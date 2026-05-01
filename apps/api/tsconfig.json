@@ -5,12 +5,15 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "allowJs": true,
+    "checkJs": false,
     "plugins": [{ "name": "next" }]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.js",
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules", ".next"]
