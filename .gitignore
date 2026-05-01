@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.expo/
+.turbo/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Native
+ios/Pods/
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+*.keystore
+!debug.keystore
+
+# Expo
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# Mobile build artifacts
+*.ipa
+*.apk
+*.aab
