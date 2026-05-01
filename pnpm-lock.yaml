@@ -17,6 +17,15 @@ importers:
 
   packages/tsconfig: {}
 
+  packages/ui-tokens:
+    devDependencies:
+      '@novame/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
 packages:
 
   turbo-darwin-64@2.3.3:

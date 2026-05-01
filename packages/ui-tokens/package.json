@@ -1,0 +1,21 @@
+{
+  "name": "@novame/ui-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens for NovaMe (colors, spacing, typography, animations)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./colors": "./src/colors.ts",
+    "./typography": "./src/typography.ts",
+    "./spacing": "./src/spacing.ts",
+    "./animations": "./src/animations.ts",
+    "./shadows": "./src/shadows.ts",
+    "./theme": "./src/theme.ts"
+  },
+  "devDependencies": {
+    "@novame/tsconfig": "workspace:*",
+    "typescript": "5.5.4"
+  }
+}
