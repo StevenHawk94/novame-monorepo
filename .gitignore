@@ -53,3 +53,7 @@ expo-env.d.ts
 
 # Temporary holding for admin API routes (will move to apps/admin in next stage)
 _admin-api-tmp/
+
+# Temporary reference files copied from old Visdom for migration (do not commit — may contain secrets like old admin password)
+_old-*
+*.tmp
