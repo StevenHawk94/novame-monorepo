@@ -50,3 +50,6 @@ expo-env.d.ts
 *.ipa
 *.apk
 *.aab
+
+# Temporary holding for admin API routes (will move to apps/admin in next stage)
+_admin-api-tmp/
