@@ -1,6 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import OverviewTab from './_components/OverviewTab';
+import PostsTab from './_components/PostsTab';
+import CardsTab from './_components/CardsTab';
+import DefaultUsersTab from './_components/DefaultUsersTab';
+import RealUsersTab from './_components/RealUsersTab';
+import OrdersTab from './_components/OrdersTab';
+import SeekQuestionsTab from './_components/SeekQuestionsTab';
+import SupportTicketsTab from './_components/SupportTicketsTab';
 
 type TabId =
   | 'overview'
@@ -55,20 +63,14 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <PlaceholderTab tab={tab} />
+      {tab === 'overview' && <OverviewTab stats={null} loading={false} />}
+      {tab === 'posts' && <PostsTab />}
+      {tab === 'cards' && <CardsTab />}
+      {tab === 'default-users' && <DefaultUsersTab />}
+      {tab === 'real-users' && <RealUsersTab />}
+      {tab === 'orders' && <OrdersTab />}
+      {tab === 'seek' && <SeekQuestionsTab />}
+      {tab === 'tickets' && <SupportTicketsTab />}
     </>
-  );
-}
-
-function PlaceholderTab({ tab }: { tab: TabId }) {
-  const label = TABS.find((t) => t.id === tab)?.label ?? tab;
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-      <p className="text-2xl mb-2">🚧</p>
-      <p className="text-sm font-medium text-black mb-1">{label} Tab</p>
-      <p className="text-xs text-gray-500">
-        Coming in step 1.3.4-C. Currently a placeholder.
-      </p>
-    </div>
   );
 }
