@@ -8,7 +8,6 @@
 export * from './wisdom'
 export * from './card'
 export * from './order'
-export * from './report'
 export * from './announcement'
 export * from './user'
 export * from './seek'

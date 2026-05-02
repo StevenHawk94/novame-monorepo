@@ -16,10 +16,6 @@ type Dashboard = {
   totalUsers: number;
 };
 
-type Stats = {
-  pendingReports?: number;
-};
-
 type Period = 'today' | '7days' | '30days' | '180days' | 'all';
 
 const PERIODS: Period[] = ['today', '7days', '30days', '180days', 'all'];
@@ -28,7 +24,7 @@ export default function OverviewTab({
   stats: initialStats,
   loading: initLoading,
 }: {
-  stats: Stats | null;
+  stats: null;
   loading: boolean;
 }) {
   const router = useRouter();
@@ -166,12 +162,6 @@ export default function OverviewTab({
 
             {/* Quick Nav */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <NavBtn
-                icon="🚨"
-                label="Reports"
-                onClick={() => router.push('/admin/reports')}
-                badge={initialStats?.pendingReports}
-              />
               <NavBtn
                 icon="📢"
                 label="Announcements"
