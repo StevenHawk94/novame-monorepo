@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Post } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 export default function PostsTab() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -16,8 +17,7 @@ export default function PostsTab() {
   const loadPosts = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/wisdoms?filter=real');
-      const d = await r.json();
+      const d = await apiClient.get<{ wisdoms?: Post[] }>('/api/admin/wisdoms?filter=real');
       setPosts(d.wisdoms || []);
     } catch {}
     setLoading(false);
@@ -25,11 +25,7 @@ export default function PostsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this post?')) return;
-    await fetch('/api/admin/wisdoms', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    await apiClient.delete('/api/admin/wisdoms?id=' + encodeURIComponent(id));
     loadPosts();
   };
 

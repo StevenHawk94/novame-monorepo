@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Order, WisdomCardData, WisdomEntry, CardEntry } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 type DownloadResponse = {
   success: boolean;
@@ -38,8 +39,7 @@ export default function OrdersTab() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`/api/orders?status=${filter}`);
-      const d = await r.json();
+      const d = await apiClient.get<{ orders?: Order[] }>(`/api/orders?status=${filter}`);
       setOrders(d.orders || []);
     } catch {}
     setLoading(false);
@@ -47,23 +47,18 @@ export default function OrdersTab() {
 
   const updateStatus = async () => {
     if (!editOrder) return;
-    await fetch('/api/orders', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderId: editOrder.id,
-        status: editStatus,
-        trackingNumber: editTracking,
-        notes: editNotes,
-      }),
+    await apiClient.patch('/api/orders', {
+      orderId: editOrder.id,
+      status: editStatus,
+      trackingNumber: editTracking,
+      notes: editNotes,
     });
     setEditOrder(null);
     loadOrders();
   };
 
   const downloadContent = async (order: Order, type: 'book' | 'cards') => {
-    const r = await fetch(`/api/orders?orderId=${order.id}&download=${type}`);
-    const d: DownloadResponse = await r.json();
+    const d = await apiClient.get<DownloadResponse>(`/api/orders?orderId=${order.id}&download=${type}`);
     if (!d.success) return alert('Download failed');
 
     if (type === 'book') {

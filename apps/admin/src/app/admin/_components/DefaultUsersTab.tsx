@@ -3,6 +3,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 
 import type { DefaultUser } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 export default function DefaultUsersTab() {
   const [users, setUsers] = useState<DefaultUser[]>([]);
@@ -21,8 +22,7 @@ export default function DefaultUsersTab() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/default-users');
-      const d = await r.json();
+      const d = await apiClient.get<{ users?: DefaultUser[] }>('/api/admin/default-users');
       setUsers(d.users || []);
     } catch {}
     setLoading(false);
@@ -44,21 +44,13 @@ export default function DefaultUsersTab() {
         const formData = new FormData();
         formData.append('file', avatarFile);
         formData.append('name', newName.trim());
-        const r = await fetch('/api/admin/upload-default-avatar', {
-          method: 'POST',
-          body: formData,
-        });
-        const d = await r.json();
+        const d = await apiClient.post<{ url?: string }>('/api/admin/upload-default-avatar', formData);
         if (d.url) avatarUrl = d.url;
       }
-      await fetch('/api/admin/default-users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newName.trim(),
-          avatarUrl,
-          exp: parseInt(String(newExp)) || 0,
-        }),
+      await apiClient.post('/api/admin/default-users', {
+        name: newName.trim(),
+        avatarUrl,
+        exp: parseInt(String(newExp)) || 0,
       });
       setNewName('');
       setNewExp(0);
@@ -74,11 +66,7 @@ export default function DefaultUsersTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this user and all their content?')) return;
-    await fetch('/api/admin/default-users', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    await apiClient.delete('/api/admin/default-users', { id });
     loadUsers();
   };
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import type { User } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 export default function RealUsersTab() {
   const [users, setUsers] = useState<User[]>([]);
@@ -16,8 +17,7 @@ export default function RealUsersTab() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/users');
-      const d = await r.json();
+      const d = await apiClient.get<{ users?: User[] }>('/api/admin/users');
       setUsers(d.users || []);
     } catch (e) {
       console.error(e);

@@ -19,13 +19,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { CsvRow, PreviewQuestion, Preview, UploadResult } from '@novame/core/types';
-
-const apiPost = (path: string, body: unknown) =>
-  fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+import { apiClient } from '@/lib/api-client';
 
 export default function SeekCsvUploadPage() {
   const router = useRouter();
@@ -139,11 +133,10 @@ export default function SeekCsvUploadPage() {
     setError(null);
 
     try {
-      const res = await apiPost('/api/admin/seek-questions', {
+      const data = await apiClient.post<UploadResult>('/api/admin/seek-questions', {
         action: 'bulk_csv_upload',
         rows: parsedRows,
       });
-      const data: UploadResult = await res.json();
       if (data.success) {
         setResult(data);
         setParsedRows([]);

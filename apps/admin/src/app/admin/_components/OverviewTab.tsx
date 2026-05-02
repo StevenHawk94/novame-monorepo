@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatCard, NavBtn } from './shared';
+import { apiClient } from '@/lib/api-client';
 
 type Dashboard = {
   users: number;
@@ -44,11 +45,10 @@ export default function OverviewTab({
   const loadDash = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`/api/admin/stats?period=${period}`);
-      const d = await r.json();
+      const d = await apiClient.get<{ success?: boolean; dashboard?: Dashboard; forceUpdateActive?: boolean }>(`/api/admin/stats?period=${period}`);
       if (d.success) {
-        setDash(d.dashboard);
-        setFuActive(d.forceUpdateActive);
+        setDash(d.dashboard ?? null);
+        setFuActive(!!d.forceUpdateActive);
       }
     } catch {}
     setLoading(false);
@@ -57,11 +57,7 @@ export default function OverviewTab({
   const sendForceUpdate = async () => {
     if (!fuVersion || !fuMessage) return alert('Fill version and message');
     setFuSending(true);
-    await fetch('/api/force-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ version: fuVersion, message: fuMessage }),
-    });
+    await apiClient.post('/api/force-update', { version: fuVersion, message: fuMessage });
     setFuVersion('');
     setFuMessage('');
     loadDash();
@@ -69,7 +65,7 @@ export default function OverviewTab({
   };
 
   const cancelForceUpdate = async () => {
-    await fetch('/api/force-update', { method: 'DELETE' });
+    await apiClient.delete('/api/force-update');
     loadDash();
   };
 

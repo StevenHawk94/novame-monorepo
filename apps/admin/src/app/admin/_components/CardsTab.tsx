@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Card, DefaultUser } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 import { ALL_KEYWORD_IDS as KEYWORDS } from '@novame/core/constants/keywords';
 
 type CardForm = {
@@ -42,13 +43,11 @@ export default function CardsTab() {
     setLoading(true);
     try {
       if (subTab === 'default') {
-        const r = await fetch('/api/admin/default-cards');
-        const d = await r.json();
+        const d = await apiClient.get<{ cards?: Card[] }>('/api/admin/default-cards');
         setCards(d.cards || []);
       } else {
-        const r = await fetch('/api/generate-abc-cards?public=true');
-        const d = await r.json();
-        setCards(((d.cards || []) as Card[]).filter((c) => c.user_id));
+        const d = await apiClient.get<{ cards?: Card[] }>('/api/generate-abc-cards?public=true');
+        setCards((d.cards || []).filter((c) => c.user_id));
       }
     } catch {}
     setLoading(false);
@@ -56,8 +55,7 @@ export default function CardsTab() {
 
   const loadDefaultUsers = async () => {
     try {
-      const r = await fetch('/api/admin/default-users');
-      const d = await r.json();
+      const d = await apiClient.get<{ users?: DefaultUser[] }>('/api/admin/default-users');
       setDefaultUsers(d.users || []);
     } catch {}
   };
@@ -68,23 +66,18 @@ export default function CardsTab() {
       return alert('Fill required fields');
     }
     try {
-      const r = await fetch('/api/admin/default-cards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cards: [
-            {
-              keyword_id: form.keywordId,
-              quote_short: form.quoteShort,
-              insight_full: form.insightFull,
-              card_number: parseInt(String(form.cardNumber)) || 1,
-              creator_name: user.name,
-              creator_avatar: user.avatar_url,
-            },
-          ],
-        }),
+      const d = await apiClient.post<{ success?: boolean; error?: string }>('/api/admin/default-cards', {
+        cards: [
+          {
+            keyword_id: form.keywordId,
+            quote_short: form.quoteShort,
+            insight_full: form.insightFull,
+            card_number: parseInt(String(form.cardNumber)) || 1,
+            creator_name: user.name,
+            creator_avatar: user.avatar_url,
+          },
+        ],
       });
-      const d = await r.json();
       if (d.success) {
         setShowCreate(false);
         setForm({ userId: '', keywordId: '', quoteShort: '', insightFull: '', cardNumber: 1 });
@@ -99,11 +92,7 @@ export default function CardsTab() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this card?')) return;
-    await fetch('/api/admin/default-cards', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    await apiClient.delete('/api/admin/default-cards', { id });
     loadCards();
   };
 

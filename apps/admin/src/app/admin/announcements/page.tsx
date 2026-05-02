@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { Announcement } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 type AnnouncementForm = {
   title: string;
@@ -67,9 +68,8 @@ export default function AdminAnnouncements() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/announcements');
-      const data = await res.json();
-      if (data.success) setAnnouncements(data.announcements);
+      const data = await apiClient.get<{ success?: boolean; announcements?: Announcement[] }>('/api/admin/announcements');
+      if (data.success && data.announcements) setAnnouncements(data.announcements);
     } catch (e) {
       console.error(e);
     }
@@ -78,12 +78,8 @@ export default function AdminAnnouncements() {
 
   const handleToggle = async (id: string, isActive: boolean) => {
     try {
-      const res = await fetch('/api/admin/announcements', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, is_active: !isActive }),
-      });
-      if ((await res.json()).success) load();
+      const data = await apiClient.patch<{ success?: boolean }>('/api/admin/announcements', { id, is_active: !isActive });
+      if (data.success) load();
     } catch {
       alert('操作失败');
     }
@@ -92,10 +88,8 @@ export default function AdminAnnouncements() {
   const handleDelete = async (id: string) => {
     if (!confirm('确定删除这条公告？')) return;
     try {
-      const res = await fetch(`/api/admin/announcements?id=${id}`, {
-        method: 'DELETE',
-      });
-      if ((await res.json()).success) load();
+      const data = await apiClient.delete<{ success?: boolean }>(`/api/admin/announcements?id=${id}`);
+      if (data.success) load();
     } catch {
       alert('删除失败');
     }
@@ -109,12 +103,7 @@ export default function AdminAnnouncements() {
     }
     setAdding(true);
     try {
-      const res = await fetch('/api/admin/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
+      const data = await apiClient.post<{ success?: boolean }>('/api/admin/announcements', form);
       if (data.success) {
         setShowAdd(false);
         setForm({ title: '', content: '', type: 'info', target_users: 'all', end_at: '' });

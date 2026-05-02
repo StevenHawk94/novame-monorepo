@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { Wisdom } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 type WisdomForm = {
   audio_url: string;
@@ -57,14 +58,13 @@ export default function AdminWisdoms() {
   const load = async (p = 0, append = false) => {
     if (!append) setLoading(true);
     try {
-      const res = await fetch(
+      const data = await apiClient.get<{ success?: boolean; wisdoms?: Wisdom[]; total?: number; hasMore?: boolean }>(
         `/api/admin/wisdoms?page=${p}&limit=20&filter=${filter}&search=${search}`
       );
-      const data = await res.json();
       if (data.success) {
-        setWisdoms(append ? [...wisdoms, ...data.wisdoms] : data.wisdoms);
-        setTotal(data.total);
-        setHasMore(data.hasMore);
+        setWisdoms(append ? [...wisdoms, ...(data.wisdoms ?? [])] : (data.wisdoms ?? []));
+        setTotal(data.total ?? 0);
+        setHasMore(!!data.hasMore);
         setPage(p);
       }
     } catch (e) {
@@ -75,8 +75,7 @@ export default function AdminWisdoms() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('确定删除？')) return;
-    const res = await fetch(`/api/admin/wisdoms?id=${id}`, { method: 'DELETE' });
-    const data = await res.json();
+    const data = await apiClient.delete<{ success?: boolean }>(`/api/admin/wisdoms?id=${id}`);
     if (data.success) {
       setWisdoms(wisdoms.filter((w) => w.id !== id));
       setDetail(null);
@@ -91,12 +90,7 @@ export default function AdminWisdoms() {
       return;
     }
     setAdding(true);
-    const res = await fetch('/api/admin/wisdoms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
+    const data = await apiClient.post<{ success?: boolean }>('/api/admin/wisdoms', form).catch(() => ({ success: false }));
     setAdding(false);
     if (data.success) {
       setShowAdd(false);

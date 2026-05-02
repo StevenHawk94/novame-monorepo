@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { Creator, Question, LinkedCard } from '@novame/core/types';
+import { apiClient } from '@/lib/api-client';
 
 const TAGS = [
   'Clarity', 'Grounding', 'Focus', 'Curiosity', 'Stillness', 'Objectivity',
@@ -38,16 +39,16 @@ export default function SeekQuestionsTab() {
 
   const loadQuestions = () => {
     setLoading(true);
-    fetch('/api/admin/seek-questions')
-      .then((r) => r.json())
+    apiClient
+      .get<{ questions?: Question[] }>('/api/admin/seek-questions')
       .then((d) => setQuestions(d.questions || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
   const loadCreators = () => {
-    fetch('/api/admin/default-users')
-      .then((r) => r.json())
+    apiClient
+      .get<{ users?: Creator[] }>('/api/admin/default-users')
       .then((d) => {
         const u: Creator[] = d.users || [];
         setCreators(u);
@@ -58,8 +59,8 @@ export default function SeekQuestionsTab() {
 
   const loadPending = () => {
     setLoadingPending(true);
-    fetch('/api/admin/seek-questions?pending=true')
-      .then((r) => r.json())
+    apiClient
+      .get<{ questions?: Question[]; pendingCount?: number }>('/api/admin/seek-questions?pending=true')
       .then((d) => {
         setPendingQuestions(d.questions || []);
         setPendingCount(d.pendingCount || 0);
@@ -77,8 +78,7 @@ export default function SeekQuestionsTab() {
 
   const loadCardsForQuestion = async (questionId: string) => {
     try {
-      const r = await fetch(`/api/admin/seek-questions?questionId=${questionId}`);
-      const d = await r.json();
+      const d = await apiClient.get<{ cards?: LinkedCard[] }>(`/api/admin/seek-questions?questionId=${questionId}`);
       setQuestionCards((prev) => ({ ...prev, [questionId]: d.cards || [] }));
     } catch {}
   };
@@ -96,16 +96,12 @@ export default function SeekQuestionsTab() {
     if (!newQ.trim() || creating || !selectedCreator) return;
     setCreating(true);
     try {
-      await fetch('/api/admin/seek-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          question: newQ.trim(),
-          tag: newTag,
-          creatorName: selectedCreator.name,
-          creatorAvatar: selectedCreator.avatar_url || '',
-        }),
+      await apiClient.post('/api/admin/seek-questions', {
+        action: 'create',
+        question: newQ.trim(),
+        tag: newTag,
+        creatorName: selectedCreator.name,
+        creatorAvatar: selectedCreator.avatar_url || '',
       });
       setNewQ('');
       setNewTag('Clarity');
@@ -117,20 +113,12 @@ export default function SeekQuestionsTab() {
 
   const deleteQuestion = async (id: string) => {
     if (!confirm('Delete this question and all its cards?')) return;
-    await fetch('/api/admin/seek-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', id }),
-    });
+    await apiClient.post('/api/admin/seek-questions', { action: 'delete', id });
     loadQuestions();
   };
 
   const approveUserQuestion = async (id: string) => {
-    await fetch('/api/admin/seek-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'approve_user_question', id }),
-    });
+    await apiClient.post('/api/admin/seek-questions', { action: 'approve_user_question', id });
     loadPending();
     loadQuestions();
   };
@@ -138,24 +126,16 @@ export default function SeekQuestionsTab() {
   const rejectUserQuestion = async (id: string) => {
     const reason = prompt('Rejection reason (optional — will be shown to the user):');
     if (reason === null) return;
-    await fetch('/api/admin/seek-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'reject_user_question',
-        id,
-        rejectionReason: reason || '',
-      }),
+    await apiClient.post('/api/admin/seek-questions', {
+      action: 'reject_user_question',
+      id,
+      rejectionReason: reason || '',
     });
     loadPending();
   };
 
   const togglePublish = async (id: string, current: boolean | undefined) => {
-    await fetch('/api/admin/seek-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update', id, isPublished: !current }),
-    });
+    await apiClient.post('/api/admin/seek-questions', { action: 'update', id, isPublished: !current });
     loadQuestions();
   };
 
@@ -164,12 +144,7 @@ export default function SeekQuestionsTab() {
     if (!cardId || addingCard) return;
     setAddingCard(questionId);
     try {
-      const r = await fetch('/api/admin/seek-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_card', questionId, cardId }),
-      });
-      const d = await r.json();
+      const d = await apiClient.post<{ success?: boolean; error?: string }>('/api/admin/seek-questions', { action: 'add_card', questionId, cardId });
       if (d.success) {
         setAddCardInputs((prev) => ({ ...prev, [questionId]: '' }));
         await loadCardsForQuestion(questionId);
@@ -186,11 +161,7 @@ export default function SeekQuestionsTab() {
   const removeCard = async (questionId: string, linkId: string) => {
     if (!confirm('Remove this card from the question?')) return;
     try {
-      await fetch('/api/admin/seek-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'remove_card', linkId }),
-      });
+      await apiClient.post('/api/admin/seek-questions', { action: 'remove_card', linkId });
       await loadCardsForQuestion(questionId);
       loadQuestions();
     } catch {
