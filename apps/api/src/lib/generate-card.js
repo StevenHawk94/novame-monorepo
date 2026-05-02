@@ -7,30 +7,8 @@
  */
 
 import { callAI, parseAIJson } from '@/lib/ai'
+import { ALL_KEYWORD_SLUGS as ALL_KEYWORDS, slugToId, idToSlug } from '@novame/core'
 
-const ALL_KEYWORDS = [
-  'Clarity','Grounding','Focus','Curiosity','Stillness','Objectivity','Adaptability','Unlearning','Vision','Acceptance','Humor','Intuition',
-  'Resilience','Boundaries','Self-Compassion','Courage','Vulnerability','Empathy','Gratitude','Patience','Forgiveness','Release','Balance','Joy',
-  'Initiative','Consistency','Discipline','Decisiveness','Purpose','Rest','Resourcefulness','Accountability','Boldness','Endurance','Communication','Momentum',
-  'Sovereignty','Authenticity','Inspiration','Generosity','Trust','Reciprocity','Collaboration','Leadership','Harmony','Legacy','Respect','Loyalty',
-]
-
-const KEYWORD_TO_ID = {
-  'Clarity':'mind-clarity','Grounding':'mind-grounding','Focus':'mind-focus','Curiosity':'mind-curiosity',
-  'Stillness':'mind-stillness','Objectivity':'mind-objectivity','Adaptability':'mind-adaptability','Unlearning':'mind-unlearning',
-  'Vision':'mind-vision','Acceptance':'mind-acceptance','Humor':'mind-humor','Intuition':'mind-intuition',
-  'Resilience':'heart-resilience','Boundaries':'heart-boundaries','Self-Compassion':'heart-self-compassion','Courage':'heart-courage',
-  'Vulnerability':'heart-vulnerability','Empathy':'heart-empathy','Gratitude':'heart-gratitude','Patience':'heart-patience',
-  'Forgiveness':'heart-forgiveness','Release':'heart-release','Balance':'heart-balance','Joy':'heart-joy',
-  'Initiative':'action-initiative','Consistency':'action-consistency','Discipline':'action-discipline','Decisiveness':'action-decisiveness',
-  'Purpose':'action-purpose','Rest':'action-rest','Resourcefulness':'action-resourcefulness','Accountability':'action-accountability',
-  'Boldness':'action-boldness','Endurance':'action-endurance','Communication':'action-communication','Momentum':'action-momentum',
-  'Sovereignty':'connection-sovereignty','Authenticity':'connection-authenticity','Inspiration':'connection-inspiration','Generosity':'connection-generosity',
-  'Trust':'connection-trust','Reciprocity':'connection-reciprocity','Collaboration':'connection-collaboration','Leadership':'connection-leadership',
-  'Harmony':'connection-harmony','Legacy':'connection-legacy','Respect':'connection-respect','Loyalty':'connection-loyalty',
-}
-
-const ID_TO_KEYWORD = Object.fromEntries(Object.entries(KEYWORD_TO_ID).map(([k, v]) => [v, k]))
 
 const SYSTEM_INSTRUCTION = `# Role
 You are the "Wisdom Keeper", a top-tier "Grounded Mentor." Your task is to act as a "Mind Refinery" to refine a user's raw input—whether it is chaotic, emotional, negative, or a simple joy—into a deep, enlightening, and publicly shareable wisdom path.
@@ -112,7 +90,7 @@ Return ONLY valid JSON.`
 function enrichCard(card) {
   const kwId = card.keyword_id || 'mind-clarity'
   const category = kwId.split('-')[0] || 'mind'
-  const keyword = ID_TO_KEYWORD[kwId] || kwId.split('-').slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  const keyword = idToSlug(kwId) || kwId.split('-').slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   return { ...card, card_keywords: { keyword, category, front_image: `/images/cards/${kwId}-front.webp`, back_image: `/images/cards/${category}-back.webp` } }
 }
 
@@ -178,7 +156,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId)
   }
 
   const matchedKeyword = ALL_KEYWORDS.find(k => k.toLowerCase() === (result.keyword || '').toLowerCase()) || 'Clarity'
-  const keywordId = KEYWORD_TO_ID[matchedKeyword] || 'mind-clarity'
+  const keywordId = slugToId(matchedKeyword) || 'mind-clarity'
 
   const { data: savedCard, error: dbError } = await supabase
     .from('wisdom_cards')
