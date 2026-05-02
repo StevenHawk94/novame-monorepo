@@ -18,6 +18,17 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const apiUrl = process.env.NOVAME_API_URL || 'http://localhost:3001'
+    return [
+      { source: '/api/orders', destination: `${apiUrl}/api/orders` },
+      { source: '/api/orders/:path*', destination: `${apiUrl}/api/orders/:path*` },
+      { source: '/api/force-update', destination: `${apiUrl}/api/force-update` },
+      { source: '/api/force-update/:path*', destination: `${apiUrl}/api/force-update/:path*` },
+      { source: '/api/generate-abc-cards', destination: `${apiUrl}/api/generate-abc-cards` },
+      { source: '/api/generate-abc-cards/:path*', destination: `${apiUrl}/api/generate-abc-cards/:path*` },
+    ]
+  },
 };
 
 module.exports = nextConfig;
