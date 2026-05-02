@@ -2,7 +2,7 @@
   "name": "novame",
   "version": "0.1.0",
   "private": true,
-  "description": "NovaMe — Journal. Reflect. Evolve. (Monorepo)",
+  "description": "NovaMe \u2014 Journal. Reflect. Evolve. (Monorepo)",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
@@ -18,5 +18,10 @@
   "devDependencies": {
     "turbo": "2.3.3",
     "typescript": "5.5.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "lightningcss": "1.30.1"
+    }
   }
 }

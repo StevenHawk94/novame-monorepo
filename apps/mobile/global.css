@@ -1,0 +1,17 @@
+/* NativeWind v5 / Tailwind v4 entry */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+@import "nativewind/theme";
+
+/* Custom theme — migrated from old Capacitor tailwind.config.js (Tailwind v4 CSS-first) */
+@theme {
+  --color-primary: #EF4444;
+  --color-app-bg: #F5F5F7;
+  --color-card-bg: #FFFFFF;
+  --color-discover-primary: #e14c4c;
+  --color-dark-bg: #121212;
+  --color-card-dark: #1E1E1E;
+  --color-accent: #93E5F5;
+  --radius-ios: 1.25rem;
+}

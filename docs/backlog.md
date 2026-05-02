@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**：2026-05-01（1.4 完整结束、阶段 2 启动前）  
-**当前阶段**:批次 1 已完结（1.4 全部交付完成），即将进入批次 2 / 阶段 2（Expo 应用骨架）
+**最后更新**:2026-05-02(阶段 2.1 完成、metro 验证通过)  
+**当前阶段**:批次 2 / 阶段 2.1 已完成(mobile Expo 骨架 + NativeWind v5 + Reanimated v4 + paths 修法 + monorepo type 隔离),待进 2.2(代码骨架)
 
 ---
 
@@ -110,6 +110,130 @@
 - **不修的理由**：production 完全正常，影响仅限 Vercel UI 上有红色感叹号
 
 ---
+
+
+#### B10. admin next.config.js transpilePackages 只列了 @novame/core
+- **来源**:阶段 2 启动前事实核对时发现
+- **现状**:
+  - apps/admin/next.config.js 的 transpilePackages 数组只列了 `@novame/core`
+  - 但 packages/ui-tokens 和 packages/api-client 同样是 source-only export 模式(main 指向 src/index.ts)，按理也应该列入
+  - admin production 全功能正常运行 —— 推测 Next.js 14 对 workspace package 的 source-only export 有自动检测机制，或被 Next 自带 SWC 编译路径覆盖
+- **风险**:升级 Next.js 主版本 / 改 export 方式 / 增加新 package 时可能突然炸
+- **不修的理由**:搬迁不重构原则；production 正常；阶段 2 不能动 admin 配置
+- **修复时机**:升级 Next.js 主版本时一起重新评估，或新增 package 触发 import 失败时
+
+#### B11. NativeWind v5 仍是 preview tag(阶段 2 引入)
+- **来源**:阶段 2 决策 1 选择 SDK 54 + NativeWind v5 preview
+- **现状**:
+  - `nativewind@preview` 是 npm preview tag，不是 stable
+  - NativeWind 维护者明确表态今后不再绑定 Expo SDK 版本，意味着 v5 stable 发布的时机不确定
+  - `npx rn-new@next --nativewind` 模板锚定的就是这个组合(生态对齐)
+- **风险**:preview 阶段可能有未发现的边界 case bug
+- **触发条件**:NativeWind v5 stable 发布后，立刻把 mobile 的 nativewind 依赖从 `@preview` 切到 stable tag(或精确 pin 版本号)
+- **跟踪方式**:定期看 nativewind.dev 或 nativewind GitHub releases 页面
+
+
+#### B12. fontFamily 完整迁移 + expo-font 加载
+- **来源**:阶段 2.1 启动前事实核对发现
+- **现状**:
+  - 旧 Capacitor tailwind.config 用了 4 个字体:Inter / Press Start 2P / Outfit / Plus Jakarta Sans
+  - Tailwind Web 有浏览器 fallback,RN 没有 —— 必须精确字体名 + expo-font 加载
+  - 阶段 2.1 mobile 用 RN 系统字体(iOS SF Pro / Android Roboto)跑通骨架,fontFamily 暂不搬
+- **触发条件**:阶段 3 UI 重写时
+- **工作内容**:
+  - 收集 4 个字体的 .ttf 文件(从 Google Fonts 下载)
+  - 用 expo-font 在 root layout 加载
+  - mobile 的 tailwind.config 用精确字体名(Inter-Regular / Inter-Bold 等)
+  - 失败 fallback 策略
+
+#### B13. tailwind theme 整合到 packages/ui-tokens
+- **来源**:阶段 2.1 启动前隐藏决策点
+- **现状**:阶段 2.1 mobile 的 colors / borderRadius / animation 直接搬到 apps/mobile/tailwind.config.js,不进 packages/ui-tokens
+- **理由**:搬迁阶段不引入新结构变化;阶段 3 UI 重写时再决定要不要把 theme 集中进 ui-tokens 让 admin 也受益
+- **触发条件**:阶段 3 UI 重写时
+
+#### B14. SplashScreen 显示时机机制 + 行为决策
+- **来源**:阶段 2.1 SplashScreen 字段映射时发现 Expo 与 Capacitor 哲学差异
+- **现状**:
+  - 旧 Capacitor splash 强制显示 2000ms + 300ms fade out
+  - Expo 默认 "app ready 就 hide",但 expo-splash-screen 提供 preventAutoHideAsync + 手动 hideAsync 完全可控
+  - 阶段 2.1 不配 prevent,跟 Expo 默认走
+- **触发条件**:
+  - 机制配置层面 → 阶段 2.3 装配 _layout.tsx 时(决定要不要在 root 加 preventAutoHideAsync + 自定义 hide 时机)
+  - 行为决策层面 → 阶段 3 UI 重写时(到底要不要保留 2s 行为)
+
+#### B15. 阶段 5 mobile Google OAuth client ID 复用
+- **来源**:阶段 2.1 iOS Info.plist 扫描发现
+- **事实**:旧项目 iOS Info.plist 里有完整的 Google OAuth 配置(reverse client ID + GIDClientID),阶段 5 mobile 必须复用同一个 client ID,不能重新申请新的
+- **不复用的后果**:旧用户认证链路断,Google Cloud Console 认证记录混乱
+- **具体值在哪**:旧项目 /Users/nihao/Desktop/visdom-capacitor/ios/App/App/Info.plist 里 CFBundleURLSchemes 和 GIDClientID 字段
+- **触发条件**:阶段 5 Google Sign-In 集成时
+
+#### B16. 旧项目 iPhone iOS 允许横屏(可能是默认值,需产品确认)
+- **来源**:阶段 2.1 iOS Info.plist 扫描发现
+- **事实**:旧 iOS Info.plist 列了 Portrait + LandscapeLeft + LandscapeRight(iPhone),但 web 模拟壳固定 390×844,UI 在横屏不可能好看
+- **决策**:阶段 2.1 mobile 锁 portrait(orientation: 'portrait'),把"是否允许横屏"作为产品决策列到 backlog
+- **触发条件**:阶段 3 UI 重写时,或产品 PM 提出明确要求时
+
+#### B17. 阶段 5 触发: iOS App.entitlements 搬迁
+- **来源**:阶段 2.1 iOS 目录扫描发现
+- **现状**:旧项目 ios/App/App/App.entitlements 存在,可能含 Apple Sign-In / Push Notifications capability
+- **触发条件**:阶段 5 原生集成 Apple Sign-In / 推送通知时
+- **工作内容**:看具体 entitlements 内容,转换成 expo app.json ios.entitlements 字段或 expo-build-properties config plugin
+
+#### B18. 阶段 5/6 触发: Products.storekit 搬迁(IAP 本地测试)
+- **来源**:阶段 2.1 iOS 目录扫描发现
+- **现状**:旧项目 ios/App/App/Products.storekit 是 Apple StoreKit 本地测试配置文件
+- **触发条件**:阶段 5 IAP 集成时(本地测试 IAP 流程不连 sandbox)或阶段 6 真机测试时
+
+#### B19. 阶段 5 触发: GoogleService-Info.plist 处理
+- **来源**:阶段 2.1 iOS 目录扫描发现
+- **现状**:旧项目 ios/App/App/GoogleService-Info.plist 存在
+- **不确定**:是 Firebase 配置还是单纯 Google Sign-In 配置 —— 阶段 5 时打开看决定
+- **触发条件**:阶段 5 Google Sign-In 集成时
+
+#### B20. 阶段 5 触发: iOS 原生 IAP plugin 业务逻辑参考
+- **来源**:阶段 2.1 iOS 目录扫描发现
+- **现状**:旧项目自己写了 iOS 原生 IAP plugin(InAppPurchasePlugin.swift + .m),不是用 npm 包
+- **价值**:.swift 代码可能有订阅升降级判定等业务逻辑值得参考 / 复用
+- **触发条件**:阶段 5 用 react-native-iap 重写 IAP 时,先读旧 .swift 看业务规则
+
+#### B21. 阶段 5 触发: Android Apple Sign-In 走 OAuth 网页流程
+- **来源**:阶段 2.1 Android Manifest 扫描发现
+- **事实**:Apple 没给 Android 原生 Apple Sign-In SDK,旧项目 Android 端 Apple Sign-In 用 OAuth deep link callback(scheme com.novame.app)
+- **关键**:mobile 阶段 5 Android 上 Apple Sign-In 必须用 expo-auth-session OAuth 流程,不能复用 iOS 原生 ASAuthorizationAppleIDProvider 路径
+- **触发条件**:阶段 5 Apple Sign-In 集成时
+
+
+#### B22. nativewind preview 引入 react-dom 18 peer 冲突(react@19.1)
+- **来源**:阶段 2.1.3 装依赖时发现
+- **现状**:nativewind@5.0.0-preview.3 拉了 react-dom@18.3.1,跟 react@19.1.0 peer 不一致
+- **影响**:peer warning 不阻塞 build;但极端情况下如果有代码意外用到 react-dom(mobile 不该用),会出现 React reconciler 版本错配
+- **暂不处理理由**:搬迁阶段聚焦骨架跑通;先看 2.1.5 type-check / metro start 是否真出问题
+- **触发条件**:
+  - (a) 2.1.5 出实际报错 → 立刻处理(加 pnpm.overrides 强制 react-dom 跟 react 一致)
+  - (b) NativeWind v5 stable 发布后这个问题可能自然消失
+
+
+#### B23. monorepo @types/react 多版本冲突 + paths 修法(已解决,记录用)
+- **来源**:阶段 2.1.5 类型分裂调试时发现并解决
+- **根因链**:
+  - admin/api 用 React 18 + @types/react@18.3.3
+  - mobile 用 React 19.1 + @types/react@19.1.17
+  - pnpm 默认 hoist-pattern=* 把 admin/api 的 @types/react@18.3.3 hoist 到 .pnpm/node_modules/
+  - mobile TS 解析 react-native 的 .d.ts 时,通过 walk-up 找到了 .pnpm/node_modules/@types/react/(指向 18.3.3)
+  - 跟 mobile 实际依赖的 19.1.17 不兼容,报 'View cannot be used as a JSX component' 等错误
+- **解决方案**:apps/mobile/tsconfig.json 加 compilerOptions.paths 锁 react 到 mobile 自己的 node_modules
+- **参考来源**:zackery.dev "@types/react in a Mono Repo"
+- **此条 backlog 性质**:已解决问题的根因记录,防止未来重新踩坑
+- **未来风险预警**:
+  - 添加新 workspace 时若 React 版本跟现有 workspace 不一致,可能复发
+  - 添加新依赖到 mobile 时,如果该依赖 .d.ts 用 'import * from react' 而没显式声明 @types/react peer,可能受影响
+  - 若 NativeWind v5 stable 后 mobile 升级 SDK 55,要重新评估 paths 配置是否仍需要
+- **失败方案备忘**(已尝试无效,不要再走):
+  - shamefully-hoist=false 治标不治本(只关 root hoist,不关 .pnpm 内部 hoist)
+  - compilerOptions.types: [] 不影响 import resolution(只影响 global include)
+  - hoist-pattern[]=!@types/react 在某些场景不工作(pnpm GitHub discussion 5779)
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
