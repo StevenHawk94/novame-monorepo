@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-// TODO(1.4): replace with shared type from @novame/core/types
-type User = {
-  id: string;
-  email?: string;
-  display_name?: string;
-  avatar_url?: string;
-  created_at?: string;
-  wisdoms_count?: number;
-  cards_count?: number;
-  subscription_tier?: string;
-};
+import type { User } from '@novame/core/types';
 
 export default function RealUsersTab() {
   const [users, setUsers] = useState<User[]>([]);

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatCard, NavBtn } from './shared';
 
-// TODO(1.4): replace with shared types from @novame/core/types
 type Dashboard = {
   users: number;
   activeSubs: number;

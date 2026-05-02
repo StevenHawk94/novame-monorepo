@@ -2,18 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-// TODO(1.4): replace with shared type from @novame/core/types
-type Post = {
-  id: string;
-  text?: string;
-  description?: string;
-  creator_name?: string;
-  creator_avatar?: string;
-  user_id?: string;
-  created_at: string;
-  listens?: number;
-  comment_count?: number;
-};
+import type { Post } from '@novame/core/types';
 
 export default function PostsTab() {
   const [posts, setPosts] = useState<Post[]>([]);

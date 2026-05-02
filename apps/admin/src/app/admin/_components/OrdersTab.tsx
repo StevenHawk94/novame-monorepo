@@ -2,42 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-// TODO(1.4): replace with shared type from @novame/core/types
-type Order = {
-  id: string;
-  customer_name?: string;
-  customer_email?: string;
-  product_type: string;
-  status: string;
-  amount: number;
-  created_at: string;
-  tracking_number?: string;
-  notes?: string;
-  shipping_name?: string;
-  shipping_address?: string;
-  shipping_city?: string;
-  shipping_state?: string;
-  shipping_zip?: string;
-};
-
-type WisdomCardData = {
-  quote_short?: string;
-  insight_full?: string;
-  card_b?: string;
-  card_c?: string;
-};
-
-type WisdomEntry = {
-  text?: string;
-  created_at: string;
-  card?: WisdomCardData;
-};
-
-type CardEntry = {
-  keyword_id?: string;
-  quote_short?: string;
-  insight_full?: string;
-};
+import type { Order, WisdomCardData, WisdomEntry, CardEntry } from '@novame/core/types';
 
 type DownloadResponse = {
   success: boolean;

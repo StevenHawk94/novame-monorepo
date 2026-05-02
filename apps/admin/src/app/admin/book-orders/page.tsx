@@ -3,32 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type ShippingInfo = {
-  fullName?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-};
-
-type BookOrder = {
-  id: string;
-  user_id?: string;
-  user_name?: string;
-  user_email?: string;
-  order_type: 'ebook' | 'printed';
-  status: string;
-  amount: number;
-  payment_status?: string;
-  wisdom_count: number;
-  total_minutes: number;
-  created_at: string;
-  tracking_number?: string;
-  shipping_info?: ShippingInfo;
-};
+import type { ShippingInfo, BookOrder } from '@novame/core/types';
 
 type StatusFilter =
   | 'all'

@@ -3,17 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type Announcement = {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  target_users: string;
-  is_active: boolean;
-  created_at: string;
-  end_at?: string;
-};
+import type { Announcement } from '@novame/core/types';
 
 type AnnouncementForm = {
   title: string;

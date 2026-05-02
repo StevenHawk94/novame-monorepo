@@ -2,13 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from 'react';
 
-// TODO(1.4): replace with shared type from @novame/core/types
-type DefaultUser = {
-  id: string;
-  name: string;
-  avatar_url?: string;
-  total_mins?: number;
-};
+import type { DefaultUser } from '@novame/core/types';
 
 export default function DefaultUsersTab() {
   const [users, setUsers] = useState<DefaultUser[]>([]);

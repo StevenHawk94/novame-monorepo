@@ -3,20 +3,7 @@
 import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type Wisdom = {
-  id: string;
-  text?: string;
-  description?: string;
-  duration_seconds?: number;
-  creator_name?: string;
-  audio_url?: string;
-  user_id?: string;
-  created_at: string;
-  listens?: number;
-  likes?: number;
-  categories?: string[];
-};
+import type { Wisdom } from '@novame/core/types';
 
 type WisdomForm = {
   audio_url: string;

@@ -3,31 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type Creator = {
-  id: string;
-  name: string;
-  avatar_url?: string;
-};
-
-type Question = {
-  id: string;
-  question_text: string;
-  question_tag: string;
-  creator_name: string;
-  card_count?: number;
-  is_published?: boolean;
-  created_at: string;
-};
-
-type LinkedCard = {
-  link_id: string;
-  keyword_id?: string;
-  quote_short?: string;
-  card_number?: number;
-  creator_name?: string;
-  card_keywords?: { keyword?: string };
-};
+import type { Creator, Question, LinkedCard } from '@novame/core/types';
 
 const TAGS = [
   'Clarity', 'Grounding', 'Focus', 'Curiosity', 'Stillness', 'Objectivity',

@@ -3,18 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type Report = {
-  id: string;
-  status: string;
-  reason: string;
-  report_type: string;
-  created_at: string;
-  details?: string;
-  admin_notes?: string;
-  target?: { text?: string; description?: string };
-  reporter?: { display_name?: string };
-};
+import type { Report } from '@novame/core/types';
 
 type ReportFilter = 'pending' | 'resolved' | 'dismissed';
 type ReportAction = 'dismiss' | 'warn' | 'delete';

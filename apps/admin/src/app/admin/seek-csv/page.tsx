@@ -18,30 +18,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type CsvRow = {
-  keyword_id: string;
-  user_name: string;
-  question: string;
-  insight_full: string;
-  quote_short: string;
-  [k: string]: string;
-};
-
-type PreviewQuestion = {
-  question: string;
-  keyword_id: string;
-  user_name: string;
-  cardCount: number;
-};
-
-type Preview = { questions: PreviewQuestion[] };
-
-type UploadResult = {
-  success: boolean;
-  summary?: { questions: number; cards: number; errors: number };
-  errors?: string[];
-};
+import type { CsvRow, PreviewQuestion, Preview, UploadResult } from '@novame/core/types';
 
 const apiPost = (path: string, body: unknown) =>
   fetch(path, {

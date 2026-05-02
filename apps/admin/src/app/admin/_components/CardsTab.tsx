@@ -2,23 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-// TODO(1.4): replace with shared types from @novame/core/types
-type Card = {
-  id: string;
-  keyword_id?: string;
-  quote_short?: string;
-  insight_full?: string;
-  card_number?: number;
-  user_id?: string;
-  creator_name?: string;
-  saves_count?: number;
-};
-
-type DefaultUser = {
-  id: string;
-  name: string;
-  avatar_url?: string;
-};
+import type { Card, DefaultUser } from '@novame/core/types';
+import { ALL_KEYWORD_IDS as KEYWORDS } from '@novame/core/constants/keywords';
 
 type CardForm = {
   userId: string;
@@ -30,21 +15,6 @@ type CardForm = {
 
 type SubTab = 'default' | 'real';
 
-const KEYWORDS = [
-  'mind-clarity', 'mind-grounding', 'mind-focus', 'mind-curiosity', 'mind-stillness',
-  'mind-objectivity', 'mind-adaptability', 'mind-unlearning', 'mind-vision',
-  'mind-acceptance', 'mind-humor', 'mind-intuition',
-  'heart-resilience', 'heart-boundaries', 'heart-self-compassion', 'heart-courage',
-  'heart-vulnerability', 'heart-empathy', 'heart-gratitude', 'heart-patience',
-  'heart-forgiveness', 'heart-release', 'heart-balance', 'heart-joy',
-  'action-initiative', 'action-consistency', 'action-discipline', 'action-decisiveness',
-  'action-purpose', 'action-rest', 'action-resourcefulness', 'action-accountability',
-  'action-boldness', 'action-endurance', 'action-communication', 'action-momentum',
-  'connection-sovereignty', 'connection-authenticity', 'connection-inspiration',
-  'connection-generosity', 'connection-trust', 'connection-reciprocity',
-  'connection-collaboration', 'connection-leadership', 'connection-harmony',
-  'connection-legacy', 'connection-respect', 'connection-loyalty',
-];
 
 export default function CardsTab() {
   const [subTab, setSubTab] = useState<SubTab>('default');

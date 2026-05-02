@@ -2,18 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-// TODO(1.4): replace with shared type from @novame/core/types
-type Ticket = {
-  id: string;
-  subject: string;
-  message: string;
-  email: string;
-  category: string;
-  status: string;
-  created_at: string;
-  user_id?: string;
-  admin_notes?: string;
-};
+import type { Ticket } from '@novame/core/types';
 
 type ColorPair = { bg: string; text: string };
 
