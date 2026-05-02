@@ -20,8 +20,6 @@ const nextConfig = {
   },
   async rewrites() {
     const apiUrl = process.env.NOVAME_API_URL || 'http://localhost:3001'
-    console.log('[next.config.js] NOVAME_API_URL =', JSON.stringify(process.env.NOVAME_API_URL))
-    console.log('[next.config.js] resolved apiUrl =', JSON.stringify(apiUrl))
     return [
       { source: '/api/orders', destination: `${apiUrl}/api/orders` },
       { source: '/api/orders/:path*', destination: `${apiUrl}/api/orders/:path*` },
