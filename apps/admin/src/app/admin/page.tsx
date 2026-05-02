@@ -8,7 +8,6 @@ import DefaultUsersTab from './_components/DefaultUsersTab';
 import RealUsersTab from './_components/RealUsersTab';
 import OrdersTab from './_components/OrdersTab';
 import SeekQuestionsTab from './_components/SeekQuestionsTab';
-import SupportTicketsTab from './_components/SupportTicketsTab';
 
 type TabId =
   | 'overview'
@@ -18,7 +17,6 @@ type TabId =
   | 'real-users'
   | 'orders'
   | 'seek'
-  | 'tickets';
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -28,7 +26,6 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'orders', icon: '📦', label: 'Orders' },
   { id: 'seek', icon: '❓', label: 'Seek Questions' },
-  { id: 'tickets', icon: '🎫', label: 'Support Tickets' },
 ];
 
 /**
@@ -70,7 +67,6 @@ export default function AdminDashboard() {
       {tab === 'real-users' && <RealUsersTab />}
       {tab === 'orders' && <OrdersTab />}
       {tab === 'seek' && <SeekQuestionsTab />}
-      {tab === 'tickets' && <SupportTicketsTab />}
     </>
   );
 }
