@@ -1,8 +1,13 @@
 /**
  * Order types.
  *
- * `Order` is the legacy/general order shape used by OrdersTab.
- * `BookOrder` is the ebook/printed-book specific shape used by book-orders.
+ * `Order` is the canonical shape for physical book/card orders managed
+ * via the admin OrdersTab. The user submits orders from mobile/web,
+ * admin processes them (status updates, tracking number, shipping).
+ *
+ * Legacy types removed in 1.4 round 2: BookOrder + ShippingInfo (the
+ * ebook order system was deprecated and the dedicated /admin/book-orders
+ * page was superseded by OrdersTab).
  */
 
 export type Order = {
@@ -20,30 +25,4 @@ export type Order = {
   shipping_city?: string
   shipping_state?: string
   shipping_zip?: string
-}
-
-export type ShippingInfo = {
-  fullName?: string
-  phone?: string
-  address?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  country?: string
-}
-
-export type BookOrder = {
-  id: string
-  user_id?: string
-  user_name?: string
-  user_email?: string
-  order_type: 'ebook' | 'printed'
-  status: string
-  amount: number
-  payment_status?: string
-  wisdom_count: number
-  total_minutes: number
-  created_at: string
-  tracking_number?: string
-  shipping_info?: ShippingInfo
 }
