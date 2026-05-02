@@ -84,6 +84,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.985.0
         version: 3.985.0
+      '@novame/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@supabase/supabase-js':
         specifier: 2.95.3
         version: 2.95.3
