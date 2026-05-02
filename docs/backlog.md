@@ -3,27 +3,12 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**：2026-05-01（1.4 第二轮死代码清理后）  
-**当前阶段**：批次 1 末尾（1.4 第二轮死代码清理完成；rewrites 配置 + api-client 即将启动）
+**最后更新**：2026-05-01（1.4 完整结束、阶段 2 启动前）  
+**当前阶段**:批次 1 已完结（1.4 全部交付完成），即将进入批次 2 / 阶段 2（Expo 应用骨架）
 
 ---
 
 ## 按触发阶段分组
-
-### 🟡 阶段 2.3 触发（mobile 写 src/lib/api.ts 时）
-
-#### packages/api-client
-- **来源**：原计划 1.4 第 5 条 deliverable，决策 5 推迟
-- **工作内容**：
-  - ApiClient 类，构造接受 `{ baseUrl, getToken }`
-  - 按 endpoint 分组的方法签名（`apiClient.likeWisdom(id)` 等)
-  - 统一错误处理（解决 RealUsersTab 收 404 HTML 报 SyntaxError 类问题）
-- **同期可顺带做（不强制）**：
-  - admin 13 处活 fetch 收编为 ApiClient 调用（注：1.4 第二轮删了 reports/support-ticket/book-orders 三套死代码后，admin 实际活 fetch 大约 13 处而不是原估的 30+）
-- **原计划引用**：行 140 "新建 packages/api-client，统一的 ApiClient 类，注入 baseUrl 和 token getter"
-- **风险/约束**：mobile 阶段 2.3 必须就地建立 —— 否则 mobile 会自己写一份 fetch 封装，将来去重难度倍增
-
----
 
 ### 🔴 阶段 5 触发（IAP 原生集成时）
 
@@ -34,7 +19,7 @@
   - 从 iap.js（旧 Capacitor 项目里有，新 monorepo 还没迁入）抽 `classifyChange(oldTier, newTier)` —— 升级 / 降级 / 续期判定
   - 抽 `TIER_RANK` `CYCLE_RANK` 常量
   - 抽 product ID ↔ tier/cycle 映射
-- **不能现在写的理由**：现在没有 mobile 实际调用作为约束，纯靠想象设计签名必然返工
+- **不能现在写的理由**:现在没有 mobile 实际调用作为约束，纯靠想象设计签名必然返工
 
 #### packages/core/rules/entitlement.ts
 - **来源**：原计划 1.4 第 4 条 deliverable，决策 5 推迟
@@ -56,19 +41,20 @@
 
 ---
 
-## 不归任何阶段的 backlog（cosmetic / 旧 bug / 业务待澄清）
+## 不归任何阶段的 backlog（cosmetic / 旧 bug / 业务待澄清 / 配置)
 
 按优先级排序：
 
 #### B1. admin RealUsersTab 慢加载
-- **来源**：1.3 阶段旧 bug，1.4 浏览器手测时确认
+- **来源**：1.3 阶段旧 bug，1.4 浏览器手测时确认仍存在
 - **症状**：列表加载特别慢但最终能出来
-- **修复时机**：阶段 2.3 建 packages/api-client 时顺便诊断（可能是 fetch 错误处理 / 接口本身慢）
-- **不修的理由**：搬迁阶段不重构原则，需要先有统一 api-client 才好诊断
+- **1.4 第二轮观察**：ApiClient 收编后没改变这个症状（ApiClient 不改 endpoint）—— 慢的根因在 apps/api 的 `/api/admin/users` route 内部 SQL 查询，不在客户端
+- **修复时机**：业务影响明显时优化（admin 内部工具，可容忍慢）
+- **修复方向**:看 apps/api/src/app/api/admin/users/route.js 的 SQL 查询，可能需要 index 或限制查询范围
 
-#### B2. admin 11 个 .js route → .ts 转换
+#### B2. admin 10 个 .js route → .ts 转换
 - **来源**：1.3 阶段刻意保留
-- **位置**：apps/admin/src/app/api/admin/*/route.js（注：reports/route.js 已在 1.4 第二轮删除，现实际剩 10 个 .js route）
+- **位置**：apps/admin/src/app/api/admin/*/route.js（reports/route.js 已在 1.4 第二轮删除）
 - **修复时机**：跟 inline createClient 一起做（见 B3），或 mobile 阶段需要严格类型时
 - **不修的理由**：当前 .js + allowJs 工作正常，转 .ts 需要给所有 SQL 查询加返回类型，工作量不小
 
@@ -84,6 +70,7 @@
 - **影响**：cosmetic 的，消费方（admin / api）的 type-check 完全正常
 - **修复时机**：未来给 packages 加独立 CI 验证时一起修
 - **修复方式**：core / ui-tokens 各自 tsconfig.json 加 `"rootDir": "./src"` 显式覆盖
+- **新成员**：1.4 第二轮新建的 packages/api-client 也是同样模式，同样有此 cosmetic 问题
 
 #### B5. Wisdom 类型 categories 字段归属确认
 - **来源**：1.4 阶段引入 categories 字段时的不确定性
@@ -113,22 +100,50 @@
   - "用 email 处理"的实现路径就是这条 route 的 Resend 调用
 - **不要删除**：删了之后 mobile 用户提交工单的入口消失，email 收件箱也不再收到通知
 
+#### B9. Vercel admin 项目 TypeCheck deployment check 失败
+- **来源**：1.4 第二轮发现
+- **症状**：每次 deployment 的 TypeCheck check（独立于 main build）显示 "The dependency install command failed"，4 秒就失败
+- **关键**：**不阻塞 production 部署** —— admin 实际部署是成功的（main build 通过），这只是一个独立 check
+- **诊断未完成**：Vercel UI 只显示一行错误，无法展开完整日志，无法定位是 npm/pnpm/turbo 哪一层出错
+- **可能根因**:某个 deployment integration 或 GitHub Action 创建的 check
+- **修复时机**：阶段 2 启动新对话时优先级看情况，或当部署被强制阻塞时
+- **不修的理由**：production 完全正常，影响仅限 Vercel UI 上有红色感叹号
+
 ---
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
-### 1.4 第二轮 — 死代码清理
+### 1.4 第二轮 — 死代码清理（先做）
 - ✅ reports 整套删除（commit `98532cd`）
   - apps/admin reports page + admin route + core/types/report.ts
   - OverviewTab Reports NavBtn + pendingReports stat 移除
 - ✅ SupportTicketsTab 删除（commit `cd69077`）
   - apps/admin SupportTicketsTab + core/types/support.ts
   - admin/page.tsx 4 处引用（import / TabId / TABS / render）移除
-  - apps/api/src/app/api/support-ticket/route.js **保留**（用户侧活路由）
+  - apps/api 的 support-ticket route 保留（用户侧活路由，见 B8）
 - ✅ book-orders 整套删除（commit `0cc7a00`）
   - apps/admin/book-orders/ 整个目录
   - core/types/order.ts: BookOrder + ShippingInfo
-  - apps/api/src/app/api/book-orders/route.js **暂留**（业务关系待澄清，见 B7）
+  - apps/api/book-orders route 暂留（业务关系待澄清，见 B7）
+
+### 1.4 第二轮 — 配置 & 基础设施
+- ✅ admin next.config.js rewrites（commit `101d0f7`）
+  - 3 个 cross-app endpoint（/api/orders, /api/force-update, /api/generate-abc-cards）
+  - 通过 NOVAME_API_URL 环境变量代理到 apps/api
+- ✅ Turborepo env 声明（commit `838b122`）
+  - turbo.json build/dev 任务声明 SUPABASE 三件套 + ADMIN_EMAILS + NOVAME_API_URL
+  - 修复 next.config.js rewrites destination 在 build 时拿不到环境变量的问题
+- ✅ apps/admin/.env.local.example 文档（commit `101d0f7`）
+
+### 1.4 第二轮 — packages/api-client（主任务）
+- ✅ 建立 @novame/api-client 包（commit `ea72228`）
+  - ApiClient 类，分层方法（request + get/post/patch/put/delete）
+  - ApiError 类，三种失败模式（HTTP / 网络 / 解析失败）统一抛
+  - FormData 自动检测，跳过 JSON.stringify
+  - getToken 异步注入设计（admin null，mobile 阶段 2.3 注入 Supabase token）
+- ✅ admin 38 处 raw fetch 收编到 ApiClient（commit `4446f91`）
+  - 10 文件 / 净删 89 行 boilerplate
+  - production 浏览器手测全部通过（Posts / Orders / DefaultUsers / Cards / Overview / SeekQuestions / RealUsers / wisdoms / announcements / seek-csv）
 
 ---
 
