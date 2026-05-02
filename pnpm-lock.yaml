@@ -20,6 +20,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.985.0
         version: 3.985.0
+      '@novame/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@supabase/ssr':
         specifier: 0.8.0
         version: 0.8.0(@supabase/supabase-js@2.95.3)
@@ -124,6 +127,15 @@ importers:
       eslint-config-next:
         specifier: 14.2.35
         version: 14.2.35(eslint@8.57.0)(typescript@5.5.4)
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
+
+  packages/core:
+    devDependencies:
+      '@novame/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       typescript:
         specifier: 5.5.4
         version: 5.5.4
