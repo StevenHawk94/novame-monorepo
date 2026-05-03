@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-02(阶段 2.1 完成、metro 验证通过)  
-**当前阶段**:批次 2 / 阶段 2.1 已完成(mobile Expo 骨架 + NativeWind v5 + Reanimated v4 + paths 修法 + monorepo type 隔离),待进 2.2(代码骨架)
+**最后更新**:2026-05-02(阶段 2.2 完成、骨架可启动)  
+**当前阶段**:批次 2 / 阶段 2.2 已完成(app/ 路由骨架 + src/ 业务目录 + @/* paths),待进 2.3(Provider 装配 + 单例)
 
 ---
 
@@ -234,6 +234,26 @@
   - shamefully-hoist=false 治标不治本(只关 root hoist,不关 .pnpm 内部 hoist)
   - compilerOptions.types: [] 不影响 import resolution(只影响 global include)
   - hoist-pattern[]=!@types/react 在某些场景不工作(pnpm GitHub discussion 5779)
+
+
+#### B24. TypeScript 5.5.4 vs Expo SDK 54 推荐 ~5.9.2 警告
+- **来源**:阶段 2.2.4 expo start 输出警告
+- **现状**:
+  - mobile devDep typescript 5.5.4(决策 5 选 A 与 monorepo 统一)
+  - Expo SDK 54 期望 ~5.9.2,启动时打印推荐升级警告
+  - **实测无影响**:type-check 通过 / metro bundle 成功 / paths 修法正常工作
+- **暂不处理理由**:
+  - Expo 警告是"推荐"非"必须"
+  - 升级 mobile 单独到 5.9.2 = mobile 与 admin/api/packages 版本分裂(决策 5 选 A 推翻)
+  - 升级整个 monorepo 到 5.9.2 = 阶段 2 之外的工作,需要重新跑所有 workspace type-check 和 build
+- **触发条件**:
+  - (a) mobile 出现实际 TS 错误且根因是 5.5.4 vs 5.9.2 特性差异 → 立即升级
+  - (b) 阶段 2 / 阶段 3 收尾时统一升级 monorepo TS 5.9.2(更稳健的时机)
+  - (c) Expo SDK 56 发布后 TS 要求可能变,届时一并评估
+- **升级实操(参考)**:
+  - root package.json: typescript 5.5.4 → 5.9.x
+  - 各 workspace 的 devDep typescript 同步
+  - pnpm install 后跑全部 type-check 验证
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
