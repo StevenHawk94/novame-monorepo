@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-02(阶段 2.2 完成、骨架可启动)  
-**当前阶段**:批次 2 / 阶段 2.2 已完成(app/ 路由骨架 + src/ 业务目录 + @/* paths),待进 2.3(Provider 装配 + 单例)
+**最后更新**:2026-05-02(阶段 2.3 完成、Provider 链 + 4 单例 + ThemeProvider + .env)  
+**当前阶段**:批次 2 / 阶段 2.3 已完成(mobile 骨架完整,等阶段 3 UI 重写),阶段 2 全部完成
 
 ---
 
@@ -254,6 +254,47 @@
   - root package.json: typescript 5.5.4 → 5.9.x
   - 各 workspace 的 devDep typescript 同步
   - pnpm install 后跑全部 type-check 验证
+
+
+#### B25. fontFamily 消费方需加 Platform.select 包装(阶段 3 触发)
+- **来源**:阶段 2.3.5 修复 typography.ts react-native 依赖时引入
+- **现状**:
+  - packages/ui-tokens/typography.ts 的 fontFamily 现在是 `{ ios, android, web }` 对象,不再是 string
+  - mobile/src/theme/ 阶段 2.3 没有消费 fontFamily,所以不受影响
+- **触发条件**:阶段 3 mobile 真用 fontFamily 渲染 Text 时
+- **预期写法**:
+  - mobile 消费方 import { Platform } from 'react-native' + theme.typography.fontFamily.sans[Platform.OS as 'ios' | 'android'] || theme.typography.fontFamily.sans.web
+  - 或者在 src/theme/ 加一个 helper: `export function selectFontFamily(family) { return Platform.select(family) ?? family.web }`
+- **设计原则**:平台选择逻辑放在消费方,不放在 ui-tokens 中(行业标准:design tokens 应 platform-agnostic)
+
+#### B26. react-native-mmkv v4 需要 Development Build(阶段 3 触发)
+- **来源**:阶段 2.3.1 装 mmkv v4 后,2.3.5 metro 验证时确认
+- **现状**:
+  - mmkv v4 是 Nitro Module,native code 不能在 Expo Go 中运行
+  - 阶段 2.3 metro bundle 仍然成功(只 link 不执行 native module)
+  - 但扫 QR 用 Expo Go 加载会报"react-native-mmkv is not supported in Expo Go"
+- **触发条件**:阶段 3 第一次需要真机/模拟器加载 app 调试
+- **解决方案**:
+  - npx expo prebuild --clean(生成 ios/ android/ 原生项目)
+  - npx expo run:ios 或 npx expo run:android(本地编译 development build)
+  - 或者用 EAS Build cloud(`eas build --profile development`)
+- **风险**:
+  - 阶段 3 第一次跑 development build 时,可能踩 mmkv v4 + RN 0.81.5 + Expo SDK 54 已知 issue (mrousavy/react-native-mmkv#985)
+  - 我们装的是 mmkv 4.3.1 + nitro 0.35.6 较新,可能已修
+  - 若失败,fallback 用 mmkv v3 + 老 API(降级回 `new MMKV()`)
+
+#### B27. packages/ui-tokens 的 react-native 依赖修复记录(已解决)
+- **来源**:阶段 2.3.5 mobile type-check 暴露 typography.ts 缺 react-native 依赖
+- **根因**:typography.ts 在 fontFamily 里用了 Platform.select 但 packages/ui-tokens 没声明 react-native 作为 dep/peerDep,1.4 阶段就存在但 admin/api 没消费 typography.ts 所以未暴露
+- **解决方案**:路径 A — 重写 fontFamily 为 platform-agnostic 对象,packages/ui-tokens 完全脱离 RN 依赖
+- **设计原则**:
+  - design tokens 应该 platform-agnostic (Tailwind / Tamagui / Theme UI 行业标准)
+  - 平台选择逻辑放在消费方,不放在 tokens 中
+- **未选方案**(已评估):
+  - 路径 B(给 ui-tokens 加 react-native 为 optional peerDep):pnpm 9 known bug autoInstallPeers 会装 optional peer 到所有 workspace,污染 admin/api 依赖图
+  - 路径 C(用 dependencies 而不是 peerDep):会强制所有 workspace 装 react-native,违反 monorepo 边界
+  - 路径 D(把 fontFamily 抽到独立模块):增加复杂度,跟搬迁原则不符
+- **此条性质**:已解决记录;未来若有人想给 ui-tokens 加 react-native 依赖,看此条理解为什么不应该这样做
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 

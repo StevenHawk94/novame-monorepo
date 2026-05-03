@@ -3,9 +3,13 @@
  *
  * NovaMe uses Inter as primary, with system fallbacks.
  * Mobile-first with fixed pixel values for cross-device consistency.
+ *
+ * fontFamily exposes platform-specific font name lookups as a
+ * plain object (ios / android / web) instead of using Platform.select.
+ * This keeps @novame/ui-tokens free of react-native runtime deps —
+ * web consumers (admin/api) read .web, mobile consumers select
+ * .ios or .android based on Platform.OS in their own code.
  */
-
-import { Platform } from 'react-native'
 
 // ──────────────────────────────────────────────
 // Font families
@@ -13,18 +17,17 @@ import { Platform } from 'react-native'
 // Note: On iOS we prefer San Francisco system font (-apple-system),
 // on Android we ship Inter via expo-font (loaded in mobile app root).
 export const fontFamily = {
-  sans: Platform.select({
+  sans: {
     ios: 'System',
     android: 'Inter',
-    default: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-  }) as string,
-
+    web: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+  },
   // For numeric displays, weekly stats, large counters
-  mono: Platform.select({
+  mono: {
     ios: 'Menlo',
     android: 'monospace',
-    default: 'ui-monospace, SFMono-Regular, monospace',
-  }) as string,
+    web: 'ui-monospace, SFMono-Regular, monospace',
+  },
 } as const
 
 // ──────────────────────────────────────────────
