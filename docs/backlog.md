@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-02(阶段 2.3 完成、Provider 链 + 4 单例 + ThemeProvider + .env)  
-**当前阶段**:批次 2 / 阶段 2.3 已完成(mobile 骨架完整,等阶段 3 UI 重写),阶段 2 全部完成
+**最后更新**:2026-05-02(阶段 3.1 完成、路由结构 + 静态资产)  
+**当前阶段**:批次 3 / 阶段 3.1 已完成(25 .tsx 路由占位 + 67 静态资产 + placeholder helper),待进 3.2(development build + fonts + tailwind theme)
 
 ---
 
@@ -295,6 +295,74 @@
   - 路径 C(用 dependencies 而不是 peerDep):会强制所有 workspace 装 react-native,违反 monorepo 边界
   - 路径 D(把 fontFamily 抽到独立模块):增加复杂度,跟搬迁原则不符
 - **此条性质**:已解决记录;未来若有人想给 ui-tokens 加 react-native 依赖,看此条理解为什么不应该这样做
+
+
+#### B28. 阶段 3 视频走 Cloudflare R2 CDN(决策已锁定,3.3 sub-step 触发)
+- **来源**:阶段 3 准备讨论时确认的策略(D15 选 C)
+- **决策内容**:
+  - 28 个角色视频(每月新增 28 个,长期累计可能 1GB+)走 Cloudflare R2 CDN,不进 git
+  - ob-10.mp4 (566 KB onboarding 视频) 进 git(首次启动立即可用)
+  - 静态图片(66 webp + logo,3.2MB)进 git
+- **方案细节**(供 3.3 实施参考):
+  - Cloudflare R2 free tier:10GB 存储 + 免费 egress + 10M Class B 操作免费
+  - 我们用量(10000 用户)预估前 5 年 $0
+  - 视频 manifest 设计:JSON 含 `{ filename, size, hash }` 数组
+  - mobile 启动时 fetch manifest,diff local cache,后台并行下载缺失视频
+  - 已缓存视频从本地播放,切换 outfit 瞬时无网络消耗
+  - 离线场景:首次启动需联网,后续完全可离线
+- **3.3 sub-step 实施步骤**(待执行):
+  1. 创建 R2 bucket,公开访问配置
+  2. 上传 28 个 mp4(以及未来 batch)
+  3. mobile 写 manifest fetch + 下载 + 缓存逻辑(`@/lib/video-cache.ts`)
+  4. VideoCharacter 组件用 expo-video 消费缓存视频
+  5. onboarding 期间静默后台下载(避免用户感知等待)
+
+#### B29. 阶段 3 路由结构 + 决策记录(已锁定,3.1 已完成)
+- **来源**:阶段 3 准备讨论时确认
+- **路由架构**:
+  - app/(main)/(tabs)/ — 4 主 tab(Home/Growth/Discover/Assets,expo-router Tabs)
+  - app/(main)/(modals)/ — 12 modal route(me/skin-select/weekly-report/ranking/record/preferences/account-management/plan-billing/support/notification-settings/subscription-paywall/character-data)
+  - app/(onboarding)/ — onboarding flow(3.5 sub-step 实现)
+  - app/(auth)/ — auth flow(3.4 sub-step 实现)
+- **关键决策**:
+  - D18:expo-router Tabs(原生感最强,跟 Finch/Duolingo 一致)
+  - D21:modal 默认 presentation: 'modal'(iOS 标准 slide up)
+  - D22:modal 在 (modals) group(路由清晰)
+  - D20:placeholder 视觉 = NovaMe 黑底紫字(从 3.1 视觉契约对齐)
+- **未在 3.1 实现的事**(供后续 sub-step 参考):
+  - BottomNav 自定义 UI(3.6 sub-step,替换默认 Tabs UI)
+  - record / subscription-paywall 等可能改 fullScreenModal presentation(3.6+)
+  - SignInPrompt modal(3.4 auth flow 决定放哪)
+
+#### B30. 阶段 3 sub-step 完整拆分(供新对话续接参考)
+- **来源**:阶段 3 准备讨论确认
+- **sub-step 列表**(每步 1-2 小时,可独立 commit):
+  - 3.1 路由结构 + 静态资产 + placeholder ✅(本次 commit)
+  - 3.2 development build 第一次 + global infra(fonts B12 + tailwind theme B13 + 第一次 expo prebuild + run:ios B26)
+  - 3.3 video CDN 基础设施(R2 setup + manifest + mobile cache 逻辑 + VideoCharacter 组件)
+  - 3.4 auth flow(Apple Sign-In B21 + Google Sign-In B15 + Email password)
+  - 3.5 onboarding flow(OnboardingFlow + ob-10.mp4 + 视频静默预下载 + app/index.tsx redirect 逻辑)
+  - 3.6 main tabs 骨架(自定义 BottomNav UI + 4 tab 真实内容渲染 + Home VideoCharacter 房间视频)
+  - 3.7 录音功能 RecordOverlay(核心)
+  - 3.8 卡片功能(CardCollectionGrid / FlippableCard / CardSpinAnimation)
+  - 3.9 Seek (Discover) view(SeekView / SeekModals / WisdomCard)
+  - 3.10 Me page + 各 overlay 收尾 + SubscriptionPaywall UI
+- **执行约束**:
+  - 每个 sub-step 独立 commit + push
+  - 每个 sub-step 完成后跑 admin/api type-check 验证零副作用
+  - 阶段 3 多个 sub-step 可分多个对话完成,每次新对话从 backlog header 续上
+- **完成标准**:
+  - 所有 25 placeholder route 都被填充为真实功能
+  - 旧 NovaMe 业务流程在 mobile 全可用
+  - 真机测试通过(iOS + Android)
+  - 视觉跟旧 NovaMe 1:1 对齐(皮囊),底层完全用 RN/expo-router 标准(底层不一样)
+
+#### B31. assets/ 命名变更记录(已完成,记录用)
+- **来源**:阶段 3.1.1 资产复制时引入
+- **变更**:旧 capacitor `public/images/assets/` → mobile `apps/mobile/assets/images/product/`
+- **理由**:避免 mobile 根 `assets/images/assets/` 三层 assets 命名混淆;`product` 语义更准确(产品销售点图:cards-hero/book-cover/book-detail-1)
+- **影响**:阶段 3.6+ 写 UI 时要消费这些图片,路径改成 `require('@/assets/images/product/*.webp')`(不再是 `/images/assets/*.webp`)
+- **此条性质**:已完成记录;未来对话写 image src 时不要写错路径
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
