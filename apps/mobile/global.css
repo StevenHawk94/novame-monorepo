@@ -4,14 +4,45 @@
 @import "tailwindcss/utilities.css";
 @import "nativewind/theme";
 
-/* Custom theme — migrated from old Capacitor tailwind.config.js (Tailwind v4 CSS-first) */
+/* ==========================================================================
+   NovaMe brand color palette (Tailwind v4 CSS-first @theme block)
+   --------------------------------------------------------------------------
+   Replaces old Capacitor web palette (red/blue/light gray) which was for
+   the legacy web app, not the native NovaMe mobile experience.
+
+   Source of truth (extracted stage 3.2 prep):
+   - capacitor.config.ts: ios/android backgroundColor #0F0B2E
+   - components/navigation/BottomNav.js: bg #0A0A0F, accent #C084FC,
+     gradient #A855F7 to #7C3AED, drop-shadow rgba(168,85,247,0.6)
+   - 4 tab screenshots: white text, purple accent on active states
+
+   These tokens are consumed by NativeWind v5 utility classes:
+     bg-bg-primary, text-accent-primary, etc.
+
+   D-3.2-ui-tokens-merge: NOT shared with admin (admin has its own palette).
+   ========================================================================== */
 @theme {
-  --color-primary: #EF4444;
-  --color-app-bg: #F5F5F7;
-  --color-card-bg: #FFFFFF;
-  --color-discover-primary: #e14c4c;
-  --color-dark-bg: #121212;
-  --color-card-dark: #1E1E1E;
-  --color-accent: #93E5F5;
+  /* Backgrounds */
+  --color-bg-primary: #0F0B2E;       /* main app dark navy */
+  --color-bg-secondary: #0A0A0F;     /* nav bar, overlay backgrounds */
+
+  /* Accent (NovaMe purple) */
+  --color-accent-primary: #C084FC;   /* active tab text/icon, primary highlights */
+  --color-accent-from: #A855F7;      /* gradient start (mic button, CTAs) */
+  --color-accent-to: #7C3AED;        /* gradient end */
+
+  /* Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.4);
+  --color-text-tertiary: rgba(255, 255, 255, 0.3);
+
+  /* Borders / overlays */
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Shadows / glows (purple radiance) */
+  --color-shadow-purple: rgba(168, 85, 247, 0.3);
+  --color-glow-purple: rgba(168, 85, 247, 0.6);
+
+  /* Border radius (iOS-style from old Capacitor) */
   --radius-ios: 1.25rem;
 }

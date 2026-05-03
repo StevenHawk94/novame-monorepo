@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-02(阶段 3.1 完成、路由结构 + 静态资产)  
-**当前阶段**:批次 3 / 阶段 3.1 已完成(25 .tsx 路由占位 + 67 静态资产 + placeholder helper),待进 3.2(development build + fonts + tailwind theme)
+**最后更新**:2026-05-03(阶段 3.2 完成、首次 dev build + NovaMe 色板 + Inter 字体注册)  
+**当前阶段**:批次 3 / 阶段 3.2 已完成(dev build 跑通 + global.css NovaMe 色板 + 4 Inter weight 注册到 app.json),待进 3.3(video CDN 基础设施)
 
 ---
 
@@ -363,6 +363,74 @@
 - **理由**:避免 mobile 根 `assets/images/assets/` 三层 assets 命名混淆;`product` 语义更准确(产品销售点图:cards-hero/book-cover/book-detail-1)
 - **影响**:阶段 3.6+ 写 UI 时要消费这些图片,路径改成 `require('@/assets/images/product/*.webp')`(不再是 `/images/assets/*.webp`)
 - **此条性质**:已完成记录;未来对话写 image src 时不要写错路径
+
+
+#### B32. mobile dev build 第一次跑通(已解决,记录用)
+- **来源**:阶段 3.2.A
+- **解决方案**:
+  - npx expo prebuild --clean 生成 ios/ android/
+  - npx expo run:ios 编译 + 启动 iPhone 17 Pro 模拟器
+  - mmkv v4 + nitro modules native 编译通过(B26 风险消除)
+  - Xcode 26.2 + RN 0.81.5 兼容(无 SWIFT_ENABLE_EXPLICIT_MODULES 错误)
+  - Reanimated v4 + worklets 编译通过
+- **此条性质**:已解决记录
+- **后续维护**:
+  - 修改 app.json 任何 native config(plugins/permissions/icon 等) → 必须 npx expo prebuild --clean + npx expo run:ios 重新编译
+  - 修改 .ts/.tsx/.css → metro hot-reload 即可,不需要重 native build
+  - 添加新 native module(react-native-* 类带 native code 的包)→ 必须重 prebuild + run:ios
+
+#### B33. tsconfig.json paths 删除 react alias(B23 修法回退,已解决)
+- **来源**:阶段 3.2.A.5 dev build 第一次跑 metro bundle 时报 "Unable to resolve react"
+- **根因链**:
+  - 阶段 2.1.5 修 B23 时,mobile/tsconfig.json 加了 `"react": ["./node_modules/@types/react"]` 让 TS type-check 找 React 19 types
+  - **但 expo metro 也读 tsconfig.json paths**(Expo CLI 的扩展行为,react native 标准 metro 不读)
+  - dev build 真跑 metro bundle 时,metro 用 paths alias 把 `import 'react'` resolve 到 @types/react/(types-only 包,main 字段为空字符串)
+  - metro 找不到 runtime 文件 → 爆错
+- **解决方案**:删除 mobile/tsconfig.json 的 `react` 和 `react/*` paths,只保留 `@/*` alias
+- **为什么可以删**:
+  - 当前 mobile/node_modules/@types/react symlink 已正确指向 .pnpm/@types+react@19.1.17(pnpm 9 + 我们的 .npmrc 设置已修)
+  - TS 自动从该 symlink 找 React 19 types,不需要 paths 强制指定
+  - B23 walk-up 漏洞已被 pnpm 9 修(2.1.5 当时是 pnpm 默认 hoist 模式,现在改了)
+- **此条性质**:已解决记录;**B23 完整结案**(B23 paths 修法已被反向操作)
+- **未来风险预警**:
+  - 如果将来 admin / api 升级到 React 19(消除 monorepo 内 React 版本分裂),这个修复仍然安全
+  - 如果将来加新 workspace 用不同 React 版本,可能再次出现 walk-up 问题,届时考虑 pnpm injected dependencies(packages/ 共享代码用 injected: true 隔离消费方 React)
+
+#### B34. app/index.tsx 临时 Redirect 到 (main)/(tabs)(3.5 触发还原)
+- **来源**:阶段 3.2.A.4 为了 dev build 验证 4 tab UI 临时改的
+- **现状**:app/index.tsx 现在是 `<Redirect href="/(main)/(tabs)" />`
+- **触发条件**:阶段 3.5 onboarding flow 实现时
+- **3.5 sub-step 应改成**:
+  - 用 mmkv storage 检查 'novame_onboarding_done' 标志
+  - 用 supabase auth 检查 session
+  - 三种重定向:
+    - 没完成 onboarding → /(onboarding)
+    - 完成 onboarding 但没登录 → /(auth)/sign-in
+    - 完成 onboarding + 已登录 → /(main)/(tabs)
+- **参考**:旧 capacitor src/app/page.js 的路由逻辑(localStorage 'novame_onboarding_done' + supabase getSession)
+
+#### B35. expo-font 字体 embed 待 prebuild + run:ios 真跑通(3.6 触发)
+- **来源**:阶段 3.2.C 完成,但选项 B(不立即 prebuild + run:ios)
+- **现状**:
+  - app.json 已声明 expo-font config plugin + 4 个 Inter weight ttf 路径
+  - 4 个 ttf 文件已装(node_modules/@expo-google-fonts/inter/*)
+  - 但 ios/ Pods 没有真正 embed 字体(因为 prebuild 未重跑)
+- **触发条件**:阶段 3.6 main tabs 骨架第一步
+- **3.6 第一步必须做**:
+  - npx expo prebuild --clean(让 expo-font 把 4 个 ttf 真 embed 到 ios/android 原生项目)
+  - npx expo run:ios(重新编译 NovaMe.app 含字体)
+  - 验证:写一个 demo `<Text fontFamily="Inter_700Bold">` 看模拟器渲染 Inter 字体(不是 SF Pro)
+- **fontFamily 名称**:Inter_400Regular / Inter_500Medium / Inter_600SemiBold / Inter_700Bold(PostScript name)
+
+#### B36. android userInterfaceStyle 需要 expo-system-ui(prebuild 提示)
+- **来源**:阶段 3.2.A.1 prebuild 输出 `» android: userInterfaceStyle: Install expo-system-ui`
+- **现状**:
+  - app.json 配了 userInterfaceStyle: 'automatic'(2.1 阶段加的,让 app 自动跟系统 light/dark 模式)
+  - iOS 默认支持
+  - **Android 需要 expo-system-ui 包才能启用**
+- **不阻塞**:不装 expo-system-ui Android 仍能跑,只是不响应系统 dark mode
+- **触发条件**:Android 真测试时(阶段 6 真机测试)需要装 expo-system-ui
+- **修复方式**:`npx expo install expo-system-ui` + 重 prebuild
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
