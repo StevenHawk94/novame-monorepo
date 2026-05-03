@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-03(阶段 3.3 完成、video CDN 基础设施 + R2 manifest)  
-**当前阶段**:批次 3 / 阶段 3.3 已完成(R2 setup + manifest 上传 + asset-cache.ts + 52 张冗余 cards 删除),待进 3.4(auth flow: Apple/Google/Email)
+**最后更新**:2026-05-03(阶段 3.4 step 1-5 完成、Email auth 跑通)  
+**当前阶段**:批次 3 / 阶段 3.4 进行中(Email password 已 commit + 真验证通过),待进 step 6 (Apple Sign-In) + step 7 (Google Sign-In)
 
 ---
 
@@ -478,6 +478,70 @@
   - manifest 生成脚本应该收编到 packages/scripts/或 admin 内置工具(目前是临时 Python 脚本)
   - 考虑用 Cloudflare Workers 自动生成 manifest(每次 R2 文件变化触发)
   - 或者 admin 端加 "上传新视频" 按钮,自动上传 + 自动重生成 manifest
+
+
+#### B40. 3.4 Email password auth 完成(已解决,记录用)
+- **来源**:阶段 3.4 step 1-5 (Email password 流程完整跑通)
+- **commit 范围**:
+  - apps/mobile/src/lib/auth.ts (新建,6 函数: signInWithEmail / signUpWithEmail / verifyEmailOtp / sendPasswordReset / signOut / getCurrentSession)
+  - apps/mobile/app/_layout.tsx (加 onAuthStateChange listener + AppState autoRefresh)
+  - apps/mobile/app/index.tsx (auth-aware redirect: session 存在 → /(main)/(tabs),session null → /(auth)/sign-in)
+  - apps/mobile/app/(auth)/sign-in.tsx (完整 5 mode UI: login / register / verify / email-login / forgot)
+- **真验证状态**(模拟器跑通):
+  - 启动应用 → 显示 sign-in (login mode)
+  - "Continue with Email" → register mode
+  - 输入 email + password (>=6) + confirm → "Create Account" → Supabase signUp 成功
+  - needsEmailConfirmation = true → 自动切到 verify mode
+  - Supabase 真发 6 位 OTP 邮件
+  - 输入 OTP → verifyEmailOtp 验证通过
+  - onAuthStateChange listener 触发 SIGNED_IN
+  - router.replace 自动跳 /(main)/(tabs) → 看到 4 tab UI
+- **Apple/Google 按钮**:disabled placeholder 状态(visual 显示不可点)
+  - step 6 (Apple Sign-In) + step 7 (Google Sign-In) 单独 commit 接入
+- **关键设计决策**:
+  - listener 放 _layout.tsx 而不是 index.tsx (用户从 main tabs sign-out 后,listener 触发跳 sign-in)
+  - INITIAL_SESSION 事件忽略 (避免跟 index.tsx 启动 redirect race)
+  - sign-in.tsx 不调 router.replace,完全靠 onAuthStateChange 驱动
+  - 错误显示 inline 红色文字而不是 Alert 弹窗
+  - infoMsg 显示紫色文字
+  - 按钮 loading 状态用 ActivityIndicator
+  - 5 mode 完整覆盖旧 Capacitor AuthPage 业务流(syncOnboardingData 推到 3.5)
+- **prebuild + run:ios 同时还掉的债**:
+  - B35 (字体 embed 真生效): 4 Inter weight 现在已 native embed,sign-in.tsx 真渲染 Inter 字体
+  - expo-video / expo-file-system 第一次 native 编译通过 (3.3 装的两个 native module 现在真生效)
+- **未做的事(Apple/Google 待 step 6/7)**:
+  - Apple Sign-In iOS native (expo-apple-authentication)
+  - Apple Sign-In Android OAuth (expo-auth-session)
+  - Google Sign-In OAuth flow
+
+#### B41. Apple Sign-In 待实现(3.4 step 6 触发)
+- **来源**:阶段 3.4 step 6 计划
+- **当前状态**:sign-in.tsx 上 "Sign in with Apple" 按钮 disabled
+- **触发条件**:阶段 3.4 step 6 开始
+- **要做的事**:
+  - 装 expo-apple-authentication
+  - app.json 加 entitlement "Sign in with Apple"
+  - 写 src/lib/auth.ts: signInWithApple()
+  - 用 supabase.auth.signInWithIdToken({ provider: 'apple', token }) 跟 Supabase 集成
+  - sign-in.tsx 上 Apple 按钮去掉 disabled
+  - prebuild --clean(因为加了 entitlement) + run:ios 验证
+- **外部依赖确认**(用户已完成):
+  - Apple Developer 已配 "Sign in with Apple" capability
+  - Supabase dashboard Apple OAuth provider 已启用 + 配 Service ID + Secret Key
+
+#### B42. Google Sign-In 待实现(3.4 step 7 触发)
+- **来源**:阶段 3.4 step 7 计划
+- **当前状态**:sign-in.tsx 上 "Continue with Google" 按钮 disabled
+- **触发条件**:阶段 3.4 step 7 开始
+- **要做的事**:
+  - 装 expo-auth-session expo-crypto
+  - 从旧 NovaMe iOS Info.plist 提取 Google Client ID(B15 触发)
+  - Supabase dashboard 配 Google Client ID
+  - 写 src/lib/auth.ts: signInWithGoogle()
+  - sign-in.tsx 上 Google 按钮去掉 disabled
+- **外部依赖确认**(用户已完成):
+  - Google Cloud Console Client ID 旧的可复用
+  - Supabase dashboard Google OAuth provider 已启用
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
