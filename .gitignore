@@ -57,3 +57,6 @@ _admin-api-tmp/
 # Temporary reference files copied from old Visdom for migration (do not commit — may contain secrets like old admin password)
 _old-*
 *.tmp
+
+# Stage 3.3 video manifest tmp file (lives only on R2)
+video-manifest.json

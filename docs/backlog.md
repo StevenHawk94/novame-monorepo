@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-03(阶段 3.2 完成、首次 dev build + NovaMe 色板 + Inter 字体注册)  
-**当前阶段**:批次 3 / 阶段 3.2 已完成(dev build 跑通 + global.css NovaMe 色板 + 4 Inter weight 注册到 app.json),待进 3.3(video CDN 基础设施)
+**最后更新**:2026-05-03(阶段 3.3 完成、video CDN 基础设施 + R2 manifest)  
+**当前阶段**:批次 3 / 阶段 3.3 已完成(R2 setup + manifest 上传 + asset-cache.ts + 52 张冗余 cards 删除),待进 3.4(auth flow: Apple/Google/Email)
 
 ---
 
@@ -431,6 +431,53 @@
 - **不阻塞**:不装 expo-system-ui Android 仍能跑,只是不响应系统 dark mode
 - **触发条件**:Android 真测试时(阶段 6 真机测试)需要装 expo-system-ui
 - **修复方式**:`npx expo install expo-system-ui` + 重 prebuild
+
+
+#### B37. video CDN 基础设施搭建完成(已解决,记录用)
+- **来源**:阶段 3.3
+- **R2 状态**:
+  - bucket URL pattern: https://media.novameapp.com/{filename}
+  - 18 视频 mp4 已上传(36.09 MB)
+  - 52 cards webp 已上传(48 front + 4 back,2.52 MB)
+  - video-manifest.json 已上传(13201 bytes)
+  - cards-background.webp + save-collection.webp 不在 R2(留 git 作为 UI 框架资产)
+- **mobile 代码**:
+  - src/lib/asset-types.ts: AssetManifest / VideoManifestEntry / CardManifestEntry / AssetDownloadResult 类型
+  - src/lib/asset-cache.ts: fetchManifestFromR2 / getCachedManifest / setCachedManifest / getCachedAssetUri / verifyCachedAsset / downloadAsset / downloadAssets / diffCacheAgainstManifest / getActiveManifest
+- **设计决策**:
+  - manifest URL hardcode 在 asset-cache.ts 常量(Q-3.3-B-1 = A,固定 URL 不需要 env var)
+  - 缓存目录: Paths.document/cache/(永久存储,Q-3.3-B-2)
+  - 启动策略: 用 cached manifest 0 延迟,后台异步刷新(Q-3.3-B-3 = B)
+  - 下载方式: 串行(避免带宽/内存峰值,3-5s onboarding 可接受)
+  - size 比对验证完整性(不用 hash,manifest schema 不放 hash)
+- **API 用法**:用 expo-file-system v19 New API(File class + downloadFileAsync 静态方法 + Paths.document Directory 实例)
+- **此条性质**:已解决记录;未来对话写消费代码时不要重新研究 expo-file-system v19 API
+
+#### B38. 视频/cards 下载策略(3.5 onboarding 触发实现)
+- **来源**:阶段 3.3 准备讨论
+- **现状**:asset-cache.ts 提供 downloadAssets 工具函数,但**还没消费方**
+- **触发条件**:阶段 3.5 onboarding flow 实现时
+- **3.5 sub-step 应做**:
+  - onboarding 第 1 屏挂载时立即触发前台下载 outfit1 的 3 视频(8.9 MB,3-5s WiFi)
+  - outfit1 完成后立即触发后台下载剩 15 视频(outfit2-6) + 52 cards(共 31MB,30-90s)
+  - 显示前台下载进度(progress bar),后台下载静默
+  - 失败处理: 重试 1 次 → 仍失败提示 "网络异常,稍后重试" 但允许进入 app(已 unlock 视频可能没有)
+- **预计实现位置**:apps/mobile/app/(onboarding)/* 或 src/lib/onboarding-flow.ts(待 3.5 设计)
+- **业务规则参考**:
+  - 用户等级 unlock 视频规则**不在 3.5 实现**(留 3.6+),3.5 阶段 onboarding 后所有 18 视频都已下载完成,3.6 mobile UI 按等级筛选展示
+
+#### B39. R2 manifest 更新流程(运维记录)
+- **来源**:阶段 3.3.A.3 manifest 生成方式
+- **当前流程**(每月新增 28 视频时):
+  1. 上传新视频文件到 R2(手动 dashboard 拖拽 或 wrangler CLI)
+  2. 重新跑 manifest 生成脚本(stage 3.3.A.3 m-2 命令的 Python 脚本)
+  3. 上传新 video-manifest.json 到 R2 替换旧的
+  4. mobile app 用户启动时自动 fetchManifestFromR2 拿新版本(后台静默)→ 触发新视频下载
+- **不需要发布 mobile app 新版本**(这是 D15 选 C CDN 的核心价值)
+- **未来优化点**:
+  - manifest 生成脚本应该收编到 packages/scripts/或 admin 内置工具(目前是临时 Python 脚本)
+  - 考虑用 Cloudflare Workers 自动生成 manifest(每次 R2 文件变化触发)
+  - 或者 admin 端加 "上传新视频" 按钮,自动上传 + 自动重生成 manifest
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 
