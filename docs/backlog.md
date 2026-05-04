@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-04(阶段 3.5 onboarding flow 完成、19 文件 1 个大 commit、type-check 通过)  
-**当前阶段**:批次 3 / 阶段 3.5 已完成(11 屏 onboarding 1:1 复刻,mmkv state + sync 服务器,真机测试推 stage 5/6),待进 3.6(main tabs 骨架 + Home VideoCharacter)
+**最后更新**:2026-05-04(阶段 3.6 main tabs 骨架 + Home VideoCharacter 完成、3 deps + ~830 行新代码、模拟器真验证通过)  
+**当前阶段**:批次 3 / 阶段 3.6 已完成(自定义 BottomTabBar + Home tab 完整业务,B35 字体 embed 还掉),待进 3.7(RecordOverlay)
 
 ---
 
@@ -409,18 +409,19 @@
   跟旧 Capacitor localStorage 单独 key 不同,**整合一个**让 mmkv 读写更快
 - **此条性质**:已解决记录
 
-#### B35. expo-font 字体 embed 待 prebuild + run:ios 真跑通(3.6 触发)
-- **来源**:阶段 3.2.C 完成,但选项 B(不立即 prebuild + run:ios)
-- **现状**:
-  - app.json 已声明 expo-font config plugin + 4 个 Inter weight ttf 路径
-  - 4 个 ttf 文件已装(node_modules/@expo-google-fonts/inter/*)
-  - 但 ios/ Pods 没有真正 embed 字体(因为 prebuild 未重跑)
-- **触发条件**:阶段 3.6 main tabs 骨架第一步
-- **3.6 第一步必须做**:
-  - npx expo prebuild --clean(让 expo-font 把 4 个 ttf 真 embed 到 ios/android 原生项目)
-  - npx expo run:ios(重新编译 NovaMe.app 含字体)
-  - 验证:写一个 demo `<Text fontFamily="Inter_700Bold">` 看模拟器渲染 Inter 字体(不是 SF Pro)
-- **fontFamily 名称**:Inter_400Regular / Inter_500Medium / Inter_600SemiBold / Inter_700Bold(PostScript name)
+#### B35. expo-font 字体 embed 已生效(3.6 prebuild 完成,已解决)
+- **来源**:阶段 3.2.C 推迟,3.6 prebuild 时还掉
+- **commit 范围**(在 3.6 大 commit 里):
+  - 3.6.1 跑了 npx expo prebuild --clean 重新生成 ios/ + android/
+  - 4 个 Inter weight ttf 真 embed 到 ios native 项目
+  - npx expo run:ios 编译通过 + 模拟器装 NovaMe.app
+- **真验证**:
+  - Onboarding 11 屏全部用 Inter_700Bold / Inter_500Medium 文字渲染正确
+  - Home tab 顶栏 / 气泡 / progress bar 用 Inter_600SemiBold / Inter_700Bold 渲染正确
+  - 不是 SF Pro 默认 fallback,确认字体真 embed
+- **fontFamily 名称**(已确认可用):
+  - Inter_400Regular / Inter_500Medium / Inter_600SemiBold / Inter_700Bold(PostScript name)
+- **此条性质**:已解决记录
 
 #### B36. android userInterfaceStyle 需要 expo-system-ui(prebuild 提示)
 - **来源**:阶段 3.2.A.1 prebuild 输出 `» android: userInterfaceStyle: Install expo-system-ui`
@@ -631,6 +632,72 @@
 
 
 ## 已完成（changelog，下个阶段完成报告时移除）
+
+#### B45. 阶段 3.6 main tabs 骨架 + Home VideoCharacter 完成(已解决,记录用)
+- **来源**:阶段 3.6
+- **commit 范围**(1 个大 commit):
+  - 装 3 个新 deps:
+    - @expo/vector-icons ^15.0.3 (MaterialIcons 提供 home/trending-up/explore/diamond/mic/menu/pets/description/emoji-events)
+    - @react-navigation/native ^7.2.2 (CommonActions for tab navigation)
+    - @react-navigation/bottom-tabs ^7.15.11 (BottomTabBarProps type for custom tab bar)
+  - 新增 src/lib/constants.ts (~190 行):
+    - OUTFIT_UNLOCK_LEVELS / WP_MAX / WP_STUDY_DECAY_PER_HOUR / WP_PLAY_DECAY_PER_HOUR / WP_HUNGER_THRESHOLD
+    - CharacterMode / CharacterState types
+    - getCharacterState / getUnlockedOutfits / getExpNeeded / getLevelFromExp helpers
+    - 4 SPEECH_BUBBLE_* arrays (HUNGRY 15 / STUDY 12 / PLAY 4 / HUNGER_WARNING 3)
+    - pickSpeechBubble helper (函数化旧 HomeView updateBubble 逻辑)
+  - 新增 src/lib/character-state.ts (~190 行):
+    - CharacterRow / CharacterStateResponse / CachedCharacterState types
+    - getCachedCharacterState / setCachedCharacterState / clearCachedCharacterState (mmkv key novame_character_state)
+    - fetchCharacterState (调 GET /api/character-state)
+    - applyLocalWPDecay (本地 30s 视觉衰减,服务器是 SSOT)
+    - switchOutfit / switchMode (POST 后自动重新 fetch)
+  - 新增 src/components/main/bottom-tab-bar.tsx (~200 行):
+    - 自定义 BottomTabBar(replaces default Tabs UI)
+    - 5 项 layout: Home / Growth / [Mic raised -20px] / Discover / Assets
+    - Mic 按钮 52x52 紫圆,onPress 调 router.push('/(main)/(modals)/record')
+    - 按 react-navigation 官方写法用 navigation.dispatch(CommonActions.navigate(...))
+  - 新增 src/components/main/video-character.tsx (~110 行,简化旧 196 行):
+    - useVideoPlayer + replace pattern (无 webview keepalive hacks)
+    - source resolution: asset-cache local file:// 优先 → R2 CDN URL fallback
+    - filename pattern char{N}-outfit{M}-{state}.mp4(跟 R2 manifest entry 一致)
+    - outfit / state 切换调 player.replace 不重新 mount VideoView
+  - 改写 (main)/(tabs)/_layout.tsx 用 tabBar prop
+  - 改写 (main)/(tabs)/index.tsx 完整 Home view (~340 行):
+    - cache-first init (mmkv 启动 0 延迟)
+    - 60s background fetchCharacterState 刷新
+    - 30s 本地 WP visual decay tick
+    - bg-night.webp 全屏背景(简化版,80+ 星星推 3.10)
+    - 顶栏 4 圆按钮(汉堡 → me modal,其他 3 个 placeholder 留 3.10)
+    - 气泡 useMemo + pickSpeechBubble
+    - VideoCharacter 10:9 aspect ratio
+    - WP / EXP 2 progress bar(simplified - 无水流动画,留 3.10)
+- **决策清单** (Q-3.6-A 到 G):
+  - A:Tabs 完全自定义(替换 expo-router 默认 UI)
+  - B:VideoCharacter 完整(playState chill/hungry/study + outfit 1-6 + character-state 服务器同步)
+  - C:仅 Home tab 真版本,growth/discover/assets 留 placeholder(对应 sub-step 触发)
+  - D:3.6.1 prebuild + run:ios(B35 触发还掉)
+  - E:1 个大 commit
+  - F:简化背景(不 100+ 星星动画)
+  - G:Weekly Report / Skin Unlock 占位(留 3.10)
+- **真验证状态**(模拟器跑通):
+  - app 启动 → mmkv onboarding+session 都在 → 直接 main tabs
+  - 自定义底部 tab(4 tab + 中央紫圆 mic)+ Home active 紫光晕
+  - bg-night.webp 全屏 cover
+  - 顶栏 4 圆按钮渲染(menu/pets/description/emoji-events MaterialIcons)
+  - 气泡显示 SPEECH_BUBBLE_HUNGRY 文案(wp=0 触发)
+  - VideoCharacter 真播 char1-outfit1-hungry.mp4(asset-cache file:// URI)
+  - WP 0/100 + EXP 0/25xp Lv.2(从 onboarding 后 character-state init_character 拿 server 计算值)
+  - Inter 字体真 embed(B35 还掉)
+  - Hamburger 按钮 → /(main)/(modals)/me 路由通
+  - Mic 按钮 → /(main)/(modals)/record 路由通
+- **stage 3.7+ 待做**:
+  - 3.7 RecordOverlay(/(main)/(modals)/record 当前是 placeholder)
+  - 3.8 真 FlippableCard / CardSpinAnimation / Confetti(替换 onboarding stubs)
+  - 3.9 Seek view
+  - 3.10 Me page + paywall + skin-select wiring + weekly-report wiring + ranking wiring
+    + 80+ 星星动画背景 + WP 衰减 / EXP 水流动画
+- **此条性质**:已解决记录;3.7 待开始
 
 ### 1.4 第二轮 — 死代码清理（先做）
 - ✅ reports 整套删除（commit `98532cd`）

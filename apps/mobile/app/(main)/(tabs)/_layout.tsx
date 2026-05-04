@@ -1,16 +1,27 @@
 import { Tabs } from 'expo-router';
 
+import { BottomTabBar } from '@/components/main/bottom-tab-bar';
+
 /**
- * Bottom tabs navigator.
+ * Bottom tabs navigator (stage 3.6).
  *
- * Stage 3.1: Default Tabs UI (system-rendered tab bar).
- * Stage 3.6: Will be replaced with custom tabBar component matching
- *            NovaMe BottomNav design (4 tabs + center mic button,
- *            dark background #0A0A0F, purple accent #C084FC).
+ * 4 main tabs: Home (index) / Growth / Discover / Assets.
+ *
+ * The visible tab bar is rendered by our custom BottomTabBar component
+ * via the `tabBar` prop. Inside it we draw 4 tab buttons + a centered
+ * raised mic button (the mic is a pure overlay, NOT a tab — it
+ * router.pushes to (main)/(modals)/record).
+ *
+ * Header is hidden across all screens. Each screen handles its own
+ * top bar (e.g. Home has 4 round buttons: hamburger / skin / weekly
+ * report / leaderboard).
  */
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs
+      tabBar={(props) => <BottomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="growth" options={{ title: 'Growth' }} />
       <Tabs.Screen name="discover" options={{ title: 'Discover' }} />
