@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-04(阶段 3.7 RecordOverlay 完成、subscription cache 基础设施 + 真录音 + 真 publish API + insight 真 UI、~1900 行新代码、模拟器真验证待跑)
-**当前阶段**:批次 3 / 阶段 3.7 RecordOverlay 已完成代码,待 prebuild + run:ios 真验证 + commit;后续 3.8 卡片真版本
+**最后更新**:2026-05-04(阶段 3.7 RecordOverlay 完成 + 真机验证、commit eda2985 + server 修 be0e22b/a27119a 已部署)
+**当前阶段**:批次 3 / 阶段 3.7 RecordOverlay 已完成 + 真机验证;后续 3.8 卡片真版本(FlippableCard / CardSpin / Confetti reanimated)
 
 ---
 
@@ -740,9 +740,18 @@
   - Bug #3(旧版 subscription state 跟 mobile 架构脱节):3.7.4 加 subscription cache 基础设施,(tabs)/index.tsx fetch
   - Bug #4(旧 RecordOverlay ringRotation animationFrame 死代码):新版不复刻
   - Bug #5(旧 publish-wisdom forceKeyword server 不接收):3.9 真接 seek 时再决策 server 是否支持
-- **真验证状态**:
+- **真验证状态**(已完成):
   - type-check 静默通过(全 sub-step 0 error)
-  - 模拟器真验证 → 见 Q-3.7.10-A,prebuild + run:ios 后跑 record + type + cancel 全路径
+  - iPhone 13 Pro Max(iOS 18.6.2)真机真测全过(2026-05-04 21:5x):
+    - record 路径:Gemini transcribe + AI generate-card 真生成 Authenticity card 真渲染
+    - type 路径:AI generate-card 真生成 Consistency card,score 96 / emotion Grounded / 真动态 title + body
+    - cancel 路径:choose / recording / publish 三个 phase 全 dismiss 干净
+    - keyboard:KeyboardAvoidingView + TouchableWithoutFeedback + onContentSizeChange 行业标准键盘行为全工作(点空白关键盘 + textarea 动态高度 + Transform 不被遮)
+  - 真测中发现 4 个真 bug 全修(全部 commit + 部署):
+    - mobile cancelRecording native shared object lifecycle bug → recorder.uri sync getter 加 try/catch(已 commit eda2985)
+    - server generate-card.js .catch chain bug → 改 try/catch await(已 commit be0e22b 部署)
+    - server ai.js fetch missing timeout 导致 Gemini 503 时 504 → 加 AbortController 8s timeout(已 commit a27119a 部署)
+    - mobile keyboard 遮挡 Transform 按钮 → KeyboardAvoidingView wrap(已 commit eda2985)
 - **stage 3.8+ 待做**:
   - 3.8 真 FlippableCard / CardSpinAnimation / Confetti(替换 stubs,Reanimated v4)
   - 3.9 SeekView + 接通 record modal seek context(forceKeyword + seekQuestionId)
