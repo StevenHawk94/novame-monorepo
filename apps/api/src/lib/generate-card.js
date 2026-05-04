@@ -212,15 +212,22 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId)
       await supabase.from('profiles').update(profileUpdate).eq('id', userId)
     } catch (e) { console.error('Aspire score update error:', e) }
   } else if (userId && shouldUpdatePortrait && result.wisdom_portrait) {
-    await supabase.from('profiles').update({ wisdom_portrait: result.wisdom_portrait.substring(0, 200) }).eq('id', userId).catch(() => {})
+    try {
+      await supabase.from('profiles').update({ wisdom_portrait: result.wisdom_portrait.substring(0, 200) }).eq('id', userId)
+    } catch (e) {
+      // best-effort — ignore
+    }
   }
 
   // Save daily_index
   if (wisdomId && result.daily_index) {
-    await supabase.from('wisdoms')
-      .update({ daily_index: (result.daily_index || '').substring(0, 250) })
-      .eq('id', wisdomId)
-      .catch(e => console.warn('[daily_index] save failed:', e.message))
+    try {
+      await supabase.from('wisdoms')
+        .update({ daily_index: (result.daily_index || '').substring(0, 250) })
+        .eq('id', wisdomId)
+    } catch (e) {
+      console.warn('[daily_index] save failed:', e.message)
+    }
   }
 
   const cardWithMeta = enrichCard(card)
