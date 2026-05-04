@@ -24,6 +24,26 @@ const SAFETY_NONE = [
   { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
 ]
 
+
+/**
+ * fetch wrapper with hard timeout via AbortController.
+ * Default 8s — fits within Vercel 25s limit when chained across 3 model tiers.
+ */
+async function fetchWithTimeout(url, options, timeoutMs = 8000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs}ms`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * Call Gemini with system_instruction + user content.
  * Splitting system_instruction from contents maximizes implicit cache hits
@@ -57,7 +77,7 @@ async function callGemini(model, { systemInstruction, userText, generationConfig
     body.contents = [{ parts: [{ text: userText }] }]
   }
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
   )
@@ -85,7 +105,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig }) {
   if (systemInstruction) messages.push({ role: 'system', content: systemInstruction })
   if (userText) messages.push({ role: 'user', content: userText })
 
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
+  const res = await fetchWithTimeout('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
