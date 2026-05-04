@@ -1,4 +1,8 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { CryptoDigestAlgorithm, digestStringAsync, randomUUID } from 'expo-crypto';
 import { Platform } from 'react-native';
 import type { AuthError, Session, User } from '@supabase/supabase-js';
@@ -251,6 +255,149 @@ export async function signInWithApple(): Promise<AppleSignInResult> {
     return {
       kind: 'error',
       message: 'Apple sign-in succeeded but no session returned.',
+    };
+  }
+  return { kind: 'success', session: data.session, user: data.user };
+}
+// ---- OAuth: Google ----
+
+/**
+ * Result of a Google Sign-In attempt.
+ *
+ * Mirrors AppleSignInResult shape so callers can pattern-match on .kind
+ * and route to the same UI affordances (cancelled = silent, others = inline).
+ */
+export type GoogleSignInResult =
+  | { kind: 'success'; session: Session; user: User }
+  | { kind: 'cancelled' }
+  | { kind: 'unsupported' }
+  | { kind: 'error'; message: string };
+
+let googleSigninConfigured = false;
+
+/**
+ * Configures the GoogleSignin SDK once per process.
+ *
+ * Must be called before signInAsync. We do it lazily inside
+ * signInWithGoogle so the SDK is never initialized if the user
+ * never taps the Google button (saves startup time).
+ *
+ * Reads from EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID and
+ * EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID. Both must be set in
+ * apps/mobile/.env.local — see .env.example for placeholders.
+ *
+ * webClientId is required even on iOS — Google's SDK uses it as the
+ * audience for the returned idToken. Without it, the idToken's aud
+ * field would be the iOS client ID and Supabase would reject it
+ * (Supabase verifies idToken aud against its Authorized Client IDs;
+ * we have all three Client IDs registered there, but using webClientId
+ * follows the recommended pattern).
+ */
+function configureGoogleSignin(): void {
+  if (googleSigninConfigured) return;
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  if (!webClientId) {
+    throw new Error(
+      'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not set. Add it to apps/mobile/.env.local.',
+    );
+  }
+  GoogleSignin.configure({
+    webClientId,
+    iosClientId,
+    scopes: ['email', 'profile'],
+  });
+  googleSigninConfigured = true;
+}
+
+/**
+ * Signs in (or up) with Google via the native Google Sign-In sheet.
+ *
+ * Flow (verified against Supabase official docs + RN-google-signin
+ * security guide):
+ *   1. configure() once with webClientId + iosClientId.
+ *   2. hasPlayServices() check on Android (no-op on iOS).
+ *   3. signIn() shows the Google account picker. Returns idToken on success.
+ *   4. supabase.auth.signInWithIdToken({ provider: 'google', token }).
+ *   5. NO nonce passed because Google iOS SDK skips nonce by default and
+ *      Supabase has Skip Nonce Check enabled for the Google provider.
+ *   6. Supabase verifies idToken signature + aud matches one of the
+ *      Authorized Client IDs (Web/iOS/Android) → returns session.
+ *   7. onAuthStateChange listener in app/_layout.tsx fires SIGNED_IN
+ *      and routes the user to (main)/(tabs).
+ *
+ * NOT done here:
+ *   - prebuild + run:ios verification: deferred to stage 5/6 real-device
+ *     testing (per user decision; native Google sign-in flow needs
+ *     Google Cloud Console SHA-1 fingerprint validation that is best
+ *     done on actual hardware).
+ *   - Apple-style nonce dance: not needed because Skip Nonce Check
+ *     is enabled in Supabase dashboard.
+ */
+export async function signInWithGoogle(): Promise<GoogleSignInResult> {
+  try {
+    configureGoogleSignin();
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Google sign-in not configured',
+    };
+  }
+
+  try {
+    // hasPlayServices: required on Android, no-op on iOS.
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  } catch (e) {
+    return {
+      kind: 'unsupported',
+    };
+  }
+
+  let response: Awaited<ReturnType<typeof GoogleSignin.signIn>>;
+  try {
+    response = await GoogleSignin.signIn();
+  } catch (e) {
+    const err = e as { code?: string; message?: string };
+    if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+      return { kind: 'cancelled' };
+    }
+    if (err.code === statusCodes.IN_PROGRESS) {
+      return { kind: 'error', message: 'Sign-in already in progress.' };
+    }
+    if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      return { kind: 'unsupported' };
+    }
+    return {
+      kind: 'error',
+      message: err.message ?? 'Google sign-in failed',
+    };
+  }
+
+  // SDK v14+ returns { type: 'success' | 'cancelled', data: {...} }.
+  if (response.type === 'cancelled') {
+    return { kind: 'cancelled' };
+  }
+  const idToken = response.data?.idToken;
+  if (!idToken) {
+    return {
+      kind: 'error',
+      message: 'No idToken returned from Google.',
+    };
+  }
+
+  // Hand off to Supabase. No nonce passed — Skip Nonce Check is enabled
+  // in the Supabase dashboard for the Google provider.
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: idToken,
+  });
+  if (error) {
+    return { kind: 'error', message: error.message };
+  }
+  if (!data.session || !data.user) {
+    return {
+      kind: 'error',
+      message: 'Google sign-in succeeded but no session returned.',
     };
   }
   return { kind: 'success', session: data.session, user: data.user };

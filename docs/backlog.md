@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-03(阶段 3.4 step 1-6 完成、Email + Apple iOS 都跑通)  
-**当前阶段**:批次 3 / 阶段 3.4 进行中(Email + Apple iOS 已 commit + 真验证),待进 step 7 (Google Sign-In)
+**最后更新**:2026-05-03(阶段 3.4 完成、Email + Apple iOS 真验证 + Google 代码层完成)  
+**当前阶段**:批次 3 / 阶段 3.4 已完成(全部 auth flow 写好,Apple iOS 真验证通过,Google 真机测试留 stage 5/6),待进 3.5(onboarding flow)
 
 ---
 
@@ -553,19 +553,36 @@
 - **不阻塞 stage 3-4**:多数 NovaMe 用户主要在 iOS,Android Apple Sign-In 是次要场景
 
 
-#### B42. Google Sign-In 待实现(3.4 step 7 触发)
-- **来源**:阶段 3.4 step 7 计划
-- **当前状态**:sign-in.tsx 上 "Continue with Google" 按钮 disabled
-- **触发条件**:阶段 3.4 step 7 开始
-- **要做的事**:
-  - 装 expo-auth-session expo-crypto
-  - 从旧 NovaMe iOS Info.plist 提取 Google Client ID(B15 触发)
-  - Supabase dashboard 配 Google Client ID
-  - 写 src/lib/auth.ts: signInWithGoogle()
-  - sign-in.tsx 上 Google 按钮去掉 disabled
-- **外部依赖确认**(用户已完成):
-  - Google Cloud Console Client ID 旧的可复用
-  - Supabase dashboard Google OAuth provider 已启用
+#### B42. Google Sign-In 已实现 (3.4 step 7 完成,代码层面;真机测试推到 stage 5/6)
+- **来源**:阶段 3.4 step 7
+- **commit 范围**:
+  - apps/mobile/app.json: @react-native-google-signin/google-signin plugin 展开形式 + iosUrlScheme
+  - apps/mobile/.env.example + .env.local: 加 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID + EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+  - apps/mobile/src/lib/auth.ts: signInWithGoogle() + GoogleSignInResult + configureGoogleSignin lazy init
+  - apps/mobile/app/(auth)/sign-in.tsx: handleGoogleSignIn handler + 按钮去 disabled
+  - 装 @react-native-google-signin/google-signin ^16.1.2
+- **核心实现** (Supabase + RN-google-signin 官方对齐):
+  - lazy configure: GoogleSignin.configure({ webClientId, iosClientId, scopes: [email, profile] })
+  - hasPlayServices() 检查(Android)+ signIn() 拿 idToken
+  - supabase.auth.signInWithIdToken({ provider: 'google', token })
+  - **不传 nonce**(Supabase Skip Nonce Check 已勾选)
+  - SDK v14+ 返回 { type: 'success' | 'cancelled', data: {...} } discriminated union
+- **Google Cloud Console / Supabase 配置** (用户已完成):
+  - 4 个 Client ID:Web (n2qf03) + iOS Firebase (aj8f90,旧 Capacitor 残留不用)
+    + iOS GoogleSignIn (fd110t) + Android (772o19)
+  - Supabase Authorized Client IDs 列表:n2qf03 + fd110t + 772o19
+  - Skip Nonce Check 勾选
+- **没真机测试的原因**(用户决策):
+  - Apple/Google 一并 commit 后不模拟器测,留 stage 5/6 真机测试
+  - 即使有 bug 也容易定位(模块明确 + 业务孤立)
+  - 模拟器 Google 流测试需要登录 Google 账号比较麻烦
+- **stage 5/6 真机测试要做的**:
+  - 重新跑 prebuild + run:ios(因为 plugin iosUrlScheme 是 native config)
+  - iOS 模拟器或真机点 Google 按钮 → 应该弹原生 Google 账户选择 sheet
+  - 选择账户 → 拿 idToken → Supabase 验证 → 跳 main tabs
+  - Android 真机也测一次(Android 流要求 SHA-1 fingerprint 在 Google Cloud Console 注册,只有真机能跑通)
+- **此条性质**:代码已实现 + commit;真机验证留 stage 5/6
+
 
 ## 已完成（changelog，下个阶段完成报告时移除）
 

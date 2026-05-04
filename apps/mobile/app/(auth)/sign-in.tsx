@@ -14,6 +14,7 @@ import {
   sendPasswordReset,
   signInWithApple,
   signInWithEmail,
+  signInWithGoogle,
   signUpWithEmail,
   verifyEmailOtp,
 } from '@/lib/auth';
@@ -165,6 +166,27 @@ export default function AuthScreen() {
     // kind === 'success' — onAuthStateChange listener will redirect.
   };
 
+  const handleGoogleSignIn = async () => {
+    clearMessages();
+    setLoading(true);
+    const result = await signInWithGoogle();
+    setLoading(false);
+    if (result.kind === 'cancelled') {
+      // Silent — user dismissed the Google account picker.
+      return;
+    }
+    if (result.kind === 'unsupported') {
+      setErrorMsg('Sign in with Google is not available on this device.');
+      return;
+    }
+    if (result.kind === 'error') {
+      setErrorMsg(result.message);
+      return;
+    }
+    // kind === 'success' — onAuthStateChange listener will redirect.
+  };
+
+
   // ---- shared visual fragments ----
 
   const Branding = () => <Text style={styles.brand}>NovaMe</Text>;
@@ -214,8 +236,9 @@ export default function AuthScreen() {
               <Text style={styles.btnAppleText}>Sign in with Apple</Text>
             </Pressable>
             <Pressable
-              style={[styles.btn, styles.btnGoogle, styles.btnDisabled]}
-              disabled
+              style={[styles.btn, styles.btnGoogle, loading && styles.btnDisabled]}
+              disabled={loading}
+              onPress={handleGoogleSignIn}
             >
               <Text style={styles.btnGoogleText}>Continue with Google</Text>
             </Pressable>
