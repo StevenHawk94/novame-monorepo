@@ -1,3 +1,6 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { CryptoDigestAlgorithm, digestStringAsync, randomUUID } from 'expo-crypto';
+import { Platform } from 'react-native';
 import type { AuthError, Session, User } from '@supabase/supabase-js';
 
 import { supabase } from './supabase';
@@ -143,3 +146,113 @@ export async function getCurrentSession(): Promise<Session | null> {
   const { data } = await supabase.auth.getSession();
   return data.session;
 }
+// ---- OAuth: Apple ----
+
+/**
+ * Result of an Apple Sign-In attempt.
+ *
+ * Three failure modes are surfaced separately:
+ *   - cancelled: user dismissed the Apple sheet
+ *   - unsupported: device or platform does not support Sign in with Apple
+ *   - error: generic failure (Apple credential issue, Supabase reject)
+ *
+ * Caller should treat 'cancelled' as a no-op (don't show error) but
+ * surface 'unsupported' and 'error' to the user.
+ */
+export type AppleSignInResult =
+  | { kind: 'success'; session: Session; user: User }
+  | { kind: 'cancelled' }
+  | { kind: 'unsupported' }
+  | { kind: 'error'; message: string };
+
+/**
+ * Signs in (or up) with Apple via the native iOS Sign in with Apple sheet.
+ *
+ * Flow (verified against Supabase official docs + multiple production examples):
+ *   1. Generate a random nonce (raw form).
+ *   2. Hash it with SHA-256 (hex).
+ *   3. Pass the HASHED nonce to AppleAuthentication.signInAsync.
+ *   4. Pass the RAW nonce to supabase.auth.signInWithIdToken alongside
+ *      the identity token Apple returned.
+ *   5. Supabase internally hashes the raw nonce and compares with the
+ *      nonce embedded in the JWT — they match because both were derived
+ *      from the same raw value.
+ *
+ * If steps 3 and 4 use the same form (both raw or both hashed), the
+ * signInWithIdToken call fails with "Passed nonce and nonce in id_token
+ * must align".
+ *
+ * Apple only returns the user's full name and email on the FIRST sign-in
+ * for a given Apple ID + app. Subsequent sign-ins return null for those
+ * fields. Stage 3.4 ignores name / email beyond what Apple bakes into
+ * the identity token; stage 3.5 (onboarding sync) or later may use them.
+ *
+ * iOS only — Android Apple Sign-In requires a separate OAuth web flow
+ * (B21, deferred to stage 5 IAP context).
+ */
+export async function signInWithApple(): Promise<AppleSignInResult> {
+  if (Platform.OS !== 'ios') {
+    return { kind: 'unsupported' };
+  }
+
+  const isAvailable = await AppleAuthentication.isAvailableAsync();
+  if (!isAvailable) {
+    return { kind: 'unsupported' };
+  }
+
+  // 1. Generate raw nonce
+  const rawNonce = randomUUID();
+
+  // 2. Hash it (SHA-256 hex, matching Supabase server-side comparison)
+  const hashedNonce = await digestStringAsync(
+    CryptoDigestAlgorithm.SHA256,
+    rawNonce,
+  );
+
+  // 3. Show Apple sheet with HASHED nonce
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+  } catch (e) {
+    // Expo throws ERR_REQUEST_CANCELED when user dismisses
+    if (e instanceof Error && (e as Error & { code?: string }).code === 'ERR_REQUEST_CANCELED') {
+      return { kind: 'cancelled' };
+    }
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Apple sign-in failed',
+    };
+  }
+
+  if (!credential.identityToken) {
+    return {
+      kind: 'error',
+      message: 'No identity token returned from Apple.',
+    };
+  }
+
+  // 4. Hand off to Supabase with RAW nonce
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: credential.identityToken,
+    nonce: rawNonce,
+  });
+
+  if (error) {
+    return { kind: 'error', message: error.message };
+  }
+  if (!data.session || !data.user) {
+    return {
+      kind: 'error',
+      message: 'Apple sign-in succeeded but no session returned.',
+    };
+  }
+  return { kind: 'success', session: data.session, user: data.user };
+}
+

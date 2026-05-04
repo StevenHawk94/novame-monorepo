@@ -20,7 +20,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "App needs microphone access to record voice to transcript to text and analyze."
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.novame.app",

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   sendPasswordReset,
+  signInWithApple,
   signInWithEmail,
   signUpWithEmail,
   verifyEmailOtp,
@@ -144,6 +145,26 @@ export default function AuthScreen() {
     setInfoMsg('Reset link sent. Check your inbox.');
   };
 
+  const handleAppleSignIn = async () => {
+    clearMessages();
+    setLoading(true);
+    const result = await signInWithApple();
+    setLoading(false);
+    if (result.kind === 'cancelled') {
+      // Silent — user dismissed the Apple sheet, no message shown.
+      return;
+    }
+    if (result.kind === 'unsupported') {
+      setErrorMsg('Sign in with Apple is not available on this device.');
+      return;
+    }
+    if (result.kind === 'error') {
+      setErrorMsg(result.message);
+      return;
+    }
+    // kind === 'success' — onAuthStateChange listener will redirect.
+  };
+
   // ---- shared visual fragments ----
 
   const Branding = () => <Text style={styles.brand}>NovaMe</Text>;
@@ -186,8 +207,9 @@ export default function AuthScreen() {
           </Text>
           <View style={styles.buttonGroup}>
             <Pressable
-              style={[styles.btn, styles.btnApple, styles.btnDisabled]}
-              disabled
+              style={[styles.btn, styles.btnApple, loading && styles.btnDisabled]}
+              disabled={loading}
+              onPress={handleAppleSignIn}
             >
               <Text style={styles.btnAppleText}>Sign in with Apple</Text>
             </Pressable>

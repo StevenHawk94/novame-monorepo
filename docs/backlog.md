@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-03(阶段 3.4 step 1-5 完成、Email auth 跑通)  
-**当前阶段**:批次 3 / 阶段 3.4 进行中(Email password 已 commit + 真验证通过),待进 step 6 (Apple Sign-In) + step 7 (Google Sign-In)
+**最后更新**:2026-05-03(阶段 3.4 step 1-6 完成、Email + Apple iOS 都跑通)  
+**当前阶段**:批次 3 / 阶段 3.4 进行中(Email + Apple iOS 已 commit + 真验证),待进 step 7 (Google Sign-In)
 
 ---
 
@@ -514,20 +514,44 @@
   - Apple Sign-In Android OAuth (expo-auth-session)
   - Google Sign-In OAuth flow
 
-#### B41. Apple Sign-In 待实现(3.4 step 6 触发)
-- **来源**:阶段 3.4 step 6 计划
-- **当前状态**:sign-in.tsx 上 "Sign in with Apple" 按钮 disabled
-- **触发条件**:阶段 3.4 step 6 开始
-- **要做的事**:
-  - 装 expo-apple-authentication
-  - app.json 加 entitlement "Sign in with Apple"
-  - 写 src/lib/auth.ts: signInWithApple()
-  - 用 supabase.auth.signInWithIdToken({ provider: 'apple', token }) 跟 Supabase 集成
-  - sign-in.tsx 上 Apple 按钮去掉 disabled
-  - prebuild --clean(因为加了 entitlement) + run:ios 验证
-- **外部依赖确认**(用户已完成):
-  - Apple Developer 已配 "Sign in with Apple" capability
-  - Supabase dashboard Apple OAuth provider 已启用 + 配 Service ID + Secret Key
+#### B41. Apple Sign-In iOS 已实现(3.4 step 6 完成,记录用)
+- **来源**:阶段 3.4 step 6
+- **commit 范围**:
+  - apps/mobile/app.json: ios.usesAppleSignIn = true(让 Expo CLI 自动配 entitlement)
+  - apps/mobile/src/lib/auth.ts: signInWithApple() + AppleSignInResult discriminated union
+  - apps/mobile/app/(auth)/sign-in.tsx: handleAppleSignIn handler + 按钮去 disabled
+  - 装 expo-apple-authentication ~8.0.8 + expo-crypto ~15.0.9
+- **核心实现** (Supabase 官方文档对齐):
+  - rawNonce = expo-crypto randomUUID()
+  - hashedNonce = SHA256(rawNonce) hex 编码
+  - AppleAuthentication.signInAsync({ scopes: [FULL_NAME, EMAIL], nonce: hashedNonce })
+  - supabase.auth.signInWithIdToken({ provider: 'apple', token: identityToken, nonce: rawNonce })
+  - Supabase 内部 SHA256(rawNonce) 跟 token JWT 里的 hashed nonce 比对 → 匹配
+- **关键 trap 已避免**:
+  - Apple signInAsync 接受 hashed nonce(SHA256 hex)
+  - Supabase signInWithIdToken 接受 raw nonce(unhashed)
+  - 两边用同一个 nonce 但形态不同。两边都用 raw 或都用 hashed 会导致 'Passed nonce and nonce in id_token must align' 错误
+- **真验证状态**(模拟器跑通):
+  - 删除 NovaMe.app 重装(清 AsyncStorage)→ sign-in 页 login mode
+  - 点 "Sign in with Apple" → iOS Apple Sign-In sheet 弹起
+  - Apple ID 验证通过 → 拿 identityToken
+  - signInWithIdToken 成功 → onAuthStateChange SIGNED_IN
+  - router.replace 自动跳 (main)/(tabs) → 4 tab UI
+- **此条性质**:已解决记录;3.4 step 7 (Google) 待开始
+
+#### B43. Apple Sign-In Android 推到 stage 5 IAP(架构记录)
+- **来源**:阶段 3.4 step 6 完成时的架构边界
+- **现状**:
+  - iOS Apple Sign-In 已完成(B41 resolved)
+  - mobile/src/lib/auth.ts signInWithApple() 用 Platform.OS !== 'ios' guard 直接返回 unsupported
+- **触发条件**:阶段 5 IAP 真机 Android 测试时(B21 同时触发)
+- **Android 实现路径**:
+  - 装 expo-auth-session expo-web-browser
+  - 用 OAuth web flow + Apple Service ID(Apple Developer Portal 配 Apple Service ID 用于 web/Android)
+  - deep link callback: novame://auth-callback
+  - Supabase 配 redirect URL 包括 novame://auth-callback
+- **不阻塞 stage 3-4**:多数 NovaMe 用户主要在 iOS,Android Apple Sign-In 是次要场景
+
 
 #### B42. Google Sign-In 待实现(3.4 step 7 触发)
 - **来源**:阶段 3.4 step 7 计划
