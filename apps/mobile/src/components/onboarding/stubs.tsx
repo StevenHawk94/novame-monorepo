@@ -116,33 +116,54 @@ const flippableStyles = StyleSheet.create({
 // ---- CardSpinStub ----
 
 type CardSpinStubProps = {
+  /** Headline shown above the spinner. */
   label1: string;
+  /** Optional middle line (used by record publishing phase). */
+  label2?: string;
+  /** Smaller text below the headline. */
   sublabel: string;
-  duration: number;
-  onDone: () => void;
+  /**
+   * Spin lifecycle mode.
+   *   - 'timed' (default): spin for `duration` ms then call `onDone`.
+   *     Used by onboarding step-spinning.tsx.
+   *   - 'continuous': spin forever; the parent will unmount this when
+   *     a network/state transition is ready. Used by record.tsx
+   *     publishing/analyzing phases. `duration` and `onDone` are
+   *     ignored.
+   */
+  mode?: 'timed' | 'continuous';
+  /** Required only for mode='timed'. */
+  duration?: number;
+  /** Required only for mode='timed'. */
+  onDone?: () => void;
 };
 
 /**
- * Spinning placeholder shown for `duration` ms then calls onDone.
+ * Spinning placeholder. Two lifecycle modes (see CardSpinStubProps).
  *
- * Stage 3.8 will replace the ActivityIndicator with a real 3D
- * spinning card animation. The duration + onDone contract is
- * preserved so step-spinning.tsx will not need changes.
+ * Stage 3.8 will replace ActivityIndicator with a real 3D card spin
+ * animation. The mode + props contract is preserved so callers do
+ * not need to change.
  */
 export function CardSpinStub({
   label1,
+  label2,
   sublabel,
+  mode = 'timed',
   duration,
   onDone,
 }: CardSpinStubProps) {
   useEffect(() => {
+    if (mode !== 'timed') return;
+    if (typeof duration !== 'number' || !onDone) return;
     const t = setTimeout(onDone, duration);
     return () => clearTimeout(t);
-  }, [duration, onDone]);
+  }, [mode, duration, onDone]);
   return (
     <View style={spinStyles.root}>
       <ActivityIndicator size="large" color="#C084FC" />
       <Text style={spinStyles.label1}>{label1}</Text>
+      {label2 ? <Text style={spinStyles.label2}>{label2}</Text> : null}
       <Text style={spinStyles.sublabel}>{sublabel}</Text>
     </View>
   );
@@ -162,6 +183,13 @@ const spinStyles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
     marginTop: 32,
+  },
+  label2: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
+    marginTop: 6,
   },
   sublabel: {
     color: 'rgba(255,255,255,0.4)',

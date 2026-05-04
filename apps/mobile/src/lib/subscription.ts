@@ -1,0 +1,129 @@
+import { storage } from './storage';
+import { apiClient } from './api';
+import type { PricingTierKey } from '@novame/core';
+
+/**
+ * Subscription state management for mobile (stage 3.7.4).
+ *
+ * Mirrors the character-state.ts pattern (cache-first read, background
+ * server refresh). Exists as a separate module because subscription is
+ * a different domain from character growth — they happen to be loaded
+ * at the same time, but evolve independently (subscription only changes
+ * when the user buys/cancels via IAP; character changes constantly).
+ *
+ * Data source — old capacitor pattern:
+ *   - GET /api/user-sync?userId=X already returns `data.subscriptionTier`
+ *     ('free' | 'basic' | 'pro' | 'ultra'), authoritative from the
+ *     profiles.subscription_tier column written by /api/apple-iap and
+ *     /api/google-iap (StoreKit 2 / Play Billing v7).
+ *   - We only cache the tier string. Detailed billing info (cycle,
+ *     period_end, status) lives behind GET /api/subscriptions and is
+ *     consumed by the Plan & Billing modal in stage 3.10.
+ *
+ * MMKV key: novame_subscription
+ *
+ * Stage 5 (IAP integration) will:
+ *   - extend this cache with billing_cycle / period_end if needed
+ *   - trigger fetchSubscriptionTier() after a successful purchase
+ *
+ * Until IAP ships, fetchSubscriptionTier() always returns 'free' for
+ * real users — but the data path is fully wired so the day IAP turns
+ * on, no consumer needs to change.
+ */
+
+const STORAGE_KEY = 'novame_subscription';
+
+// ---- types ----
+
+/**
+ * Subset of /api/user-sync GET response that we care about for
+ * subscription. Other fields (profile, wisdoms, etc.) are read by
+ * the screens that need them — we only consume subscriptionTier here.
+ */
+type UserSyncSubscriptionShape = {
+  success: boolean;
+  data: {
+    subscriptionTier?: PricingTierKey;
+  };
+};
+
+export type CachedSubscription = {
+  /** Active tier. Defaults to 'free' for users who have never purchased. */
+  tier: PricingTierKey;
+  /** Wall-clock timestamp of the last successful server fetch. */
+  lastFetchedAtMs: number;
+};
+
+// ---- mmkv read / write ----
+
+/**
+ * Reads cached subscription from MMKV. Returns null if no cache exists
+ * (first launch after sign-in) or if the cached value is corrupt JSON.
+ */
+export function getCachedSubscription(): CachedSubscription | null {
+  const raw = storage.getString(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as CachedSubscription;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convenience: returns the active tier, defaulting to 'free' if no
+ * cache exists yet. UI render paths that just need a tier string
+ * (e.g. PRICING_TIERS lookup) should use this instead of the full
+ * getCachedSubscription helper.
+ */
+export function getCachedSubscriptionTier(): PricingTierKey {
+  return getCachedSubscription()?.tier ?? 'free';
+}
+
+/**
+ * Persists subscription state to MMKV cache.
+ */
+export function setCachedSubscription(state: CachedSubscription): void {
+  storage.set(STORAGE_KEY, JSON.stringify(state));
+}
+
+/**
+ * Clears cached subscription (sign-out, account switch, etc.).
+ */
+export function clearCachedSubscription(): void {
+  storage.remove(STORAGE_KEY);
+}
+
+// ---- server fetch ----
+
+/**
+ * Fetches the user's tier from /api/user-sync, persists to MMKV cache,
+ * and returns the resulting CachedSubscription.
+ *
+ * Throws on network or HTTP errors. Caller should treat failure as
+ * non-fatal — stale cache (or 'free' default) keeps the UI working.
+ *
+ * Why user-sync and not /api/subscriptions:
+ *   - user-sync already returns subscriptionTier alongside profile +
+ *     onboarding flags, so calling it gives us tier "for free" if any
+ *     other consumer also wants user-sync data later.
+ *   - /api/subscriptions returns the verbose subscription row (billing
+ *     history, period_start/end) — Plan & Billing modal only.
+ */
+export async function fetchSubscriptionTier(
+  userId: string,
+): Promise<CachedSubscription> {
+  const data = await apiClient.get<UserSyncSubscriptionShape>(
+    `/api/user-sync?userId=${encodeURIComponent(userId)}`,
+  );
+  if (!data.success) {
+    throw new Error('user-sync GET returned non-success');
+  }
+  const tier = data.data.subscriptionTier ?? 'free';
+  const next: CachedSubscription = {
+    tier,
+    lastFetchedAtMs: Date.now(),
+  };
+  setCachedSubscription(next);
+  return next;
+}

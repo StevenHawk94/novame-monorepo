@@ -18,8 +18,7 @@
       "bundleIdentifier": "com.novame.app",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSMicrophoneUsageDescription": "App needs microphone access to record voice to transcript to text and analyze."
+        "ITSAppUsesNonExemptEncryption": false
       },
       "usesAppleSignIn": true
     },
@@ -56,6 +55,12 @@
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.966579113880-fd110tglqc5bnciu3nk9s3b6h87avuqm"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "App needs microphone access to record voice to transcript to text and analyze."
         }
       ]
     ],

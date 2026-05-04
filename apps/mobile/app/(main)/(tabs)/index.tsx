@@ -18,6 +18,7 @@ import {
   getCachedCharacterState,
   type CachedCharacterState,
 } from '@/lib/character-state';
+import { fetchSubscriptionTier } from '@/lib/subscription';
 import {
   getCharacterState,
   pickSpeechBubble,
@@ -96,6 +97,10 @@ export default function HomeTab() {
       userIdRef.current = session.user.id;
       try {
         const next = await fetchCharacterState(session.user.id);
+        // Subscription tier is fetched in parallel — same authoritative
+        // data trigger as character-state. Errors are swallowed because the
+        // app degrades gracefully to cached tier (or "free" default).
+        void fetchSubscriptionTier(session.user.id).catch(() => {});
         if (cancelled) return;
         setCachedState(next);
         setWpVisual(next.wp);

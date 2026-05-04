@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-04(阶段 3.6 main tabs 骨架 + Home VideoCharacter 完成、3 deps + ~830 行新代码、模拟器真验证通过)  
-**当前阶段**:批次 3 / 阶段 3.6 已完成(自定义 BottomTabBar + Home tab 完整业务,B35 字体 embed 还掉),待进 3.7(RecordOverlay)
+**最后更新**:2026-05-04(阶段 3.7 RecordOverlay 完成、subscription cache 基础设施 + 真录音 + 真 publish API + insight 真 UI、~1900 行新代码、模拟器真验证待跑)
+**当前阶段**:批次 3 / 阶段 3.7 RecordOverlay 已完成代码,待 prebuild + run:ios 真验证 + commit;后续 3.8 卡片真版本
 
 ---
 
@@ -30,6 +30,51 @@
 - **不能现在写的理由**：apps/api 当前代码只用 PRICING_TIERS 的价格字段（create-payment / book-payment），没人调用配额检查 —— 形状未知
 
 ---
+
+
+#### B47. publish-wisdom server 端 social 字段清理(stage 后续触发)
+- **来源**:阶段 3.7.7 决策时发现
+- **现状**:
+  - mobile 已停止传 isPublic(产品决策:NovaMe wisdoms 全 private,Discover 公共社区已下线)
+  - server apps/api/src/app/api/publish-wisdom/route.js 仍有大量社交向死代码:
+    - line 90-99:isPublic 入参解析(JSON / FormData 双路径)
+    - line 191-199:engagement boost 逻辑(boost_at / boost_views / boost_likes 写 wisdoms 表)
+    - line 209-219:auto-comment fetch /api/wisdom-comments
+    - line 110-112 + line 180-181:creator_name / creator_avatar 取数
+- **触发条件**:server 端清理 social feed / Discover 公共区域时一并删除
+- **风险**:留着不影响 mobile,但 wisdoms 表 boost_* 字段会被无意义写入,影响数据洁净度。新 wisdoms 数据上的 is_public=true 跟产品意图不符
+- **不修的理由**:跨边界改动(影响 wisdom_comments / liked_wisdoms 等已删但 server 仍部分残留的功能),需要做完整清理 PR
+
+#### B48. generate-card.js title 死兼容代码清理(stage 后续触发)
+- **来源**:阶段 3.7.9 看 server 真实代码时发现
+- **现状**:
+  - server apps/api/src/lib/generate-card.js AI 生成 4 个干净独立字段:card_b_title / card_b / card_c_title / card_c
+  - 但 line 150-155 故意把 title 拼回 body 开头(`Title: xxx\nbody`),wire format 给客户端的是合并字符串
+  - mobile 客户端必须用 regex `/^Title:\s*(.+?)\n([\s\S]*)$/` 拆开来用
+- **行业标准**:server 应直接返回独立字段,不打混再让客户端拆
+- **触发条件**:server 重构 generate-card 返回 schema 时一并改;或老 web 客户端确认下线后改
+- **risk 微小**:目前 mobile 用 regex 兼容工作,不影响业务
+
+#### B49. expo-file-system v19 New API 迁移债(stage 后续触发)
+- **来源**:阶段 3.7.1 写 audio-recorder.ts 时遇到 v19 API 重构
+- **现状**:
+  - apps/mobile/src/lib/audio-recorder.ts 用 `import * as FileSystem from 'expo-file-system/legacy'` 显式 legacy import 路径
+  - 因为 v19 顶层 InfoOptions 类型只有 md5 字段(New API 风格,size 默认返回不需要 opt-in)
+  - asset-cache.ts (3.3 阶段) 用了 New API File class
+- **触发条件**:Expo SDK 升级到 55+(legacy 子路径可能消失)或全 mobile 统一切 New API 时
+- **行业标准**:统一 New API File class,审计所有 expo-file-system 用法
+- **不修的理由**:legacy 路径在 SDK 54 / 55 都还工作,统一迁需要大范围测试 + 完整回归
+
+#### B50. Android SDK 54 expo-audio 零字节文件 bug 处理记录(已防御,记录用)
+- **来源**:阶段 3.7.1 web_search 时发现 GitHub expo/expo#39646
+- **现状**:
+  - SDK 54 Android 上,expo-audio recorder.stop() 返回的 URI 可能指向 0 字节文件,真录音在另一路径
+  - audio-recorder.ts stopRecording() 已加 size 校验:sizeBytes === 0 抛错让上层处理
+  - record.tsx PhaseRecording handleSave 命中 0 字节会跳 errored UI
+- **iOS 不受影响**(只 Android)
+- **真测计划**:阶段 5/6 Android 真机测试时验证;若仍触发,fallback 到 expo-av(SDK 54 上 expo-av 还工作)或 react-native-audio-recorder-player
+- **此条性质**:已防御,记录用;3.7 模拟器测 iOS 不会触发
+
 
 ### ⚪ 触发条件未明（可能永远不做）
 
@@ -632,6 +677,78 @@
 
 
 ## 已完成（changelog，下个阶段完成报告时移除）
+
+#### B46. 阶段 3.7 RecordOverlay 完成(已解决,记录用)
+- **来源**:阶段 3.7
+- **commit 范围**(1 个大 commit):
+  - 装 2 个新 deps(原生模块):
+    - expo-audio ~1.1.1(SDK 54 stable,SDK 55 起 expo-av removed)
+    - react-native-svg 15.12.1(progress ring + score ring)
+  - 新增 src/lib/audio-recorder.ts(~170 行):
+    - configureAudioSession / prepareAndStart / pauseRecording / resumeRecording / stopRecording / cancelRecording / formatDuration
+    - 命令式 wrapper,顶层 useAudioRecorder hook 返回 instance,各 phase 调命令
+    - Android SDK 54 zero-byte 文件 size 校验(B50 防御)
+    - 用 expo-file-system/legacy 显式 import(B49 记录)
+  - 新增 src/lib/permissions.ts(~80 行):
+    - getMicPermission / requestMicPermission / openAppSettings
+    - canAskAgain 字段判断决定是否走 Settings 跳转
+  - 新增 src/lib/subscription.ts(~130 行):
+    - 跟 character-state.ts 同模式 cache + fetch helper
+    - mmkv key novame_subscription
+    - getCachedSubscription / getCachedSubscriptionTier / fetchSubscriptionTier
+    - 数据源:GET /api/user-sync 已返回 subscriptionTier 字段(无新 endpoint)
+  - 改 (main)/(tabs)/index.tsx:跟 fetchCharacterState 并行调 fetchSubscriptionTier(同地位 cache 模式)
+  - 改 stubs.tsx CardSpinStub:加 mode + label2(向后兼容 onboarding step-spinning)
+  - 改 packages/core/src/constants/recording.ts:加 MIN_TYPED_CHARS = 10
+  - 改 app.json:expo-audio plugin 加 microphonePermission options + 删 ios.infoPlist.NSMicrophoneUsageDescription(单一来源原则)
+  - 改写 (main)/(modals)/record.tsx 完整 7-phase state machine(~2175 行):
+    - PhaseChoose:大紫圆 mic + Type instead 胶囊 + Cancel(光圈 shadow + light haptic)
+    - PhaseRecording:SVG 圆形 progress ring 260x260 + 紫渐变 + 进度发光圆点 + 中央 timer + 顶部 Recording indicator + 底部 Cancel/Pause-Resume/Save
+    - PhasePublish:紫圆 mic icon + 时长 + description input + Transform
+    - PhaseTypeInput:textarea + char counter + description input + Transform(disabled until 10 trimmed chars)
+    - PhasePublishing:CardSpinStub mode='continuous' + "Wait for it..."
+    - PhaseAnalyzing:CardSpinStub mode='continuous' + "Generating your wisdom card..."
+    - PhaseInsight:Score 圆环 + Emotion + FlippableCardStub + Card B/C 玻璃卡 + Tasks 紫卡 + Done
+    - MicDenied dialog:🎙️ + Go to Settings + Cancel
+    - 真录音生命周期(prepare → record → pause/resume → stop) + 100ms timer + max-second auto-save
+    - 真 publish lifecycle:POST /api/publish-wisdom(record FormData / typed JSON 双路径)+ 2.5s 最小停留 + character-state record_complete + daily-tasks fire-and-forget
+    - inflightRef guard 防 React Strict Mode 双发
+    - errored 状态恢复 UI(返回 publish/type-input 重试 + close)
+- **决策清单**(Q-3.7-A 到 J + Q-3.7.x 系列):
+  - Q-3.7-A:expo-audio(SDK 54 stable,SDK 55 起 expo-av removed)
+  - Q-3.7-B:type 模式 3.7 全做(record + type 双路径)
+  - Q-3.7-C:seek context 字段接好不传,3.9 SeekView 一行参数挂
+  - Q-3.7-D:skin unlock console.log 占位,3.10 装 SkinUnlockOverlay 接通
+  - Q-3.7-E:first-wisdom paywall console.log 占位,3.10 装 SubscriptionPaywall 接通
+  - Q-3.7-F:Confetti / CardSpin / FlippableCard 用 stubs,3.8 升级真版本
+  - Q-3.7-G:标准 iOS modal slide-up(已在 (main)/_layout.tsx 配)
+  - Q-3.7-H:tier 限额从 PRICING_TIERS 真读 + server 兜底
+  - Q-3.7-I:1 个大 commit
+  - Q-3.7-J:全做完一次性测
+  - Q-3.7.4-A:加 mobile subscription cache 基础设施(行业标准 — 替代 hardcoded "free")
+  - Q-3.7.4-B:setInterval 100ms 1:1 移植,不引入 Reanimated
+  - Q-3.7.4-C:Cancel 不加 confirm,跟旧版业务一致
+  - Q-3.7.4-D:cache fetch 在 (tabs)/index.tsx,跟 character-state 同地位(_layout 不参与业务 fetch)
+  - Q-3.7.5-A:publish phase Cancel 直接删录音 + close(无确认 dialog)
+  - Q-3.7.6-A:MIN_TYPED_CHARS=10 抽到 core/constants/recording.ts(行业标准 — 业务规则常量)
+  - Q-3.7.7-A:全私密(NovaMe wisdoms 全 private,Discover 公共区域已下线,不传 isPublic)
+  - Q-3.7.8-A/B/C:CardSpinStub 扩展 mode 'timed'/'continuous' + label2 可选(向后兼容 onboarding)
+  - Q-3.7.10-A:prebuild + run:ios 后真测 iOS 模拟器全路径(record + type + cancel + micDenied)
+- **行业标准应用 + bug 报告**(在写代码过程中识别的 5 个 bug,全部按行业标准处理):
+  - Bug #1(旧 RecordOverlay window.__dailyRemainingSeconds hack):新版改成显示 `Plan: Free`(真读 tierLimits.name)
+  - Bug #2(旧版 maxSeconds = 600 hardcoded):新版改读 tierLimits.maxSecondsPerRecord(Free/Basic 卡 300s,Pro/Ultra 卡 600s)
+  - Bug #3(旧版 subscription state 跟 mobile 架构脱节):3.7.4 加 subscription cache 基础设施,(tabs)/index.tsx fetch
+  - Bug #4(旧 RecordOverlay ringRotation animationFrame 死代码):新版不复刻
+  - Bug #5(旧 publish-wisdom forceKeyword server 不接收):3.9 真接 seek 时再决策 server 是否支持
+- **真验证状态**:
+  - type-check 静默通过(全 sub-step 0 error)
+  - 模拟器真验证 → 见 Q-3.7.10-A,prebuild + run:ios 后跑 record + type + cancel 全路径
+- **stage 3.8+ 待做**:
+  - 3.8 真 FlippableCard / CardSpinAnimation / Confetti(替换 stubs,Reanimated v4)
+  - 3.9 SeekView + 接通 record modal seek context(forceKeyword + seekQuestionId)
+  - 3.10 Me page + paywall + skin-select 接通(替换 console.log 占位)
+- **此条性质**:已解决记录;3.8 待开始
+
 
 #### B45. 阶段 3.6 main tabs 骨架 + Home VideoCharacter 完成(已解决,记录用)
 - **来源**:阶段 3.6
