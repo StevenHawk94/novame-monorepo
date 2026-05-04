@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
+import { syncOnboardingIfPending } from '@/lib/onboarding';
 
 /**
  * Root layout for @novame/mobile.
@@ -62,8 +63,15 @@ export default function RootLayout() {
     // ---- onAuthStateChange: drive navigation on sign-in / sign-out ----
     const {
       data: { subscription: authSub },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
+        // Fire-and-forget onboarding sync if there is pending mmkv data
+        // from a fresh onboarding completion. Errors are logged and
+        // swallowed inside syncOnboardingIfPending so navigation never
+        // blocks. Stage 3.5 (B40) deferred this from 3.4 step 5.
+        if (session?.user?.id) {
+          void syncOnboardingIfPending(session.user.id);
+        }
         router.replace('/(main)/(tabs)');
       } else if (event === 'SIGNED_OUT') {
         router.replace('/(auth)/sign-in');

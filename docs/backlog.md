@@ -3,8 +3,8 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-03(阶段 3.4 完成、Email + Apple iOS 真验证 + Google 代码层完成)  
-**当前阶段**:批次 3 / 阶段 3.4 已完成(全部 auth flow 写好,Apple iOS 真验证通过,Google 真机测试留 stage 5/6),待进 3.5(onboarding flow)
+**最后更新**:2026-05-04(阶段 3.5 onboarding flow 完成、19 文件 1 个大 commit、type-check 通过)  
+**当前阶段**:批次 3 / 阶段 3.5 已完成(11 屏 onboarding 1:1 复刻,mmkv state + sync 服务器,真机测试推 stage 5/6),待进 3.6(main tabs 骨架 + Home VideoCharacter)
 
 ---
 
@@ -396,18 +396,18 @@
   - 如果将来 admin / api 升级到 React 19(消除 monorepo 内 React 版本分裂),这个修复仍然安全
   - 如果将来加新 workspace 用不同 React 版本,可能再次出现 walk-up 问题,届时考虑 pnpm injected dependencies(packages/ 共享代码用 injected: true 隔离消费方 React)
 
-#### B34. app/index.tsx 临时 Redirect 到 (main)/(tabs)(3.5 触发还原)
-- **来源**:阶段 3.2.A.4 为了 dev build 验证 4 tab UI 临时改的
-- **现状**:app/index.tsx 现在是 `<Redirect href="/(main)/(tabs)" />`
-- **触发条件**:阶段 3.5 onboarding flow 实现时
-- **3.5 sub-step 应改成**:
-  - 用 mmkv storage 检查 'novame_onboarding_done' 标志
-  - 用 supabase auth 检查 session
-  - 三种重定向:
-    - 没完成 onboarding → /(onboarding)
-    - 完成 onboarding 但没登录 → /(auth)/sign-in
-    - 完成 onboarding + 已登录 → /(main)/(tabs)
-- **参考**:旧 capacitor src/app/page.js 的路由逻辑(localStorage 'novame_onboarding_done' + supabase getSession)
+#### B34. app/index.tsx onboarding gate 已还原(3.5 完成,已解决)
+- **来源**:阶段 3.2.A.4 为了 dev build 验证 4 tab UI 临时改的,3.5 还原
+- **commit 范围** (3.5 大 commit 一次还原 B34 + B38 + B40 syncOnboardingData):
+  - apps/mobile/app/index.tsx 三分支 redirect:
+    - isOnboardingDone() === false → /(onboarding)
+    - isOnboardingDone() === true && session === null → /(auth)/sign-in
+    - isOnboardingDone() === true && session !== null → /(main)/(tabs)
+  - 性能 trick:onboarding 同步 mmkv 检查在 render 阶段做(不读 AsyncStorage),
+    onboarding 没完成的用户 0 延迟跳 onboarding flow
+- **存储 key**:novame_onboarding_state (mmkv,JSON blob 含 done / aspireWords / sa / s7 / charName / pendingSync)
+  跟旧 Capacitor localStorage 单独 key 不同,**整合一个**让 mmkv 读写更快
+- **此条性质**:已解决记录
 
 #### B35. expo-font 字体 embed 待 prebuild + run:ios 真跑通(3.6 触发)
 - **来源**:阶段 3.2.C 完成,但选项 B(不立即 prebuild + run:ios)
@@ -453,18 +453,21 @@
 - **API 用法**:用 expo-file-system v19 New API(File class + downloadFileAsync 静态方法 + Paths.document Directory 实例)
 - **此条性质**:已解决记录;未来对话写消费代码时不要重新研究 expo-file-system v19 API
 
-#### B38. 视频/cards 下载策略(3.5 onboarding 触发实现)
-- **来源**:阶段 3.3 准备讨论
-- **现状**:asset-cache.ts 提供 downloadAssets 工具函数,但**还没消费方**
-- **触发条件**:阶段 3.5 onboarding flow 实现时
-- **3.5 sub-step 应做**:
-  - onboarding 第 1 屏挂载时立即触发前台下载 outfit1 的 3 视频(8.9 MB,3-5s WiFi)
-  - outfit1 完成后立即触发后台下载剩 15 视频(outfit2-6) + 52 cards(共 31MB,30-90s)
-  - 显示前台下载进度(progress bar),后台下载静默
-  - 失败处理: 重试 1 次 → 仍失败提示 "网络异常,稍后重试" 但允许进入 app(已 unlock 视频可能没有)
-- **预计实现位置**:apps/mobile/app/(onboarding)/* 或 src/lib/onboarding-flow.ts(待 3.5 设计)
-- **业务规则参考**:
-  - 用户等级 unlock 视频规则**不在 3.5 实现**(留 3.6+),3.5 阶段 onboarding 后所有 18 视频都已下载完成,3.6 mobile UI 按等级筛选展示
+#### B38. 视频/cards 下载策略已实现(3.5 完成,已解决)
+- **来源**:阶段 3.3 准备讨论,3.5 实施
+- **commit 范围** (在 3.5 大 commit 内):
+  - apps/mobile/app/(onboarding)/index.tsx (step 1) useEffect 触发:
+    - 1. fetchManifestFromR2() + setCachedManifest
+    - 2. 前台 await downloadAssets(manifest.baseUrl, outfit1)(只 outfit1 视频 ~8.9MB)
+    - 3. 后台 void downloadAssets(manifest.baseUrl, rest)(outfit2-6 + 52 cards,fire-and-forget)
+- **跟原计划差异**:
+  - 没显示 progress bar(用户走 step 2-7 几分钟,前台下载早完成,不必显示进度)
+  - 失败静默处理(catch 空 block,下次启动会重试)
+  - 没用 retry 机制(asset-cache 已内置 SHA-256 校验 + 失败抛错,catch 兜底)
+- **验证**:
+  - 真验证留 stage 5/6 真机(按 Q-3.5-C 决策)
+  - 模拟器一旦真跑,可以从 Network 监控看到 R2 manifest fetch + 18 video 下载
+- **此条性质**:已解决记录
 
 #### B39. R2 manifest 更新流程(运维记录)
 - **来源**:阶段 3.3.A.3 manifest 生成方式
@@ -505,7 +508,7 @@
   - 错误显示 inline 红色文字而不是 Alert 弹窗
   - infoMsg 显示紫色文字
   - 按钮 loading 状态用 ActivityIndicator
-  - 5 mode 完整覆盖旧 Capacitor AuthPage 业务流(syncOnboardingData 推到 3.5)
+  - 5 mode 完整覆盖旧 Capacitor AuthPage 业务流(syncOnboardingData 已在 3.5 实现(B44))
 - **prebuild + run:ios 同时还掉的债**:
   - B35 (字体 embed 真生效): 4 Inter weight 现在已 native embed,sign-in.tsx 真渲染 Inter 字体
   - expo-video / expo-file-system 第一次 native 编译通过 (3.3 装的两个 native module 现在真生效)
@@ -551,6 +554,49 @@
   - deep link callback: novame://auth-callback
   - Supabase 配 redirect URL 包括 novame://auth-callback
 - **不阻塞 stage 3-4**:多数 NovaMe 用户主要在 iOS,Android Apple Sign-In 是次要场景
+
+#### B44. 阶段 3.5 onboarding flow 完成(已解决,记录用)
+- **来源**:阶段 3.5
+- **commit 范围**(1 个大 commit,19 文件):
+  - 新增 src/lib/onboarding.ts:
+    - OnboardingState type (done / aspireWords / sa / s7 / charName / pendingSync)
+    - getOnboardingState / patchOnboardingState / isOnboardingDone /
+      markOnboardingComplete / clearOnboardingState
+    - syncOnboardingDataToServer(userId): 双 API 调用 (POST /api/character-state init_character +
+      POST /api/user-sync 写 profile 表)
+    - syncOnboardingIfPending(userId): auth listener 用,fire-and-forget 失败静默
+  - 新增 src/components/onboarding/{stubs.tsx, shared.tsx, constants.ts}:
+    - stubs.tsx:FlippableCardStub / CardSpinStub / ConfettiStub (3.8 升级真版本)
+    - shared.tsx:ProgressBar / PrimaryButton / BackButton / Shell / ImgPage / HighlightedText
+    - constants.ts:ASPIRE_WORDS / S4_OPTS / S4_RESP / S7_OPTS / REVIEWS / INITIATIVE_CARD
+  - 改写 app/(onboarding)/_layout.tsx 加 slide_from_right Stack transition
+  - 重写 app/(onboarding)/index.tsx 为 step 1 (welcome + 触发 asset-cache 下载)
+  - 新增 app/(onboarding)/step-2.tsx 到 step-11.tsx (10 文件) + step-spinning.tsx (11 屏 1:1 复刻旧 NovaMe)
+  - 改 app/_layout.tsx onAuthStateChange listener 拿 session 参数 + SIGNED_IN 调 syncOnboardingIfPending
+  - 改 app/index.tsx 加 onboarding gate (3 分支 redirect,B34 还原)
+- **决策清单** (Q-3.5-A/B/C/D + 几个执行决定):
+  - Q-3.5-A:11 屏 1:1 复刻旧 NovaMe(没精简)
+  - Q-3.5-B:mmkv state + sync 服务器(B 选项)
+  - Q-3.5-C:不真测,留 stage 5/6
+  - Q-3.5-D:1 个大 commit
+  - sa / s7 也 persist (旧 Capacitor 没 persist,但 mobile 后台切换风险高,全 persist 更稳)
+  - 屏 8/spinning 用 stub 组件(3.8 升级真版本)
+- **资源占位记录**(用户后续添加):
+  - apps/mobile/assets/images/onboarding/ob-9-user1.webp / ob-9-user2.webp / ob-9-user3.webp:屏 9 review 头像 → 占位灰色圆形
+  - apps/mobile/assets/images/onboarding/ob-11.webp:屏 11 完成屏背景 → 占位深蓝平面
+  - R2 cards/action-initiative-front.webp + cards/action-back.webp:屏 8 卡片图 → asset-cache 缓存命中显示,未命中显示紫色渐变占位
+- **验证状态**:
+  - type-check 静默通过(15 新文件 + 4 修改文件,~1100 行新代码)
+  - 模拟器真验证留 stage 5/6 (按 Q-3.5-C 决策)
+- **stage 5/6 真机测试要做的**:
+  - 删 [NovaMe.app](http://NovaMe.app) 重装 → 应该跳 (onboarding) 不是 sign-in
+  - 走完 11 屏 (覆盖每屏 mmkv persist + back 导航 + Continue)
+  - 屏 11 "Start My Journey" → 跳 sign-in,sign-in 后 onAuthStateChange 触发 sync
+  - 验证 server profile 表有 aspireWords / aspireScores / characterName / hasCompletedOnboarding=true
+  - 验证 character_data 表有 character_name = 用户输入名 / character_id='char-1'
+  - asset-cache 视频下载验证(R2 fetch + 18 video file:// path 在 mmkv manifest 里)
+- **此条性质**:已解决记录;3.6 (main tabs + Home VideoCharacter) 待开始
+
 
 
 #### B42. Google Sign-In 已实现 (3.4 step 7 完成,代码层面;真机测试推到 stage 5/6)
