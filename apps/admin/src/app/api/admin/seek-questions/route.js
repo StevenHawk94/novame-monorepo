@@ -200,8 +200,11 @@ export async function POST(request) {
     }
 
     if (action === 'reject_user_question') {
-      const { id } = body
-      await supabase.from('seek_questions').update({ status: 'rejected' }).eq('id', id)
+      const { id, rejectionReason } = body
+      await supabase.from('seek_questions').update({
+        status: 'rejected',
+        rejection_reason: (rejectionReason || '').trim(),
+      }).eq('id', id)
       return NextResponse.json({ success: true })
     }
 
