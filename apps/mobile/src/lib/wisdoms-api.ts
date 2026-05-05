@@ -14,9 +14,7 @@ export type WisdomCardEmbed = {
   insight_full: string | null;
   wisdom_score: number | null;
   wisdom_emotion: string | null;
-  card_b_title: string | null;
   card_b: string | null;
-  card_c_title: string | null;
   card_c: string | null;
   task_1: string | null;
   task_2: string | null;
