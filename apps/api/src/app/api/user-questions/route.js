@@ -17,7 +17,7 @@ export async function GET(req) {
     const supabase = getSupabase()
     const { data: questions } = await supabase
       .from('seek_questions')
-      .select('id, question_text, status, is_published, card_count, created_at')
+      .select('id, question_text, status, is_published, card_count, created_at, rejection_reason')
       .eq('submitted_by_user_id', userId)
       .order('created_at', { ascending: false })
 
