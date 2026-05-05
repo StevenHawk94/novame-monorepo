@@ -67,7 +67,7 @@ export async function GET(request) {
       const ids = wisdomList.map((w) => w.id)
       const { data: cards, error: cErr } = await supabase
         .from('wisdom_cards')
-        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_score, wisdom_emotion')
+        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_score, wisdom_emotion, card_b_title, card_b, card_c_title, card_c, task_1, task_2')
         .in('wisdom_id', ids)
 
       if (cErr) {
@@ -92,6 +92,12 @@ export async function GET(request) {
             insight_full: card.insight_full,
             wisdom_score: card.wisdom_score,
             wisdom_emotion: card.wisdom_emotion,
+            card_b_title: card.card_b_title,
+            card_b: card.card_b,
+            card_c_title: card.card_c_title,
+            card_c: card.card_c,
+            task_1: card.task_1,
+            task_2: card.task_2,
           }
         : null
       return {
