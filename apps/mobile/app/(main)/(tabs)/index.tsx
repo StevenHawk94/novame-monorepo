@@ -199,6 +199,7 @@ export default function HomeTab() {
             <TopBarButton icon="pets" onPress={handlePlaceholder} />
             <TopBarButton icon="description" onPress={handlePlaceholder} />
             <TopBarButton icon="emoji-events" onPress={handlePlaceholder} />
+            {/* Stage 3.8.1 DEV: reanimated v4 smoke test entry — DELETE before commit */}
           </View>
         </View>
 

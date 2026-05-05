@@ -63,7 +63,9 @@ import {
   openAppSettings,
 } from '@/lib/permissions';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
-import { CardSpinStub, ConfettiStub, FlippableCardStub } from '@/components/onboarding/stubs';
+import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
+import { Confetti } from '@/components/cards/Confetti';
+import { FlippableCard } from '@/components/cards/FlippableCard';
 
 // ---- Phase state machine ----
 
@@ -1500,13 +1502,15 @@ function PhasePublishing({
     );
   }
 
+  // 3.8 — temporary fallback. CardSpinAnimation has unresolved
+  // visual bug in modal context (B52).
   return (
-    <CardSpinStub
-      mode="continuous"
-      label1="Wait for it..."
-      label2="Your legacy is loading."
-      sublabel="Almost there"
-    />
+    <View style={pubgStyles.loaderHost}>
+      <ActivityIndicator size="large" color="#A855F7" />
+      <Text style={pubgStyles.loaderTitle}>Wait for it...</Text>
+      <Text style={pubgStyles.loaderSub}>Your legacy is loading.</Text>
+      <Text style={pubgStyles.loaderHint}>Almost there</Text>
+    </View>
   );
 }
 
@@ -1517,15 +1521,42 @@ function PhasePublishing({
 
 function PhaseAnalyzing(_props: PhaseProps) {
   return (
-    <CardSpinStub
-      mode="continuous"
-      label1="Generating your wisdom card..."
-      sublabel="Analyzing patterns and insights"
-    />
+    <View style={pubgStyles.loaderHost}>
+      <ActivityIndicator size="large" color="#A855F7" />
+      <Text style={pubgStyles.loaderTitle}>Generating your wisdom card...</Text>
+      <Text style={pubgStyles.loaderSub}>Analyzing patterns and insights</Text>
+    </View>
   );
 }
 
 const pubgStyles = StyleSheet.create({
+  loaderHost: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A0820',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  loaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 32,
+  },
+  loaderSub: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  loaderHint: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   root: {
     flex: 1,
     alignItems: 'center',
@@ -1704,7 +1735,7 @@ function PhaseInsight({
   // Card front image — pulled from R2 cards cache via filename pattern.
   // 3.8 FlippableCard real version will also use this URI.
   const frontFilename = `${keywordId}-front.webp`;
-  const frontUri = getCachedAssetUri(frontFilename);
+  // frontUri no longer needed — FlippableCard resolves cache internally.
 
   // Quote shown on the static card front.
   const quoteShort =
@@ -1746,7 +1777,7 @@ function PhaseInsight({
 
   return (
     <View style={insightStyles.root}>
-      <ConfettiStub />
+      <Confetti />
 
       <ScrollView
         contentContainerStyle={insightStyles.scrollContent}
@@ -1806,9 +1837,11 @@ function PhaseInsight({
 
         {/* Flippable wisdom card */}
         <View style={insightStyles.cardWrap}>
-          <FlippableCardStub
-            frontUri={frontUri}
+          <FlippableCard
+            frontFilename={frontFilename}
+            backFilename={`${keywordId.split('-')[0]}-back.webp`}
             quoteShort={quoteShort}
+            insightFull={card?.insight_full ?? ''}
             width={260}
           />
         </View>

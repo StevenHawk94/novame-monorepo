@@ -3,14 +3,31 @@
 > 跨阶段未完成事项总览。每条目标注 **触发条件** + **来源**。  
 > 维护规则：每个阶段 completion 报告写完后，本文档同步更新（添加新待办、移除已完成）。
 
-**最后更新**:2026-05-04(阶段 3.7 RecordOverlay 完成 + 真机验证、commit eda2985 + server 修 be0e22b/a27119a 已部署)
-**当前阶段**:批次 3 / 阶段 3.7 RecordOverlay 已完成 + 真机验证;后续 3.8 卡片真版本(FlippableCard / CardSpin / Confetti reanimated)
+**最后更新**:2026-05-05(阶段 3.8 卡片真版本完成 — FlippableCard + Confetti 真测过、CardSpinAnimation 真版本完成但 record modal 内有未解 bug B52 走 ActivityIndicator workaround)
+**当前阶段**:批次 3 / 阶段 3.8 卡片真版本已完成;后续 3.9 Seek view
 
 ---
 
 ## 按触发阶段分组
 
 ### 🔴 阶段 5 触发（IAP 原生集成时）
+#### B52 — CardSpinAnimation in record modal: visual "curtain" clipping bug
+- **来源**:阶段 3.8 真测发现,根因未定位
+- **触发条件**:阶段 5 真测 polish 阶段(若 reanimated/expo-router 上游修复也算触发)
+- **症状**:CardSpinAnimation 在 ScrollView 内(test-anim 烧杯入口)正常工作,但在 record.tsx modal 内(PhasePublishing/PhaseAnalyzing)整个 spin 区域(卡片 + labels + dots)出现垂直"幕布"遮挡,左右切换始终隐藏一半内容
+- **已尝试无效修法**:
+  1. flex/width 布局调整
+  2. anchor point + transformOrigin
+  3. face borderRadius/overflow 调整
+  4. 限高 wrapper 容器(280/320px)
+  5. modal presentation 变体(modal/fullScreenModal/transparentModal)
+- **疑似根因**:reanimated v4 Y 轴 3D rotation + iOS Fabric ShadowTree layout + Expo Router modal 渲染层 三者交互 bug。**不是布局问题**(所有 wrapper 结构均触发)。参考 Expo issue #32450 modal cropping
+- **现状 workaround**:PhasePublishing/PhaseAnalyzing 暂用 ActivityIndicator + 文字 labels(行业标准 loading UI),CardSpinAnimation 真版本保留,test-anim 跟 onboarding step-spinning 仍正常工作
+- **阶段 5 修法选项**:
+  - (a) 用 2D fade+scale 模拟翻转(避开 rotateY)
+  - (b) 用 react-native-skia 重写 spin card
+  - (c) 等 reanimated/expo-router 上游修复
+
 
 #### packages/core/rules/iap.ts
 - **来源**：原计划 1.4 第 2 条 deliverable，决策 5 推迟

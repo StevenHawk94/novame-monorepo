@@ -11,10 +11,8 @@ import {
   PrimaryButton,
   Shell,
 } from '@/components/onboarding/shared';
-import {
-  ConfettiStub,
-  FlippableCardStub,
-} from '@/components/onboarding/stubs';
+import { Confetti } from '@/components/cards/Confetti';
+import { FlippableCard } from '@/components/cards/FlippableCard';
 import { INITIATIVE_CARD } from '@/components/onboarding/constants';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 
@@ -42,11 +40,13 @@ export default function OnboardingStep8() {
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = screenWidth <= 375 ? 240 : 270;
 
-  const frontUri = getCachedAssetUri('action-initiative-front.webp');
+  // Note: FlippableCard handles cache lookup internally now.
+  // const frontFilename = 'action-initiative-front.webp';
+  // const backFilename = 'action-back.webp';
 
   return (
     <Shell step={8}>
-      {showConfetti ? <ConfettiStub /> : null}
+      {showConfetti ? <Confetti /> : null}
       <View style={styles.body}>
         <Text style={styles.eyebrow}>Look at that.</Text>
         <Text style={styles.headline}>
@@ -56,9 +56,11 @@ export default function OnboardingStep8() {
           Even the smallest whisper of a thought holds the power to transform.
         </Text>
         <View style={styles.cardContainer}>
-          <FlippableCardStub
-            frontUri={frontUri}
+          <FlippableCard
+            frontFilename="action-initiative-front.webp"
+            backFilename="action-back.webp"
             quoteShort={INITIATIVE_CARD.quoteShort}
+            insightFull={INITIATIVE_CARD.insightFull ?? ''}
             width={cardWidth}
           />
         </View>

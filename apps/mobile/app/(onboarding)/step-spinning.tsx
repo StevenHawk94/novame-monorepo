@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 
-import { CardSpinStub } from '@/components/onboarding/stubs';
+import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
 
 /**
  * Spinning transition between step 7 and step 8.
@@ -16,7 +16,7 @@ import { CardSpinStub } from '@/components/onboarding/stubs';
 export default function OnboardingStepSpinning() {
   const router = useRouter();
   return (
-    <CardSpinStub
+    <CardSpinAnimation
       label1="Crafting your first Wisdom Card..."
       sublabel="Just a moment"
       duration={3000}
