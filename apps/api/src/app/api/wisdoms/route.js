@@ -11,11 +11,13 @@ function getSupabase() {
 }
 
 /**
- * GET /api/wisdoms?userId=...&limit=20&offset=0
+ * GET /api/wisdoms?userId=...&limit=30&offset=0
  *
- * Returns the authenticated user's own published wisdoms with their
- * generated card payload joined in. Sorted by created_at desc so the
- * Growth tab's My Logs feed shows newest first.
+ * Returns the user's own published wisdoms with their generated
+ * wisdom_card joined in client-side. We query the two tables
+ * separately and stitch them together rather than relying on a
+ * PostgREST relation join, because wisdom_cards.wisdom_id may not
+ * have an explicit FK constraint registered with PostgREST.
  *
  * Response shape:
  *   {
@@ -25,10 +27,8 @@ function getSupabase() {
  *       card: { id, keyword_id, quote_short, insight_full,
  *               wisdom_score, wisdom_emotion } | null
  *     }],
- *     total: number     // total count for pagination
+ *     total: number
  *   }
- *
- * Pagination via limit (default 30, max 100) + offset.
  */
 export async function GET(request) {
   try {
@@ -43,46 +43,75 @@ export async function GET(request) {
 
     const supabase = getSupabase()
 
-    // Total count for pagination UI
     const { count: total } = await supabase
       .from('wisdoms')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
 
-    // Page of wisdoms with their card joined
-    const { data: wisdoms, error } = await supabase
+    const { data: wisdoms, error: wErr } = await supabase
       .from('wisdoms')
-      .select(`
-        id, created_at, audio_url, text, categories, duration,
-        wisdom_cards (
-          id, keyword_id, quote_short, insight_full,
-          wisdom_score, wisdom_emotion
-        )
-      `)
+      .select('id, created_at, audio_url, text, categories, duration')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (error) {
-      console.error('[wisdoms] query failed:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (wErr) {
+      console.error('[wisdoms] wisdoms query failed:', wErr.message)
+      return NextResponse.json({ error: wErr.message }, { status: 500 })
     }
 
-    // Flatten the joined card (supabase returns array even for 1:1)
-    const flattened = (wisdoms || []).map((w) => {
-      const cardsArr = Array.isArray(w.wisdom_cards) ? w.wisdom_cards : []
-      const card = cardsArr.length > 0 ? cardsArr[0] : null
-      const { wisdom_cards: _wc, ...rest } = w
-      return { ...rest, card }
+    const wisdomList = wisdoms || []
+    let cardByWisdomId = new Map()
+
+    if (wisdomList.length > 0) {
+      const ids = wisdomList.map((w) => w.id)
+      const { data: cards, error: cErr } = await supabase
+        .from('wisdom_cards')
+        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_score, wisdom_emotion')
+        .in('wisdom_id', ids)
+
+      if (cErr) {
+        console.error('[wisdoms] cards query failed:', cErr.message)
+        // Soft-fail: return wisdoms without cards rather than 500.
+      } else {
+        for (const card of cards || []) {
+          if (card.wisdom_id && !cardByWisdomId.has(card.wisdom_id)) {
+            cardByWisdomId.set(card.wisdom_id, card)
+          }
+        }
+      }
+    }
+
+    const stitched = wisdomList.map((w) => {
+      const card = cardByWisdomId.get(w.id) || null
+      const cardOut = card
+        ? {
+            id: card.id,
+            keyword_id: card.keyword_id,
+            quote_short: card.quote_short,
+            insight_full: card.insight_full,
+            wisdom_score: card.wisdom_score,
+            wisdom_emotion: card.wisdom_emotion,
+          }
+        : null
+      return {
+        id: w.id,
+        created_at: w.created_at,
+        audio_url: w.audio_url,
+        text: w.text,
+        categories: w.categories,
+        duration: w.duration,
+        card: cardOut,
+      }
     })
 
     return NextResponse.json({
       success: true,
-      wisdoms: flattened,
+      wisdoms: stitched,
       total: total || 0,
     })
   } catch (e) {
-    console.error('[wisdoms] error:', e.message)
+    console.error('[wisdoms] error:', e?.message)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
