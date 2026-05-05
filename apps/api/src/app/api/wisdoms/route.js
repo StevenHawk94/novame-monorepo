@@ -50,7 +50,7 @@ export async function GET(request) {
 
     const { data: wisdoms, error: wErr } = await supabase
       .from('wisdoms')
-      .select('id, created_at, audio_url, text, categories, duration')
+      .select('id, created_at, text, description, categories')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -97,10 +97,9 @@ export async function GET(request) {
       return {
         id: w.id,
         created_at: w.created_at,
-        audio_url: w.audio_url,
         text: w.text,
+        description: w.description,
         categories: w.categories,
-        duration: w.duration,
         card: cardOut,
       }
     })
