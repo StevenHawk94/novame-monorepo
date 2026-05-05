@@ -30,7 +30,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAudioRecorder, RecordingPresets } from 'expo-audio';
 import type { AudioRecorder } from 'expo-audio';
@@ -104,6 +104,13 @@ type PhaseProps = {
   goTo: (next: Phase) => void;
   close: () => void;
   showMicDenied: () => void;
+  // Seek-question context. Populated when this modal was opened from
+  // Discover or Question Detail's "Offer Wisdom" CTA. Phases that
+  // publish wisdom (PhasePublishing) read these to forward forceKeyword
+  // + seekQuestionId to /api/publish-wisdom.
+  seekForceKeyword?: string;
+  seekQuestionId?: string;
+  seekQuestionText?: string;
 };
 
 // ---- Placeholder primitives (used by phases not yet rewritten) ----
@@ -197,7 +204,7 @@ const phStyles = StyleSheet.create({
 
 // ---- Phase: choose (3.7.3 + permission flow added in 3.7.4) ----
 
-function PhaseChoose({ goTo, close, showMicDenied }: PhaseProps) {
+function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProps) {
   const [requesting, setRequesting] = useState(false);
 
   const handleRecordTap = async () => {
@@ -228,11 +235,21 @@ function PhaseChoose({ goTo, close, showMicDenied }: PhaseProps) {
 
   return (
     <View style={chooseStyles.root}>
+      {seekForceKeyword ? (
+        <View style={chooseStyles.seekKeywordPillWrap}>
+          <View style={chooseStyles.seekKeywordPill}>
+            <Text style={chooseStyles.seekKeywordPillText}>{seekForceKeyword}</Text>
+          </View>
+        </View>
+      ) : null}
       <View style={chooseStyles.headerBlock}>
-        <Text style={chooseStyles.title}>Release Your Day</Text>
+        <Text style={chooseStyles.title}>
+          {seekForceKeyword ? 'Share Your Wisdom' : 'Release Your Day'}
+        </Text>
         <Text style={chooseStyles.subtitle}>
-          Share a moment you witnessed, an action you took, or a thought
-          that's lingering in your mind.
+          {seekForceKeyword
+            ? 'Offer a moment/a thought in your life that that can create the wisdom to answer the question.'
+            : 'Share a moment you witnessed, an action you took, or a thought that\u2019s lingering in your mind.'}
         </Text>
       </View>
 
@@ -368,6 +385,25 @@ const chooseStyles = StyleSheet.create({
     color: 'rgba(255,255,255,0.3)',
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
+  },
+  seekKeywordPillWrap: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 4,
+  },
+  seekKeywordPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(168,85,247,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.35)',
+  },
+  seekKeywordPillText: {
+    color: '#E9B0F7',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 
@@ -1328,6 +1364,11 @@ async function callPublishWisdom(args: {
   durationSec?: number;
   // typed-mode fields (ignored when !isTyped)
   text?: string;
+  // Seek-question fields. Forwarded to /api/publish-wisdom so the
+  // server pins card art to the question's tag (forceKeyword) and
+  // links the new card into seek_question_cards (seekQuestionId).
+  forceKeyword?: string | null;
+  seekQuestionId?: string | null;
 }): Promise<PublishWisdomResponse> {
   if (args.isTyped) {
     return apiClient.post<PublishWisdomResponse>('/api/publish-wisdom', {
@@ -1335,6 +1376,8 @@ async function callPublishWisdom(args: {
       text: args.text ?? '',
       description: args.description,
       isTyped: true,
+      forceKeyword: args.forceKeyword ?? null,
+      seekQuestionId: args.seekQuestionId ?? null,
     });
   }
 
@@ -1352,6 +1395,8 @@ async function callPublishWisdom(args: {
   fd.append('userId', args.userId);
   fd.append('duration', String(args.durationSec ?? 0));
   fd.append('description', args.description);
+  if (args.forceKeyword) fd.append('forceKeyword', args.forceKeyword);
+  if (args.seekQuestionId) fd.append('seekQuestionId', args.seekQuestionId);
 
   return apiClient.post<PublishWisdomResponse>('/api/publish-wisdom', fd);
 }
@@ -1416,6 +1461,8 @@ function PhasePublishing({
   setLastPublishMessage,
   goTo,
   close,
+  seekForceKeyword,
+  seekQuestionId,
 }: PhaseProps) {
   const inflightRef = useRef(false);
   const [errored, setErrored] = useState(false);
@@ -1442,6 +1489,8 @@ function PhasePublishing({
           audioUri: recordingResult?.uri,
           durationSec: recordingDurationSec,
           text: isTyped ? typedText.trim() : undefined,
+          forceKeyword: seekForceKeyword || null,
+          seekQuestionId: seekQuestionId || null,
         });
 
         // Guarantee ~2.5s minimum in publishing phase before showing
@@ -2181,7 +2230,24 @@ const denyStyles = StyleSheet.create({
 
 // ---- Main component ----
 
+type RecordRouteParams = {
+  questionId?: string;
+  forceKeyword?: string;
+  questionText?: string;
+};
+
 export default function RecordModal() {
+  // Seek-question context (set when this modal is opened from
+  // Discover or Question Detail's "Offer Wisdom" CTA). When present,
+  // we show a top banner naming the question and forward forceKeyword
+  // + seekQuestionId on publish so the card art matches the tag and
+  // the new card is automatically linked to the question.
+  const seekParams = useLocalSearchParams<RecordRouteParams>();
+  const seekQuestionId = (seekParams.questionId || '').trim();
+  const seekForceKeyword = (seekParams.forceKeyword || '').trim();
+  const seekQuestionText = (seekParams.questionText || '').trim();
+  const isSeekContext = seekQuestionId.length > 0;
+
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [phase, setPhase] = useState<Phase>(PHASE.CHOOSE);
@@ -2226,6 +2292,9 @@ export default function RecordModal() {
     goTo,
     close,
     showMicDenied,
+    seekForceKeyword,
+    seekQuestionId,
+    seekQuestionText,
   };
 
   return (

@@ -11,6 +11,41 @@
 ## 按触发阶段分组
 
 ### 🔴 阶段 5 触发（IAP 原生集成时）
+#### B53 — RefreshControl spinner 在 iOS Fabric 不可见
+- **来源**:阶段 3.9.A.1.2 Discover tab pull-to-refresh 真测发现
+- **触发条件**:阶段 5 polish 阶段
+- **症状**:RN 标准 RefreshControl 在 RN 0.81 + iOS Fabric (新架构) 下,下拉刷新时 spinner 跟 title 都不显示。功能仍正常(下拉触发 fetch),只是无视觉反馈
+- **已尝试无效修法**:tintColor 白色 + title="Pull to refresh" + titleColor 白色半透明
+- **疑似根因**:同 B52 类似 — 新架构 Fabric 渲染层对 RefreshControl 内置 native view 的 layout 计算异常
+- **现状 workaround**:无 — 用户下拉时 list 顶部弹一下后回弹,触发 fetch 但无 spinner 反馈
+- **阶段 5 修法选项**:
+  - (a) 自定义 RefreshControl(reanimated + Pressable + 手势 + 自渲染 spinner)
+  - (b) 等 RN/Fabric 上游修复
+  - (c) 用社区库如 `react-native-refresh-control` 或 `@react-native-community/...` 替代
+
+#### B54 — Admin 后台 user-submitted question 缺少 tag 选择 UI
+- **来源**:阶段 3.9.A.1.4 mobile New Question 真测发现
+- **触发条件**:用户提交新问题后,admin 在后台审核 approve & publish 时无法选择 question_tag
+- **症状**:apps/admin 的 Seek Questions → User's Contribute 卡片只有 "Approve & Publish" 跟 "Reject" 按钮,缺少 question_tag dropdown / chip selector
+- **业务影响**:approve 后的 question 在 mobile Discover 显示 tag pill 为空,且用户 offer wisdom 时没有 forceKeyword 预绑定
+- **修法**:apps/admin 的 SeekQuestionsTab 加 tag selector(48 keyword 列表),approve 时把选定 tag 写回 seek_questions.question_tag,然后再 set is_published=true
+- **scope**:apps/admin(不是 mobile),阶段 5 admin polish 时一起做
+
+#### B55 — DeepSeek API 余额耗尽 + Gemini 频繁 timeout
+- **来源**:阶段 3.9.A.1.7 真测 publish-wisdom
+- **触发条件**:第三方 AI provider 故障期间
+- **症状**:
+  - DeepSeek 返回 HTTP 402 "Insufficient Balance"
+  - Gemini 2.5-flash + 2.5-flash-lite 在 8s 内未响应
+  - 全部失败后走静态 fallback,quote/insight 用固定模板文案,跟用户输入无关
+- **业务影响**:用户感知到长 publishing wait time(server 跑完 3 次 fallback 后才返回),最终拿到的卡 quote/insight 是模板化文案而不是个性化
+- **修法**:
+  - (a) 充值 DeepSeek
+  - (b) 调整 Gemini timeout 延长,或换更稳定 model
+  - (c) 加 monitoring 告警 — provider 失败率超过阈值时报警
+  - (d) 改进静态 fallback 让它至少基于用户输入的关键词生成
+- **scope**:apps/api,运营层面 + 配置层面
+
 #### B52 — CardSpinAnimation in record modal: visual "curtain" clipping bug
 - **来源**:阶段 3.8 真测发现,根因未定位
 - **触发条件**:阶段 5 真测 polish 阶段(若 reanimated/expo-router 上游修复也算触发)

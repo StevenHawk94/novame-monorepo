@@ -48,6 +48,13 @@ export type FlippableCardProps = {
   width: number;
   /** Optional callback when flip state changes. */
   onFlip?: (flipped: boolean) => void;
+  /**
+   * Which side to show initially. 'front' (default) starts with the
+   * quote-bearing parchment art; 'back' starts on the category art so
+   * the user taps to reveal the wisdom (used in Seek question detail
+   * to preserve the reveal moment).
+   */
+  defaultSide?: 'front' | 'back';
 };
 
 /**
@@ -112,6 +119,7 @@ export function FlippableCard({
   insightFull,
   width,
   onFlip,
+  defaultSide = 'front',
 }: FlippableCardProps) {
   const height = Math.round(width / AR);
 
@@ -120,7 +128,7 @@ export function FlippableCard({
   const backUri = backFilename ? getCachedAssetUri(backFilename) : null;
 
   // Single shared value driving the flip. 0 = front, 180 = back.
-  const rotation = useSharedValue(0);
+  const rotation = useSharedValue(defaultSide === 'back' ? 180 : 0);
 
   // Animated styles for both faces.
   // Front face: rotates from 0deg -> 180deg as rotation goes 0 -> 180.
