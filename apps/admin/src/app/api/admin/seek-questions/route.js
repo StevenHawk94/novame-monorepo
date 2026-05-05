@@ -201,11 +201,19 @@ export async function POST(request) {
 
     if (action === 'reject_user_question') {
       const { id, rejectionReason } = body
-      await supabase.from('seek_questions').update({
-        status: 'rejected',
-        rejection_reason: (rejectionReason || '').trim(),
-      }).eq('id', id)
-      return NextResponse.json({ success: true })
+      console.log('[reject_user_question] body =', JSON.stringify(body))
+      console.log('[reject_user_question] id =', id, 'rejectionReason =', rejectionReason)
+      const reasonValue = (rejectionReason || '').trim()
+      const { data: updated, error: updateErr } = await supabase
+        .from('seek_questions')
+        .update({
+          status: 'rejected',
+          rejection_reason: reasonValue,
+        })
+        .eq('id', id)
+        .select()
+      console.log('[reject_user_question] update result =', JSON.stringify(updated), 'error =', updateErr)
+      return NextResponse.json({ success: !updateErr, updated, error: updateErr?.message })
     }
 
     if (action === 'bulk_csv_upload') {
