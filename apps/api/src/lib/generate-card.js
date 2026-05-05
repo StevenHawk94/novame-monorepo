@@ -103,7 +103,7 @@ function enrichCard(card) {
  * @param {string} userId - User ID
  * @returns {{ success: boolean, card?: object, keyword?: string, keywordId?: string }}
  */
-export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId) {
+export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null) {
   if (!wisdomText || wisdomText.length <= 5) {
     return { success: false, error: 'Text too short' }
   }
@@ -155,7 +155,14 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId)
     result.card_c = `Title: ${result.card_c_title}\n${result.card_c}`
   }
 
-  const matchedKeyword = ALL_KEYWORDS.find(k => k.toLowerCase() === (result.keyword || '').toLowerCase()) || 'Clarity'
+  // forceKeyword overrides the AI's keyword choice. Used by Seek
+  // question flow so the published card's art matches the question's
+  // tag (Loyalty question -> Loyalty art) regardless of what the AI
+  // would have chosen for this wisdom text. Quote, insight, scores
+  // are still AI-generated unchanged.
+  const matchedKeyword = forceKeyword
+    ? (ALL_KEYWORDS.find(k => k.toLowerCase() === forceKeyword.toLowerCase()) || forceKeyword)
+    : (ALL_KEYWORDS.find(k => k.toLowerCase() === (result.keyword || '').toLowerCase()) || 'Clarity')
   const keywordId = slugToId(matchedKeyword) || 'mind-clarity'
 
   const { data: savedCard, error: dbError } = await supabase

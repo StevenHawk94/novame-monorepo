@@ -81,6 +81,7 @@ export async function POST(request) {
   try {
     const contentType = request.headers.get('content-type') || ''
     let audioFile = null, userId, duration = 0, description = '', isPublic = false, isTyped = false, typedText = ''
+    let forceKeyword = null, seekQuestionId = null
 
     if (contentType.includes('application/json')) {
       const body = await request.json()
@@ -89,6 +90,8 @@ export async function POST(request) {
       description = body.description || typedText.substring(0, 200)
       isPublic = body.isPublic === true || body.isPublic === 'true'
       isTyped = true
+      forceKeyword = body.forceKeyword || null
+      seekQuestionId = body.seekQuestionId || null
     } else {
       const formData = await request.formData()
       audioFile = formData.get('audio')
@@ -96,6 +99,8 @@ export async function POST(request) {
       duration = parseInt(formData.get('duration') || '0')
       description = formData.get('description') || ''
       isPublic = formData.get('isPublic') === 'true'
+      forceKeyword = formData.get('forceKeyword') || null
+      seekQuestionId = formData.get('seekQuestionId') || null
     }
 
     if (!userId || (!audioFile && !isTyped)) {
@@ -223,10 +228,33 @@ export async function POST(request) {
     if (wisdom.id && transcribedText && transcribedText.length > 5) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
-        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId)
+        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword)
         console.log('[publish-wisdom] Card generation result:', cardResult.success ? 'success' : 'failed', 'keyword:', cardResult.keyword || 'n/a')
         if (cardResult.success && cardResult.card) {
           generatedCard = cardResult.card
+          // If this wisdom was offered for a Seek question, link the
+          // newly-created card to the question. Best-effort: failure
+          // here is logged but does not fail the publish call (the
+          // wisdom + card are already saved). Mobile clients can
+          // surface a retry path if needed.
+          if (seekQuestionId && generatedCard.id) {
+            try {
+              const { error: linkErr } = await supabase
+                .from('seek_question_cards')
+                .insert({
+                  question_id: seekQuestionId,
+                  card_id: generatedCard.id,
+                  contributed_by: userId,
+                })
+              if (linkErr) {
+                console.error('[publish-wisdom] seek_question_cards insert failed:', linkErr.message)
+              } else {
+                console.log('[publish-wisdom] linked card', generatedCard.id, 'to question', seekQuestionId)
+              }
+            } catch (linkEx) {
+              console.error('[publish-wisdom] seek_question_cards exception:', linkEx.message)
+            }
+          }
         }
       } catch (e) {
         console.error('[publish-wisdom] Card generation exception:', e.message)
