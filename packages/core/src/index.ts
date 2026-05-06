@@ -21,6 +21,7 @@ export * from './types'
 // Constants
 export * from './constants/keywords'
 export * from './constants/pricing'
+export * from './constants/locales'
 export * from './constants/character'
 export * from './constants/exp'
 export * from './constants/recording'
