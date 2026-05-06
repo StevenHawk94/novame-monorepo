@@ -66,6 +66,7 @@ import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
 import { Confetti } from '@/components/cards/Confetti';
 import { FlippableCard } from '@/components/cards/FlippableCard';
+import { InsightView } from '@/components/insight/insight-view';
 
 // ---- Phase state machine ----
 
@@ -1699,108 +1700,15 @@ const pubgStyles = StyleSheet.create({
 //   - First-wisdom paywall (free user, first ever wisdom) — console.log
 //     placeholder until 3.10 wires SubscriptionPaywall.
 
-const KEYWORD_ID_TO_NAME: Record<string, string> = {
-  'mind-clarity': 'Clarity',
-  'mind-grounding': 'Grounding',
-  'mind-focus': 'Focus',
-  'mind-curiosity': 'Curiosity',
-  'mind-stillness': 'Stillness',
-  'mind-objectivity': 'Objectivity',
-  'mind-adaptability': 'Adaptability',
-  'mind-unlearning': 'Unlearning',
-  'mind-vision': 'Vision',
-  'mind-acceptance': 'Acceptance',
-  'mind-humor': 'Humor',
-  'mind-intuition': 'Intuition',
-  'heart-resilience': 'Resilience',
-  'heart-boundaries': 'Boundaries',
-  'heart-self-compassion': 'Self-Compassion',
-  'heart-courage': 'Courage',
-  'heart-vulnerability': 'Vulnerability',
-  'heart-empathy': 'Empathy',
-  'heart-gratitude': 'Gratitude',
-  'heart-patience': 'Patience',
-  'heart-forgiveness': 'Forgiveness',
-  'heart-release': 'Release',
-  'heart-balance': 'Balance',
-  'heart-joy': 'Joy',
-  'action-initiative': 'Initiative',
-  'action-consistency': 'Consistency',
-  'action-discipline': 'Discipline',
-  'action-decisiveness': 'Decisiveness',
-  'action-purpose': 'Purpose',
-  'action-rest': 'Rest',
-  'action-resourcefulness': 'Resourcefulness',
-  'action-accountability': 'Accountability',
-  'action-boldness': 'Boldness',
-  'action-endurance': 'Endurance',
-  'action-communication': 'Communication',
-  'action-momentum': 'Momentum',
-  'connection-sovereignty': 'Sovereignty',
-  'connection-authenticity': 'Authenticity',
-  'connection-inspiration': 'Inspiration',
-  'connection-generosity': 'Generosity',
-  'connection-trust': 'Trust',
-  'connection-reciprocity': 'Reciprocity',
-  'connection-collaboration': 'Collaboration',
-  'connection-leadership': 'Leadership',
-  'connection-harmony': 'Harmony',
-  'connection-legacy': 'Legacy',
-  'connection-respect': 'Respect',
-  'connection-loyalty': 'Loyalty',
-};
 
-/**
- * Extract `{ title, body }` from a server-merged "Title: xxx\n<body>"
- * string. Falls back to empty title and full string as body if the
- * regex doesn't match.
- */
-function splitTitleBody(raw: string): { title: string; body: string } {
-  if (!raw) return { title: '', body: '' };
-  const m = raw.match(/^Title:\s*(.+?)\n([\s\S]*)$/);
-  if (m) return { title: m[1].trim(), body: m[2].trim() };
-  return { title: '', body: raw };
-}
 
-const INSIGHT_RING_R = 38;
-const INSIGHT_RING_C = 2 * Math.PI * INSIGHT_RING_R;
 
 function PhaseInsight({
   publishedCard,
   publishedScore,
   publishedEmotion,
-  goTo,
   close,
 }: PhaseProps) {
-  const card = publishedCard;
-
-  // Keyword resolution — server returns keyword_id like 'mind-clarity'.
-  // Display name comes from our local lookup table; if a brand-new
-  // keyword_id ever shows up we degrade gracefully to 'Clarity'.
-  const keywordId = card?.keyword_id ?? 'mind-clarity';
-  const keywordName =
-    card?.keyword ?? KEYWORD_ID_TO_NAME[keywordId] ?? 'Clarity';
-
-  // Card front image — pulled from R2 cards cache via filename pattern.
-  // 3.8 FlippableCard real version will also use this URI.
-  const frontFilename = `${keywordId}-front.webp`;
-  // frontUri no longer needed — FlippableCard resolves cache internally.
-
-  // Quote shown on the static card front.
-  const quoteShort =
-    card?.quote_short ?? 'Reflection turns experience into wisdom.';
-
-  // B / C — pull title + body out of the server-merged blob.
-  const b = splitTitleBody(card?.card_b ?? '');
-  const c = splitTitleBody(card?.card_c ?? '');
-
-  // Tasks block — only render when at least one task exists.
-  const hasTasks = !!(card?.task_1 || card?.task_2);
-
-  // Score ring math.
-  const score = Math.max(0, Math.min(100, Math.round(publishedScore)));
-  const ringDashOffset = INSIGHT_RING_C * (1 - score / 100);
-
   const handleDone = () => {
     haptics.medium();
 
@@ -1809,17 +1717,10 @@ function PhaseInsight({
     clearCachedCharacterState();
 
     // 3.10 placeholder: skin unlock detection.
-    // Server-side character-state record_complete already updated the
-    // level; if it crossed an OUTFIT_UNLOCK_LEVELS threshold and the
-    // outfit hasn't been seen yet, 3.10 will surface a SkinUnlockOverlay
-    // here. For now we just log so 3.10 can locate the integration point.
-    console.log('[insight] Done — skin-unlock detection placeholder (3.10)');
+    console.log('[insight] Done \u2014 skin-unlock detection placeholder (3.10)');
 
     // 3.10 placeholder: first-wisdom paywall trigger.
-    // If this was the user's first ever wisdom AND they're on the free
-    // tier, the old web app showed the paywall after a 300ms delay.
-    // 3.10 will wire openPaywall('first-wisdom') here.
-    console.log('[insight] Done — first-wisdom paywall placeholder (3.10)');
+    console.log('[insight] Done \u2014 first-wisdom paywall placeholder (3.10)');
 
     close();
   };
@@ -1832,116 +1733,11 @@ function PhaseInsight({
         contentContainerStyle={insightStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={insightStyles.title}>WISDOM INSIGHT</Text>
-
-        {/* Score + Emotion row */}
-        <View style={insightStyles.metaRow}>
-          <View style={insightStyles.scoreCol}>
-            <View style={insightStyles.scoreRingWrap}>
-              <Svg width={90} height={90} viewBox="0 0 90 90">
-                <Circle
-                  cx={45}
-                  cy={45}
-                  r={INSIGHT_RING_R}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth={6}
-                />
-                <Circle
-                  cx={45}
-                  cy={45}
-                  r={INSIGHT_RING_R}
-                  fill="none"
-                  stroke="#A855F7"
-                  strokeWidth={6}
-                  strokeLinecap="round"
-                  strokeDasharray={`${INSIGHT_RING_C}`}
-                  strokeDashoffset={`${ringDashOffset}`}
-                  transform="rotate(-90 45 45)"
-                />
-              </Svg>
-              <View pointerEvents="none" style={insightStyles.scoreCenter}>
-                <Text style={insightStyles.scoreValue}>{score}</Text>
-                <Text style={insightStyles.scoreMax}>/100</Text>
-              </View>
-            </View>
-            <View style={insightStyles.scoreLabelRow}>
-              <MaterialIcons name="star" size={14} color="#FACC15" />
-              <Text style={insightStyles.scoreLabel}>Wisdom Score</Text>
-            </View>
-          </View>
-
-          <View style={insightStyles.emotionCol}>
-            <MaterialIcons
-              name="sentiment-satisfied"
-              size={36}
-              color="#C084FC"
-            />
-            <Text style={insightStyles.emotionCaption}>Wisdom Emotion:</Text>
-            <Text style={insightStyles.emotionValue}>
-              {publishedEmotion || 'Thoughtful'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Flippable wisdom card */}
-        <View style={insightStyles.cardWrap}>
-          <FlippableCard
-            frontFilename={frontFilename}
-            backFilename={`${keywordId.split('-')[0]}-back.webp`}
-            quoteShort={quoteShort}
-            insightFull={card?.insight_full ?? ''}
-            width={260}
-          />
-        </View>
-        <Text style={insightStyles.flipHint}>Tap to flip</Text>
-
-        {/* Card B — Feel Seen */}
-        <View style={insightStyles.glassCard}>
-          <View style={insightStyles.glassHeader}>
-            <MaterialIcons name="psychology" size={18} color="#C084FC" />
-            {b.title ? (
-              <Text style={insightStyles.glassTitle}>{b.title}</Text>
-            ) : null}
-          </View>
-          <Text style={insightStyles.glassBody}>{b.body}</Text>
-        </View>
-
-        {/* Card C — Root Insight */}
-        <View style={insightStyles.glassCard}>
-          <View style={insightStyles.glassHeader}>
-            <MaterialIcons name="school" size={18} color="#C084FC" />
-            {c.title ? (
-              <Text style={insightStyles.glassTitle}>{c.title}</Text>
-            ) : null}
-          </View>
-          <Text style={insightStyles.glassBody}>{c.body}</Text>
-        </View>
-
-        {/* Wisdom Tasks */}
-        {hasTasks ? (
-          <View style={insightStyles.tasksCard}>
-            <View style={insightStyles.glassHeader}>
-              <MaterialIcons name="task-alt" size={18} color="#FACC15" />
-              <Text style={insightStyles.glassTitle}>YOUR WISDOM TASKS</Text>
-            </View>
-            {card?.task_1 ? (
-              <View style={insightStyles.taskRow}>
-                <Text style={insightStyles.taskBolt}>⚡</Text>
-                <Text style={insightStyles.taskText}>{card.task_1}</Text>
-              </View>
-            ) : null}
-            {card?.task_2 ? (
-              <View style={insightStyles.taskRow}>
-                <Text style={insightStyles.taskBolt}>⚡</Text>
-                <Text style={insightStyles.taskText}>{card.task_2}</Text>
-              </View>
-            ) : null}
-            <Text style={insightStyles.taskHint}>
-              Complete these tasks from your character page to earn EXP!
-            </Text>
-          </View>
-        ) : null}
+        <InsightView
+          card={publishedCard}
+          score={publishedScore}
+          emotion={publishedEmotion}
+        />
 
         {/* Bottom spacer so Done button has air */}
         <View style={{ height: 16 }} />
@@ -1967,145 +1763,7 @@ const insightStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
     paddingBottom: 16,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
-    marginBottom: 24,
-    letterSpacing: 1,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-  },
-  scoreCol: {
-    alignItems: 'center',
-  },
-  scoreRingWrap: {
-    width: 90,
-    height: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreCenter: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreValue: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontFamily: 'Inter_700Bold',
-  },
-  scoreMax: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 9,
-    fontFamily: 'Inter_400Regular',
-  },
-  scoreLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-  },
-  scoreLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-    fontFamily: 'Inter_500Medium',
-  },
-  emotionCol: {
-    alignItems: 'center',
-  },
-  emotionCaption: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 10,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 4,
-  },
-  emotionValue: {
-    color: '#C084FC',
-    fontSize: 13,
-    fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  cardWrap: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  flipHint: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 10,
-    fontFamily: 'Inter_400Regular',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  glassCard: {
-    width: '100%',
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 16,
-  },
-  glassHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  glassTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Inter_700Bold',
-    flexShrink: 1,
-  },
-  glassBody: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
-  },
-  tasksCard: {
-    width: '100%',
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: 'rgba(168,85,247,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.15)',
-    marginBottom: 16,
-  },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginBottom: 8,
-  },
-  taskBolt: {
-    color: '#FACC15',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  taskText: {
-    flex: 1,
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
-  },
-  taskHint: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 12,
   },
   doneBar: {
     paddingHorizontal: 24,
