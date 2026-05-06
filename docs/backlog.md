@@ -11,6 +11,15 @@
 ## 按触发阶段分组
 
 ### 🔴 阶段 5 触发（IAP 原生集成时）
+#### B56 — MMKV v4 持久化在 dev build 失效
+- **来源**:阶段 3.9.A.2.5 真测发现
+- **触发条件**:dev build,`npx expo run:ios --device` 重装后或 force quit 重开
+- **症状**:onboarding `done` 字段每次启动读为 false / supabase auth session 也丢失 / 用户每次重走 onboarding 11 步
+- **疑似根因**:`react-native-mmkv` v4 + `react-native-nitro-modules` 在 dev build 模式下 storage 实例每次启动重建
+- **业务影响**:开发体验差,**production app 行为待验证**
+- **修法选项**:(a) downgrade mmkv v3  (b) 等 v4 上游修复  (c) verify release build 是否真持久
+- **scope**:apps/mobile
+
 #### B53 — RefreshControl spinner 在 iOS Fabric 不可见
 - **来源**:阶段 3.9.A.1.2 Discover tab pull-to-refresh 真测发现
 - **触发条件**:阶段 5 polish 阶段

@@ -23,7 +23,7 @@ import {
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 
 import { apiClient } from '@/lib/api';
 import { SeekQuestionCard } from '@/components/seek/seek-question-card';
@@ -32,6 +32,32 @@ import type { SeekQuestion } from '@/lib/seek-types';
 type FetchResp = { questions?: SeekQuestion[] };
 
 export default function DiscoverTab() {
+  // Keywords selected via the filter modal. Persisted only in memory
+  // (Q-3.9.A.2-batchD: session-only). The filter modal hands them
+  // back via a `filter` route param (comma-separated).
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const filterParam = useLocalSearchParams<{ filter?: string }>().filter;
+
+  // Sync the param into state on every mount/focus. An empty string
+  // means "show all" (Reset button case).
+  useEffect(() => {
+    if (filterParam === undefined) return;
+    const next = (filterParam || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setSelectedKeywords(next);
+  }, [filterParam]);
+
+  // Re-fetch whenever the filter set changes. We depend on the
+  // joined string so the effect doesn't fire on every render with a
+  // fresh array reference but identical contents.
+  const filterKey = selectedKeywords.join(',');
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
+
   const router = useRouter();
   const [questions, setQuestions] = useState<SeekQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +70,12 @@ export default function DiscoverTab() {
     else setRefreshing(true);
     setError(null);
     try {
-      const data = await apiClient.get<FetchResp>('/api/seek-questions');
+      const qs = selectedKeywords.length > 0
+        ? `?keywords=${encodeURIComponent(selectedKeywords.join(','))}`
+        : '';
+      console.log('[discover] fetching:', `/api/seek-questions${qs}`);
+      const data = await apiClient.get<FetchResp>(`/api/seek-questions${qs}`);
+      console.log('[discover] got', data.questions?.length ?? 0, 'questions');
       setQuestions(data.questions ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load questions');
@@ -95,12 +126,41 @@ export default function DiscoverTab() {
     router.push('/(main)/(modals)/my-questions');
   };
 
+  // Open the filter modal, pre-seeded with the current selection so
+  // the user sees what's already chosen.
+  const openFilter = () => {
+    const csv = selectedKeywords.join(',');
+    router.push({
+      pathname: '/(main)/(modals)/discover-filter',
+      params: csv ? { selected: csv } : {},
+    });
+  };
+
   return (
     <View style={styles.root}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Questions From Community</Text>
-        <MaterialIcons name="tune" size={22} color="rgba(255,255,255,0.4)" />
+        <Pressable
+          onPress={openFilter}
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.filterBtn,
+            selectedKeywords.length > 0 && styles.filterBtnActive,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <MaterialIcons
+            name="tune"
+            size={22}
+            color={selectedKeywords.length > 0 ? '#FFFFFF' : 'rgba(255,255,255,0.6)'}
+          />
+          {selectedKeywords.length > 0 ? (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{selectedKeywords.length}</Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
 
       {/* Body */}
@@ -178,6 +238,38 @@ export default function DiscoverTab() {
 }
 
 const styles = StyleSheet.create({
+  filterBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  filterBtnActive: {
+    backgroundColor: 'rgba(168,85,247,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.55)',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#0F0B2E',
+  },
+  filterBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
   root: {
     flex: 1,
     backgroundColor: '#0F0B2E',

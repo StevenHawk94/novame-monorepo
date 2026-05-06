@@ -67,12 +67,29 @@ export async function GET(request) {
       return NextResponse.json({ success: true, question, cards: orderedCards })
     }
 
-    // List all published questions
-    const { data: questions } = await supabase
+    // List all published questions, optionally filtered by question_tag.
+    // Mobile passes ?keywords=Clarity,Resilience,Joy when the user
+    // applies a filter from the Discover filter sheet. We accept a
+    // comma-separated list and use Postgres IN to filter.
+    const keywordsParam = searchParams.get('keywords')
+    const keywordList = keywordsParam
+      ? keywordsParam
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : []
+
+    let listQuery = supabase
       .from('seek_questions')
       .select('*, seek_question_cards(count)')
       .eq('is_published', true)
       .order('created_at', { ascending: false })
+
+    if (keywordList.length > 0) {
+      listQuery = listQuery.in('question_tag', keywordList)
+    }
+
+    const { data: questions } = await listQuery
 
     return NextResponse.json({
       success: true,
