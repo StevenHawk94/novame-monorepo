@@ -80,12 +80,38 @@ export function VideoCharacter({
   });
 
   // Swap source when outfit/state changes without remounting the VideoView.
+  // We use replaceAsync (expo-video v3+) so the asset load doesn't block
+  // the main thread — replace() does sync IO that visibly freezes the
+  // UI for ~10s after publish-wisdom on iOS even when the file is in
+  // the bundle/cache. replaceAsync resolves once the new source is
+  // ready and we play() then.
   useEffect(() => {
     const next = buildFilename(characterId, outfit, state);
     if (next === currentFilename) return;
     setCurrentFilename(next);
-    player.replace(resolveSource(next));
-    player.play();
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const replaceFn = (player as unknown as {
+          replaceAsync?: (src: ReturnType<typeof resolveSource>) => Promise<void>;
+        }).replaceAsync;
+        if (typeof replaceFn === 'function') {
+          await replaceFn.call(player, resolveSource(next));
+        } else {
+          // Fallback for older expo-video that doesn't expose replaceAsync.
+          player.replace(resolveSource(next));
+        }
+        if (!cancelled) player.play();
+      } catch (e) {
+        // If the swap fails we keep the current source playing rather
+        // than tearing down the player.
+        console.warn('[video-character] replaceAsync failed:', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [characterId, outfit, state, currentFilename, player]);
 
   const videoView = (

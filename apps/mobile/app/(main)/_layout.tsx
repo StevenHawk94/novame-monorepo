@@ -1,5 +1,7 @@
 import { Stack } from 'expo-router';
 
+import { useStudyClaimDetector } from '@/hooks/use-study-claim-detector';
+
 /**
  * Main authenticated app layout.
  *
@@ -12,6 +14,10 @@ import { Stack } from 'expo-router';
  * Stage 3.6 will replace default Tabs with custom NovaMe BottomNav UI.
  */
 export default function MainLayout() {
+  // Single global listener for the end-of-study-session claim modal.
+  // Mounted here so it survives tab switches and modal navigation.
+  useStudyClaimDetector();
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />

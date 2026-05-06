@@ -94,10 +94,14 @@ export async function POST(req) {
       total_exp: newTotalExp, exp: newLevelInfo.currentExp, level: newLevelInfo.level,
     }).eq('user_id', userId).eq('character_id', charId)
 
-    // Reset: back to play, full WP, clear afk accumulator
+    // Switch back to play mode + clear AFK accumulator. We deliberately
+    // do NOT refill WP here — WP only refills on publish-wisdom (handled
+    // by character-state route's record_complete action). After claim,
+    // the companion stays in play with whatever WP they had (typically
+    // 0 since claim only runs when WP hits 0).
     await supabase.from('profiles').update({
-      character_mode: 'play', wp: WP_MAX,
-      wp_last_updated: new Date().toISOString(), afk_study_seconds: 0,
+      character_mode: 'play',
+      afk_study_seconds: 0,
     }).eq('id', userId)
 
     // Update people_impacted_display
