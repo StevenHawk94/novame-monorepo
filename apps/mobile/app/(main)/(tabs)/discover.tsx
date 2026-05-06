@@ -73,9 +73,7 @@ export default function DiscoverTab() {
       const qs = selectedKeywords.length > 0
         ? `?keywords=${encodeURIComponent(selectedKeywords.join(','))}`
         : '';
-      console.log('[discover] fetching:', `/api/seek-questions${qs}`);
       const data = await apiClient.get<FetchResp>(`/api/seek-questions${qs}`);
-      console.log('[discover] got', data.questions?.length ?? 0, 'questions');
       setQuestions(data.questions ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load questions');
@@ -83,7 +81,7 @@ export default function DiscoverTab() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedKeywords]);
 
   // Re-fetch on every focus (initial mount + every time the user
   // returns to this tab). Keeps the question list + each card's
