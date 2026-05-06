@@ -62,10 +62,10 @@ export const PRICING_TIERS: Record<PricingTierKey, PricingTier> = {
 }
 
 /** Wisdom Book ebook unlock threshold (total recorded words). */
-export const BOOK_UNLOCK_WORDS = 20000
+export const BOOK_UNLOCK_WORDS = 100
 
 /** Wisdom Cards collection unlock — 48 unique keywords collected. */
-export const CARDS_UNLOCK_COUNT = 48
+export const CARDS_UNLOCK_COUNT = 1
 
 /** Printed wisdom book price (USD). */
 export const PRINTED_BOOK_PRICE = 99.99
