@@ -192,10 +192,19 @@ export async function POST(request) {
     }
 
     if (action === 'approve_user_question') {
-      const { id } = body
-      await supabase.from('seek_questions').update({
-        status: 'approved', is_published: true,
-      }).eq('id', id)
+      const { id, tag } = body
+      if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+      // Persist the admin-selected keyword tag so the mobile record
+      // overlay can bind forceKeyword + show the keyword pill when
+      // a user offers wisdom on this question.
+      const update = {
+        status: 'approved',
+        is_published: true,
+      }
+      if (tag && typeof tag === 'string' && tag.trim()) {
+        update.question_tag = tag.trim()
+      }
+      await supabase.from('seek_questions').update(update).eq('id', id)
       return NextResponse.json({ success: true })
     }
 

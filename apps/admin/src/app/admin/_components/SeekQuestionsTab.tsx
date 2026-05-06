@@ -31,6 +31,11 @@ export default function SeekQuestionsTab() {
   const [showPending, setShowPending] = useState(false);
   const [pendingQuestions, setPendingQuestions] = useState<Question[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  // Per-pending-question tag selection. Defaults to 'Clarity' if the
+  // admin doesn't pick anything before approving. The chosen tag
+  // gets persisted to seek_questions.question_tag so the mobile
+  // record overlay can show the keyword pill + bind forceKeyword.
+  const [pendingTags, setPendingTags] = useState<Record<string, string>>({});
   const [loadingPending, setLoadingPending] = useState(false);
   const [addCardInputs, setAddCardInputs] = useState<Record<string, string>>({});
   const [addingCard, setAddingCard] = useState<string | null>(null);
@@ -118,7 +123,17 @@ export default function SeekQuestionsTab() {
   };
 
   const approveUserQuestion = async (id: string) => {
-    await apiClient.post('/api/admin/seek-questions', { action: 'approve_user_question', id });
+    const tag = pendingTags[id] || 'Clarity';
+    await apiClient.post('/api/admin/seek-questions', {
+      action: 'approve_user_question',
+      id,
+      tag,
+    });
+    setPendingTags((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     loadPending();
     loadQuestions();
   };
@@ -231,6 +246,29 @@ export default function SeekQuestionsTab() {
                     by {q.creator_name} ·{' '}
                     {new Date(q.created_at).toLocaleDateString()}
                   </p>
+                  <div className="flex items-end gap-2 mb-2">
+                    <div className="flex-1">
+                      <label className="text-xs text-black font-medium mb-1 block">
+                        Keyword (card category)
+                      </label>
+                      <select
+                        value={pendingTags[q.id] || 'Clarity'}
+                        onChange={(e) =>
+                          setPendingTags((prev) => ({
+                            ...prev,
+                            [q.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border rounded-lg text-sm text-black"
+                      >
+                        {TAGS.map((kw) => (
+                          <option key={kw} value={kw}>
+                            {kw}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => approveUserQuestion(q.id)}

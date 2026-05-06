@@ -23,7 +23,7 @@
   - (b) 等 RN/Fabric 上游修复
   - (c) 用社区库如 `react-native-refresh-control` 或 `@react-native-community/...` 替代
 
-#### B54 — Admin 后台 user-submitted question 缺少 tag 选择 UI
+#### B54 [RESOLVED 3.9.A.2 polish] — Admin 后台 user-submitted question 缺少 tag 选择 UI
 - **来源**:阶段 3.9.A.1.4 mobile New Question 真测发现
 - **触发条件**:用户提交新问题后,admin 在后台审核 approve & publish 时无法选择 question_tag
 - **症状**:apps/admin 的 Seek Questions → User's Contribute 卡片只有 "Approve & Publish" 跟 "Reject" 按钮,缺少 question_tag dropdown / chip selector
