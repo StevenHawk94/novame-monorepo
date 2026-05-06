@@ -19,9 +19,8 @@
  * (3.9.B.2) which renders a FlippableCard carousel of the user's
  * cards in that keyword.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,9 +32,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
 import { getCachedAssetUri } from '@/lib/asset-cache';
-import { supabase } from '@/lib/supabase';
+import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
 type Category = {
   id: 'mind' | 'heart' | 'action' | 'connection';
@@ -91,45 +89,13 @@ function kwToSlug(catId: string, keyword: string): string {
   return `${catId}-${keyword.toLowerCase().replace(/\s+/g, '-')}`;
 }
 
-export function CollectionView() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [wisdoms, setWisdoms] = useState<WisdomLog[]>([]);
-  const [loading, setLoading] = useState(true);
+type Props = {
+  shared: AssetsTabSharedState;
+};
 
-  useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      setUserId(data.session?.user.id ?? null);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchWisdoms(userId, { limit: 200 });
-        if (!cancelled) setWisdoms(res.wisdoms ?? []);
-      } catch (e) {
-        console.warn('[collection] fetch wisdoms failed:', e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const w of wisdoms) {
-      const slug = w.card?.keyword_id;
-      if (slug) map[slug] = (map[slug] ?? 0) + 1;
-    }
-    return map;
-  }, [wisdoms]);
-
-  const collectedCount = Object.keys(counts).length;
+export function CollectionView({ shared }: Props) {
+  const counts = shared.counts;
+  const collectedCount = shared.collectedKw;
 
   const onSelectKeyword = (slug: string, name: string, color: string) => {
     router.push({
@@ -159,11 +125,7 @@ export function CollectionView() {
 
       {/* Stat */}
       <View style={styles.statRow}>
-        {loading ? (
-          <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
-        ) : (
-          <Text style={styles.statText}>{collectedCount}/48 Collected</Text>
-        )}
+        <Text style={styles.statText}>{collectedCount}/48 Collected</Text>
       </View>
 
       {/* Categories */}

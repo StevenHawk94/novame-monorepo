@@ -72,3 +72,9 @@ export const PRINTED_BOOK_PRICE = 99.99
 
 /** Wisdom book milestone — minutes recorded to qualify for printing. */
 export const BOOK_MILESTONE_MINS = 300
+
+/** Printed wisdom cards deck price (USD). */
+export const WISDOM_CARDS_PRICE = 59.99
+
+/** Flat shipping fee for printed assets (USD). */
+export const SHIPPING_FEE = 0

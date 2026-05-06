@@ -1,30 +1,111 @@
 /**
  * Assets tab — Stage 3.9.B
  *
- * Two sub-tabs:
- *   - Collection: 48-keyword grid showing the user's published wisdom
- *     card progress. Tap a collected keyword to enter the keyword
- *     detail carousel (FlippableCard swipe view).
- *   - Assets: physical product ordering (Wisdom Book + Wisdom Cards
- *     deck) with unlock progress, shipping form, and order history.
- *     Payment integration is deferred to stage 5; the payment view
- *     renders a stub button.
+ * Two sub-tabs: Collection + Assets. State for the user's wisdoms
+ * (and the per-keyword counts derived from them) lives here at the
+ * parent level so both sub-tabs share a single fetch instead of
+ * each querying /api/wisdoms separately.
  *
- * Sub-tab pattern matches Growth tab (3.9.A.2.1) for visual
- * consistency: pill labels with a purple underline on the active tab.
+ * Data shared across both sub-tabs:
+ *   - wisdoms      — the user's published wisdom logs
+ *   - counts       — keyword_id slug → number of cards
+ *   - totalWords   — sum of word counts across all wisdom texts
+ *   - collectedKw  — number of unique keyword slugs (≤ 48)
+ *
+ * Sub-tab pattern matches Growth tab (3.9.A.2.1): pill labels with
+ * a purple underline on the active tab.
  */
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CollectionView } from '@/components/assets/collection-view';
 import { AssetsView } from '@/components/assets/assets-view';
+import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
+import { supabase } from '@/lib/supabase';
+import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
 type SubTab = 'collection' | 'assets';
+
+function countWords(text: string | null | undefined): number {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
 
 export default function AssetsTab() {
   const insets = useSafeAreaInsets();
   const [subTab, setSubTab] = useState<SubTab>('collection');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [wisdoms, setWisdoms] = useState<WisdomLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user.id ?? null);
+    });
+  }, []);
+
+  const load = useMemo(
+    () => async () => {
+      if (!userId) return;
+      try {
+        const res = await fetchWisdoms(userId, { limit: 200 });
+        setWisdoms(res.wisdoms ?? []);
+      } catch (e) {
+        console.warn('[assets] fetch wisdoms failed:', e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userId],
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+    void load();
+  }, [userId, load]);
+
+  // Re-fetch when the tab regains focus so newly published wisdoms
+  // immediately bump the Collection grid + Assets progress bars.
+  useFocusEffect(
+    useMemo(
+      () => () => {
+        if (userId) void load();
+      },
+      [userId, load],
+    ),
+  );
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const w of wisdoms) {
+      const slug = w.card?.keyword_id;
+      if (slug) map[slug] = (map[slug] ?? 0) + 1;
+    }
+    return map;
+  }, [wisdoms]);
+
+  const totalWords = useMemo(
+    () => wisdoms.reduce((sum, w) => sum + countWords(w.text), 0),
+    [wisdoms],
+  );
+
+  const collectedKw = Object.keys(counts).length;
+
+  const shared: AssetsTabSharedState = {
+    wisdoms,
+    counts,
+    totalWords,
+    collectedKw,
+    loading,
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -47,7 +128,15 @@ export default function AssetsTab() {
         </Pressable>
       </View>
 
-      {subTab === 'collection' ? <CollectionView /> : <AssetsView />}
+      {loading && wisdoms.length === 0 ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color="#A855F7" />
+        </View>
+      ) : subTab === 'collection' ? (
+        <CollectionView shared={shared} />
+      ) : (
+        <AssetsView shared={shared} />
+      )}
     </View>
   );
 }
@@ -84,5 +173,10 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     backgroundColor: '#A855F7',
+  },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
