@@ -91,13 +91,14 @@ export function useStudyClaimDetector() {
       }
 
       try {
+        console.log('[claim-detector] fetching server state…');
         const fresh = await fetchCharacterState(userId);
         if (cancelled) return;
         if (evaluate(fresh.mode, fresh.wp, fresh.wpLastFetchedAtMs)) {
           triggerClaim();
         }
       } catch (e) {
-        console.warn('[study-claim-detector] initial fetch failed:', e);
+        console.warn('[claim-detector] initial fetch failed:', e);
       } finally {
         initialFetchDoneRef.current = true;
       }
