@@ -225,7 +225,10 @@ export default function HomeTab() {
               icon="pets"
               onPress={() => router.push('/(main)/(modals)/skin-select')}
             />
-            <TopBarButton icon="description" onPress={handlePlaceholder} />
+            <TopBarButton
+              icon="description"
+              onPress={() => router.push('/(main)/(modals)/weekly-report')}
+            />
             <TopBarButton
               icon="emoji-events"
               onPress={() => router.push('/(main)/(modals)/ranking')}
