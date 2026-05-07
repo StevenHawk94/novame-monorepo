@@ -243,6 +243,25 @@ export async function POST(request) {
 
     console.log('[publish-wisdom] Final text length:', (transcribedText || '').length, 'chars:', (transcribedText || '').substring(0, 100) || '(empty)')
 
+    // ---- Stage 5.IAP.4 hardening: reject before insert if text is unusable ----
+    // The previous behavior was to write the wisdom row regardless and
+    // let card generation silently fail later. That gave the user a
+    // success response with card=null and ALSO consumed the monthly
+    // quota (because some prior code paths could still write a
+    // wisdom_card stub). The fix: bail out here before any DB write.
+    const minTextLength = 5
+    if (!transcribedText || transcribedText.trim().length < minTextLength) {
+      console.warn('[publish-wisdom] TRANSCRIPTION_FAILED: text too short or empty')
+      return NextResponse.json(
+        {
+          error: 'Could not transcribe your recording. Please try again.',
+          code: 'TRANSCRIPTION_FAILED',
+        },
+        { status: 422 }
+      )
+    }
+    // ---- end hardening ----
+
     // Save to database
     const insertData = {
       user_id: userId,
@@ -295,6 +314,7 @@ export async function POST(request) {
 
     // Generate wisdom insight card — direct call (no HTTP self-fetch)
     let generatedCard = null
+    let cardGenerationFailed = false
     if (wisdom.id && transcribedText && transcribedText.length > 5) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
@@ -325,12 +345,33 @@ export async function POST(request) {
               console.error('[publish-wisdom] seek_question_cards exception:', linkEx.message)
             }
           }
+        } else {
+          cardGenerationFailed = true
         }
       } catch (e) {
         console.error('[publish-wisdom] Card generation exception:', e.message)
+        cardGenerationFailed = true
       }
     } else {
       console.log('[publish-wisdom] Skipped card generation — text too short or empty:', (transcribedText || '').length, 'chars')
+    }
+
+    // Stage 5.IAP.4: if card generation failed, undo the wisdom write
+    // so the user is not consuming a quota slot for a broken result.
+    if (cardGenerationFailed) {
+      console.warn('[publish-wisdom] CARD_GENERATION_FAILED -- rolling back wisdom row', wisdom.id)
+      try {
+        await supabase.from('wisdoms').delete().eq('id', wisdom.id)
+      } catch (delErr) {
+        console.error('[publish-wisdom] rollback delete failed:', delErr)
+      }
+      return NextResponse.json(
+        {
+          error: 'Could not generate your wisdom card. Please try again.',
+          code: 'CARD_GENERATION_FAILED',
+        },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({

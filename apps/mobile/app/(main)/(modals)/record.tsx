@@ -1564,21 +1564,33 @@ function PhasePublishing({
         goTo(PHASE.INSIGHT);
       } catch (err) {
         console.error('[publish] failed:', err);
-        // Stage 5.IAP.4: detect quota-exceeded -> route to paywall.
-        if (
-          err instanceof ApiError &&
-          err.status === 402 &&
-          typeof err.body === 'object' &&
-          err.body !== null &&
-          'code' in err.body &&
-          (err.body as { code?: string }).code === 'QUOTA_EXCEEDED'
-        ) {
-          inflightRef.current = false;
-          close();
-          setTimeout(() => {
-            router.push('/(main)/(modals)/subscription-paywall');
-          }, 100);
-          return;
+        // Stage 5.IAP.4: typed error routing.
+        //   - 402 QUOTA_EXCEEDED       -> close + paywall
+        //   - 422 TRANSCRIPTION_FAILED -> show retryable error screen
+        //   - 500 CARD_GENERATION_FAILED -> show retryable error screen
+        //   - anything else            -> generic error screen
+        if (err instanceof ApiError) {
+          const code =
+            typeof err.body === 'object' &&
+            err.body !== null &&
+            'code' in err.body
+              ? (err.body as { code?: string }).code
+              : undefined;
+
+          if (err.status === 402 && code === 'QUOTA_EXCEEDED') {
+            inflightRef.current = false;
+            close();
+            setTimeout(() => {
+              router.push('/(main)/(modals)/subscription-paywall');
+            }, 100);
+            return;
+          }
+          // 422 (TRANSCRIPTION_FAILED) and 500 (CARD_GENERATION_FAILED)
+          // both fall through to the generic errored screen, which
+          // already gives the user a "try again" affordance. The
+          // crucial difference vs the old behavior is that the server
+          // has now ROLLED BACK the wisdom row, so the user is not
+          // billed a quota slot for the failed attempt.
         }
         setErrored(true);
         inflightRef.current = false;

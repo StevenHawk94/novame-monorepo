@@ -101,6 +101,23 @@ let initialized = false;
 let purchaseUpdateSub: { remove: () => void } | null = null;
 let purchaseErrorSub: { remove: () => void } | null = null;
 
+// Stage 5.IAP fix: tracks transactionIds we have already processed in
+// this app launch. Sandbox + Apple replay any unfinished transactions
+// every time initConnection runs, AND every auto-renewal (every 5
+// minutes in sandbox) fires the listener again. Without dedup we'd
+// re-upload the same transaction many times. Server is upsert-safe
+// but the UI complete-callback is not.
+const processedTransactionIds = new Set<string>();
+
+// Stage 5.IAP fix: distinguishes user-initiated purchases from queue
+// replays / auto-renewals. Set to true only inside purchaseSubscription
+// for the duration of the StoreKit dialog. The listener uses this flag
+// to decide whether to fire onPurchaseComplete callbacks (which close
+// the paywall + show the success alert). Replays / renewals must NOT
+// trigger that UI -- they should just sync silently to the server.
+let userInitiatedInFlight = false;
+let userInitiatedTimer: ReturnType<typeof setTimeout> | null = null;
+
 // Event emitter for UI to subscribe to purchase outcomes.
 type PurchaseCompleteCallback = (info: {
   tier: PricingTierKey;
@@ -148,8 +165,51 @@ export async function initIAP(): Promise<void> {
     return;
   }
 
-  // Global listener -- fires for new purchases AND restored purchases
-  // AND auto-renewals replayed on app launch (StoreKit 2 behavior).
+  // Stage 5.IAP fix (Bug #7 + #8): recover any unfinished StoreKit
+  // transactions BEFORE registering the listener. This drains the
+  // replay queue in silent mode (server upload + finishTransaction,
+  // but no onPurchaseComplete fired -- so the paywall doesn't see a
+  // ghost success). Without this step, every cold app launch was
+  // showing "Subscription Active to Ultra" because an old sandbox
+  // ultra transaction was stuck in the queue.
+  //
+  // Reference: hyochan/expo-iap discussion #177 -- "On app startup,
+  // call getAvailablePurchases() to load any pending/restore-able
+  // transactions. Validate each on your server (source of truth for
+  // subscription status). Call finishTransaction() for each to clear
+  // the queue."
+  try {
+    const pending = await getAvailablePurchases();
+    if (pending && pending.length > 0) {
+      console.log(
+        `[iap] recovering ${pending.length} unfinished transaction(s) from StoreKit queue`,
+      );
+      for (const purchase of pending) {
+        const txnId = String(purchase.id);
+        if (processedTransactionIds.has(txnId)) continue;
+        processedTransactionIds.add(txnId);
+        try {
+          await uploadPurchaseToServer(purchase);
+          await finishTransaction({ purchase, isConsumable: false });
+          console.log('[iap] recovered transaction', txnId, purchase.productId);
+        } catch (e) {
+          console.warn('[iap] recovery failed for', txnId, e);
+          // Keep it in the set anyway -- if we keep retrying every
+          // launch we'd just spam the server with the same broken
+          // transaction. Listener-time will retry later if needed.
+        }
+      }
+      // After recovery, refresh the cached tier so the user sees
+      // their accurate state on Me page.
+      await refreshSubscriptionCache();
+    }
+  } catch (e) {
+    console.warn('[iap] queue recovery failed:', e);
+  }
+
+  // Global listener -- fires for NEW user-initiated purchases AND
+  // future auto-renewals. Stale-replay protection happens via
+  // processedTransactionIds set above.
   purchaseUpdateSub = purchaseUpdatedListener((purchase) => {
     void handlePurchaseUpdate(purchase);
   });
@@ -232,11 +292,34 @@ export async function purchaseSubscription(
   if (!initialized) {
     throw new Error('IAP not initialized -- call initIAP() first');
   }
-  await requestPurchase({
-    request: { ios: { sku: productId } },
-    type: 'subs',
-  });
-  // Result arrives via purchaseUpdatedListener.
+
+  // Mark that the very next listener fire originated from a user tap
+  // on Subscribe. Without this, we cannot distinguish the new purchase
+  // from a queue replay or a sandbox auto-renewal that happens to land
+  // at the same moment. We auto-clear after 60s in case the dialog is
+  // cancelled (UserCancelled is silent at the listener level too).
+  userInitiatedInFlight = true;
+  if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
+  userInitiatedTimer = setTimeout(() => {
+    userInitiatedInFlight = false;
+    userInitiatedTimer = null;
+  }, 60000);
+
+  try {
+    await requestPurchase({
+      request: { ios: { sku: productId } },
+      type: 'subs',
+    });
+    // Result arrives via purchaseUpdatedListener.
+  } catch (e) {
+    // Configuration error -- clear the flag so a future tap resets state.
+    userInitiatedInFlight = false;
+    if (userInitiatedTimer) {
+      clearTimeout(userInitiatedTimer);
+      userInitiatedTimer = null;
+    }
+    throw e;
+  }
 }
 
 // ---- Restore purchases ----
@@ -312,12 +395,37 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     return;
   }
 
+  // Stage 5.IAP fix (Bug #7 + #8): dedup by transactionId. Sandbox
+  // replays the same transaction every initConnection AND every
+  // auto-renewal (~5min in sandbox). Without this, the listener
+  // would re-upload + re-fire UI callbacks on every replay.
+  const txnId = String(purchase.id);
+  if (processedTransactionIds.has(txnId)) {
+    console.log('[iap] skipping already-processed transaction', txnId);
+    return;
+  }
+  processedTransactionIds.add(txnId);
+
+  // Stage 5.IAP fix: capture the user-initiated flag at the start of
+  // handling. Even if userInitiatedInFlight clears mid-flight (60s
+  // timeout) we want to honor the original intent.
+  const wasUserInitiated = userInitiatedInFlight;
+  if (wasUserInitiated) {
+    userInitiatedInFlight = false;
+    if (userInitiatedTimer) {
+      clearTimeout(userInitiatedTimer);
+      userInitiatedTimer = null;
+    }
+  }
+
   try {
     await uploadPurchaseToServer(purchase);
   } catch (e) {
     console.error('[iap] server upload failed:', e);
-    // DO NOT finish the transaction -- StoreKit will replay on next
-    // launch and we can retry the upload.
+    // Don't finish the transaction -- StoreKit replays it on next
+    // launch and we can retry the upload then. Also remove from the
+    // dedup set so a future retry can attempt again.
+    processedTransactionIds.delete(txnId);
     return;
   }
 
@@ -328,8 +436,22 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     console.warn('[iap] finishTransaction failed (non-fatal):', e);
   }
 
-  // Refresh local cache + notify UI.
+  // Refresh local cache so any later UI read sees the new tier.
   await refreshSubscriptionCache();
+
+  // Only fire the success UI callback if this was a user tap on
+  // Subscribe. Replays and silent auto-renewals must NOT close the
+  // paywall or show "Subscription Active" because the user did not
+  // just initiate anything.
+  if (!wasUserInitiated) {
+    console.log(
+      '[iap] silent processed (queue replay / auto-renewal):',
+      txnId,
+      productId,
+    );
+    return;
+  }
+
   const tier = PRODUCT_TO_TIER[productId];
   const cycle = PRODUCT_TO_CYCLE[productId];
   for (const cb of completeCallbacks) {
