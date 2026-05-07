@@ -41,7 +41,7 @@ import {
   WISDOM_CARDS_PRICE,
   SHIPPING_FEE,
 } from '@novame/core';
-import { fetchWisdoms } from '@/lib/wisdoms-api';
+import { fetchUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
 
@@ -86,18 +86,13 @@ export default function ProductDetailModal() {
     let cancelled = false;
     (async () => {
       try {
-        const [wRes, oRes] = await Promise.all([
-          fetchWisdoms(userId, { limit: 200 }),
+        const [sRes, oRes] = await Promise.all([
+          fetchUserStats(userId),
           fetchOrders(userId),
         ]);
         if (cancelled) return;
-        const wisdoms = wRes.wisdoms ?? [];
-        setTotalWords(wisdoms.reduce((s, w) => s + countWords(w.text), 0));
-        const slugSet = new Set<string>();
-        for (const w of wisdoms) {
-          if (w.card?.keyword_id) slugSet.add(w.card.keyword_id);
-        }
-        setCollectedKw(slugSet.size);
+        setTotalWords(sRes.totalWords);
+        setCollectedKw(sRes.uniqueKeywords);
         setOrders(oRes.orders ?? []);
       } catch (e) {
         console.warn('[product-detail] fetch failed:', e);

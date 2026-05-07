@@ -20,6 +20,28 @@
 - **修法选项**:(a) downgrade mmkv v3  (b) 等 v4 上游修复  (c) verify release build 是否真持久
 - **scope**:apps/mobile
 
+#### B57 — Stage 3.9.B testing thresholds need restoring
+- **来源**:阶段 3.9.B.4 测试便利
+- **触发条件**:迁移完成 + 准备发布前
+- **症状**:`packages/core/src/constants/pricing.ts`
+  - `BOOK_UNLOCK_WORDS = 100`(应该 20000)
+  - `CARDS_UNLOCK_COUNT = 1`(应该 48)
+- **修法**:改回 production 值
+- **scope**:packages/core,1 行 commit
+
+#### B58 — Stage 5 Airwallex/IAP integration scope
+- **来源**:阶段 3.9.B 收尾
+- **触发条件**:阶段 5 IAP + 实物支付集成
+- **范围**:
+  - **payment-stub.tsx** → 真支付(`expo-web-browser` 打开 `/api/payment-checkout` 跳板页)
+  - **shipping-form.tsx** Continue → 同时 POST `/api/orders` 创建 `pending_payment` record + 创建 payment intent
+  - **payment-stub.tsx** → 处理 redirect 回调(deep linking 拦截 successUrl/failUrl/cancelUrl),根据 status 路由 cards-select / order-success
+  - **cards-select** view 实现:用户从已收藏 48 keyword 各选 1 张组成卡盒,POST PATCH `/api/orders` selectedCardIds + status='paid'
+  - **server `last_book_applied_at`** 字段 + `wisdoms.created_at > last_book_applied_at` filter(words 清 0 逻辑)
+  - **Order Detail "Continue Card Selection"** 按钮接通 cards-select
+  - **Order History "Pay Now"** 按钮接通 resume payment 流程
+- **scope**:apps/mobile + apps/api,multi-day 工作
+
 #### B53 — RefreshControl spinner 在 iOS Fabric 不可见
 - **来源**:阶段 3.9.A.1.2 Discover tab pull-to-refresh 真测发现
 - **触发条件**:阶段 5 polish 阶段

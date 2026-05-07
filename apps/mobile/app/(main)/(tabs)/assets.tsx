@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CollectionView } from '@/components/assets/collection-view';
 import { AssetsView } from '@/components/assets/assets-view';
-import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
+import { fetchUserStats, type UserStats } from '@/lib/user-stats-api';
 import { supabase } from '@/lib/supabase';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
@@ -43,7 +43,7 @@ export default function AssetsTab() {
   const insets = useSafeAreaInsets();
   const [subTab, setSubTab] = useState<SubTab>('collection');
   const [userId, setUserId] = useState<string | null>(null);
-  const [wisdoms, setWisdoms] = useState<WisdomLog[]>([]);
+  const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,10 +56,10 @@ export default function AssetsTab() {
     () => async () => {
       if (!userId) return;
       try {
-        const res = await fetchWisdoms(userId, { limit: 200 });
-        setWisdoms(res.wisdoms ?? []);
+        const res = await fetchUserStats(userId);
+        setStats(res);
       } catch (e) {
-        console.warn('[assets] fetch wisdoms failed:', e);
+        console.warn('[assets] fetch user-stats failed:', e);
       } finally {
         setLoading(false);
       }
@@ -83,24 +83,12 @@ export default function AssetsTab() {
     ),
   );
 
-  const counts = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const w of wisdoms) {
-      const slug = w.card?.keyword_id;
-      if (slug) map[slug] = (map[slug] ?? 0) + 1;
-    }
-    return map;
-  }, [wisdoms]);
-
-  const totalWords = useMemo(
-    () => wisdoms.reduce((sum, w) => sum + countWords(w.text), 0),
-    [wisdoms],
-  );
-
-  const collectedKw = Object.keys(counts).length;
+  const counts = stats?.keywordCounts ?? {};
+  const totalWords = stats?.totalWords ?? 0;
+  const collectedKw = stats?.uniqueKeywords ?? 0;
 
   const shared: AssetsTabSharedState = {
-    wisdoms,
+    wisdoms: [],
     counts,
     totalWords,
     collectedKw,
@@ -128,7 +116,7 @@ export default function AssetsTab() {
         </Pressable>
       </View>
 
-      {loading && wisdoms.length === 0 ? (
+      {loading && !stats ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#A855F7" />
         </View>
