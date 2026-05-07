@@ -226,7 +226,10 @@ export default function HomeTab() {
               onPress={() => router.push('/(main)/(modals)/skin-select')}
             />
             <TopBarButton icon="description" onPress={handlePlaceholder} />
-            <TopBarButton icon="emoji-events" onPress={handlePlaceholder} />
+            <TopBarButton
+              icon="emoji-events"
+              onPress={() => router.push('/(main)/(modals)/ranking')}
+            />
             {/* Stage 3.8.1 DEV: reanimated v4 smoke test entry — DELETE before commit */}
           </View>
         </View>
