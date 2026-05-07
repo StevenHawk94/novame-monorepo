@@ -122,6 +122,18 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
 
   const userPrompt = buildUserPrompt(wisdomText, aspireList, shouldUpdatePortrait)
 
+  // Stage 5.IAP.5.bugfix.B: when ALL AI providers fail (e.g. Gemini
+  // 503 high-demand error + DeepSeek out of balance), do NOT fall
+  // back to a hardcoded "Clarity" placeholder card. The previous
+  // behavior wrote a generic default card to wisdom_cards, returned
+  // success=true, and consumed the user's monthly quota slot for what
+  // was effectively a model outage on our side. Industry standard
+  // (RevenueCat / Adapty guidance for failed generation): treat as a
+  // failure, signal to the caller, let them roll back. The caller
+  // (publish-wisdom/route.js) already handles success=false by
+  // deleting the wisdom row and returning HTTP 500
+  // CARD_GENERATION_FAILED, which the mobile client routes to its
+  // retryable error screen WITHOUT consuming quota.
   let result
   try {
     const aiResult = await callAI({
@@ -133,18 +145,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     result = parseAIJson(aiResult.text)
   } catch (e) {
     console.error('[generate-card] All AI models failed:', e.message)
-    result = {
-      keyword: 'Clarity',
-      quote_short: 'Reflection turns experience into wisdom.',
-      insight_full: 'Every moment of honest self-examination is an act of quiet courage. Most people move through life accumulating experiences without pausing to distill them — yet it is precisely in this pause that growth occurs. To articulate what you have lived through is to transform raw data into durable wisdom, turning the personal into the universal.',
-      card_b_title: 'You Showed Up, and That Matters',
-      card_b: 'The fact that you paused to reflect speaks volumes about who you are. In a world that rewards speed and surface-level thinking, you chose depth. That is not a small thing. Your willingness to examine your own experience means you are already doing what most people only talk about.',
-      card_c_title: 'The Power of Pause',
-      card_c: 'Consider this: every great thinker, every person whose words have outlived them, started exactly where you are right now — with a moment of honest reflection. The difference between an experience and a lesson is the willingness to look twice. You have that willingness. Now imagine carrying this same quality of attention into the smallest moments of your day.',
-      wisdom_score: 78, wisdom_emotion: 'Reflective',
-      task_1: 'Write down one sentence about what today taught you.',
-      task_2: 'Take three deep breaths and notice how your body feels right now.',
-    }
+    return { success: false, error: e.message || 'AI generation failed' }
   }
 
   // Merge titles into card_b/card_c
