@@ -57,6 +57,34 @@ import {
 } from './subscription';
 import type { PricingTierKey } from '@novame/core';
 
+// ---- Purchase outcome (for paywall to react to upgrade vs downgrade) ----
+
+/**
+ * Result of a user-initiated subscribe call.
+ *
+ * Apple StoreKit 2 has different behavior for upgrade vs downgrade vs
+ * crossgrade (same level, different duration):
+ *   - new / upgrade  -> requestPurchase resolves to a Purchase, the
+ *                       purchaseUpdatedListener fires with the new
+ *                       transaction, money is charged immediately.
+ *   - downgrade      -> requestPurchase resolves to null. NO new
+ *                       transaction, NO listener fire. The change
+ *                       lands in renewalInfo.autoRenewPreference and
+ *                       takes effect at the end of the current
+ *                       billing period.
+ *   - crossgrade     -> same as downgrade for behavior purposes
+ *                       (Apple treats same-level/different-duration
+ *                       as deferred per StoreKit 2 docs).
+ *
+ * We surface these distinctions so the paywall can show the correct
+ * post-purchase UX (e.g. "Welcome to Pro" vs "Your plan changes on
+ * YYYY-MM-DD").
+ */
+export type PurchaseOutcome =
+  | { kind: 'completed'; productId: string }
+  | { kind: 'scheduled'; productId: string }
+  | { kind: 'cancelled' };
+
 // ---- Product IDs (must match Apple App Store Connect setup) ----
 
 export const IOS_SUBSCRIPTION_PRODUCT_IDS = [
@@ -285,7 +313,7 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
  */
 export async function purchaseSubscription(
   productId: IOSSubscriptionProductId,
-): Promise<void> {
+): Promise<PurchaseOutcome> {
   if (Platform.OS !== 'ios') {
     throw new Error('IAP only supported on iOS in this build');
   }
@@ -293,11 +321,10 @@ export async function purchaseSubscription(
     throw new Error('IAP not initialized -- call initIAP() first');
   }
 
-  // Mark that the very next listener fire originated from a user tap
-  // on Subscribe. Without this, we cannot distinguish the new purchase
-  // from a queue replay or a sandbox auto-renewal that happens to land
-  // at the same moment. We auto-clear after 60s in case the dialog is
-  // cancelled (UserCancelled is silent at the listener level too).
+  // Mark that the next listener fire originated from a user tap. The
+  // listener uses this to decide whether to fire onPurchaseComplete
+  // (which closes the paywall + shows success). Replays / renewals
+  // run silently. Auto-clear after 60s in case the dialog is dismissed.
   userInitiatedInFlight = true;
   if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
   userInitiatedTimer = setTimeout(() => {
@@ -306,17 +333,53 @@ export async function purchaseSubscription(
   }, 60000);
 
   try {
-    await requestPurchase({
+    // requestPurchase returns:
+    //   - Purchase           -> new / upgrade (immediate, listener fires)
+    //   - null               -> downgrade or crossgrade (scheduled,
+    //                           NO new transaction, listener does NOT
+    //                           fire). The change lives in renewalInfo.
+    //                           autoRenewPreference and takes effect at
+    //                           the end of the current period.
+    // Cancellation throws ErrorCode.UserCancelled.
+    const result = await requestPurchase({
       request: { ios: { sku: productId } },
       type: 'subs',
     });
-    // Result arrives via purchaseUpdatedListener.
+
+    if (result === null || result === undefined) {
+      // Scheduled change -- clear the in-flight flag because the
+      // listener won't fire. The paywall will show "scheduled" UI.
+      userInitiatedInFlight = false;
+      if (userInitiatedTimer) {
+        clearTimeout(userInitiatedTimer);
+        userInitiatedTimer = null;
+      }
+      // Refresh the cached subscription so renewalInfo settles -- the
+      // server doesn't know yet, but local cache reflects current state.
+      void refreshSubscriptionCache();
+      return { kind: 'scheduled', productId };
+    }
+
+    // Immediate purchase -- the listener will pick up the transaction
+    // (uploadPurchaseToServer + finishTransaction + fire complete
+    // callbacks). The paywall should wait for onPurchaseComplete
+    // before closing, so it sees the server-confirmed tier.
+    return { kind: 'completed', productId };
   } catch (e) {
-    // Configuration error -- clear the flag so a future tap resets state.
     userInitiatedInFlight = false;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
       userInitiatedTimer = null;
+    }
+    // Detect user cancellation -- expo-iap throws an error with
+    // code='user-cancelled'. We don't want to surface this as a
+    // failure to the UI.
+    const errCode =
+      typeof e === 'object' && e !== null && 'code' in e
+        ? (e as { code?: string }).code
+        : undefined;
+    if (errCode === ErrorCode.UserCancelled) {
+      return { kind: 'cancelled' };
     }
     throw e;
   }
@@ -553,6 +616,35 @@ const TIER_RANK: Record<PricingTierKey, number> = {
   pro: 2,
   ultra: 3,
 };
+
+/**
+ * Classify a subscription change. Mirrors the App Store Connect
+ * subscription-group level ranking we configured: ultra (level 1) >
+ * pro (level 2) > basic (level 3). Same tier + same cycle = same.
+ * Same tier + different cycle = crossgrade (deferred per Apple).
+ *
+ * Used by the paywall CTA to choose the right label and post-action
+ * messaging.
+ */
+export type SubscriptionChange =
+  | 'new'         // user is on free, buying their first paid plan
+  | 'same'        // exact same plan + cycle (button should be disabled)
+  | 'upgrade'     // higher tier (immediate)
+  | 'downgrade'   // lower tier (scheduled)
+  | 'crossgrade'; // same tier, different cycle (scheduled per Apple StoreKit 2)
+
+export function classifySubscriptionChange(
+  current: { tier: PricingTierKey; cycle?: 'monthly' | 'yearly' | null },
+  target: { tier: PricingTierKey; cycle: 'monthly' | 'yearly' },
+): SubscriptionChange {
+  if (current.tier === 'free') return 'new';
+  if (current.tier === target.tier) {
+    if (current.cycle === target.cycle) return 'same';
+    return 'crossgrade';
+  }
+  if (TIER_RANK[target.tier] > TIER_RANK[current.tier]) return 'upgrade';
+  return 'downgrade';
+}
 
 function pickHigherTier(
   a: PricingTierKey | undefined,

@@ -115,6 +115,11 @@ type PhaseProps = {
   seekForceKeyword?: string;
   seekQuestionId?: string;
   seekQuestionText?: string;
+  // Stage 5.IAP.5 (Bug #1): aggressive-upsell signal. PhasePublishing
+  // sets this when the publish consumed the last quota slot;
+  // PhaseInsight close handler reads it.
+  setQuotaExhaustedAfterPublish?: (v: boolean) => void;
+  quotaExhaustedAfterPublish?: boolean;
 };
 
 // ---- Placeholder primitives (used by phases not yet rewritten) ----
@@ -1499,6 +1504,7 @@ function PhasePublishing({
   close,
   seekForceKeyword,
   seekQuestionId,
+  setQuotaExhaustedAfterPublish,
 }: PhaseProps) {
   const inflightRef = useRef(false);
   const [errored, setErrored] = useState(false);
@@ -1553,6 +1559,23 @@ function PhasePublishing({
         // are current. Stage 3.10.1.
         invalidateMeStats();
         void fetchMeStats(userId).catch(() => {});
+
+        // Stage 5.IAP.5 (Bug #1, aggressive upsell): check whether
+        // this publish consumed the user's last quota slot. If so,
+        // signal PhaseInsight to push the paywall on close. We
+        // do NOT block the success flow -- the insight still shows.
+        // Network failure here just means no paywall; the user will
+        // hit the gate naturally on their next attempt.
+        void fetchDailyLimit(userId)
+          .then((limit) => {
+            if (
+              limit.allowed === false ||
+              (typeof limit.remaining === 'number' && limit.remaining <= 0)
+            ) {
+              setQuotaExhaustedAfterPublish?.(true);
+            }
+          })
+          .catch(() => {});
 
         setPublishedCard(response.card ?? null);
         setPublishedScore(score);
@@ -1774,11 +1797,27 @@ const pubgStyles = StyleSheet.create({
 
 
 function PhaseInsight({
+
   publishedCard,
   publishedScore,
   publishedEmotion,
   close,
+  quotaExhaustedAfterPublish,
 }: PhaseProps) {
+  // Stage 5.IAP.5 (Bug #1, aggressive upsell): wrap close so that if
+  // this publish consumed the user's last quota slot, we route to the
+  // paywall instead of just dismissing. The 350ms delay lets the modal
+  // dismiss animation start before the paywall presents.
+  const handleClose = () => {
+    if (quotaExhaustedAfterPublish) {
+      close();
+      setTimeout(() => {
+        router.push('/(main)/(modals)/subscription-paywall');
+      }, 350);
+      return;
+    }
+    close();
+  };
   const handleDone = () => {
     haptics.medium();
 
@@ -1792,7 +1831,7 @@ function PhaseInsight({
     // 3.10 placeholder: first-wisdom paywall trigger.
     console.log('[insight] Done \u2014 first-wisdom paywall placeholder (3.10)');
 
-    close();
+    handleClose();
   };
 
   return (
@@ -1979,6 +2018,12 @@ export default function RecordModal() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [phase, setPhase] = useState<Phase>(PHASE.CHOOSE);
+  // Stage 5.IAP.5 (Bug #1, aggressive upsell): set to true by
+  // PhasePublishing when the just-completed publish consumed the
+  // user's last monthly quota slot. PhaseInsight reads this on
+  // close and routes to the paywall instead of just closing.
+  const [quotaExhaustedAfterPublish, setQuotaExhaustedAfterPublish] =
+    useState(false);
   const [recordingDurationSec, setRecordingDurationSec] = useState(0);
   const [recordingResult, setRecordingResult] = useState<RecordingResult | null>(null);
   const [description, setDescription] = useState('');

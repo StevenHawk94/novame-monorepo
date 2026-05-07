@@ -10,6 +10,10 @@ import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { syncOnboardingIfPending } from '@/lib/onboarding';
+import { clearCachedSubscription } from '@/lib/subscription';
+import { clearCachedMeStats } from '@/lib/me-stats';
+import { clearCachedCharacterState } from '@/lib/character-state';
+import { storage } from '@/lib/storage';
 
 /**
  * Root layout for @novame/mobile.
@@ -78,6 +82,23 @@ export default function RootLayout() {
         }
         router.replace('/(main)/(tabs)');
       } else if (event === 'SIGNED_OUT') {
+        // Stage 5.IAP.5 (Bug #5): clear all per-user MMKV caches so
+        // the next user (or fresh sign-in) does not see stale data
+        // from the previous user. Per Supabase official guidance for
+        // SIGNED_OUT: 'Use this to clean up any local storage your
+        // application has associated with the user.'
+        try {
+          clearCachedSubscription();
+          clearCachedMeStats();
+          clearCachedCharacterState();
+          // Onboarding cache: scoped to the previous user's uncommitted
+          // onboarding draft. Safe to clear unconditionally.
+          storage.remove('novame_onboarding_state');
+          // Shipping form cache: address belongs to the previous user.
+          storage.remove('novame.shipping');
+        } catch (e) {
+          console.warn('[layout] sign-out cache clear failed:', e);
+        }
         router.replace('/(auth)/sign-in');
       }
       // INITIAL_SESSION / TOKEN_REFRESHED / USER_UPDATED: no-op here.

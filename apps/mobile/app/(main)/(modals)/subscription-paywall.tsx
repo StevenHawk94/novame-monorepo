@@ -25,7 +25,10 @@ import {
   restoreSubscriptions,
   onPurchaseComplete,
   onPurchaseError,
+  classifySubscriptionChange,
+  type SubscriptionChange,
 } from '@/lib/iap';
+import { getCachedSubscription } from '@/lib/subscription';
 
 /**
  * Subscription Paywall overlay -- Stage 3.10.4.
@@ -86,38 +89,51 @@ export default function SubscriptionPaywallModal() {
   const insets = useSafeAreaInsets();
   const [cycle, setCycle] = useState<Cycle>('monthly');
   const [selected, setSelected] = useState<TierDisplay['key']>('pro');
-  // Stage 5.IAP.3: buy / restore in-flight indicator. Used to disable
-  // the Subscribe and Restore buttons while StoreKit is busy so the
-  // user can't double-tap or fire a restore mid-purchase.
+
+  // Stage 5.IAP.5: read current subscription so the paywall can
+  // distinguish new / upgrade / downgrade / crossgrade and show the
+  // right CTA + hint banner. The cache is updated by lib/iap.ts after
+  // a successful purchase; before the user has any subscription it's
+  // null (which we treat as { tier: 'free' }).
+  const cachedSub = getCachedSubscription();
+  const currentTier: PricingTierKey = cachedSub?.tier ?? 'free';
+  // Note: cachedSub does not store cycle today (subscription.ts only
+  // stores tier + lastFetchedAtMs). When tier !== 'free' but cycle
+  // is unknown, we err on the side of treating cycle as 'monthly' --
+  // this means a basic-yearly user selecting basic-monthly will be
+  // classified as 'crossgrade' which is the safe (deferred) handling.
+  const currentCycle: Cycle =
+    (cachedSub as { cycle?: Cycle } | null)?.cycle === 'yearly'
+      ? 'yearly'
+      : 'monthly';
+
+  // Pending change classification (recomputed on every cycle/selected
+  // change). Drives the CTA label, hint banner, and disabled state.
+  const pendingChange: SubscriptionChange = classifySubscriptionChange(
+    { tier: currentTier, cycle: currentCycle },
+    { tier: selected, cycle },
+  );
+  // Stage 5.IAP.5: in-flight indicator (disable repeat taps).
   const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>(
     'idle',
   );
 
-  // Stage 5.IAP.3: listen for the global IAP listener's outcome events.
-  // The listener lives in app/_layout.tsx, registers once, and fires
-  // here when our own purchaseSubscription() resolves on the StoreKit
-  // side AND the server upload completes. The paywall is responsible
-  // only for closing itself + showing the right alert.
+  // Stage 5.IAP.5: listen for the global IAP listener's outcome events.
+  // Industry standard (RevenueCat / Adapty / Apphud): on completed
+  // purchase, just close the paywall -- do NOT pop a redundant alert.
+  // Apple's own StoreKit dialog already showed "You're All Set" before
+  // returning control to us. Any extra alert is double-confirmation
+  // friction that hurts conversion. The next screen (Me page) will
+  // reflect the new tier on its next focus.
   useEffect(() => {
-    const offComplete = onPurchaseComplete(({ tier, cycle: cyc }) => {
+    const offComplete = onPurchaseComplete(() => {
       setBusy('idle');
-      Alert.alert(
-        'Subscription Active',
-        `Welcome to ${PRICING_TIERS[tier].name} (${cyc}). Your subscription is now active.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) router.back();
-            },
-          },
-        ],
-      );
+      if (router.canGoBack()) router.back();
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
-      // user-cancelled is filtered inside lib/iap.ts so we never see
-      // it here. All remaining errors merit a friendly message.
+      // user-cancelled is filtered inside lib/iap.ts -- we never see
+      // it here. Other errors deserve a friendly retry message.
       Alert.alert(
         'Purchase Failed',
         err.message ||
@@ -176,9 +192,8 @@ export default function SubscriptionPaywallModal() {
 
   const handleSubscribe = async () => {
     if (busy !== 'idle') return;
+    if (pendingChange === 'same') return; // current plan, no-op
     void haptics.medium();
-    // Compose product ID from the current selection. Must match the 6
-    // App Store Connect product IDs in IOS_SUBSCRIPTION_PRODUCT_IDS.
     const productId = `novame.${selected}.${cycle}` as IOSSubscriptionProductId;
     if (!IOS_SUBSCRIPTION_PRODUCT_IDS.includes(productId)) {
       Alert.alert('Invalid Product', `Product ${productId} is not configured.`);
@@ -186,33 +201,76 @@ export default function SubscriptionPaywallModal() {
     }
     setBusy('purchasing');
     try {
-      // Triggers the StoreKit dialog. The result arrives via the
-      // global purchaseUpdatedListener in lib/iap.ts, which fires the
-      // onPurchaseComplete callback we registered in the useEffect
-      // above. So we don't await a result here -- we just await the
-      // dialog dismiss, then either the listener fires (success) or
-      // the user cancelled (silent, busy reset by error listener
-      // filter -- but to be safe, we also reset on the next mount /
-      // user retry).
-      await purchaseSubscription(productId);
-      // If we got here without the listener firing yet, leave busy set
-      // -- onPurchaseComplete / onPurchaseError will clear it. If the
-      // user cancelled, neither fires (UserCancelled is silent), so we
-      // need to clear busy after a short delay to let the dialog
-      // animate closed.
+      const outcome = await purchaseSubscription(productId);
+
+      if (outcome.kind === 'cancelled') {
+        // User dismissed the StoreKit dialog -- silent.
+        setBusy('idle');
+        return;
+      }
+
+      if (outcome.kind === 'scheduled') {
+        // Apple StoreKit 2: downgrade or crossgrade. NO new transaction
+        // fires; the change lands at the end of the current period.
+        // Tell the user explicitly because there's no other UI signal
+        // (no charge, no immediate tier change). This is the one alert
+        // we MUST keep -- the timing info has no other surface.
+        setBusy('idle');
+        const tierName = PRICING_TIERS[selected].name;
+        const cycleLabel = cycle === 'yearly' ? 'Annual' : 'Monthly';
+        Alert.alert(
+          'Change Scheduled',
+          `Your plan will switch to ${tierName} (${cycleLabel}) at the end of your current billing period. Until then, your current plan stays active.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (router.canGoBack()) router.back();
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      // outcome.kind === 'completed' -- immediate purchase. Listener
+      // will fire shortly with server-confirmed tier; the useEffect
+      // above closes the paywall on that event. Leave busy=purchasing
+      // so the button stays disabled while the listener catches up.
+      // Safety: if the listener somehow doesn't fire within 5s
+      // (network stuck on the apple-iap upload), reset busy so the
+      // user can retry instead of staring at a frozen button.
       setTimeout(() => {
         setBusy((b) => (b === 'purchasing' ? 'idle' : b));
-      }, 600);
+      }, 5000);
     } catch (e) {
-      // requestPurchase throws on configuration errors only; user
-      // cancellation does not throw. So this branch means something
-      // is misconfigured.
       setBusy('idle');
       Alert.alert(
         'Purchase Failed',
         e instanceof Error ? e.message : 'Please try again.',
       );
     }
+  };
+
+  // Industry-standard CTA labels. Apple HIG + Adapty / RevenueCat
+  // recommendations: the button text should reflect what the action
+  // will actually do, not a generic "Subscribe" word. This reduces
+  // post-tap confusion ("did I just buy something?").
+  const ctaLabel = (): string => {
+    if (busy === 'purchasing') return 'Processing...';
+    if (busy === 'restoring') return 'Restoring...';
+    if (pendingChange === 'same') return 'Current Plan';
+    if (pendingChange === 'new') return 'Subscribe';
+    if (pendingChange === 'upgrade') {
+      return `Upgrade to ${PRICING_TIERS[selected].name}`;
+    }
+    if (pendingChange === 'downgrade') return 'Schedule Downgrade';
+    if (pendingChange === 'crossgrade') {
+      return cycle === 'yearly'
+        ? 'Switch to Annual'
+        : 'Switch to Monthly';
+    }
+    return 'Subscribe';
   };
 
   const openLink = (url: string) => {
@@ -304,17 +362,26 @@ export default function SubscriptionPaywallModal() {
             const isSelected = selected === key;
             const price = cycle === 'monthly' ? t.monthlyPrice : t.yearlyPrice;
             const saving = calcSaving(t.monthlyPrice, t.yearlyPrice);
+            // Stage 5.IAP.5: this card == user's CURRENT active sub if
+            // both tier AND cycle match. A basic-monthly user looking
+            // at the basic-yearly card is NOT current -- they're
+            // considering a crossgrade (which is deferred per Apple).
+            const isCurrent =
+              currentTier === key && currentCycle === cycle;
             return (
               <Pressable
                 key={key}
                 onPress={() => {
+                  if (isCurrent) return;
                   void haptics.selection();
                   setSelected(key);
                 }}
+                disabled={isCurrent}
                 style={({ pressed }) => [
                   styles.tierCard,
                   isSelected && styles.tierCardSelected,
-                  { opacity: pressed ? 0.9 : 1 },
+                  isCurrent && { opacity: 0.55 },
+                  { opacity: pressed && !isCurrent ? 0.9 : 1 },
                 ]}
               >
                 <View
@@ -331,6 +398,11 @@ export default function SubscriptionPaywallModal() {
                 </View>
                 <View style={styles.tierMid}>
                   <View style={styles.tierNameRow}>
+                    {isCurrent ? (
+                      <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>CURRENT</Text>
+                      </View>
+                    ) : null}
                     <Text style={styles.tierName}>{t.name}</Text>
                     {cycle === 'yearly' && saving > 0 ? (
                       <View style={styles.savingChip}>
@@ -368,14 +440,32 @@ export default function SubscriptionPaywallModal() {
           { paddingBottom: insets.bottom + 12 },
         ]}
       >
+        {pendingChange === 'upgrade' ? (
+          <View style={styles.hintBannerUpgrade}>
+            <Text style={styles.hintBannerText}>
+              Starts immediately. Unused time on your current plan is credited toward the new one.
+            </Text>
+          </View>
+        ) : null}
+        {pendingChange === 'downgrade' || pendingChange === 'crossgrade' ? (
+          <View style={styles.hintBannerScheduled}>
+            <Text style={styles.hintBannerText}>
+              Your current plan stays active until the end of the billing period. The new plan takes effect then.
+            </Text>
+          </View>
+        ) : null}
         <Pressable
           onPress={handleSubscribe}
+          disabled={busy !== 'idle' || pendingChange === 'same'}
           style={({ pressed }) => [
             styles.subscribeBtn,
+            (busy !== 'idle' || pendingChange === 'same') && {
+              opacity: 0.5,
+            },
             { opacity: pressed ? 0.9 : 1 },
           ]}
         >
-          <Text style={styles.subscribeBtnText}>Subscribe</Text>
+          <Text style={styles.subscribeBtnText}>{ctaLabel()}</Text>
         </Pressable>
         <View style={styles.footerLinks}>
           <Pressable onPress={() => openLink(TERMS_URL)} hitSlop={6}>
@@ -593,6 +683,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     backgroundColor: '#0F0B2E',
+  },
+  currentBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: 'rgba(168,85,247,0.3)',
+    marginRight: 6,
+  },
+  currentBadgeText: {
+    color: '#C084FC',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  hintBannerUpgrade: {
+    backgroundColor: 'rgba(52,211,153,0.08)',
+    borderColor: 'rgba(52,211,153,0.2)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  hintBannerScheduled: {
+    backgroundColor: 'rgba(251,191,36,0.08)',
+    borderColor: 'rgba(251,191,36,0.2)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  hintBannerText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    lineHeight: 17,
   },
   subscribeBtn: {
     paddingVertical: 18,
