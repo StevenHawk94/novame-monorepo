@@ -194,7 +194,7 @@ export default function MeModal() {
 
         {/* 2. Better Self Match */}
         <Pressable
-          onPress={() => goTo('/(main)/(modals)/weekly-report')}
+          onPress={() => goTo('/(main)/(modals)/growth-center')}
           style={({ pressed }) => [
             styles.card,
             { opacity: pressed ? 0.85 : 1 },
