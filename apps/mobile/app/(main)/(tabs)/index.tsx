@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { VideoCharacter } from '@/components/main/video-character';
 import {
@@ -85,6 +85,19 @@ export default function HomeTab() {
   const userIdRef = useRef<string | null>(null);
 
   // ---- Initial fetch + 60s refresh interval ----
+
+  // Re-sync cached state when the home tab regains focus. Modal overlays
+  // like skin-select mutate the MMKV cache via switchOutfit() but do
+  // not push to home tab's local state directly. Reading cache on focus
+  // gives the user immediate visual feedback (new outfit) the moment
+  // they close the modal, without depending on a tab switch / cold
+  // re-mount to refresh.
+  useFocusEffect(
+    useCallback(() => {
+      const fresh = getCachedCharacterState();
+      if (fresh) setCachedState(fresh);
+    }, []),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -208,7 +221,10 @@ export default function HomeTab() {
         <View style={styles.topBar}>
           <TopBarButton icon="menu" onPress={handleMePress} />
           <View style={styles.topBarRight}>
-            <TopBarButton icon="pets" onPress={handlePlaceholder} />
+            <TopBarButton
+              icon="pets"
+              onPress={() => router.push('/(main)/(modals)/skin-select')}
+            />
             <TopBarButton icon="description" onPress={handlePlaceholder} />
             <TopBarButton icon="emoji-events" onPress={handlePlaceholder} />
             {/* Stage 3.8.1 DEV: reanimated v4 smoke test entry — DELETE before commit */}

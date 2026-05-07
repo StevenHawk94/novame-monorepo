@@ -204,10 +204,12 @@ export async function switchOutfit(
   userId: string,
   outfitNum: number,
 ): Promise<CachedCharacterState> {
+  // NB: server destructures `const { outfitNum } = body` -- field name
+  // must match exactly or the server silently writes undefined.
   await apiClient.post('/api/character-state', {
     userId,
     action: 'switch_outfit',
-    outfit: outfitNum,
+    outfitNum,
   });
   return fetchCharacterState(userId);
 }
