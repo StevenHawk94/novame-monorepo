@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -15,6 +15,12 @@ import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 
 import { MiniGauge } from '@/components/me/mini-gauge';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
+import {
+  PlanBillingSheet,
+  type PlanBillingSheetRef,
+} from '@/components/me/plan-billing-sheet';
 import { haptics } from '@/lib/haptics';
 import {
   type CachedMeStats,
@@ -52,6 +58,8 @@ const PRIVACY_URL = 'https://api.soulsayit.com/privacy';
 const TERMS_URL = 'https://api.soulsayit.com/terms';
 
 export default function MeModal() {
+  const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);
+
   const insets = useSafeAreaInsets();
   const [stats, setStats] = useState<CachedMeStats | null>(() =>
     getCachedMeStats(),
@@ -146,6 +154,7 @@ export default function MeModal() {
   const appVersion = Constants.expoConfig?.version ?? '';
 
   return (
+    <BottomSheetModalProvider>
     <View style={styles.root}>
       <ScrollView
         contentContainerStyle={[
@@ -272,7 +281,7 @@ export default function MeModal() {
             </View>
           </View>
           <Pressable
-            onPress={() => goTo('/(main)/(modals)/plan-billing')}
+            onPress={() => planBillingSheetRef.current?.present()}
             style={({ pressed }) => [
               styles.planViewBtn,
               { opacity: pressed ? 0.7 : 1 },
@@ -293,7 +302,7 @@ export default function MeModal() {
           <MenuRow
             icon="credit-card"
             label="Plan and Billing"
-            onPress={() => goTo('/(main)/(modals)/plan-billing')}
+            onPress={() => planBillingSheetRef.current?.present()}
             divider
           />
           <MenuRow
@@ -334,7 +343,9 @@ export default function MeModal() {
           <Text style={styles.versionText}>VERSION {appVersion}</Text>
         ) : null}
       </ScrollView>
+      <PlanBillingSheet ref={planBillingSheetRef} />
     </View>
+    </BottomSheetModalProvider>
   );
 }
 
