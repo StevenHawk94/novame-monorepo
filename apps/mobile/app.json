@@ -62,7 +62,8 @@
         {
           "microphonePermission": "App needs microphone access to record voice to transcript to text and analyze."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
