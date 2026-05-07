@@ -65,7 +65,8 @@
       ],
       "expo-web-browser",
       "expo-notifications",
-      "./plugins/with-photo-permissions"
+      "./plugins/with-photo-permissions",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true
