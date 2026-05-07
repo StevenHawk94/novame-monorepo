@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
+import { initIAP, cleanupIAP } from '@/lib/iap';
 import { syncOnboardingIfPending } from '@/lib/onboarding';
 
 /**
@@ -58,6 +59,9 @@ export default function RootLayout() {
     };
     // Run once on mount to set the initial state correctly.
     handleAppStateChange(AppState.currentState);
+    // Stage 5.IAP.2: register global StoreKit 2 purchase listener.
+    void initIAP();
+
     const appStateSub = AppState.addEventListener('change', handleAppStateChange);
 
     // ---- onAuthStateChange: drive navigation on sign-in / sign-out ----
@@ -82,6 +86,7 @@ export default function RootLayout() {
     return () => {
       appStateSub.remove();
       authSub.unsubscribe();
+      void cleanupIAP();
     };
   }, []);
 
