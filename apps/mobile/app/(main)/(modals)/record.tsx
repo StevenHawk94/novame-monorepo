@@ -63,6 +63,8 @@ import {
   openAppSettings,
 } from '@/lib/permissions';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { fetchDailyLimit } from '@/lib/daily-limit-api';
+import { ApiError } from '@novame/api-client';
 import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
 import { Confetti } from '@/components/cards/Confetti';
@@ -209,6 +211,41 @@ const phStyles = StyleSheet.create({
 function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProps) {
   const [requesting, setRequesting] = useState(false);
 
+  // Stage 5.IAP.4: pre-flight quota check. If the user is at or over
+  // their monthly insight quota, close this modal and push the
+  // paywall. We do NOT block on the request -- if it fails (network),
+  // we fall through to letting the user record/type and let the
+  // server-side gate in publish-wisdom catch it.
+  const checkQuotaThenAdvance = async (
+    next: typeof PHASE.RECORDING | typeof PHASE.TYPE_INPUT,
+  ): Promise<void> => {
+    try {
+      const session = await getCurrentSession();
+      const userId = session?.user?.id;
+      if (!userId) {
+        // No session shouldn't happen at this point but if it does,
+        // skip the check rather than block.
+        goTo(next);
+        return;
+      }
+      const limit = await fetchDailyLimit(userId);
+      if (!limit.allowed) {
+        haptics.warning();
+        close();
+        // Wait one tick so the close animation can begin before we
+        // push the paywall on top of the modal stack.
+        setTimeout(() => {
+          router.push('/(main)/(modals)/subscription-paywall');
+        }, 100);
+        return;
+      }
+    } catch (e) {
+      console.warn('[record/choose] quota pre-check failed:', e);
+      // fall through -- server will block if actually over.
+    }
+    goTo(next);
+  };
+
   const handleRecordTap = async () => {
     if (requesting) return;
     haptics.light();
@@ -216,15 +253,12 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
     try {
       const res = await requestMicPermission();
       if (res.granted) {
-        goTo(PHASE.RECORDING);
+        await checkQuotaThenAdvance(PHASE.RECORDING);
       } else if (!res.canAskAgain) {
         // System will not show prompt again — direct user to Settings.
         showMicDenied();
       } else {
         // User actively denied this prompt; stay on choose phase.
-        // (Old RecordOverlay treated this the same as canAskAgain=false,
-        // but we're more conservative — only push Settings dialog when
-        // the system actually blocks future prompts.)
       }
     } finally {
       setRequesting(false);
@@ -232,7 +266,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
   };
 
   const handleTypeTap = () => {
-    goTo(PHASE.TYPE_INPUT);
+    void checkQuotaThenAdvance(PHASE.TYPE_INPUT);
   };
 
   return (
@@ -1530,6 +1564,22 @@ function PhasePublishing({
         goTo(PHASE.INSIGHT);
       } catch (err) {
         console.error('[publish] failed:', err);
+        // Stage 5.IAP.4: detect quota-exceeded -> route to paywall.
+        if (
+          err instanceof ApiError &&
+          err.status === 402 &&
+          typeof err.body === 'object' &&
+          err.body !== null &&
+          'code' in err.body &&
+          (err.body as { code?: string }).code === 'QUOTA_EXCEEDED'
+        ) {
+          inflightRef.current = false;
+          close();
+          setTimeout(() => {
+            router.push('/(main)/(modals)/subscription-paywall');
+          }, 100);
+          return;
+        }
         setErrored(true);
         inflightRef.current = false;
       }

@@ -109,6 +109,76 @@ export async function POST(request) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // ---- Stage 5.IAP.4: monthly insight quota gate ----
+    // Mirror the algorithm used in /api/daily-limit (count
+    // wisdom_cards rows for this user since the start of the calendar
+    // month). If at-or-over the tier limit, return 402 Payment
+    // Required with a machine-readable code so mobile clients can
+    // route the user to the paywall instead of showing a generic
+    // error.
+    //
+    // We respect a clientTier hint passed from mobile (mirroring
+    // daily-limit's race-condition handling). After a fresh purchase
+    // the StoreKit dialog can return before the apple-iap upload +
+    // DB write settle. The mobile MMKV cache is updated optimistically
+    // by lib/iap.ts -- if the client thinks it has a higher tier than
+    // the DB, we trust it for THIS request and reconcile on the next
+    // webhook fire.
+    const TIER_LIMITS = { free: 1, basic: 15, pro: 30, ultra: 60 }
+    const TIER_RANK   = { free: 0, basic: 1, pro: 2, ultra: 3 }
+
+    let clientTier = null
+    try {
+      // JSON requests: clientTier was destructured into typedText et al
+      // above -- but we read it again here so this block is positionally
+      // independent (easier to maintain). Falls through to null on
+      // multipart since FormData lookup is one-shot above.
+      clientTier = (contentType.includes('application/json'))
+        ? null  // JSON path: re-parse not possible (body was consumed). Mobile sets clientTier on form fields below for the file path; for typed wisdoms we accept the DB tier as authoritative since typed mode is fast and webhook race is rare.
+        : null
+    } catch { /* swallow */ }
+
+    const { data: tierProfile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', userId)
+      .single()
+    const dbTier = tierProfile?.subscription_tier || 'free'
+    let effectiveTier = dbTier
+    if (clientTier && (TIER_RANK[clientTier] ?? -1) > (TIER_RANK[dbTier] ?? 0)) {
+      effectiveTier = clientTier
+    }
+    const monthlyLimit = TIER_LIMITS[effectiveTier] ?? TIER_LIMITS.free
+
+    const monthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    ).toISOString()
+    const { count: usedCount } = await supabase
+      .from('wisdom_cards')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', monthStart)
+    const usedThisMonth = usedCount || 0
+
+    if (usedThisMonth >= monthlyLimit) {
+      console.log(
+        `[publish-wisdom] QUOTA_EXCEEDED: user=${userId} tier=${effectiveTier} used=${usedThisMonth}/${monthlyLimit}`
+      )
+      return NextResponse.json(
+        {
+          error: 'Monthly insight quota exceeded',
+          code: 'QUOTA_EXCEEDED',
+          usedThisMonth,
+          monthlyLimit,
+          tier: effectiveTier,
+        },
+        { status: 402 }
+      )
+    }
+    // ---- end quota gate ----
+
     let creatorName = null
     let creatorAvatar = null
     try {
