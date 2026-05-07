@@ -63,7 +63,15 @@
           "microphonePermission": "App needs microphone access to record voice to transcript to text and analyze."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "NovaMe needs access to your photos to set a custom profile picture.",
+          "cameraPermission": "NovaMe needs camera access to take a profile picture."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
