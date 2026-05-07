@@ -64,14 +64,8 @@
         }
       ],
       "expo-web-browser",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "NovaMe needs access to your photos to set a custom profile picture.",
-          "cameraPermission": "NovaMe needs camera access to take a profile picture."
-        }
-      ],
-      "expo-notifications"
+      "expo-notifications",
+      "./plugins/with-photo-permissions"
     ],
     "experiments": {
       "typedRoutes": true
