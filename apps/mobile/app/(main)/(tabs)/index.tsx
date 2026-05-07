@@ -19,6 +19,7 @@ import {
   type CachedCharacterState,
 } from '@/lib/character-state';
 import { fetchSubscriptionTier } from '@/lib/subscription';
+import { fetchMeStats } from '@/lib/me-stats';
 import {
   getCharacterState,
   pickSpeechBubble,
@@ -101,6 +102,17 @@ export default function HomeTab() {
         // data trigger as character-state. Errors are swallowed because the
         // app degrades gracefully to cached tier (or "free" default).
         void fetchSubscriptionTier(session.user.id).catch(() => {});
+        // Me-page stats prewarm — runs ~1.5s after Tier 1 loaders so it
+        // never competes with the visible Home UI for bandwidth. The
+        // user is unlikely to tap the hamburger within 1.5s of seeing
+        // the home screen, so by the time they do open Me the cache is
+        // hot and the modal renders instantly. Failure is silent — Me
+        // shows "--" placeholders, every other section still works.
+        const meStatsUserId = session.user.id;
+        setTimeout(() => {
+          if (cancelled) return;
+          void fetchMeStats(meStatsUserId).catch(() => {});
+        }, 1500);
         if (cancelled) return;
         setCachedState(next);
         setWpVisual(next.wp);

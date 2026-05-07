@@ -63,6 +63,7 @@ import {
   openAppSettings,
 } from '@/lib/permissions';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
 import { Confetti } from '@/components/cards/Confetti';
 import { FlippableCard } from '@/components/cards/FlippableCard';
@@ -1511,6 +1512,13 @@ function PhasePublishing({
           wisdomScore: score,
           card: response.card ?? null,
         });
+
+        // Me-stats now stale (totalWords / totalCards / usedThisMonth /
+        // totalExp all changed). Invalidate cache + fire silent refetch
+        // so when the user returns to Home and opens Me, the numbers
+        // are current. Stage 3.10.1.
+        invalidateMeStats();
+        void fetchMeStats(userId).catch(() => {});
 
         setPublishedCard(response.card ?? null);
         setPublishedScore(score);
