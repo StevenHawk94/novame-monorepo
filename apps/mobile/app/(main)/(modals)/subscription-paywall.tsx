@@ -18,6 +18,14 @@ import {
 } from '@novame/core';
 
 import { haptics } from '@/lib/haptics';
+import {
+  IOS_SUBSCRIPTION_PRODUCT_IDS,
+  type IOSSubscriptionProductId,
+  purchaseSubscription,
+  restoreSubscriptions,
+  onPurchaseComplete,
+  onPurchaseError,
+} from '@/lib/iap';
 
 /**
  * Subscription Paywall overlay -- Stage 3.10.4.
@@ -78,26 +86,133 @@ export default function SubscriptionPaywallModal() {
   const insets = useSafeAreaInsets();
   const [cycle, setCycle] = useState<Cycle>('monthly');
   const [selected, setSelected] = useState<TierDisplay['key']>('pro');
+  // Stage 5.IAP.3: buy / restore in-flight indicator. Used to disable
+  // the Subscribe and Restore buttons while StoreKit is busy so the
+  // user can't double-tap or fire a restore mid-purchase.
+  const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>(
+    'idle',
+  );
+
+  // Stage 5.IAP.3: listen for the global IAP listener's outcome events.
+  // The listener lives in app/_layout.tsx, registers once, and fires
+  // here when our own purchaseSubscription() resolves on the StoreKit
+  // side AND the server upload completes. The paywall is responsible
+  // only for closing itself + showing the right alert.
+  useEffect(() => {
+    const offComplete = onPurchaseComplete(({ tier, cycle: cyc }) => {
+      setBusy('idle');
+      Alert.alert(
+        'Subscription Active',
+        `Welcome to ${PRICING_TIERS[tier].name} (${cyc}). Your subscription is now active.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) router.back();
+            },
+          },
+        ],
+      );
+    });
+    const offError = onPurchaseError((err) => {
+      setBusy('idle');
+      // user-cancelled is filtered inside lib/iap.ts so we never see
+      // it here. All remaining errors merit a friendly message.
+      Alert.alert(
+        'Purchase Failed',
+        err.message ||
+          'Something went wrong with the purchase. Please try again.',
+      );
+    });
+    return () => {
+      offComplete();
+      offError();
+    };
+  }, []);
 
   const handleClose = () => {
     void haptics.light();
     router.back();
   };
 
-  const handleRestore = () => {
+  const handleRestore = async () => {
+    if (busy !== 'idle') return;
     void haptics.light();
-    Alert.alert(
-      'Coming Soon',
-      'In-app purchases launch in Stage 5. Restore Purchases will be available once IAP is enabled.',
-    );
+    setBusy('restoring');
+    try {
+      const result = await restoreSubscriptions();
+      // setBusy is reset inside the onPurchaseComplete listener when a
+      // restore actually triggers a tier write -- BUT restore can also
+      // succeed-but-find-nothing, which never fires the listener. So
+      // we explicitly clear busy here too.
+      setBusy('idle');
+      if (result.restored && result.tier) {
+        Alert.alert(
+          'Restored',
+          `Your ${PRICING_TIERS[result.tier].name} subscription is now active.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (router.canGoBack()) router.back();
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          'Nothing to Restore',
+          'We did not find any prior subscription on this Apple ID.',
+        );
+      }
+    } catch (e) {
+      setBusy('idle');
+      Alert.alert(
+        'Restore Failed',
+        e instanceof Error ? e.message : 'Please try again.',
+      );
+    }
   };
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
+    if (busy !== 'idle') return;
     void haptics.medium();
-    Alert.alert(
-      'Coming Soon',
-      'In-app purchases launch in Stage 5. Subscribe will be enabled once IAP is integrated.',
-    );
+    // Compose product ID from the current selection. Must match the 6
+    // App Store Connect product IDs in IOS_SUBSCRIPTION_PRODUCT_IDS.
+    const productId = `novame.${selected}.${cycle}` as IOSSubscriptionProductId;
+    if (!IOS_SUBSCRIPTION_PRODUCT_IDS.includes(productId)) {
+      Alert.alert('Invalid Product', `Product ${productId} is not configured.`);
+      return;
+    }
+    setBusy('purchasing');
+    try {
+      // Triggers the StoreKit dialog. The result arrives via the
+      // global purchaseUpdatedListener in lib/iap.ts, which fires the
+      // onPurchaseComplete callback we registered in the useEffect
+      // above. So we don't await a result here -- we just await the
+      // dialog dismiss, then either the listener fires (success) or
+      // the user cancelled (silent, busy reset by error listener
+      // filter -- but to be safe, we also reset on the next mount /
+      // user retry).
+      await purchaseSubscription(productId);
+      // If we got here without the listener firing yet, leave busy set
+      // -- onPurchaseComplete / onPurchaseError will clear it. If the
+      // user cancelled, neither fires (UserCancelled is silent), so we
+      // need to clear busy after a short delay to let the dialog
+      // animate closed.
+      setTimeout(() => {
+        setBusy((b) => (b === 'purchasing' ? 'idle' : b));
+      }, 600);
+    } catch (e) {
+      // requestPurchase throws on configuration errors only; user
+      // cancellation does not throw. So this branch means something
+      // is misconfigured.
+      setBusy('idle');
+      Alert.alert(
+        'Purchase Failed',
+        e instanceof Error ? e.message : 'Please try again.',
+      );
+    }
   };
 
   const openLink = (url: string) => {
