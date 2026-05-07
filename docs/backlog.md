@@ -11,6 +11,30 @@
 ## 按触发阶段分组
 
 ### 🔴 阶段 5 触发（IAP 原生集成时）
+#### B59 — Email verification email not delivered after newEmail change
+- **Source**: Stage 3.10.2 C1 Account Management real-device testing
+- **Trigger**: User opens Account Management -> Email -> enters new
+  email -> Send Verification. Server returns success
+  (`{success:true, message:'Verification email sent'}`) but no email
+  arrives at the new inbox.
+- **Symptom**: `supabase.auth.admin.updateUserById({ email: newEmail })`
+  is supposed to fire Supabase's "Confirm email change" template via
+  the project's configured SMTP, but the email never reaches the user.
+  Old web (visdom-capacitor) used the same code path and likely had
+  the same behavior -- this is a Supabase project-level SMTP / email
+  template / Site URL configuration issue, not a mobile code bug.
+- **Fix scope**:
+  - Verify Supabase Dashboard -> Auth -> Email Templates -> "Confirm
+    email change" is enabled.
+  - Verify Auth -> URL Configuration -> Site URL points to a host
+    that can receive the verification redirect (production needs
+    novame://... deep link or web fallback).
+  - Verify SMTP is set up (default Supabase SMTP has tight rate
+    limits; production should use Resend / Postmark / SendGrid).
+- **Scope**: ops / supabase project config (no app code change)
+- **Priority**: Stage 5 (Email change is rare; users can sign-up with
+  the desired email instead. Not a launch blocker.)
+
 #### B56 — MMKV v4 持久化在 dev build 失效
 - **来源**:阶段 3.9.A.2.5 真测发现
 - **触发条件**:dev build,`npx expo run:ios --device` 重装后或 force quit 重开
