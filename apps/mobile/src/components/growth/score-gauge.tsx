@@ -2,30 +2,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 /**
- * Half-circle gauge for the "Better Self Match" entry on the Me page
- * (Stage 3.10.1). A larger sibling component, ScoreGauge, lives at
- * components/growth/score-gauge.tsx for the Growth Center overlay
- * (Stage 3.10.3 A) -- both share the same SVG arc technique and color
- * thresholds; only the dimensions and label sizes differ.
+ * Large half-circle gauge for the Growth Center "Better Self Match"
+ * card (Stage 3.10.3 A). Same SVG technique as MiniGauge but bigger:
+ * the gauge is the focal point of its card, score sits inside the arc
+ * in 32px black weight, and the match label drops below the arc in
+ * the gauge color.
  *
- * Score domain: 30 - 100 (matches old web MeView mini-gauge math, where
- * scores below 30 still pin the bar to empty). The default mid-tier
- * score returned by the server is 70 (see /api/me-stats and
- * profiles.better_self_score column default).
- *
- * Color thresholds:
- *   80+   green  (High Match)
- *   60-79 yellow (Medium Match)
- *   <60   red    (Low Match)
- *
- * Implementation note: react-native-svg ships with Expo SDK 54 (already
- * a transitive dependency at v15.12.1). We use SVG rather than nested
- * Views with rotated borders because the latter requires hacky
- * transform-origin + masking and breaks under reanimated layout pass.
+ * Score domain matches MiniGauge (30 - 100, default 70). Color
+ * thresholds are also identical so the two surfaces never disagree.
  */
 
 const ARC_PATH = 'M 20 90 A 80 80 0 0 1 180 90';
-// Stroke length of the arc above (computed once: pi * 80 ~= 251).
 const ARC_LENGTH = 251;
 
 function getColor(score: number): string {
@@ -40,11 +27,11 @@ function getLabel(score: number): string {
   return 'Low Match';
 }
 
-export type MiniGaugeProps = {
+export type ScoreGaugeProps = {
   score: number;
 };
 
-export function MiniGauge({ score }: MiniGaugeProps) {
+export function ScoreGauge({ score }: ScoreGaugeProps) {
   const clamped = Math.max(30, Math.min(100, score));
   const pct = (clamped - 30) / 70;
   const dashLen = pct * ARC_LENGTH;
@@ -53,7 +40,7 @@ export function MiniGauge({ score }: MiniGaugeProps) {
   const label = getLabel(score);
 
   return (
-    <View style={styles.row}>
+    <View style={styles.wrap}>
       <View style={styles.svgWrap}>
         <Svg viewBox="0 0 200 100" width="100%" height="100%">
           <Path
@@ -82,14 +69,12 @@ export function MiniGauge({ score }: MiniGaugeProps) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
+  wrap: {
     alignItems: 'center',
-    gap: 16,
   },
   svgWrap: {
-    width: 96,
-    height: 48,
+    width: 200,
+    height: 100,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -97,16 +82,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: 4,
     alignItems: 'center',
   },
   scoreText: {
-    fontSize: 18,
+    fontSize: 32,
     fontWeight: '900',
     color: '#FFFFFF',
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    marginTop: 8,
   },
 });
