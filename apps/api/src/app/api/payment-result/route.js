@@ -88,18 +88,32 @@ export async function GET(request) {
     } catch(e) {}
 
     function returnToApp() {
-      // 2. 尝试使用 iOS Capacitor 的专用协议返回
-      window.location.href = 'capacitor://localhost';
-      
-      // 3. 尝试使用 Android Capacitor 的协议
+      // Stage 5.AIR.1: deep-link back into the React Native app via
+      // the registered URL scheme. SFAuthenticationSession (which is
+      // what expo-web-browser.openAuthSessionAsync wraps on iOS)
+      // intercepts any URL whose scheme matches the returnUrl
+      // passed in by the client ('novame://payment-result'). On
+      // intercept, the session auto-dismisses and resolves the
+      // mobile-side promise with { type: 'success', url: <this url> }.
+      // The mobile client then parses status + paymentIntentId from
+      // the query string.
+      //
+      // We pass the same status + payment_intent_id we received from
+      // Airwallex so the mobile client doesn't need to round-trip
+      // back to our server to learn the outcome.
+      var deepLink = 'novame://payment-result?status=' + encodeURIComponent(result.status);
+      if (result.paymentIntentId) {
+        deepLink += '&payment_intent_id=' + encodeURIComponent(result.paymentIntentId);
+      }
+      window.location.href = deepLink;
+
+      // Fallback: if for some reason the browser didn't follow the
+      // custom scheme (rare; usually only happens if the user
+      // disabled the app), try history.back() so they at least
+      // exit the bridge page.
       setTimeout(function() {
-        window.location.href = 'https://localhost';
-      }, 300);
-      
-      // 4. 终极防线：如果上述皆无效，强行后退历史记录以尝试退出 WebView 环境
-      setTimeout(function() {
-        window.history.go(-3);
-      }, 800);
+        window.history.go(-1);
+      }, 1500);
     }
 
     // 模拟处理时间后自动返回
