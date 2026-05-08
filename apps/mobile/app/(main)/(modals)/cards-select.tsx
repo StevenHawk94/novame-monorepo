@@ -430,14 +430,23 @@ function KeywordTab({
   isLocked: boolean;
   onPress: () => void;
 }) {
-  // Same source-of-truth pattern as KeywordCell in collection-view.tsx:
-  // resolve via asset-cache first, fall back to direct R2 URL so the
-  // image still loads even if the bundle hasn't pre-fetched yet.
-  const filename = `${slug}-front.webp`;
-  const cached = getCachedAssetUri(filename);
-  const src = cached
-    ? { uri: cached }
-    : { uri: CARD_FALLBACK_URL(filename) };
+  // Stage 5.AIR.2.bugfix.C: R2 stores keyword art under the keyword
+  // ID (e.g. 'mind-clarity-front.webp'), NOT the slug
+  // ('Clarity-front.webp' -- which 404s). Convert via slugToId.
+  // (collection-view.tsx has the same bug in its fallback branch
+  // but never hits it because by the time users reach Collection
+  // the asset-cache has already downloaded the file under its
+  // real ID-based filename, so the cache hit short-circuits the
+  // wrong fallback URL. cards-select hits the fallback fresh on
+  // first visit.)
+  const id = slugToId(slug);
+  const filename = id ? `${id}-front.webp` : null;
+  const cached = filename ? getCachedAssetUri(filename) : null;
+  const src = filename
+    ? cached
+      ? { uri: cached }
+      : { uri: CARD_FALLBACK_URL(filename) }
+    : null;
 
   return (
     <Pressable
@@ -451,14 +460,16 @@ function KeywordTab({
       ]}
     >
       <View style={tabStyles.imgWrap}>
-        <Image
-          source={src}
-          style={[
-            tabStyles.img,
-            isLocked && { opacity: 0.3 },
-          ]}
-          contentFit="contain"
-        />
+        {src ? (
+          <Image
+            source={src}
+            style={[
+              tabStyles.img,
+              isLocked && { opacity: 0.3 },
+            ]}
+            contentFit="contain"
+          />
+        ) : null}
         {isLocked ? (
           <View style={tabStyles.lockOverlay}>
             <MaterialIcons

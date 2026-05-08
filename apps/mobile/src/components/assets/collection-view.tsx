@@ -32,6 +32,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { slugToId } from '@novame/core';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
@@ -202,7 +203,13 @@ function KeywordCell({
   // Resolve front-art URL via the asset-cache the same way step-8 +
   // FlippableCard do. If the asset isn't cached yet we fall back to
   // the R2 URL so the network image still loads.
-  const filename = `${slug}-front.webp`;
+  // Stage 5.AIR.2.bugfix.C: R2 stores by keyword ID (mind-clarity)
+  // not slug (Clarity). The cache hit usually saves us, but the
+  // fallback URL was always wrong; if cache ever misses (e.g. fresh
+  // install) Collection would silently render empty. Fix in lockstep
+  // with cards-select.
+  const id = slugToId(slug);
+  const filename = id ? `${id}-front.webp` : `${slug}-front.webp`;
   const cached = getCachedAssetUri(filename);
   const src = cached
     ? { uri: cached }
