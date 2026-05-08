@@ -1,35 +1,39 @@
 /**
- * Cards selection modal — Stage 5.AIR.2
+ * Cards selection modal — Stage 5.AIR.2 (UI v2 with bugfix.A)
  *
  * Entry: order-detail Continue Card Selection button (when order
- * status === 'pending_selection'). Receives ?orderId= in route
- * params and is responsible for letting the user pick exactly 48
- * wisdom_cards from their collection to compose the printed deck.
+ * status === 'pending_selection'). Receives ?orderId= and lets the
+ * user pick exactly 48 wisdom_cards from their collection to compose
+ * the printed deck.
  *
  * Design decision (a): the 48-count constraint is on TOTAL CARDS,
  * not on distinct keywords. A user with 50 wisdom_cards across 12
  * keywords can pick any 48 — including multiple from the same
- * keyword. This is the more forgiving UX path: a user does not need
- * to have collected all 48 keywords before they can use this
- * feature.
+ * keyword.
  *
- * Data source: fetchWisdoms returns the user's wisdoms with the
- * generated wisdom_card joined in. We filter to wisdoms that have
- * a card and group by card.keyword_id for tab navigation. No new
- * server endpoint needed.
+ * UI v2 changes from initial 5.AIR.2 (per testing feedback):
+ *   1. Keyword tab strip is now a fixed-rectangle button per keyword
+ *      (80x96), each containing the keyword's front-art thumbnail +
+ *      name + count badge. Matches the visual language of the
+ *      Collection grid so users recognize cards at a glance.
+ *      Locked tabs (no cards yet) are dimmed with a lock overlay.
+ *   2. Long-press a card cell to open a preview modal with the full
+ *      FlippableCard (front-art + insight). Preview includes
+ *      Add/Remove deck buttons so the user can decide after seeing
+ *      both sides. Single-tap on the cell still does the immediate
+ *      add/remove (faster path for users who recognize quotes).
  *
- * Submit: PATCH /api/orders { orderId, status: 'paid',
- * selectedCardIds: [48 ids] }. The server validates status
- * transitions; once status='paid' the selection is locked in (any
- * further PATCH requests would be rejected by status validation in
- * a future hardening pass — for now the protection is that the
- * modal only opens when status='pending_selection').
+ * Data source: fetchWisdoms(userId, limit=200). Filters wisdoms with
+ * a card joined and groups by card.keyword_id. No new server
+ * endpoint needed.
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -38,17 +42,21 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ALL_KEYWORD_SLUGS, slugToId, idToSlug } from '@novame/core';
 import { supabase } from '@/lib/supabase';
 import { fetchWisdoms, type WisdomCardEmbed } from '@/lib/wisdoms-api';
 import { updateOrder } from '@/lib/orders-api';
+import { getCachedAssetUri } from '@/lib/asset-cache';
+import { FlippableCard } from '@/components/cards/FlippableCard';
 
 const REQUIRED_COUNT = 48;
+const CARD_FALLBACK_URL = (filename: string) =>
+  `https://media.novameapp.com/cards/${filename}`;
 
 type CardItem = WisdomCardEmbed & {
-  // Always non-null after grouping (we filter wisdoms that lack a card).
   id: string;
   keyword_id: string | null;
 };
@@ -65,6 +73,7 @@ export default function CardsSelectModal() {
   const [activeKeywordSlug, setActiveKeywordSlug] = useState<string | null>(
     null,
   );
+  const [previewCard, setPreviewCard] = useState<CardItem | null>(null);
 
   // ---- Load all of user's wisdom_cards ----
   useEffect(() => {
@@ -77,16 +86,12 @@ export default function CardsSelectModal() {
           if (!cancelled) setLoading(false);
           return;
         }
-        // 200 covers a heavy-user case (a typical user with 48
-        // keyword unlock has ~50-150 wisdoms). If we ever exceed
-        // this we add a paging UI; not worth the complexity yet.
         const res = await fetchWisdoms(userId, { limit: 200, offset: 0 });
         if (cancelled) return;
         const cards: CardItem[] = (res.wisdoms || [])
           .map((w) => w.card)
           .filter((c): c is WisdomCardEmbed => !!c && !!c.id) as CardItem[];
         setAllCards(cards);
-        // Default-select the first keyword that actually has cards
         const firstWithCards = ALL_KEYWORD_SLUGS.find((slug) => {
           const id = slugToId(slug);
           return cards.some((c) => c.keyword_id === id);
@@ -103,7 +108,7 @@ export default function CardsSelectModal() {
     };
   }, []);
 
-  // ---- Group cards by keyword_id for tab content ----
+  // ---- Group cards by keyword_id ----
   const cardsByKeywordId = useMemo(() => {
     const map = new Map<string, CardItem[]>();
     for (const card of allCards) {
@@ -115,7 +120,6 @@ export default function CardsSelectModal() {
     return map;
   }, [allCards]);
 
-  // ---- Build a deduped, ordered list of (slug, count) for the tab bar ----
   const keywordTabs = useMemo(() => {
     return ALL_KEYWORD_SLUGS.map((slug) => {
       const id = slugToId(slug);
@@ -169,8 +173,6 @@ export default function CardsSelectModal() {
         status: 'paid',
         selectedCardIds: Array.from(selectedIds),
       });
-      // Success -> back out to order-detail, which will re-fetch
-      // the order on focus (see order-detail useEffect).
       Alert.alert(
         'Deck complete',
         'Your 48 cards are locked in. We will print and ship within a few business days.',
@@ -255,60 +257,39 @@ export default function CardsSelectModal() {
         </View>
       ) : (
         <>
-          {/* Keyword tab strip */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabStrip}
-          >
-            {keywordTabs.map(({ slug, count }) => {
-              const isActive = slug === activeKeywordSlug;
-              const isLocked = count === 0;
-              return (
-                <Pressable
+          {/* Keyword tab strip — fixed-rectangle buttons with thumbnail + name + count */}
+          <View style={styles.tabStripWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabStrip}
+            >
+              {keywordTabs.map(({ slug, count }) => (
+                <KeywordTab
                   key={slug}
-                  onPress={() => {
-                    if (isLocked) return;
-                    setActiveKeywordSlug(slug);
-                  }}
-                  disabled={isLocked}
-                  style={({ pressed }) => [
-                    styles.tab,
-                    isActive && styles.tabActive,
-                    isLocked && styles.tabLocked,
-                    pressed && !isLocked && { opacity: 0.85 },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      isActive && styles.tabTextActive,
-                      isLocked && styles.tabTextLocked,
-                    ]}
-                  >
-                    {slug}
-                  </Text>
-                  {!isLocked ? (
-                    <View
-                      style={[
-                        styles.tabCountWrap,
-                        isActive && styles.tabCountWrapActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.tabCount,
-                          isActive && styles.tabCountActive,
-                        ]}
-                      >
-                        {count}
-                      </Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                  slug={slug}
+                  count={count}
+                  isActive={slug === activeKeywordSlug}
+                  isLocked={count === 0}
+                  onPress={() => setActiveKeywordSlug(slug)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Hint banner — shown when 0 selected */}
+          {selectedIds.size === 0 ? (
+            <View style={styles.hintBanner}>
+              <MaterialIcons
+                name="touch-app"
+                size={14}
+                color="rgba(192,132,252,0.85)"
+              />
+              <Text style={styles.hintBannerText}>
+                Tap to add. Long-press to preview both sides.
+              </Text>
+            </View>
+          ) : null}
 
           {/* Card grid for the active tab */}
           <FlatList
@@ -317,7 +298,7 @@ export default function CardsSelectModal() {
             numColumns={2}
             columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
             contentContainerStyle={{
-              paddingTop: 12,
+              paddingTop: 8,
               paddingBottom: 120 + insets.bottom,
               gap: 12,
             }}
@@ -333,6 +314,8 @@ export default function CardsSelectModal() {
               return (
                 <Pressable
                   onPress={() => toggleSelection(item.id)}
+                  onLongPress={() => setPreviewCard(item)}
+                  delayLongPress={250}
                   style={({ pressed }) => [
                     styles.cardCell,
                     isSelected && styles.cardCellSelected,
@@ -408,11 +391,200 @@ export default function CardsSelectModal() {
               )}
             </Pressable>
           </View>
+
+          {/* Long-press preview modal */}
+          <PreviewModal
+            card={previewCard}
+            isSelected={previewCard ? selectedIds.has(previewCard.id) : false}
+            onClose={() => setPreviewCard(null)}
+            onToggle={() => {
+              if (previewCard) toggleSelection(previewCard.id);
+            }}
+          />
         </>
       )}
     </View>
   );
 }
+
+// ---- Keyword tab (fixed-rectangle button with art thumbnail) ----
+
+function KeywordTab({
+  slug,
+  count,
+  isActive,
+  isLocked,
+  onPress,
+}: {
+  slug: string;
+  count: number;
+  isActive: boolean;
+  isLocked: boolean;
+  onPress: () => void;
+}) {
+  // Same source-of-truth pattern as KeywordCell in collection-view.tsx:
+  // resolve via asset-cache first, fall back to direct R2 URL so the
+  // image still loads even if the bundle hasn't pre-fetched yet.
+  const filename = `${slug}-front.webp`;
+  const cached = getCachedAssetUri(filename);
+  const src = cached
+    ? { uri: cached }
+    : { uri: CARD_FALLBACK_URL(filename) };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={isLocked}
+      style={({ pressed }) => [
+        tabStyles.tile,
+        isActive && tabStyles.tileActive,
+        isLocked && tabStyles.tileLocked,
+        pressed && !isLocked && { opacity: 0.85 },
+      ]}
+    >
+      <View style={tabStyles.imgWrap}>
+        <Image
+          source={src}
+          style={[
+            tabStyles.img,
+            isLocked && { opacity: 0.3 },
+          ]}
+          contentFit="contain"
+        />
+        {isLocked ? (
+          <View style={tabStyles.lockOverlay}>
+            <MaterialIcons
+              name="lock"
+              size={14}
+              color="rgba(255,255,255,0.55)"
+            />
+          </View>
+        ) : null}
+        {!isLocked && count > 0 ? (
+          <View
+            style={[
+              tabStyles.countBadge,
+              isActive && tabStyles.countBadgeActive,
+            ]}
+          >
+            <Text style={tabStyles.countText}>{count}</Text>
+          </View>
+        ) : null}
+      </View>
+      <Text
+        style={[
+          tabStyles.label,
+          isActive && tabStyles.labelActive,
+          isLocked && tabStyles.labelLocked,
+        ]}
+        numberOfLines={1}
+      >
+        {slug}
+      </Text>
+    </Pressable>
+  );
+}
+
+// ---- Long-press preview modal with FlippableCard + add/remove ----
+
+function PreviewModal({
+  card,
+  isSelected,
+  onClose,
+  onToggle,
+}: {
+  card: CardItem | null;
+  isSelected: boolean;
+  onClose: () => void;
+  onToggle: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+
+  if (!card) return null;
+
+  const kwId = card.keyword_id ?? 'mind-clarity';
+  const category = kwId.split('-')[0] || 'mind';
+  const frontFilename = `${kwId}-front.webp`;
+  const backFilename = `${category}-back.webp`;
+
+  // Card width: leave 32px margin each side, cap at 320 so big-screen
+  // phones don't blow up the card disproportionately.
+  const screenWidth = Dimensions.get('window').width;
+  const cardWidth = Math.min(320, screenWidth - 64);
+
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={previewStyles.backdrop} onPress={onClose}>
+        {/* Inner pressable absorbs taps so backdrop only catches outside-card taps. */}
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={[
+            previewStyles.sheet,
+            {
+              paddingTop: insets.top + 24,
+              paddingBottom: insets.bottom + 24,
+            },
+          ]}
+        >
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            style={previewStyles.closeBtn}
+          >
+            <MaterialIcons name="close" size={22} color="#FFFFFF" />
+          </Pressable>
+
+          <Text style={previewStyles.title}>
+            {idToSlug(kwId) ?? 'Wisdom'}
+          </Text>
+          <Text style={previewStyles.subtitle}>
+            Tap card to flip. Long-press hint: both sides.
+          </Text>
+
+          <View style={previewStyles.cardWrap}>
+            <FlippableCard
+              frontFilename={frontFilename}
+              backFilename={backFilename}
+              quoteShort={card.quote_short ?? ''}
+              insightFull={card.insight_full ?? ''}
+              width={cardWidth}
+            />
+          </View>
+
+          <Pressable
+            onPress={() => {
+              onToggle();
+              onClose();
+            }}
+            style={({ pressed }) => [
+              previewStyles.actionBtn,
+              isSelected
+                ? previewStyles.actionBtnRemove
+                : previewStyles.actionBtnAdd,
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <MaterialIcons
+              name={isSelected ? 'remove-circle-outline' : 'add-circle-outline'}
+              size={18}
+              color="#FFFFFF"
+            />
+            <Text style={previewStyles.actionBtnText}>
+              {isSelected ? 'Remove from Deck' : 'Add to Deck'}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+// ---- Styles: main layout ----
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F0B2E' },
@@ -446,59 +618,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 14,
   },
-  emptyTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  emptyTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   emptyBody: {
     color: 'rgba(255,255,255,0.55)',
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
   },
+  tabStripWrap: {
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
   tabStrip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    gap: 10,
   },
-  tab: {
+  hintBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(168,85,247,0.06)',
   },
-  tabActive: {
-    backgroundColor: 'rgba(168,85,247,0.18)',
-    borderColor: 'rgba(168,85,247,0.4)',
-  },
-  tabLocked: { opacity: 0.35 },
-  tabText: {
-    color: 'rgba(255,255,255,0.65)',
+  hintBannerText: {
+    color: 'rgba(192,132,252,0.85)',
     fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'capitalize',
+    fontWeight: '600',
   },
-  tabTextActive: { color: '#C084FC' },
-  tabTextLocked: { color: 'rgba(255,255,255,0.4)' },
-  tabCountWrap: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  tabCountWrapActive: { backgroundColor: 'rgba(168,85,247,0.3)' },
-  tabCount: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  tabCountActive: { color: '#C084FC' },
   cardCell: {
     flex: 1,
     minHeight: 140,
@@ -557,10 +705,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     alignItems: 'center',
   },
-  tabEmptyText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
-  },
+  tabEmptyText: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
   footer: {
     position: 'absolute',
     left: 0,
@@ -580,4 +725,136 @@ const styles = StyleSheet.create({
     backgroundColor: '#A855F7',
   },
   ctaText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+});
+
+// ---- Styles: keyword tab tile ----
+
+const tabStyles = StyleSheet.create({
+  tile: {
+    width: 76,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+  },
+  tileActive: {
+    backgroundColor: 'rgba(168,85,247,0.18)',
+    borderColor: 'rgba(168,85,247,0.5)',
+  },
+  tileLocked: { opacity: 0.4 },
+  imgWrap: {
+    width: 64,
+    aspectRatio: 1024 / 1536, // 2:3 keyword card ratio
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  img: { width: '100%', height: '100%' },
+  lockOverlay: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
+    borderRadius: 9,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    borderWidth: 1.5,
+    borderColor: '#A855F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countBadgeActive: { backgroundColor: '#A855F7', borderColor: '#FFFFFF' },
+  countText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  label: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+    textAlign: 'center',
+  },
+  labelActive: { color: '#C084FC' },
+  labelLocked: { color: 'rgba(255,255,255,0.4)' },
+});
+
+// ---- Styles: long-press preview modal ----
+
+const previewStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#1A1640',
+    borderRadius: 22,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    zIndex: 10,
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    textTransform: 'capitalize',
+    marginBottom: 4,
+  },
+  subtitle: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    marginBottom: 20,
+  },
+  cardWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    width: '100%',
+  },
+  actionBtnAdd: { backgroundColor: '#A855F7' },
+  actionBtnRemove: { backgroundColor: 'rgba(239,68,68,0.85)' },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
 });
