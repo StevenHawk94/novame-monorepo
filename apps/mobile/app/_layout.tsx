@@ -1,4 +1,3 @@
-import '../global.css';
 
 import { useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
