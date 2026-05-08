@@ -206,7 +206,7 @@ function KeywordCell({
   const cached = getCachedAssetUri(filename);
   const src = cached
     ? { uri: cached }
-    : { uri: `https://media.novameapp.com/cards/${filename}` };
+    : { uri: `https://media.novameapp.com/${filename}` };
 
   return (
     <Pressable

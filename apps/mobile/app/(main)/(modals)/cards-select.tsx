@@ -53,8 +53,16 @@ import { getCachedAssetUri } from '@/lib/asset-cache';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 
 const REQUIRED_COUNT = 48;
+// Stage 5.AIR.2.bugfix.B: R2 cards live at the bucket root, NOT in a
+// /cards/ subdirectory. The bucket path is just /{filename}.webp.
+// (collection-view.tsx had the same wrong /cards/ prefix in its
+// fallback path but it never showed because by the time users
+// reach Collection their assets are already in MMKV cache and the
+// fallback branch is dead code. cards-select hits the fallback on
+// first paint because tab thumbnails request keyword art the user
+// may not have viewed before.)
 const CARD_FALLBACK_URL = (filename: string) =>
-  `https://media.novameapp.com/cards/${filename}`;
+  `https://media.novameapp.com/${filename}`;
 
 type CardItem = WisdomCardEmbed & {
   id: string;
