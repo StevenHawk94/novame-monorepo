@@ -113,10 +113,13 @@ export default function OrderDetailModal() {
   };
 
   const onContinueSelection = () => {
-    Alert.alert(
-      'Coming soon',
-      'Card selection will be available shortly. We\u2019ll notify you when it\u2019s ready.',
-    );
+    // Stage 5.AIR.2: route to the cards-select modal carrying the
+    // current orderId. cards-select handles the deck composition
+    // and PATCHes the order to status='paid' on submit.
+    router.push({
+      pathname: '/(main)/(modals)/cards-select',
+      params: { orderId: order?.id ?? '' },
+    });
   };
 
   return (
