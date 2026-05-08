@@ -34,7 +34,8 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
@@ -70,6 +71,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "734e8969-2007-4fba-ad80-e3e04beaaa68"
+      }
+    },
+    "owner": "stevenhawk2333"
   }
 }
