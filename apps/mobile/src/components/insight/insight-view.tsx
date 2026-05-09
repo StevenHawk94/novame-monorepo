@@ -219,13 +219,13 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
           </View>
           {card?.task_1 ? (
             <View style={styles.taskRow}>
-              <Text style={styles.taskBolt}>\u26A1</Text>
+              <Text style={styles.taskBolt}>⚡</Text>
               <Text style={styles.taskText}>{card.task_1}</Text>
             </View>
           ) : null}
           {card?.task_2 ? (
             <View style={styles.taskRow}>
-              <Text style={styles.taskBolt}>\u26A1</Text>
+              <Text style={styles.taskBolt}>⚡</Text>
               <Text style={styles.taskText}>{card.task_2}</Text>
             </View>
           ) : null}

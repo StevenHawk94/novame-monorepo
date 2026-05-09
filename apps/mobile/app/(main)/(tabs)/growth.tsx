@@ -487,7 +487,7 @@ function TaskRow({
         pressed && !completing && { opacity: 0.85 },
       ]}
     >
-      <Text style={styles.taskText} numberOfLines={2}>
+      <Text style={styles.taskText}>
         {task.task_text}
       </Text>
       <View style={styles.taskRight}>

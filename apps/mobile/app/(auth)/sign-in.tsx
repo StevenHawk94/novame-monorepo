@@ -6,9 +6,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
+
+import { storage } from '@/lib/storage';
 
 import {
   sendPasswordReset,
@@ -22,28 +27,62 @@ import {
 /**
  * AuthPage — 5-mode state machine.
  *
- * Visual contract: matches the old Capacitor NovaMe AuthPage screenshots.
- * Architecture: rewritten with React Native + expo-router.
+ * Stage 3.5.bugfix (2025-11-XX): Sign in with Apple / Continue with
+ * Google buttons restyled to match official platform guidelines:
+ *   - Apple: white bg + black logo + "Sign in with Apple" text per
+ *     Apple HIG (https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)
+ *   - Google: white bg + 4-color G logo + "Continue with Google" per
+ *     Google Identity Branding Guidelines
+ *     (https://developers.google.com/identity/branding-guidelines)
  *
- * Mode flow:
- *   login        — landing page (Apple / Google / Email buttons)
- *   register     — new user email + password + confirm
- *   email-login  — existing user email + password
- *   verify       — OTP code entry after register success
- *   forgot       — send password reset email
+ * Logos are SVG components rendered inline via react-native-svg
+ * (already a peer dep in Expo SDK 54). No new asset files needed.
  *
- * Apple / Google buttons are visible but disabled in this commit.
- * Stage 3.4 step 6 wires up Apple Sign-In; step 7 wires up Google.
- *
- * onAuthStateChange listener (in app/_layout.tsx, stage 3.4 step 3) is
- * what actually triggers redirect to (main)/(tabs) after successful
- * signIn / verifyOtp. This screen does not call router.replace itself.
+ * Mode flow: login / register / email-login / verify / forgot
  */
 
 type AuthMode = 'login' | 'register' | 'email-login' | 'verify' | 'forgot';
 
 const TERMS_URL = 'https://novameapp.com/terms';
 const PRIVACY_URL = 'https://novameapp.com/privacy';
+
+// ---- SVG Logos (per official guidelines) ----
+
+function AppleLogo({ size = 18 }: { size?: number }) {
+  // Apple's official logo glyph (HIG-compliant proportions)
+  return (
+    <Svg width={size} height={size * 1.2} viewBox="0 0 384 480">
+      <Path
+        fill="#000000"
+        d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
+      />
+    </Svg>
+  );
+}
+
+function GoogleLogo({ size = 18 }: { size?: number }) {
+  // Google's official 4-color G mark
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48">
+      <Path
+        fill="#FFC107"
+        d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+      />
+      <Path
+        fill="#FF3D00"
+        d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+      />
+      <Path
+        fill="#4CAF50"
+        d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+      />
+      <Path
+        fill="#1976D2"
+        d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+      />
+    </Svg>
+  );
+}
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>('login');
@@ -54,6 +93,21 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
+  const router = useRouter();
+
+  // ---- dev-only: replay onboarding ----
+  const replayOnboarding = () => {
+    // Clear onboarding done flag so the boot redirector + onboarding
+    // flow treat the user as fresh. We delete the whole state key
+    // (rather than patching) so step-2..11 also start clean.
+    try {
+      storage.remove('novame_onboarding_state');
+    } catch {
+      // best effort — even if delete fails, replace() will still
+      // navigate; user will see step 1 splash regardless.
+    }
+    router.replace('/(onboarding)');
+  };
 
   const clearMessages = () => {
     setErrorMsg('');
@@ -95,7 +149,6 @@ export default function AuthScreen() {
       setInfoMsg('Check your email for a 6-digit code.');
       goTo('verify');
     }
-    // If no email confirmation required, onAuthStateChange handles redirect.
   };
 
   const handleVerifyOtp = async () => {
@@ -111,7 +164,6 @@ export default function AuthScreen() {
       setErrorMsg(error.message);
       return;
     }
-    // Success: onAuthStateChange will redirect.
   };
 
   const handleEmailSignIn = async () => {
@@ -127,7 +179,6 @@ export default function AuthScreen() {
       setErrorMsg(error.message);
       return;
     }
-    // Success: onAuthStateChange will redirect.
   };
 
   const handleForgotPassword = async () => {
@@ -151,10 +202,7 @@ export default function AuthScreen() {
     setLoading(true);
     const result = await signInWithApple();
     setLoading(false);
-    if (result.kind === 'cancelled') {
-      // Silent — user dismissed the Apple sheet, no message shown.
-      return;
-    }
+    if (result.kind === 'cancelled') return;
     if (result.kind === 'unsupported') {
       setErrorMsg('Sign in with Apple is not available on this device.');
       return;
@@ -163,7 +211,6 @@ export default function AuthScreen() {
       setErrorMsg(result.message);
       return;
     }
-    // kind === 'success' — onAuthStateChange listener will redirect.
   };
 
   const handleGoogleSignIn = async () => {
@@ -171,10 +218,7 @@ export default function AuthScreen() {
     setLoading(true);
     const result = await signInWithGoogle();
     setLoading(false);
-    if (result.kind === 'cancelled') {
-      // Silent — user dismissed the Google account picker.
-      return;
-    }
+    if (result.kind === 'cancelled') return;
     if (result.kind === 'unsupported') {
       setErrorMsg('Sign in with Google is not available on this device.');
       return;
@@ -183,9 +227,7 @@ export default function AuthScreen() {
       setErrorMsg(result.message);
       return;
     }
-    // kind === 'success' — onAuthStateChange listener will redirect.
   };
-
 
   // ---- shared visual fragments ----
 
@@ -193,7 +235,9 @@ export default function AuthScreen() {
 
   const Footer = () => (
     <View style={styles.footer}>
-      <Text style={styles.footerText}>By continuing, you agree to NovaMe&apos;s </Text>
+      <Text style={styles.footerText}>
+        By continuing, you agree to NovaMe&apos;s{' '}
+      </Text>
       <View style={styles.footerLinks}>
         <Pressable onPress={() => Linking.openURL(TERMS_URL)}>
           <Text style={styles.linkText}>Terms &amp; Conditions</Text>
@@ -228,31 +272,66 @@ export default function AuthScreen() {
             Create an account to keep everything safe.
           </Text>
           <View style={styles.buttonGroup}>
-            <Pressable
-              style={[styles.btn, styles.btnApple, loading && styles.btnDisabled]}
-              disabled={loading}
-              onPress={handleAppleSignIn}
-            >
-              <Text style={styles.btnAppleText}>Sign in with Apple</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.btn, styles.btnGoogle, loading && styles.btnDisabled]}
-              disabled={loading}
-              onPress={handleGoogleSignIn}
-            >
-              <Text style={styles.btnGoogleText}>Continue with Google</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.btn, styles.btnPrimary]}
-              onPress={() => goTo('register')}
-            >
-              <Text style={styles.btnPrimaryText}>Continue with Email</Text>
-            </Pressable>
+            {/* Sign in with Apple — HIG-compliant white variant */}
+            <View style={styles.btnSlot}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[
+                  styles.btn,
+                  styles.btnApple,
+                  loading && styles.btnDisabled,
+                ]}
+                disabled={loading}
+                onPress={handleAppleSignIn}
+              >
+                <View style={styles.btnIcon}>
+                  <AppleLogo size={18} />
+                </View>
+                <Text style={styles.btnAppleText}>Sign in with Apple</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Continue with Google — official white variant */}
+            <View style={styles.btnSlot}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[
+                  styles.btn,
+                  styles.btnGoogle,
+                  loading && styles.btnDisabled,
+                ]}
+                disabled={loading}
+                onPress={handleGoogleSignIn}
+              >
+                <View style={styles.btnIcon}>
+                  <GoogleLogo size={18} />
+                </View>
+                <Text style={styles.btnGoogleText}>Continue with Google</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.btnSlot}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.btn, styles.btnPrimary]}
+                onPress={() => goTo('register')}
+              >
+                <Text style={styles.btnPrimaryText}>Continue with Email</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <Pressable onPress={() => goTo('email-login')} style={styles.bottomLinkRow}>
+          <Pressable
+            onPress={() => goTo('email-login')}
+            style={styles.bottomLinkRow}
+          >
             <Text style={styles.dimText}>Already have an account? </Text>
             <Text style={styles.boldLinkText}>Log in</Text>
           </Pressable>
+          {__DEV__ ? (
+            <Pressable onPress={replayOnboarding} style={styles.devLinkRow}>
+              <Text style={styles.devLinkText}>↩︎ Replay onboarding (dev)</Text>
+            </Pressable>
+          ) : null}
         </View>
         <Footer />
       </SafeAreaView>
@@ -307,7 +386,10 @@ export default function AuthScreen() {
               <Text style={styles.btnPrimaryText}>Create Account</Text>
             )}
           </Pressable>
-          <Pressable onPress={() => goTo('email-login')} style={styles.bottomLinkRow}>
+          <Pressable
+            onPress={() => goTo('email-login')}
+            style={styles.bottomLinkRow}
+          >
             <Text style={styles.dimText}>Already have an account? </Text>
             <Text style={styles.boldLinkText}>Sign In</Text>
           </Pressable>
@@ -361,7 +443,10 @@ export default function AuthScreen() {
               <Text style={styles.btnPrimaryText}>Sign In</Text>
             )}
           </Pressable>
-          <Pressable onPress={() => goTo('register')} style={styles.bottomLinkRow}>
+          <Pressable
+            onPress={() => goTo('register')}
+            style={styles.bottomLinkRow}
+          >
             <Text style={styles.dimText}>Don&apos;t have an account? </Text>
             <Text style={styles.boldLinkText}>Sign Up</Text>
           </Pressable>
@@ -521,45 +606,67 @@ const styles = StyleSheet.create({
     letterSpacing: 8,
   },
   buttonGroup: {
-    gap: 12,
     marginBottom: 24,
+  },
+  btnSlot: {
+    // Each button isolated in its own View so the touch responder
+    // system treats them as separate hit-test regions. 16px spacing
+    // chosen for visual uniformity across all 3 buttons.
+    marginBottom: 16,
   },
   btn: {
     borderRadius: 16,
-    paddingVertical: 18,
+    paddingVertical: 16,
+    minHeight: 50, // Apple HIG minimum tappable height
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
+  btnIcon: {
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Sign in with Apple — white variant per HIG
   btnApple: {
     backgroundColor: '#FFFFFF',
   },
   btnAppleText: {
     color: '#000000',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.4,
   },
+
+  // Continue with Google — white variant per Identity Branding Guidelines
   btnGoogle: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(0,0,0,0.08)',
   },
+  // Unified to Apple HIG typography for visual consistency on iOS-first launch.
+  // Google's branding guidelines accept any font as long as logo + "Continue
+  // with Google" wording + colors are intact, so 17pt SemiBold is compliant.
   btnGoogleText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#1F1F1F',
+    fontSize: 17,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.4,
   },
+
   btnPrimary: {
     backgroundColor: '#A855F7',
     marginTop: 8,
   },
   btnPrimaryText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
+    letterSpacing: -0.4,
   },
   btnDisabled: {
     opacity: 0.5,
@@ -624,5 +731,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  devLinkRow: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  devLinkText: {
+    color: 'rgba(255,255,255,0.35)',
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    fontStyle: 'italic',
   },
 });

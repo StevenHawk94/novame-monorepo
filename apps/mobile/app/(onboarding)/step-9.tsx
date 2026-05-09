@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Image,
+  Dimensions,
+  FlatList,
+  ListRenderItem,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -18,64 +22,162 @@ import { REVIEWS } from '@/components/onboarding/constants';
 /**
  * Step 9 — User reviews carousel.
  *
- * Auto-advances every 4 seconds. Tapping a dot indicator jumps to
- * that review.
+ * Stage 3.5 → Stage 3.5.bugfix (2025-11-XX):
+ *   - Replaces single-card rendering with FlatList horizontal +
+ *     pagingEnabled, so users can swipe between reviews.
+ *   - Auto-rotation pauses on user drag (onScrollBeginDrag) and
+ *     resumes 1.5s after the user releases (onMomentumScrollEnd).
+ *     Pattern matches Instagram Stories / Apple Music carousels.
+ *   - Dot indicators remain interactive (scrollToIndex on tap).
  *
- * Avatars: REVIEWS[i].avatarFile (e.g. ob-9-user1.webp). These
- * files are NOT yet committed in apps/mobile/assets/images/onboarding/
- * (user will add them after stage 3.5). Until then, Image source
- * resolution will fail silently and the avatar slot shows a circle
- * placeholder.
- *
- * Stage 3.5 simplification: no swipe-to-pan gesture (old Capacitor
- * had touch handlers). Users navigate via dot indicators or wait
- * for auto-advance. Stage 3.8 may add gesture-handler swipe.
+ * Note: the previous 4-second auto-advance is preserved.
  */
 
 const ROTATE_MS = 4000;
+const RESUME_DELAY_MS = 1500;
+
+type Review = (typeof REVIEWS)[number];
 
 export default function OnboardingStep9() {
   const router = useRouter();
   const [idx, setIdx] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const listRef = useRef<FlatList<Review>>(null);
+  const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUserInteracting = useRef(false);
 
-  useEffect(() => {
-    timer.current = setInterval(() => {
-      setIdx((i) => (i + 1) % REVIEWS.length);
+  const screenWidth = Dimensions.get('window').width;
+  // ItemWidth = screen width minus the body horizontal padding (24*2)
+  const itemWidth = screenWidth - 48;
+
+  // ---- Auto-rotation control ----
+
+  const startAutoRotate = useCallback(() => {
+    if (autoTimer.current) return;
+    autoTimer.current = setInterval(() => {
+      if (isUserInteracting.current) return;
+      setIdx((i) => {
+        const next = (i + 1) % REVIEWS.length;
+        listRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
     }, ROTATE_MS);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
   }, []);
 
-  const review = REVIEWS[idx];
+  const stopAutoRotate = useCallback(() => {
+    if (autoTimer.current) {
+      clearInterval(autoTimer.current);
+      autoTimer.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    startAutoRotate();
+    return () => {
+      stopAutoRotate();
+      if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    };
+  }, [startAutoRotate, stopAutoRotate]);
+
+  // ---- Scroll handlers ----
+
+  const handleScrollBeginDrag = () => {
+    isUserInteracting.current = true;
+    stopAutoRotate();
+    if (resumeTimer.current) {
+      clearTimeout(resumeTimer.current);
+      resumeTimer.current = null;
+    }
+  };
+
+  const handleMomentumScrollEnd = (
+    e: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const newIdx = Math.round(offsetX / itemWidth);
+    setIdx(Math.max(0, Math.min(REVIEWS.length - 1, newIdx)));
+
+    // Schedule auto-rotate resume after a short delay
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => {
+      isUserInteracting.current = false;
+      startAutoRotate();
+    }, RESUME_DELAY_MS);
+  };
+
+  const handleDotPress = (i: number) => {
+    setIdx(i);
+    listRef.current?.scrollToIndex({ index: i, animated: true });
+    // Treat dot tap as a brief interaction, then resume
+    isUserInteracting.current = true;
+    stopAutoRotate();
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => {
+      isUserInteracting.current = false;
+      startAutoRotate();
+    }, RESUME_DELAY_MS);
+  };
+
+  // ---- Render ----
+
+  const renderItem: ListRenderItem<Review> = ({ item }) => (
+    <View style={[styles.card, { width: itemWidth }]}>
+      <View style={styles.stars}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Text key={i} style={styles.star}>
+            {'★'}
+          </Text>
+        ))}
+      </View>
+      <HighlightedText text={item.text} />
+      <View style={styles.author}>
+        <View style={styles.avatar} />
+        <Text style={styles.authorName}>
+          {'— '}
+          {item.name}
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <Shell step={9} onBack={() => router.back()}>
       <View style={styles.body}>
-        <Text style={styles.headline}>Don&apos;t just take our word for it.</Text>
+        <Text style={styles.headline}>
+          Don&apos;t just take our word for it.
+        </Text>
         <Text style={styles.subheadline}>
           See how others are turning their everyday moments into lasting wisdom.
         </Text>
-        <View style={styles.card}>
-          <View style={styles.stars}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Text key={i} style={styles.star}>
-                {'★'}
-              </Text>
-            ))}
-          </View>
-          <HighlightedText text={review.text} />
-          <View style={styles.author}>
-            <View style={styles.avatar} />
-            <Text style={styles.authorName}>{'— '}{review.name}</Text>
-          </View>
+
+        <View style={styles.carouselWrap}>
+          <FlatList
+            ref={listRef}
+            data={REVIEWS}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.name}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            getItemLayout={(_, i) => ({
+              length: itemWidth,
+              offset: itemWidth * i,
+              index: i,
+            })}
+            decelerationRate="fast"
+            snapToInterval={itemWidth}
+            snapToAlignment="start"
+          />
         </View>
+
         <View style={styles.dots}>
           {REVIEWS.map((_, i) => (
             <Pressable
               key={i}
-              onPress={() => setIdx(i)}
+              onPress={() => handleDotPress(i)}
+              hitSlop={10}
               style={[styles.dot, i === idx && styles.dotActive]}
             />
           ))}
@@ -110,14 +212,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  carouselWrap: {
+    marginBottom: 16,
+  },
   card: {
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
     padding: 20,
-    minHeight: 220,
-    marginBottom: 16,
+    minHeight: 260,
+    justifyContent: 'center',
   },
   stars: {
     flexDirection: 'row',
@@ -158,6 +263,7 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: '#A855F7',
+    width: 20, // Active dot wider for clearer state
   },
   footer: {
     paddingHorizontal: 24,

@@ -31,6 +31,7 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAudioRecorder, RecordingPresets } from 'expo-audio';
 import type { AudioRecorder } from 'expo-audio';
@@ -63,6 +64,7 @@ import {
   openAppSettings,
 } from '@/lib/permissions';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { storage } from '@/lib/storage';
 import { fetchDailyLimit } from '@/lib/daily-limit-api';
 import { ApiError } from '@novame/api-client';
 import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
@@ -991,18 +993,6 @@ function PhasePublish({
             {formatDuration(recordingDurationSec)} recorded
           </Text>
 
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Add a description (optional)..."
-            placeholderTextColor="rgba(255,255,255,0.3)"
-            maxLength={300}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-            style={pubStyles.descInput}
-          />
-
           <Pressable
             onPress={handleTransform}
             style={({ pressed }) => [
@@ -1139,11 +1129,16 @@ function PhaseTypeInput({
 
   const trimmedLength = typedText.trim().length;
   const canTransform = trimmedLength >= MIN_TYPED_CHARS;
+  const insets = useSafeAreaInsets();
 
-  // Dynamic textarea height — grows with content up to a sensible cap.
-  // Industry standard: min 120px (~4 lines), grows up to 280px before
-  // the inner scroll kicks in. Empty state shows the placeholder height.
-  const [textareaHeight, setTextareaHeight] = useState(120);
+  // Stage 3.10.x: keyboardVerticalOffset = top safe-area inset so the
+  // input + Transform button stay above the keyboard. iOS modals have
+  // a status-bar offset KeyboardAvoidingView doesn't auto-detect.
+
+  // Stage 3.10.x draft persistence: typedText is mirrored to MMKV on
+  // every keystroke; cleared only on successful submit (handleTransform
+  // path that goTo PUBLISHING). Back / dismiss / accidental close all
+  // preserve the draft so users don't lose their work.
 
   const handleBack = () => {
     haptics.light();
@@ -1166,7 +1161,7 @@ function PhaseTypeInput({
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={typeStyles.root}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
       <TouchableWithoutFeedback onPress={handleDismissKeyboard} accessible={false}>
         <View style={typeStyles.fullArea}>
@@ -1193,19 +1188,13 @@ function PhaseTypeInput({
             <TextInput
               value={typedText}
               onChangeText={setTypedText}
-              onContentSizeChange={(e) => {
-                const next = e.nativeEvent.contentSize.height;
-                // Clamp 120-280 — within bounds the input grows with content,
-                // beyond it the inner scroll engages.
-                setTextareaHeight(Math.min(280, Math.max(120, next + 24)));
-              }}
               placeholder="What happened around you... and what shifted inside you?"
               placeholderTextColor="rgba(255,255,255,0.2)"
               maxLength={maxChars}
               multiline
               autoFocus
               textAlignVertical="top"
-              style={[typeStyles.mainInput, { height: textareaHeight }]}
+              style={[typeStyles.mainInput, typeStyles.mainInputFlex]}
             />
             <View style={typeStyles.counterRow}>
               <Text style={typeStyles.counterText}>
@@ -1218,15 +1207,6 @@ function PhaseTypeInput({
           </ScrollView>
 
           <View style={typeStyles.footer}>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Brief description (optional)"
-              placeholderTextColor="rgba(255,255,255,0.2)"
-              maxLength={200}
-              style={typeStyles.descInput}
-            />
-
             <Pressable
               onPress={handleTransform}
               disabled={!canTransform}
@@ -1295,6 +1275,13 @@ const typeStyles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
+  },
+  mainInputFlex: {
+    // Stage 3.10.x: input fills remaining space above keyboard.
+    // minHeight ensures a usable area even before the user starts
+    // typing; flex:1 lets it grow up to the keyboard's top edge.
+    flex: 1,
+    minHeight: 280,
   },
   counterRow: {
     flexDirection: 'row',
@@ -1584,6 +1571,15 @@ function PhasePublishing({
           setLastPublishMessage(response.characterBMessage);
         }
 
+        // Stage 3.10.x: clear typed-text draft only on successful publish.
+        // All other exit paths (back, accidental dismiss, error retry)
+        // preserve the draft.
+        try {
+          storage.remove('novame_record_typed_draft');
+        } catch {
+          // best-effort
+        }
+
         goTo(PHASE.INSIGHT);
       } catch (err) {
         console.error('[publish] failed:', err);
@@ -1645,16 +1641,17 @@ function PhasePublishing({
     );
   }
 
-  // 3.8 — temporary fallback. CardSpinAnimation has unresolved
-  // visual bug in modal context (B52).
-  return (
-    <View style={pubgStyles.loaderHost}>
-      <ActivityIndicator size="large" color="#A855F7" />
-      <Text style={pubgStyles.loaderTitle}>Wait for it...</Text>
-      <Text style={pubgStyles.loaderSub}>Your legacy is loading.</Text>
-      <Text style={pubgStyles.loaderHint}>Almost there</Text>
-    </View>
-  );
+  // Stage 3.8.3.lottie.B (2025-11-XX): spinning UI moved to record.tsx
+  // main render so the same CardSpinAnimation instance persists across
+  // PUBLISHING -> ANALYZING phase transitions. Without this lift, the
+  // Lottie animation would unmount + remount when phase flipped, causing
+  // a visible flicker / restart from frame 0.
+  //
+  // PhasePublishing now renders ONLY the errored state. The success path
+  // returns null and lets the main render's <CardSpinAnimation> show
+  // through. Network side effects (publish-wisdom POST + state setters)
+  // continue to live in this component's useEffect above.
+  return null;
 }
 
 // ---- Phase: analyzing (3.7.7 real — keeps spinning until publish resolves) ----
@@ -1663,13 +1660,12 @@ function PhasePublishing({
 // drive us to insight when it resolves. No new request fires here.
 
 function PhaseAnalyzing(_props: PhaseProps) {
-  return (
-    <View style={pubgStyles.loaderHost}>
-      <ActivityIndicator size="large" color="#A855F7" />
-      <Text style={pubgStyles.loaderTitle}>Generating your wisdom card...</Text>
-      <Text style={pubgStyles.loaderSub}>Analyzing patterns and insights</Text>
-    </View>
-  );
+  // Stage 3.8.3.lottie.B: rendered as null. Spinning UI now lives in
+  // the parent record.tsx main render so the same CardSpinAnimation
+  // instance persists across PUBLISHING -> ANALYZING transition.
+  // This component is kept (rather than deleted) for symmetry with the
+  // phase enum and to leave room for future phase-specific behavior.
+  return null;
 }
 
 const pubgStyles = StyleSheet.create({
@@ -2027,7 +2023,20 @@ export default function RecordModal() {
   const [recordingDurationSec, setRecordingDurationSec] = useState(0);
   const [recordingResult, setRecordingResult] = useState<RecordingResult | null>(null);
   const [description, setDescription] = useState('');
-  const [typedText, setTypedText] = useState('');
+  // Stage 3.10.x: hydrate typedText from MMKV draft on mount.
+  // Cleared only on successful publish (see PhasePublishing.useEffect
+  // success branch).
+  const [typedText, setTypedTextRaw] = useState(
+    () => storage.getString('novame_record_typed_draft') ?? '',
+  );
+  const setTypedText = (next: string) => {
+    setTypedTextRaw(next);
+    if (next) {
+      storage.set('novame_record_typed_draft', next);
+    } else {
+      storage.remove('novame_record_typed_draft');
+    }
+  };
   const [publishedCard, setPublishedCard] = useState<PublishedCardData | null>(null);
   const [publishedScore, setPublishedScore] = useState<number>(0);
   const [publishedEmotion, setPublishedEmotion] = useState<string>('');
@@ -2076,6 +2085,30 @@ export default function RecordModal() {
       {phase === PHASE.RECORDING ? <PhaseRecording {...phaseProps} /> : null}
       {phase === PHASE.PUBLISH ? <PhasePublish {...phaseProps} /> : null}
       {phase === PHASE.TYPE_INPUT ? <PhaseTypeInput {...phaseProps} /> : null}
+      {/* Spinning UI lifted out of PhasePublishing/PhaseAnalyzing so
+          the SAME CardSpinAnimation instance persists across the
+          PUBLISHING -> ANALYZING phase flip. Only the labels change;
+          the Lottie keeps playing without restart. */}
+      {(phase === PHASE.PUBLISHING || phase === PHASE.ANALYZING) ? (
+        <View style={pubgStyles.loaderHost}>
+          <CardSpinAnimation
+            mode="continuous"
+            label1={
+              phase === PHASE.PUBLISHING
+                ? 'Wait for it...'
+                : 'Generating your wisdom card...'
+            }
+            label2={
+              phase === PHASE.PUBLISHING ? 'Your legacy is loading.' : undefined
+            }
+            sublabel={
+              phase === PHASE.PUBLISHING
+                ? 'Almost there'
+                : 'Analyzing patterns and insights'
+            }
+          />
+        </View>
+      ) : null}
       {phase === PHASE.PUBLISHING ? <PhasePublishing {...phaseProps} /> : null}
       {phase === PHASE.ANALYZING ? <PhaseAnalyzing {...phaseProps} /> : null}
       {phase === PHASE.INSIGHT ? <PhaseInsight {...phaseProps} /> : null}
