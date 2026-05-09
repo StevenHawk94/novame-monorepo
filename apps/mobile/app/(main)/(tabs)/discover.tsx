@@ -25,9 +25,12 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 
-import { apiClient } from '@/lib/api';
 import { SeekQuestionCard } from '@/components/seek/seek-question-card';
 import type { SeekQuestion } from '@/lib/seek-types';
+import {
+  fetchSeekQuestionsWithCache,
+  getCachedSeekQuestions,
+} from '@/lib/seek-questions-cache';
 
 type FetchResp = { questions?: SeekQuestion[] };
 
@@ -59,22 +62,26 @@ export default function DiscoverTab() {
   }, [filterKey]);
 
   const router = useRouter();
-  const [questions, setQuestions] = useState<SeekQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<SeekQuestion[]>(
+    () => getCachedSeekQuestions('') ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () => getCachedSeekQuestions('') === null,
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
 
   const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
-    if (mode === 'initial') setLoading(true);
-    else setRefreshing(true);
+    // Stage 6 SWR: only show spinner if no cache. Pull-to-refresh
+    // (mode='refresh') always shows refresh indicator regardless.
+    const hasCache = getCachedSeekQuestions(filterKey) !== null;
+    if (mode === 'initial' && !hasCache) setLoading(true);
+    else if (mode === 'refresh') setRefreshing(true);
     setError(null);
     try {
-      const qs = selectedKeywords.length > 0
-        ? `?keywords=${encodeURIComponent(selectedKeywords.join(','))}`
-        : '';
-      const data = await apiClient.get<FetchResp>(`/api/seek-questions${qs}`);
-      setQuestions(data.questions ?? []);
+      const qs = await fetchSeekQuestionsWithCache(filterKey, selectedKeywords);
+      setQuestions(qs);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load questions');
     } finally {

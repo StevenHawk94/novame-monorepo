@@ -14,7 +14,8 @@ import { Image } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
 import {
-  fetchLeaderboard,
+  fetchLeaderboardWithCache,
+  getCachedLeaderboard,
   type LeaderboardEntry,
 } from '@/lib/leaderboard-api';
 
@@ -40,15 +41,20 @@ import {
 export default function RankingModal() {
   const insets = useSafeAreaInsets();
 
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(
+    () => getCachedLeaderboard() ?? [],
+  );
+  const [loading, setLoading] = useState(() => getCachedLeaderboard() === null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      const res = await fetchLeaderboard(50);
+      // Stage 6 SWR: only show spinner if no cache. Otherwise silent
+      // background refresh; user sees prior leaderboard immediately.
+      const hasCache = getCachedLeaderboard() !== null;
+      if (!hasCache) setLoading(true);
+      const res = await fetchLeaderboardWithCache(50);
       if (cancelled) return;
       if (res.kind === 'success') {
         setEntries(res.entries);
@@ -56,7 +62,7 @@ export default function RankingModal() {
       } else {
         setError(res.message);
       }
-      setLoading(false);
+      if (!hasCache) setLoading(false);
     })();
     return () => {
       cancelled = true;

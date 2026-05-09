@@ -15,6 +15,7 @@
  *                  expCurrent, expNeeded }
  */
 import { apiClient } from './api';
+import { storage } from './storage';
 
 export type DailyTaskType = 'daily_love' | 'wisdom';
 
@@ -58,4 +59,71 @@ export async function completeDailyTask(
     '/api/daily-tasks',
     { userId, action: 'complete', taskId },
   );
+}
+
+// ============================================================
+// SWR Cache Layer — Stage 6 (cache-first reads, publish invalidation)
+//
+// Strategy: mirror me-stats.ts pattern.
+//   - getCachedDailyTasks(): MMKV sync read; null on miss.
+//   - fetchDailyTasksWithCache(userId): API fetch + write-through to
+//     cache + return. Used for both initial cold-start fetch and
+//     post-invalidate re-fetch.
+//   - invalidateDailyTasks(): MMKV remove; signals "next read should
+//     refetch."
+//
+// Page integration (growth.tsx My Tasks):
+//   - On mount: useState initial value = getCachedDailyTasks(). User
+//     immediately sees last-known list (or empty if first time).
+//   - useFocusEffect: void fetchDailyTasksWithCache(userId).then(setRows)
+//     for silent background refresh on every tab focus.
+//
+// Invalidation triggers:
+//   - record.tsx PhasePublishing success: invalidateDailyTasks()
+//     because publish creates new wisdom tasks (task_1 / task_2).
+//
+// MMKV key: novame_daily_tasks
+// ============================================================
+
+const DAILY_TASKS_STORAGE_KEY = 'novame_daily_tasks';
+
+export type CachedDailyTasks = {
+  tasks: DailyTask[];
+  lastFetchedAtMs: number;
+};
+
+export function getCachedDailyTasks(): DailyTask[] | null {
+  const raw = storage.getString(DAILY_TASKS_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CachedDailyTasks;
+    return parsed.tasks ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedDailyTasks(tasks: DailyTask[]): void {
+  const payload: CachedDailyTasks = {
+    tasks,
+    lastFetchedAtMs: Date.now(),
+  };
+  storage.set(DAILY_TASKS_STORAGE_KEY, JSON.stringify(payload));
+}
+
+export function invalidateDailyTasks(): void {
+  storage.remove(DAILY_TASKS_STORAGE_KEY);
+}
+
+/**
+ * Cache-aware fetch. Always hits server; writes through to cache.
+ * Use this from page components (growth.tsx) for both initial
+ * load and post-invalidate refresh.
+ */
+export async function fetchDailyTasksWithCache(
+  userId: string,
+): Promise<DailyTask[]> {
+  const tasks = await fetchDailyTasks(userId);
+  setCachedDailyTasks(tasks);
+  return tasks;
 }

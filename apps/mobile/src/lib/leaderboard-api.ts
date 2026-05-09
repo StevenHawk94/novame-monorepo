@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { storage } from './storage';
 
 /**
  * Leaderboard API wrapper -- Stage 3.10.3 C.
@@ -60,4 +61,46 @@ export async function fetchLeaderboard(
       message: e instanceof Error ? e.message : 'Network error',
     };
   }
+}
+
+// ============================================================
+// SWR Cache Layer — Stage 6
+// MMKV key: novame_leaderboard
+// Used by: ranking.tsx
+// ============================================================
+
+const LEADERBOARD_STORAGE_KEY = 'novame_leaderboard';
+
+export type CachedLeaderboard = {
+  entries: LeaderboardEntry[];
+  lastFetchedAtMs: number;
+};
+
+export function getCachedLeaderboard(): LeaderboardEntry[] | null {
+  const raw = storage.getString(LEADERBOARD_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return (JSON.parse(raw) as CachedLeaderboard).entries ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedLeaderboard(entries: LeaderboardEntry[]): void {
+  const payload: CachedLeaderboard = { entries, lastFetchedAtMs: Date.now() };
+  storage.set(LEADERBOARD_STORAGE_KEY, JSON.stringify(payload));
+}
+
+export function invalidateLeaderboard(): void {
+  storage.remove(LEADERBOARD_STORAGE_KEY);
+}
+
+export async function fetchLeaderboardWithCache(
+  limit: number = 50,
+): Promise<LeaderboardResult> {
+  const res = await fetchLeaderboard(limit);
+  if (res.kind === 'success') {
+    setCachedLeaderboard(res.entries);
+  }
+  return res;
 }

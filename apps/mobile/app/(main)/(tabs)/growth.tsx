@@ -38,10 +38,16 @@ import {
 import {
   completeDailyTask,
   fetchDailyTasks,
+  fetchDailyTasksWithCache,
+  getCachedDailyTasks,
   type DailyTask,
 } from '@/lib/daily-tasks-api';
 import { getExpNeeded } from '@/lib/exp-formula';
-import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
+import {
+  fetchWisdomsWithCache,
+  getCachedWisdoms,
+  type WisdomLog,
+} from '@/lib/wisdoms-api';
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
 
@@ -72,17 +78,31 @@ export default function GrowthTab() {
   const [switchingMode, setSwitchingMode] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<RowState[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  const [rows, setRows] = useState<RowState[]>(() => {
+    // Stage 6 SWR: hydrate from cache so users see last-known tasks
+    // instantly on tab switch (no flash of empty state).
+    const cached = getCachedDailyTasks();
+    return cached
+      ? cached.map((t) => ({ task: t, completing: false }))
+      : [];
+  });
+  const [tasksLoading, setTasksLoading] = useState(
+    // Stage 6 SWR: only show spinner if no cache exists. Otherwise
+    // skip loading state entirely so cache renders instantly.
+    () => getCachedDailyTasks() === null,
+  );
   // Floating confetti bursts that outlive the task row. Each entry is
   // a unique id; we render an absolute-positioned BurstConfetti per id
   // and clean it up after CONFETTI_DURATION_MS.
   const [floatingBursts, setFloatingBursts] = useState<string[]>([]);
 
   // === My Logs sub-tab state ===
-  const [logs, setLogs] = useState<WisdomLog[]>([]);
+  const [logs, setLogs] = useState<WisdomLog[]>(() => {
+    const cached = getCachedWisdoms();
+    return cached?.wisdoms ?? [];
+  });
   const [logsLoading, setLogsLoading] = useState(false);
-  const [logsLoaded, setLogsLoaded] = useState(false);
+  const [logsLoaded, setLogsLoaded] = useState(() => getCachedWisdoms() !== null);
   const [authorProfile, setAuthorProfile] = useState<{
     display_name: string;
     avatar_url: string | null;
@@ -143,34 +163,50 @@ export default function GrowthTab() {
     }
   }, [userId]);
 
-  // === Tasks ===
+  // === Tasks (Stage 6 SWR: cache-first) ===
+  // Show cache instantly; fetch silently in background. Only show
+  // loading spinner when there is no cache at all (first-ever load).
   const refreshTasks = useCallback(async () => {
     if (!userId) return;
-    setTasksLoading(true);
+    const cached = getCachedDailyTasks();
+    const hasCache = cached !== null;
+    if (!hasCache) setTasksLoading(true);
     try {
-      const tasks = await fetchDailyTasks(userId);
+      const tasks = await fetchDailyTasksWithCache(userId);
       setRows(tasks.map((t) => ({ task: t, completing: false })));
     } catch (e) {
       console.warn('[growth] daily-tasks fetch failed:', e);
+      // If we have stale cache, keep showing it; user notices nothing.
+      // If no cache, leave loading state false so the empty UI shows.
     } finally {
-      setTasksLoading(false);
+      if (!hasCache) setTasksLoading(false);
     }
   }, [userId]);
 
-  // Lazy-fetch wisdom logs the first time the user opens My Logs.
-  // Re-fetch on subsequent opens too so newly published wisdoms
-  // appear without a manual refresh.
+  // Stage 6 SWR bugfix: useFocusEffect does NOT re-run when its deps
+  // change (only on focus/blur). On cold start userId is null on
+  // first focus tick, refreshTasks early-returns, and loading state
+  // gets stuck at `true` forever. This effect closes the gap by
+  // triggering refreshTasks the moment userId resolves.
+  useEffect(() => {
+    if (!userId) return;
+    void refreshTasks();
+  }, [userId, refreshTasks]);
+
+  // Stage 6 SWR cache-first. If cache exists -> show instantly,
+  // fetch silently. If no cache -> show spinner.
   const refreshLogs = useCallback(async () => {
     if (!userId) return;
-    setLogsLoading(true);
+    const hasCache = getCachedWisdoms() !== null;
+    if (!hasCache) setLogsLoading(true);
     try {
-      const res = await fetchWisdoms(userId, { limit: 30 });
+      const res = await fetchWisdomsWithCache(userId, { limit: 30 });
       setLogs(res.wisdoms ?? []);
       setLogsLoaded(true);
     } catch (e) {
       console.warn('[growth] wisdoms fetch failed:', e);
     } finally {
-      setLogsLoading(false);
+      if (!hasCache) setLogsLoading(false);
     }
   }, [userId]);
 

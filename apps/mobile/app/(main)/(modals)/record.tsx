@@ -66,6 +66,11 @@ import {
 import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { storage } from '@/lib/storage';
 import { fetchDailyLimit } from '@/lib/daily-limit-api';
+import { invalidateDailyTasks } from '@/lib/daily-tasks-api';
+import { invalidateWisdoms } from '@/lib/wisdoms-api';
+import { invalidateLeaderboard } from '@/lib/leaderboard-api';
+import { invalidateUserStats } from '@/lib/user-stats-api';
+import { invalidateSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
 import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
@@ -1546,6 +1551,21 @@ function PhasePublishing({
         // are current. Stage 3.10.1.
         invalidateMeStats();
         void fetchMeStats(userId).catch(() => {});
+
+        // Stage 6 SWR: publish creates 2 new daily tasks (task_1 / task_2).
+        // Invalidate the daily-tasks cache so when the user returns to
+        // Growth tab, the new tasks appear (cache-first read shows old
+        // list instantly + background fetch swaps in fresh data).
+        invalidateDailyTasks();
+
+        // Stage 6 SWR: every Cold-data cache that publish makes stale.
+        // None of these trigger an immediate fetch -- the user pays
+        // network cost only for the pages they actually visit next
+        // (lazy revalidation).
+        invalidateWisdoms();         // My Logs (new wisdom row)
+        invalidateLeaderboard();      // Ranking (totalMinutes/wisdomCount bump)
+        invalidateUserStats();        // Assets (totalWords / uniqueKeywords)
+        invalidateSeekQuestions();    // Discover feed (cards count badge)
 
         // Stage 5.IAP.5 (Bug #1, aggressive upsell): check whether
         // this publish consumed the user's last quota slot. If so,

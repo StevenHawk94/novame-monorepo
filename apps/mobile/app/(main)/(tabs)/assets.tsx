@@ -28,7 +28,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CollectionView } from '@/components/assets/collection-view';
 import { AssetsView } from '@/components/assets/assets-view';
-import { fetchUserStats, type UserStats } from '@/lib/user-stats-api';
+import {
+  fetchUserStatsWithCache,
+  getCachedUserStats,
+  type UserStats,
+} from '@/lib/user-stats-api';
 import { supabase } from '@/lib/supabase';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
@@ -43,8 +47,10 @@ export default function AssetsTab() {
   const insets = useSafeAreaInsets();
   const [subTab, setSubTab] = useState<SubTab>('collection');
   const [userId, setUserId] = useState<string | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<UserStats | null>(
+    () => getCachedUserStats(),
+  );
+  const [loading, setLoading] = useState(() => getCachedUserStats() === null);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -55,13 +61,15 @@ export default function AssetsTab() {
   const load = useMemo(
     () => async () => {
       if (!userId) return;
+      // Stage 6 SWR cache-first. Don't toggle loading if we have cache.
+      const hasCache = getCachedUserStats() !== null;
       try {
-        const res = await fetchUserStats(userId);
+        const res = await fetchUserStatsWithCache(userId);
         setStats(res);
       } catch (e) {
         console.warn('[assets] fetch user-stats failed:', e);
       } finally {
-        setLoading(false);
+        if (!hasCache) setLoading(false);
       }
     },
     [userId],
