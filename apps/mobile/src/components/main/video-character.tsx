@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 import { getCachedAssetUri } from '@/lib/asset-cache';
@@ -78,6 +78,63 @@ export function VideoCharacter({
     p.muted = true;
     p.play();
   });
+
+  // Stage 6 keep-playing safeguard layer 1: AppState resume.
+  // expo-video pauses videos when the app goes to background (iOS
+  // system requirement + battery), but does NOT auto-resume on
+  // return. Without this listener, switching to another app once
+  // and coming back leaves the home video frozen on a frame, which
+  // also triggers iOS 16+ Live Text overlay ("Copy All") on detected
+  // frame text. Re-playing as soon as we return to active state
+  // restores motion + suppresses Live Text.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        try {
+          player.play();
+        } catch {
+          // best-effort
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [player]);
+
+  // Stage 6 keep-playing safeguard layer 2: replaceAsync race fix.
+  // After publish-wisdom, character outfit/state may change which
+  // triggers replaceAsync below. expo-video v3 replaceAsync resolves
+  // before the new source reaches 'readyToPlay' status in some cases,
+  // so the immediate player.play() call after replaceAsync silently
+  // no-ops (player still in 'loading' or 'idle'). This listener
+  // catches the moment the new source becomes playable and starts it
+  // if not already playing — bug-free across all replace scenarios.
+  useEffect(() => {
+    const sub = player.addListener('statusChange', ({ status }) => {
+      if (status === 'readyToPlay' && !player.playing) {
+        try {
+          player.play();
+        } catch {
+          // best-effort
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [player]);
+
+  // Stage 6 keep-playing safeguard layer 3: loop fallback.
+  // player.loop = true is set at construction, but some iOS versions
+  // and replaced sources occasionally fire playToEnd without auto-
+  // restart. Force-replay on end is a defensive safety net.
+  useEffect(() => {
+    const sub = player.addListener('playToEnd', () => {
+      try {
+        player.play();
+      } catch {
+        // best-effort
+      }
+    });
+    return () => sub.remove();
+  }, [player]);
 
   // Swap source when outfit/state changes without remounting the VideoView.
   // We use replaceAsync (expo-video v3+) so the asset load doesn't block
