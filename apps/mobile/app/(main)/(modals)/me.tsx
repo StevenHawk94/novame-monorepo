@@ -25,9 +25,11 @@ import { haptics } from '@/lib/haptics';
 import {
   type CachedMeStats,
   clearCachedMeStats,
+  fetchMeStats,
   getCachedMeStats,
 } from '@/lib/me-stats';
 import { clearCachedSubscription } from '@/lib/subscription';
+import { onPurchaseComplete } from '@/lib/iap';
 import { clearCachedCharacterState } from '@/lib/character-state';
 import { signOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -65,18 +67,37 @@ export default function MeModal() {
     getCachedMeStats(),
   );
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
 
-  // Email lives in supabase auth, not in the me-stats cache (which only
-  // mirrors the profiles table). Read it once on mount.
+  // Email + userId live in supabase auth, not in me-stats cache. Read
+  // once on mount. userId drives fetchMeStats() on purchase complete.
   useEffect(() => {
     let cancelled = false;
     void supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setUserEmail(data.session?.user?.email ?? '');
+      if (cancelled) return;
+      setUserEmail(data.session?.user?.email ?? '');
+      setUserId(data.session?.user?.id ?? '');
     });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Stage 5.IAP.x.bugfix: subscribe to IAP purchase-complete events.
+  // When a purchase succeeds while Me modal is open, immediately
+  // refetch me-stats so usedThisMonth / planName / monthlyAnalyses
+  // reflect the new tier without waiting for the 2s polling tick.
+  useEffect(() => {
+    if (!userId) return;
+    const unsubscribe = onPurchaseComplete(() => {
+      void fetchMeStats(userId)
+        .then((next) => setStats(next))
+        .catch(() => {
+          // best-effort -- 2s polling fallback below will catch up
+        });
+    });
+    return unsubscribe;
+  }, [userId]);
 
   // Re-read cache on a 2s tick so a background refetch (e.g. record
   // publish success while this modal happens to be open) reflects in

@@ -50,6 +50,7 @@ import {
 } from 'expo-iap';
 
 import { apiClient } from './api';
+import { invalidateMeStats } from './me-stats';
 import { supabase } from './supabase';
 import {
   clearCachedSubscription,
@@ -517,6 +518,18 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
 
   const tier = PRODUCT_TO_TIER[productId];
   const cycle = PRODUCT_TO_CYCLE[productId];
+
+  // Stage 5.IAP.x.bugfix: invalidate me-stats cache so any UI that
+  // reads it (Me modal usedThisMonth / planName / monthlyAnalyses)
+  // refetches fresh data on next access. The user-facing effect:
+  // upgrading/downgrading immediately reflects in Me page without
+  // having to wait for the 2s polling tick.
+  try {
+    invalidateMeStats();
+  } catch {
+    // best-effort
+  }
+
   for (const cb of completeCallbacks) {
     try {
       cb({ tier, cycle });

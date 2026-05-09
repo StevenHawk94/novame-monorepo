@@ -192,7 +192,12 @@ export default function SubscriptionPaywallModal() {
 
   const handleSubscribe = async () => {
     if (busy !== 'idle') return;
-    if (pendingChange === 'same') return; // current plan, no-op
+    if (pendingChange === 'same') {
+      // Stage 5.IAP.x.bugfix: take user to iOS subscription
+      // management page (App Store rules forbid in-app cancel).
+      void Linking.openURL('https://apps.apple.com/account/subscriptions');
+      return;
+    }
     void haptics.medium();
     const productId = `novame.${selected}.${cycle}` as IOSSubscriptionProductId;
     if (!IOS_SUBSCRIPTION_PRODUCT_IDS.includes(productId)) {
@@ -259,7 +264,7 @@ export default function SubscriptionPaywallModal() {
   const ctaLabel = (): string => {
     if (busy === 'purchasing') return 'Processing...';
     if (busy === 'restoring') return 'Restoring...';
-    if (pendingChange === 'same') return 'Current Plan';
+    if (pendingChange === 'same') return 'Manage Subscription';
     if (pendingChange === 'new') return 'Subscribe';
     if (pendingChange === 'upgrade') {
       return `Upgrade to ${PRICING_TIERS[selected].name}`;
@@ -372,16 +377,16 @@ export default function SubscriptionPaywallModal() {
               <Pressable
                 key={key}
                 onPress={() => {
-                  if (isCurrent) return;
+                  // Stage 5.IAP.x.bugfix: current plan IS selectable
+                  // now. Selecting it -> CTA becomes "Manage
+                  // Subscription" which opens iOS subscription page.
                   void haptics.selection();
                   setSelected(key);
                 }}
-                disabled={isCurrent}
                 style={({ pressed }) => [
                   styles.tierCard,
                   isSelected && styles.tierCardSelected,
-                  isCurrent && { opacity: 0.55 },
-                  { opacity: pressed && !isCurrent ? 0.9 : 1 },
+                  { opacity: pressed ? 0.9 : 1 },
                 ]}
               >
                 <View
@@ -398,12 +403,12 @@ export default function SubscriptionPaywallModal() {
                 </View>
                 <View style={styles.tierMid}>
                   <View style={styles.tierNameRow}>
+                    <Text style={styles.tierName}>{t.name}</Text>
                     {isCurrent ? (
                       <View style={styles.currentBadge}>
                         <Text style={styles.currentBadgeText}>CURRENT</Text>
                       </View>
                     ) : null}
-                    <Text style={styles.tierName}>{t.name}</Text>
                     {cycle === 'yearly' && saving > 0 ? (
                       <View style={styles.savingChip}>
                         <Text style={styles.savingChipText}>-{saving}%</Text>
@@ -456,12 +461,10 @@ export default function SubscriptionPaywallModal() {
         ) : null}
         <Pressable
           onPress={handleSubscribe}
-          disabled={busy !== 'idle' || pendingChange === 'same'}
+          disabled={busy !== 'idle'}
           style={({ pressed }) => [
             styles.subscribeBtn,
-            (busy !== 'idle' || pendingChange === 'same') && {
-              opacity: 0.5,
-            },
+            busy !== 'idle' && { opacity: 0.5 },
             { opacity: pressed ? 0.9 : 1 },
           ]}
         >
