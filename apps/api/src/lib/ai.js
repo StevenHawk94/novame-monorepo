@@ -1,9 +1,12 @@
 /**
- * lib/ai.js — Shared AI invocation layer with 3-tier fallback
+ * lib/ai.js — Shared AI invocation layer with 4-tier fallback
  *
- * Tier 1: gemini-2.5-flash-lite-latest  (cheapest, fastest)
- * Tier 2: gemini-2.5-flash-latest       (better quality, still fast)
- * Tier 3: deepseek-chat (DeepSeek-V3.2) (external fallback)
+ * Tier 1: gemini-2.5-flash-lite      (cheapest, fastest, default)
+ * Tier 2: gemini-3.1-flash-lite      (newer generation lite, fallback if Tier 1 fails)
+ * Tier 3: gemini-2.5-flash           (heavier Gemini model)
+ * Tier 4: deepseek-chat (V3.2)       (external fallback if all Gemini fails)
+ *
+ * Per-call timeout: 5s (4 tiers x 5s = 20s, fits within Vercel edge 25s limit).
  *
  * All Gemini calls use system_instruction separation to maximize implicit cache hits.
  * Safety filters set to BLOCK_NONE so user diary content (emotions, stress, anger) is never blocked.
@@ -14,6 +17,7 @@ const DEEPSEEK_API_KEY = () => process.env.DEEPSEEK_API_KEY
 
 const GEMINI_MODELS = [
   'gemini-2.5-flash-lite',
+  'gemini-3.1-flash-lite',
   'gemini-2.5-flash',
 ]
 
@@ -29,7 +33,7 @@ const SAFETY_NONE = [
  * fetch wrapper with hard timeout via AbortController.
  * Default 8s — fits within Vercel 25s limit when chained across 3 model tiers.
  */
-async function fetchWithTimeout(url, options, timeoutMs = 8000) {
+async function fetchWithTimeout(url, options, timeoutMs = 5000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -167,7 +171,9 @@ export async function callAI(opts) {
     }
   }
 
-  throw new Error(`All AI models failed: ${errors.join(' | ')}`)
+  // Surface a user-friendly message; keep the technical chain in console
+  console.error('[AI] All models failed:', errors.join(' | '))
+  throw new Error('All AI models failed, please try again later.')
 }
 
 /**

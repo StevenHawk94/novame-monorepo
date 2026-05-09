@@ -9,35 +9,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 /**
- * Generate embedding via Gemini
- */
-async function generateEmbedding(text) {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey || !text) return null
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: { parts: [{ text }] } }),
-      }
-    )
-    if (!response.ok) {
-      console.error('Embedding API error:', await response.text())
-      return null
-    }
-    const data = await response.json()
-    const fullEmbedding = data.embedding.values
-    return fullEmbedding.slice(0, 768)
-  } catch (error) {
-    console.error('Failed to generate embedding:', error)
-    return null
-  }
-}
-
-/**
  * Generate character B message using callAI (3-tier fallback)
  */
 async function generateCharacterBMessage(userId, wisdomText, supabase) {
