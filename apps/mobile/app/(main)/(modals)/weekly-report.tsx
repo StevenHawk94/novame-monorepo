@@ -417,7 +417,7 @@ export default function WeeklyReportModal() {
                 {totalResonance.toLocaleString()}
               </Text>
               <Text style={styles.echoSubLabel}>
-                souls reached this week
+                souls reached
               </Text>
             </View>
             <AvatarRow avatars={data.defaultAvatars ?? []} />

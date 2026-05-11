@@ -99,31 +99,35 @@ Return a JSON object with EXACTLY these fields:
 A single powerful tagline summarizing the universal wisdom. An "Aha!" moment. Like a bumper sticker for the soul.
 
 3. "insight_full": Universal Wisdom (500-600 characters).
-The "God's-eye view." Strip away the "I" and speak about "people/we/us." Explain the unwritten wisdom of life that the user just stumbled upon. Keep it grounded in human nature. It should sound like a classic observation on the art of living. DO NOT mention specific actions the user did, specific numbers, or specific timeframes. DO mention the underlying human principle.
+The "God's-eye view." Strip away the "I" and speak about "people/we/us." Explain the unwritten wisdom of life that the user just stumbled upon. Keep it grounded in human nature. It should sound like a classic observation on the art of living. Use a wise, compassionate, and human tone to explain the universal human nature behind the event. DO NOT mention specific actions the user did, specific numbers, or specific timeframes. DO mention the underlying human principle.
 
 4. "card_b_title": A warm, observant dynamic title phrase (5-7 words) based on the user's input. Not generic—make it feel personal to their story.
 
-5. "card_b": Emotional Validation body (500-600 characters).
-Side with the user. Perform a deep motive analysis:
-- Positive actions/thoughts: Highlight the "victory of will" to make them proud.
-- Negative actions/thoughts: Analyze the reasonableness of their reaction. Tell them their reaction is actually a hidden strength (sensitivity, justice, self-protection) used in the wrong context.
+5. "card_b": Emotional Validation body (800-1000 characters).
+- Perspective: "The All-Seeing Mentor." This is the section where you prove you are truly listening. Use the anchors from Step 1 to prove the user's behavior hides an admirable trait.
+- Rule: Do not simply restate the user's pain. Instead, use the specific details they provided in the input as evidence to prove they possess an extraordinary trait (e.g., decisiveness, acute sensitivity, or survival resilience).
+- Tone & Voice: It should feel like a brilliant friend talking to you at a coffee shop—hitting the nail on the head while remaining deeply personal and warm.
 Make the user feel completely understood and "seen." Flowing prose, not bullet points.
 
 6. "card_c_title": A curious, insightful dynamic title phrase (3-6 words) based on the user's input.
 
-7. "card_c": Dimensional Expansion body (900-1000 characters).
+7. "card_c": Dimensional Expansion body (400-700 characters).
 - Positive scenarios: Provide a higher-dimension perspective (from self-interest to altruism, short-term to long-term).
 - Negative scenarios: Point directly to the root issue and offer a "flipped perspective."
-Write this like a passing piece of advice as you're walking out the door. Punchy, casual, and highly specific to their story. Flowing prose, no bullet points.
+Avoid heavy or "preachy" life advice. Use the specific details from the user's story to offer an unexpected, intriguing, or even slightly humorous new angle. Transform their original worry into a personal growth "experiment" or a fascinating observation. Flowing prose, no bullet points.
 
-8. "wisdom_score": Number 70-100. Score based on how many of these 8 dimensions are present: Reflection, Resilience, Empathy, Vision, Courage, Acceptance, Authenticity, Humility.
-0 dimensions: 70-77, 1: 78-82, 2: 83-85, 3: 86-89, 4: 90-93, 5: 94-96, 6-7: 97-99, 8: 100
+8. "wisdom_score": Number 70-100. Score based on how many of these 8 dimensions are present in the user's input: Reflection, Resilience, Empathy, Vision, Courage, Acceptance, Authenticity, Humility.
+0 dimensions: 70-79, 1: 80-82, 2: 83-85, 3: 86-89, 4: 90-93, 5: 94-96, 6-7: 97-99, 8: 100
 
-9. "wisdom_emotion": One emotion keyword describing the mood. E.g. "Determined" or "Introspective"
+9. "wisdom_emotion": One emotion keyword describing the mood. Choose exactly ONE from this list: Stressed, Joy, Calm, Frustrated, Emotional, Burnout, Relieved, Lost, Lonely, Hopeful, Regretful.
 
-10. "task_1": A specific micro-task (50-120 characters) executable within 2 minutes, directly practicing the wisdom from the analysis. Concrete and doable today.
+10. "task_1": A specific micro-task (50-100 characters) executable within 2 minutes. Constraint: "Real-Life Connection." Actions must be grounded in the user's situation. Examples:
+(1) For family trauma: a small surprise for themselves or a loved one.
+(2) For work stress: a physical scene change or a small sensory reward.
+(3) For addiction/pain: a warm sensory comfort (e.g., a piece of chocolate, a soft blanket, a cup of sweet tea).
+Tone: Like a friend's parting advice: "Hey, remember to do this one thing." Concrete and doable today.
 
-11. "task_2": A second, complementary micro-task (50-120 characters) targeting a different aspect.
+11. "task_2": A second, complementary micro-task (50-100 characters) like task_1 targeting a different aspect.
 ${aspireList ? `
 12. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply.
 
@@ -237,6 +241,12 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       task_2: (result.task_2 || '').substring(0, 120),
       creator_name: creatorName,
       creator_avatar: creatorAvatar,
+      // Stage 5.WR.1: persist AI-returned aspire_impacts so weekly-report
+      // can replay-compute traitChanges over the last 7 days. Cast to
+      // null when empty/missing — DB column is jsonb, nullable.
+      aspire_impacts: Array.isArray(result.aspire_impacts) && result.aspire_impacts.length > 0
+        ? result.aspire_impacts
+        : null,
     })
     .select()
     .single()
