@@ -33,6 +33,24 @@ import type {
 // ---- constants ----
 
 /**
+ * Card filenames used on onboarding step 8.
+ *
+ * These two assets must be on the user's device before they reach
+ * step 8, or the FlippableCard renders its placeholder (purple bg
+ * with a star) instead of the real card art — which feels broken.
+ *
+ * Onboarding step 1 awaits the download of these (along with the
+ * outfit-1 videos) before launching the background fill of the
+ * remaining 50 cards + outfit-2..6 videos. See
+ * apps/mobile/app/(onboarding)/index.tsx.
+ */
+export const STEP_8_CARDS = [
+  'action-initiative-front.webp',
+  'action-back.webp',
+] as const;
+
+
+/**
  * R2 manifest URL. Hardcoded per Q-3.3-B-1 = A (no env var needed,
  * URL is fixed across dev/prod, single source of truth).
  */

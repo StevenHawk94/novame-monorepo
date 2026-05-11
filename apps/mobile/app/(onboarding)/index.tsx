@@ -8,6 +8,7 @@ import {
   downloadAssets,
   fetchManifestFromR2,
   setCachedManifest,
+  STEP_8_CARDS,
 } from '@/lib/asset-cache';
 
 /**
@@ -38,26 +39,49 @@ export default function OnboardingStep1() {
         const manifest = await fetchManifestFromR2();
         setCachedManifest(manifest);
 
-        // Build foreground list: outfit-1 videos only (3 files, ~9 MB).
-        const outfit1 = manifest.videos
+        // ---- Phase 1 (awaited): outfit-1 videos + step-8 cards ----
+        // These are the assets the user MUST see during onboarding.
+        // Block until they're cached so step 8 never renders an empty
+        // placeholder card. Total payload ~9 MB (videos) + 2x ~50 KB
+        // (cards) = ~9.1 MB — finishes well before the user reaches
+        // step 8 even on a slow connection.
+        const outfit1Names = manifest.videos
           .filter((v) => v.outfit === 1)
           .map((v) => v.filename);
-        const foregroundMissing = outfit1.filter((filename) => {
-          const entry = manifest.videos.find((v) => v.filename === filename);
+        const step8CardNames = STEP_8_CARDS.filter((filename) =>
+          manifest.cards.some((c) => c.filename === filename),
+        );
+        const phase1Targets = [...outfit1Names, ...step8CardNames];
+
+        // Only download those that are actually missing or stale.
+        const phase1Missing = phase1Targets.filter((filename) => {
+          const videoEntry = manifest.videos.find(
+            (v) => v.filename === filename,
+          );
+          const cardEntry = manifest.cards.find(
+            (c) => c.filename === filename,
+          );
+          const entry = videoEntry ?? cardEntry;
           if (!entry) return false;
-          return diffCacheAgainstManifest(
-            { ...manifest, videos: [entry], cards: [] },
-          ).length > 0;
+          return (
+            diffCacheAgainstManifest({
+              ...manifest,
+              videos: videoEntry ? [videoEntry] : [],
+              cards: cardEntry ? [cardEntry] : [],
+            }).length > 0
+          );
         });
 
-        if (foregroundMissing.length > 0) {
-          await downloadAssets(manifest.baseUrl, foregroundMissing);
+        if (phase1Missing.length > 0) {
+          await downloadAssets(manifest.baseUrl, phase1Missing);
         }
 
-        // Background fill: everything else (outfit-2..6 + 52 cards).
+        // ---- Phase 2 (fire-and-forget): everything else ----
+        // outfit-2..6 videos + the other 50 cards. Not awaited so user
+        // can advance through onboarding immediately. By the time they
+        // reach the main tabs these will (mostly) be cached.
         const remaining = diffCacheAgainstManifest(manifest);
         if (remaining.length > 0) {
-          // Intentionally not awaited.
           void downloadAssets(manifest.baseUrl, remaining);
         }
       } catch {
