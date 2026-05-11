@@ -1,40 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 
 import { getOnboardingState } from '@/lib/onboarding';
 
 /**
- * Step 3 — Aspire-words celebration (Stage 3.5.bugfix.C, 2025-11-XX).
+ * Step 3 — Aspire-words celebration with Tap Burst (Stage 6.x).
  *
- * Complete rewrite using RN built-in Animated API instead of
- * react-native-reanimated. Reanimated worklets had race conditions
- * with the layout layer in the previous attempt — children with
- * opacity=0 inside absolutely-positioned siblings collapsed the
- * flex layer below.
+ * 4-phase choreography:
+ *   Phase 1 'words'      0.0s → 1.4s   chips stagger-in, glow purple
+ *   Phase 2 'converge'   1.4s → 2.0s   chips fly to center, shrink + fade
+ *   Phase 3 'burst'      2.0s → 3.0s   Tap-Burst lottie explodes (1s)
+ *   Phase 4 'final'      2.7s → 4.5s   "Wow..." text bounces in (overlaps
+ *                                       lottie tail by 0.3s for seamless
+ *                                       handoff)
+ *   Navigate at 4.5s.
  *
- * New design:
- *   - Single-phase render driven by `phase` state ('words' | 'spark'
- *     | 'final').
- *   - Each phase replaces the previous via conditional render — no
- *     overlapping absolute layers, no z-fighting.
- *   - Each chip / sparkle / final-line owns its own Animated.Value
- *     pair (opacity + scale) and runs Animated.timing on mount.
- *
- * Timeline:
- *   0.0s → 1.4s   words: stagger-in (100ms each), then stay visible
- *   1.4s          phase='spark'
- *   1.4s → 2.2s   purple sparkle scales 0→1.15 + rotates 360°
- *   2.2s          phase='final'
- *   2.2s → 3.8s   final-line bounces in, holds
- *   3.8s          navigate to step-4
+ * Implementation: pure RN Animated API for the chip motion (cheap,
+ * reliable), Lottie native renderer for the burst (designer-controlled
+ * visuals).
  */
 
-const NAV_DELAY_MS = 3800;
-const WORDS_HOLD_MS = 1400;
-const SPARK_HOLD_MS = 800;
+const PHASE_DURATIONS = {
+  WORDS: 1400,
+  CONVERGE: 600,
+  BURST: 1000,
+  FINAL_HOLD: 1500,
+};
+const FINAL_OVERLAP_MS = 300; // final text appears 300ms before burst ends
+const NAV_DELAY_MS =
+  PHASE_DURATIONS.WORDS +
+  PHASE_DURATIONS.CONVERGE +
+  PHASE_DURATIONS.BURST +
+  PHASE_DURATIONS.FINAL_HOLD;
 
-type Phase = 'words' | 'spark' | 'final';
+const TAP_BURST_LOTTIE = require('../../assets/animations/tap-burst.json');
+
+const SCREEN = Dimensions.get('window');
+const CENTER_X = SCREEN.width / 2;
+const CENTER_Y = SCREEN.height / 2;
+
+type Phase = 'words' | 'converge' | 'burst' | 'final';
 
 export default function OnboardingStep3() {
   const router = useRouter();
@@ -47,9 +54,19 @@ export default function OnboardingStep3() {
       return;
     }
 
-    const t1 = setTimeout(() => setPhase('spark'), WORDS_HOLD_MS);
-    const t2 = setTimeout(() => setPhase('final'), WORDS_HOLD_MS + SPARK_HOLD_MS);
+    const t1 = setTimeout(() => setPhase('converge'), PHASE_DURATIONS.WORDS);
+    const t2 = setTimeout(
+      () => setPhase('burst'),
+      PHASE_DURATIONS.WORDS + PHASE_DURATIONS.CONVERGE,
+    );
     const t3 = setTimeout(
+      () => setPhase('final'),
+      PHASE_DURATIONS.WORDS +
+        PHASE_DURATIONS.CONVERGE +
+        PHASE_DURATIONS.BURST -
+        FINAL_OVERLAP_MS,
+    );
+    const t4 = setTimeout(
       () => router.push('/(onboarding)/step-4'),
       NAV_DELAY_MS,
     );
@@ -58,6 +75,7 @@ export default function OnboardingStep3() {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      clearTimeout(t4);
     };
   }, [router, words.length]);
 
@@ -65,55 +83,155 @@ export default function OnboardingStep3() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.stage}>
-        {phase === 'words' && <WordsCloud words={words} />}
-        {phase === 'spark' && <Sparkle />}
-        {phase === 'final' && <FinalLine />}
-      </View>
+      {/* Words layer — visible during phase=words AND converge.
+          During converge each chip animates its own translate to center. */}
+      {(phase === 'words' || phase === 'converge') && (
+        <View style={styles.absLayer} pointerEvents="none">
+          <View style={styles.wordsLayer}>
+            {words.map((word, i) => (
+              <WordChip
+                key={word}
+                word={word}
+                inDelay={i * 100}
+                converging={phase === 'converge'}
+                convergeDelay={i * 30}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Burst layer — Lottie centered, plays once. */}
+      {(phase === 'burst' || phase === 'final') && (
+        <View style={styles.absLayer} pointerEvents="none">
+          <LottieView
+            source={TAP_BURST_LOTTIE}
+            autoPlay
+            loop={false}
+            style={styles.lottie}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+
+      {/* Final text — overlaps the lottie tail. */}
+      {phase === 'final' && (
+        <View style={styles.absLayer} pointerEvents="none">
+          <FinalLine />
+        </View>
+      )}
     </View>
   );
 }
 
-// ---- WordsCloud — staggered entry of all picked words ----
+// ---- WordChip — handles BOTH stagger-in AND converge-to-center ----
 
-function WordsCloud({ words }: { words: string[] }) {
-  return (
-    <View style={styles.wordsLayer}>
-      {words.map((word, i) => (
-        <WordChip key={word} word={word} delay={i * 100} />
-      ))}
-    </View>
-  );
-}
-
-function WordChip({ word, delay }: { word: string; delay: number }) {
+function WordChip({
+  word,
+  inDelay,
+  converging,
+  convergeDelay,
+}: {
+  word: string;
+  inDelay: number;
+  converging: boolean;
+  convergeDelay: number;
+}) {
+  // Stagger-in (opacity + scale-up from 0.7 to 1)
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.7)).current;
+
+  // Converge: each chip captures its initial onLayout center, then
+  // animates dx/dy to (0,0) relative to current position. We use a
+  // separate Animated.Value driver in [0,1] and interpolate to the
+  // negative offset, so each chip flies to screen center regardless
+  // of where it started in the wordsLayer flex grid.
+  const convergeProgress = useRef(new Animated.Value(0)).current;
+  const [layout, setLayout] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 380,
-        delay,
+        delay: inDelay,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.spring(scale, {
         toValue: 1,
-        delay,
+        delay: inDelay,
         damping: 12,
         stiffness: 140,
         useNativeDriver: true,
       }),
     ]).start();
-  }, [opacity, scale, delay]);
+  }, [opacity, scale, inDelay]);
+
+  useEffect(() => {
+    if (!converging) return;
+    Animated.parallel([
+      Animated.timing(convergeProgress, {
+        toValue: 1,
+        duration: 500,
+        delay: convergeDelay,
+        easing: Easing.in(Easing.quad), // accelerate INTO the center
+        useNativeDriver: true,
+      }),
+      // Shrink + fade out as it approaches center
+      Animated.timing(scale, {
+        toValue: 0.2,
+        duration: 500,
+        delay: convergeDelay,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 500,
+        delay: convergeDelay + 200, // start fading after some travel
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [converging, convergeProgress, opacity, scale, convergeDelay]);
+
+  // From layout, compute offset to screen center.
+  // dx = CENTER_X - (chip.x + chip.w/2), same for y.
+  const dx = layout
+    ? CENTER_X - (layout.x + layout.w / 2)
+    : 0;
+  const dy = layout
+    ? CENTER_Y - (layout.y + layout.h / 2)
+    : 0;
+
+  const translateX = convergeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, dx],
+  });
+  const translateY = convergeProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, dy],
+  });
 
   return (
     <Animated.View
+      onLayout={(e) => {
+        // Capture absolute window coords once for converge math.
+        e.target?.measureInWindow?.((x, y, w, h) => {
+          setLayout({ x, y, w, h });
+        });
+      }}
       style={[
         styles.chip,
-        { opacity, transform: [{ scale }] },
+        {
+          opacity,
+          transform: [
+            { translateX },
+            { translateY },
+            { scale },
+          ],
+        },
       ]}
     >
       <Text style={styles.chipText}>{word}</Text>
@@ -121,62 +239,7 @@ function WordChip({ word, delay }: { word: string; delay: number }) {
   );
 }
 
-// ---- Sparkle — rotating + scaling purple star ----
-
-function Sparkle() {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0)).current;
-  const rot = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 220,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.2,
-          duration: 500,
-          easing: Easing.out(Easing.back(1.6)),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 0.95,
-          duration: 200,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(rot, {
-        toValue: 1,
-        duration: 700,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [opacity, scale, rot]);
-
-  const rotate = rot.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  return (
-    <Animated.View
-      style={{
-        opacity,
-        transform: [{ scale }, { rotate }],
-      }}
-    >
-      <Text style={styles.sparkleGlyph}>{'✨'}</Text>
-    </Animated.View>
-  );
-}
-
-// ---- FinalLine — playful spring bounce ----
+// ---- FinalLine ----
 
 function FinalLine() {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -186,14 +249,14 @@ function FinalLine() {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 200,
+        duration: 300,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.sequence([
         Animated.timing(scale, {
           toValue: 1.15,
-          duration: 280,
+          duration: 320,
           easing: Easing.out(Easing.back(2)),
           useNativeDriver: true,
         }),
@@ -214,16 +277,18 @@ function FinalLine() {
   }, [opacity, scale]);
 
   return (
-    <Animated.View
-      style={[
-        styles.finalWrap,
-        { opacity, transform: [{ scale }] },
-      ]}
-    >
-      <Text style={styles.finalText}>
-        Wow, That's a beautiful version!
-      </Text>
-    </Animated.View>
+    <View style={styles.finalLayer} pointerEvents="none">
+      <Animated.View
+        style={[
+          styles.finalWrap,
+          { opacity, transform: [{ scale }] },
+        ]}
+      >
+        <Text style={styles.finalText}>
+          Wow, That's a beautiful version!
+        </Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -233,12 +298,13 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0A0820',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  stage: {
-    width: '100%',
-    minHeight: 320,
+  absLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -248,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    gap: 10,
+    gap: 12,
   },
   chip: {
     paddingHorizontal: 16,
@@ -256,7 +322,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(168,85,247,0.18)',
     borderWidth: 1.5,
-    borderColor: 'rgba(168,85,247,0.5)',
+    borderColor: 'rgba(168,85,247,0.55)',
+    // Spherical purple glow effect
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 14,
   },
   chipText: {
     color: '#FFFFFF',
@@ -266,12 +337,14 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
   },
-  sparkleGlyph: {
-    fontSize: 96,
-    color: '#C084FC',
-    textShadowColor: 'rgba(168,85,247,0.9)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 24,
+  lottie: {
+    width: 320,
+    height: 320,
+  },
+  finalLayer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   finalWrap: {
     paddingHorizontal: 24,

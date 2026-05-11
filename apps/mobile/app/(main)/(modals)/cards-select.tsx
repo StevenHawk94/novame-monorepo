@@ -51,6 +51,7 @@ import { fetchWisdoms, type WisdomCardEmbed } from '@/lib/wisdoms-api';
 import { updateOrder } from '@/lib/orders-api';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import { FlippableCard } from '@/components/cards/FlippableCard';
+import { getStandardCardWidth } from '@/lib/card-dimensions';
 
 const REQUIRED_COUNT = 48;
 // Stage 5.AIR.2.bugfix.B: R2 cards live at the bucket root, NOT in a
@@ -529,7 +530,7 @@ function PreviewModal({
   // Card width: leave 32px margin each side, cap at 320 so big-screen
   // phones don't blow up the card disproportionately.
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = Math.min(320, screenWidth - 64);
+  const cardWidth = getStandardCardWidth(screenWidth);
 
   return (
     <Modal

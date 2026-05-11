@@ -1,26 +1,28 @@
 /**
- * FlippableCard — Stage 3.8.2 real implementation
+ * FlippableCard — Stage 6 (boxShadow glow + improved typography)
  *
  * 3D Y-axis flip card with adaptive font sizing for both faces.
  *
- * Visual model (1:1 with old Capacitor FlippableCard.js):
+ * Visual model:
  *   - Aspect ratio 600:951 (≈ 0.6667), portrait
- *   - Standard widths: 240px (small screen), 270px (default)
- *   - Front: keyword card image with quote_short on bottom parchment area
- *   - Back: category-back image with insight_full filling 84% center
+ *   - Width comes from getStandardCardWidth() (single formula across app)
  *   - Tap to flip (rotateY 0deg <-> 180deg, 600ms)
- *   - Purple glow shadow around card
+ *   - Domain-colored multi-layer boxShadow halo (Mind=blue, Heart=pink,
+ *     Action=yellow, Connection=green), rotates with the card.
  *
- * Asset paths (R2 cached via getCachedAssetUri):
- *   - Front: {keyword_id}-front.webp  (e.g. "mind-clarity-front.webp")
- *   - Back:  {category}-back.webp     (e.g. "mind-back.webp")
+ * Typography:
+ *   - Front quote: dynamic size from text length (13-22px range)
+ *     positioned with frontTextArea top:76% (lifted 2pt from prior 78%)
+ *   - Back insight: dynamic algorithm picks the LARGEST size that both
+ *     fits AND fills at least 85% of the available height (≤15%
+ *     whitespace target). If a size fits with >15% slack, we try a
+ *     larger one. Range 11-18px.
  *
- * Adaptive font algorithm (ported from old web):
- *   - Front quote: shorter text -> larger font (5.8% to 3.4% of card width)
- *   - Back insight: tries 14px down to 5px, picks largest size that fits
- *     within 78% width x 82% height with 1.5 line-height + 12% safety margin
+ * disabled prop:
+ *   - When the parent (e.g. a Carousel) is mid-swipe, set disabled=true
+ *     so the tap-to-flip Pressable becomes a no-op. This prevents the
+ *     "swipe and flip happen simultaneously" bug.
  */
-import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -33,70 +35,114 @@ import { Image } from 'expo-image';
 
 import { getCachedAssetUri } from '@/lib/asset-cache';
 
-const AR = 1024 / 1536; // 2:3 ratio matches R2 keyword card images
+const AR = 1024 / 1536;
+
+const DOMAIN_GLOW: Record<string, string> = {
+  mind: '#3B82F6',
+  heart: '#EC4899',
+  action: '#FACC15',
+  connection: '#22C55E',
+};
+const DEFAULT_GLOW = '#A855F7';
+
+function getDomainGlow(
+  frontFilename?: string | null,
+  backFilename?: string | null,
+): string {
+  const source = frontFilename ?? backFilename ?? '';
+  const firstSegment = source.split('-')[0];
+  return DOMAIN_GLOW[firstSegment] ?? DEFAULT_GLOW;
+}
+
+function buildGlowBoxShadow(color: string): string {
+  return [
+    `0px 0px 4px 1px ${color}CC`,
+    `0px 0px 10px 2px ${color}80`,
+    `0px 0px 18px 4px ${color}33`,
+  ].join(', ');
+}
 
 export type FlippableCardProps = {
-  /** Filename to look up in asset-cache, e.g. "mind-clarity-front.webp". null falls back to gradient placeholder. */
   frontFilename?: string | null;
-  /** Filename of category back, e.g. "mind-back.webp". null falls back to gradient placeholder. */
   backFilename?: string | null;
-  /** Short quote shown on front parchment area. */
   quoteShort: string;
-  /** Long insight shown filling back face. */
   insightFull: string;
-  /** Card width in pixels. Height auto-derived from AR. */
   width: number;
-  /** Optional callback when flip state changes. */
   onFlip?: (flipped: boolean) => void;
-  /**
-   * Which side to show initially. 'front' (default) starts with the
-   * quote-bearing parchment art; 'back' starts on the category art so
-   * the user taps to reveal the wisdom (used in Seek question detail
-   * to preserve the reveal moment).
-   */
   defaultSide?: 'front' | 'back';
+  /**
+   * When true, tap-to-flip is disabled. Used by parent Carousel during
+   * a swipe so a finger that ends up dragging doesn't also trigger flip.
+   */
+  disabled?: boolean;
 };
 
 /**
- * Maps front quote character count to a font size factor.
- * Shorter text -> larger font (more impact).
+ * Front quote: shorter text → larger font.
+ * Range 13px (long, ≥51 chars) to 22px (short, ≤20 chars).
  */
 function frontFontSize(width: number, text: string): number {
   const len = text.length;
   let factor: number;
-  // Tuned for R2 card art parchment area (~270px wide).
-  // Bigger than old web because RN parchment region is tighter
-  // and Inter italic-bold reads narrower than serif fonts.
-  if (len <= 20) factor = 0.080;
-  else if (len <= 35) factor = 0.068;
-  else if (len <= 50) factor = 0.058;
-  else factor = 0.048;
+  if (len <= 20) factor = 0.084;       // bumped up slightly for impact
+  else if (len <= 35) factor = 0.072;
+  else if (len <= 50) factor = 0.060;
+  else factor = 0.050;
   return Math.max(13, Math.round(width * factor));
 }
 
 /**
- * Picks the largest font size (from a descending list) that fits insight_full
- * inside the back card's available space. Mirrors backFontSize from old web.
+ * Back insight typography: pick the largest size that completely fits.
+ *
+ * Returns BOTH font size AND lineHeightRatio (line-height multiplier),
+ * so callers can compress vertical spacing when text would otherwise
+ * overflow.
+ *
+ * Priority order:
+ *   1. Find the largest font size from [18..11] where, with default
+ *      lineHeightRatio 1.5, the full text fits within availH. Use it.
+ *      Short content gets large fonts; long content drops to smaller
+ *      ones — same as before.
+ *   2. If even size=11 with lineHeightRatio 1.5 overflows, keep
+ *      size=11 and shrink lineHeightRatio down through 1.4, 1.3, 1.2
+ *      to reclaim vertical space. Stop at the first ratio that fits.
+ *   3. If 11px + lineHeightRatio 1.2 still doesn't fit (backend
+ *      character limits should prevent this), return that as the
+ *      final fallback — readability beats clipping.
+ *
+ * Range 11-18px. lineHeightRatio range 1.2-1.5.
  */
-function backFontSize(width: number, text: string, cardHeight: number): number {
-  if (!text) return 13;
-  // Tighter availH to leave 3-4 lines of breathing room at bottom.
-  // 0.67 ensures the last text line is well above the bottom card border.
-  const availH = cardHeight * 0.67;
-  const availW = width * 0.78;
-  const lineH = 1.5;
-  const safetyMargin = 1.12;
+function backFontSize(
+  width: number,
+  text: string,
+  cardHeight: number,
+): { size: number; lineHeightRatio: number } {
+  if (!text) return { size: 14, lineHeightRatio: 1.5 };
+  // Real backTextArea inset: top 12% + bottom 10% → 78% of card height.
+  // Real backTextArea inset: left 12% + right 12% → 76% of card width.
+  // Slightly conservative compared to the full parchment artwork so
+  // text has a small breathing buffer from the decorative gold border.
+  const availH = cardHeight * 0.78;
+  const availW = width * 0.76;
+  // No safety buffer — availH/availW already represent the TRUE usable
+  // region. Previous 1.08 buffer caused under-estimation of fit and
+  // forced the algorithm to drop to smaller font + tighter line-height
+  // even when content actually fit at a larger size.
+  const safetyMargin = 1.0;
   const scale = width / 270;
-  // Min size raised to 9 — anything smaller is unreadable on real device.
-  const baseSizes = [14, 13, 12, 11, 10, 9];
+  const baseSizes = [18, 17, 16, 15, 14, 13, 12, 11];
 
-  for (const base of baseSizes) {
-    const size = Math.round(base * scale * 10) / 10;
-    if (size < 9) continue;
+  function totalLinesFor(size: number): number {
+    // Inter is a narrow sans-serif. Empirical avg glyph width ratio:
+    //   - At sizes ≥14:  ~0.48 (regular weight)
+    //   - At sizes 12-13: ~0.50
+    //   - At sizes ≤11:   ~0.52 (smaller sizes hint to slightly wider)
+    // These are tuned conservatively — slight over-estimate of glyph
+    // width is safer than under-estimate (which causes content overflow).
     const charWidthRatio =
-      size >= 11 ? 0.54 : size >= 9 ? 0.56 : 0.58;
+      size >= 14 ? 0.48 : size >= 12 ? 0.50 : 0.52;
     const charsPerLine = Math.floor(availW / (size * charWidthRatio));
-    if (charsPerLine <= 0) continue;
+    if (charsPerLine <= 0) return Infinity;
     const paragraphs = text.split('\n');
     let totalLines = 0;
     for (const para of paragraphs) {
@@ -106,10 +152,34 @@ function backFontSize(width: number, text: string, cardHeight: number): number {
       }
       totalLines += Math.ceil(para.length / charsPerLine);
     }
-    const textHeight = totalLines * size * lineH * safetyMargin;
-    if (textHeight <= availH) return size;
+    return totalLines;
   }
-  return Math.max(9, Math.round(9 * scale));
+
+  // Priority 1: largest font that fits at default line-height 1.5.
+  for (const base of baseSizes) {
+    const size = Math.round(base * scale * 10) / 10;
+    if (size < 11) continue;
+    const lines = totalLinesFor(size);
+    const textHeight = lines * size * 1.5 * safetyMargin;
+    if (textHeight <= availH) {
+      return { size, lineHeightRatio: 1.5 };
+    }
+  }
+
+  // Priority 2: smallest font (11) with progressively tighter line-height.
+  // Reached only when even 11px @ lh 1.5 overflows.
+  const minSize = Math.max(11, Math.round(11 * scale));
+  const lines = totalLinesFor(minSize);
+  for (const ratio of [1.4, 1.3, 1.2]) {
+    const textHeight = lines * minSize * ratio * safetyMargin;
+    if (textHeight <= availH) {
+      return { size: minSize, lineHeightRatio: ratio };
+    }
+  }
+
+  // Priority 3: tightest readable. Backend char limits should prevent
+  // ever reaching here.
+  return { size: minSize, lineHeightRatio: 1.2 };
 }
 
 export function FlippableCard({
@@ -120,23 +190,15 @@ export function FlippableCard({
   width,
   onFlip,
   defaultSide = 'front',
+  disabled = false,
 }: FlippableCardProps) {
   const height = Math.round(width / AR);
 
-  // Resolve cached URIs (null fallback shows gradient placeholder).
   const frontUri = frontFilename ? getCachedAssetUri(frontFilename) : null;
   const backUri = backFilename ? getCachedAssetUri(backFilename) : null;
 
-  // Single shared value driving the flip. 0 = front, 180 = back.
   const rotation = useSharedValue(defaultSide === 'back' ? 180 : 0);
 
-  // Animated styles for both faces.
-  // Front face: rotates from 0deg -> 180deg as rotation goes 0 -> 180.
-  // Back face: rotates from 180deg -> 360deg (always 180deg ahead) so it shows
-  //            up-right when card is flipped.
-  // backfaceVisibility: 'hidden' lets each face hide itself when its
-  //            rotation crosses 90deg. iOS supports this natively; Android
-  //            behavior is OK in RN 0.81.
   const frontAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 1200 },
@@ -154,6 +216,7 @@ export function FlippableCard({
   }));
 
   const handlePress = () => {
+    if (disabled) return; // mid-swipe, ignore tap
     const isFlipped = rotation.value >= 90;
     const target = isFlipped ? 0 : 180;
     rotation.value = withTiming(target, {
@@ -164,70 +227,84 @@ export function FlippableCard({
   };
 
   const qSize = frontFontSize(width, quoteShort || '');
-  const iSize = backFontSize(width, insightFull || '', height);
+  const iTypo = backFontSize(width, insightFull || '', height);
+  const glowColor = getDomainGlow(frontFilename, backFilename);
+  const glow = buildGlowBoxShadow(glowColor);
 
   return (
     <View style={[styles.outerWrap, { width, height }]}>
-      {/* Glow layer behind card */}
-      <View
-        style={[
-          styles.glow,
-          { width: width + 6, height: height + 6, borderRadius: 11 },
-        ]}
-      />
-
       <Pressable onPress={handlePress} style={styles.pressableWrap}>
-        {/* FRONT face */}
         <Animated.View
           style={[
             styles.face,
-            { width, height, borderRadius: 8 },
+            {
+              width,
+              height,
+              borderRadius: 8,
+              boxShadow: glow,
+            },
             frontAnimatedStyle,
           ]}
         >
-          {frontUri ? (
-            <Image
-              source={{ uri: frontUri }}
-              style={styles.faceImage}
-              contentFit="cover"
-            />
-          ) : (
-            <View style={[styles.placeholderBg, styles.frontPlaceholder]}>
-              <Text style={styles.placeholderStar}>{'✨'}</Text>
+          <View style={[styles.faceInner, { borderRadius: 8 }]}>
+            {frontUri ? (
+              <Image
+                source={{ uri: frontUri }}
+                style={styles.faceImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[styles.placeholderBg, styles.frontPlaceholder]}>
+                <Text style={styles.placeholderStar}>{'✨'}</Text>
+              </View>
+            )}
+            <View style={styles.frontTextArea}>
+              <Text
+                style={[styles.frontQuote, { fontSize: qSize }]}
+                numberOfLines={4}
+              >
+                {quoteShort || ''}
+              </Text>
             </View>
-          )}
-          <View style={styles.frontTextArea}>
-            <Text
-              style={[styles.frontQuote, { fontSize: qSize }]}
-              numberOfLines={4}
-            >
-              {quoteShort || ''}
-            </Text>
           </View>
         </Animated.View>
 
-        {/* BACK face */}
         <Animated.View
           style={[
             styles.face,
             styles.backFace,
-            { width, height, borderRadius: 8 },
+            {
+              width,
+              height,
+              borderRadius: 8,
+              boxShadow: glow,
+            },
             backAnimatedStyle,
           ]}
         >
-          {backUri ? (
-            <Image
-              source={{ uri: backUri }}
-              style={styles.faceImage}
-              contentFit="cover"
-            />
-          ) : (
-            <View style={[styles.placeholderBg, styles.backPlaceholder]} />
-          )}
-          <View style={styles.backTextArea}>
-            <Text style={[styles.backInsight, { fontSize: iSize }]}>
-              {insightFull || ''}
-            </Text>
+          <View style={[styles.faceInner, { borderRadius: 8 }]}>
+            {backUri ? (
+              <Image
+                source={{ uri: backUri }}
+                style={styles.faceImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[styles.placeholderBg, styles.backPlaceholder]} />
+            )}
+            <View style={styles.backTextArea}>
+              <Text
+                style={[
+                  styles.backInsight,
+                  {
+                    fontSize: iTypo.size,
+                    lineHeight: iTypo.size * iTypo.lineHeightRatio,
+                  },
+                ]}
+              >
+                {insightFull || ''}
+              </Text>
+            </View>
           </View>
         </Animated.View>
       </Pressable>
@@ -240,15 +317,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  glow: {
-    position: 'absolute',
-    backgroundColor: 'transparent',
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
-  },
   pressableWrap: {
     width: '100%',
     height: '100%',
@@ -257,12 +325,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    overflow: 'hidden',
     backfaceVisibility: 'hidden',
     backgroundColor: '#1a1020',
   },
   backFace: {
     backgroundColor: '#0a2010',
+  },
+  faceInner: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
   },
   faceImage: {
     width: '100%',
@@ -286,7 +358,7 @@ const styles = StyleSheet.create({
   },
   frontTextArea: {
     position: 'absolute',
-    top: '78%',
+    top: '76%',          // ← lifted 2pt from 78%
     bottom: '5%',
     left: '10%',
     right: '10%',
@@ -299,12 +371,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   backTextArea: {
     position: 'absolute',
     top: '12%',
-    bottom: '20%',
+    bottom: '10%',
     left: '12%',
     right: '12%',
     overflow: 'hidden',
@@ -312,6 +384,7 @@ const styles = StyleSheet.create({
   backInsight: {
     color: '#1a1a1a',
     fontWeight: '500',
-    lineHeight: 22,
+    // lineHeight is set inline based on backFontSize() output so it
+    // can compress (1.2-1.5×) to fit long insights.
   },
 });

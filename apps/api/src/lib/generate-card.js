@@ -147,14 +147,17 @@ function enrichCard(card) {
 
 /**
  * Generate a wisdom card from text — called directly (no HTTP self-fetch).
- * 
+ *
  * @param {object} supabase - Supabase client instance
  * @param {string} wisdomId - UUID of the wisdom record
  * @param {string} wisdomText - The transcribed/typed text
  * @param {string} userId - User ID
+ * @param {string|null} forceKeyword - Optional keyword override (Seek question flow)
+ * @param {string|null} creatorName - Display name to stamp on wisdom_cards.creator_name
+ * @param {string|null} creatorAvatar - Avatar URL to stamp on wisdom_cards.creator_avatar
  * @returns {{ success: boolean, card?: object, keyword?: string, keywordId?: string }}
  */
-export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null) {
+export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null, creatorName = null, creatorAvatar = null) {
   if (!wisdomText || wisdomText.length <= 5) {
     return { success: false, error: 'Text too short' }
   }
@@ -232,6 +235,8 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       wisdom_emotion: result.wisdom_emotion || 'Reflective',
       task_1: (result.task_1 || '').substring(0, 120),
       task_2: (result.task_2 || '').substring(0, 120),
+      creator_name: creatorName,
+      creator_avatar: creatorAvatar,
     })
     .select()
     .single()
@@ -247,6 +252,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     card_b: result.card_b, card_c: result.card_c,
     wisdom_score: result.wisdom_score, wisdom_emotion: result.wisdom_emotion,
     task_1: result.task_1, task_2: result.task_2,
+    creator_name: creatorName, creator_avatar: creatorAvatar,
     created_at: new Date().toISOString(),
   }
 

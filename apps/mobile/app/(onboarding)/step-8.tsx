@@ -15,6 +15,7 @@ import { Confetti } from '@/components/cards/Confetti';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { INITIATIVE_CARD } from '@/components/onboarding/constants';
 import { getCachedAssetUri } from '@/lib/asset-cache';
+import { getStandardCardWidth } from '@/lib/card-dimensions';
 
 /**
  * Step 8 — "Look at that. Your initiative... holds a lesson!"
@@ -38,7 +39,7 @@ export default function OnboardingStep8() {
   const [showConfetti] = useState(true);
 
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = screenWidth <= 375 ? 240 : 270;
+  const cardWidth = getStandardCardWidth(screenWidth);
 
   // Note: FlippableCard handles cache lookup internally now.
   // const frontFilename = 'action-initiative-front.webp';

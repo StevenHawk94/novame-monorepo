@@ -154,7 +154,16 @@ export async function POST(request) {
     let creatorAvatar = null
     try {
       const { data: profile } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', userId).single()
-      if (profile) { creatorName = profile.display_name; creatorAvatar = profile.avatar_url }
+      if (profile) {
+        // Mirror /api/user-questions fallback: when display_name is
+        // empty/null, surface 'Community Member' so downstream
+        // wisdom_cards / wisdoms rows never carry an empty string
+        // (which would force the mobile UI into its 'WisdomSeeker'
+        // fallback even though we technically have a row).
+        const dn = (profile.display_name || '').trim()
+        creatorName = dn || 'Community Member'
+        creatorAvatar = profile.avatar_url || null
+      }
     } catch (e) { console.log('Could not fetch user profile:', e.message) }
 
     let publicUrl = ''
@@ -289,7 +298,7 @@ export async function POST(request) {
     if (wisdom.id && transcribedText && transcribedText.length > 5) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
-        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword)
+        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar)
         console.log('[publish-wisdom] Card generation result:', cardResult.success ? 'success' : 'failed', 'keyword:', cardResult.keyword || 'n/a')
         if (cardResult.success && cardResult.card) {
           generatedCard = cardResult.card

@@ -23,6 +23,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
+import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { Dimensions } from 'react-native';
 
 const INSIGHT_RING_R = 38;
 const INSIGHT_RING_C = 2 * Math.PI * INSIGHT_RING_R;
@@ -186,7 +188,7 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
           backFilename={backFilename}
           quoteShort={quoteShort}
           insightFull={card?.insight_full ?? ''}
-          width={260}
+          width={getStandardCardWidth(Dimensions.get('window').width)}
         />
       </View>
       <Text style={styles.flipHint}>Tap to flip</Text>

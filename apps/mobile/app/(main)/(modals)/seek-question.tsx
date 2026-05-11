@@ -35,6 +35,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiClient } from '@/lib/api';
+import { getStandardCardWidth } from '@/lib/card-dimensions';
 import { saveCard, unsaveCard } from '@/lib/card-saves-api';
 import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
@@ -43,7 +44,7 @@ import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
 type FetchResp = { cards?: SeekCard[] };
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(SCREEN_W - 64, 320);
+const CARD_WIDTH = getStandardCardWidth(SCREEN_W);
 
 function decodeQuestionParam(q: string | undefined): SeekQuestion | null {
   if (!q) return null;

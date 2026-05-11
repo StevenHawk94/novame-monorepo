@@ -1,11 +1,24 @@
 /**
- * Keyword detail modal — Stage 3.9.B.2
+ * Keyword detail modal — Stage 3.9.B.2 + Stage 6 polish
  *
  * Opened from the Collection sub-tab when the user taps a collected
  * keyword cell. Renders a parallax carousel of every wisdom_card the
  * user has published under that keyword, using FlippableCard for
  * each. Reuses fetchWisdoms (the same data source as Growth > My
  * Logs) and filters client-side by keyword_id slug.
+ *
+ * Stage 6 changes (Stage 3.9.B.2.glow.bugfix):
+ *   - Removed the standalone `centerGlow` View overlay. It sat in
+ *     front of the FlippableCard and clipped the top of the card's
+ *     shadow halo. FlippableCard now ships its own domain-colored
+ *     boxShadow glow that rotates with the 3D flip, so no external
+ *     glow layer is needed.
+ *   - Added swipe-vs-tap isolation. While Carousel is mid-pan,
+ *     FlippableCard's tap-to-flip is disabled so a horizontal swipe
+ *     doesn't accidentally trigger a flip on the card being scrolled
+ *     past.
+ *   - Card width now goes through getStandardCardWidth() so this
+ *     screen matches every other place a FlippableCard renders.
  *
  * Visual model:
  *   - Full-screen modal with cards-background.webp behind a dark
@@ -16,7 +29,7 @@
  *     card — matching the old web carousel
  *   - Footer hint: "Tap to flip · Swipe to browse"
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -34,9 +47,10 @@ import Carousel from 'react-native-reanimated-carousel';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
 import { supabase } from '@/lib/supabase';
+import { getStandardCardWidth } from '@/lib/card-dimensions';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = Math.min(270, SCREEN_W - 80);
+const CARD_W = getStandardCardWidth(SCREEN_W);
 
 export default function KeywordDetailModal() {
   const insets = useSafeAreaInsets();
@@ -47,12 +61,17 @@ export default function KeywordDetailModal() {
   }>();
   const slug = params.slug ?? '';
   const name = params.name ?? '';
-  const accentColor = params.color ?? '#A855F7';
 
   const [userId, setUserId] = useState<string | null>(null);
   const [wisdoms, setWisdoms] = useState<WisdomLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [centerIdx, setCenterIdx] = useState(0);
+
+  // Stage 6 swipe-vs-tap: Carousel sets isScrolling=true on pan-begin
+  // and resets ~250ms after settle. FlippableCard receives it as
+  // `disabled` and ignores tap during that window.
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -82,6 +101,14 @@ export default function KeywordDetailModal() {
     };
   }, [userId, slug]);
 
+  useEffect(() => {
+    return () => {
+      if (scrollSettleTimerRef.current) {
+        clearTimeout(scrollSettleTimerRef.current);
+      }
+    };
+  }, []);
+
   const goBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
@@ -92,24 +119,16 @@ export default function KeywordDetailModal() {
   const category = useMemo(() => slug.split('-')[0] ?? 'mind', [slug]);
   const backFilename = `${category}-back.webp`;
 
-  const renderItem = ({ item, index }: { item: WisdomLog; index: number }) => {
-    const isCenter = index === centerIdx;
+  const renderItem = ({ item }: { item: WisdomLog; index: number }) => {
     return (
       <View style={styles.itemWrap}>
-        {isCenter ? (
-          <View
-            style={[
-              styles.centerGlow,
-              { shadowColor: accentColor },
-            ]}
-          />
-        ) : null}
         <FlippableCard
           frontFilename={`${slug}-front.webp`}
           backFilename={backFilename}
           quoteShort={item.card?.quote_short ?? ''}
           insightFull={item.card?.insight_full ?? ''}
           width={CARD_W}
+          disabled={isScrolling}
         />
       </View>
     );
@@ -169,7 +188,7 @@ export default function KeywordDetailModal() {
             <Carousel
               loop={false}
               width={SCREEN_W}
-              height={(CARD_W * 15) / 10 + 20}
+              height={(CARD_W * 15) / 10 + 60}
               data={wisdoms}
               renderItem={renderItem}
               mode="parallax"
@@ -179,6 +198,18 @@ export default function KeywordDetailModal() {
                 parallaxAdjacentItemScale: 0.75,
               }}
               onSnapToItem={(i) => setCenterIdx(i)}
+              onScrollStart={() => {
+                if (scrollSettleTimerRef.current) {
+                  clearTimeout(scrollSettleTimerRef.current);
+                  scrollSettleTimerRef.current = null;
+                }
+                setIsScrolling(true);
+              }}
+              onScrollEnd={() => {
+                scrollSettleTimerRef.current = setTimeout(() => {
+                  setIsScrolling(false);
+                }, 250);
+              }}
             />
             <Text style={styles.hint}>Tap to flip · Swipe to browse</Text>
             {wisdoms.length > 1 ? (
@@ -242,16 +273,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  centerGlow: {
-    position: 'absolute',
-    width: CARD_W + 12,
-    height: (CARD_W * 15) / 10 + 12,
-    borderRadius: 14,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 12,
-  },
+  // Stage 6: removed `centerGlow` style — FlippableCard's own boxShadow
+  // halo replaces it.
   hint: {
     color: 'rgba(255,255,255,0.25)',
     fontSize: 10,
