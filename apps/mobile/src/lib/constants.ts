@@ -161,12 +161,21 @@ export const SPEECH_BUBBLE_PLAY = [
   "Life is good! But I wouldn't mind some wisdom snacks.",
   "Relaxing is important too! Share a thought when you're ready.",
   'Taking it easy today. Got any casual wisdom?',
+  "No rush, no pressure. I'm just here, enjoying the vibe.",
+  'Letting my thoughts drift... care to drop a little spark of insight?',
+  "A little break today for a big leap tomorrow. What's on your mind?",
+  "Enjoying the art of doing nothing. It's surprisingly productive!",
 ] as const;
 
 export const SPEECH_BUBBLE_HUNGER_WARNING = [
   "I'm getting tired... my learning efficiency is dropping.",
   "Running low on energy... I can't focus as well anymore.",
   'My willpower is fading... record some wisdom to recharge me!',
+  "Battery critical! I need some 'human energy.' What's on your mind right now?",
+  'My energy is fading. Share a thought with me? I need the spark to keep going.',
+  'Feeling a bit weak... Even a tiny slice of your day would give me a huge boost!',
+  'Focusing is getting harder. A quick insight would really boost my stats.',
+  'Energy critical! Even a tiny reflection would help me reboot.',
 ] as const;
 
 /**

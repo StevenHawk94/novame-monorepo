@@ -9,10 +9,12 @@
  * instantly on prop change so the user reads the new state before
  * the bar finishes filling.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -102,7 +104,32 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
     width: `${progress.value * 100}%`,
   }));
 
-  const expLabel = `${expCurrent} / ${expNeeded}xp`;
+  // Stage 5.WR.2 (Bug 4 fix): animate the number alongside the bar.
+  // We track a separate "display" state that updates on every JS-side
+  // tick of the Reanimated progress value. The label reads from this
+  // state instead of the prop, so the number ticks 20 → 21 → 22 → ...
+  // → 40 in lockstep with the bar filling.
+  //
+  // For level-up frames, progress.value goes 1 → 1 (hold) → 0 (snap)
+  // → newTarget. The displayed number tracks each phase: rises to
+  // expNeeded (last level cap), holds, snaps to 0, rises again. We
+  // compute the number as round(progress.value * expNeeded) for the
+  // in-level phase and let the level-up branch override expNeeded
+  // mid-animation via a ref so the snap happens cleanly.
+  const [animatedExpCurrent, setAnimatedExpCurrent] = useState(expCurrent);
+
+  useAnimatedReaction(
+    () => progress.value,
+    (curr) => {
+      // Map progress (0..1) back to xp (0..expNeeded). Math.round so
+      // the displayed number is an integer at every frame.
+      const nextNum = Math.round(curr * expNeeded);
+      runOnJS(setAnimatedExpCurrent)(nextNum);
+    },
+    [expNeeded],
+  );
+
+  const expLabel = `${animatedExpCurrent} / ${expNeeded}xp`;
 
   return (
     <View style={styles.wrap}>

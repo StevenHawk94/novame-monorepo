@@ -27,6 +27,7 @@ import {
 } from '@/lib/constants';
 import { getCurrentSession } from '@/lib/auth';
 import { haptics } from '@/lib/haptics';
+import { storage } from '@/lib/storage';
 
 /**
  * Home tab — the central NovaMe experience.
@@ -160,11 +161,51 @@ export default function HomeTab() {
 
   // ---- Speech bubble (regenerated when wp/mode/charName change) ----
 
+  // Stage 5.WR.2 (Bug 2 fix): poll MMKV for last publish message + ts.
+  // We tick once per minute so the AI message disappears when its
+  // 1-hour window expires while the user is still on the home tab
+  // (without this poll the bubble would be stale until the next
+  // re-render trigger like wp/mode change).
+  const [publishMsgTick, setPublishMsgTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setPublishMsgTick((n) => n + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   const bubble = useMemo(() => {
     if (!cachedState) return 'Loading...';
     const hasNoWisdoms = false; // wisdoms list integration lands in 3.7+
+
+    // Stage 5.WR.2 (Bug 2 fix): if the user published a wisdom within
+    // the last hour, show the AI-generated character message instead
+    // of the random fallback line. HUNGRY (wp<=0) still takes
+    // priority — a starving companion shouldn't celebrate the user's
+    // wisdom; the food-first urgency overrides everything else.
+    if (wpVisual > 0) {
+      try {
+        const raw = storage.getString('novame_last_publish_message');
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            message?: string;
+            timestampMs?: number;
+          };
+          const HOUR_MS = 60 * 60 * 1000;
+          if (
+            parsed.message &&
+            typeof parsed.timestampMs === 'number' &&
+            Date.now() - parsed.timestampMs < HOUR_MS
+          ) {
+            return parsed.message;
+          }
+        }
+      } catch {
+        // best-effort; fall through to random pick
+      }
+    }
+
     return pickSpeechBubble(wpVisual, cachedState.mode, hasNoWisdoms, cachedState.charName);
-  }, [cachedState, wpVisual]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cachedState, wpVisual, publishMsgTick]);
 
   // ---- Initial loading state ----
 

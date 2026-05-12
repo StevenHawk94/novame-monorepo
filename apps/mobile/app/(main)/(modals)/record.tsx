@@ -48,7 +48,7 @@ import { haptics } from '@/lib/haptics';
 import { apiClient } from '@/lib/api';
 import { getCurrentSession } from '@/lib/auth';
 import { getCachedAssetUri } from '@/lib/asset-cache';
-import { clearCachedCharacterState } from '@/lib/character-state';
+import { clearCachedCharacterState, fetchCharacterState} from '@/lib/character-state';
 import {
   configureAudioSession,
   prepareAndStart,
@@ -1588,6 +1588,24 @@ function PhasePublishing({
         setPublishedEmotion(response.card?.wisdom_emotion ?? 'Thoughtful');
         if (response.characterBMessage) {
           setLastPublishMessage(response.characterBMessage);
+          // Stage 5.WR.2 (Bug 2 fix): persist the AI-generated
+          // character message to MMKV with a timestamp. The home tab
+          // speech bubble uses this within a 1-hour window before
+          // falling back to the random wp/mode-based fallback lines.
+          // New publishes within the hour refresh the timestamp, so
+          // a user who publishes multiple wisdoms gets the latest
+          // message and the window restarts.
+          try {
+            storage.set(
+              'novame_last_publish_message',
+              JSON.stringify({
+                message: response.characterBMessage,
+                timestampMs: Date.now(),
+              }),
+            );
+          } catch (e) {
+            console.warn('[publish] persist character message failed:', e);
+          }
         }
 
         // Stage 3.10.x: clear typed-text draft only on successful publish.
@@ -1819,6 +1837,34 @@ function PhaseInsight({
   close,
   quotaExhaustedAfterPublish,
 }: PhaseProps) {
+  // Stage 5.WR.2 (Bug 1 fix): start prefetching latest character state
+  // the moment the insight screen renders. By the time the user reads
+  // the wisdom card and taps Done (~5-30s typical), the fetch has
+  // long completed and the home tab will read fresh data from cache
+  // on next focus. If the user taps Done immediately (~1s), handleDone
+  // awaits this promise so the cache is hot before close.
+  const prefetchRef = useRef<Promise<unknown> | null>(null);
+  const [doneBusy, setDoneBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const session = await getCurrentSession();
+      if (cancelled) return;
+      const userId = session?.user?.id;
+      if (!userId) return;
+      // fetchCharacterState writes MMKV cache as a side effect.
+      // We don't need the return value here; we only need the cache
+      // to be hot when home tab reads it on focus.
+      prefetchRef.current = fetchCharacterState(userId).catch((e) => {
+        console.warn('[insight prefetch] fetchCharacterState failed:', e);
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Stage 5.IAP.5 (Bug #1, aggressive upsell): wrap close so that if
   // this publish consumed the user's last quota slot, we route to the
   // paywall instead of just dismissing. The 350ms delay lets the modal
@@ -1833,18 +1879,31 @@ function PhaseInsight({
     }
     close();
   };
-  const handleDone = () => {
+  const handleDone = async () => {
+    if (doneBusy) return;
+    setDoneBusy(true);
     haptics.medium();
 
-    // Force Home tab to re-fetch character state on next mount so the
-    // freshly-updated wp/exp/level are visible without manual reload.
-    clearCachedCharacterState();
-
-    // 3.10 placeholder: skin unlock detection.
-    console.log('[insight] Done \u2014 skin-unlock detection placeholder (3.10)');
-
-    // 3.10 placeholder: first-wisdom paywall trigger.
-    console.log('[insight] Done \u2014 first-wisdom paywall placeholder (3.10)');
+    // Stage 5.WR.2 (Bug 1 fix): await prefetch promise so cache is
+    // populated BEFORE home tab re-renders. If the prefetch already
+    // completed (user dwelled > 1s on insight), this resolves
+    // immediately. If user tapped Done quickly, this waits up to
+    // ~600ms. The doneBusy state disables the button so double-
+    // taps don't spawn parallel close calls.
+    //
+    // We removed the old clearCachedCharacterState() call: clearing
+    // the cache then closing without refetching left home tab with
+    // no data to render (the cause of the 10+ second "Loading..."
+    // and missing wp/exp updates). The prefetch path now keeps
+    // cache FRESH instead of EMPTY.
+    try {
+      if (prefetchRef.current) {
+        await prefetchRef.current;
+      }
+    } catch {
+      // Already swallowed by the .catch in the prefetch effect;
+      // belt-and-suspenders.
+    }
 
     handleClose();
   };
@@ -1870,12 +1929,15 @@ function PhaseInsight({
       <View style={insightStyles.doneBar}>
         <Pressable
           onPress={handleDone}
+          disabled={doneBusy}
           style={({ pressed }) => [
             insightStyles.doneButton,
-            { opacity: pressed ? 0.85 : 1 },
+            { opacity: doneBusy ? 0.6 : pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={insightStyles.doneLabel}>Done</Text>
+          <Text style={insightStyles.doneLabel}>
+            {doneBusy ? 'Loading...' : 'Done'}
+          </Text>
         </Pressable>
       </View>
     </View>
