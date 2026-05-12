@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { useFocusEffect } from 'expo-router';
 
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import type { CharacterState } from '@/lib/constants';
@@ -78,6 +79,30 @@ export function VideoCharacter({
     p.muted = true;
     p.play();
   });
+
+  // Stage 5.WR.2 (Bug 6 fix): safeguard layer 4 — expo-router focus.
+  // When the user switches tabs and comes back to Home, neither
+  // AppState change (layer 1) nor replaceAsync (layer 2) nor
+  // playToEnd (layer 3) fires, because the app stays active and
+  // the source/playback state didn't actually change — only the
+  // tab visibility did. expo-router's useFocusEffect fires every
+  // time this screen regains focus, so we use it as the catch-all
+  // resume trigger. Cheap (a single .play() call), idempotent
+  // (already-playing player ignores the call), and matches the
+  // expo-video community pattern for tab-based navigation.
+  useFocusEffect(
+    useCallback(() => {
+      try {
+        if (!player.playing) {
+          player.play();
+        }
+      } catch {
+        // best-effort
+      }
+      // No cleanup needed — we don't pause on blur. Other safeguards
+      // (AppState background) handle the genuine pause cases.
+    }, [player]),
+  );
 
   // Stage 6 keep-playing safeguard layer 1: AppState resume.
   // expo-video pauses videos when the app goes to background (iOS

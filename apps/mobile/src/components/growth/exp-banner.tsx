@@ -15,6 +15,7 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -37,10 +38,37 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
   const progress = useSharedValue(target);
 
   useEffect(() => {
-    progress.value = withTiming(target, {
-      duration: FILL_DURATION_MS,
-      easing: Easing.out(Easing.cubic),
-    });
+    // Stage 5.WR.2 (Bug 5 fix): detect level-up to avoid the
+    // "rewind" bug. When the user levels up:
+    //   prev render: expCurrent=20, expNeeded=20 -> target=1.0
+    //   next render: expCurrent=0,  expNeeded=50 -> target=0.0
+    // Plain withTiming(0.0) would visually reverse the bar from
+    // full back to empty, which users perceive as a glitch.
+    //
+    // Level-up heuristic: target < progress.value AND drop > 0.5.
+    // This catches the actual level-up case (full -> 0) without
+    // false-firing on small in-level decreases (which shouldn't
+    // happen anyway since EXP only grows in normal flow).
+    //
+    // Sequence: confirm-fill (100ms) -> instant snap to 0 (0ms) ->
+    // animate up to new target (800ms). The 100ms confirm-fill is
+    // the "level-up flash" — visual reward.
+    const isLevelUp = target < progress.value && progress.value - target > 0.5;
+    if (isLevelUp) {
+      progress.value = withSequence(
+        withTiming(1, { duration: 100, easing: Easing.linear }),
+        withTiming(0, { duration: 0 }),
+        withTiming(target, {
+          duration: FILL_DURATION_MS,
+          easing: Easing.out(Easing.cubic),
+        }),
+      );
+    } else {
+      progress.value = withTiming(target, {
+        duration: FILL_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
   }, [target, progress]);
 
   const fillStyle = useAnimatedStyle(() => ({

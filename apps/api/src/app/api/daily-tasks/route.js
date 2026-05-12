@@ -48,24 +48,24 @@ export async function GET(request) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
 
-    const { data: existingDaily } = await supabase
-      .from('daily_tasks')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('task_type', 'daily_love')
-      .gte('created_at', todayStart)
-      .lt('created_at', todayEnd)
-      .limit(1)
-
-    if (!existingDaily || existingDaily.length === 0) {
-      await supabase.from('daily_tasks').insert({
-        user_id: userId,
-        task_text: 'Love yourself today ❤️',
-        task_type: 'daily_love',
-        exp_reward: 10,
-        is_completed: false,
-        expires_at: todayEnd,
-      })
+    // Stage 5.WR.2 (Bug 2 fix): daily_love is unique per (user, day) at
+    // the DB layer via daily_tasks_uniq_daily_love partial index. Race
+    // condition between concurrent requests previously created multiple
+    // daily_love rows per day; the unique index now rejects extras
+    // (PG error 23505). We still attempt the INSERT to create the row
+    // for today, and swallow 23505 silently — the user already has
+    // today's row from the racing request, no error to surface.
+    const { error: insertError } = await supabase.from('daily_tasks').insert({
+      user_id: userId,
+      task_text: 'Love yourself today ❤️',
+      task_type: 'daily_love',
+      exp_reward: 10,
+      is_completed: false,
+      expires_at: todayEnd,
+    })
+    // 23505 = unique_violation. Any other error gets logged for visibility.
+    if (insertError && insertError.code !== '23505') {
+      console.warn('[daily-tasks] daily_love insert error:', insertError)
     }
 
     // Fetch all active tasks

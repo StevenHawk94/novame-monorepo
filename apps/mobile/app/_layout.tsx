@@ -12,6 +12,8 @@ import { syncOnboardingIfPending } from '@/lib/onboarding';
 import { clearCachedSubscription } from '@/lib/subscription';
 import { clearCachedMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState } from '@/lib/character-state';
+import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
+import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 
 /**
@@ -72,6 +74,31 @@ export default function RootLayout() {
       data: { subscription: authSub },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
+        // Stage 5.WR.2 (cache-stale fix): defensively clear per-user
+        // MMKV caches on SIGNED_IN, not just SIGNED_OUT. The
+        // SIGNED_OUT-only handler doesn't cover edge cases like:
+        //   - User force-quits the app instead of signing out
+        //   - User switches accounts after expo-dev-client hot restart
+        //   - Apple Sign In re-authenticates as a different user
+        // In all of these, the previous user's cached subscription /
+        // me-stats / character-state would render for ~20 seconds
+        // until the first authoritative fetch returns. Clearing on
+        // SIGNED_IN guarantees the UI starts blank for the new user.
+        //
+        // We do NOT clear onboarding_state / shipping here:
+        //   - onboarding_state: in-progress draft scoped to the new
+        //     user (a brand-new account has none yet; a returning
+        //     mid-onboarding user gets to resume).
+        //   - shipping: physical address, doesn't affect any auth-
+        //     gated UI and survives the user switch deliberately.
+        try {
+          clearCachedSubscription();
+          clearCachedMeStats();
+          clearCachedCharacterState();
+        } catch (e) {
+          console.warn('[layout] sign-in cache clear failed:', e);
+        }
+
         // Fire-and-forget onboarding sync if there is pending mmkv data
         // from a fresh onboarding completion. Errors are logged and
         // swallowed inside syncOnboardingIfPending so navigation never
@@ -90,6 +117,12 @@ export default function RootLayout() {
           clearCachedSubscription();
           clearCachedMeStats();
           clearCachedCharacterState();
+          // Stage 5.WR.2 (Bug 3): clear skin-unlock tracker so a fresh
+          // user on the same device starts with no "already seen"
+          // history. Also drain the in-memory queue so leftover
+          // modals from the prior session don't flash on sign-in.
+          clearSkinUnlockTracker();
+          clearSkinUnlockQueue();
           // Onboarding cache: scoped to the previous user's uncommitted
           // onboarding draft. Safe to clear unconditionally.
           storage.remove('novame_onboarding_state');

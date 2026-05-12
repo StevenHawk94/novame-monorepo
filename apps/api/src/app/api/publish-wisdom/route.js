@@ -354,11 +354,17 @@ export async function POST(request) {
       )
     }
 
+    // Stage 5.WR.2 (Bug 1 fix): echo quotaExhausted synchronously so
+    // mobile record.tsx can set the paywall-trigger state without a
+    // race-prone follow-up fetchDailyLimit call. After this publish
+    // succeeds, usedThisMonth + 1 is the new count.
+    const quotaExhausted = (usedThisMonth + 1) >= monthlyLimit
     return NextResponse.json({
       success: true,
       wisdom: { id: wisdom.id, audioUrl: publicUrl, text: transcribedText, categories, duration: isTyped ? 0 : duration, isPublic },
       card: generatedCard,
       characterBMessage,
+      quotaExhausted,
     })
   } catch (error) {
     console.error('[publish-wisdom] Error:', error)

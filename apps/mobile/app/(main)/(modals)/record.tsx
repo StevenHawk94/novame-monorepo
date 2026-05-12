@@ -1384,6 +1384,11 @@ type PublishWisdomResponse = {
     wisdom_emotion?: string;
   } | null;
   characterBMessage?: string | null;
+  // Stage 5.WR.2 (Bug 1 fix): server returns this when this publish
+  // consumed the user's last monthly quota slot. Mobile uses it to
+  // trigger the post-publish paywall on PhaseInsight close, replacing
+  // the earlier race-prone follow-up fetchDailyLimit pattern.
+  quotaExhausted?: boolean;
 };
 
 type PublishedCardData = NonNullable<PublishWisdomResponse['card']>;
@@ -1567,22 +1572,16 @@ function PhasePublishing({
         invalidateUserStats();        // Assets (totalWords / uniqueKeywords)
         invalidateSeekQuestions();    // Discover feed (cards count badge)
 
-        // Stage 5.IAP.5 (Bug #1, aggressive upsell): check whether
-        // this publish consumed the user's last quota slot. If so,
-        // signal PhaseInsight to push the paywall on close. We
-        // do NOT block the success flow -- the insight still shows.
-        // Network failure here just means no paywall; the user will
-        // hit the gate naturally on their next attempt.
-        void fetchDailyLimit(userId)
-          .then((limit) => {
-            if (
-              limit.allowed === false ||
-              (typeof limit.remaining === 'number' && limit.remaining <= 0)
-            ) {
-              setQuotaExhaustedAfterPublish?.(true);
-            }
-          })
-          .catch(() => {});
+        // Stage 5.WR.2 (Bug 1 fix): server-driven paywall trigger.
+        // publish-wisdom now echoes a quotaExhausted flag synchronously
+        // in its success response (true when usedThisMonth+1 >= monthlyLimit).
+        // This replaces the earlier race-prone pattern of firing a
+        // separate fetchDailyLimit RPC and setting state asynchronously
+        // -- PhaseInsight could render and the user could close it
+        // before the follow-up fetch resolved.
+        if (response.quotaExhausted) {
+          setQuotaExhaustedAfterPublish?.(true);
+        }
 
         setPublishedCard(response.card ?? null);
         setPublishedScore(score);

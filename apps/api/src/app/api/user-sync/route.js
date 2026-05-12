@@ -82,6 +82,93 @@ export async function GET(request) {
         console.error('Profile creation error:', createError)
       } else {
         profile = newProfile
+
+        // Stage 5.WR.2 (Bug 4 fix): every new user gets the
+        // action-initiative wisdom card in their Collection by default.
+        // The card content mirrors INITIATIVE_CARD in the mobile
+        // onboarding constants — same quote_short + insight_full text
+        // shown on onboarding Step 8, so the card the user "earned" in
+        // the simulated onboarding is the same one they actually own.
+        //
+        // Note: wisdom_id is NULL on purpose. This card has no source
+        // wisdom (the user never recorded one to generate it); leaving
+        // wisdom_id null keeps the card out of the My Logs feed (which
+        // filters on user_id from wisdoms table), while still showing
+        // it in Collection (which queries wisdom_cards directly).
+        // card_a/card_b/card_c are NOT NULL columns in the schema, so
+        // we fill with quote_short/empty/empty to satisfy the constraint.
+        // task_1/task_2 stay null — this is a static "default" card
+        // with no actionable tasks tied to it.
+        //
+        // Errors here are non-fatal. If the INSERT fails, the user
+        // still gets through sync; we just log it. They lose the
+        // default card (minor) rather than failing sign-in (major).
+        const { error: starterCardError } = await supabase
+          .from('wisdom_cards')
+          .insert({
+            user_id: userId,
+            wisdom_id: null,
+            keyword_id: 'action-initiative',
+            card_number: 1,
+            quote_short:
+              'The simple act of showing up is the first step of every great awakening.',
+            insight_full:
+              "The sheer act of showing up is your first profound breakthrough. You are here because a quiet part of you is demanding growth. Many ignore that inner voice, but you chose to listen. This desire to evolve is never just a fleeting thought—it is a grounding strength and the true engine of your transformation. Actively seeking change proves the seeds of your highest self are already taking root. You don't need every answer mapped out today; you only need the courage to begin. Your willingness to change is the magic.",
+            card_a:
+              'The simple act of showing up is the first step of every great awakening.',
+            card_b: '',
+            card_c: '',
+            task_1: null,
+            task_2: null,
+            creator_name: newProfile.display_name,
+            creator_avatar: newProfile.avatar_url,
+          })
+        if (starterCardError) {
+          console.warn('[user-sync] starter card insert error:', starterCardError)
+        }
+
+        // Stage 5.WR.2 (Bug 2 part B): every new user gets 3 starter
+        // tasks. These are one-time, never re-created, never expire
+        // (expires_at far in the future). Once completed they vanish
+        // from the active list. Free-standing micro-actions designed to
+        // ground the user in their body / environment before any
+        // wisdom recording — therapeutic priming.
+        //
+        // task_type='starter' separates these from daily_love (daily,
+        // auto-regenerated) and wisdom (per-publish, 24h expiry).
+        const { error: starterTasksError } = await supabase
+          .from('daily_tasks')
+          .insert([
+            {
+              user_id: userId,
+              task_type: 'starter',
+              task_text:
+                'Name five things you see, four you feel, and three you hear right now.',
+              exp_reward: 10,
+              is_completed: false,
+              expires_at: '2099-12-31T23:59:59Z',
+            },
+            {
+              user_id: userId,
+              task_type: 'starter',
+              task_text: 'Drink a full glass of cold water slowly.',
+              exp_reward: 10,
+              is_completed: false,
+              expires_at: '2099-12-31T23:59:59Z',
+            },
+            {
+              user_id: userId,
+              task_type: 'starter',
+              task_text:
+                'Look out a window and focus on the furthest object you can see for one minute.',
+              exp_reward: 10,
+              is_completed: false,
+              expires_at: '2099-12-31T23:59:59Z',
+            },
+          ])
+        if (starterTasksError) {
+          console.warn('[user-sync] starter tasks insert error:', starterTasksError)
+        }
       }
     } else if (profileError) {
       console.error('Profile fetch error:', profileError)

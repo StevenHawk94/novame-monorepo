@@ -1,5 +1,7 @@
 import { storage } from './storage';
 import { apiClient } from './api';
+import { detectNewlyUnlockedOutfits } from './skin-unlock-tracker';
+import { enqueueSkinUnlocks } from './skin-unlock-store';
 import {
   type CharacterMode,
   type LevelInfo,
@@ -143,6 +145,24 @@ export async function fetchCharacterState(
   }
   const next = mapResponseToCache(data);
   setCachedCharacterState(next);
+
+    // Stage 5.WR.2 (Bug 3): detect skin unlocks crossed by the new level
+    // and enqueue them for the global SkinUnlockModal (rendered in tabs
+    // _layout.tsx). detectNewlyUnlockedOutfits writes lastShownLevel
+    // to MMKV synchronously before returning, so a concurrent second
+    // fetch (e.g. 60s setInterval firing while focus refetch is in
+    // flight) will see the updated state and return [].
+    try {
+      const newlyUnlocked = detectNewlyUnlockedOutfits(next.level);
+      if (newlyUnlocked.length > 0) {
+        enqueueSkinUnlocks(newlyUnlocked);
+      }
+    } catch (e) {
+      // Non-fatal: tracking error doesn't break the data fetch. Log so
+      // we'd notice it in TestFlight if it started failing systemically.
+      console.warn('[character-state] skin unlock detection failed:', e);
+    }
+
   return next;
 }
 
