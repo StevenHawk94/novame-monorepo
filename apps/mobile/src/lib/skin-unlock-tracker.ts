@@ -93,7 +93,11 @@ export function detectNewlyUnlockedOutfits(currentLevel: number): number[] {
   if (currentLevel <= lastShown) return [];
 
   const newOutfits: number[] = [];
-  for (let i = 0; i < OUTFIT_UNLOCK_LEVELS.length; i++) {
+  // Stage 5.WR.2 (Bug A fix): start from i=1, not i=0.
+  // OUTFIT_UNLOCK_LEVELS[0] = 1 corresponds to outfit 1, which is the
+  // default character every new user starts with. There is no unlock
+  // event for it — modal should only fire for outfits 2-6.
+  for (let i = 1; i < OUTFIT_UNLOCK_LEVELS.length; i++) {
     const threshold = OUTFIT_UNLOCK_LEVELS[i];
     // Outfit (i+1) unlocks at threshold. Newly unlocked iff strictly
     // greater than lastShown AND <= currentLevel.

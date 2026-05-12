@@ -130,6 +130,11 @@ export async function POST(request) {
       .from('wisdom_cards')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
+      // Stage 5.WR.2 (Bug C): exclude starter / default cards which
+      // have wisdom_id=NULL. Those are gifted to new users by
+      // user-sync and would otherwise consume the user's first
+      // free-tier slot before they publish anything real.
+      .not('wisdom_id', 'is', null)
       .gte('created_at', monthStart)
     const usedThisMonth = usedCount || 0
 

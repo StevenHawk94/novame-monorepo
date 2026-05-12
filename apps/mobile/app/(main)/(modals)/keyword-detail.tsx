@@ -46,6 +46,7 @@ import Carousel from 'react-native-reanimated-carousel';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
+import { apiClient } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
 
@@ -84,12 +85,75 @@ export default function KeywordDetailModal() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetchWisdoms(userId, { limit: 200 });
+        // Stage 5.WR.2 (Bug B fix): parallel-fetch published wisdoms
+        // AND orphan cards. /api/wisdoms only returns cards that
+        // join through the wisdoms table, so default / starter cards
+        // (wisdom_id=NULL) never appear there. Query
+        // /api/generate-abc-cards directly to pick up the user's
+        // orphan cards by keyword and merge them in.
+        const [wisdomsRes, orphanRes] = await Promise.all([
+          fetchWisdoms(userId, { limit: 200 }),
+          apiClient
+            .get<{ success: boolean; cards: Array<{
+              id: string;
+              wisdom_id: string | null;
+              keyword_id: string | null;
+              quote_short: string | null;
+              insight_full: string | null;
+              wisdom_score: number | null;
+              wisdom_emotion: string | null;
+              card_b: string | null;
+              card_c: string | null;
+              task_1: string | null;
+              task_2: string | null;
+              created_at: string;
+            }> }>(
+              `/api/generate-abc-cards?userId=${encodeURIComponent(userId)}&keywordId=${encodeURIComponent(slug)}`,
+            )
+            .catch(() => ({ success: false, cards: [] })),
+        ]);
         if (cancelled) return;
-        const filtered = (res.wisdoms ?? []).filter(
+
+        const filteredWisdoms = (wisdomsRes.wisdoms ?? []).filter(
           (w) => w.card?.keyword_id === slug,
         );
-        setWisdoms(filtered);
+
+        // Only pick up orphan cards (wisdom_id IS NULL) — non-orphan
+        // ones are already in filteredWisdoms via the join above and
+        // would duplicate.
+        const orphanCards = (orphanRes.cards ?? []).filter(
+          (c) => c.wisdom_id === null,
+        );
+
+        // Wrap each orphan card as a WisdomLog shape with text=null.
+        // FlippableCard's renderItem only reads card.quote_short and
+        // card.insight_full, so the missing text/description fields
+        // don't break the carousel render.
+        const orphanWisdoms: WisdomLog[] = orphanCards.map((c) => ({
+          id: `starter-${c.id}`,
+          created_at: c.created_at,
+          text: null,
+          description: null,
+          categories: null,
+          card: {
+            id: c.id,
+            keyword_id: c.keyword_id,
+            quote_short: c.quote_short,
+            insight_full: c.insight_full,
+            wisdom_score: c.wisdom_score,
+            wisdom_emotion: c.wisdom_emotion,
+            card_b: c.card_b,
+            card_c: c.card_c,
+            task_1: c.task_1,
+            task_2: c.task_2,
+          },
+        }));
+
+        // Orphans first (chronologically earliest), then published
+        // wisdoms in newest-first order. This puts the action-
+        // initiative starter card at the front of the carousel for
+        // new users.
+        setWisdoms([...orphanWisdoms, ...filteredWisdoms]);
       } catch (e) {
         console.warn('[keyword-detail] fetch failed:', e);
       } finally {
