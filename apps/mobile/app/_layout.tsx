@@ -106,7 +106,11 @@ export default function RootLayout() {
         if (session?.user?.id) {
           void syncOnboardingIfPending(session.user.id);
         }
-        router.replace('/(main)/(tabs)');
+        // Stage 5.WR.2 (Bug 2 fix): route through signing-in screen
+        // so it can prewarm character-state / subscription / me-stats
+        // before home renders. Avoids the "Loading..." speech bubble
+        // and missing Me page header on first frame after sign-in.
+        router.replace('/(auth)/signing-in');
       } else if (event === 'SIGNED_OUT') {
         // Stage 5.IAP.5 (Bug #5): clear all per-user MMKV caches so
         // the next user (or fresh sign-in) does not see stale data

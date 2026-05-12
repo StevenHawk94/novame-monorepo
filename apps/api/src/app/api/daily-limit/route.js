@@ -71,6 +71,14 @@ export async function GET(request) {
       .from('wisdom_cards')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
+      // Stage 5.WR.2 (Bug 1 fix, second pass): exclude starter /
+      // default cards (wisdom_id IS NULL). Same fix as publish-wisdom
+      // — the daily-limit endpoint is the pre-record gate (called
+      // before the user enters record/type screen) and was hitting
+      // the same off-by-one because user-sync inserts a starter card
+      // that this count happily included. Free tier monthlyLimit=1
+      // + 1 starter card = remaining=0 = paywall before first record.
+      .not('wisdom_id', 'is', null)
       .gte('created_at', monthStart)
 
     if (error) console.error('Count error:', error)

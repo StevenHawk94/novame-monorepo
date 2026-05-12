@@ -38,26 +38,53 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
   const progress = useSharedValue(target);
 
   useEffect(() => {
-    // Stage 5.WR.2 (Bug 5 fix): detect level-up to avoid the
-    // "rewind" bug. When the user levels up:
-    //   prev render: expCurrent=20, expNeeded=20 -> target=1.0
-    //   next render: expCurrent=0,  expNeeded=50 -> target=0.0
-    // Plain withTiming(0.0) would visually reverse the bar from
-    // full back to empty, which users perceive as a glitch.
+    // Stage 5.WR.2 (Bug 3 fix, second pass): correct level-up sequence.
     //
-    // Level-up heuristic: target < progress.value AND drop > 0.5.
-    // This catches the actual level-up case (full -> 0) without
-    // false-firing on small in-level decreases (which shouldn't
-    // happen anyway since EXP only grows in normal flow).
+    // The user's perception of level-up is a 4-stage event:
+    //   1. Their current bar position rises smoothly to 100% (this
+    //      is the visual reward for THIS xp gain — the user must
+    //      feel the bar fill before the level changes).
+    //   2. The bar holds at 100% briefly to confirm the level-up
+    //      moment (a beat for the eye to register the milestone).
+    //   3. The bar snaps to 0 (instantly, no animation) as the
+    //      level number ticks up.
+    //   4. The bar rises from 0 to the new level's progress
+    //      (the leftover xp that overflowed past the prior cap).
     //
-    // Sequence: confirm-fill (100ms) -> instant snap to 0 (0ms) ->
-    // animate up to new target (800ms). The 100ms confirm-fill is
-    // the "level-up flash" — visual reward.
+    // First-pass fix did 1+3+4 only (skipping the fill to 100%) so
+    // users saw the bar abruptly disappear instead of completing
+    // the fill they earned. Now restored.
+    //
+    // Stage 1 duration is proportional to remaining distance from
+    // the current progress to 1.0 — so a near-full bar finishes
+    // quickly, a half-full one takes longer. Keeps the "linear xp
+    // gain" perception consistent.
+    //
+    // Detection heuristic unchanged: target < progress.value AND
+    // drop > 0.5 catches level-up specifically. Small in-level
+    // decreases (which shouldn't happen) don't false-fire.
     const isLevelUp = target < progress.value && progress.value - target > 0.5;
     if (isLevelUp) {
+      const fillRemaining = Math.max(0, 1 - progress.value);
+      // Scale fill-to-full duration by remaining distance. Floor at
+      // 80ms so very-near-full bars still show a small visible fill
+      // rather than snapping. Ceiling at FILL_DURATION_MS so a
+      // hypothetical "level up from 0%" case still fits.
+      const fillToFullMs = Math.max(
+        80,
+        Math.min(FILL_DURATION_MS, fillRemaining * FILL_DURATION_MS),
+      );
       progress.value = withSequence(
-        withTiming(1, { duration: 100, easing: Easing.linear }),
+        // 1. Current position → 100% (the xp the user just earned)
+        withTiming(1, {
+          duration: fillToFullMs,
+          easing: Easing.out(Easing.cubic),
+        }),
+        // 2. Hold at 100% for the level-up "moment"
+        withTiming(1, { duration: 200, easing: Easing.linear }),
+        // 3. Snap to 0 instantly (no animation)
         withTiming(0, { duration: 0 }),
+        // 4. 0 → new level's target (leftover overflow xp)
         withTiming(target, {
           duration: FILL_DURATION_MS,
           easing: Easing.out(Easing.cubic),

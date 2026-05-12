@@ -80,8 +80,12 @@ export default function Index() {
   }
 
   // Branch 3: onboarding done, session resolved — go to main or sign-in.
+  // Stage 5.WR.2 (Bug 2 fix): route through signing-in screen so
+  // it can prewarm character-state / subscription / me-stats before
+  // home renders. Cold-start users (existing session, no sign-in
+  // event fired) need the same prewarm path as fresh sign-ins.
   return hasSession ? (
-    <Redirect href="/(main)/(tabs)" />
+    <Redirect href="/(auth)/signing-in" />
   ) : (
     <Redirect href="/(auth)/sign-in" />
   );
