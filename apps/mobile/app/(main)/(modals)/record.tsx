@@ -49,6 +49,7 @@ import { apiClient } from '@/lib/api';
 import { getCurrentSession } from '@/lib/auth';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import { clearCachedCharacterState, fetchCharacterState} from '@/lib/character-state';
+import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import {
   configureAudioSession,
   prepareAndStart,
@@ -1870,6 +1871,13 @@ function PhaseInsight({
   // paywall instead of just dismissing. The 350ms delay lets the modal
   // dismiss animation start before the paywall presents.
   const handleClose = () => {
+    // Stage 5.WR.2 (Bug 2 fix, third pass): emit home-refresh signal
+    // on every close path. expo-router v6 doesn't fire useFocusEffect
+    // on tab when modals open/close, so the home tab needs this
+    // explicit signal to know its cached data may have changed.
+    // Idempotent — the home tab's subscriber reads cache + refetches,
+    // both safe to repeat.
+    emitHomeRefresh();
     if (quotaExhaustedAfterPublish) {
       // Stage 5.WR.2 (Bug 2 fix): use router.replace instead of
       // close() + setTimeout(push). The old pattern triggered an iOS

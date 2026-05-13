@@ -29,6 +29,7 @@ import {
   type SubscriptionChange,
 } from '@/lib/iap';
 import { getCachedSubscription } from '@/lib/subscription';
+import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 
 /**
  * Subscription Paywall overlay -- Stage 3.10.4.
@@ -128,7 +129,11 @@ export default function SubscriptionPaywallModal() {
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
       setBusy('idle');
-      if (router.canGoBack()) router.back();
+      // Stage 5.WR.2 (Bug 2 fix, third pass): notify home tab of
+      // subscription tier change (free → paid). Paywall doesn't
+      // refresh home itself; the signal lets home subscribers refetch.
+      emitHomeRefresh();
+      emitHomeRefresh(); if (router.canGoBack()) router.back();
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
@@ -148,6 +153,11 @@ export default function SubscriptionPaywallModal() {
 
   const handleClose = () => {
     void haptics.light();
+    // Stage 5.WR.2 (Bug 2 fix, third pass): user dismissing paywall
+    // (without purchase) still warrants a home refresh — they may
+    // have changed mode or other state via deep links / context
+    // switches we don't track here.
+    emitHomeRefresh();
     router.back();
   };
 
@@ -170,7 +180,7 @@ export default function SubscriptionPaywallModal() {
             {
               text: 'OK',
               onPress: () => {
-                if (router.canGoBack()) router.back();
+                emitHomeRefresh(); if (router.canGoBack()) router.back();
               },
             },
           ],
@@ -230,7 +240,7 @@ export default function SubscriptionPaywallModal() {
             {
               text: 'OK',
               onPress: () => {
-                if (router.canGoBack()) router.back();
+                emitHomeRefresh(); if (router.canGoBack()) router.back();
               },
             },
           ],

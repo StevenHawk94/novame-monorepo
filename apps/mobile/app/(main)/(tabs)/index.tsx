@@ -26,6 +26,7 @@ import {
   WP_HUNGER_THRESHOLD,
 } from '@/lib/constants';
 import { getCurrentSession } from '@/lib/auth';
+import { subscribeHomeRefresh } from '@/lib/home-refresh-signal';
 import { haptics } from '@/lib/haptics';
 import { storage } from '@/lib/storage';
 
@@ -110,6 +111,40 @@ export default function HomeTab() {
       }
     }, []),
   );
+
+  // Stage 5.WR.2 (Bug 2 fix, third pass): subscribe to the global
+  // home-refresh signal. Modal-close paths (record.tsx handleDone,
+  // record.tsx handleClose→paywall, paywall.tsx close, paywall.tsx
+  // purchase-complete) all emit this signal. We re-read the cache
+  // (already updated by PhaseInsight prefetch in most paths) AND
+  // kick off a fresh fetch in case the prefetch was aborted or never
+  // ran (e.g. router.replace abruptly unmounted PhaseInsight).
+  //
+  // Why this exists alongside useFocusEffect: expo-router v6 modal
+  // stacks don't blur/focus tabs when modals are stacked or replaced.
+  // The home tab's useFocusEffect doesn't fire on paywall-close paths.
+  // This signal subscription is the explicit notification channel.
+  useEffect(() => {
+    return subscribeHomeRefresh(() => {
+      const fresh = getCachedCharacterState();
+      if (fresh) {
+        setCachedState(fresh);
+        setWpVisual(fresh.wp);
+      }
+      const userId = userIdRef.current;
+      if (userId) {
+        void fetchCharacterState(userId)
+          .then((next) => {
+            setCachedState(next);
+            setWpVisual(next.wp);
+          })
+          .catch(() => {
+            // Network failures are non-fatal; cache fallback above
+            // already populated UI with the latest known state.
+          });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

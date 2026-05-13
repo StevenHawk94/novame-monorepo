@@ -12,6 +12,7 @@
 import { useEffect, useState, useRef} from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   runOnJS,
   useAnimatedReaction,
@@ -65,16 +66,36 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
   // rather animate the user through a confusing fill-snap-rise than
   // show the bar shrinking backward.
   const prevLevelRef = useRef(level);
-  // Stage 5.WR.2 (Bug 1 fix, third pass): track prev target via ref
-  // instead of reading progress.value at effect-run time. progress.value
-  // is a Reanimated worklet shared value; reading it from a JS-thread
-  // useEffect during an in-flight withSequence (e.g. previous level-up
-  // animation still in its hold stage at value=1.0) returns a stale /
-  // mid-animation value, which corrupted the level-up detection on
-  // subsequent task completions ("first task post-levelup wrongly
-  // re-played the 4-stage celebration").
+  // Stage 5.WR.2 (Bug 1 fix, FOURTH pass): industry-standard animation
+  // interruption per Reanimated official docs.
+  //
+  // Problem the prior fix didn't solve: even with prevTargetRef tracking
+  // the JS-side target value, the WORKLET-side progress.value could still
+  // be in an in-flight withSequence (e.g. holding at 1.0 during stage 2)
+  // when a new useEffect ran. The new withTiming(target=0.8) would then
+  // animate from worklet-current-frame (1.0) backward to 0.8, producing
+  // the "bar fills to 100% then drops" replay bug.
+  //
+  // Official fix (docs.swmansion.com/react-native-reanimated/.../animations):
+  //   1. cancelAnimation(sharedValue) — terminates in-flight withSequence
+  //      cleanly, leaving sharedValue at whatever the current frame is.
+  //   2. Set sharedValue = stable target — overrides the in-flight frame
+  //      with our known-good "last stable" value (prevTargetRef).
+  //   3. Then start the new animation from the synced state.
+  //
+  // Result: any in-flight animation is hard-reset to the last committed
+  // target before the new animation begins. No cross-thread drift, no
+  // replay on the next task completion.
   const prevTargetRef = useRef(target);
   useEffect(() => {
+    // Step 1: cancel any animation currently running on this shared value.
+    cancelAnimation(progress);
+    // Step 2: force-sync to the last stable target (the React-tracked
+    // value from the previous effect run). This guarantees the new
+    // animation starts from a known-good state regardless of where the
+    // worklet was when we cancelled.
+    progress.value = prevTargetRef.current;
+
     const isLevelUp = level > prevLevelRef.current;
     // Regression safeguard: if target dropped without a level change,
     // still route through the 4-stage path (bar must never visually
@@ -119,7 +140,11 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
         easing: Easing.out(Easing.cubic),
       });
     }
-  }, [target, progress, level]);
+  }, [target, level]);
+  // Note on deps: `progress` is intentionally NOT in this dependency
+  // array. Per Reanimated's official guidance, shared values should not
+  // be React effect dependencies — their changes are worklet-driven, not
+  // React-driven, and including them causes unnecessary effect re-runs.
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
