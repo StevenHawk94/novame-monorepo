@@ -1,9 +1,18 @@
 /**
- * Assets sub-tab — Stage 3.9.B.3
+ * Assets sub-tab — Stage 3.9.B.3 (Stage 6 visual refresh)
  *
- * The "Manifest Your Wisdom" main view: shows two unlock progress
- * bars (Words and Cards Type), two product cards (Wisdom Book and
- * Wisdom Cards), and an Order History entry button.
+ * The "Manifest Your Wisdom" main view: banner header, "Your Journey"
+ * progress section with two unlock bars (Words + Cards Type), product
+ * cards (Wisdom Book + Wisdom Cards), and Order History entry.
+ *
+ * Visual model (refreshed):
+ *   - Progress cards: dark navy panel with a tinted border, large
+ *     branded icon on the left, label + sub on the right, percentage
+ *     pill upper-right.
+ *   - Product cards: deep-purple body with the cover image on top
+ *     against a light frame; full descriptive title; CTA pill at the
+ *     bottom (Locked = teal, Order = pink, Continue = orange when a
+ *     wisdom-cards selection is pending).
  *
  * Data source: shared state from the Assets tab parent (no fetch
  * here). totalWords is summed client-side from wisdoms.text. Once
@@ -35,6 +44,9 @@ import {
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
+
+const BOOK_ICON = require('../../../assets/images/product/book-icon.webp');
+const CARD_ICON = require('../../../assets/images/product/card-icon.webp');
 
 type Props = {
   shared: AssetsTabSharedState;
@@ -77,9 +89,6 @@ export function AssetsView({ shared }: Props) {
   const cardsProgress = Math.min((collectedKw / CARDS_UNLOCK_COUNT) * 100, 100);
   const cardsUnlocked = collectedKw >= CARDS_UNLOCK_COUNT;
 
-  // A pending wisdom_cards order means the user paid but hasn't yet
-  // chosen which 48 cards to print. We surface this on the cards
-  // product cell.
   const pendingCardsOrder = useMemo(
     () =>
       orders.find(
@@ -126,44 +135,42 @@ export function AssetsView({ shared }: Props) {
         </Text>
       </LinearGradient>
 
+      <Text style={styles.sectionTitle}>Your Journey</Text>
+
       {/* Words progress (Wisdom Book) */}
       <ProgressCard
-        icon="edit-note"
-        gradient={['#34D399', '#3B82F6']}
-        label={`${availableWords.toLocaleString()}/${BOOK_UNLOCK_WORDS.toLocaleString()} Words`}
+        iconSource={BOOK_ICON}
+        accent="#F472B6"
+        countLabel={availableWords.toLocaleString()}
+        totalLabel={BOOK_UNLOCK_WORDS.toLocaleString()}
+        unit="Words"
         sub="To unlock your wisdom book"
         progress={bookProgress}
-        barGradient={['#34D399', '#3B82F6']}
       />
 
       {/* Cards Type progress (Wisdom Cards) */}
       <ProgressCard
-        icon="style"
-        gradient={['#7C3AED', '#6D28D9']}
-        label={`${collectedKw}/${CARDS_UNLOCK_COUNT} Cards Type`}
+        iconSource={CARD_ICON}
+        accent="#A855F7"
+        countLabel={String(collectedKw)}
+        totalLabel={String(CARDS_UNLOCK_COUNT)}
+        unit="Cards Type"
         sub="To unlock your wisdom cards deck"
         progress={cardsProgress}
-        barGradient={['#A855F7', '#7C3AED']}
       />
 
       {/* Product cards */}
       <View style={styles.productRow}>
         <ProductCell
           imgSource={require('../../../assets/images/product/book-cover.webp')}
-          title="Wisdom Book"
-          stat={`${availableWords.toLocaleString()}/${BOOK_UNLOCK_WORDS.toLocaleString()}`}
+          title="Personalized Book of Your Growth Journey"
           unlocked={bookUnlocked}
           pending={false}
           onPress={onOpenBook}
         />
         <ProductCell
           imgSource={require('../../../assets/images/product/cards-cover.webp')}
-          title="Wisdom Cards"
-          stat={
-            pendingCardsOrder
-              ? 'Selection pending'
-              : `${collectedKw}/${CARDS_UNLOCK_COUNT}`
-          }
+          title="Personalized Card Deck of Your Growth Wisdom"
           unlocked={cardsUnlocked}
           pending={!!pendingCardsOrder}
           onPress={onOpenCards}
@@ -191,71 +198,74 @@ export function AssetsView({ shared }: Props) {
 }
 
 function ProgressCard({
-  icon,
-  gradient,
-  label,
+  iconSource,
+  accent,
+  countLabel,
+  totalLabel,
+  unit,
   sub,
   progress,
-  barGradient,
 }: {
-  icon: 'edit-note' | 'style';
-  gradient: [string, string];
-  label: string;
+  iconSource: number;
+  accent: string;
+  countLabel: string;
+  totalLabel: string;
+  unit: string;
   sub: string;
   progress: number;
-  barGradient: [string, string];
 }) {
   return (
-    <LinearGradient
-      colors={gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.progressCard}
-    >
-      <View style={styles.progressHeader}>
-        <MaterialIcons name={icon} size={18} color="rgba(255,255,255,0.85)" />
-        <Text style={styles.progressLabel}>{label}</Text>
-        <Text style={styles.progressPercent}>{Math.round(progress)}%</Text>
+    <View style={[styles.progressCard, { borderColor: `${accent}55` }]}>
+      <Image source={iconSource} style={styles.progressIcon} contentFit="contain" />
+      <View style={styles.progressBody}>
+        <View style={styles.progressTopRow}>
+          <Text style={styles.progressLabel}>
+            <Text style={[styles.progressCount, { color: accent }]}>
+              {countLabel}/{totalLabel}
+            </Text>{' '}
+            <Text style={styles.progressUnit}>{unit}</Text>
+          </Text>
+          <View style={styles.percentPill}>
+            <MaterialIcons name="star" size={11} color="#FACC15" />
+            <Text style={styles.percentPillText}>{Math.round(progress)}%</Text>
+          </View>
+        </View>
+        <Text style={styles.progressSub}>{sub}</Text>
+        <View style={styles.progressTrack}>
+          <LinearGradient
+            colors={[accent, `${accent}AA`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progress}%` }]}
+          />
+        </View>
       </View>
-      <View style={styles.progressTrack}>
-        <LinearGradient
-          colors={barGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.progressFill, { width: `${progress}%` }]}
-        />
-      </View>
-      <Text style={styles.progressSub}>{sub}</Text>
-    </LinearGradient>
+    </View>
   );
 }
 
 function ProductCell({
   imgSource,
   title,
-  stat,
   unlocked,
   pending,
   onPress,
 }: {
   imgSource: number;
   title: string;
-  stat: string;
   unlocked: boolean;
   pending: boolean;
   onPress: () => void;
 }) {
-  const cta = pending ? 'Continue' : unlocked ? 'Order' : 'Locked';
-  const ctaColor = pending
+  // CTA appearance: pending overrides unlocked; otherwise Locked/Order
+  // map to teal / pink to match the design comp.
+  const ctaText = pending ? 'Continue' : unlocked ? 'Order' : 'Locked';
+  const ctaBg = pending
     ? '#F97316'
     : unlocked
-    ? '#22C55E'
-    : 'rgba(255,255,255,0.35)';
-  const ctaBg = pending
-    ? 'rgba(249,115,22,0.18)'
-    : unlocked
-    ? 'rgba(34,197,94,0.18)'
-    : 'rgba(255,255,255,0.06)';
+    ? '#EC4899'
+    : '#5EEAD4';
+  const ctaTextColor = pending || unlocked ? '#FFFFFF' : '#0F172A';
 
   return (
     <Pressable
@@ -279,10 +289,13 @@ function ProductCell({
         ) : null}
       </View>
       <View style={styles.productInfo}>
-        <Text style={styles.productTitle}>{title}</Text>
-        <Text style={styles.productStat}>{stat}</Text>
+        <Text style={styles.productTitle} numberOfLines={2}>
+          {title}
+        </Text>
         <View style={[styles.productCta, { backgroundColor: ctaBg }]}>
-          <Text style={[styles.productCtaText, { color: ctaColor }]}>{cta}</Text>
+          <Text style={[styles.productCtaText, { color: ctaTextColor }]}>
+            {ctaText}
+          </Text>
         </View>
       </View>
     </Pressable>
@@ -303,7 +316,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 16,
     marginTop: 4,
-    marginBottom: 18,
+    marginBottom: 20,
     borderRadius: 16,
   },
   bannerTitle: {
@@ -317,44 +330,82 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  progressCard: {
-    borderRadius: 16,
-    padding: 14,
+  sectionTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
     marginBottom: 12,
+    marginLeft: 4,
   },
-  progressHeader: {
+  // Progress card: dark panel with accent-tinted border, big icon
+  // on the left, content on the right.
+  progressCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: 'rgba(15,11,46,0.6)',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 12,
+    gap: 14,
   },
-  progressLabel: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    marginLeft: 6,
+  progressIcon: {
+    width: 56,
+    height: 56,
+  },
+  progressBody: {
     flex: 1,
   },
-  progressPercent: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 13,
+  progressTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  progressLabel: {
+    flex: 1,
+  },
+  progressCount: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  progressUnit: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
   },
+  percentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  percentPillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  progressSub: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 11,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
   progressTrack: {
-    height: 10,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.10)',
     borderRadius: 999,
     overflow: 'hidden',
-    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
     borderRadius: 999,
   },
-  progressSub: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 11,
-    fontWeight: '500',
-  },
+  // Product row + cell: purple body, image on top, descriptive title
+  // and CTA at the bottom.
   productRow: {
     flexDirection: 'row',
     gap: 12,
@@ -363,14 +414,14 @@ const styles = StyleSheet.create({
   },
   productCell: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: '#7C3AED',
     borderRadius: 16,
     overflow: 'hidden',
   },
   productImgWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.85)',
     position: 'relative',
   },
   productImg: {
@@ -393,26 +444,24 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     padding: 12,
+    minHeight: 88,
+    justifyContent: 'space-between',
   },
   productTitle: {
-    color: '#1A1A1A',
-    fontSize: 14,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  productStat: {
-    color: '#888',
-    fontSize: 11,
-    marginBottom: 8,
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 17,
+    marginBottom: 10,
   },
   productCta: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 999,
   },
   productCtaText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
   },
   historyBtn: {
