@@ -25,9 +25,10 @@ import {
  * and navigate to (main)/(tabs), running syncOnboardingIfPending
  * along the way.
  *
- * Background: ob-11.webp is not yet committed to git (user will
- * add it post-stage-3.5). The Image render falls back to a flat
- * dark navy background until the file is added.
+ * Background: ob-11.webp lives in apps/mobile/assets/images/onboarding/
+ * alongside ob-1..ob-10. If the file is missing the Image render
+ * falls back to a flat dark navy background, but the file should
+ * be present in any branch building this screen.
  */
 export default function OnboardingStep11() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function OnboardingStep11() {
 
   return (
     <ImgPage
+      imgSource={require('@/../assets/images/onboarding/ob-11.webp')}
       btn={<PrimaryButton onPress={handleStart}>Start My Journey</PrimaryButton>}
     >
       <View style={styles.center}>

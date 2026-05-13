@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
+  Image,
   ListRenderItem,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -18,6 +19,16 @@ import {
   Shell,
 } from '@/components/onboarding/shared';
 import { REVIEWS } from '@/components/onboarding/constants';
+
+// Static require() map for review avatars. React Native's require()
+// can only take a string literal, not a variable, so this map is the
+// idiomatic way to resolve dynamic filenames to bundled image assets.
+// Keys must match the avatarFile field in REVIEWS exactly.
+const REVIEW_AVATARS: Record<string, number> = {
+  'ob-9-user1.webp': require('@/../assets/images/onboarding/ob-9-user1.webp'),
+  'ob-9-user2.webp': require('@/../assets/images/onboarding/ob-9-user2.webp'),
+  'ob-9-user3.webp': require('@/../assets/images/onboarding/ob-9-user3.webp'),
+};
 
 /**
  * Step 9 — User reviews carousel.
@@ -131,7 +142,10 @@ export default function OnboardingStep9() {
       </View>
       <HighlightedText text={item.text} />
       <View style={styles.author}>
-        <View style={styles.avatar} />
+        <Image
+          source={REVIEW_AVATARS[item.avatarFile]}
+          style={styles.avatar}
+        />
         <Text style={styles.authorName}>
           {'— '}
           {item.name}
