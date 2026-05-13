@@ -1871,10 +1871,20 @@ function PhaseInsight({
   // dismiss animation start before the paywall presents.
   const handleClose = () => {
     if (quotaExhaustedAfterPublish) {
-      close();
-      setTimeout(() => {
-        router.push('/(main)/(modals)/subscription-paywall');
-      }, 350);
+      // Stage 5.WR.2 (Bug 2 fix): use router.replace instead of
+      // close() + setTimeout(push). The old pattern triggered an iOS
+      // UIKit modal-on-modal presentation conflict: router.back()
+      // started the record dismiss animation, and 350ms later the
+      // setTimeout pushed paywall — but the record modal's view was
+      // still in the UIKit window hierarchy during its dismiss
+      // animation. iOS doesn't cleanly handle "present while
+      // dismissing", leaving a transparent ghost view on top of
+      // the tab bar after paywall closed, blocking all home tab
+      // touches. Industry standard (per expo-router docs + community
+      // guides on modal transitions) is router.replace, which swaps
+      // routes in a single transaction without the dismiss-then-
+      // present window.
+      router.replace('/(main)/(modals)/subscription-paywall');
       return;
     }
     close();

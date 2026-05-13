@@ -65,11 +65,26 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
   // rather animate the user through a confusing fill-snap-rise than
   // show the bar shrinking backward.
   const prevLevelRef = useRef(level);
+  // Stage 5.WR.2 (Bug 1 fix, third pass): track prev target via ref
+  // instead of reading progress.value at effect-run time. progress.value
+  // is a Reanimated worklet shared value; reading it from a JS-thread
+  // useEffect during an in-flight withSequence (e.g. previous level-up
+  // animation still in its hold stage at value=1.0) returns a stale /
+  // mid-animation value, which corrupted the level-up detection on
+  // subsequent task completions ("first task post-levelup wrongly
+  // re-played the 4-stage celebration").
+  const prevTargetRef = useRef(target);
   useEffect(() => {
-    const isLevelUp = level > prevLevelRef.current || target < progress.value;
+    const isLevelUp = level > prevLevelRef.current;
+    // Regression safeguard: if target dropped without a level change,
+    // still route through the 4-stage path (bar must never visually
+    // retreat). Compares against the prior React target value, not
+    // the Reanimated shared value — no cross-thread staleness.
+    const isUnexpectedRegression = !isLevelUp && target < prevTargetRef.current;
     prevLevelRef.current = level;
+    prevTargetRef.current = target;
 
-    if (isLevelUp) {
+    if (isLevelUp || isUnexpectedRegression) {
       // 4-stage industry-standard level-up sequence:
       //   1. Current position → 100% (visual reward for the xp gain
       //      that pushed the user past the cap)
