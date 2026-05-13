@@ -2158,6 +2158,8 @@ export default function RecordModal() {
     seekForceKeyword,
     seekQuestionId,
     seekQuestionText,
+    setQuotaExhaustedAfterPublish,
+    quotaExhaustedAfterPublish,
   };
 
   return (

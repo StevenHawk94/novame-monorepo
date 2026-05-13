@@ -96,7 +96,18 @@ export default function HomeTab() {
   useFocusEffect(
     useCallback(() => {
       const fresh = getCachedCharacterState();
-      if (fresh) setCachedState(fresh);
+      if (fresh) {
+        setCachedState(fresh);
+        // Stage 5.WR.2 (Bug 1 fix, third pass): also sync wpVisual.
+        // wpVisual is an independent state because of the local
+        // 30s decay loop (line 148-160 uses applyLocalWPDecay).
+        // Without setWpVisual here, focus picks up the new cachedState
+        // (level/exp/mode) but the displayed WP number lags by up to
+        // 60s — the next setInterval refresh — causing the visible
+        // delay after a publish where exp/level/video updated
+        // immediately but WP did not.
+        setWpVisual(fresh.wp);
+      }
     }, []),
   );
 
