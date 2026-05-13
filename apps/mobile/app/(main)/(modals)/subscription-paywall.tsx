@@ -133,7 +133,7 @@ export default function SubscriptionPaywallModal() {
       // subscription tier change (free → paid). Paywall doesn't
       // refresh home itself; the signal lets home subscribers refetch.
       emitHomeRefresh();
-      emitHomeRefresh(); if (router.canGoBack()) router.back();
+      if (router.canGoBack()) router.back();
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');

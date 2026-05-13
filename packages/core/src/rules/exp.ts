@@ -39,7 +39,19 @@ function buildExpTable(): readonly ExpRow[] {
   for (let lv = 1; lv <= 99; lv++) {
     let expNeeded: number
     if (lv <= 5) {
-      expNeeded = 20 + (lv - 1) * 5
+      // Stage 5.WR.2: bumped from `20 + (lv-1)*5` to `30 + (lv-1)*10`
+      // to slow early progression. With the old curve, a new user's
+      // first publish (~90 xp from a typical wisdom score) plus the
+      // 3 starter tasks (30 xp total) = ~120 xp, which crossed
+      // level 5 — the threshold for unlocking outfit 2. That meant
+      // the SkinUnlockModal would fire at the same moment as the
+      // free-tier quota-exhausted paywall, producing a confusing
+      // double-modal stack. With the new curve, level 5 requires
+      // 180 cumulative xp, so the first publish lands the user at
+      // level 3-4 instead. Level 5+ formula unchanged — the total
+      // xp to level 50 only increases by 70, so mid-game progression
+      // is preserved.
+      expNeeded = 30 + (lv - 1) * 10
     } else if (lv <= 15) {
       expNeeded = Math.round(50 + (lv - 6) * 4.44)
     } else if (lv <= 25) {

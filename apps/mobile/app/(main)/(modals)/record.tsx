@@ -29,6 +29,7 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   View,
+  InteractionManager
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1879,20 +1880,30 @@ function PhaseInsight({
     // both safe to repeat.
     emitHomeRefresh();
     if (quotaExhaustedAfterPublish) {
-      // Stage 5.WR.2 (Bug 2 fix): use router.replace instead of
-      // close() + setTimeout(push). The old pattern triggered an iOS
-      // UIKit modal-on-modal presentation conflict: router.back()
-      // started the record dismiss animation, and 350ms later the
-      // setTimeout pushed paywall — but the record modal's view was
-      // still in the UIKit window hierarchy during its dismiss
-      // animation. iOS doesn't cleanly handle "present while
-      // dismissing", leaving a transparent ghost view on top of
-      // the tab bar after paywall closed, blocking all home tab
-      // touches. Industry standard (per expo-router docs + community
-      // guides on modal transitions) is router.replace, which swaps
-      // routes in a single transaction without the dismiss-then-
-      // present window.
-      router.replace('/(main)/(modals)/subscription-paywall');
+      // Stage 5.WR.2 (Bug 2 fix, FOURTH pass): industry-standard
+      // modal-after-modal handling per Whitespectre RN modal guide
+      // and react-native-modal Issue #484.
+      //
+      // Root cause: iOS UIKit forbids presenting a second modal while
+      // the first is still dismissing — "the presenting view controller
+      // (which is now hidden) cannot present another view controller
+      // on top of that one." Previous attempts (close() + setTimeout(350),
+      // then router.replace) both ran into this: router.replace at the
+      // expo-router level is just a logical route swap, but underneath
+      // iOS still has to dismiss record then present paywall, and
+      // they overlap when dismiss animation is mid-flight. Result is
+      // a ghost view that survives in the UIKit window hierarchy and
+      // blocks home tab touches after paywall closes.
+      //
+      // Correct flow: close the record modal, wait for ALL interactions
+      // (including the dismiss animation) to complete, THEN push the
+      // paywall. InteractionManager is React Native's official API
+      // for this — it tracks animation/gesture/interaction completion
+      // at the runtime level, not a timer guess.
+      close();
+      InteractionManager.runAfterInteractions(() => {
+        router.push('/(main)/(modals)/subscription-paywall');
+      });
       return;
     }
     close();
