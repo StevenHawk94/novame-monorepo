@@ -119,12 +119,14 @@ export default function ProductDetailModal() {
       ? require('../../../assets/images/product/book-hero.webp')
       : require('../../../assets/images/product/cards-hero.webp');
 
-  // Cards-detail-1 isn\'t shipped yet; until it lands we fall back to
-  // the cards-hero image so the layout doesn\'t collapse.
+  // Detail image is the larger marketing shot rendered below the
+  // hero in the product detail modal. Each product has its own
+  // asset: book-detail-1.webp for the book, cards-detail-1.webp
+  // for the cards.
   const detailSource =
     product === 'wisdom_book'
       ? require('../../../assets/images/product/book-detail-1.webp')
-      : require('../../../assets/images/product/cards-hero.webp');
+      : require('../../../assets/images/product/cards-detail-1.webp');
 
   // Resolve detail-image natural aspect ratio so the image renders
   // unclipped at full natural height. RNImage.resolveAssetSource
