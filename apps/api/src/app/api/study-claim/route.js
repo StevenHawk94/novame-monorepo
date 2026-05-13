@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getExpNeeded, getLevelFromExp } from '@/lib/exp'
 
 export const runtime = 'edge'
 
@@ -15,25 +16,7 @@ function calcAFKExp(accumSecs) {
   return Math.floor(halfSecs / secsPerExpFull) + Math.floor(halfSecs / secsPerExpHungry)
 }
 
-function getExpNeeded(lv) {
-  if (lv <= 5) return 20 + (lv - 1) * 5
-  if (lv <= 15) return Math.round(50 + (lv - 6) * 4.44)
-  if (lv <= 25) return Math.round(120 + (lv - 16) * 8.89)
-  if (lv <= 40) return Math.round(220 + (lv - 26) * 12.86)
-  if (lv <= 50) return Math.round(420 + (lv - 41) * 13.33)
-  return Math.round(560 + (lv - 51) * 20)
-}
 
-function getLevelFromExp(totalExp) {
-  let level = 1, accumulated = 0
-  while (true) {
-    const needed = getExpNeeded(level)
-    if (accumulated + needed > totalExp) break
-    accumulated += needed
-    level++
-  }
-  return { level, currentExp: totalExp - accumulated, expNeeded: getExpNeeded(level) }
-}
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)

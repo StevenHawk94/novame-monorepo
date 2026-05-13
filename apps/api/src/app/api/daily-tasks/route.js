@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getExpNeeded, getLevelFromExp } from '@/lib/exp'
 
 export const runtime = 'edge'
 
@@ -11,26 +12,7 @@ function getSupabase() {
   )
 }
 
-// Must match character-state API exactly
-function getExpNeeded(lv) {
-  if (lv <= 5) return 20 + (lv - 1) * 5
-  if (lv <= 15) return Math.round(50 + (lv - 6) * 4.44)
-  if (lv <= 25) return Math.round(120 + (lv - 16) * 8.89)
-  if (lv <= 40) return Math.round(220 + (lv - 26) * 12.86)
-  if (lv <= 50) return Math.round(420 + (lv - 41) * 13.33)
-  if (lv <= 90) return 800
-  return 1000
-}
 
-function getLevelFromExp(totalExp) {
-  let remaining = totalExp
-  for (let lv = 1; lv <= 99; lv++) {
-    const needed = getExpNeeded(lv)
-    if (remaining < needed) return { level: lv, currentExp: remaining, expNeeded: needed, totalExp }
-    remaining -= needed
-  }
-  return { level: 99, currentExp: 0, expNeeded: 0, totalExp }
-}
 
 /**
  * GET /api/daily-tasks?userId=...

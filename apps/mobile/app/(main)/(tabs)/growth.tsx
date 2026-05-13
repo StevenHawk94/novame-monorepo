@@ -152,13 +152,42 @@ export default function GrowthTab() {
   };
 
   // === Character state ===
+  // Stage 5.WR.2 (FIFTH pass): refreshChar race-condition guard.
+  //
+  // When the user taps multiple task completion buttons in quick
+  // succession, each tap fires its own onCompleteTask → server POST →
+  // refreshChar. Three concurrent refreshChars produce three
+  // fetchCharacterState requests that resolve in unpredictable order.
+  // Each resolution calls setCharState, which triggers exp-banner's
+  // useEffect, which restarts the bar animation from prevTargetRef.
+  // The result is the bar jumping between intermediate states the
+  // server happens to have written when each fetch read (lv6 30/50
+  // → 13/50 → 50/50 → 23/50, observed in user video). Visually this
+  // reads as "the level-up animation playing twice."
+  //
+  // Industry-standard fix per Sebastien Lorber's race-conditions
+  // article and the react-async-hook library: tag each refresh with
+  // a monotonically increasing sequence number. When a response
+  // arrives, only apply it if its seq matches the latest one issued.
+  // Older in-flight responses are dropped — their setCharState
+  // calls never run. Only the LAST request's data lands in state.
+  //
+  // AbortController would also work, but is heavier for this use
+  // case: we don't need to cancel the HTTP request, only the setState.
+  // The seq pattern is the lighter and more common React idiom.
+  const refreshCharSeqRef = useRef(0);
   const refreshChar = useCallback(async () => {
     if (!userId) return;
+    const seq = ++refreshCharSeqRef.current;
     try {
       const next = await fetchCharacterState(userId);
+      // Drop stale response: a newer refreshChar has been issued.
+      if (seq !== refreshCharSeqRef.current) return;
       setCharState(next);
       setWpVisual(next.wp);
     } catch (e) {
+      // Don't gate the warn on seq — even stale failures are worth
+      // logging in case of widespread network issues.
       console.warn('[growth] character-state refresh failed:', e);
     }
   }, [userId]);
