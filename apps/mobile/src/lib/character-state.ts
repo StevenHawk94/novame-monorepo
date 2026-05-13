@@ -4,10 +4,10 @@ import { detectNewlyUnlockedOutfits } from './skin-unlock-tracker';
 import { enqueueSkinUnlocks } from './skin-unlock-store';
 import {
   type CharacterMode,
-  type LevelInfo,
   WP_PLAY_DECAY_PER_HOUR,
   WP_STUDY_DECAY_PER_HOUR,
 } from './constants';
+import type { LevelInfo } from '@novame/core';
 
 /**
  * Character state management for the Home tab (stage 3.6).

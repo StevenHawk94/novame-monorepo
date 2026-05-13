@@ -10,8 +10,12 @@
  *   - Character outfit unlock levels
  *   - WP (willpower) decay constants
  *   - Speech bubble messages keyed on character state
- *   - Helper functions: getCharacterState, getUnlockedOutfits,
- *     getExpNeeded, getLevelFromExp
+ *   - Helper functions: getCharacterState, getUnlockedOutfits
+ *
+ * Note: EXP level functions (getExpNeeded, getLevelFromExp, LevelInfo)
+ * live in @novame/core/rules/exp — single source of truth shared with
+ * server. Mobile previously had a local mirror here; removed once the
+ * shared package's exports proved sufficient.
  *
  * The old constants.js getVideoUrl helper is NOT migrated. The new
  * mobile app reads cached video files directly via
@@ -68,57 +72,6 @@ export function getCharacterState(wp: number, mode: CharacterMode): CharacterSta
  */
 export function getUnlockedOutfits(level: number): number[] {
   return OUTFIT_UNLOCK_LEVELS.filter((lv, i) => level >= lv).map((_, i) => i + 1);
-}
-
-// ---- Level / EXP table ----
-
-/**
- * Returns the EXP required to advance from the given level to the next.
- *
- * Tiered scaling matching the apps/api character-state route logic
- * (which is the source of truth — server computes the same value).
- */
-export function getExpNeeded(level: number): number {
-  if (level <= 5) return 20 + (level - 1) * 5;
-  if (level <= 15) return Math.round(50 + (level - 6) * 4.44);
-  if (level <= 25) return Math.round(120 + (level - 16) * 8.89);
-  if (level <= 40) return Math.round(220 + (level - 26) * 12.86);
-  if (level <= 50) return Math.round(420 + (level - 41) * 13.33);
-  if (level <= 90) return 800;
-  return 1000;
-}
-
-export type LevelInfo = {
-  level: number;
-  currentExp: number;
-  expNeeded: number;
-  totalExp: number;
-  /** Progress within the current level, 0..1. */
-  progress: number;
-};
-
-/**
- * Computes level + within-level EXP from a total EXP value.
- *
- * Used by HomeView's progress bar render and by the AFK EXP back-fill
- * that arrives in the character-state GET response.
- */
-export function getLevelFromExp(totalExp: number): LevelInfo {
-  let remaining = totalExp;
-  for (let lv = 1; lv <= 99; lv++) {
-    const needed = getExpNeeded(lv);
-    if (remaining < needed) {
-      return {
-        level: lv,
-        currentExp: remaining,
-        expNeeded: needed,
-        totalExp,
-        progress: needed > 0 ? remaining / needed : 0,
-      };
-    }
-    remaining -= needed;
-  }
-  return { level: 99, currentExp: 0, expNeeded: 0, totalExp, progress: 1 };
 }
 
 // ---- Speech bubble messages ----
