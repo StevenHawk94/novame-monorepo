@@ -3,16 +3,36 @@
  *
  * Stacked: ribbon-art title + purple capsule with the level + EXP bar.
  *
- * The bar fill is animated via reanimated so that incoming exp values
- * (e.g. after completing a daily task) flow in like water rather than
- * snapping. The text labels (Lv. N / current/needed xp) update
- * instantly on prop change so the user reads the new state before
- * the bar finishes filling.
+ * Animation philosophy (Stage 5.WR.2, SIXTH and FINAL rewrite):
+ *
+ * Reanimated's withTiming/withSequence are interruption-safe by design.
+ * When a new withTiming starts while a previous animation is still
+ * running, Reanimated automatically picks up from the worklet's current
+ * frame and animates to the new target. No cancelAnimation needed.
+ *
+ * Previous five attempts all failed because they tried to "help"
+ * Reanimated handle interruption — calling cancelAnimation, then
+ * setting progress.value = stableValue, then starting a new
+ * withTiming. The intermediate manual writes were ASYNCHRONOUS
+ * cross-thread operations (JS → UI thread), so the next withTiming
+ * still read the worklet's stale frame, not the just-written value.
+ * Result: animation from a wrong start point → visible regression
+ * or replay.
+ *
+ * This rewrite trusts Reanimated:
+ *   - The useEffect only calls withTiming or withSequence. Nothing else.
+ *   - State tracking (prev level, prev target) uses sharedValues, not
+ *     refs. sharedValue reads inside a worklet are synchronous; refs
+ *     are JS-only and would have the same cross-thread issue.
+ *
+ * Level-up detection runs JS-side (the level prop change is React-
+ * triggered, not worklet-triggered), but the decision feeds straight
+ * into withSequence/withTiming without intermediate progress.value
+ * writes — so there is no JS/worklet race surface.
  */
-import { useEffect, useState, useRef} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  cancelAnimation,
   Easing,
   runOnJS,
   useAnimatedReaction,
@@ -28,6 +48,7 @@ const BANNER_ASPECT = 460 / 130;
 const BANNER_MAX_WIDTH = 280;
 
 const FILL_DURATION_MS = 800;
+const LEVEL_UP_HOLD_MS = 200;
 
 export type ExpBannerProps = {
   level: number;
@@ -36,98 +57,60 @@ export type ExpBannerProps = {
 };
 
 export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
-  const target =
-    expNeeded > 0 ? Math.min(1, Math.max(0, expCurrent / expNeeded)) : 0;
+  // Stable derived value — only changes when the underlying numbers
+  // do. Prevents useEffect re-runs on parent re-renders where the
+  // expCurrent/expNeeded didn't actually change.
+  const target = useMemo(() => {
+    if (expNeeded <= 0) return 0;
+    return Math.min(1, Math.max(0, expCurrent / expNeeded));
+  }, [expCurrent, expNeeded]);
+
+  // The shared value driving the bar fill. Lives on the UI thread.
   const progress = useSharedValue(target);
 
-  // Stage 5.WR.2 (Bug 4 fix, second pass): level-up detection via
-  // level prop change instead of progress.value drop heuristic.
-  //
-  // Why the heuristic failed: progress goes 5/20=0.25 → 5/30=0.167
-  // on a level-up where the user earned exactly enough xp to cross
-  // and have leftover. That's a drop of only 0.083 — below the 0.5
-  // threshold the heuristic used. The fallback path then ran
-  // withTiming(target) directly, animating the bar BACKWARD from
-  // 0.25 to 0.167 — a visible regression.
-  //
-  // The industry-standard pattern (Pokemon, Star Wars Battlefront II,
-  // most RPGs): detect level-up via the level value itself changing,
-  // not via progress math. Bar never regresses; instead any decrease
-  // routes through the 4-stage celebration sequence.
-  //
-  // Why a ref instead of state: we only need to compare against the
-  // previous level inside this effect; we don't need re-renders
-  // when prev level changes.
-  //
-  // Belt-and-suspenders: also force the level-up path whenever
-  // target < progress.value, since the EXP bar should never visually
-  // regress. If level didn't change but server somehow returned a
-  // lower expCurrent (data error, replay glitch, anything), we'd
-  // rather animate the user through a confusing fill-snap-rise than
-  // show the bar shrinking backward.
-  const prevLevelRef = useRef(level);
-  // Stage 5.WR.2 (Bug 1 fix, FOURTH pass): industry-standard animation
-  // interruption per Reanimated official docs.
-  //
-  // Problem the prior fix didn't solve: even with prevTargetRef tracking
-  // the JS-side target value, the WORKLET-side progress.value could still
-  // be in an in-flight withSequence (e.g. holding at 1.0 during stage 2)
-  // when a new useEffect ran. The new withTiming(target=0.8) would then
-  // animate from worklet-current-frame (1.0) backward to 0.8, producing
-  // the "bar fills to 100% then drops" replay bug.
-  //
-  // Official fix (docs.swmansion.com/react-native-reanimated/.../animations):
-  //   1. cancelAnimation(sharedValue) — terminates in-flight withSequence
-  //      cleanly, leaving sharedValue at whatever the current frame is.
-  //   2. Set sharedValue = stable target — overrides the in-flight frame
-  //      with our known-good "last stable" value (prevTargetRef).
-  //   3. Then start the new animation from the synced state.
-  //
-  // Result: any in-flight animation is hard-reset to the last committed
-  // target before the new animation begins. No cross-thread drift, no
-  // replay on the next task completion.
-  const prevTargetRef = useRef(target);
+  // Track previous level on the UI thread (via sharedValue), not the
+  // JS thread (via useRef). Worklets read sharedValues synchronously;
+  // they cannot read refs at all. Putting prev-level on the UI thread
+  // means level-up detection inside a worklet would be possible, and
+  // even when we read it from JS (as we do below), the value is the
+  // same one the worklet sees — no thread skew.
+  const prevLevel = useSharedValue(level);
+
   useEffect(() => {
-    // Step 1: cancel any animation currently running on this shared value.
-    cancelAnimation(progress);
-    // Step 2: force-sync to the last stable target (the React-tracked
-    // value from the previous effect run). This guarantees the new
-    // animation starts from a known-good state regardless of where the
-    // worklet was when we cancelled.
-    progress.value = prevTargetRef.current;
+    const isLevelUp = level > prevLevel.value;
+    // Update the tracker BEFORE issuing the animation. Subsequent
+    // effect runs read the just-updated value.
+    prevLevel.value = level;
 
-    const isLevelUp = level > prevLevelRef.current;
-    // Regression safeguard: if target dropped without a level change,
-    // still route through the 4-stage path (bar must never visually
-    // retreat). Compares against the prior React target value, not
-    // the Reanimated shared value — no cross-thread staleness.
-    const isUnexpectedRegression = !isLevelUp && target < prevTargetRef.current;
-    prevLevelRef.current = level;
-    prevTargetRef.current = target;
-
-    if (isLevelUp || isUnexpectedRegression) {
-      // 4-stage industry-standard level-up sequence:
-      //   1. Current position → 100% (visual reward for the xp gain
-      //      that pushed the user past the cap)
-      //   2. Hold at 100% (the "I leveled up!" moment)
-      //   3. Snap to 0 (level number ticks up here)
-      //   4. 0 → new level's target (leftover overflow xp)
+    if (isLevelUp) {
+      // 4-stage industry-standard level-up celebration:
+      //   1. current → 100% (reward the xp gain that crossed the cap)
+      //   2. hold at 100% (the "I leveled up!" moment)
+      //   3. snap to 0 (instant, the level number flips here)
+      //   4. 0 → new level's target (the leftover overflow xp)
       //
-      // Stage 1 duration scales with remaining distance to 100% so a
-      // bar that's already near full finishes quickly, and one that's
-      // half empty takes proportionally longer — keeps the "linear xp
-      // gain" perception consistent.
-      const fillRemaining = Math.max(0, 1 - progress.value);
+      // Stage 1's duration scales with how much of the bar is empty,
+      // so a near-full bar tops off quickly while a half-empty one
+      // gets more time. Keeps the perceived xp-per-second feel
+      // consistent regardless of where the bar started.
+      //
+      // Critically: this withSequence call SUPERSEDES any in-flight
+      // animation on `progress`. Reanimated starts the new sequence
+      // from the worklet's current frame — no cancel/set/restart
+      // gymnastics needed, and no cross-thread race window.
+      const startValue = progress.value;
+      const fillRemaining = Math.max(0, 1 - startValue);
       const fillToFullMs = Math.max(
         80,
         Math.min(FILL_DURATION_MS, fillRemaining * FILL_DURATION_MS),
       );
+
       progress.value = withSequence(
         withTiming(1, {
           duration: fillToFullMs,
           easing: Easing.out(Easing.cubic),
         }),
-        withTiming(1, { duration: 200, easing: Easing.linear }),
+        withTiming(1, { duration: LEVEL_UP_HOLD_MS, easing: Easing.linear }),
         withTiming(0, { duration: 0 }),
         withTiming(target, {
           duration: FILL_DURATION_MS,
@@ -135,42 +118,33 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
         }),
       );
     } else {
+      // Same-level update. Trust withTiming to animate from the
+      // worklet's current frame to the new target. If a level-up
+      // sequence is still in flight (rare — the user would have to
+      // tap a task within ~2s of the previous level-up), withTiming
+      // picks up from wherever it is and smoothly bends toward the
+      // new target. No replay.
       progress.value = withTiming(target, {
         duration: FILL_DURATION_MS,
         easing: Easing.out(Easing.cubic),
       });
     }
-  }, [target, level]);
-  // Note on deps: `progress` is intentionally NOT in this dependency
-  // array. Per Reanimated's official guidance, shared values should not
-  // be React effect dependencies — their changes are worklet-driven, not
-  // React-driven, and including them causes unnecessary effect re-runs.
+  }, [target, level, progress, prevLevel]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
   }));
 
-  // Stage 5.WR.2 (Bug 4 fix): animate the number alongside the bar.
-  // We track a separate "display" state that updates on every JS-side
-  // tick of the Reanimated progress value. The label reads from this
-  // state instead of the prop, so the number ticks 20 → 21 → 22 → ...
-  // → 40 in lockstep with the bar filling.
-  //
-  // For level-up frames, progress.value goes 1 → 1 (hold) → 0 (snap)
-  // → newTarget. The displayed number tracks each phase: rises to
-  // expNeeded (last level cap), holds, snaps to 0, rises again. We
-  // compute the number as round(progress.value * expNeeded) for the
-  // in-level phase and let the level-up branch override expNeeded
-  // mid-animation via a ref so the snap happens cleanly.
+  // Animated xp number — ticks 30 → 31 → 32 ... in lockstep with the
+  // bar filling. During a level-up sequence the number climbs to
+  // expNeeded (cap), holds, snaps to 0, then climbs to the leftover —
+  // matching the bar's 4-stage motion exactly because they're both
+  // driven by progress.value.
   const [animatedExpCurrent, setAnimatedExpCurrent] = useState(expCurrent);
-
   useAnimatedReaction(
     () => progress.value,
     (curr) => {
-      // Map progress (0..1) back to xp (0..expNeeded). Math.round so
-      // the displayed number is an integer at every frame.
-      const nextNum = Math.round(curr * expNeeded);
-      runOnJS(setAnimatedExpCurrent)(nextNum);
+      runOnJS(setAnimatedExpCurrent)(Math.round(curr * expNeeded));
     },
     [expNeeded],
   );
