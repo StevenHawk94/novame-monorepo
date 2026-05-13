@@ -92,3 +92,17 @@ export function getLevelFromExp(totalExp: number): LevelInfo {
   }
   return { level: 99, currentExp: 0, expNeeded: 0, totalExp, progress: 1 }
 }
+
+/**
+ * EXP required to advance from level `lv` to `lv + 1`.
+ *
+ * Looks up the value from the frozen EXP_TABLE — single source of truth.
+ * Out-of-range levels (< 1 or > 99) return 0, matching the table cap.
+ *
+ * Used by mobile's growth tab for optimistic level-up calculation when
+ * the user completes a task, before the server response arrives.
+ */
+export function getExpNeeded(lv: number): number {
+  if (lv < 1 || lv > 99) return 0
+  return EXP_TABLE[lv - 1].expNeeded
+}

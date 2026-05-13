@@ -42,7 +42,7 @@ import {
   getCachedDailyTasks,
   type DailyTask,
 } from '@/lib/daily-tasks-api';
-import { getExpNeeded } from '@/lib/exp-formula';
+import { getExpNeeded } from '@novame/core';
 import {
   fetchWisdomsWithCache,
   getCachedWisdoms,
@@ -365,7 +365,7 @@ export default function GrowthTab() {
       prev.map((r) => (r.task.id === taskId ? { ...r, completing: true } : r)),
     );
 
-    // Optimistic EXP increment using local exp-formula so the bar
+    // Optimistic EXP increment using shared @novame/core formula so the bar
     // animates to its new value right away (water-flow effect).
     const reward = target.task.exp_reward;
     setCharState((prev) => {
