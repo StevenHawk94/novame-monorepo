@@ -1,20 +1,38 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
+import { getCurrentSession } from '@/lib/auth';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { syncOnboardingIfPending } from '@/lib/onboarding';
-import { clearCachedSubscription } from '@/lib/subscription';
-import { clearCachedMeStats } from '@/lib/me-stats';
-import { clearCachedCharacterState } from '@/lib/character-state';
+import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscription';
+import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
+import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
+
+// Per expo-splash-screen official docs: call preventAutoHideAsync in
+// the global scope of the module that owns the root component, NOT
+// inside a React effect. Doing it inside an effect can run too late
+// (after the splash has already auto-hidden when the first component
+// mounted), defeating the purpose.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Silent — if it returns false the splash was already hidden, which
+  // is fine; we just skip the manual hide path.
+});
+
+// Hard timeout on cold-start prewarm. Per Apple App Store guidance and
+// the expo docs, the splash must hide within a few seconds even if
+// network fetches hang — otherwise the user is trapped staring at a
+// static screen. 3 seconds is the standard Expo / RN community value.
+const PREWARM_TIMEOUT_MS = 3000;
 
 /**
  * Root layout for @novame/mobile.
@@ -53,6 +71,82 @@ import { storage } from '@/lib/storage';
  *      and the initial Redirect).
  */
 export default function RootLayout() {
+  // Cold-start prewarm gate. Stays false until either:
+  //   - All three critical fetches resolve (character state, tier, me-stats), or
+  //   - PREWARM_TIMEOUT_MS elapses (safety net for slow networks).
+  // While false, RootLayout returns null so the native splash stays
+  // visible. When true, hideAsync() runs and the app renders its
+  // first real frame with hot caches.
+  //
+  // Sign-in flow is unaffected: that path goes through
+  // /(auth)/signing-in which does its own prewarm. This gate only
+  // covers cold starts (process launch), where INITIAL_SESSION is
+  // a no-op on the onAuthStateChange listener.
+  const [isReady, setIsReady] = useState(false);
+
+  // Cold-start prewarm. Runs once on mount, independent of the
+  // auth-state-change effect below. Promise.allSettled (not all)
+  // so one slow / failing fetch doesn't drag the others. The
+  // timeout race guarantees splash hide within PREWARM_TIMEOUT_MS
+  // even if all fetches hang.
+  useEffect(() => {
+    let cancelled = false;
+
+    const finish = () => {
+      if (!cancelled) setIsReady(true);
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        console.warn('[layout] cold-start prewarm timeout, hiding splash anyway');
+      }
+      finish();
+    }, PREWARM_TIMEOUT_MS);
+
+    void (async () => {
+      try {
+        const session = await getCurrentSession();
+        const userId = session?.user?.id;
+        if (userId) {
+          // Three caches the home tab + me page read on first render.
+          // allSettled: missing data falls back to local cache or
+          // sensible defaults, doesn't block navigation.
+          await Promise.allSettled([
+            fetchCharacterState(userId),
+            fetchSubscriptionTier(userId),
+            fetchMeStats(userId),
+          ]);
+        }
+        // Sessionless cold start (onboarding incomplete or signed out):
+        // nothing to prewarm; finish immediately so app/index.tsx can
+        // redirect to (onboarding) or (auth)/sign-in.
+      } catch (e) {
+        console.warn('[layout] cold-start prewarm error:', e);
+      } finally {
+        clearTimeout(timeoutId);
+        finish();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Hide the native splash once we're ready. Separate effect from
+  // the prewarm itself so React re-renders the JSX (return <Stack />)
+  // before hideAsync triggers — avoids a 1-frame blank window between
+  // splash hide and first paint.
+  useEffect(() => {
+    if (isReady) {
+      SplashScreen.hideAsync().catch(() => {
+        // Already hidden (e.g. preventAutoHideAsync returned false on
+        // start). Nothing to do.
+      });
+    }
+  }, [isReady]);
+
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
     const handleAppStateChange = (state: AppStateStatus) => {
@@ -146,6 +240,12 @@ export default function RootLayout() {
       void cleanupIAP();
     };
   }, []);
+
+  // While prewarm runs, return null so React doesn't render the
+  // app tree. The native splash (kept visible by preventAutoHideAsync)
+  // remains on screen. Per expo-splash-screen official example, this
+  // is the canonical pattern.
+  if (!isReady) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -64,28 +64,42 @@ export default function Index() {
   }
 
   // Branch 2: onboarding done, session check still pending — show loading.
+  // In practice this is rarely reached: _layout.tsx already awaited
+  // getCurrentSession during cold-start prewarm, so the AsyncStorage
+  // value is hot by the time this component mounts. But the path is
+  // kept as a defensive fallback for the extreme case where the
+  // second read still hasn't resolved (e.g. disk pressure). The
+  // background color matches the native splash (#7C3AED) so any
+  // one-frame flash here is invisible to the user.
   if (hasSession === null) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: '#0F0B2E',
+          backgroundColor: '#7C3AED',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator size="large" color="#C084FC" />
+        <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     );
   }
 
   // Branch 3: onboarding done, session resolved — go to main or sign-in.
-  // Stage 5.WR.2 (Bug 2 fix): route through signing-in screen so
-  // it can prewarm character-state / subscription / me-stats before
-  // home renders. Cold-start users (existing session, no sign-in
-  // event fired) need the same prewarm path as fresh sign-ins.
+  // Cold-start with an existing session goes STRAIGHT to (main)/(tabs).
+  // Prewarming has already happened in _layout.tsx (held the native
+  // splash visible until character-state / subscription / me-stats
+  // caches were hot), so the home tab renders fully populated on
+  // first frame.
+  //
+  // The signing-in.tsx screen is still used, but only by the SIGNED_IN
+  // path in _layout.tsx's onAuthStateChange listener — i.e. when the
+  // user actively signs in via email / Apple / Google. That flow needs
+  // its own prewarm because it didn't go through the cold-start
+  // _layout.tsx prewarm path.
   return hasSession ? (
-    <Redirect href="/(auth)/signing-in" />
+    <Redirect href="/(main)/(tabs)" />
   ) : (
     <Redirect href="/(auth)/sign-in" />
   );
