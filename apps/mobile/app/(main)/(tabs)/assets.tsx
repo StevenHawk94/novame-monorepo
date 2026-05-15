@@ -1,24 +1,20 @@
 /**
- * Assets tab — Stage 3.9.B
+ * Assets tab — Stage 3.9.B + Stage 6 swipe refresh.
  *
  * Two sub-tabs: Collection + Assets. State for the user's wisdoms
  * (and the per-keyword counts derived from them) lives here at the
  * parent level so both sub-tabs share a single fetch instead of
  * each querying /api/wisdoms separately.
  *
- * Data shared across both sub-tabs:
- *   - wisdoms      — the user's published wisdom logs
- *   - counts       — keyword_id slug → number of cards
- *   - totalWords   — sum of word counts across all wisdom texts
- *   - collectedKw  — number of unique keyword slugs (≤ 48)
- *
- * Sub-tab pattern matches Growth tab (3.9.A.2.1): pill labels with
- * a purple underline on the active tab.
+ * Stage 6: sub-tab switching now supports both tap (PagerTabBar) and
+ * horizontal swipe (reanimated-carousel). The underline animates in
+ * lockstep with the swipe progress. See PagerTabBar + growth.tsx for
+ * symmetric implementation rationale.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  Dimensions,
   StyleSheet,
   Text,
   View,
@@ -26,8 +22,14 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import Carousel, {
+  type ICarouselInstance,
+} from 'react-native-reanimated-carousel';
+import { useSharedValue } from 'react-native-reanimated';
+
 import { CollectionView } from '@/components/assets/collection-view';
 import { AssetsView } from '@/components/assets/assets-view';
+import { PagerTabBar } from '@/components/ui/pager-tab-bar';
 import {
   fetchUserStatsWithCache,
   getCachedUserStats,
@@ -38,14 +40,18 @@ import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
 type SubTab = 'collection' | 'assets';
 
-function countWords(text: string | null | undefined): number {
-  if (!text) return 0;
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
+const SCREEN_W = Dimensions.get('window').width;
 
 export default function AssetsTab() {
   const insets = useSafeAreaInsets();
   const [subTab, setSubTab] = useState<SubTab>('collection');
+
+  // Carousel control: ref for tap-driven scrollTo, sharedValue for the
+  // tab-bar underline slide animation. Carousel v4.x accepts the
+  // SharedValue directly via onProgressChange (no JS callback hop).
+  const carouselRef = useRef<ICarouselInstance>(null);
+  const scrollProgress = useSharedValue(0);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [stats, setStats] = useState<UserStats | null>(
     () => getCachedUserStats(),
@@ -103,35 +109,71 @@ export default function AssetsTab() {
     loading,
   };
 
+  // Carousel needs an explicit height. We compute the available
+  // vertical space: full screen minus top safe area, minus the
+  // sub-tab header (paddingTop 8 + tab height ~46 + baseline 2),
+  // minus the bottom tab bar (~90 incl. safe-area). The carousel
+  // children each contain their own scrolling content if needed.
+  const screenH = Dimensions.get('window').height;
+  const headerH = 56; // sub-tab strip total height
+  const bottomTabH = 90;
+  const carouselHeight = screenH - insets.top - headerH - bottomTabH;
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.segHeader}>
-        <Pressable onPress={() => setSubTab('collection')} style={styles.segBtn}>
-          <Text
-            style={[styles.segText, subTab === 'collection' && styles.segTextActive]}
-          >
-            Collection
-          </Text>
-          {subTab === 'collection' ? <View style={styles.segUnderline} /> : null}
-        </Pressable>
-        <Pressable onPress={() => setSubTab('assets')} style={styles.segBtn}>
-          <Text
-            style={[styles.segText, subTab === 'assets' && styles.segTextActive]}
-          >
-            Assets
-          </Text>
-          {subTab === 'assets' ? <View style={styles.segUnderline} /> : null}
-        </Pressable>
+        <PagerTabBar
+          tabs={['Collection', 'Assets']}
+          scrollProgress={scrollProgress}
+          activeIndex={subTab === 'collection' ? 0 : 1}
+          onTabPress={(i) => {
+            const next: SubTab = i === 0 ? 'collection' : 'assets';
+            setSubTab(next);
+            carouselRef.current?.scrollTo({ index: i, animated: true });
+          }}
+        />
       </View>
 
       {loading && !stats ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#A855F7" />
         </View>
-      ) : subTab === 'collection' ? (
-        <CollectionView shared={shared} />
       ) : (
-        <AssetsView shared={shared} />
+        <Carousel
+          ref={carouselRef}
+          loop={false}
+          width={SCREEN_W}
+          height={carouselHeight}
+          data={[0, 1]}
+          defaultIndex={subTab === 'collection' ? 0 : 1}
+          // Direct SharedValue write -- worklet-driven, no JS hop.
+          // This is the v4.x recommended pattern per the migration
+          // guide. The bar underline reads this same sharedValue.
+          onProgressChange={scrollProgress}
+          onSnapToItem={(idx) => {
+            const next: SubTab = idx === 0 ? 'collection' : 'assets';
+            if (next !== subTab) setSubTab(next);
+          }}
+          // Horizontal-swipe gesture isolation: only activate the pan
+          // once the user has moved >10pt horizontally. If they move
+          // >5pt vertically first, the gesture fails -- letting the
+          // inner ScrollView handle the swipe. iOS HIG default
+          // thresholds.
+          onConfigurePanGesture={(panGesture) => {
+            'worklet';
+            panGesture.activeOffsetX([-10, 10]);
+            panGesture.failOffsetY([-5, 5]);
+          }}
+          renderItem={({ index }) => (
+            <View style={{ flex: 1 }}>
+              {index === 0 ? (
+                <CollectionView shared={shared} />
+              ) : (
+                <AssetsView shared={shared} />
+              )}
+            </View>
+          )}
+        />
       )}
     </View>
   );
@@ -143,32 +185,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F0B2E',
   },
   segHeader: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 4,
-  },
-  segBtn: {
-    paddingVertical: 10,
-    marginRight: 24,
-    position: 'relative',
-  },
-  segText: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  segTextActive: {
-    color: '#C084FC',
-  },
-  segUnderline: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: '#A855F7',
   },
   loading: {
     flex: 1,

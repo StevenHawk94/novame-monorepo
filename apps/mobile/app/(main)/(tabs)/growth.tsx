@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,9 +25,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import Carousel, {
+  type ICarouselInstance,
+} from 'react-native-reanimated-carousel';
+import { useSharedValue } from 'react-native-reanimated';
+
 import { BurstConfetti } from '@/components/growth/burst-confetti';
 import { ExpBanner } from '@/components/growth/exp-banner';
 import { FocusModeCard } from '@/components/growth/focus-mode-card';
+import { PagerTabBar } from '@/components/ui/pager-tab-bar';
 import { Toast, type ToastVariant } from '@/components/ui/toast';
 import {
   applyLocalWPDecay,
@@ -53,6 +60,8 @@ import { supabase } from '@/lib/supabase';
 
 type SubTab = 'tasks' | 'logs';
 
+const SCREEN_W = Dimensions.get('window').width;
+
 // Per-row UI flags layered on top of the server task data so we can
 // drive the optimistic complete -> confetti -> remove animation
 // without mutating the server response shape.
@@ -70,6 +79,13 @@ const CONFETTI_DURATION_MS = 1000;
 export default function GrowthTab() {
   const insets = useSafeAreaInsets();
   const [subTab, setSubTab] = useState<SubTab>('tasks');
+
+  // Carousel control: ref for tap-driven scrollTo, sharedValue for the
+  // tab-bar underline slide animation. Carousel v4.x accepts the
+  // SharedValue directly via onProgressChange (no JS callback hop).
+  // See assets.tsx for the symmetric implementation.
+  const carouselRef = useRef<ICarouselInstance>(null);
+  const scrollProgress = useSharedValue(0);
 
   const [charState, setCharState] = useState<CachedCharacterState | null>(
     () => getCachedCharacterState(),
@@ -429,93 +445,122 @@ export default function GrowthTab() {
   const expNeeded = charState?.expNeeded ?? 20;
   const mode = charState?.mode ?? 'play';
 
+  // Carousel needs an explicit height. Compute available vertical
+  // space: screen height minus top safe area, sub-tab header
+  // (~56pt), and bottom tab bar (~90pt incl. safe-area).
+  const screenH = Dimensions.get('window').height;
+  const headerH = 56;
+  const bottomTabH = 90;
+  const carouselHeight = screenH - insets.top - headerH - bottomTabH;
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Sub-tab segmented header */}
       <View style={styles.segHeader}>
-        <Pressable onPress={() => setSubTab('tasks')} style={styles.segBtn}>
-          <Text style={[styles.segText, subTab === 'tasks' && styles.segTextActive]}>
-            My Tasks
-          </Text>
-          {subTab === 'tasks' ? <View style={styles.segUnderline} /> : null}
-        </Pressable>
-        <Pressable onPress={() => setSubTab('logs')} style={styles.segBtn}>
-          <Text style={[styles.segText, subTab === 'logs' && styles.segTextActive]}>
-            My Logs
-          </Text>
-          {subTab === 'logs' ? <View style={styles.segUnderline} /> : null}
-        </Pressable>
+        <PagerTabBar
+          tabs={['My Tasks', 'My Logs']}
+          scrollProgress={scrollProgress}
+          activeIndex={subTab === 'tasks' ? 0 : 1}
+          onTabPress={(i) => {
+            const next: SubTab = i === 0 ? 'tasks' : 'logs';
+            setSubTab(next);
+            carouselRef.current?.scrollTo({ index: i, animated: true });
+          }}
+        />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {subTab === 'tasks' ? (
-          <>
-            <ExpBanner level={level} expCurrent={expCurrent} expNeeded={expNeeded} />
-            <FocusModeCard
-              mode={mode}
-              wp={wpVisual}
-              busy={switchingMode}
-              onStart={onStartFocus}
-            />
-            <View style={styles.tasksBlock}>
-            <Text style={styles.tasksHeader}>Daily Tasks</Text>
-            {tasksLoading ? (
-              <View style={styles.tasksLoading}>
-                <ActivityIndicator size="small" color="#A855F7" />
+      <Carousel
+        ref={carouselRef}
+        loop={false}
+        width={SCREEN_W}
+        height={carouselHeight}
+        data={[0, 1]}
+        defaultIndex={subTab === 'tasks' ? 0 : 1}
+        onProgressChange={scrollProgress}
+        onSnapToItem={(idx) => {
+          const next: SubTab = idx === 0 ? 'tasks' : 'logs';
+          if (next !== subTab) setSubTab(next);
+        }}
+        onConfigurePanGesture={(panGesture) => {
+          'worklet';
+          panGesture.activeOffsetX([-10, 10]);
+          panGesture.failOffsetY([-5, 5]);
+        }}
+        renderItem={({ index }) =>
+          index === 0 ? (
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <ExpBanner level={level} expCurrent={expCurrent} expNeeded={expNeeded} />
+              <FocusModeCard
+                mode={mode}
+                wp={wpVisual}
+                busy={switchingMode}
+                onStart={onStartFocus}
+              />
+              <View style={styles.tasksBlock}>
+                <Text style={styles.tasksHeader}>Daily Tasks</Text>
+                {tasksLoading ? (
+                  <View style={styles.tasksLoading}>
+                    <ActivityIndicator size="small" color="#A855F7" />
+                  </View>
+                ) : rows.length === 0 ? (
+                  <View style={styles.tasksEmpty}>
+                    <MaterialIcons name="check-circle" size={42} color="rgba(255,255,255,0.18)" />
+                    <Text style={styles.tasksEmptyTitle}>All caught up</Text>
+                    <Text style={styles.tasksEmptySub}>
+                      Share a wisdom to unlock more tasks
+                    </Text>
+                  </View>
+                ) : (
+                  rows.map((r) => (
+                    <TaskRow
+                      key={r.task.id}
+                      task={r.task}
+                      completing={r.completing}
+                      onPress={() => onCompleteTask(r.task.id)}
+                    />
+                  ))
+                )}
               </View>
-            ) : rows.length === 0 ? (
-              <View style={styles.tasksEmpty}>
-                <MaterialIcons name="check-circle" size={42} color="rgba(255,255,255,0.18)" />
-                <Text style={styles.tasksEmptyTitle}>All caught up</Text>
-                <Text style={styles.tasksEmptySub}>
-                  Share a wisdom to unlock more tasks
-                </Text>
+            </ScrollView>
+          ) : (
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.logsBlock}>
+                {logsLoading && !logsLoaded ? (
+                  <View style={styles.logsCenter}>
+                    <ActivityIndicator size="small" color="#A855F7" />
+                  </View>
+                ) : logs.length === 0 ? (
+                  <View style={styles.logsEmpty}>
+                    <MaterialIcons name="auto-awesome" size={42} color="rgba(255,255,255,0.18)" />
+                    <Text style={styles.logsEmptyTitle}>No wisdoms yet</Text>
+                    <Text style={styles.logsEmptySub}>
+                      Tap the mic to share your first one
+                    </Text>
+                  </View>
+                ) : (
+                  logs.map((w) => (
+                    <WisdomLogRow
+                      key={w.id}
+                      wisdom={w}
+                      authorName={authorProfile?.display_name ?? 'You'}
+                      authorAvatar={authorProfile?.avatar_url ?? null}
+                      onRead={onLogRead}
+                      onInsight={onLogInsight}
+                      onMenu={onLogMenu}
+                    />
+                  ))
+                )}
               </View>
-            ) : (
-              rows.map((r) => (
-                <TaskRow
-                  key={r.task.id}
-                  task={r.task}
-                  completing={r.completing}
-                  onPress={() => onCompleteTask(r.task.id)}
-                />
-              ))
-            )}
-            </View>
-          </>
-        ) : (
-          <View style={styles.logsBlock}>
-            {logsLoading && !logsLoaded ? (
-              <View style={styles.logsCenter}>
-                <ActivityIndicator size="small" color="#A855F7" />
-              </View>
-            ) : logs.length === 0 ? (
-              <View style={styles.logsEmpty}>
-                <MaterialIcons name="auto-awesome" size={42} color="rgba(255,255,255,0.18)" />
-                <Text style={styles.logsEmptyTitle}>No wisdoms yet</Text>
-                <Text style={styles.logsEmptySub}>
-                  Tap the mic to share your first one
-                </Text>
-              </View>
-            ) : (
-              logs.map((w) => (
-                <WisdomLogRow
-                  key={w.id}
-                  wisdom={w}
-                  authorName={authorProfile?.display_name ?? 'You'}
-                  authorAvatar={authorProfile?.avatar_url ?? null}
-                  onRead={onLogRead}
-                  onInsight={onLogInsight}
-                  onMenu={onLogMenu}
-                />
-              ))
-            )}
-          </View>
-        )}
-      </ScrollView>
+            </ScrollView>
+          )
+        }
+      />
 
       {/* Floating confetti bursts spawned by completed tasks. They
           sit above the ScrollView so the row vanishing doesn't cut
@@ -573,29 +618,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A0F3D',
   },
   segHeader: {
-    flexDirection: 'row',
     paddingHorizontal: 24,
     paddingTop: 8,
-  },
-  segBtn: {
-    paddingVertical: 12,
-    marginRight: 24,
-    alignItems: 'flex-start',
-  },
-  segText: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  segTextActive: {
-    color: '#FFFFFF',
-  },
-  segUnderline: {
-    height: 3,
-    backgroundColor: '#A855F7',
-    borderRadius: 999,
-    marginTop: 4,
-    width: '100%',
   },
   scrollContent: {
     paddingBottom: 120,
