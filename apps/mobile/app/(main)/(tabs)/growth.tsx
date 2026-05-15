@@ -57,6 +57,7 @@ import {
 } from '@/lib/wisdoms-api';
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 type SubTab = 'tasks' | 'logs';
 
@@ -312,6 +313,7 @@ export default function GrowthTab() {
       );
       return;
     }
+    void haptics.light();
     setSwitchingMode(true);
     try {
       const next = await switchMode(userId, 'study');
@@ -372,6 +374,7 @@ export default function GrowthTab() {
   };
 
   const onCompleteTask = async (taskId: string) => {
+    void haptics.medium();
     if (!userId) return;
     const target = rows.find((r) => r.task.id === taskId);
     if (!target || target.completing) return;

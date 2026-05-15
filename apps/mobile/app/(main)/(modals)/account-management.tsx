@@ -136,6 +136,7 @@ export default function AccountManagementModal() {
   // ---- Avatar upload ----
 
   const handlePickAndUpload = async () => {
+    void haptics.light();
     if (!userId || busy) return;
     setStatus({ kind: 'idle' });
 
@@ -271,6 +272,7 @@ export default function AccountManagementModal() {
   // ---- Delete account ----
 
   const handleDeleteAccount = () => {
+    void haptics.light();
     Alert.alert(
       'Delete Account?',
       'This permanently deletes your account, wisdoms, cards, and all data. This cannot be undone.',

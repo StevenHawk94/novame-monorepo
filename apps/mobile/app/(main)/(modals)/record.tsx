@@ -280,6 +280,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
   };
 
   const handleTypeTap = () => {
+    void haptics.light();
     void checkQuotaThenAdvance(PHASE.TYPE_INPUT);
   };
 
@@ -341,7 +342,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
         </Text>
       </View>
 
-      <Pressable onPress={close} style={chooseStyles.cancelButton}>
+      <Pressable onPress={() => { void haptics.light(); close(); }} style={chooseStyles.cancelButton}>
         <Text style={chooseStyles.cancelLabel}>Cancel</Text>
       </Pressable>
     </View>
@@ -673,7 +674,7 @@ function PhaseRecording({
             Something went wrong. Please try again.
           </Text>
           <Pressable
-            onPress={close}
+            onPress={() => { void haptics.light(); close(); }}
             style={({ pressed }) => [
               recStyles.errorButton,
               { opacity: pressed ? 0.8 : 1 },
@@ -1665,7 +1666,7 @@ function PhasePublishing({
           Something went wrong while saving your wisdom. Please try again.
         </Text>
         <Pressable
-          onPress={() => goTo(recordingResult ? PHASE.PUBLISH : PHASE.TYPE_INPUT)}
+          onPress={() => { void haptics.light(); goTo(recordingResult ? PHASE.PUBLISH : PHASE.TYPE_INPUT); }}
           style={({ pressed }) => [
             pubgStyles.retryButton,
             { opacity: pressed ? 0.85 : 1 },
@@ -1673,7 +1674,7 @@ function PhasePublishing({
         >
           <Text style={pubgStyles.retryLabel}>Back</Text>
         </Pressable>
-        <Pressable onPress={close} style={pubgStyles.closeButton}>
+        <Pressable onPress={() => { void haptics.light(); close(); }} style={pubgStyles.closeButton}>
           <Text style={pubgStyles.closeLabel}>Close</Text>
         </Pressable>
       </View>

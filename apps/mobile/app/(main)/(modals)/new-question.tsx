@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { Toast, type ToastVariant } from '@/components/ui/toast';
+import { haptics } from '@/lib/haptics';
 
 const MIN_LEN = 10;
 const MAX_LEN = 200;
@@ -95,6 +96,7 @@ export default function NewQuestionScreen() {
   };
 
   const onSubmit = async () => {
+    void haptics.light();
     if (!canSubmit) return;
     setSubmitting(true);
     try {
@@ -122,7 +124,7 @@ export default function NewQuestionScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { void haptics.light(); router.back(); }} style={styles.backBtn} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.topTitle}>Ask New Question</Text>

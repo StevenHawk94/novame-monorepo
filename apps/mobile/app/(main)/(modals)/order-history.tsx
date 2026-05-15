@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { fetchOrders, type Order, type OrderStatus } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
 import { storage } from '@/lib/storage';
+import { haptics } from '@/lib/haptics';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending_payment: 'Pending Payment',
@@ -105,6 +106,7 @@ export default function OrderHistoryModal() {
   );
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };
@@ -138,6 +140,7 @@ export default function OrderHistoryModal() {
   };
 
   const browseProducts = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };

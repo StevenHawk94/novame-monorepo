@@ -37,6 +37,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { COUNTRIES, STATES, type CountryOption, type StateOption } from '@novame/core';
 import { storage } from '@/lib/storage';
+import { haptics } from '@/lib/haptics';
 
 const STORAGE_KEY = 'novame.shipping';
 
@@ -116,6 +117,7 @@ export default function ShippingFormModal() {
   };
 
   const onContinue = () => {
+    void haptics.light();
     if (!valid) return;
     router.push({
       pathname: '/(main)/(modals)/payment-stub',
@@ -127,6 +129,7 @@ export default function ShippingFormModal() {
   };
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };
@@ -320,7 +323,7 @@ function CountryPicker({
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => { void haptics.light(); setOpen(true); }}
         style={({ pressed }) => [
           styles.input,
           styles.pickerBtn,
@@ -379,7 +382,7 @@ function StatePicker({
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => { void haptics.light(); setOpen(true); }}
         style={({ pressed }) => [
           styles.input,
           styles.pickerBtn,
@@ -476,7 +479,7 @@ function PickerSheet({
               return (
                 <Pressable
                   key={o.code}
-                  onPress={() => onSelect(o.code)}
+                  onPress={() => { void haptics.light(); onSelect(o.code); }}
                   style={({ pressed }) => [
                     styles.sheetRow,
                     active && styles.sheetRowActive,

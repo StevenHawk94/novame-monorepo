@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 
 import { PrimaryButton, Shell } from '@/components/onboarding/shared';
 import { ASPIRE_WORDS } from '@/components/onboarding/constants';
+import { haptics } from '@/lib/haptics';
 import {
   getOnboardingState,
   patchOnboardingState,
@@ -63,7 +64,7 @@ export default function OnboardingStep2() {
             return (
               <Pressable
                 key={word}
-                onPress={() => toggle(word)}
+                onPress={() => { void haptics.light(); toggle(word); }}
                 style={[styles.chip, active && styles.chipActive]}
               >
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>

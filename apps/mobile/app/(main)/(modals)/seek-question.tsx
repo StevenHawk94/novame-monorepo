@@ -40,6 +40,7 @@ import { saveCard, unsaveCard } from '@/lib/card-saves-api';
 import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
 import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
+import { haptics } from '@/lib/haptics';
 
 type FetchResp = { cards?: SeekCard[] };
 
@@ -131,6 +132,7 @@ export default function SeekQuestionScreen() {
   };
 
   const offerWisdom = () => {
+    void haptics.light();
     if (!question) return;
     const sp = new URLSearchParams({
       questionId: question.id,
@@ -144,7 +146,7 @@ export default function SeekQuestionScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { void haptics.light(); router.back(); }} style={styles.backBtn} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.topTitle}>Wisdoms</Text>
@@ -160,7 +162,7 @@ export default function SeekQuestionScreen() {
           <MaterialIcons name="cloud-off" size={48} color="rgba(255,255,255,0.25)" />
           <Text style={styles.errorTitle}>Couldn{'\u2019'}t load wisdoms</Text>
           <Text style={styles.errorSub}>{error}</Text>
-          <Pressable onPress={() => void load()} style={styles.retryBtn}>
+          <Pressable onPress={() => { void haptics.light(); void load(); }} style={styles.retryBtn}>
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>

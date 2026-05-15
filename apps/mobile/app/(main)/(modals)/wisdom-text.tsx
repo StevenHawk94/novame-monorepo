@@ -12,6 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatRelativeShort } from '@/lib/relative-time';
+import { haptics } from '@/lib/haptics';
 
 type Payload = {
   text: string;
@@ -34,6 +35,7 @@ export default function WisdomTextModal() {
   const payload = decodePayload(params.payload);
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/growth');
   };

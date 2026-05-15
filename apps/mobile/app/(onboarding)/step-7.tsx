@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { PrimaryButton, Shell } from '@/components/onboarding/shared';
 import { S7_OPTS } from '@/components/onboarding/constants';
+import { haptics } from '@/lib/haptics';
 import {
   getOnboardingState,
   patchOnboardingState,
@@ -40,7 +41,7 @@ export default function OnboardingStep7() {
             return (
               <Pressable
                 key={opt.key}
-                onPress={() => select(opt.key)}
+                onPress={() => { void haptics.light(); select(opt.key); }}
                 style={[styles.option, active && styles.optionActive]}
               >
                 <Text style={styles.optionLabel}>{opt.label}</Text>

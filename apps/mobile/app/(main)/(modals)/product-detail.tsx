@@ -44,6 +44,7 @@ import {
 import { fetchUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 type ProductKey = 'wisdom_book' | 'wisdom_cards';
 
@@ -167,6 +168,7 @@ export default function ProductDetailModal() {
   }
 
   const onOrder = () => {
+    void haptics.light();
     if (ctaState !== 'unlocked') return;
     router.push({
       pathname: '/(main)/(modals)/shipping-form',
@@ -175,6 +177,7 @@ export default function ProductDetailModal() {
   };
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };

@@ -33,6 +33,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { fetchOrders, type Order, type OrderStatus } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending_payment: 'Pending Payment',
@@ -108,11 +109,13 @@ export default function OrderDetailModal() {
   }, [userId, orderId]);
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };
 
   const onContinueSelection = () => {
+    void haptics.light();
     // Stage 5.AIR.2: route to the cards-select modal carrying the
     // current orderId. cards-select handles the deck composition
     // and PATCHes the order to status='paid' on submit.

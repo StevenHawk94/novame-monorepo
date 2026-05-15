@@ -33,6 +33,7 @@ import {
 
 import { switchOutfit } from '@/lib/character-state';
 import { dequeueSkinUnlock } from '@/lib/skin-unlock-store';
+import { haptics } from '@/lib/haptics';
 
 // Statically-resolved asset imports — Metro can't bundle dynamic
 // require() paths, so we map outfit number to its require() result
@@ -58,6 +59,7 @@ export function SkinUnlockModal({ outfitNum, userId }: SkinUnlockModalProps) {
   const image = SKIN_IMAGES[outfitNum] ?? SKIN_IMAGES[1];
 
   const handleSwitch = async () => {
+    void haptics.light();
     if (!userId || busy) return;
     setBusy(true);
     try {
@@ -74,6 +76,7 @@ export function SkinUnlockModal({ outfitNum, userId }: SkinUnlockModalProps) {
   };
 
   const handleLater = () => {
+    void haptics.light();
     if (busy) return;
     dequeueSkinUnlock();
   };

@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { InsightView, type InsightCardData } from '@/components/insight/insight-view';
+import { haptics } from '@/lib/haptics';
 
 type Payload = {
   card: InsightCardData | null;
@@ -38,6 +39,7 @@ export default function WisdomInsightModal() {
   const payload = decodePayload(params.payload);
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/growth');
   };

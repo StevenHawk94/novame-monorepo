@@ -25,6 +25,7 @@ import {
 } from '@/lib/character-state';
 import { postStudyClaim, type StudyClaimResponse } from '@/lib/study-claim-api';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 const FILL_DURATION_MS = 900;
 
@@ -82,6 +83,7 @@ export default function StudyClaimModal() {
   }));
 
   const handleAwesome = async () => {
+    void haptics.light();
     if (userId) {
       try {
         await fetchCharacterState(userId);

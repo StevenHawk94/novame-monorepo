@@ -49,6 +49,7 @@ import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
 import { apiClient } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { haptics } from '@/lib/haptics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = getStandardCardWidth(SCREEN_W);
@@ -174,6 +175,7 @@ export default function KeywordDetailModal() {
   }, []);
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };

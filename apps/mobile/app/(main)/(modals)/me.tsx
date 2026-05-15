@@ -224,7 +224,7 @@ export default function MeModal() {
 
         {/* 2. Better Self Match */}
         <Pressable
-          onPress={() => goTo('/(main)/(modals)/growth-center')}
+          onPress={() => { void haptics.light(); goTo('/(main)/(modals)/growth-center'); }}
           style={({ pressed }) => [
             styles.card,
             { opacity: pressed ? 0.85 : 1 },
@@ -302,7 +302,7 @@ export default function MeModal() {
             </View>
           </View>
           <Pressable
-            onPress={() => planBillingSheetRef.current?.present()}
+            onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }}
             style={({ pressed }) => [
               styles.planViewBtn,
               { opacity: pressed ? 0.7 : 1 },
@@ -353,10 +353,10 @@ export default function MeModal() {
 
         {/* 7. Privacy / Terms + version */}
         <View style={styles.legalRow}>
-          <Pressable onPress={() => openUrl(PRIVACY_URL)} hitSlop={8}>
+          <Pressable onPress={() => { void haptics.light(); openUrl(PRIVACY_URL); }} hitSlop={8}>
             <Text style={styles.legalLink}>Privacy Policy</Text>
           </Pressable>
-          <Pressable onPress={() => openUrl(TERMS_URL)} hitSlop={8}>
+          <Pressable onPress={() => { void haptics.light(); openUrl(TERMS_URL); }} hitSlop={8}>
             <Text style={styles.legalLink}>Terms of Service</Text>
           </Pressable>
         </View>

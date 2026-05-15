@@ -44,6 +44,7 @@ import {
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 const BOOK_ICON = require('../../../assets/images/product/book-icon.webp');
 const CARD_ICON = require('../../../assets/images/product/card-icon.webp');
@@ -113,6 +114,7 @@ export function AssetsView({ shared }: Props) {
   };
 
   const onOpenOrders = () => {
+    void haptics.light();
     router.push('/(main)/(modals)/order-history');
   };
 

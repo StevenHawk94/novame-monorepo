@@ -27,6 +27,7 @@ import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 
 import { SeekQuestionCard } from '@/components/seek/seek-question-card';
 import type { SeekQuestion } from '@/lib/seek-types';
+import { haptics } from '@/lib/haptics';
 import {
   fetchSeekQuestionsWithCache,
   getCachedSeekQuestions,
@@ -122,11 +123,13 @@ export default function DiscoverTab() {
   };
 
   const askNew = () => {
+    void haptics.light();
     setFabOpen(false);
     router.push('/(main)/(modals)/new-question');
   };
 
   const myQuestions = () => {
+    void haptics.light();
     setFabOpen(false);
     router.push('/(main)/(modals)/my-questions');
   };
@@ -134,6 +137,7 @@ export default function DiscoverTab() {
   // Open the filter modal, pre-seeded with the current selection so
   // the user sees what's already chosen.
   const openFilter = () => {
+    void haptics.light();
     const csv = selectedKeywords.join(',');
     router.push({
       pathname: '/(main)/(modals)/discover-filter',
@@ -178,7 +182,7 @@ export default function DiscoverTab() {
           <MaterialIcons name="cloud-off" size={48} color="rgba(255,255,255,0.25)" />
           <Text style={styles.errorTitle}>Couldn\'t load questions</Text>
           <Text style={styles.errorSub}>{error}</Text>
-          <Pressable onPress={() => void load('initial')} style={styles.retryBtn}>
+          <Pressable onPress={() => { void haptics.light(); void load('initial'); }} style={styles.retryBtn}>
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>
@@ -213,7 +217,7 @@ export default function DiscoverTab() {
       )}
 
       {/* FAB */}
-      <Pressable onPress={() => setFabOpen(true)} style={styles.fab}>
+      <Pressable onPress={() => { void haptics.light(); setFabOpen(true); }} style={styles.fab}>
         <MaterialIcons name="add" size={28} color="#FFFFFF" />
       </Pressable>
 

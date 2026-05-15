@@ -59,6 +59,7 @@ import {
   SHIPPING_FEE,
 } from '@novame/core';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 import {
   createOrder,
   updateOrder,
@@ -103,6 +104,7 @@ export default function PaymentModal() {
   const [resultBanner, setResultBanner] = useState<ResultBanner>(null);
 
   const onPay = async () => {
+    void haptics.light();
     if (busy) return;
     if (!shipping) {
       Alert.alert('Missing address', 'Please go back and complete the shipping form.');
@@ -229,6 +231,7 @@ export default function PaymentModal() {
   };
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/assets');
   };

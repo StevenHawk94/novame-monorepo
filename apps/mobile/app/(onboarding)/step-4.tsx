@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Shell } from '@/components/onboarding/shared';
 import { S4_OPTS } from '@/components/onboarding/constants';
 import { patchOnboardingState } from '@/lib/onboarding';
+import { haptics } from '@/lib/haptics';
 
 /**
  * Step 4 — "How far away does that version of you feel right now?"
@@ -31,7 +32,7 @@ export default function OnboardingStep4() {
           {S4_OPTS.map((opt) => (
             <Pressable
               key={opt.key}
-              onPress={() => handleSelect(opt.key)}
+              onPress={() => { void haptics.light(); handleSelect(opt.key); }}
               style={({ pressed }) => [
                 styles.option,
                 pressed && styles.optionPressed,

@@ -147,7 +147,7 @@ export default function SkinSelectModal() {
           return (
             <Pressable
               key={n}
-              onPress={() => handlePickOutfit(n)}
+              onPress={() => { void haptics.light(); handlePickOutfit(n); }}
               disabled={busy !== null}
               style={({ pressed }) => [
                 styles.cell,

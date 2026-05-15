@@ -504,11 +504,11 @@ export default function SubscriptionPaywallModal() {
           <Text style={styles.subscribeBtnText}>{ctaLabel()}</Text>
         </Pressable>
         <View style={styles.footerLinks}>
-          <Pressable onPress={() => openLink(TERMS_URL)} hitSlop={6}>
+          <Pressable onPress={() => { void haptics.light(); openLink(TERMS_URL); }} hitSlop={6}>
             <Text style={styles.footerLink}>Terms of Use</Text>
           </Pressable>
           <Text style={styles.footerSep}>Cancel anytime</Text>
-          <Pressable onPress={() => openLink(PRIVACY_URL)} hitSlop={6}>
+          <Pressable onPress={() => { void haptics.light(); openLink(PRIVACY_URL); }} hitSlop={6}>
             <Text style={styles.footerLink}>Privacy Policy</Text>
           </Pressable>
         </View>

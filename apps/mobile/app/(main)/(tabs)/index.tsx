@@ -310,15 +310,15 @@ export default function HomeTab() {
           <View style={styles.topBarRight}>
             <TopBarButton
               icon="pets"
-              onPress={() => router.push('/(main)/(modals)/skin-select')}
+              onPress={() => { void haptics.light(); router.push('/(main)/(modals)/skin-select'); }}
             />
             <TopBarButton
               icon="description"
-              onPress={() => router.push('/(main)/(modals)/weekly-report')}
+              onPress={() => { void haptics.light(); router.push('/(main)/(modals)/weekly-report'); }}
             />
             <TopBarButton
               icon="emoji-events"
-              onPress={() => router.push('/(main)/(modals)/ranking')}
+              onPress={() => { void haptics.light(); router.push('/(main)/(modals)/ranking'); }}
             />
             {/* Stage 3.8.1 DEV: reanimated v4 smoke test entry — DELETE before commit */}
           </View>

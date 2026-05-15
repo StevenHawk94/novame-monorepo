@@ -14,6 +14,7 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 import { formatRelativeShort } from '@/lib/relative-time';
 import type { WisdomLog } from '@/lib/wisdoms-api';
+import { haptics } from '@/lib/haptics';
 
 export type WisdomLogRowProps = {
   wisdom: WisdomLog;
@@ -55,7 +56,7 @@ export function WisdomLogRow({
         <Text style={styles.time}>{time}</Text>
         <View style={{ flex: 1 }} />
         <Pressable
-          onPress={() => onMenu(wisdom.id)}
+          onPress={() => { void haptics.light(); onMenu(wisdom.id); }}
           hitSlop={10}
           style={({ pressed }) => [styles.menuBtn, pressed && { opacity: 0.6 }]}
         >
@@ -71,7 +72,7 @@ export function WisdomLogRow({
       {/* Action buttons */}
       <View style={styles.actionsRow}>
         <Pressable
-          onPress={() => onRead(wisdom.id)}
+          onPress={() => { void haptics.light(); onRead(wisdom.id); }}
           style={({ pressed }) => [
             styles.actionBtn,
             styles.actionBtnSecondary,
@@ -86,7 +87,7 @@ export function WisdomLogRow({
           <Text style={styles.actionText}>Read</Text>
         </Pressable>
         <Pressable
-          onPress={() => onInsight(wisdom.id)}
+          onPress={() => { void haptics.light(); onInsight(wisdom.id); }}
           style={({ pressed }) => [
             styles.actionBtn,
             styles.actionBtnPrimary,

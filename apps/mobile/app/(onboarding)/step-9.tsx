@@ -19,6 +19,7 @@ import {
   Shell,
 } from '@/components/onboarding/shared';
 import { REVIEWS } from '@/components/onboarding/constants';
+import { haptics } from '@/lib/haptics';
 
 // Static require() map for review avatars. React Native's require()
 // can only take a string literal, not a variable, so this map is the
@@ -190,7 +191,7 @@ export default function OnboardingStep9() {
           {REVIEWS.map((_, i) => (
             <Pressable
               key={i}
-              onPress={() => handleDotPress(i)}
+              onPress={() => { void haptics.light(); handleDotPress(i); }}
               hitSlop={10}
               style={[styles.dot, i === idx && styles.dotActive]}
             />

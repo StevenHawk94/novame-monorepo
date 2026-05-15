@@ -38,6 +38,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiClient } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { haptics } from '@/lib/haptics';
 
 type MyQuestionStatus = 'pending' | 'approved' | 'rejected';
 
@@ -137,7 +138,7 @@ export default function MyQuestionsScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { void haptics.light(); router.back(); }} style={styles.backBtn} hitSlop={8}>
           <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.topTitle}>My Questions</Text>
@@ -154,7 +155,7 @@ export default function MyQuestionsScreen() {
           <MaterialIcons name="cloud-off" size={48} color="rgba(255,255,255,0.25)" />
           <Text style={styles.errorTitle}>Couldn{'\u2019'}t load questions</Text>
           <Text style={styles.errorSub}>{error}</Text>
-          <Pressable onPress={() => void load('initial')} style={styles.retryBtn}>
+          <Pressable onPress={() => { void haptics.light(); void load('initial'); }} style={styles.retryBtn}>
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>

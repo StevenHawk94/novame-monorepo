@@ -52,6 +52,7 @@ import { updateOrder } from '@/lib/orders-api';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { haptics } from '@/lib/haptics';
 
 const REQUIRED_COUNT = 48;
 // Stage 5.AIR.2.bugfix.B: R2 cards live at the bucket root, NOT in a
@@ -164,6 +165,7 @@ export default function CardsSelectModal() {
   };
 
   const onSubmit = async () => {
+    void haptics.light();
     if (!orderId) {
       Alert.alert('Error', 'Order context lost. Please go back and try again.');
       return;
@@ -206,6 +208,7 @@ export default function CardsSelectModal() {
   };
 
   const goBack = () => {
+    void haptics.light();
     if (selectedIds.size > 0) {
       Alert.alert(
         'Discard selection?',
@@ -322,7 +325,7 @@ export default function CardsSelectModal() {
               const isSelected = selectedIds.has(item.id);
               return (
                 <Pressable
-                  onPress={() => toggleSelection(item.id)}
+                  onPress={() => { void haptics.light(); toggleSelection(item.id); }}
                   onLongPress={() => setPreviewCard(item)}
                   delayLongPress={250}
                   style={({ pressed }) => [
@@ -578,6 +581,7 @@ function PreviewModal({
 
           <Pressable
             onPress={() => {
+              void haptics.light();
               onToggle();
               onClose();
             }}

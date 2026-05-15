@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { storage } from '@/lib/storage';
+import { haptics } from '@/lib/haptics';
 
 import {
   sendPasswordReset,
@@ -97,6 +98,7 @@ export default function AuthScreen() {
 
   // ---- dev-only: replay onboarding ----
   const replayOnboarding = () => {
+    void haptics.light();
     // Clear onboarding done flag so the boot redirector + onboarding
     // flow treat the user as fresh. We delete the whole state key
     // (rather than patching) so step-2..11 also start clean.
@@ -122,6 +124,7 @@ export default function AuthScreen() {
   // ---- handlers ----
 
   const handleSignUp = async () => {
+    void haptics.light();
     clearMessages();
     if (!email.trim() || !password) {
       setErrorMsg('Email and password are required.');
@@ -152,6 +155,7 @@ export default function AuthScreen() {
   };
 
   const handleVerifyOtp = async () => {
+    void haptics.light();
     clearMessages();
     if (otpCode.length !== 6) {
       setErrorMsg('Enter the 6-digit code from your email.');
@@ -167,6 +171,7 @@ export default function AuthScreen() {
   };
 
   const handleEmailSignIn = async () => {
+    void haptics.light();
     clearMessages();
     if (!email.trim() || !password) {
       setErrorMsg('Email and password are required.');
@@ -182,6 +187,7 @@ export default function AuthScreen() {
   };
 
   const handleForgotPassword = async () => {
+    void haptics.light();
     clearMessages();
     if (!email.trim()) {
       setErrorMsg('Enter your email address.');
@@ -239,11 +245,11 @@ export default function AuthScreen() {
         By continuing, you agree to NovaMe&apos;s{' '}
       </Text>
       <View style={styles.footerLinks}>
-        <Pressable onPress={() => Linking.openURL(TERMS_URL)}>
+        <Pressable onPress={() => { void haptics.light(); Linking.openURL(TERMS_URL); }}>
           <Text style={styles.linkText}>Terms &amp; Conditions</Text>
         </Pressable>
         <Text style={styles.footerText}> and acknowledge the </Text>
-        <Pressable onPress={() => Linking.openURL(PRIVACY_URL)}>
+        <Pressable onPress={() => { void haptics.light(); Linking.openURL(PRIVACY_URL); }}>
           <Text style={styles.linkText}>Privacy Policy</Text>
         </Pressable>
         <Text style={styles.footerText}>.</Text>
@@ -314,14 +320,14 @@ export default function AuthScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.btn, styles.btnPrimary]}
-                onPress={() => goTo('register')}
+                onPress={() => { void haptics.light(); goTo('register'); }}
               >
                 <Text style={styles.btnPrimaryText}>Continue with Email</Text>
               </TouchableOpacity>
             </View>
           </View>
           <Pressable
-            onPress={() => goTo('email-login')}
+            onPress={() => { void haptics.light(); goTo('email-login'); }}
             style={styles.bottomLinkRow}
           >
             <Text style={styles.dimText}>Already have an account? </Text>
@@ -387,13 +393,13 @@ export default function AuthScreen() {
             )}
           </Pressable>
           <Pressable
-            onPress={() => goTo('email-login')}
+            onPress={() => { void haptics.light(); goTo('email-login'); }}
             style={styles.bottomLinkRow}
           >
             <Text style={styles.dimText}>Already have an account? </Text>
             <Text style={styles.boldLinkText}>Sign In</Text>
           </Pressable>
-          <Pressable onPress={() => goTo('login')} style={styles.backLink}>
+          <Pressable onPress={() => { void haptics.light(); goTo('login'); }} style={styles.backLink}>
             <Text style={styles.linkText}>Back</Text>
           </Pressable>
         </View>
@@ -428,7 +434,7 @@ export default function AuthScreen() {
             secureTextEntry
             editable={!loading}
           />
-          <Pressable onPress={() => goTo('forgot')} style={styles.forgotLinkRow}>
+          <Pressable onPress={() => { void haptics.light(); goTo('forgot'); }} style={styles.forgotLinkRow}>
             <Text style={styles.linkText}>Forgot password?</Text>
           </Pressable>
           <Messages />
@@ -444,13 +450,13 @@ export default function AuthScreen() {
             )}
           </Pressable>
           <Pressable
-            onPress={() => goTo('register')}
+            onPress={() => { void haptics.light(); goTo('register'); }}
             style={styles.bottomLinkRow}
           >
             <Text style={styles.dimText}>Don&apos;t have an account? </Text>
             <Text style={styles.boldLinkText}>Sign Up</Text>
           </Pressable>
-          <Pressable onPress={() => goTo('login')} style={styles.backLink}>
+          <Pressable onPress={() => { void haptics.light(); goTo('login'); }} style={styles.backLink}>
             <Text style={styles.linkText}>Back</Text>
           </Pressable>
         </View>
@@ -531,7 +537,7 @@ export default function AuthScreen() {
             <Text style={styles.btnPrimaryText}>Send Reset Link</Text>
           )}
         </Pressable>
-        <Pressable onPress={() => goTo('email-login')} style={styles.backLink}>
+        <Pressable onPress={() => { void haptics.light(); goTo('email-login'); }} style={styles.backLink}>
           <Text style={styles.linkText}>Back</Text>
         </Pressable>
       </View>

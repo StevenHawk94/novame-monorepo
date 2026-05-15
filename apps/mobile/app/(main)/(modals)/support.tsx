@@ -94,6 +94,7 @@ export default function SupportModal() {
   };
 
   const handleSend = async () => {
+    void haptics.light();
     if (busy) return;
     if (!userId) {
       setStatus({ kind: 'error', text: 'Not signed in. Please re-launch the app.' });
@@ -229,7 +230,7 @@ export default function SupportModal() {
               return (
                 <Pressable
                   key={cat.id}
-                  onPress={() => handleSelectCategory(cat.id)}
+                  onPress={() => { void haptics.light(); handleSelectCategory(cat.id); }}
                   style={({ pressed }) => [
                     styles.categoryBtn,
                     selected && styles.categoryBtnSelected,

@@ -14,6 +14,7 @@
  *   - Footer button "Apply (N)" returns to Discover with the param.
  */
 import { useMemo, useState } from 'react';
+import { haptics } from '@/lib/haptics';
 import {
   Pressable,
   ScrollView,
@@ -89,6 +90,8 @@ export default function DiscoverFilterModal() {
   const reset = () => setSelected(new Set());
 
   const apply = () => {
+    void haptics.light();
+    void haptics.light();
     const csv = Array.from(selected).join(',');
     // Replace the modal with the discover tab carrying the filter
     // param so the back gesture doesn't loop us.
@@ -99,6 +102,7 @@ export default function DiscoverFilterModal() {
   };
 
   const goBack = () => {
+    void haptics.light();
     if (router.canGoBack()) router.back();
     else router.replace('/(main)/(tabs)/discover');
   };
@@ -152,7 +156,7 @@ export default function DiscoverFilterModal() {
                 return (
                   <Pressable
                     key={kw}
-                    onPress={() => toggle(kw)}
+                    onPress={() => { void haptics.light(); toggle(kw); }}
                     style={({ pressed }) => [
                       styles.chip,
                       active && styles.chipActive,
