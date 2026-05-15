@@ -1,18 +1,46 @@
 /**
- * Focus Mode card — Stage 3.9.A.2.1
+ * Focus Mode card — Stage 3.9.A.2.1, Stage 6 visual refresh.
  *
  * Single horizontal card with a lightning icon + "Focus Mode" label
  * + sublabel + Start button on the right.
  *
  * Behavior:
- *   - When mode === 'play':  Button reads "Start", tap fires onStart.
- *     Disabled if wp <= 0 (server requires wp > 0 to enter study mode).
- *   - When mode === 'study': Button reads "In Progress" and is disabled
- *     (study cannot be cancelled — runs until WP hits 0 then auto-claims).
+ *   - mode === 'play' + wp > 0:  Button is orange "Start", breathing
+ *     animation loops (scale 1.0 -> 1.04 + shadow opacity 0.4 -> 0.7,
+ *     1.5s full cycle). Tap fires onStart.
+ *   - mode === 'play' + wp <= 0: Button is grey "WP empty", disabled,
+ *     no animation.
+ *   - mode === 'study':          Button is green "In Progress",
+ *     disabled (study runs until WP hits 0), no animation.
+ *
+ * Breathing animation rationale:
+ *   - 1.5s full cycle (750ms one-way, withRepeat with reverse=true)
+ *     matches industry UI breathing tempo (Sleep app, Headspace, Calm).
+ *   - Easing.inOut(quad) gives the "slow start, fast middle, slow end"
+ *     feel of real breathing — linear feels mechanical, cubic too
+ *     dramatic.
+ *   - 4% scale amplitude + shadow opacity swing creates visual density
+ *     without being distracting. Scale alone reads as mechanical.
+ *   - Animated.View wraps the Pressable (not the other way around)
+ *     because Pressable's style={({pressed}) => [...]} closure is a
+ *     JS-thread function, incompatible with useAnimatedStyle worklets.
+ *     The outer Animated.View carries the breath transform; the inner
+ *     Pressable composes its own press-down transform — RN flattens
+ *     them automatically (scale 1.04 * scale 0.96 = ~1.0 on press).
  */
+import { useEffect } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 // Bundle asset for the Focus Mode icon. Resolved via Metro's asset
 // pipeline (require returns a numeric module id usable as <Image>
@@ -41,6 +69,44 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
       ? 'Wait for WP to recover, then study to earn XP fast'
       : 'Turn on to gain XP faster';
 
+  // Breathing animation SharedValue. Oscillates 0 <-> 1 when canStart,
+  // held at 0 otherwise. Cancellation is explicit on the else branch
+  // so a flipped state immediately stills the button — without cancel,
+  // the in-flight withTiming would continue to its target before stopping.
+  const breath = useSharedValue(0);
+
+  useEffect(() => {
+    if (canStart) {
+      breath.value = withRepeat(
+        withTiming(1, { duration: 750, easing: Easing.inOut(Easing.quad) }),
+        -1,    // infinite
+        true,  // reverse on each iteration: 0 -> 1 -> 0 -> 1 ...
+      );
+    } else {
+      cancelAnimation(breath);
+      breath.value = 0;
+    }
+  }, [canStart, breath]);
+
+  const breathStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: interpolate(breath.value, [0, 1], [1, 1.04]) },
+    ],
+    shadowOpacity: interpolate(breath.value, [0, 1], [0.4, 0.7]),
+  }));
+
+  // Color palette per state. isStudy uses emerald (matches the green
+  // "active/saved" chips used elsewhere e.g. in subscription-paywall).
+  const buttonColors: [string, string] = canStart
+    ? ['#FB923C', '#F97316']
+    : isStudy
+      ? ['#34D399', '#10B981']
+      : ['#5B5478', '#4B4565'];
+
+  // Shadow color tracks the gradient so the bloom feels native to the
+  // current button color, not a generic orange under a green button.
+  const shadowColor = canStart ? '#F97316' : isStudy ? '#10B981' : 'transparent';
+
   return (
     <View style={styles.cardWrap}>
       <LinearGradient
@@ -64,24 +130,32 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
           <Text style={styles.title}>Focus Mode</Text>
           <Text style={styles.sub}>{sublabel}</Text>
         </View>
-        <Pressable
-          onPress={onStart}
-          disabled={!canStart}
-          style={({ pressed }) => [
-            styles.btnWrap,
-            !canStart && styles.btnWrapDisabled,
-            pressed && canStart && styles.btnWrapPressed,
-          ]}
-        >
-          <LinearGradient
-            colors={canStart ? ['#FB923C', '#F97316'] : ['#5B5478', '#4B4565']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.btn}
+        {/* Outer Animated.View carries breath animation (scale + shadow).
+            Inner Pressable handles press feedback independently — RN
+            composes the two transforms automatically. canStart gates
+            whether breathStyle applies; non-active states get a static
+            shadowColor only. */}
+        <Animated.View style={canStart ? breathStyle : undefined}>
+          <Pressable
+            onPress={onStart}
+            disabled={!canStart}
+            style={({ pressed }) => [
+              styles.btnWrap,
+              { shadowColor },
+              !canStart && styles.btnWrapDisabled,
+              pressed && canStart && styles.btnWrapPressed,
+            ]}
           >
-            <Text style={styles.btnText}>{buttonLabel}</Text>
-          </LinearGradient>
-        </Pressable>
+            <LinearGradient
+              colors={buttonColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.btn}
+            >
+              <Text style={styles.btnText}>{buttonLabel}</Text>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
       </LinearGradient>
     </View>
   );
@@ -129,7 +203,6 @@ const styles = StyleSheet.create({
   },
   btnWrap: {
     borderRadius: 999,
-    shadowColor: '#F97316',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
