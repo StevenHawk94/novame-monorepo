@@ -56,8 +56,8 @@ import { supabase } from '@/lib/supabase';
  * fires SIGNED_OUT.
  */
 
-const PRIVACY_URL = 'https://api.soulsayit.com/privacy';
-const TERMS_URL = 'https://api.soulsayit.com/terms';
+const PRIVACY_URL = 'https://novameapp.com/privacy';
+const TERMS_URL = 'https://novameapp.com/terms';
 
 export default function MeModal() {
   const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);

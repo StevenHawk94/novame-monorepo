@@ -65,8 +65,8 @@ import { emitHomeRefresh } from '@/lib/home-refresh-signal';
  * Stage 5 (B58) wires real expo-iap or react-native-iap calls in here.
  */
 
-const TERMS_URL = 'https://api.soulsayit.com/terms';
-const PRIVACY_URL = 'https://api.soulsayit.com/privacy';
+const TERMS_URL = 'https://novameapp.com/terms';
+const PRIVACY_URL = 'https://novameapp.com/privacy';
 
 type Cycle = 'monthly' | 'yearly';
 

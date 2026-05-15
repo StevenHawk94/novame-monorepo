@@ -123,10 +123,14 @@ export async function GET(request) {
     const profileBase = await ensureProfileFields(supabase, userId)
     if (!profileBase) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    // Re-read full profile
+    // Re-read full profile.
+    // ai_consent_at is included here so the mobile client can read it
+    // from the character-state response without making a separate
+    // /api/ai-consent GET call. The field is set when the user
+    // agrees to AI processing via the in-app consent modal.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('active_character_id, character_mode, wp, wp_last_updated, mode_changed_at, afk_study_seconds, afk_play_seconds, last_recording_at')
+      .select('active_character_id, character_mode, wp, wp_last_updated, mode_changed_at, afk_study_seconds, afk_play_seconds, last_recording_at, ai_consent_at')
       .eq('id', userId)
       .single()
 
@@ -173,6 +177,7 @@ export async function GET(request) {
       character: charData ? { ...charData, total_exp: totalExp, exp: levelInfo.currentExp, level: levelInfo.level } : null,
       levelInfo,
       allCharacters: allChars || [],
+      aiConsentAt: profile.ai_consent_at ?? null,
     })
   } catch (error) {
     console.error('GET character-state error:', error)
