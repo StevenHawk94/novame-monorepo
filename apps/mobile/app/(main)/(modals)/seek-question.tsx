@@ -27,8 +27,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
-} from 'react-native';
+  View, Alert,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -36,7 +35,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiClient } from '@/lib/api';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
-import { saveCard, unsaveCard } from '@/lib/card-saves-api';
+import { blockWisdomCard } from '@/lib/wisdom-card-blocks';
 import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
 import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
@@ -71,7 +70,6 @@ export default function SeekQuestionScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [savingCardId, setSavingCardId] = useState<string | null>(null);
 
   // Resolve current user id once (used by save guard + API).
   useEffect(() => {
@@ -89,8 +87,13 @@ export default function SeekQuestionScreen() {
     setLoading(true);
     setError(null);
     try {
+      // Append userId so the server can filter out cards this user
+      // has blocked. Without userId the server skips the block filter
+      // and returns all cards — used as a transitional path during
+      // sign-out / before session is resolved.
+      const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
       const data = await apiClient.get<FetchResp & { question?: SeekQuestion }>(
-        `/api/seek-questions?questionId=${encodeURIComponent(questionId)}`,
+        `/api/seek-questions?questionId=${encodeURIComponent(questionId)}${userIdParam}`,
       );
       setCards(data.cards ?? []);
       // Prefer server question if present (more authoritative than param).
@@ -100,7 +103,7 @@ export default function SeekQuestionScreen() {
     } finally {
       setLoading(false);
     }
-  }, [questionId]);
+  }, [questionId, userId]);
 
   // Re-fetch on every focus (initial mount + every time the user
   // returns to this modal from another screen, e.g. back from record
@@ -112,24 +115,28 @@ export default function SeekQuestionScreen() {
     }, [load]),
   );
 
-  const onToggleSave = async (card: SeekCard) => {
-    if (!userId || savingCardId) return;
-    setSavingCardId(card.id);
-    const wasSaved = !!card.is_saved;
-    // Optimistic update
-    setCards((prev) =>
-      prev.map((c) => (c.id === card.id ? { ...c, is_saved: !wasSaved } : c)),
-    );
-    const result = wasSaved
-      ? await unsaveCard(userId, card.id)
-      : await saveCard(userId, card.id);
+  const onBlock = async (card: SeekCard) => {
+    if (!userId) return;
+    // Optimistic: snapshot current list, remove the card immediately.
+    // If the server fails, we restore by reinserting at the original
+    // position so the user's mental model of card order stays intact.
+    const snapshot = cards;
+    const idx = snapshot.findIndex((c) => c.id === card.id);
+    setCards((prev) => prev.filter((c) => c.id !== card.id));
+    const result = await blockWisdomCard(userId, card.id);
     if (!result.success) {
-      // Roll back
-      setCards((prev) =>
-        prev.map((c) => (c.id === card.id ? { ...c, is_saved: wasSaved } : c)),
+      // Roll back: insert at original index.
+      setCards((prev) => {
+        const next = [...prev];
+        const safeIdx = Math.min(idx, next.length);
+        next.splice(safeIdx, 0, card);
+        return next;
+      });
+      Alert.alert(
+        'Could not block',
+        result.error ?? 'Please try again.',
       );
     }
-    setSavingCardId(null);
   };
 
   const offerWisdom = () => {
@@ -196,10 +203,8 @@ export default function SeekQuestionScreen() {
             <SeekCardRow
               card={item}
               cardWidth={CARD_WIDTH}
-              saved={!!item.is_saved}
-              canSave={!!userId && item.user_id !== userId}
-              saving={savingCardId === item.id}
-              onToggleSave={() => void onToggleSave(item)}
+              canBlock={!!userId && item.user_id !== userId}
+              onBlock={() => void onBlock(item)}
             />
           )}
         />
