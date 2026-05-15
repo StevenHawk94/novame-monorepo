@@ -14,6 +14,13 @@ export async function GET(request) {
     const questionId = searchParams.get('questionId')
 
     if (questionId) {
+      // Optional userId so we can filter out cards this user has
+      // blocked. The block list is a per-user "hide forever" set.
+      // If userId is absent (e.g. legacy mobile build, or the caller
+      // is a curious anonymous browser), we skip the filter and
+      // return everything.
+      const userId = searchParams.get('userId')
+
       const { data: question } = await supabase
         .from('seek_questions')
         .select('*')
@@ -22,14 +29,34 @@ export async function GET(request) {
 
       if (!question) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-      // Step 1: get card_ids
+      // Step 1: get card_ids linked to this question.
       const { data: cardLinks } = await supabase
         .from('seek_question_cards')
         .select('card_id, created_at')
         .eq('question_id', questionId)
         .order('created_at', { ascending: false })
 
-      const cardIds = (cardLinks || []).map(l => l.card_id).filter(Boolean)
+      let cardIds = (cardLinks || []).map(l => l.card_id).filter(Boolean)
+
+      // Step 1b: filter out cards this user has blocked. We do this
+      // BEFORE the wisdom_cards fetch so we don't waste bandwidth
+      // pulling card content that will be discarded.
+      if (userId && cardIds.length > 0) {
+        const { data: blocks, error: blocksErr } = await supabase
+          .from('wisdom_card_blocks')
+          .select('card_id')
+          .eq('user_id', userId)
+          .in('card_id', cardIds)
+        if (blocksErr) {
+          // Non-fatal: log and proceed without filtering. Better to
+          // show a blocked card occasionally than to fail the whole
+          // request because of a block-list query hiccup.
+          console.warn('[seek-questions] block filter query failed:', blocksErr.message)
+        } else if (blocks && blocks.length > 0) {
+          const blockedSet = new Set(blocks.map(b => b.card_id))
+          cardIds = cardIds.filter(id => !blockedSet.has(id))
+        }
+      }
 
       if (cardIds.length === 0) {
         return NextResponse.json({ success: true, question, cards: [] })
