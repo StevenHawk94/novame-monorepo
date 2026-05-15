@@ -41,6 +41,7 @@ import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
 import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
 import { haptics } from '@/lib/haptics';
+import { requireAiConsent } from '@/lib/ai-consent';
 
 type FetchResp = { cards?: SeekCard[] };
 
@@ -139,7 +140,13 @@ export default function SeekQuestionScreen() {
       forceKeyword: question.question_tag || '',
       questionText: question.question_text,
     });
-    router.push(`/(main)/(modals)/record?${sp.toString()}`);
+    const target = `/(main)/(modals)/record?${sp.toString()}`;
+    // AI consent gate: pushes consent modal with this target as `next`
+    // if not agreed. The modal will router.replace to `target` after
+    // Agree; we must NOT push it again here on the false path.
+    const proceed = requireAiConsent(target);
+    if (!proceed) return;
+    router.push(target as never);
   };
 
   return (

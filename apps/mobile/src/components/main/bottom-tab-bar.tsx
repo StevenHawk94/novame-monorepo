@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
+import { requireAiConsent } from '@/lib/ai-consent';
 
 /**
  * Custom bottom tab bar for the (main)/(tabs) layout.
@@ -91,6 +92,12 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   const handleMicPress = () => {
     void haptics.medium();
+    // AI consent gate: requireAiConsent pushes the consent modal if
+    // not yet agreed and returns false; we MUST abort here to avoid
+    // a double-push. On Agree, the consent modal router.replaces to
+    // /(main)/(modals)/record itself.
+    const proceed = requireAiConsent('/(main)/(modals)/record');
+    if (!proceed) return;
     router.push('/(main)/(modals)/record');
   };
 

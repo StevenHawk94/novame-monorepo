@@ -28,6 +28,7 @@ import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { SeekQuestionCard } from '@/components/seek/seek-question-card';
 import type { SeekQuestion } from '@/lib/seek-types';
 import { haptics } from '@/lib/haptics';
+import { requireAiConsent } from '@/lib/ai-consent';
 import {
   fetchSeekQuestionsWithCache,
   getCachedSeekQuestions,
@@ -119,7 +120,13 @@ export default function DiscoverTab() {
       forceKeyword: q.question_tag || '',
       questionText: q.question_text,
     });
-    router.push(`/(main)/(modals)/record?${params.toString()}`);
+    const target = `/(main)/(modals)/record?${params.toString()}`;
+    // AI consent gate: pushes consent modal with this target as `next`
+    // if not agreed. The modal will router.replace to `target` after
+    // Agree; we must NOT push it again here on the false path.
+    const proceed = requireAiConsent(target);
+    if (!proceed) return;
+    router.push(target as never);
   };
 
   const askNew = () => {

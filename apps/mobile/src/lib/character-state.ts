@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import { apiClient } from './api';
+import { setAiConsentFromServer } from './ai-consent';
 import { detectNewlyUnlockedOutfits } from './skin-unlock-tracker';
 import { enqueueSkinUnlocks } from './skin-unlock-store';
 import {
@@ -62,6 +63,14 @@ export type CharacterStateResponse = {
   character: CharacterRow | null;
   levelInfo: LevelInfo;
   allCharacters: CharacterRow[];
+  /**
+   * ISO timestamp when the user agreed to AI processing via the
+   * in-app consent modal, or null if not yet agreed. Sourced from
+   * profiles.ai_consent_at on the server. The mobile client mirrors
+   * this into MMKV via setAiConsentFromServer so the gate check in
+   * requireAiConsent is synchronous and survives offline use.
+   */
+  aiConsentAt: string | null;
 };
 
 /**
@@ -145,6 +154,11 @@ export async function fetchCharacterState(
   }
   const next = mapResponseToCache(data);
   setCachedCharacterState(next);
+  // Mirror server-side ai_consent_at into MMKV so the synchronous
+  // requireAiConsent gate stays current across devices (user agrees
+  // on iPhone -> next character-state fetch on iPad picks it up and
+  // writes its own MMKV).
+  setAiConsentFromServer(data.aiConsentAt);
 
     // Stage 5.WR.2 (Bug 3): detect skin unlocks crossed by the new level
     // and enqueue them for the global SkinUnlockModal (rendered in tabs
