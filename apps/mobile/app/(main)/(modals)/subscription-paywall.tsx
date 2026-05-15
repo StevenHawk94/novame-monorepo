@@ -252,11 +252,34 @@ export default function SubscriptionPaywallModal() {
       // will fire shortly with server-confirmed tier; the useEffect
       // above closes the paywall on that event. Leave busy=purchasing
       // so the button stays disabled while the listener catches up.
-      // Safety: if the listener somehow doesn't fire within 5s
-      // (network stuck on the apple-iap upload), reset busy so the
-      // user can retry instead of staring at a frozen button.
+      //
+      // Safety net (Stage 6 fix): if the listener somehow doesn't
+      // fire within 5s, we previously only reset busy -- leaving
+      // the user staring at a paywall they thought completed (and
+      // had been charged for, in sandbox sometimes). Now we also
+      // refresh the subscription cache and close the paywall, on
+      // the assumption that the purchase DID complete server-side
+      // (StoreKit returned a Purchase, that's the contract) and the
+      // problem is somewhere in our listener pipeline. The user
+      // gets out of the paywall; the Me page will reflect the new
+      // tier on next focus.
+      //
+      // Common reason for listener to not fire: iap.ts's
+      // processedTransactionIds set has the txnId from initIAP
+      // recovery, so the listener short-circuits. The Stage 6 fix
+      // to recovery (release transient-failure ids) addresses this
+      // at the source. This safety net is the belt to that
+      // suspenders -- so a future regression of the same class
+      // doesn't trap users on the paywall again.
       setTimeout(() => {
-        setBusy((b) => (b === 'purchasing' ? 'idle' : b));
+        setBusy((b) => {
+          if (b !== 'purchasing') return b; // already settled
+          // Refresh tier cache and close. emitHomeRefresh so home
+          // tab picks up any character/quota changes.
+          emitHomeRefresh();
+          if (router.canGoBack()) router.back();
+          return 'idle';
+        });
       }, 5000);
     } catch (e) {
       setBusy('idle');

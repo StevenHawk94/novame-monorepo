@@ -223,9 +223,47 @@ export async function initIAP(): Promise<void> {
           console.log('[iap] recovered transaction', txnId, purchase.productId);
         } catch (e) {
           console.warn('[iap] recovery failed for', txnId, e);
-          // Keep it in the set anyway -- if we keep retrying every
-          // launch we'd just spam the server with the same broken
-          // transaction. Listener-time will retry later if needed.
+          // Stage 6 fix: distinguish INFRASTRUCTURE failures (no
+          // session / network down / supabase unavailable) from
+          // BUSINESS failures (server rejected the transaction).
+          //
+          // Infrastructure failures during initIAP recovery are
+          // common: the listener registers very early in app boot,
+          // before supabase.auth has restored the session from MMKV.
+          // The first uploadPurchaseToServer call throws "No active
+          // session for IAP upload" -- a transient race, NOT a
+          // problem with the transaction itself.
+          //
+          // Old behavior: kept the txnId in processedTransactionIds
+          // anyway "to avoid spam." Consequence: when the user
+          // later tapped Subscribe, StoreKit returned the same
+          // unfinished transaction (because finishTransaction never
+          // ran), the listener fired, saw the id in the set, and
+          // returned silently. paywall.onPurchaseComplete never
+          // fired -> paywall stuck on "Processing..." until the 5s
+          // safety net, but never closed.
+          //
+          // New behavior: for transient errors we recognise as
+          // infrastructure (session missing, network), DROP the id
+          // from the set. The listener will get a fresh shot later
+          // (e.g. when the user actually taps Subscribe and
+          // StoreKit re-delivers the unfinished transaction).
+          const msg =
+            e instanceof Error ? e.message : typeof e === 'string' ? e : '';
+          const isTransient =
+            msg.includes('No active session') ||
+            msg.includes('Network request failed') ||
+            msg.includes('fetch failed') ||
+            msg.includes('NetworkError');
+          if (isTransient) {
+            processedTransactionIds.delete(txnId);
+            console.log(
+              '[iap] recovery error is transient, releasing txnId for retry:',
+              txnId,
+            );
+          }
+          // For non-transient (business) errors: keep in set, don't
+          // spam server with the same broken txn every launch.
         }
       }
       // After recovery, refresh the cached tier so the user sees
