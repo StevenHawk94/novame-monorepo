@@ -96,3 +96,20 @@ export function clearSkinUnlockQueue(): void {
   _queue = [];
   notify();
 }
+
+/**
+ * Synchronously peek the head of the queue without subscribing.
+ *
+ * Stage 6.RatingPrompt: used by record.tsx handleClose to decide
+ * whether to yield to a skin unlock vs trigger the rating prompt --
+ * when the queue is non-empty, the SkinUnlockModal in
+ * (tabs)/_layout.tsx will auto-surface, so the rating prompt yields
+ * (and does NOT mark itself as shown, so the next publish milestone
+ * gets a fresh shot).
+ *
+ * Non-React (unlike useSkinUnlockHead) because the call site is an
+ * imperative event handler, not a render path.
+ */
+export function peekSkinUnlockQueueHead(): number | undefined {
+  return _queue[0];
+}

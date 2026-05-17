@@ -58,6 +58,17 @@ import {
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
+import {
+  incrementTaskCompletionCount,
+  getTaskCompletionCount,
+} from '@/lib/task-completion-count';
+import { getPublishCount } from '@/lib/publish-count';
+import {
+  shouldShowRatingPrompt,
+  markRatingPromptShown,
+  emitRatingPromptRequest,
+} from '@/lib/rating-prompt';
+import { getCachedSubscriptionTier } from '@/lib/subscription';
 
 type SubTab = 'tasks' | 'logs';
 
@@ -430,6 +441,34 @@ export default function GrowthTab() {
       }
       // Pull authoritative character state from server.
       void refreshChar();
+
+      // Stage 6.RatingPrompt: increment lifetime task completion
+      // counter + check if we should surface the rating prompt.
+      // For subscribed users, completing 10/50/100 tasks is a
+      // strong engagement signal independent of publish quota.
+      // shouldShowRatingPrompt internally gates on subscription
+      // status, cooldown, and prior expression -- safe to call
+      // unconditionally on every successful task completion.
+      incrementTaskCompletionCount();
+      const publishCount = getPublishCount();
+      const taskCompletionCount = getTaskCompletionCount();
+      const isSubscribed = getCachedSubscriptionTier() !== 'free';
+      if (
+        shouldShowRatingPrompt({
+          publishCount,
+          taskCompletionCount,
+          isSubscribed,
+        })
+      ) {
+        markRatingPromptShown();
+        // Delay so the EXP toast (+confetti burst on screen) has
+        // a moment to register before the sheet covers the lower
+        // half. 1.2s = roughly when the confetti has finished and
+        // toast has begun to fade.
+        setTimeout(() => {
+          emitRatingPromptRequest();
+        }, 1200);
+      }
     } catch (e) {
       // Roll back optimistic state on failure.
       setRows((prev) =>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -249,11 +250,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <BottomSheetModalProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

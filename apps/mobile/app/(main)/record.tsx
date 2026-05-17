@@ -51,6 +51,14 @@ import { getCurrentSession } from '@/lib/auth';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import { clearCachedCharacterState, fetchCharacterState} from '@/lib/character-state';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
+import { incrementPublishCount, getPublishCount } from '@/lib/publish-count';
+import { getTaskCompletionCount } from '@/lib/task-completion-count';
+import {
+  shouldShowRatingPrompt,
+  markRatingPromptShown,
+  emitRatingPromptRequest,
+} from '@/lib/rating-prompt';
+import { peekSkinUnlockQueueHead } from '@/lib/skin-unlock-store';
 import {
   configureAudioSession,
   prepareAndStart,
@@ -1933,9 +1941,19 @@ function PhaseInsight({
     // on every close path. expo-router v6 doesn't fire useFocusEffect
     // on tab when modals open/close, so the home tab needs this
     // explicit signal to know its cached data may have changed.
-    // Idempotent — the home tab's subscriber reads cache + refetches,
+    // Idempotent -- the home tab's subscriber reads cache + refetches,
     // both safe to repeat.
     emitHomeRefresh();
+
+    // Stage 6.RatingPrompt: priority chain for post-publish modals --
+    // only ONE should display. Anything higher than rating prompt
+    // wins and we yield WITHOUT marking the prompt as shown, so the
+    // next milestone gets a fresh shot.
+    //
+    //   1. Paywall (highest -- quota exhausted, business critical)
+    //   2. Skin unlock (next -- celebrate level-up moment)
+    //   3. Rating prompt (lowest -- yields to anything more important)
+
     if (quotaExhaustedAfterPublish) {
       // Stage 5.WR.2 (Bug 2 fix, FOURTH pass): industry-standard
       // modal-after-modal handling per Whitespectre RN modal guide
@@ -1963,6 +1981,41 @@ function PhaseInsight({
       });
       return;
     }
+
+    // Skin unlock takes the next slot. If the queue has items
+    // pending, SkinUnlockModal in (tabs)/_layout.tsx will surface
+    // automatically as soon as we close. Yield without burning the
+    // rating prompt opportunity -- the next milestone publish still
+    // gets a chance to ask.
+    if (peekSkinUnlockQueueHead() !== undefined) {
+      close();
+      return;
+    }
+
+    // Rating prompt -- only if milestone (3 / 10 / 30) is hit, the
+    // user hasn't expressed before, and cooldown has passed. Mark
+    // as shown immediately so dismissal-without-engaging starts the
+    // cooldown clock. Use InteractionManager so the BottomSheet
+    // presents AFTER the record modal has finished dismissing
+    // (iOS UIKit forbids two-modal overlap).
+    const publishCount = getPublishCount();
+    const taskCompletionCount = getTaskCompletionCount();
+    const isSubscribed = getCachedSubscriptionTier() !== 'free';
+    if (
+      shouldShowRatingPrompt({
+        publishCount,
+        taskCompletionCount,
+        isSubscribed,
+      })
+    ) {
+      markRatingPromptShown();
+      close();
+      InteractionManager.runAfterInteractions(() => {
+        emitRatingPromptRequest();
+      });
+      return;
+    }
+
     close();
   };
   const handleDone = async () => {
@@ -1990,6 +2043,13 @@ function PhaseInsight({
       // Already swallowed by the .catch in the prefetch effect;
       // belt-and-suspenders.
     }
+
+    // Stage 6.RatingPrompt: increment the lifetime publish counter
+    // now that the user has consumed their generated insight and is
+    // about to dismiss. This is the "signature interaction" moment
+    // per Apple HIG -- the right point to potentially trigger a
+    // rating ask on the next handleClose tick.
+    incrementPublishCount();
 
     handleClose();
   };

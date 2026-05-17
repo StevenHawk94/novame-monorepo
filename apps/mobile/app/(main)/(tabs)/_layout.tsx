@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Tabs } from 'expo-router';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
 import { SkinUnlockModal } from '@/components/modals/skin-unlock-modal';
+import {
+  RatingPromptSheet,
+  type RatingPromptSheetRef,
+} from '@/components/rating/rating-prompt-sheet';
 import { useSkinUnlockHead } from '@/lib/skin-unlock-store';
+import { subscribeRatingPromptRequest } from '@/lib/rating-prompt';
 import { getCurrentSession } from '@/lib/auth';
 
 /**
@@ -37,8 +43,20 @@ export default function TabsLayout() {
     void getCurrentSession().then((s) => setUserId(s?.user?.id ?? null));
   }, []);
 
+  // Stage 6.RatingPrompt: global rating-prompt sheet. Mounted here
+  // (not inside any single tab) so it can surface above whichever
+  // tab the user is on when the record modal closes after a publish
+  // milestone. Subscribe wiring is module-level via rating-prompt.ts,
+  // mirroring skin-unlock-store and home-refresh-signal patterns.
+  const ratingSheetRef = useRef<RatingPromptSheetRef>(null);
+  useEffect(() => {
+    return subscribeRatingPromptRequest(() => {
+      ratingSheetRef.current?.present();
+    });
+  }, []);
+
   return (
-    <>
+    <BottomSheetModalProvider>
       <Tabs
         tabBar={(props) => <BottomTabBar {...props} />}
         screenOptions={{ headerShown: false }}
@@ -51,6 +69,7 @@ export default function TabsLayout() {
       {queueHead !== undefined ? (
         <SkinUnlockModal outfitNum={queueHead} userId={userId} />
       ) : null}
-    </>
+      <RatingPromptSheet ref={ratingSheetRef} />
+    </BottomSheetModalProvider>
   );
 }
