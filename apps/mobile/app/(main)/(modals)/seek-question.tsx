@@ -15,7 +15,7 @@
  * Layout:
  *   - Top: back button + question text + author + tag + wisdom count
  *   - Middle: vertical list of FlippableCard with save bookmark
- *   - Bottom: fixed Offer Wisdom CTA (router.push to record overlay
+ *   - Bottom: fixed Offer Wisdom CTA (router.push to record screen
  *     pre-bound with this question's keyword)
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -147,7 +147,7 @@ export default function SeekQuestionScreen() {
       forceKeyword: question.question_tag || '',
       questionText: question.question_text,
     });
-    const target = `/(main)/(modals)/record?${sp.toString()}`;
+    const target = `/(main)/record?${sp.toString()}`;
     // AI consent gate: pushes consent modal with this target as `next`
     // if not agreed. The modal will router.replace to `target` after
     // Agree; we must NOT push it again here on the false path.

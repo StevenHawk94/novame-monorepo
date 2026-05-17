@@ -15,7 +15,7 @@ import { getCurrentSession } from '@/lib/auth';
  * The visible tab bar is rendered by our custom BottomTabBar component
  * via the `tabBar` prop. Inside it we draw 4 tab buttons + a centered
  * raised mic button (the mic is a pure overlay, NOT a tab — it
- * router.pushes to (main)/(modals)/record).
+ * router.pushes to (main)/record).
  *
  * Header is hidden across all screens. Each screen handles its own
  * top bar (e.g. Home has 4 round buttons: hamburger / skin / weekly

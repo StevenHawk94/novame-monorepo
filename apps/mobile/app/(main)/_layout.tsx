@@ -34,6 +34,24 @@ export default function MainLayout() {
         name="ai-consent"
         options={{ presentation: 'transparentModal', animation: 'fade' }}
       />
+      {/* record is the "publish wisdom" capture flow (record / type / publish /
+          analyze / insight). It used to live inside (modals)/ with the default
+          'modal' presentation, which let users dismiss with a downward swipe --
+          a documented loss-of-work foot-gun. We promote it to a top-level
+          screen under (main)/ with 'fullScreenModal' presentation so:
+            - the slide-up entry animation is preserved (matches old UX), AND
+            - the iOS downward dismiss gesture is not available at all.
+          'fullScreenModal' is the only reliable way to disable the dismiss
+          gesture on iOS (gestureEnabled:false on a 'modal' presentation only
+          produces a rubber-band bounce per react-native-screens issue #1410).
+          Furthermore, expo-router does not honor presentation set on a screen
+          inside a nested layout (issue #37680), which is why the screen file
+          itself had to move out of (modals)/ rather than just adding options
+          there. */}
+      <Stack.Screen
+        name="record"
+        options={{ presentation: 'fullScreenModal' }}
+      />
     </Stack>
   );
 }

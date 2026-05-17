@@ -60,7 +60,7 @@ const ROUTE_LABELS: Record<string, string> = {
  * Renders the 4 declared tab routes plus an interleaved center mic
  * button. The mic button does not consume a route slot in the
  * underlying navigator — it's purely an overlay button that triggers
- * router.push to /(main)/(modals)/record.
+ * router.push to /(main)/record.
  */
 export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -96,9 +96,9 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     // not yet agreed and returns false; we MUST abort here to avoid
     // a double-push. On Agree, the consent modal router.replaces to
     // /(main)/(modals)/record itself.
-    const proceed = requireAiConsent('/(main)/(modals)/record');
+    const proceed = requireAiConsent('/(main)/record');
     if (!proceed) return;
-    router.push('/(main)/(modals)/record');
+    router.push('/(main)/record');
   };
 
   return (

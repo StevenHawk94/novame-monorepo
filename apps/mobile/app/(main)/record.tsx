@@ -184,20 +184,26 @@ const phStyles = StyleSheet.create({
   frame: {
     flex: 1,
     paddingHorizontal: 32,
-    paddingTop: 80,
+    // Stage 6.RecordVisual: bumped from 80 -> 120. Record screen is a
+    // 'fullScreenModal' presentation (no swipe-down dismiss, see
+    // (main)/_layout.tsx). fullScreenModal extends to status bar so
+    // PhaseFrame needs generous top padding for breathing room.
+    paddingTop: 120,
     paddingBottom: 40,
     alignItems: 'center',
   },
   frameTitle: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'center',
   },
   frameSubtitle: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
+    // Stage 6.RecordVisual: bumped contrast from 0.4 -> 0.85 — pale white
+    // on the purple background was hard to read.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
     marginBottom: 32,
     textAlign: 'center',
   },
@@ -215,7 +221,7 @@ const phStyles = StyleSheet.create({
     width: '100%',
   },
   buttonLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });
@@ -332,8 +338,8 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
         >
           <MaterialIcons
             name="edit-note"
-            size={20}
-            color="rgba(255,255,255,0.5)"
+            size={22}
+            color="#1F1147"
           />
           <Text style={chooseStyles.typeLabel}>Type instead</Text>
         </Pressable>
@@ -353,7 +359,8 @@ const chooseStyles = StyleSheet.create({
   root: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 64,
+    // Stage 6.RecordVisual: bumped 84 -> 110 for breathing room on fullScreenModal.
+    paddingTop: 110,
     paddingBottom: 32,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -363,79 +370,84 @@ const chooseStyles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 26,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: high-contrast subtitle on purple bg.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 16,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
     paddingHorizontal: 8,
   },
   recordBlock: {
     alignItems: 'center',
   },
   micButton: {
+    // Stage 6.RecordVisual: was '#A855F7' (purple) — invisible on purple bg.
+    // Pink is the brand primary CTA color used across the record flow.
     width: 128,
     height: 128,
     borderRadius: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#A855F7',
-    shadowColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.6,
     shadowRadius: 30,
     elevation: 12,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   micLabel: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
     marginTop: 4,
   },
   recordHint: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
     fontFamily: 'Inter_400Regular',
   },
   typeBlock: {
     alignItems: 'center',
   },
   typeButton: {
+    // Stage 6.RecordVisual: white pill (secondary CTA per ux spec).
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 10,
   },
   typeLabel: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
+    color: '#1F1147',
+    fontSize: 17,
+    fontFamily: 'Inter_700Bold',
   },
   typeHint: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 10,
+    // Stage 6.RecordVisual: bumped from 0.2 (invisible) to 0.7 + size 14.
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
     fontFamily: 'Inter_400Regular',
   },
   cancelButton: {
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
   },
   cancelLabel: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
+    // Stage 6.RecordVisual: high-contrast white for the dismiss action.
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
   },
   seekKeywordPillWrap: {
     alignItems: 'center',
@@ -443,16 +455,16 @@ const chooseStyles = StyleSheet.create({
     paddingBottom: 4,
   },
   seekKeywordPill: {
+    // Stage 6.RecordVisual: white pill on purple bg with pink-tinted text
+    // for the seek-question context label.
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(168,85,247,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.35)',
+    backgroundColor: '#FFFFFF',
   },
   seekKeywordPillText: {
-    color: '#E9B0F7',
-    fontSize: 12,
+    color: '#EC4899',
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -701,19 +713,32 @@ function PhaseRecording({
       <View style={recStyles.ringWrap}>
         <Svg width={260} height={260} viewBox="0 0 260 260">
           <Defs>
+            {/* Stage 6.RecordVisual: was purple gradient (invisible on purple bg).
+                Pink gradient now contrasts against the new background. */}
             <LinearGradient id="recGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#7C3AED" />
-              <Stop offset="50%" stopColor="#A855F7" />
-              <Stop offset="100%" stopColor="#C084FC" />
+              <Stop offset="0%" stopColor="#F472B6" />
+              <Stop offset="50%" stopColor="#EC4899" />
+              <Stop offset="100%" stopColor="#DB2777" />
             </LinearGradient>
           </Defs>
-          {/* Background track */}
+          {/* White inner disc fills the ring interior so the timer digits
+              sit on a clean white surface against the purple bg.
+              Radius = RING_RADIUS - strokeWidth/2 - 4 so it tucks neatly
+              inside the progress arc without overlapping the stroke. */}
+          <Circle
+            cx={RING_CENTER}
+            cy={RING_CENTER}
+            r={RING_RADIUS - 7}
+            fill="#FFFFFF"
+          />
+          {/* Background track. Stage 6.RecordVisual: white-tint for contrast
+              against the new purple background. */}
           <Circle
             cx={RING_CENTER}
             cy={RING_CENTER}
             r={RING_RADIUS}
             fill="none"
-            stroke="rgba(168,85,247,0.15)"
+            stroke="rgba(255,255,255,0.25)"
             strokeWidth={6}
           />
           {/* Progress arc — rotated -90deg via origin so it starts at top */}
@@ -729,11 +754,11 @@ function PhaseRecording({
             strokeDashoffset={`${dashOffset}`}
             transform={`rotate(-90 ${RING_CENTER} ${RING_CENTER})`}
           />
-          {/* Glowing dot at progress tip */}
+          {/* Glowing dot at progress tip. Stage 6.RecordVisual: pink glow. */}
           {progress > 0.005 ? (
             <>
-              <Circle cx={dotX} cy={dotY} r={8} fill="rgba(168,85,247,0.3)" />
-              <Circle cx={dotX} cy={dotY} r={5} fill="#C084FC" />
+              <Circle cx={dotX} cy={dotY} r={8} fill="rgba(236,72,153,0.4)" />
+              <Circle cx={dotX} cy={dotY} r={5} fill="#F472B6" />
             </>
           ) : null}
         </Svg>
@@ -772,7 +797,7 @@ function PhaseRecording({
               { opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <MaterialIcons name="close" size={24} color="#FFFFFF" />
+            <MaterialIcons name="close" size={26} color="#1F1147" />
           </Pressable>
           <Text style={recStyles.smallLabel}>CANCEL</Text>
         </View>
@@ -787,7 +812,7 @@ function PhaseRecording({
           >
             <MaterialIcons
               name={isPaused ? 'play-arrow' : 'pause'}
-              size={32}
+              size={34}
               color="#FFFFFF"
             />
           </Pressable>
@@ -804,7 +829,7 @@ function PhaseRecording({
               { opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <MaterialIcons name="check" size={24} color="#FFFFFF" />
+            <MaterialIcons name="check" size={26} color="#1F1147" />
           </Pressable>
           <Text style={recStyles.smallLabel}>SAVE</Text>
         </View>
@@ -817,12 +842,13 @@ const recStyles = StyleSheet.create({
   root: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 56,
+    // Stage 6.RecordVisual: 56 -> 90 for fullScreenModal status-bar clearance.
+    paddingTop: 90,
     paddingBottom: 48,
   },
   topIndicator: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   topIndicatorRow: {
     flexDirection: 'row',
@@ -830,6 +856,7 @@ const recStyles = StyleSheet.create({
     gap: 8,
   },
   recDot: {
+    // Stage 6.RecordVisual: red kept — universal "recording" semantic.
     width: 10,
     height: 10,
     borderRadius: 5,
@@ -837,9 +864,9 @@ const recStyles = StyleSheet.create({
   },
   recLabel: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
   },
   ringWrap: {
     width: 260,
@@ -854,28 +881,32 @@ const recStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   timerText: {
-    color: '#FFFFFF',
-    fontSize: 56,
+    // Stage 6.RecordVisual: deep-purple text sits on the new white inner
+    // disc of the ring (white digits on white bg would be invisible).
+    color: '#1F1147',
+    fontSize: 64,
     fontFamily: 'Inter_700Bold',
     fontVariant: ['tabular-nums'],
   },
   hintBlock: {
     alignItems: 'center',
-    marginTop: 24,
-    height: 44,
+    marginTop: 28,
+    height: 52,
   },
   minHint: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
+    // Stage 6.RecordVisual: bumped contrast 0.6 -> 0.9 + size 13 -> 15.
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
     marginBottom: 4,
   },
   minHintWarning: {
-    color: '#F87171',
+    color: '#FCA5A5',
   },
   planHint: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: bumped 0.3 -> 0.7 + size 12 -> 14.
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
     fontFamily: 'Inter_400Regular',
   },
   controls: {
@@ -887,35 +918,39 @@ const recStyles = StyleSheet.create({
   },
   controlSlot: {
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   smallButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    // Stage 6.RecordVisual: secondary CTA — white background + deep-purple icon.
+    // Larger 60 (was 56) for better tap target.
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: '#FFFFFF',
   },
   bigButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    // Stage 6.RecordVisual: primary CTA — pink (was purple, invisible on
+    // purple bg). Slightly larger 68 (was 64).
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#A855F7',
-    shadowColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 8,
   },
   smallLabel: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
+    // Stage 6.RecordVisual: bumped 0.3 -> 0.85 + 10 -> 12 for legibility.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
     fontFamily: 'Inter_700Bold',
+    letterSpacing: 0.8,
   },
   errorBlock: {
     flex: 1,
@@ -925,26 +960,27 @@ const recStyles = StyleSheet.create({
   },
   errorTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Inter_700Bold',
     marginBottom: 8,
   },
   errorBody: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
     marginBottom: 24,
   },
   errorButton: {
+    // Stage 6.RecordVisual: pink primary on purple bg.
     paddingHorizontal: 32,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 16,
-    backgroundColor: '#A855F7',
+    backgroundColor: '#EC4899',
   },
   errorButtonLabel: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
   },
 });
@@ -994,7 +1030,7 @@ function PhasePublish({
       <TouchableWithoutFeedback onPress={handleDismissKeyboard} accessible={false}>
         <View style={pubStyles.body}>
           <View style={pubStyles.iconCircle}>
-            <MaterialIcons name="mic" size={32} color="#FFFFFF" />
+            <MaterialIcons name="mic" size={34} color="#1F1147" />
           </View>
           <Text style={pubStyles.title}>Recording Complete</Text>
           <Text style={pubStyles.duration}>
@@ -1024,7 +1060,8 @@ const pubStyles = StyleSheet.create({
   root: {
     flex: 1,
     paddingHorizontal: 32,
-    paddingTop: 64,
+    // Stage 6.RecordVisual: 64 -> 100 for fullScreenModal status-bar clearance.
+    paddingTop: 100,
     paddingBottom: 48,
   },
   body: {
@@ -1033,72 +1070,70 @@ const pubStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    // Stage 6.RecordVisual: white surface for the mic indicator.
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#A855F7',
-    marginBottom: 16,
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 20,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   duration: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: bumped contrast 0.4 -> 0.85.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 32,
+    marginBottom: 36,
   },
   descInput: {
+    // Stage 6.RecordVisual: white optional-description input.
     width: '100%',
     minHeight: 88,
     maxHeight: 160,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: '#1F1147',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    lineHeight: 22,
+    backgroundColor: '#FFFFFF',
     marginBottom: 16,
   },
   primaryButton: {
+    // Stage 6.RecordVisual: pink primary CTA.
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#A855F7',
-    shadowColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 8,
   },
   primaryLabel: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
   },
   cancelButton: {
     paddingVertical: 12,
-    marginTop: 16,
+    marginTop: 18,
   },
   cancelLabel: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
+    // Stage 6.RecordVisual: high-contrast white for dismiss.
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
   },
 });
 
@@ -1181,7 +1216,7 @@ function PhaseTypeInput({
                 { opacity: pressed ? 0.7 : 1 },
               ]}
             >
-              <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
+              <MaterialIcons name="arrow-back" size={24} color="#1F1147" />
             </Pressable>
             <Text style={typeStyles.headerTitle}>Unload Your Mind Here</Text>
             <View style={typeStyles.headerSpacer} />
@@ -1197,7 +1232,7 @@ function PhaseTypeInput({
               value={typedText}
               onChangeText={setTypedText}
               placeholder="What happened around you... and what shifted inside you?"
-              placeholderTextColor="rgba(255,255,255,0.2)"
+              placeholderTextColor="rgba(31,17,71,0.4)"
               maxLength={maxChars}
               multiline
               autoFocus
@@ -1237,7 +1272,8 @@ function PhaseTypeInput({
 const typeStyles = StyleSheet.create({
   root: {
     flex: 1,
-    paddingTop: 16,
+    // Stage 6.RecordVisual: 16 -> 80 for fullScreenModal status-bar clearance.
+    paddingTop: 80,
   },
   fullArea: {
     flex: 1,
@@ -1254,12 +1290,13 @@ const typeStyles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    // Stage 6.RecordVisual: white circular back button.
+    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
   },
@@ -1274,31 +1311,31 @@ const typeStyles = StyleSheet.create({
     paddingBottom: 12,
   },
   mainInput: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    // Stage 6.RecordVisual: white textarea + deep-purple text (was a
+    // semi-transparent dark surface that was invisible on the new
+    // purple bg).
+    color: '#1F1147',
+    fontSize: 17,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
+    lineHeight: 24,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
   },
   mainInputFlex: {
     // Stage 3.10.x: input fills remaining space above keyboard.
-    // minHeight ensures a usable area even before the user starts
-    // typing; flex:1 lets it grow up to the keyboard's top edge.
     flex: 1,
     minHeight: 280,
   },
   counterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 10,
   },
   counterText: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: high-contrast on purple bg.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
   },
   footer: {
@@ -1307,28 +1344,33 @@ const typeStyles = StyleSheet.create({
     paddingTop: 12,
   },
   descInput: {
+    // Stage 6.RecordVisual: white optional-description input.
     width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: '#1F1147',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     marginBottom: 12,
   },
   primaryButton: {
+    // Stage 6.RecordVisual: pink primary CTA (was purple, invisible).
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
   },
   primaryLabel: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
   },
 });
@@ -1710,29 +1752,33 @@ function PhaseAnalyzing(_props: PhaseProps) {
 
 const pubgStyles = StyleSheet.create({
   loaderHost: {
+    // Stage 6.RecordVisual: was '#0A0820' deep-near-black. Transparent now
+    // so root purple bg shows through (rootStyles.root is the source of truth).
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0A0820',
+    backgroundColor: 'transparent',
     paddingHorizontal: 24,
     gap: 12,
   },
   loaderTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
     marginTop: 32,
   },
   loaderSub: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: 0.7 -> #FFFFFF for legibility on purple bg.
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
   },
   loaderHint: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: 0.4 -> 0.85.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -1745,47 +1791,56 @@ const pubgStyles = StyleSheet.create({
   },
   label1: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Inter_700Bold',
     marginTop: 12,
     textAlign: 'center',
   },
   label2: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: 0.7 -> #FFFFFF.
+    color: '#FFFFFF',
+    fontSize: 15,
     fontFamily: 'Inter_500Medium',
     textAlign: 'center',
   },
   sublabel: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: 0.4 -> 0.85.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
   },
   errorTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Inter_700Bold',
     marginBottom: 8,
     textAlign: 'center',
   },
   errorBody: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: 0.5 -> #FFFFFF.
+    color: '#FFFFFF',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
+    lineHeight: 23,
     textAlign: 'center',
     marginBottom: 24,
   },
   retryButton: {
+    // Stage 6.RecordVisual: pink primary CTA.
     paddingHorizontal: 32,
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
   },
   retryLabel: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
   },
   closeButton: {
@@ -1793,9 +1848,10 @@ const pubgStyles = StyleSheet.create({
     marginTop: 8,
   },
   closeLabel: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
+    // Stage 6.RecordVisual: 0.4 (invisible) -> #FFFFFF.
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
 });
 
@@ -1987,20 +2043,21 @@ const insightStyles = StyleSheet.create({
     paddingBottom: 32,
   },
   doneButton: {
+    // Stage 6.RecordVisual: pink primary CTA (was '#A855F7' purple, invisible).
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#A855F7',
-    shadowColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 8,
   },
   doneLabel: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
   },
 });
@@ -2046,59 +2103,69 @@ const denyStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 32,
   },
   card: {
+    // Stage 6.RecordVisual: card matches paywall-purple brand tone,
+    // pink-tinted border (was '#1A1040' near-black with purple border).
     width: '100%',
     maxWidth: 360,
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingVertical: 32,
     alignItems: 'center',
-    backgroundColor: '#1A1040',
+    backgroundColor: '#7C3AED',
     borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.3)',
+    borderColor: 'rgba(236,72,153,0.4)',
   },
   emoji: {
-    fontSize: 36,
-    marginBottom: 12,
+    fontSize: 42,
+    marginBottom: 14,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'center',
   },
   body: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+    // Stage 6.RecordVisual: 0.5 -> #FFFFFF for legibility.
+    color: '#FFFFFF',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
+    lineHeight: 23,
     textAlign: 'center',
     marginBottom: 24,
   },
   primaryButton: {
+    // Stage 6.RecordVisual: pink primary CTA (was purple, invisible on bg).
     width: '100%',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#A855F7',
+    backgroundColor: '#EC4899',
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
     marginBottom: 12,
   },
   primaryLabel: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Inter_700Bold',
   },
   cancelButton: {
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   cancelLabel: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
+    // Stage 6.RecordVisual: 0.4 (invisible) -> #FFFFFF.
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
   },
 });
 
@@ -2241,6 +2308,9 @@ export default function RecordModal() {
 const rootStyles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0820',
+    // Stage 6.RecordVisual: paywall-purple background (was '#0A0820' deep-near-black).
+    // Matches the brand purple used in subscription-paywall + ai-consent + ExpBanner.
+    // White text + pink CTAs are layered on top via the per-phase styles below.
+    backgroundColor: '#7C3AED',
   },
 });

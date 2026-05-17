@@ -143,12 +143,13 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
         <View style={styles.scoreCol}>
           <View style={styles.scoreRingWrap}>
             <Svg width={90} height={90} viewBox="0 0 90 90">
+              {/* Stage 6.RecordVisual: pink ring on purple bg + brighter track. */}
               <Circle
                 cx={45}
                 cy={45}
                 r={INSIGHT_RING_R}
                 fill="none"
-                stroke="rgba(255,255,255,0.1)"
+                stroke="rgba(255,255,255,0.25)"
                 strokeWidth={6}
               />
               <Circle
@@ -156,7 +157,7 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
                 cy={45}
                 r={INSIGHT_RING_R}
                 fill="none"
-                stroke="#A855F7"
+                stroke="#EC4899"
                 strokeWidth={6}
                 strokeLinecap="round"
                 strokeDasharray={`${INSIGHT_RING_C}`}
@@ -176,7 +177,7 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
         </View>
 
         <View style={styles.emotionCol}>
-          <MaterialIcons name="sentiment-satisfied" size={36} color="#C084FC" />
+          <MaterialIcons name="sentiment-satisfied" size={36} color="#FFFFFF" />
           <Text style={styles.emotionCaption}>Wisdom Emotion:</Text>
           <Text style={styles.emotionValue}>{emotion || 'Thoughtful'}</Text>
         </View>
@@ -196,7 +197,7 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
       {b.body ? (
         <View style={styles.glassCard}>
           <View style={styles.glassHeader}>
-            <MaterialIcons name="psychology" size={18} color="#C084FC" />
+            <MaterialIcons name="psychology" size={18} color="#FFFFFF" />
             {b.title ? <Text style={styles.glassTitle}>{b.title}</Text> : null}
           </View>
           <Text style={styles.glassBody}>{b.body}</Text>
@@ -206,7 +207,7 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
       {c.body ? (
         <View style={styles.glassCard}>
           <View style={styles.glassHeader}>
-            <MaterialIcons name="school" size={18} color="#C084FC" />
+            <MaterialIcons name="school" size={18} color="#FFFFFF" />
             {c.title ? <Text style={styles.glassTitle}>{c.title}</Text> : null}
           </View>
           <Text style={styles.glassBody}>{c.body}</Text>
@@ -243,22 +244,23 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    // Stage 6.RecordVisual: 32 -> 80 for fullScreenModal status-bar clearance.
+    paddingTop: 80,
     paddingBottom: 16,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 24,
-    letterSpacing: 1,
+    marginBottom: 28,
+    letterSpacing: 1.5,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   scoreCol: {
     alignItems: 'center',
@@ -276,37 +278,42 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Inter_700Bold',
   },
   scoreMax: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 9,
+    // Stage 6.RecordVisual: bumped 0.4 -> 0.85 for purple bg legibility.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 11,
     fontFamily: 'Inter_400Regular',
   },
   scoreLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
+    gap: 6,
+    marginTop: 10,
   },
   scoreLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: 0.6 -> 0.85 + bumped 12 -> 13.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
   },
   emotionCol: {
     alignItems: 'center',
   },
   emotionCaption: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 10,
+    // Stage 6.RecordVisual: 0.5 -> 0.85 + size 10 -> 12.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
     fontFamily: 'Inter_400Regular',
-    marginTop: 4,
+    marginTop: 6,
   },
   emotionValue: {
-    color: '#C084FC',
-    fontSize: 13,
+    // Stage 6.RecordVisual: was light purple #C084FC (low contrast on bg).
+    // Now pure white + bumped 13 -> 15.
+    color: '#FFFFFF',
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
     marginTop: 2,
@@ -316,19 +323,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   flipHint: {
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 10,
+    // Stage 6.RecordVisual: 0.2 (invisible) -> 0.85 + size 10 -> 12.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
     marginBottom: 24,
   },
   glassCard: {
+    // Stage 6.RecordVisual: slightly more solid for legibility on purple bg.
     width: '100%',
     padding: 20,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
   glassHeader: {
@@ -339,46 +348,48 @@ const styles = StyleSheet.create({
   },
   glassTitle: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_700Bold',
     flexShrink: 1,
   },
   glassBody: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   tasksCard: {
     width: '100%',
     padding: 20,
     borderRadius: 18,
-    backgroundColor: 'rgba(168,85,247,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.15)',
+    borderColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
   taskRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   taskBolt: {
     color: '#FACC15',
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 2,
   },
   taskText: {
+    // Stage 6.RecordVisual: 0.7 -> #FFFFFF for legibility.
     flex: 1,
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
+    lineHeight: 23,
   },
   taskHint: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
+    // Stage 6.RecordVisual: 0.3 (invisible) -> 0.85.
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
     fontFamily: 'Inter_400Regular',
     marginTop: 12,
   },
