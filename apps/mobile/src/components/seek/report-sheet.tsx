@@ -98,7 +98,7 @@ export const ReportSheet = forwardRef<ReportSheetRef, ReportSheetProps>(
       dismiss: () => internalRef.current?.dismiss(),
     }));
 
-    const snapPoints = useMemo(() => ['85%'], []);
+    const snapPoints = useMemo(() => ['95%'], []);
 
     const renderBackdrop = useCallback(
       (backdropProps: BottomSheetBackdropProps) => (

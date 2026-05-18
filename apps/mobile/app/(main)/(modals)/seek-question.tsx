@@ -37,6 +37,7 @@ import { apiClient } from '@/lib/api';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
 import { blockWisdomCard } from '@/lib/wisdom-card-blocks';
 import { reportWisdomCard } from '@/lib/wisdom-card-reports';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import {
   ReportSheet,
   type ReportSheetRef,
@@ -214,6 +215,7 @@ export default function SeekQuestionScreen() {
   };
 
   return (
+    <BottomSheetModalProvider>
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Top bar */}
       <View style={styles.topBar}>
@@ -285,9 +287,13 @@ export default function SeekQuestionScreen() {
         </View>
       ) : null}
 
-      {/* Report sheet -- mounted at root level so it overlays the
-          FlatList + bottom CTA. Apple App Store Guideline 1.2 (UGC
-          moderation) requires this report mechanism. */}
+      {/* Report sheet -- mounted inside a local BottomSheetModalProvider
+          so its portal lives in THIS modal's view hierarchy, not the
+          parent root (which is hidden behind the native modal). Without
+          the local Provider, gorhom's portal would render under the
+          modal window and the sheet would be invisible / unreachable.
+          Apple App Store Guideline 1.2 (UGC moderation) requires this
+          report mechanism. */}
       <ReportSheet
         ref={reportSheetRef}
         onSubmit={(cardId, reason, detail) =>
@@ -295,6 +301,7 @@ export default function SeekQuestionScreen() {
         }
       />
     </View>
+    </BottomSheetModalProvider>
   );
 }
 

@@ -39,6 +39,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -74,6 +75,22 @@ export default function AiConsentModal() {
   const handleToggle = () => {
     void haptics.light();
     setAgreed((prev) => !prev);
+  };
+
+  // Open the AI-features explainer page in the user's external
+  // browser. We intentionally use Linking.openURL (not a WebView /
+  // expo-web-browser) so the page renders with the user's familiar
+  // browser chrome + their saved cookies / dark mode preferences,
+  // and so the consent modal stays parked in the background ready
+  // for the user to return and finish the agree flow.
+  const handleLearnMore = () => {
+    void haptics.light();
+    void Linking.openURL('https://novameapp.com/ai-features').catch(() => {
+      Alert.alert(
+        'Could not open page',
+        'Please visit novameapp.com/ai-features in your browser.',
+      );
+    });
   };
 
   const handleAgree = async () => {
@@ -201,6 +218,22 @@ export default function AiConsentModal() {
         </Pressable>
 
         <Pressable
+          onPress={handleLearnMore}
+          style={({ pressed }) => [
+            styles.learnMoreRow,
+            pressed && { opacity: 0.6 },
+          ]}
+          hitSlop={6}
+        >
+          <Text style={styles.learnMoreText}>Learn More</Text>
+          <MaterialIcons
+            name="open-in-new"
+            size={14}
+            color="rgba(255,255,255,0.75)"
+          />
+        </Pressable>
+
+        <Pressable
           onPress={handleAgree}
           disabled={!agreed || busy}
           style={({ pressed }) => [
@@ -323,6 +356,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '500',
+  },
+  learnMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    marginTop: -10,
+    marginBottom: 16,
+  },
+  learnMoreText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(255,255,255,0.5)',
   },
   ctaBtn: {
     paddingVertical: 16,
