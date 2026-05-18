@@ -18,7 +18,7 @@
  *   - Bottom: fixed Offer Wisdom CTA (router.push to record screen
  *     pre-bound with this question's keyword)
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -36,6 +36,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient } from '@/lib/api';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
 import { blockWisdomCard } from '@/lib/wisdom-card-blocks';
+import { reportWisdomCard } from '@/lib/wisdom-card-reports';
+import {
+  ReportSheet,
+  type ReportSheetRef,
+} from '@/components/seek/report-sheet';
 import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
 import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
@@ -70,6 +75,7 @@ export default function SeekQuestionScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const reportSheetRef = useRef<ReportSheetRef>(null);
 
   // Resolve current user id once (used by save guard + API).
   useEffect(() => {
@@ -139,6 +145,57 @@ export default function SeekQuestionScreen() {
     }
   };
 
+  // Open the report sheet for the given card. The sheet collects
+  // reason + detail, then calls handleReportSubmit on Submit.
+  const onReport = (card: SeekCard) => {
+    reportSheetRef.current?.present(card.id);
+  };
+
+  // Called by ReportSheet after the user selects a reason and submits.
+  // Posts the report to the server (which also auto-blocks the card
+  // for this user per Apple-compliant UGC moderation flow), then
+  // optimistically drops the card from the list with rollback on
+  // failure -- same pattern as onBlock.
+  //
+  // Apple App Store Guideline 1.2 compliance: we surface a confirmation
+  // dialog promising 24-hour admin review so users know reports are
+  // taken seriously, not silently dropped.
+  const handleReportSubmit = async (
+    cardId: string,
+    reason: Parameters<typeof reportWisdomCard>[2],
+    detail: string,
+  ) => {
+    if (!userId) return;
+    const snapshot = cards;
+    const idx = snapshot.findIndex((c) => c.id === cardId);
+    const original = snapshot[idx];
+    // Optimistic remove.
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+    const result = await reportWisdomCard(userId, cardId, reason, detail);
+    if (!result.success) {
+      // Roll back to original list position.
+      if (original) {
+        setCards((prev) => {
+          const next = [...prev];
+          const safeIdx = Math.min(idx, next.length);
+          next.splice(safeIdx, 0, original);
+          return next;
+        });
+      }
+      Alert.alert(
+        'Could not submit report',
+        result.error ?? 'Please try again.',
+      );
+      return;
+    }
+    Alert.alert(
+      'Report submitted',
+      result.alreadyReported
+        ? 'You\u2019ve already reported this wisdom. Our team will review it within 24 hours.'
+        : 'Thanks for letting us know. Our team will review this within 24 hours and take action if it violates our community guidelines.',
+    );
+  };
+
   const offerWisdom = () => {
     void haptics.light();
     if (!question) return;
@@ -205,6 +262,7 @@ export default function SeekQuestionScreen() {
               cardWidth={CARD_WIDTH}
               canBlock={!!userId && item.user_id !== userId}
               onBlock={() => void onBlock(item)}
+              onReport={() => onReport(item)}
             />
           )}
         />
@@ -226,6 +284,16 @@ export default function SeekQuestionScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      {/* Report sheet -- mounted at root level so it overlays the
+          FlatList + bottom CTA. Apple App Store Guideline 1.2 (UGC
+          moderation) requires this report mechanism. */}
+      <ReportSheet
+        ref={reportSheetRef}
+        onSubmit={(cardId, reason, detail) =>
+          void handleReportSubmit(cardId, reason, detail)
+        }
+      />
     </View>
   );
 }

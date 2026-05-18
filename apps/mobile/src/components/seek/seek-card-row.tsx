@@ -32,6 +32,7 @@ export type SeekCardRowProps = {
   cardWidth: number;
   canBlock: boolean;
   onBlock: () => void;
+  onReport: () => void;
 };
 
 export function SeekCardRow({
@@ -39,6 +40,7 @@ export function SeekCardRow({
   cardWidth,
   canBlock,
   onBlock,
+  onReport,
 }: SeekCardRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -63,6 +65,15 @@ export function SeekCardRow({
     void haptics.medium();
     setMenuOpen(false);
     onBlock();
+  };
+
+  const handleReport = () => {
+    // Report is a more serious action than Block -- block is personal
+    // filtering, report flags content for admin review per Apple
+    // App Store Guideline 1.2 (UGC moderation, 24-hour response).
+    void haptics.medium();
+    setMenuOpen(false);
+    onReport();
   };
 
   return (
@@ -128,6 +139,17 @@ export function SeekCardRow({
             style={styles.menuCard}
             onPress={(e) => e.stopPropagation()}
           >
+            <Pressable
+              onPress={handleReport}
+              style={({ pressed }) => [
+                styles.menuItem,
+                pressed && styles.menuItemPressed,
+              ]}
+            >
+              <MaterialIcons name="flag" size={20} color="#F97316" />
+              <Text style={styles.menuItemText}>Report this wisdom</Text>
+            </Pressable>
+            <View style={styles.menuDivider} />
             <Pressable
               onPress={handleBlock}
               style={({ pressed }) => [
@@ -241,6 +263,12 @@ const styles = StyleSheet.create({
   },
   menuItemPressed: {
     backgroundColor: 'rgba(239,68,68,0.08)',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 4,
+    marginHorizontal: 16,
   },
   menuItemText: {
     color: '#FFFFFF',
