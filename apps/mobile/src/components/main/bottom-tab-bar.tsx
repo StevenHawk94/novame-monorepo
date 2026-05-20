@@ -167,8 +167,30 @@ function MicButton({ onPress }: MicButtonProps): ReactNode {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#0A0A0F',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.04)',
+    borderTopWidth: 0,
+    // Subpixel-rounding fix (industry-standard for this exact bug):
+    //
+    // React Native's iOS layout engine computes positions in floating-
+    // point logical pixels, then rounds at render time. When the screen
+    // height divides unevenly across nested containers (root paddingTop +
+    // segHeader + Carousel + BottomTab paddingBottom), the boundary
+    // between the Carousel's bottom and the BottomTab's top can land
+    // on a 0.5px subpixel position. The renderer can't draw half a
+    // physical pixel, so it leaves a 0.5-1px gap that exposes
+    // whatever is BEHIND -- in our case, the purple root bg, which
+    // shows as a thin purple line above the tab bar.
+    //
+    // Reported as a known iOS behavior in multiple facebook/react-
+    // native issues (#12681, #29010, ...). The accepted fix in the
+    // RN community is to micro-overlap adjacent containers by 1 logical
+    // pixel via marginTop: -1 or transform translateY -0.5, which
+    // guarantees the lower container covers any subpixel gap above
+    // it. Choosing marginTop here because it's pure layout (no
+    // transform compositing overhead) and works on all platforms.
+    // Visual concealment instead of margin trick: see growth.tsx
+    // for the root-bg-matches-tabBar-bg approach that eliminates
+    // the visible 1px subpixel gap line.
+    marginTop: 0,
   },
   row: {
     flexDirection: 'row',

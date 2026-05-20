@@ -51,11 +51,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { getExpNeeded } from '@novame/core';
 
-const TASK_BANNER_SOURCE = require('../../../assets/images/growth/task-banner.webp');
-
-const BANNER_ASPECT = 460 / 130;
-const BANNER_MAX_WIDTH = 280;
-
 // First fill (or same-level fill) gets the full 800ms for celebration.
 // Subsequent fills in a multi-level burst are compressed so a +3 lv
 // gain doesn't drag past ~2s total.
@@ -426,18 +421,9 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.titleBannerWrap}>
-        <Image
-          source={TASK_BANNER_SOURCE}
-          style={styles.bannerImg}
-          resizeMode="contain"
-        />
-        <Text style={styles.titleText}>Grow with Your Pal</Text>
-      </View>
-
       <View style={styles.expCard}>
         <View style={styles.barLabelRow}>
-          <Text style={styles.lvLabel}>Lv. {displayLevel}</Text>
+          <Text style={styles.lvLabel}>Lv {displayLevel}</Text>
           <Text style={styles.expLabel}>{expLabel}</Text>
         </View>
         <View style={styles.barTrack}>
@@ -450,65 +436,40 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 16,
-    marginTop: 12,
-  },
-  titleBannerWrap: {
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: BANNER_MAX_WIDTH,
-    aspectRatio: BANNER_ASPECT,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  bannerImg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  titleText: {
-    color: '#1F1F1F',
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: -16,
+    paddingHorizontal: 0,
+    marginTop: 0,
   },
   expCard: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    backgroundColor: '#1A0F3D',
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
   },
   barLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 14,
   },
   lvLabel: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '800',
   },
   expLabel: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
   },
   barTrack: {
-    height: 10,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 999,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    backgroundColor: '#F5641F',
+    backgroundColor: '#F59E0B',
     borderRadius: 999,
   },
 });

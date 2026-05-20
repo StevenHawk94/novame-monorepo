@@ -82,7 +82,7 @@ export function WisdomLogRow({
           <MaterialCommunityIcons
             name="book-open-variant"
             size={18}
-            color="#FFFFFF"
+            color="#1F1147"
           />
           <Text style={styles.actionText}>Read</Text>
         </Pressable>
@@ -104,12 +104,10 @@ export function WisdomLogRow({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -141,12 +139,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   author: {
-    color: '#FFFFFF',
+    color: '#1F1147',
     fontSize: 15,
     fontWeight: '700',
   },
   time: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(0,0,0,0.45)',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -154,7 +152,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   preview: {
-    color: '#FFFFFF',
+    color: '#1F1147',
     fontSize: 15,
     lineHeight: 21,
     marginBottom: 14,
@@ -173,21 +171,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   actionBtnSecondary: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   actionBtnPrimary: {
-    backgroundColor: 'rgba(124, 58, 237, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(168, 85, 247, 0.35)',
+    backgroundColor: '#7C3AED',
   },
   actionText: {
-    color: '#FFFFFF',
+    color: '#1F1147',
     fontSize: 14,
     fontWeight: '700',
   },
   actionTextInsight: {
-    color: '#C4B5FD',
+    color: '#FFFFFF',
   },
 });

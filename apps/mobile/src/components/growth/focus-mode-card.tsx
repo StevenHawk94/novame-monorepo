@@ -45,10 +45,11 @@ import Animated, {
 // Bundle asset for the Focus Mode icon. Resolved via Metro's asset
 // pipeline (require returns a numeric module id usable as <Image>
 // source).
-const FOCUS_ICON_SOURCE = require('../../../assets/images/growth/focus-icon.webp');
+const FOCUS_ICON_SOURCE = require('../../../assets/images/growth/focus-icon.png');
 
 
 import type { CharacterMode } from '@/lib/constants';
+import { WP_STUDY_DECAY_PER_HOUR } from '@/lib/constants';
 
 export type FocusModeCardProps = {
   mode: CharacterMode;
@@ -62,12 +63,23 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
   const wpZero = wp <= 0;
   const canStart = !isStudy && !wpZero && !busy;
 
-  const buttonLabel = isStudy ? 'In Progress' : wpZero ? 'WP empty' : 'Start';
+  const buttonLabel = isStudy ? 'XP Boost Active' : wpZero ? 'Low WP' : 'Start';
+
+  // Countdown when study mode is active: time remaining until WP hits 0.
+  // wp / decayPerHour = hours remaining. Recomputed on every render
+  // (parent re-renders ~every 30s via wpVisual decay tick), so the
+  // displayed countdown stays roughly in sync with the bar.
+  const studyHoursLeft = isStudy && wp > 0 ? wp / WP_STUDY_DECAY_PER_HOUR : 0;
+  const studyTotalMinutes = Math.max(0, Math.round(studyHoursLeft * 60));
+  const studyH = Math.floor(studyTotalMinutes / 60);
+  const studyM = studyTotalMinutes % 60;
+  const studyCountdown = `${studyH}h ${studyM}m`;
+
   const sublabel = isStudy
-    ? 'Earning XP — locked until WP runs out'
+    ? `XP is gaining faster, Your Pal will finish study in ${studyCountdown}`
     : wpZero
-      ? 'Wait for WP to recover, then study to earn XP fast'
-      : 'Turn on to gain XP faster';
+      ? 'Recover Your WP to Start'
+      : 'Start to boost your XP faster';
 
   // Breathing animation SharedValue. Oscillates 0 <-> 1 when canStart,
   // held at 0 otherwise. Cancellation is explicit on the else branch
@@ -95,26 +107,21 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
     shadowOpacity: interpolate(breath.value, [0, 1], [0.4, 0.7]),
   }));
 
-  // Color palette per state. isStudy uses emerald (matches the green
-  // "active/saved" chips used elsewhere e.g. in subscription-paywall).
+  // Color palette per state — new design figure 1:
+  //   canStart (wp>=10, mode='play')  -> purple, breathing
+  //   isStudy (study mode active)     -> green, "XP Boost Active"
+  //   wpZero (wp<10)                  -> red, "Low WP" (was grey)
   const buttonColors: [string, string] = canStart
-    ? ['#FB923C', '#F97316']
+    ? ['#8B5CF6', '#7C3AED']
     : isStudy
       ? ['#34D399', '#10B981']
-      : ['#5B5478', '#4B4565'];
+      : ['#F87171', '#EF4444'];
 
-  // Shadow color tracks the gradient so the bloom feels native to the
-  // current button color, not a generic orange under a green button.
-  const shadowColor = canStart ? '#F97316' : isStudy ? '#10B981' : 'transparent';
+  const shadowColor = canStart ? '#7C3AED' : isStudy ? '#10B981' : '#EF4444';
 
   return (
     <View style={styles.cardWrap}>
-      <LinearGradient
-        colors={['#9333EA', '#7C3AED']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.card}
-      >
+      <View style={styles.card}>
         <View style={styles.iconBubble}>
           {FOCUS_ICON_SOURCE ? (
             <Image
@@ -127,7 +134,7 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
           )}
         </View>
         <View style={styles.textBlock}>
-          <Text style={styles.title}>Focus Mode</Text>
+          <Text style={styles.title}>Study Mode</Text>
           <Text style={styles.sub}>{sublabel}</Text>
         </View>
         {/* Outer Animated.View carries breath animation (scale + shadow).
@@ -156,15 +163,15 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
             </LinearGradient>
           </Pressable>
         </Animated.View>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   cardWrap: {
-    paddingHorizontal: 16,
-    marginTop: 18,
+    paddingHorizontal: 0,
+    marginTop: 14,
   },
   card: {
     flexDirection: 'row',
@@ -172,16 +179,17 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 16,
     paddingHorizontal: 14,
-    borderRadius: 22,
+    borderRadius: 18,
+    backgroundColor: '#1A0F3D',
   },
   iconBubble: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: 12,
-    backgroundColor: '#F5B042',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   iconImg: {
     width: '100%',

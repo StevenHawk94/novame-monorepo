@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -69,6 +70,11 @@ import {
   emitRatingPromptRequest,
 } from '@/lib/rating-prompt';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
+
+// New design figure 1: hero illustration (samurai + black cat) sits to
+// the right of the "Finish Your Tasks to Power Up Your Pal and Yourself!"
+// title on the purple top section.
+const CHARACTERS_IMAGE_SOURCE = require('../../../assets/images/growth/characters.png');
 
 type SubTab = 'tasks' | 'logs';
 
@@ -488,15 +494,31 @@ export default function GrowthTab() {
   const mode = charState?.mode ?? 'play';
 
   // Carousel needs an explicit height. Compute available vertical
-  // space: screen height minus top safe area, sub-tab header
-  // (~56pt), and bottom tab bar (~90pt incl. safe-area).
+  // space: screen height minus top safe area, sub-tab header,
+  // and bottom tab bar.
+  //
+  // Bottom tab bar real height (see bottom-tab-bar.tsx):
+  //   row.height: 56
+  //   borderTopWidth: 1
+  //   paddingBottom: insets.bottom (home indicator safe area, 34
+  //                                  on iPhone 13 Pro Max, 0 on SE)
+  // Total = 56 + 1 + insets.bottom
+  //
+  // Previously the bottomTab height was hard-coded to 90, which
+  // missed the 1px borderTopWidth -- the resulting 1px gap between
+  // Carousel bottom and BottomTab top exposed the purple root,
+  // showing as a thin purple line above the tab bar across both
+  // sub-tabs (since root bg is purple).
   const screenH = Dimensions.get('window').height;
   const headerH = 56;
-  const bottomTabH = 90;
+  const bottomTabH = 56 + 1 + insets.bottom;
   const carouselHeight = screenH - insets.top - headerH - bottomTabH;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={styles.root}>
+      {/* Status bar area: purple, matches segHeader. Sized to the top
+          safe-area inset so it covers exactly the status bar region. */}
+      <View style={[styles.statusBarBg, { height: insets.top }]} />
       {/* Sub-tab segmented header */}
       <View style={styles.segHeader}>
         <PagerTabBar
@@ -530,19 +552,47 @@ export default function GrowthTab() {
         }}
         renderItem={({ index }) =>
           index === 0 ? (
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <ExpBanner level={level} expCurrent={expCurrent} expNeeded={expNeeded} />
-              <FocusModeCard
-                mode={mode}
-                wp={wpVisual}
-                busy={switchingMode}
-                onStart={onStartFocus}
+            <View style={styles.myLogsPurpleBackdrop}>
+              {/* Bottom-anchored dark overlay -- layered design pattern
+                  for "purple top + dark bottom from any height" without
+                  size math. The overlay sits below the ScrollView in
+                  z-order (it's rendered first). ScrollView content has
+                  its own purple hero + dark tasksBlock bg; the overlay
+                  fills any gap between the last task and the bottom
+                  tab bar, plus catches the bottom bounce area.
+                  Root bg (purple) handles the top bounce area. */}
+              <View
+                style={styles.bottomDarkOverlay}
+                pointerEvents="none"
               />
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+              {/* Purple hero block -- "Finish Your Tasks to Power Up Your Pal
+                  and Yourself!" title + characters illustration + Lv card +
+                  Focus Mode card. Background is loading-page purple #7C3AED. */}
+              <View style={styles.heroBlock}>
+                <View style={styles.heroTitleRow}>
+                  <Text style={styles.heroTitle}>
+                    Finish Your Tasks to Power Up Your Pal and Yourself!
+                  </Text>
+                  <Image
+                    source={CHARACTERS_IMAGE_SOURCE}
+                    style={styles.heroIllustration}
+                    resizeMode="contain"
+                  />
+                </View>
+                <ExpBanner level={level} expCurrent={expCurrent} expNeeded={expNeeded} />
+                <FocusModeCard
+                  mode={mode}
+                  wp={wpVisual}
+                  busy={switchingMode}
+                  onStart={onStartFocus}
+                />
+              </View>
               <View style={styles.tasksBlock}>
-                <Text style={styles.tasksHeader}>Daily Tasks</Text>
+                <Text style={styles.tasksHeader}>Growth Tasks</Text>
                 {tasksLoading ? (
                   <View style={styles.tasksLoading}>
                     <ActivityIndicator size="small" color="#A855F7" />
@@ -566,12 +616,14 @@ export default function GrowthTab() {
                   ))
                 )}
               </View>
-            </ScrollView>
+              </ScrollView>
+            </View>
           ) : (
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
+            <View style={styles.myLogsPurpleBackdrop}>
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
               <View style={styles.logsBlock}>
                 {logsLoading && !logsLoaded ? (
                   <View style={styles.logsCenter}>
@@ -599,7 +651,8 @@ export default function GrowthTab() {
                   ))
                 )}
               </View>
-            </ScrollView>
+              </ScrollView>
+            </View>
           )
         }
       />
@@ -657,18 +710,102 @@ function TaskRow({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    // Dark bg matches BottomTabBar's #0A0A0F. The 1px subpixel gap
+    // between root and BottomTabBar (RN iOS layout rounding) now
+    // shows the same dark color as the tab bar -- visually invisible.
+    // The purple top region is provided by statusBarBg + segHeader +
+    // hero block (each with their own purple bg), so the user never
+    // sees the dark root color at the top.
+    backgroundColor: '#0A0A0F',
+  },
+  // Purple status-bar overlay: covers the top safe-area inset region
+  // so the dark root color is never visible above the segHeader.
+  // Height is set inline from useSafeAreaInsets().top.
+  statusBarBg: {
+    backgroundColor: '#7C3AED',
+  },
+  // My Logs needs purple body bg since root is no longer purple.
+  myLogsPurpleBackdrop: {
+    flex: 1,
+    backgroundColor: '#7C3AED',
+  },
+  // Layered overlay pattern:
+  //   tabPane: full-flex container, transparent (lets root's purple
+  //            show through during top bounce + as default).
+  //   bottomDarkOverlay: absolute-positioned dark fill anchored to
+  //            the bottom of tabPane. Catches any space below
+  //            ScrollView content + the bottom bounce area.
+  //   ScrollView (sibling, rendered after) sits on top with its
+  //            own hero (purple) + tasksBlock (dark) backgrounds.
+  // Result: purple at top, dark at bottom, automatically, without
+  //         any size math or onLayout measurements.
+  tabPane: {
+    flex: 1,
+  },
+  bottomDarkOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // 70% screen-height is a generous cushion: even on small phones
+    // it covers the bottom-tab region + below any reasonable task
+    // list, while on big phones it stays well below the hero. The
+    // ScrollView's own dark tasksBlock paints over this overlay,
+    // so the actual visible boundary is dictated by content, not
+    // by this height value.
+    height: '70%',
     backgroundColor: '#1A0F3D',
   },
   segHeader: {
     paddingHorizontal: 24,
     paddingTop: 8,
+    backgroundColor: '#7C3AED',
   },
   scrollContent: {
-    paddingBottom: 120,
+    // Method C: backdrop View behind ScrollView provides the bottom
+    // color fill. ScrollView content just stacks intrinsically; no
+    // flexGrow + no paddingBottom needed -- the wrapping View
+    // (myTasksContainer or myLogsContainer) handles all the "fill
+    // to bottom" responsibility.
+  },
+  // Purple hero block. Height is intrinsic (driven by the title
+  // wrap + illustration + Lv card + Focus Mode card). On any screen
+  // size this just naturally takes the space it needs.
+  heroBlock: {
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 18,
+  },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 18,
+    gap: 12,
+  },
+  heroTitle: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 26,
+  },
+  heroIllustration: {
+    width: 130,
+    height: 130,
   },
   tasksBlock: {
     paddingHorizontal: 16,
-    marginTop: 24,
+    paddingTop: 20,
+    paddingBottom: 140,
+    marginTop: 0,
+    // Dark bg here paints over the bottom overlay starting from the
+    // end of the hero block (no gap between hero and tasks). The
+    // bottom overlay then continues the dark color past the last
+    // task all the way down.
+    backgroundColor: '#1A0F3D',
   },
   tasksHeader: {
     color: '#FFFFFF',
@@ -742,6 +879,7 @@ const styles = StyleSheet.create({
   logsBlock: {
     paddingHorizontal: 16,
     marginTop: 24,
+    paddingBottom: 140,
   },
   logsCenter: {
     paddingVertical: 40,
