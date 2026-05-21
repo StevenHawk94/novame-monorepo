@@ -8,17 +8,72 @@
 import { apiClient } from './api';
 import { storage } from './storage';
 
+/**
+ * Stage 6 Wisdom Insight redesign — 3-part Core Reframing.
+ *
+ * Replaces the previous single-block card_b / card_c structure with
+ * three distinct micro-paragraphs, each with its own dynamic emoji
+ * title (🔍 mirror_hook / 🔄 flipped_lens / 🌱 permission_slip).
+ *
+ * Persisted as a single jsonb column `reframe` on wisdom_cards.
+ * Null on legacy wisdoms created before Stage 6 — UI falls back to
+ * rendering card_b via splitTitleBody() in that case.
+ */
+export type ReframeData = {
+  mirror_hook: { title: string; body: string };
+  flipped_lens: { title: string; body: string };
+  permission_slip: { title: string; body: string };
+};
+
+/**
+ * Stage 6 Wisdom Insight redesign — Self-Reflection Question.
+ *
+ * Two-part payload: an empathetic 1-2 sentence validation anchor,
+ * then ONE provocative deep question. AI branches dimension by
+ * emotional tone (negative → Secondary Gain / Illusion of Control /
+ * Comfort of Misery / Bedrock Fear; positive → Hidden Recipe /
+ * Future Lows / Unconditional Self / Joy Boundaries).
+ *
+ * Persisted as jsonb column `reflective_question`. Null on legacy
+ * wisdoms — UI hides the "Ask Yourself This" card entirely in that
+ * case.
+ */
+export type ReflectiveQuestion = {
+  validation: string;
+  question: string;
+};
+
+/**
+ * Aspire impact entry — produced by AI when the wisdom touches one
+ * of the user's aspire keywords. Drives the progress bar in the
+ * "How The Community React" band on the insight page.
+ */
+export type AspireImpact = {
+  keyword: string;
+  direction: 'positive' | 'negative';
+};
+
 export type WisdomCardEmbed = {
   id: string;
   keyword_id: string | null;
   quote_short: string | null;
   insight_full: string | null;
+  // Stage 6: wisdom_score retained for legacy wisdoms (UI no longer
+  // renders a score ring on the redesigned insight page). New
+  // wisdoms write null here.
   wisdom_score: number | null;
   wisdom_emotion: string | null;
+  // Stage 6 legacy columns. New wisdoms write null here and use the
+  // reframe field below instead. Old wisdoms still flow through
+  // these so My Logs can re-render them.
   card_b: string | null;
   card_c: string | null;
   task_1: string | null;
   task_2: string | null;
+  // Stage 6 new columns.
+  reframe: ReframeData | null;
+  reflective_question: ReflectiveQuestion | null;
+  aspire_impacts: AspireImpact[] | null;
 };
 
 export type WisdomLog = {

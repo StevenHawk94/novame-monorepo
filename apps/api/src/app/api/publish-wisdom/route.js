@@ -299,6 +299,7 @@ export async function POST(request) {
 
     // Generate wisdom insight card — direct call (no HTTP self-fetch)
     let generatedCard = null
+    let generatedAspireScores = null
     let cardGenerationFailed = false
     if (wisdom.id && transcribedText && transcribedText.length > 5) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
@@ -307,6 +308,11 @@ export async function POST(request) {
         console.log('[publish-wisdom] Card generation result:', cardResult.success ? 'success' : 'failed', 'keyword:', cardResult.keyword || 'n/a')
         if (cardResult.success && cardResult.card) {
           generatedCard = cardResult.card
+          // Stage 6: forward the post-update aspire_scores snapshot
+          // returned by generateWisdomCard so the mobile insight page
+          // can size its Aspire progress bar without a follow-up
+          // /api/profile fetch. Null when no aspire_impacts applied.
+          generatedAspireScores = cardResult.aspireScores ?? null
           // If this wisdom was offered for a Seek question, link the
           // newly-created card to the question. Best-effort: failure
           // here is logged but does not fail the publish call (the
@@ -368,6 +374,9 @@ export async function POST(request) {
       success: true,
       wisdom: { id: wisdom.id, audioUrl: publicUrl, text: transcribedText, categories, duration: isTyped ? 0 : duration, isPublic },
       card: generatedCard,
+      // Stage 6: aspire_scores snapshot after this wisdom's nudge has
+      // been applied. Consumed by mobile InsightView's Aspire bar.
+      aspireScores: generatedAspireScores,
       characterBMessage,
       quotaExhausted,
     })

@@ -379,7 +379,13 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     created_at: new Date().toISOString(),
   }
 
-  // Update aspire scores
+  // Update aspire scores. Stage 6: also capture the updated scores
+  // object into the function-scope `updatedAspireScores` so we can
+  // return it. The mobile insight page renders an aspire progress bar
+  // for the first aspire_impacts keyword; it needs the *new* score
+  // (after the +/-2 nudge) to size the bar correctly without making
+  // a follow-up /api/profile fetch.
+  let updatedAspireScores = null
   if (userId && result.aspire_impacts && Array.isArray(result.aspire_impacts) && result.aspire_impacts.length > 0) {
     try {
       const { data: prof } = await supabase.from('profiles').select('aspire_scores').eq('id', userId).single()
@@ -398,6 +404,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
         profileUpdate.wisdom_portrait = result.wisdom_portrait.substring(0, 200)
       }
       await supabase.from('profiles').update(profileUpdate).eq('id', userId)
+      updatedAspireScores = scores
     } catch (e) { console.error('Aspire score update error:', e) }
   } else if (userId && shouldUpdatePortrait && result.wisdom_portrait) {
     try {
@@ -431,5 +438,10 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     keywordId,
     wisdomEmotion: result.wisdom_emotion || 'Reflective',
     dbSaved: !dbError,
+    // Stage 6: post-update aspire_scores snapshot, used by the mobile
+    // insight page to size the Aspire progress bar without a follow-up
+    // /api/profile fetch. Null if no aspire_impacts were generated
+    // for this wisdom (mobile will hide the Aspire sub-section).
+    aspireScores: updatedAspireScores,
   }
 }

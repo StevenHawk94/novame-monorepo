@@ -1,94 +1,150 @@
 /**
- * InsightView — Stage 3.9.A.2.4
+ * InsightView — Stage 6 Wisdom Insight redesign
  *
- * Pure presentation of a generated wisdom_card insight payload. Used
- * by record.tsx (after publish) and by the My Logs Insight modal
- * (re-viewing a previously published wisdom). The component knows
- * nothing about haptics, paywalls, or character-state — those side
- * effects live in the parent wrapper.
+ * Pure presentation of a generated wisdom_card payload. Used by:
+ *   - record.tsx (after publishing a new wisdom, full data available)
+ *   - wisdom-insight.tsx modal (My Logs re-view, cardCollection=null
+ *     because "just unlocked" semantics don't apply to historical
+ *     wisdoms)
  *
- * Renders:
- *   - "WISDOM INSIGHT" title
- *   - Score ring (0-100) + emotion label
- *   - FlippableCard (front: keyword art + quote, back: insight_full)
- *   - Card B "Feel Seen" glass card
- *   - Card C "Root Insight" glass card
- *   - Tasks block (only when at least one task exists)
+ * The 7-section layout maps to the design figure:
+ *   1. Card Collection notification (new-type vs added-to-collection)
+ *   2. "Wisdom Behind Your Words" page title
+ *   3. FlippableCard (front: keyword art + quote, back: insight_full)
+ *      + "Tap to Flip" hint
+ *   4. "How The Community React" band:
+ *      4a. Random community-similar-feeling count
+ *      4b. Aspire progress bar (delta + current score + label)
+ *      4c. Big emotion keyword + emotion illustration
+ *   5. 3-part Reframe (Mirror Hook / Flipped Lens / Permission Slip)
+ *      rendered as purple-titled prose sections (no card chrome)
+ *   6. "Ask Yourself This" dark card with validation + question
+ *   7. "Today's Missions to Grow" purple card with task_1 + task_2
  *
- * Anything optional (B/C/tasks/quote/insight_full) degrades gracefully
- * when null so the modal works on legacy wisdoms predating those columns.
+ * Legacy compatibility:
+ *   - card.reframe == null  -> Section 5 falls back to splitTitleBody
+ *     (card.card_b) for a single-section render
+ *   - card.reflective_question == null  -> Section 6 hides
+ *   - cardCollection == null  -> Section 1 hides (My Logs entry)
+ *   - aspireImpact == null  -> Section 4b hides
  */
-import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { useMemo } from 'react';
+import {
+  Dimensions,
+  ImageBackground,
+  Image as RNImage,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
-import { Dimensions } from 'react-native';
+import type {
+  AspireImpact,
+  ReflectiveQuestion,
+  ReframeData,
+} from '@/lib/wisdoms-api';
 
-const INSIGHT_RING_R = 38;
-const INSIGHT_RING_C = 2 * Math.PI * INSIGHT_RING_R;
+// ============================================================
+// Static asset requires (RN bundler resolves at build time so the
+// images are packaged into the app binary — no network latency).
+// ============================================================
+const CARDS_BACKGROUND = require('../../../assets/images/cards/cards-background.webp');
+const EMOTION_IMAGES = {
+  sad: require('../../../assets/images/insight/sad.webp'),
+  happy: require('../../../assets/images/insight/happy.webp'),
+  excited: require('../../../assets/images/insight/excited.webp'),
+  peace: require('../../../assets/images/insight/peace.webp'),
+  anxious: require('../../../assets/images/insight/anxious.webp'),
+  exhausting: require('../../../assets/images/insight/exhausting.webp'),
+  fine: require('../../../assets/images/insight/fine.webp'),
+  angry: require('../../../assets/images/insight/angry.webp'),
+} as const;
 
-/**
- * Slug-to-display-name map. Server returns `keyword_id` like
- * `mind-clarity`; we render the human-readable label. New keyword_ids
- * fall back to 'Clarity'.
- */
+type EmotionCategory = keyof typeof EMOTION_IMAGES;
+
+// ============================================================
+// Fine-grained emotion keyword -> broad category lookup. AI returns
+// a fine-grained keyword like "Joyful"; this maps to the broad
+// "happy" category to pick which illustration to render.
+//
+// Fallback for unrecognized words = 'fine' (neutral / mellow).
+// ============================================================
+const EMOTION_TO_CATEGORY: Record<string, EmotionCategory> = {
+  // Sad
+  Discouraged: 'sad', Bitter: 'sad', Sad: 'sad', Apathetic: 'sad',
+  Disappointed: 'sad', Dull: 'sad', Powerless: 'sad', Upset: 'sad', Distraught: 'sad',
+  Sadness: 'sad',
+  // Happy
+  Radiant: 'happy', Overjoyed: 'happy', Proud: 'happy', Fulfilled: 'happy',
+  Delighted: 'happy', Joyful: 'happy', Elated: 'happy', Hopeful: 'happy',
+  Optimistic: 'happy', Connected: 'happy', Happy: 'happy', Cheerful: 'happy',
+  Grateful: 'happy', Pleasant: 'happy',
+  // Excited
+  Thrilled: 'excited', Pumped: 'excited', Triumphant: 'excited', Energized: 'excited',
+  Motivated: 'excited', Empowered: 'excited', Ecstatic: 'excited', Inspired: 'excited',
+  Exhilarated: 'excited', Driven: 'excited', Buzzing: 'excited', 'On Fire': 'excited',
+  Glowing: 'excited',
+  // Peace
+  Calm: 'peace', Content: 'peace', Reassured: 'peace', Relaxed: 'peace',
+  Satisfied: 'peace', Peaceful: 'peace', Confident: 'peace', Cozy: 'peace',
+  AtEase: 'peace', 'Steady-Good': 'peace', Comfortable: 'peace', Warm: 'peace',
+  'Clear-headed': 'peace',
+  // Anxious
+  Worried: 'anxious', Pressured: 'anxious', Impatient: 'anxious', Anxious: 'anxious',
+  Nervous: 'anxious', Uneasy: 'anxious', Concerned: 'anxious', Unsettled: 'anxious',
+  Stressed: 'anxious', Panicked: 'anxious', Freaked: 'anxious', Restless: 'anxious',
+  Terrified: 'anxious', Startled: 'anxious', 'On Edge': 'anxious', Petrified: 'anxious',
+  Overwhelmed: 'anxious', Alarmed: 'anxious', 'Worked Up': 'anxious', Shocked: 'anxious',
+  Irrational: 'anxious',
+  // Exhausting
+  Drained: 'exhausting', Sluggish: 'exhausting', Flat: 'exhausting', Sleepy: 'exhausting',
+  // Fine
+  Neutral: 'fine', Composed: 'fine', Simple: 'fine', Mellow: 'fine', Mild: 'fine',
+  Grounded: 'fine', Unbothered: 'fine', Soft: 'fine', Balanced: 'fine', Even: 'fine',
+  Unemotional: 'fine', Easy: 'fine', Present: 'fine', 'Low-key': 'fine', Plain: 'fine',
+  Steady: 'fine', Quiet: 'fine', Meh: 'fine', Reflective: 'fine', Thoughtful: 'fine',
+  // Angry
+  Resentful: 'angry', Irritated: 'angry', Frustrated: 'angry', Enraged: 'angry',
+  Outraged: 'angry', Agitated: 'angry', Tense: 'angry', Furious: 'angry',
+};
+
+function emotionToCategory(emotion: string): EmotionCategory {
+  return EMOTION_TO_CATEGORY[emotion] ?? 'fine';
+}
+
+// ============================================================
+// Slug -> display-name map (kept for record.tsx import compat).
+// Server returns keyword_id like `mind-clarity`; humans see 'Clarity'.
+// ============================================================
 export const KEYWORD_ID_TO_NAME: Record<string, string> = {
-  'mind-clarity': 'Clarity',
-  'mind-grounding': 'Grounding',
-  'mind-focus': 'Focus',
-  'mind-curiosity': 'Curiosity',
-  'mind-stillness': 'Stillness',
-  'mind-objectivity': 'Objectivity',
-  'mind-adaptability': 'Adaptability',
-  'mind-unlearning': 'Unlearning',
-  'mind-vision': 'Vision',
-  'mind-acceptance': 'Acceptance',
-  'mind-humor': 'Humor',
-  'mind-intuition': 'Intuition',
-  'heart-resilience': 'Resilience',
-  'heart-boundaries': 'Boundaries',
-  'heart-self-compassion': 'Self-Compassion',
-  'heart-courage': 'Courage',
-  'heart-vulnerability': 'Vulnerability',
-  'heart-empathy': 'Empathy',
-  'heart-gratitude': 'Gratitude',
-  'heart-patience': 'Patience',
-  'heart-forgiveness': 'Forgiveness',
-  'heart-release': 'Release',
-  'heart-balance': 'Balance',
-  'heart-joy': 'Joy',
-  'action-initiative': 'Initiative',
-  'action-consistency': 'Consistency',
-  'action-discipline': 'Discipline',
-  'action-decisiveness': 'Decisiveness',
-  'action-purpose': 'Purpose',
-  'action-rest': 'Rest',
-  'action-resourcefulness': 'Resourcefulness',
-  'action-accountability': 'Accountability',
-  'action-boldness': 'Boldness',
-  'action-endurance': 'Endurance',
-  'action-communication': 'Communication',
+  'mind-clarity': 'Clarity', 'mind-grounding': 'Grounding', 'mind-focus': 'Focus',
+  'mind-curiosity': 'Curiosity', 'mind-stillness': 'Stillness', 'mind-objectivity': 'Objectivity',
+  'mind-adaptability': 'Adaptability', 'mind-unlearning': 'Unlearning', 'mind-vision': 'Vision',
+  'mind-acceptance': 'Acceptance', 'mind-humor': 'Humor', 'mind-intuition': 'Intuition',
+  'heart-resilience': 'Resilience', 'heart-boundaries': 'Boundaries', 'heart-self-compassion': 'Self-Compassion',
+  'heart-courage': 'Courage', 'heart-vulnerability': 'Vulnerability', 'heart-empathy': 'Empathy',
+  'heart-gratitude': 'Gratitude', 'heart-patience': 'Patience', 'heart-forgiveness': 'Forgiveness',
+  'heart-release': 'Release', 'heart-balance': 'Balance', 'heart-joy': 'Joy',
+  'action-initiative': 'Initiative', 'action-consistency': 'Consistency', 'action-discipline': 'Discipline',
+  'action-decisiveness': 'Decisiveness', 'action-purpose': 'Purpose', 'action-rest': 'Rest',
+  'action-resourcefulness': 'Resourcefulness', 'action-accountability': 'Accountability',
+  'action-boldness': 'Boldness', 'action-endurance': 'Endurance', 'action-communication': 'Communication',
   'action-momentum': 'Momentum',
-  'connection-sovereignty': 'Sovereignty',
-  'connection-authenticity': 'Authenticity',
-  'connection-inspiration': 'Inspiration',
-  'connection-generosity': 'Generosity',
-  'connection-trust': 'Trust',
-  'connection-reciprocity': 'Reciprocity',
-  'connection-collaboration': 'Collaboration',
-  'connection-leadership': 'Leadership',
-  'connection-harmony': 'Harmony',
-  'connection-legacy': 'Legacy',
-  'connection-respect': 'Respect',
+  'connection-sovereignty': 'Sovereignty', 'connection-authenticity': 'Authenticity',
+  'connection-inspiration': 'Inspiration', 'connection-generosity': 'Generosity',
+  'connection-trust': 'Trust', 'connection-reciprocity': 'Reciprocity',
+  'connection-collaboration': 'Collaboration', 'connection-leadership': 'Leadership',
+  'connection-harmony': 'Harmony', 'connection-legacy': 'Legacy', 'connection-respect': 'Respect',
   'connection-loyalty': 'Loyalty',
 };
 
 /**
- * Extract `{ title, body }` from a server-merged "Title: xxx\n<body>"
- * string. Falls back to empty title and full string as body if the
- * regex doesn't match.
+ * Legacy "Title: xxx\n<body>" parser. Pre-Stage-6 wisdoms stored the
+ * dynamic title merged into the body string. Used as the fallback path
+ * when card.reframe is null (no 3-part structure available).
  */
 export function splitTitleBody(raw: string): { title: string; body: string } {
   if (!raw) return { title: '', body: '' };
@@ -97,29 +153,73 @@ export function splitTitleBody(raw: string): { title: string; body: string } {
   return { title: '', body: raw };
 }
 
+// ============================================================
+// Types
+// ============================================================
+
 /**
- * Card data shape consumed by the view. Compatible with both:
- *   - record.tsx PublishedCardData (post-publish response)
- *   - WisdomCardEmbed (My Logs feed payload)
+ * Card payload shape consumed by InsightView. Wider than
+ * WisdomCardEmbed because record.tsx may also pass an in-memory
+ * just-published card that hasn't been re-fetched yet.
  */
 export type InsightCardData = {
   keyword_id?: string | null;
   keyword?: string | null;
   quote_short?: string | null;
   insight_full?: string | null;
+  // Legacy single-block fields (rendered only when reframe is null)
   card_b?: string | null;
   card_c?: string | null;
   task_1?: string | null;
   task_2?: string | null;
+  // Stage 6 redesigned fields
+  reframe?: ReframeData | null;
+  reflective_question?: ReflectiveQuestion | null;
+  aspire_impacts?: AspireImpact[] | null;
+};
+
+/**
+ * Card Collection notification info. Computed by the parent
+ * component from the user's cached wisdoms list before passing in
+ * so InsightView doesn't have to query storage during render.
+ */
+export type CardCollectionInfo = {
+  isNewType: boolean;
+  keyword: string;
+  typesCollected: number;
+  cardsCollectedForKeyword: number;
+};
+
+/**
+ * Aspire impact display data. Computed by the parent from the AI's
+ * aspire_impacts array (we pick element [0]) and the user's current
+ * aspire_scores from /api/character-state or profile.
+ */
+export type AspireImpactDisplay = {
+  keyword: string;
+  deltaPercent: number; // +2 or -2 (could be expanded in the future)
+  currentScore: number; // 0-100, drives the progress bar fill width
 };
 
 export type InsightViewProps = {
   card: InsightCardData | null;
-  score: number;
   emotion: string;
+  cardCollection: CardCollectionInfo | null;
+  aspireImpact: AspireImpactDisplay | null;
+  communityCount: number;
 };
 
-export function InsightView({ card, score, emotion }: InsightViewProps) {
+// ============================================================
+// Component
+// ============================================================
+
+export function InsightView({
+  card,
+  emotion,
+  cardCollection,
+  aspireImpact,
+  communityCount,
+}: InsightViewProps) {
   const keywordId = card?.keyword_id ?? 'mind-clarity';
   const frontFilename = `${keywordId}-front.webp`;
   const backFilename = `${keywordId.split('-')[0]}-back.webp`;
@@ -127,62 +227,80 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
   const quoteShort =
     card?.quote_short ?? 'Reflection turns experience into wisdom.';
 
-  const b = splitTitleBody(card?.card_b ?? '');
-  const c = splitTitleBody(card?.card_c ?? '');
+  // Section 5: prefer Stage-6 reframe; fall back to legacy card_b
+  // single-section render if reframe is missing.
+  const reframe = card?.reframe ?? null;
+  const legacyB = useMemo(() => splitTitleBody(card?.card_b ?? ''), [card?.card_b]);
 
+  const reflective = card?.reflective_question ?? null;
   const hasTasks = !!(card?.task_1 || card?.task_2);
 
-  const safeScore = Math.max(0, Math.min(100, Math.round(score)));
-  const ringDashOffset = INSIGHT_RING_C * (1 - safeScore / 100);
+  // Emotion category for the illustration. Falls back to 'fine' for
+  // unrecognized words.
+  const emotionCategory = emotionToCategory(emotion);
+  const emotionImage = EMOTION_IMAGES[emotionCategory];
+
+  // Format community count with thousand separators (1203 -> "1,203").
+  const communityCountStr = useMemo(
+    () => communityCount.toLocaleString('en-US'),
+    [communityCount],
+  );
+
+  // Aspire bar fill clamped 0-100.
+  const aspireFillPct = aspireImpact
+    ? Math.max(0, Math.min(100, aspireImpact.currentScore))
+    : 0;
+  const aspireDeltaStr = aspireImpact
+    ? (aspireImpact.deltaPercent >= 0 ? '+' : '') + aspireImpact.deltaPercent + '%'
+    : '';
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>WISDOM INSIGHT</Text>
+      {/* ============================================================
+          Section 1: Card Collection notification
+          Two visual states gated by cardCollection.isNewType.
+          Hidden entirely when cardCollection is null (My Logs entry).
+          ============================================================ */}
+      {cardCollection ? (
+        <ImageBackground
+          source={CARDS_BACKGROUND}
+          style={styles.collectionBg}
+          imageStyle={styles.collectionBgImage}
+          resizeMode="cover"
+        >
+          <Text style={styles.collectionHeader}>
+            {cardCollection.isNewType
+              ? 'New Card Type Unlocked!'
+              : 'Added to Collection!'}
+          </Text>
 
-      <View style={styles.metaRow}>
-        <View style={styles.scoreCol}>
-          <View style={styles.scoreRingWrap}>
-            <Svg width={90} height={90} viewBox="0 0 90 90">
-              {/* Stage 6.RecordVisual: pink ring on purple bg + brighter track. */}
-              <Circle
-                cx={45}
-                cy={45}
-                r={INSIGHT_RING_R}
-                fill="none"
-                stroke="rgba(255,255,255,0.25)"
-                strokeWidth={6}
-              />
-              <Circle
-                cx={45}
-                cy={45}
-                r={INSIGHT_RING_R}
-                fill="none"
-                stroke="#EC4899"
-                strokeWidth={6}
-                strokeLinecap="round"
-                strokeDasharray={`${INSIGHT_RING_C}`}
-                strokeDashoffset={`${ringDashOffset}`}
-                transform="rotate(-90 45 45)"
-              />
-            </Svg>
-            <View pointerEvents="none" style={styles.scoreCenter}>
-              <Text style={styles.scoreValue}>{safeScore}</Text>
-              <Text style={styles.scoreMax}>/100</Text>
+          <View style={styles.collectionKeywordRow}>
+            <View style={styles.collectionKeywordPill}>
+              <Text style={styles.collectionKeywordText}>
+                {cardCollection.keyword}
+              </Text>
             </View>
+            {cardCollection.isNewType ? (
+              <Text style={styles.collectionNewBadge}>New</Text>
+            ) : null}
           </View>
-          <View style={styles.scoreLabelRow}>
-            <MaterialIcons name="star" size={14} color="#FACC15" />
-            <Text style={styles.scoreLabel}>Wisdom Score</Text>
-          </View>
-        </View>
 
-        <View style={styles.emotionCol}>
-          <MaterialIcons name="sentiment-satisfied" size={36} color="#FFFFFF" />
-          <Text style={styles.emotionCaption}>Wisdom Emotion:</Text>
-          <Text style={styles.emotionValue}>{emotion || 'Thoughtful'}</Text>
-        </View>
-      </View>
+          <Text style={styles.collectionSubtitle}>
+            {cardCollection.isNewType
+              ? `${cardCollection.typesCollected}/48 Types Collected`
+              : `${cardCollection.cardsCollectedForKeyword} Cards Collected`}
+          </Text>
+        </ImageBackground>
+      ) : null}
 
+      {/* ============================================================
+          Section 2: Page title
+          ============================================================ */}
+      <Text style={styles.pageTitle}>Wisdom Behind Your Words</Text>
+
+      {/* ============================================================
+          Section 3: FlippableCard + Tap-to-flip hint
+          ============================================================ */}
       <View style={styles.cardWrap}>
         <FlippableCard
           frontFilename={frontFilename}
@@ -192,205 +310,437 @@ export function InsightView({ card, score, emotion }: InsightViewProps) {
           width={getStandardCardWidth(Dimensions.get('window').width)}
         />
       </View>
-      <Text style={styles.flipHint}>Tap to flip</Text>
+      <Text style={styles.flipHint}>Tap to Flip</Text>
 
-      {b.body ? (
-        <View style={styles.glassCard}>
-          <View style={styles.glassHeader}>
-            <MaterialIcons name="psychology" size={18} color="#FFFFFF" />
-            {b.title ? <Text style={styles.glassTitle}>{b.title}</Text> : null}
+      {/* ============================================================
+          Section 4: How The Community React band
+          ============================================================ */}
+      <View style={styles.communityBanner}>
+        <Text style={styles.communityBannerText}>How The Community React</Text>
+      </View>
+
+      <View style={styles.communityBody}>
+        {/* 4a: similar-feeling count */}
+        <View style={styles.communityRow}>
+          <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
+          <Text style={styles.communityRowCaption}>
+            People in the community{'\n'}have similar feeling
+          </Text>
+        </View>
+
+        {/* 4b: Aspire progress bar (conditional) */}
+        {aspireImpact ? (
+          <View style={styles.aspireBlock}>
+            <View style={styles.aspireBarRow}>
+              <View style={styles.aspireBarTrack}>
+                <View
+                  style={[styles.aspireBarFill, { width: `${aspireFillPct}%` }]}
+                >
+                  <Text style={styles.aspireDeltaInBar}>{aspireDeltaStr}</Text>
+                </View>
+              </View>
+              <Text style={styles.aspireScoreText}>{aspireFillPct}%</Text>
+            </View>
+            <Text style={styles.aspireLabel}>Your {aspireImpact.keyword}</Text>
           </View>
-          <Text style={styles.glassBody}>{b.body}</Text>
+        ) : null}
+
+        {/* 4c: Emotion big text + illustration */}
+        <View style={styles.emotionRow}>
+          <View style={styles.emotionTextCol}>
+            <Text style={styles.emotionBigText}>{emotion || 'Reflective'}</Text>
+            <Text style={styles.emotionCaption}>Your Emotion Keyword</Text>
+          </View>
+          <RNImage source={emotionImage} style={styles.emotionImage} resizeMode="contain" />
+        </View>
+      </View>
+
+      {/* ============================================================
+          Section 5: 3-part Reframe (or legacy single-section fallback)
+          ============================================================ */}
+      {reframe ? (
+        <View style={styles.reframeSection}>
+          {reframe.mirror_hook.title || reframe.mirror_hook.body ? (
+            <View style={styles.reframePart}>
+              <Text style={styles.reframeTitle}>{reframe.mirror_hook.title}</Text>
+              <Text style={styles.reframeBody}>{reframe.mirror_hook.body}</Text>
+            </View>
+          ) : null}
+          {reframe.flipped_lens.title || reframe.flipped_lens.body ? (
+            <View style={styles.reframePart}>
+              <Text style={styles.reframeTitle}>{reframe.flipped_lens.title}</Text>
+              <Text style={styles.reframeBody}>{reframe.flipped_lens.body}</Text>
+            </View>
+          ) : null}
+          {reframe.permission_slip.title || reframe.permission_slip.body ? (
+            <View style={styles.reframePart}>
+              <Text style={styles.reframeTitle}>{reframe.permission_slip.title}</Text>
+              <Text style={styles.reframeBody}>{reframe.permission_slip.body}</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : legacyB.body ? (
+        // Legacy fallback: pre-Stage-6 wisdoms have no reframe; show
+        // the single-section card_b in the same purple-title style.
+        <View style={styles.reframeSection}>
+          <View style={styles.reframePart}>
+            {legacyB.title ? (
+              <Text style={styles.reframeTitle}>{legacyB.title}</Text>
+            ) : null}
+            <Text style={styles.reframeBody}>{legacyB.body}</Text>
+          </View>
         </View>
       ) : null}
 
-      {c.body ? (
-        <View style={styles.glassCard}>
-          <View style={styles.glassHeader}>
-            <MaterialIcons name="school" size={18} color="#FFFFFF" />
-            {c.title ? <Text style={styles.glassTitle}>{c.title}</Text> : null}
+      {/* ============================================================
+          Section 6: Ask Yourself This (conditional)
+          ============================================================ */}
+      {reflective && (reflective.validation || reflective.question) ? (
+        <View style={styles.askCard}>
+          <View style={styles.askHeader}>
+            <View style={styles.askIconCircle}>
+              <MaterialIcons name="help-outline" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.askTitle}>Ask Yourself This</Text>
           </View>
-          <Text style={styles.glassBody}>{c.body}</Text>
+          {reflective.validation ? (
+            <Text style={styles.askValidation}>{reflective.validation}</Text>
+          ) : null}
+          {reflective.question ? (
+            <Text style={styles.askQuestion}>{reflective.question}</Text>
+          ) : null}
         </View>
       ) : null}
 
+      {/* ============================================================
+          Section 7: Today's Missions to Grow (conditional)
+          ============================================================ */}
       {hasTasks ? (
-        <View style={styles.tasksCard}>
-          <View style={styles.glassHeader}>
-            <MaterialIcons name="task-alt" size={18} color="#FACC15" />
-            <Text style={styles.glassTitle}>YOUR WISDOM TASKS</Text>
+        <View style={styles.missionsCard}>
+          <View style={styles.missionsHeader}>
+            <View style={styles.missionsIconCircle}>
+              <MaterialIcons name="check" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.missionsTitle}>Today's Missions to Grow</Text>
           </View>
           {card?.task_1 ? (
-            <View style={styles.taskRow}>
-              <Text style={styles.taskBolt}>⚡</Text>
-              <Text style={styles.taskText}>{card.task_1}</Text>
+            <View style={styles.missionRow}>
+              <Text style={styles.missionBolt}>⚡</Text>
+              <Text style={styles.missionText}>{card.task_1}</Text>
             </View>
           ) : null}
           {card?.task_2 ? (
-            <View style={styles.taskRow}>
-              <Text style={styles.taskBolt}>⚡</Text>
-              <Text style={styles.taskText}>{card.task_2}</Text>
+            <View style={styles.missionRow}>
+              <Text style={styles.missionBolt}>⚡</Text>
+              <Text style={styles.missionText}>{card.task_2}</Text>
             </View>
           ) : null}
-          <Text style={styles.taskHint}>
-            Complete these tasks from your character page to earn EXP!
-          </Text>
         </View>
       ) : null}
     </View>
   );
 }
 
+// ============================================================
+// Styles
+// ============================================================
+
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 24,
-    // Stage 6.RecordVisual: 32 -> 80 for fullScreenModal status-bar clearance.
     paddingTop: 80,
     paddingBottom: 16,
   },
-  title: {
+
+  // ===== Section 1: Card Collection =====
+  collectionBg: {
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingBottom: 24,
+    marginHorizontal: -24, // bleed to screen edges so the light glow extends
+    marginBottom: 8,
+  },
+  collectionBgImage: {
+    // Let the webp's natural purple-glow gradient show through.
+    resizeMode: 'cover',
+  },
+  collectionHeader: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 28,
-    letterSpacing: 1.5,
+    marginBottom: 14,
   },
-  metaRow: {
+  collectionKeywordRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginBottom: 28,
-  },
-  scoreCol: {
-    alignItems: 'center',
-  },
-  scoreRingWrap: {
-    width: 90,
-    height: 90,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    marginBottom: 10,
   },
-  scoreCenter: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
+  collectionKeywordPill: {
+    backgroundColor: '#E97FCB',
+    paddingHorizontal: 22,
+    paddingVertical: 8,
+    borderRadius: 999,
   },
-  scoreValue: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontFamily: 'Inter_700Bold',
-  },
-  scoreMax: {
-    // Stage 6.RecordVisual: bumped 0.4 -> 0.85 for purple bg legibility.
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 11,
-    fontFamily: 'Inter_400Regular',
-  },
-  scoreLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-  },
-  scoreLabel: {
-    // Stage 6.RecordVisual: 0.6 -> 0.85 + bumped 12 -> 13.
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-  },
-  emotionCol: {
-    alignItems: 'center',
-  },
-  emotionCaption: {
-    // Stage 6.RecordVisual: 0.5 -> 0.85 + size 10 -> 12.
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 6,
-  },
-  emotionValue: {
-    // Stage 6.RecordVisual: was light purple #C084FC (low contrast on bg).
-    // Now pure white + bumped 13 -> 15.
+  collectionKeywordText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
-    marginTop: 2,
   },
+  collectionNewBadge: {
+    color: '#FACC15',
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    fontStyle: 'italic',
+    marginLeft: -6,
+    marginTop: -8,
+  },
+  collectionSubtitle: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
+  },
+
+  // ===== Section 2: Page title =====
+  pageTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+
+  // ===== Section 3: Card + flip hint =====
   cardWrap: {
     alignItems: 'center',
     marginBottom: 8,
   },
   flipHint: {
-    // Stage 6.RecordVisual: 0.2 (invisible) -> 0.85 + size 10 -> 12.
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Inter_500Medium',
     textAlign: 'center',
-    marginBottom: 24,
-  },
-  glassCard: {
-    // Stage 6.RecordVisual: slightly more solid for legibility on purple bg.
-    width: '100%',
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
-  glassHeader: {
+
+  // ===== Section 4: Community band =====
+  communityBanner: {
+    backgroundColor: '#7C3AED',
+    paddingVertical: 10,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: -8,
+  },
+  communityBannerText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+  },
+  communityBody: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginHorizontal: -8,
+    marginBottom: 24,
+  },
+  communityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 18,
+  },
+  communityBigNumber: {
+    color: '#EC4899',
+    fontSize: 40,
+    fontFamily: 'Inter_900Black',
+    marginRight: 16,
+  },
+  communityRowCaption: {
+    flex: 1,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium',
+    lineHeight: 18,
+  },
+
+  // 4b Aspire
+  aspireBlock: {
+    marginBottom: 18,
+  },
+  aspireBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 6,
+  },
+  aspireBarTrack: {
+    flex: 1,
+    height: 22,
+    backgroundColor: '#FCE7F3',
+    borderRadius: 999,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  aspireBarFill: {
+    height: '100%',
+    backgroundColor: '#7C3AED',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 60, // ensure +2% label has room even when fill is small
+  },
+  aspireDeltaInBar: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontFamily: 'Inter_700Bold',
+  },
+  aspireScoreText: {
+    color: '#EC4899',
+    fontSize: 22,
+    fontFamily: 'Inter_900Black',
+    minWidth: 56,
+    textAlign: 'right',
+  },
+  aspireLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+  },
+
+  // 4c Emotion
+  emotionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  emotionTextCol: {
+    flex: 1,
+  },
+  emotionBigText: {
+    color: '#EC4899',
+    fontSize: 36,
+    fontFamily: 'Inter_900Black',
+    marginBottom: 2,
+  },
+  emotionCaption: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+  },
+  emotionImage: {
+    width: 80,
+    height: 80,
+    marginLeft: 12,
+  },
+
+  // ===== Section 5: 3-part Reframe =====
+  reframeSection: {
+    marginBottom: 8,
+  },
+  reframePart: {
+    marginBottom: 24,
+  },
+  reframeTitle: {
+    color: '#A78BFA',
+    fontSize: 22,
+    fontFamily: 'Inter_900Black',
+    marginBottom: 12,
+    lineHeight: 28,
+  },
+  reframeBody: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 23,
+  },
+
+  // ===== Section 6: Ask Yourself This =====
+  askCard: {
+    backgroundColor: '#1A0F3D',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  askHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     marginBottom: 12,
   },
-  glassTitle: {
+  askIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  askTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+  },
+  askValidation: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 21,
+    marginBottom: 8,
+  },
+  askQuestion: {
     color: '#FFFFFF',
     fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    flexShrink: 1,
-  },
-  glassBody: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
     lineHeight: 23,
   },
-  tasksCard: {
-    width: '100%',
+
+  // ===== Section 7: Today's Missions =====
+  missionsCard: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 16,
     padding: 20,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
-  taskRow: {
+  missionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  missionsIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  missionsTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter_700Bold',
+  },
+  missionRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 12,
   },
-  taskBolt: {
+  missionBolt: {
     color: '#FACC15',
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 16,
+    marginTop: 1,
   },
-  taskText: {
-    // Stage 6.RecordVisual: 0.7 -> #FFFFFF for legibility.
+  missionText: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 23,
-  },
-  taskHint: {
-    // Stage 6.RecordVisual: 0.3 (invisible) -> 0.85.
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-    marginTop: 12,
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
+    lineHeight: 21,
   },
 });

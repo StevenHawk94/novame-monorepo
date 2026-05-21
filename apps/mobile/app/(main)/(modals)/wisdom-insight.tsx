@@ -1,15 +1,30 @@
 /**
- * Wisdom insight modal — Stage 3.9.A.2.4
+ * Wisdom insight modal — Stage 6 redesign
  *
  * Re-view of a previously published wisdom's full insight payload.
  * Renders the same InsightView used by the record flow, but without
  * the post-publish side effects (no confetti, no character-state
- * cache clear, no skin-unlock placeholder). Just close on Done.
+ * cache clear, no skin-unlock placeholder). Just close on back.
  *
- * Receives the wisdom_card payload + score + emotion via the
- * `payload` route param (encodeURIComponent JSON). Empty card data
- * gracefully degrades (B/C/tasks blocks omit themselves).
+ * Payload contract (URL-encoded JSON via `payload` route param):
+ *   {
+ *     card: InsightCardData | null,
+ *     emotion: string,
+ *   }
+ *
+ * Stage 6 semantic decisions:
+ *   - cardCollection is ALWAYS null here. The "New Card Type Unlocked"
+ *     banner only makes sense in the moment of publishing — replaying
+ *     it for historical wisdoms would mislead the user about what was
+ *     "just unlocked." InsightView hides Section 1 when null.
+ *   - aspireImpact is ALWAYS null here. The current aspire_scores at
+ *     publish time aren't replayable, so showing today's bar with
+ *     yesterday's delta would be lying.
+ *   - communityCount is generated fresh in this modal via useMemo so
+ *     it stays stable across re-renders but doesn't need to be
+ *     serialized in the URL (URLs already get long with the card JSON).
  */
+import { useMemo } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,7 +35,6 @@ import { haptics } from '@/lib/haptics';
 
 type Payload = {
   card: InsightCardData | null;
-  score: number;
   emotion: string;
 };
 
@@ -37,6 +51,15 @@ export default function WisdomInsightModal() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ payload?: string }>();
   const payload = decodePayload(params.payload);
+
+  // Generate a stable community-count for the lifetime of this modal.
+  // useMemo with [] deps means the number is computed once on mount
+  // and survives every re-render (so the "1,203 people" line doesn't
+  // re-randomize when the user scrolls or the keyboard appears).
+  const communityCount = useMemo(
+    () => 50 + Math.floor(Math.random() * 1951),
+    [],
+  );
 
   const goBack = () => {
     void haptics.light();
@@ -65,8 +88,10 @@ export default function WisdomInsightModal() {
         >
           <InsightView
             card={payload.card}
-            score={payload.score}
             emotion={payload.emotion}
+            cardCollection={null}
+            aspireImpact={null}
+            communityCount={communityCount}
           />
         </ScrollView>
       ) : (

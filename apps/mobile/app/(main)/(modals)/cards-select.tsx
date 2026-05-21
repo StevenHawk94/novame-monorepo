@@ -355,18 +355,11 @@ export default function CardsSelectModal() {
                       item.insight_full?.slice(0, 100) ||
                       '...'}
                   </Text>
-                  {item.wisdom_score ? (
-                    <View style={styles.cardCellFooter}>
-                      <MaterialIcons
-                        name="star"
-                        size={12}
-                        color="#FBBF24"
-                      />
-                      <Text style={styles.cardCellScore}>
-                        {item.wisdom_score}
-                      </Text>
-                    </View>
-                  ) : null}
+                  {/* Stage 6: wisdom_score UI removed. The score is no
+                      longer rendered anywhere -- it has been deleted
+                      from the AI prompt + DB insert (lib/generate-card.js).
+                      Legacy wisdoms still have a wisdom_score column
+                      value but the app no longer surfaces it. */}
                 </Pressable>
               );
             }}

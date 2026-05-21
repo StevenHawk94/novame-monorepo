@@ -374,10 +374,14 @@ export default function GrowthTab() {
   const onLogInsight = (id: string) => {
     const w = logs.find((x) => x.id === id);
     if (!w) return;
+    // Stage 6: payload no longer carries score (the score ring is gone
+    // from the redesigned InsightView). cardCollection and aspireImpact
+    // are also not serialized -- the wisdom-insight modal sets them to
+    // null because "just unlocked" / "current aspire score" semantics
+    // don't apply when re-reading a historical wisdom.
     const payload = encodeURIComponent(
       JSON.stringify({
         card: w.card,
-        score: w.card?.wisdom_score ?? 0,
         emotion: w.card?.wisdom_emotion ?? 'Reflective',
       }),
     );

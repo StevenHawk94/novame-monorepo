@@ -147,6 +147,13 @@ export default function KeywordDetailModal() {
             card_c: c.card_c,
             task_1: c.task_1,
             task_2: c.task_2,
+            // Stage 6: orphan starter cards predate the redesign and
+            // have no reframe / reflective_question / aspire_impacts.
+            // Setting null lets InsightView fall back to the legacy
+            // splitTitleBody(card_b) render path for these.
+            reframe: null,
+            reflective_question: null,
+            aspire_impacts: null,
           },
         }));
 
