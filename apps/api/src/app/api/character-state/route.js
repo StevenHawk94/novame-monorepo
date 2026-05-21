@@ -235,37 +235,39 @@ export async function POST(request) {
     }
 
     if (action === 'record_complete') {
-      // EXP gained = wisdom_score from AI analysis (70-100)
-      const { wisdomScore, durationSeconds } = body
-      const expGained = wisdomScore || 78 // fallback to 78 if not provided
+      // Stage 6 Wisdom Insight redesign: EXP gain from publishing a
+      // wisdom has been REMOVED. Previously expGained = wisdom_score
+      // from AI analysis (70-100), but wisdom_score itself is now gone
+      // from the prompt / DB insert. EXP is now earned by completing
+      // daily tasks only (see /api/daily-tasks).
+      //
+      // What this action STILL does (unchanged):
+      //   1. Increment recording stats (total_recording_seconds,
+      //      total_cards_created) for character_data analytics.
+      //   2. Restore WP to 100 + bump last_recording_at. This is the
+      //      mechanism that drives Home page hungry -> chill character
+      //      animation transition (Home reads WP / last_recording_at
+      //      to decide which mode video to play).
+      const { durationSeconds } = body
 
       const { data: profile } = await supabase.from('profiles').select('active_character_id').eq('id', userId).single()
       const charId = profile?.active_character_id || 'char-1'
-      
+
       // Ensure character exists
       const charData = await ensureCharacterData(supabase, userId, charId)
       if (!charData) return NextResponse.json({ success: false, error: 'Failed to get/create character data' })
 
-      const newTotalExp = (charData.total_exp || 0) + expGained
       const newRecSecs = (charData.total_recording_seconds || 0) + (durationSeconds || 0)
       const newCards = (charData.total_cards_created || 0) + 1
-      const levelInfo = getLevelFromExp(newTotalExp)
-
-      const outfitLevels = [1, 5, 10, 20, 30, 50]
-      const unlocked = outfitLevels.filter(lv => levelInfo.level >= lv).map((_, i) => i + 1)
 
       const { error: updateErr } = await supabase.from('character_data').update({
-        total_exp: newTotalExp,
-        exp: levelInfo.currentExp,
-        level: levelInfo.level,
         total_recording_seconds: newRecSecs,
         total_cards_created: newCards,
-        unlocked_outfits: unlocked,
       }).eq('id', charData.id)
 
       if (updateErr) console.error('character_data update error:', updateErr)
 
-      // Restore WP
+      // Restore WP -- still the trigger for Home page hungry -> chill mode swap.
       const { error: wpErr } = await supabase.from('profiles').update({
         wp: WP_MAX,
         wp_last_updated: new Date().toISOString(),
@@ -276,10 +278,6 @@ export async function POST(request) {
 
       return NextResponse.json({
         success: true,
-        expGained,
-        newTotalExp,
-        levelInfo,
-        unlockedOutfits: unlocked,
         wp: WP_MAX,
       })
     }
