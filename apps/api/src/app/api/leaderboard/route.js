@@ -62,10 +62,22 @@ export async function GET(request) {
       dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
     }
     
+    // Stage 6.LeaderboardFix: removed .eq('is_public', true) filter.
+    //
+    // Background: mobile UI no longer offers a public/private toggle
+    // (see record.tsx:1405 — "We do not send isPublic..."), so the
+    // server's publish-wisdom defaults isPublic=false for every new
+    // wisdom. The is_public filter here was rejecting every real-
+    // user row, leaving the leaderboard populated only by
+    // leaderboard_seeds curated rows.
+    //
+    // is_public is intentionally kept in the publish-wisdom pipeline
+    // because it still gates engagement-boost scheduling and the
+    // auto-comment trigger downstream. We just don't use it as a
+    // leaderboard inclusion filter anymore.
     let query = supabase
       .from('wisdoms')
       .select('user_id, duration_seconds')
-      .eq('is_public', true)
       .not('user_id', 'is', null)
     
     if (dateFilter) {
