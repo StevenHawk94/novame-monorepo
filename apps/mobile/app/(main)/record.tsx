@@ -18,6 +18,7 @@
 
 import { useEffect, useRef, useState, useMemo} from 'react';
 import {
+  Alert,
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
@@ -1586,7 +1587,6 @@ function PhasePublishing({
   setQuotaExhaustedAfterPublish,
 }: PhaseProps) {
   const inflightRef = useRef(false);
-  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     if (inflightRef.current) return;
@@ -1747,11 +1747,25 @@ function PhasePublishing({
         goTo(PHASE.INSIGHT);
       } catch (err) {
         console.error('[publish] failed:', err);
-        // Stage 5.IAP.4: typed error routing.
-        //   - 402 QUOTA_EXCEEDED       -> close + paywall
-        //   - 422 TRANSCRIPTION_FAILED -> show retryable error screen
-        //   - 500 CARD_GENERATION_FAILED -> show retryable error screen
-        //   - anything else            -> generic error screen
+        // Stage 6.WisdomFix-Retry: simplified failure UX.
+        //
+        // Previous design: render an in-phase errored view with Back +
+        // Close buttons. That had two flaws:
+        //   1. The CardSpinAnimation overlay in record.tsx outer render
+        //      keeps spinning regardless of PhasePublishing's local
+        //      errored state — so the errored view was covered and the
+        //      user just saw an indefinite spinner.
+        //   2. Two-button retry flow is heavier than the failure
+        //      deserves: server already rolled back, quota is intact,
+        //      retry = just relaunch the same flow from scratch.
+        //
+        // New design: a native iOS Alert with single OK button. OK
+        // dismisses the entire record modal back to the home tab. The
+        // user re-enters the flow fresh from the mic button. Server
+        // has already rolled back the wisdom row (no quota burn).
+        //
+        // QUOTA_EXCEEDED stays on its dedicated paywall route — that's
+        // not a "failure", it's a business gate to upgrade.
         if (err instanceof ApiError) {
           const code =
             typeof err.body === 'object' &&
@@ -1768,42 +1782,26 @@ function PhasePublishing({
             }, 100);
             return;
           }
-          // 422 (TRANSCRIPTION_FAILED) and 500 (CARD_GENERATION_FAILED)
-          // both fall through to the generic errored screen, which
-          // already gives the user a "try again" affordance. The
-          // crucial difference vs the old behavior is that the server
-          // has now ROLLED BACK the wisdom row, so the user is not
-          // billed a quota slot for the failed attempt.
         }
-        setErrored(true);
+
         inflightRef.current = false;
+        Alert.alert(
+          'Generation Failed',
+          'Please try again later.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                close();
+              },
+            },
+          ],
+          { cancelable: false },
+        );
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  if (errored) {
-    return (
-      <View style={pubgStyles.root}>
-        <Text style={pubgStyles.errorTitle}>Publishing failed</Text>
-        <Text style={pubgStyles.errorBody}>
-          Something went wrong while saving your wisdom. Please try again.
-        </Text>
-        <Pressable
-          onPress={() => { void haptics.light(); goTo(recordingResult ? PHASE.PUBLISH : PHASE.TYPE_INPUT); }}
-          style={({ pressed }) => [
-            pubgStyles.retryButton,
-            { opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Text style={pubgStyles.retryLabel}>Back</Text>
-        </Pressable>
-        <Pressable onPress={() => { void haptics.light(); close(); }} style={pubgStyles.closeButton}>
-          <Text style={pubgStyles.closeLabel}>Close</Text>
-        </Pressable>
-      </View>
-    );
-  }
 
   // Stage 3.8.3.lottie.B (2025-11-XX): spinning UI moved to record.tsx
   // main render so the same CardSpinAnimation instance persists across
