@@ -207,6 +207,15 @@ export type InsightViewProps = {
   cardCollection: CardCollectionInfo | null;
   aspireImpact: AspireImpactDisplay | null;
   communityCount: number;
+  /**
+   * Optional extra paddingTop added to Block 1+2's ImageBackground
+   * topPurpleWrap. Used by record.tsx PhaseInsight to make room for
+   * the iOS status bar while still letting the purple glow extend
+   * into the safe area. wisdom-insight.tsx omits this prop (it has
+   * its own back-button header handling the safe area), so default
+   * 0 preserves the legacy visual.
+   */
+  topExtraPadding?: number;
 };
 
 // ============================================================
@@ -219,6 +228,7 @@ export function InsightView({
   cardCollection,
   aspireImpact,
   communityCount,
+  topExtraPadding = 0,
 }: InsightViewProps) {
   const keywordId = card?.keyword_id ?? 'mind-clarity';
   const frontFilename = `${keywordId}-front.webp`;
@@ -257,69 +267,74 @@ export function InsightView({
   return (
     <View style={styles.container}>
       {/* ============================================================
-          Section 1: Card Collection notification
-          Two visual states gated by cardCollection.isNewType.
-          Hidden entirely when cardCollection is null (My Logs entry).
+          Blocks 1 + 2: SHARED purple cards-background.webp glow.
+          Block 1 (Card Collection notification) is conditional on
+          cardCollection; Block 2 (page title + FlippableCard + flip
+          hint) always renders. Both sit on the same ImageBackground
+          so the purple light extends from the very top all the way
+          down through the FlippableCard and "Tap To Flip" hint --
+          matching the design figure.
           ============================================================ */}
-      {cardCollection ? (
-        <ImageBackground
-          source={CARDS_BACKGROUND}
-          style={styles.collectionBg}
-          imageStyle={styles.collectionBgImage}
-          resizeMode="cover"
-        >
-          <Text style={styles.collectionHeader}>
-            {cardCollection.isNewType
-              ? 'New Card Type Unlocked!'
-              : 'Added to Collection!'}
-          </Text>
+      <ImageBackground
+        source={CARDS_BACKGROUND}
+        style={[styles.topPurpleWrap, { paddingTop: 24 + topExtraPadding }]}
+        imageStyle={styles.topPurpleBg}
+        resizeMode="cover"
+      >
+        {cardCollection ? (
+          <>
+            <Text style={styles.collectionHeader}>
+              {cardCollection.isNewType
+                ? 'New Card Type Unlocked!'
+                : 'Added to Collection!'}
+            </Text>
 
-          <View style={styles.collectionKeywordRow}>
-            <View style={styles.collectionKeywordPill}>
-              <Text style={styles.collectionKeywordText}>
-                {cardCollection.keyword}
-              </Text>
+            <View style={styles.collectionKeywordRow}>
+              <View style={styles.collectionKeywordPill}>
+                <Text style={styles.collectionKeywordText}>
+                  {cardCollection.keyword}
+                </Text>
+              </View>
+              {cardCollection.isNewType ? (
+                <Text style={styles.collectionNewBadge}>New</Text>
+              ) : null}
             </View>
-            {cardCollection.isNewType ? (
-              <Text style={styles.collectionNewBadge}>New</Text>
-            ) : null}
-          </View>
 
-          <Text style={styles.collectionSubtitle}>
-            {cardCollection.isNewType
-              ? `${cardCollection.typesCollected}/48 Types Collected`
-              : `${cardCollection.cardsCollectedForKeyword} Cards Collected`}
-          </Text>
-        </ImageBackground>
-      ) : null}
+            <Text style={styles.collectionSubtitle}>
+              {cardCollection.isNewType
+                ? `${cardCollection.typesCollected}/48 Types Collected`
+                : `${cardCollection.cardsCollectedForKeyword} Cards Collected`}
+            </Text>
+          </>
+        ) : null}
 
-      {/* ============================================================
-          Section 2: Page title
-          ============================================================ */}
-      <Text style={styles.pageTitle}>Wisdom Behind Your Words</Text>
+        <Text style={styles.pageTitle}>Wisdom Behind Your Words</Text>
 
-      {/* ============================================================
-          Section 3: FlippableCard + Tap-to-flip hint
-          ============================================================ */}
-      <View style={styles.cardWrap}>
-        <FlippableCard
-          frontFilename={frontFilename}
-          backFilename={backFilename}
-          quoteShort={quoteShort}
-          insightFull={card?.insight_full ?? ''}
-          width={getStandardCardWidth(Dimensions.get('window').width)}
-        />
-      </View>
-      <Text style={styles.flipHint}>Tap to Flip</Text>
+        <View style={styles.cardWrap}>
+          <FlippableCard
+            frontFilename={frontFilename}
+            backFilename={backFilename}
+            quoteShort={quoteShort}
+            insightFull={card?.insight_full ?? ''}
+            width={getStandardCardWidth(Dimensions.get('window').width)}
+          />
+        </View>
+        <Text style={styles.flipHint}>Tap to Flip</Text>
+      </ImageBackground>
 
       {/* ============================================================
-          Section 4: How The Community React band
+          Block 3: How The Community React.
+          Light-lilac card containing a purple banner header on top
+          and a body region beneath. Wrapped in communityCard so
+          the rounded corners + overflow:hidden clip the banner's
+          colored edges into the light-lilac card chrome.
           ============================================================ */}
-      <View style={styles.communityBanner}>
-        <Text style={styles.communityBannerText}>How The Community React</Text>
-      </View>
+      <View style={styles.communityCard}>
+        <View style={styles.communityBanner}>
+          <Text style={styles.communityBannerText}>How The Community React</Text>
+        </View>
 
-      <View style={styles.communityBody}>
+        <View style={styles.communityBody}>
         {/* 4a: similar-feeling count */}
         <View style={styles.communityRow}>
           <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
@@ -353,10 +368,13 @@ export function InsightView({
           </View>
           <RNImage source={emotionImage} style={styles.emotionImage} resizeMode="contain" />
         </View>
+        </View>
       </View>
 
       {/* ============================================================
-          Section 5: 3-part Reframe (or legacy single-section fallback)
+          Block 4: 3-part Reframe (or legacy single-section fallback).
+          White root bg, purple titles, BLACK body text. No emoji
+          prefix on titles (prompt now outputs plain text).
           ============================================================ */}
       {reframe ? (
         <View style={styles.reframeSection}>
@@ -447,23 +465,28 @@ export function InsightView({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 0,
     paddingBottom: 16,
   },
 
-  // ===== Section 1: Card Collection =====
-  collectionBg: {
-    alignItems: 'center',
+  // ============================================================
+  // Block 1 + 2 SHARED: purple cards-background.webp glow.
+  // Both the Card Collection notification AND the FlippableCard
+  // sit on this same backdrop so the purple light extends from
+  // the very top down through the card and "Tap to Flip" hint.
+  // The webp is sized to cover and the section grows with content.
+  // ============================================================
+  topPurpleWrap: {
+    paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 24,
-    marginHorizontal: -24, // bleed to screen edges so the light glow extends
-    marginBottom: 8,
+    paddingBottom: 16,
   },
-  collectionBgImage: {
-    // Let the webp's natural purple-glow gradient show through.
+  topPurpleBg: {
+    // ImageBackground.imageStyle: lets the underlying webp cover.
     resizeMode: 'cover',
   },
+
+  // ===== Block 1: Card Collection notification =====
   collectionHeader: {
     color: '#FFFFFF',
     fontSize: 17,
@@ -497,13 +520,15 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   collectionSubtitle: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
     textAlign: 'center',
+    marginBottom: 18,
   },
 
-  // ===== Section 2: Page title =====
+  // ===== Block 2: page title + FlippableCard + flip hint =====
+  // All on the SAME purple glow as Block 1.
   pageTitle: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -512,28 +537,35 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
   },
-
-  // ===== Section 3: Card + flip hint =====
   cardWrap: {
     alignItems: 'center',
     marginBottom: 8,
   },
   flipHint: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
+    color: '#FFFFFF',
+    fontSize: 13,
     fontFamily: 'Inter_500Medium',
     textAlign: 'center',
-    marginBottom: 16,
   },
 
-  // ===== Section 4: Community band =====
+  // ============================================================
+  // Block 3: How The Community React.
+  // Light-lilac card (#F4F1FF) with a purple banner across the top.
+  // Internal text is BLACK (#000000) on the light bg, except the
+  // big pink numerics and the emotion keyword.
+  // ============================================================
+  communityCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F4F1FF',
+  },
   communityBanner: {
     backgroundColor: '#7C3AED',
     paddingVertical: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
     alignItems: 'center',
-    marginHorizontal: -8,
   },
   communityBannerText: {
     color: '#FFFFFF',
@@ -541,34 +573,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
   },
   communityBody: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    marginHorizontal: -8,
-    marginBottom: 24,
+    paddingVertical: 18,
   },
   communityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   communityBigNumber: {
     color: '#EC4899',
-    fontSize: 40,
+    fontSize: 38,
     fontFamily: 'Inter_900Black',
     marginRight: 16,
   },
   communityRowCaption: {
     flex: 1,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#000000',
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
     lineHeight: 18,
   },
 
-  // 4b Aspire
+  // 3b Aspire bar
   aspireBlock: {
     marginBottom: 18,
   },
@@ -592,7 +619,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 60, // ensure +2% label has room even when fill is small
+    minWidth: 60,
   },
   aspireDeltaInBar: {
     color: '#FFFFFF',
@@ -607,12 +634,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   aspireLabel: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#000000',
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
   },
 
-  // 4c Emotion
+  // 3c Emotion big text + illustration
   emotionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -628,7 +655,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   emotionCaption: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#000000',
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
   },
@@ -638,29 +665,37 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 
-  // ===== Section 5: 3-part Reframe =====
+  // ============================================================
+  // Block 4: 3-part Reframe sections.
+  // White bg (root), purple titles, BLACK body text.
+  // No emoji prefix on titles -- AI prompt now outputs plain text.
+  // ============================================================
   reframeSection: {
+    paddingHorizontal: 24,
     marginBottom: 8,
   },
   reframePart: {
     marginBottom: 24,
   },
   reframeTitle: {
-    color: '#A78BFA',
+    color: '#7C3AED',
     fontSize: 22,
     fontFamily: 'Inter_900Black',
     marginBottom: 12,
     lineHeight: 28,
   },
   reframeBody: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
     lineHeight: 23,
   },
 
-  // ===== Section 6: Ask Yourself This =====
+  // ============================================================
+  // Block 5: Ask Yourself This (dark purple card).
+  // ============================================================
   askCard: {
+    marginHorizontal: 16,
     backgroundColor: '#1A0F3D',
     borderRadius: 16,
     padding: 20,
@@ -695,12 +730,15 @@ const styles = StyleSheet.create({
   askQuestion: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_500Medium',
     lineHeight: 23,
   },
 
-  // ===== Section 7: Today's Missions =====
+  // ============================================================
+  // Block 6: Today's Missions to Grow (solid purple card).
+  // ============================================================
   missionsCard: {
+    marginHorizontal: 16,
     backgroundColor: '#7C3AED',
     borderRadius: 16,
     padding: 20,
@@ -716,7 +754,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },

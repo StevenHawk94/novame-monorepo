@@ -91,15 +91,15 @@ Max 60 characters. A minimal, powerful, card-worthy tagline. An "Aha!" moment. B
 Total length 1500-2000 characters across all three micro-paragraphs. Structure strictly into three parts. NO bullet points. Address user directly as "you."
 
 #### Part 1: The Mirror Hook
-- title (3-6 words): Sharp observant phrase pinpointing the specific mental knot. Must mention an exact element from their story. Prefix with the magnifying-glass emoji.
+- title (3-6 words): Sharp observant phrase pinpointing the specific mental knot. Must mention an exact element from their story. NO emoji prefix -- plain text only.
 - body: Point out the unconscious trap or rigid expectation causing their state. Use 2-3 precise details from input as evidence. Prove where they are stuck without judgment.
 
 #### Part 2: The Flipped Lens
-- title (3-6 words): Curious, witty, or paradoxical phrase introducing unexpected new game rules. Prefix with the counterclockwise-arrows emoji.
+- title (3-6 words): Curious, witty, or paradoxical phrase introducing unexpected new game rules. NO emoji prefix -- plain text only.
 - body: Offer an unexpected, intriguing, or slightly humorous new angle. If negative: dissolve fear/shame by framing as a fascinating low-stakes experiment. If positive: expand into a repeatable personal superpower.
 
 #### Part 3: The Permission Slip
-- title (3-5 words): Brief liberating phrase marking the mental pivot. Prefix with the seedling emoji.
+- title (3-5 words): Brief liberating phrase marking the mental pivot. NO emoji prefix -- plain text only.
 - body: ONE punchy, liberating closing sentence. Tell them what this new perspective allows them to do or feel at this exact moment.
 
 Tone: Like an intuitive brilliant friend hitting the nail on the head over coffee. Deep, sharp, lighthearted.
@@ -183,7 +183,7 @@ Other required fields below also apply:
 
 # Output Format (CRITICAL)
 
-Return a valid JSON object containing ALL fields requested in the user prompt. NO markdown fences. NO extra text outside JSON. Use \\n for line breaks within JSON string values. NEVER use markdown bold, asterisks, or hash headers inside output values. Emojis (the magnifying-glass, the counterclockwise-arrows, the seedling) ARE allowed in title fields and should be the first character of each title.`
+Return a valid JSON object containing ALL fields requested in the user prompt. NO markdown fences. NO extra text outside JSON. Use \\n for line breaks within JSON string values. NEVER use markdown bold, asterisks, or hash headers inside output values. Title fields are strictly plain English text starting with a capital letter — never emoji, never punctuation, never quote marks. The output is fed directly into a typography-controlled UI; any prefix character breaks the layout.`
 
 
 function buildUserPrompt(wisdomText, aspireList, shouldUpdatePortrait) {
@@ -201,15 +201,15 @@ Return a JSON object with EXACTLY these fields:
 
 3. "insight_full": Universal Wisdom (500-600 characters). The "God's-eye view." Strip away "I" and speak about "people/we/us." Weave three parts into ONE paragraph: (a) The Human Paradox — common relatable trap all humans fall into; (b) The Hidden Truth — counter-intuitive twist the user's story proved true; (c) The Art of Living — compassionate actionable philosophy. Wise yet grounded tone. No academic jargon. Use simple concrete analogies. DO NOT mention specific actions the user did, specific numbers, or specific timeframes. DO mention the underlying human principle.
 
-4. "mirror_hook_title": Part 1 title of Core Reframing (3-6 words). Sharp, observant phrase pinpointing the specific mental knot they are tied up in. Mention an exact element from their story. Start with the magnifying-glass emoji as the first character.
+4. "mirror_hook_title": Part 1 title of Core Reframing (3-6 words). Sharp, observant phrase pinpointing the specific mental knot they are tied up in. Mention an exact element from their story. FORMAT: plain English words only — start with a capital letter, no leading emoji, no leading punctuation, no quote marks. Examples — Bad: "🤔 The Comfort of the Known", "💡 Stuck in the loop". Good: "The Comfort of the Known", "Stuck in the loop".
 
 5. "mirror_hook_body": Part 1 body (400-600 characters). Point out the unconscious trap or rigid expectation causing their current state. Use 2-3 precise details from input as evidence. Prove where they are stuck without judgment.
 
-6. "flipped_lens_title": Part 2 title (3-6 words). Curious, witty, or slightly paradoxical phrase introducing unexpected new game rules. Start with the counterclockwise-arrows emoji as the first character.
+6. "flipped_lens_title": Part 2 title (3-6 words). Curious, witty, or slightly paradoxical phrase introducing unexpected new game rules. FORMAT: plain English words only — start with a capital letter, no leading emoji, no leading punctuation, no quote marks. Examples — Bad: "🧭 Curiosity as a Compass", "✨ The Hidden Door". Good: "Curiosity as a Compass", "The Hidden Door".
 
 7. "flipped_lens_body": Part 2 body (500-800 characters). Offer an unexpected, intriguing, or slightly humorous new angle on this exact situation. If negative: dissolve fear/shame by framing as fascinating low-stakes experiment. If positive: expand into repeatable personal superpower.
 
-8. "permission_slip_title": Part 3 title (3-5 words). Brief liberating phrase marking the mental pivot. Start with the seedling emoji as the first character.
+8. "permission_slip_title": Part 3 title (3-5 words). Brief liberating phrase marking the mental pivot. FORMAT: plain English words only — start with a capital letter, no leading emoji, no leading punctuation, no quote marks. Examples — Bad: "🌱 Embrace the Unexplored", "🚀 Step Forward". Good: "Embrace the Unexplored", "Step Forward".
 
 9. "permission_slip_body": Part 3 body (200-400 characters). ONE punchy liberating closing sentence/short paragraph. Tell them what this new perspective allows them to do or feel at this exact moment.
 
@@ -303,6 +303,21 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     return { success: false, error: e.message || 'AI generation failed' }
   }
 
+  // Stage 6.WisdomFix-S3: emoji sanitize.
+  // The prompt instructs AI to emit plain-text titles (no emoji
+  // prefix), but Gemini/DeepSeek occasionally ignore the negative
+  // instruction and prepend emoji like "🤔 The Comfort of the Known
+  // Path". Defensive client-side strip ensures the saved DB row is
+  // always clean regardless of model compliance. Uses Unicode property
+  // escapes \p{Extended_Pictographic} which V8 (Edge runtime) supports.
+  const stripLeadingEmoji = (s) => {
+    if (typeof s !== 'string') return s
+    return s.replace(/^[\p{Extended_Pictographic}\u200d\ufe0f\s]+/u, '').trim()
+  }
+  result.mirror_hook_title = stripLeadingEmoji(result.mirror_hook_title)
+  result.flipped_lens_title = stripLeadingEmoji(result.flipped_lens_title)
+  result.permission_slip_title = stripLeadingEmoji(result.permission_slip_title)
+
   // Stage 6 Wisdom Insight redesign: assemble new jsonb columns.
   // `reframe` = 3-part Core Reframing (mirror_hook / flipped_lens /
   // permission_slip), each with {title, body}.
@@ -329,10 +344,30 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   // forceKeyword overrides AI's keyword choice. Used by Seek question
   // flow so card art matches the question's tag regardless of AI
   // choice. Quote, insight, scores still AI-generated unchanged.
+  // Stage 6.WisdomFix-S2: no more silent 'Clarity' / 'mind-clarity'
+  // fallback. The product contract is "AI must pick one of the 48
+  // keywords." If AI returns a string that doesn't match (or
+  // forceKeyword is bogus), fail the whole publish and let the user
+  // retry — fabricating a Clarity card unrelated to their input is
+  // the worst possible UX (matches §5.3 lesson: "graceful fallback is
+  // wrong when the fallback isn't actually graceful").
   const matchedKeyword = forceKeyword
-    ? (ALL_KEYWORDS.find(k => k.toLowerCase() === forceKeyword.toLowerCase()) || forceKeyword)
-    : (ALL_KEYWORDS.find(k => k.toLowerCase() === (result.keyword || '').toLowerCase()) || 'Clarity')
-  const keywordId = slugToId(matchedKeyword) || 'mind-clarity'
+    ? ALL_KEYWORDS.find(k => k.toLowerCase() === forceKeyword.toLowerCase())
+    : ALL_KEYWORDS.find(k => k.toLowerCase() === (result.keyword || '').toLowerCase())
+  if (!matchedKeyword) {
+    const provided = forceKeyword ?? result.keyword ?? '(none)'
+    console.error('[generate-card] Keyword match failed. AI/force provided:', provided)
+    return { success: false, error: `Keyword "${provided}" not in the 48-keyword set` }
+  }
+  const keywordId = slugToId(matchedKeyword)
+  if (!keywordId) {
+    // Theoretically unreachable: ALL_KEYWORDS is derived from KEYWORDS
+    // and slugToId is the inverse mapping. Guard exists so any future
+    // drift between the two surfaces immediately instead of silently
+    // saving a stale id.
+    console.error('[generate-card] slugToId returned undefined for slug:', matchedKeyword)
+    return { success: false, error: `slugToId failed for "${matchedKeyword}"` }
+  }
 
   const { data: savedCard, error: dbError } = await supabase
     .from('wisdom_cards')
@@ -363,21 +398,24 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     .select()
     .single()
 
-  if (dbError) console.error('[generate-card] DB save error:', dbError.message)
-
-  const card = savedCard || {
-    id: `temp-${Date.now()}`, wisdom_id: wisdomId, user_id: userId,
-    keyword_id: keywordId,
-    quote_short: (result.quote_short || '').substring(0, 60),
-    insight_full: result.insight_full,
-    card_a: (result.quote_short || '').substring(0, 60),
-    reframe,
-    reflective_question: reflectiveQuestion,
-    wisdom_emotion: result.wisdom_emotion,
-    task_1: result.task_1, task_2: result.task_2,
-    creator_name: creatorName, creator_avatar: creatorAvatar,
-    created_at: new Date().toISOString(),
+  // Stage 6.WisdomFix-S1: DB save failure must propagate as a
+  // hard failure, not a silent fallback. The pre-fix code returned
+  // success:true with a `temp-<timestamp>` in-memory card object;
+  // PhaseInsight then rendered the user's "Release" card correctly
+  // (data was in memory) but Collection / My Logs forever missed it
+  // (DB had no row), and the user's monthly quota was consumed for a
+  // ghost card. Matches §5.3 lesson: rollback over fabricate-success.
+  if (dbError) {
+    console.error('[generate-card] DB save error:', dbError.message)
+    return { success: false, error: 'DB save failed: ' + dbError.message }
   }
+  if (!savedCard) {
+    // Defensive: should be unreachable when dbError is null, but
+    // .select().single() can technically return data:null in edge cases.
+    console.error('[generate-card] DB insert returned null savedCard with no dbError')
+    return { success: false, error: 'DB save returned null' }
+  }
+  const card = savedCard
 
   // Update aspire scores. Stage 6: also capture the updated scores
   // object into the function-scope `updatedAspireScores` so we can

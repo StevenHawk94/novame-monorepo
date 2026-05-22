@@ -1986,6 +1986,7 @@ function PhaseInsight({
   // long completed and the home tab will read fresh data from cache
   // on next focus. If the user taps Done immediately (~1s), handleDone
   // awaits this promise so the cache is hot before close.
+  const insets = useSafeAreaInsets();
   const prefetchRef = useRef<Promise<unknown> | null>(null);
   const [doneBusy, setDoneBusy] = useState(false);
 
@@ -2144,6 +2145,7 @@ function PhaseInsight({
           cardCollection={publishedCardCollection}
           aspireImpact={publishedAspireImpact}
           communityCount={communityCount}
+          topExtraPadding={Math.max(0, insets.top - 4)}
         />
 
         {/* Bottom spacer so Done button has air */}
@@ -2171,6 +2173,12 @@ function PhaseInsight({
 const insightStyles = StyleSheet.create({
   root: {
     flex: 1,
+    // Stage 6.RecordBgFix (post-revert): PhaseInsight gets its own
+    // white root so InsightView's Block 4 (reframe) + spacing between
+    // self-styled blocks renders on white. Independent of rootStyles
+    // (the shared dark-purple #1A0F3D background of CHOOSE / RECORDING
+    // / PUBLISHING / TYPE_INPUT). Matches wisdom-insight.tsx root.
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     paddingBottom: 16,
@@ -2458,9 +2466,15 @@ export default function RecordModal() {
 const rootStyles = StyleSheet.create({
   root: {
     flex: 1,
-    // Stage 6.RecordVisual: paywall-purple background (was '#0A0820' deep-near-black).
-    // Matches the brand purple used in subscription-paywall + ai-consent + ExpBanner.
-    // White text + pink CTAs are layered on top via the per-phase styles below.
-    backgroundColor: '#7C3AED',
+    // Stage 6.RecordBgFix (reverted from Stage 6 Insight redesign):
+    // Insight page redesign needed a white container, but routing that
+    // through the SHARED rootStyles.root made every earlier phase
+    // (Choose / Recording / Publishing / Type Input) lose its purple
+    // background — white labels on white root went invisible. Reverted
+    // to deep purple here; InsightView ships its own white container
+    // internally so PhaseInsight still renders white on top of this
+    // purple root. Matches wisdom-text.tsx (#1A0F3D) for continuity
+    // when TYPE_INPUT pushes into wisdom-text.
+    backgroundColor: '#1A0F3D',
   },
 });

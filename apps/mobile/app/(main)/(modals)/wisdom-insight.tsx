@@ -68,30 +68,25 @@ export default function WisdomInsightModal() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-      {/* Header: just a back button on the left; the inner WISDOM INSIGHT
-          title acts as the page title to avoid duplication. */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={goBack}
-          hitSlop={12}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
-        >
-          <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
-        </Pressable>
-      </View>
-
+    <View style={styles.root}>
       {payload ? (
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
           showsVerticalScrollIndicator={false}
         >
+          {/* InsightView's Block 1+2 ImageBackground extends all the way
+              to the screen top (root has no paddingTop). topExtraPadding
+              gives the in-content text room to clear the status bar
+              while the purple glow still bleeds into the safe area —
+              matches the design comp and PhaseInsight's behavior in
+              record.tsx. */}
           <InsightView
             card={payload.card}
             emotion={payload.emotion}
             cardCollection={null}
             aspireImpact={null}
             communityCount={communityCount}
+            topExtraPadding={Math.max(0, insets.top - 4)}
           />
         </ScrollView>
       ) : (
@@ -99,6 +94,21 @@ export default function WisdomInsightModal() {
           <Text style={styles.emptyText}>Could not load this insight.</Text>
         </View>
       )}
+      {/* Floating back button on top of the purple ImageBackground.
+          Position is anchored to the safe-area top so on every device
+          it sits just below the status bar. zIndex above ScrollView
+          so it stays tappable while content scrolls underneath. */}
+      <Pressable
+        onPress={goBack}
+        hitSlop={12}
+        style={({ pressed }) => [
+          styles.backFloating,
+          { top: insets.top + 8 },
+          pressed && { opacity: 0.7 },
+        ]}
+      >
+        <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
+      </Pressable>
     </View>
   );
 }
@@ -106,7 +116,11 @@ export default function WisdomInsightModal() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#1A0F3D',
+    // Stage 6 Wisdom Insight redesign: white root matches the in-page
+    // section colors (white body for reframe + dark Ask card + purple
+    // Missions card). The back button switches to a dark glyph against
+    // this white background.
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -116,12 +130,31 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backBtn: {
+    // DEPRECATED — kept temporarily; no JSX references this any more
+    // since back button moved to backFloating below. Safe to delete in
+    // a follow-up cleanup once we're sure no other surface imports it.
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(31,17,71,0.06)',
+  },
+  // Stage 6.WisdomFix-S4: floating back button overlays the
+  // ImageBackground (which now extends into the safe area). White
+  // glyph + semi-opaque white-tint circle for contrast against the
+  // purple glow. `top` is supplied inline from insets.top + 8 at
+  // render time, so iPhone SE / Pro Max both get correct placement.
+  backFloating: {
+    position: 'absolute',
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    zIndex: 10,
   },
   headerSpacer: {
     width: 36,
