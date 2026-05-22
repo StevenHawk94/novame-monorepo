@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import {
+  decodeNotificationPayload,
+  isDecodedNotificationDataPayload,
+  isDecodedNotificationSummaryPayload,
+  APPLE_ROOT_CA_G3_FINGERPRINT,
+} from 'app-store-server-api'
 
-export const runtime = 'edge'
+// Stage 6.WebhookJWS: runtime switched from 'edge' to 'nodejs'
+// because app-store-server-api uses Node's crypto module for
+// X.509 certificate chain validation (not available in Edge).
+// Cold start goes from ~10ms to ~200-500ms — fine for a
+// server-to-server webhook (Apple gives 30s timeout window).
+// All other routes in this project remain on Edge runtime.
+export const runtime = 'nodejs'
 
 /**
  * POST /api/webhooks/apple
@@ -44,24 +56,26 @@ const PRODUCT_TO_CYCLE = {
 }
 
 /**
- * Decode a JWS token payload (base64url middle segment).
- * We skip signature verification here — Apple's notification system is
- * already authenticated via HTTPS to our specific URL.
+ * Stage 6.WebhookJWS: decodeJWSPayload helper removed. Previously
+ * this function did base64url decode without ANY signature
+ * verification, so any HTTP client that knew the webhook URL could
+ * forge notifications. Replaced with decodeNotificationPayload from
+ * app-store-server-api which:
+ *   1. Parses the JWS x5c header (3-cert chain: leaf, intermediate,
+ *      Apple Root CA G3)
+ *   2. Verifies x5c[2]'s SHA-256 fingerprint matches the embedded
+ *      APPLE_ROOT_CA_G3_FINGERPRINT constant
+ *   3. Validates the certificate chain (each cert signed by next)
+ *   4. Extracts the leaf cert's ES256 public key
+ *   5. Verifies the JWS signature using that public key
+ *   6. Returns the typed decoded payload
+ *
+ * Throws if any step fails. Feature flag WEBHOOK_VERIFY_DISABLED
+ * exists as an emergency fallback if Apple's certificate rotation
+ * causes false rejections in production (see Oct 2025 incident
+ * where Apple's own certificate expiry briefly broke verification
+ * for everyone).
  */
-function decodeJWSPayload(jws) {
-  try {
-    const parts = jws.split('.')
-    if (parts.length < 2) return null
-    // base64url → base64 → JSON
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-    const padded  = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
-    const decoded = atob(padded)
-    return JSON.parse(decoded)
-  } catch (e) {
-    console.error('[Apple webhook] JWS decode error:', e)
-    return null
-  }
-}
 
 export async function POST(request) {
   try {
@@ -74,27 +88,83 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing signedPayload' }, { status: 400 })
     }
 
-    // Decode the outer notification envelope
-    const notification = decodeJWSPayload(signedPayload)
-    if (!notification) {
-      return NextResponse.json({ error: 'Failed to decode notification' }, { status: 400 })
+    // Stage 6.WebhookJWS: full JWS signature + cert-chain + Apple
+    // Root CA fingerprint verification before trusting the payload.
+    //
+    // Emergency feature flag: if Apple has another certificate
+    // rotation incident (Oct 2025 had one), setting
+    // WEBHOOK_VERIFY_DISABLED=true in Vercel env vars will skip
+    // verification temporarily. NEVER leave this on in normal
+    // operation -- it disables the entire defense.
+    let notification
+    const verifyDisabled = process.env.WEBHOOK_VERIFY_DISABLED === 'true'
+
+    if (verifyDisabled) {
+      // Fallback path: base64url decode without verification.
+      console.warn('[Apple webhook] WEBHOOK_VERIFY_DISABLED=true — signature verification skipped. This should only be used during Apple certificate incidents.')
+      try {
+        const parts = signedPayload.split('.')
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+        notification = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+      } catch (decodeErr) {
+        console.error('[Apple webhook] Fallback decode failed:', decodeErr.message)
+        return NextResponse.json({ received: true, error: 'Decode failed' })
+      }
+    } else {
+      // Normal path: verify signature, cert chain, and Apple Root CA.
+      try {
+        notification = await decodeNotificationPayload(signedPayload)
+      } catch (verifyErr) {
+        console.error('[Apple webhook] SIGNATURE VERIFICATION FAILED:', verifyErr.message, '— rejecting payload. If this is a legitimate Apple notification, check whether Apple has rotated certificates (see Oct 2025 incident) and consider setting WEBHOOK_VERIFY_DISABLED=true as an emergency measure.')
+        // Return 200 not 401: returning 4xx/5xx causes Apple to
+        // retry up to 5 times over 3 days, amplifying load if our
+        // verification is misconfigured. Return 200 + log so legit
+        // notifications get dropped silently (worse than retry,
+        // but bounded) while we investigate.
+        return NextResponse.json({ received: true, error: 'Signature verification failed' })
+      }
+    }
+
+    // Check bundle ID — defense against cross-app notification spoofing.
+    // Notification structure differs between data-bearing and summary
+    // notifications; both have bundleId in their data/summary subfield.
+    const expectedBundleId = 'com.novame.app'
+    const actualBundleId = notification.data?.bundleId || notification.summary?.bundleId
+    if (actualBundleId && actualBundleId !== expectedBundleId) {
+      console.warn('[Apple webhook] Bundle ID mismatch — expected', expectedBundleId, 'got', actualBundleId, '— ignoring notification')
+      return NextResponse.json({ received: true })
     }
 
     const notificationType = notification.notificationType   // e.g. "DID_RENEW"
     const subtype          = notification.subtype             // e.g. "INITIAL_BUY"
     const data             = notification.data
 
-    console.log(`[Apple webhook] ${notificationType}${subtype ? ':'+subtype : ''}`)
+    console.log(`[Apple webhook] ${notificationType}${subtype ? ':'+subtype : ''} verified=${!verifyDisabled}`)
 
-    // Decode the transaction info inside data
-    let transactionInfo = null
-    let renewalInfo     = null
+    // The library already decoded signedTransactionInfo and
+    // signedRenewalInfo for us (in the verified path) -- they come
+    // back as plain objects, not still-encoded JWS strings. In the
+    // fallback (verifyDisabled) path the data field still has the
+    // raw signed JWS strings, so we must decode them unverified.
+    let transactionInfo = data?.signedTransactionInfo || null
+    let renewalInfo     = data?.signedRenewalInfo || null
 
-    if (data?.signedTransactionInfo) {
-      transactionInfo = decodeJWSPayload(data.signedTransactionInfo)
+    if (verifyDisabled && typeof transactionInfo === 'string') {
+      try {
+        const parts = transactionInfo.split('.')
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+        transactionInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+      } catch { transactionInfo = null }
     }
-    if (data?.signedRenewalInfo) {
-      renewalInfo = decodeJWSPayload(data.signedRenewalInfo)
+    if (verifyDisabled && typeof renewalInfo === 'string') {
+      try {
+        const parts = renewalInfo.split('.')
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+        renewalInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+      } catch { renewalInfo = null }
     }
 
     const supabase = getSupabase()

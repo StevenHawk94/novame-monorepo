@@ -14,6 +14,7 @@
     "@aws-sdk/client-s3": "3.985.0",
     "@novame/core": "workspace:^",
     "@supabase/supabase-js": "2.95.3",
+    "app-store-server-api": "^0.17.3",
     "date-fns": "4.1.0",
     "google-auth-library": "10.5.0",
     "jose": "6.2.2",

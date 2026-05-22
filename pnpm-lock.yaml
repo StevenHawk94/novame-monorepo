@@ -96,6 +96,9 @@ importers:
       '@supabase/supabase-js':
         specifier: 2.95.3
         version: 2.95.3
+      app-store-server-api:
+        specifier: ^0.17.3
+        version: 0.17.3
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
@@ -2263,6 +2266,9 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
+  app-store-server-api@0.17.3:
+    resolution: {integrity: sha512-A9KYXrFRbeR9fB55LJ2PJR/GHdQcWTo2chqjkV1A0kYSxIKgpnhb5Xf0KHiagXrqWUBjo6QIkt+bX3rrpjOcPQ==}
+
   arg@5.0.2:
     resolution: {integrity: sha512-PYjyFOLKQ9y57JvQ6QLo8dAgNqswh8M1RMJYdQduT6xbWSgK36P/Z/v+p888pM69jMMfS8Xd8F6I1kQ/I9HUGg==}
 
@@ -3746,6 +3752,9 @@ packages:
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   jose@6.2.2:
     resolution: {integrity: sha512-d7kPDd34KO/YnzaDOlikGpOurfF0ByC2sEV4cANCtdqLlTfBlw2p14O/5d/zv40gJPbIQxfES3nSx1/oYNyuZQ==}
@@ -8178,6 +8187,10 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.2
 
+  app-store-server-api@0.17.3:
+    dependencies:
+      jose: 5.10.0
+
   arg@5.0.2: {}
 
   argparse@1.0.10:
@@ -9973,6 +9986,8 @@ snapshots:
   jimp-compact@0.16.1: {}
 
   jiti@1.21.7: {}
+
+  jose@5.10.0: {}
 
   jose@6.2.2: {}
 
