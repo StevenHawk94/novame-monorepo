@@ -2,17 +2,17 @@ import { apiClient } from './api';
 import { storage } from './storage';
 
 /**
- * Leaderboard API wrapper -- Stage 3.10.3 C.
+ * Leaderboard API wrapper -- Stage 3.10.3 C (Stage 6.LeaderboardExpUnify).
  *
  * Single GET to /api/leaderboard?period=all&limit=50. The server
  * merges leaderboard_seeds (curated default users) with real users
- * aggregated from the wisdoms table (totalMinutes per user_id),
- * sorts by totalMinutes desc, and returns the top N as a single
- * pre-ranked list.
+ * pulled from character_data.total_exp, sorts by totalExp desc, and
+ * returns the top N as a single pre-ranked list.
  *
- * The mobile UI relabels totalMinutes as "exp" (carryover from old
- * web -- the score really is wisdom-creation minutes, but "exp" is
- * the user-facing term across both web and mobile).
+ * totalExp is the SAME number shown on the me page's exp pill, so a
+ * user's leaderboard rank matches the exp they see in their profile.
+ * Seed users' total_mins legacy values are aliased to totalExp at
+ * the API layer (same magnitude as real users' exp, see route comment).
  */
 
 export type LeaderboardEntry = {
@@ -22,10 +22,8 @@ export type LeaderboardEntry = {
   name: string;
   /** Public avatar URL (supabase storage), nullable -- caller falls back to icon. */
   avatar: string | null;
-  /** Score the UI shows as "exp" -- really wisdom-creation minutes. */
-  totalMinutes: number;
-  /** How many wisdoms this user has shared. */
-  wisdomCount: number;
+  /** Score: character_data.total_exp for real users, leaderboard_seeds.total_mins (aliased) for seeds. */
+  totalExp: number;
   /** True for curated leaderboard_seeds rows. */
   isDefault: boolean;
   /** 1-based rank within this fetch. */
@@ -69,7 +67,11 @@ export async function fetchLeaderboard(
 // Used by: ranking.tsx
 // ============================================================
 
-const LEADERBOARD_STORAGE_KEY = 'novame_leaderboard';
+// Stage 6.LeaderboardExpUnify bumped this key from
+// 'novame_leaderboard' to 'novame_leaderboard_v2' so old cached
+// entries (with the legacy `totalMinutes` field) are invalidated
+// rather than corrupting the UI which now reads `totalExp`.
+const LEADERBOARD_STORAGE_KEY = 'novame_leaderboard_v2';
 
 export type CachedLeaderboard = {
   entries: LeaderboardEntry[];

@@ -1648,7 +1648,7 @@ function PhasePublishing({
         // network cost only for the pages they actually visit next
         // (lazy revalidation).
         invalidateWisdoms();         // My Logs (new wisdom row)
-        invalidateLeaderboard();      // Ranking (totalMinutes/wisdomCount bump)
+        invalidateLeaderboard();      // Ranking (totalExp bump after wisdom publish)
         invalidateUserStats();        // Assets (totalWords / uniqueKeywords)
         invalidateSeekQuestions();    // Discover feed (cards count badge)
 

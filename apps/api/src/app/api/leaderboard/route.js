@@ -40,12 +40,21 @@ export async function GET(request) {
         .order('total_mins', { ascending: false })
       
       if (!seedError && seeds) {
+        // Stage 6.LeaderboardExpUnify: seeds table stores total_mins
+        // (curated minute counts assigned when the seed users were
+        // first inserted). We treat that same number as the user-
+        // facing "exp" score, since the values (200-600 range) align
+        // with the magnitude of real users' total_exp (character_data
+        // top-10 sits at ~400-6000). Renaming the DB column would
+        // require a migration; we instead alias the field at the
+        // API boundary so the mobile client sees a single field
+        // (totalExp) regardless of which underlying table it came
+        // from. wisdomCount removed -- ranking.tsx never displays it.
         seedUsers = seeds.map(s => ({
           userId: `seed-${s.name}`,
           name: s.name,
           avatar: s.avatar_url,
-          totalMinutes: s.total_mins || 0,
-          wisdomCount: s.wisdom_count || 1,
+          totalExp: s.total_mins || 0,
           isDefault: true,
         }))
       }
@@ -53,83 +62,63 @@ export async function GET(request) {
       console.log('leaderboard_seeds table may not exist:', e.message)
     }
     
-    // 来源2：从 wisdoms 聚合真实用户数据
-    let dateFilter = null
-    const now = new Date()
-    if (period === 'week') {
-      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    } else if (period === 'month') {
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    }
-    
-    // Stage 6.LeaderboardFix: removed .eq('is_public', true) filter.
+    // Stage 6.LeaderboardExpUnify: real users now scored by
+    // character_data.total_exp (same source as the me-stats page's
+    // "totalExp" pill), so a user's leaderboard rank uses the
+    // identical number they see in their own profile. Previously
+    // leaderboard aggregated wisdoms.duration_seconds, which gave a
+    // wisdom-creation-minutes score completely divorced from the
+    // exp displayed elsewhere.
     //
-    // Background: mobile UI no longer offers a public/private toggle
-    // (see record.tsx:1405 — "We do not send isPublic..."), so the
-    // server's publish-wisdom defaults isPublic=false for every new
-    // wisdom. The is_public filter here was rejecting every real-
-    // user row, leaving the leaderboard populated only by
-    // leaderboard_seeds curated rows.
-    //
-    // is_public is intentionally kept in the publish-wisdom pipeline
-    // because it still gates engagement-boost scheduling and the
-    // auto-comment trigger downstream. We just don't use it as a
-    // leaderboard inclusion filter anymore.
-    let query = supabase
-      .from('wisdoms')
-      .select('user_id, duration_seconds')
-      .not('user_id', 'is', null)
-    
-    if (dateFilter) {
-      query = query.gte('created_at', dateFilter)
-    }
-    
-    const { data: wisdoms } = await query
-    
-    // 按用户聚合
-    const userStatsFromWisdoms = {}
-    for (const w of wisdoms || []) {
-      if (!w.user_id) continue
-      if (!userStatsFromWisdoms[w.user_id]) {
-        userStatsFromWisdoms[w.user_id] = { totalSeconds: 0, wisdomCount: 0 }
-      }
-      const seconds = parseInt(w.duration_seconds) || 0
-      userStatsFromWisdoms[w.user_id].totalSeconds += seconds
-      userStatsFromWisdoms[w.user_id].wisdomCount += 1
-    }
-    
-    // 获取真实用户的 profile 信息
-    const realUserIds = Object.keys(userStatsFromWisdoms)
+    // The period filter ("week" / "month" / "all") is no longer
+    // applied at the data layer because character_data has no
+    // created_at-per-exp-event ledger -- total_exp is a running
+    // total, not a time-bucketed metric. Period is still accepted
+    // as a query param for forward compatibility but currently
+    // returns all-time exp for any value.
     let realUsers = []
-    
-    if (realUserIds.length > 0) {
+    const { data: charRows, error: charErr } = await supabase
+      .from('character_data')
+      .select('user_id, total_exp')
+      .not('user_id', 'is', null)
+      .gt('total_exp', 0)
+
+    if (charErr) {
+      console.error('[leaderboard] character_data fetch error:', charErr.message)
+    } else if (charRows && charRows.length > 0) {
+      // Fetch display info from profiles in a single round-trip.
+      const userIds = charRows.map(r => r.user_id)
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, total_mins_created')
-        .in('id', realUserIds)
-      
-      if (profiles) {
-        realUsers = profiles.map(p => {
-          const stats = userStatsFromWisdoms[p.id] || { totalSeconds: 0, wisdomCount: 0 }
-          const presetMins = p.total_mins_created || 0
-          const calculatedMins = Math.round(stats.totalSeconds / 60)
-          
+        .select('id, display_name, avatar_url')
+        .in('id', userIds)
+
+      const profilesMap = {}
+      for (const p of profiles || []) {
+        profilesMap[p.id] = p
+      }
+
+      realUsers = charRows
+        .map(r => {
+          const p = profilesMap[r.user_id]
+          if (!p) return null  // Skip if profile row missing (defensive)
           return {
-            userId: p.id,
+            userId: r.user_id,
             name: p.display_name || 'Anonymous',
             avatar: p.avatar_url,
-            totalMinutes: presetMins > 0 ? presetMins : calculatedMins,
-            wisdomCount: stats.wisdomCount,
+            totalExp: r.total_exp || 0,
             isDefault: false,
           }
         })
-      }
+        .filter(Boolean)
     }
-    
-    // 合并并排序
+
+    // Merge and rank. We filter out zero-exp entries (both seeds and
+    // real users with no recorded activity) so the leaderboard never
+    // surfaces empty rows.
     const allUsers = [...seedUsers, ...realUsers]
-      .filter(u => u.totalMinutes > 0)
-      .sort((a, b) => b.totalMinutes - a.totalMinutes)
+      .filter(u => u.totalExp > 0)
+      .sort((a, b) => b.totalExp - a.totalExp)
       .slice(0, limit)
       .map((entry, index) => ({ ...entry, rank: index + 1 }))
     

@@ -20,11 +20,11 @@ import {
 } from '@/lib/leaderboard-api';
 
 /**
- * Leaderboard overlay -- Stage 3.10.3 C.
+ * Leaderboard overlay -- Stage 3.10.3 C (Stage 6.LeaderboardExpUnify).
  *
- * Top-50 ranking by total wisdom-creation minutes (relabeled "exp" in
- * the UI for consistency with the old web). 1:1 mirror of the legacy
- * RankingOverlay layout: top-3 podium + list 4-N.
+ * Top-50 ranking by total_exp -- the same number shown on the me
+ * page's exp pill. 1:1 mirror of the legacy RankingOverlay layout:
+ * top-3 podium + list 4-N.
  *
  * Data flow:
  *   - On mount, GET /api/leaderboard?period=all&limit=50
@@ -242,7 +242,7 @@ function PodiumSlot({
           size === 'large' ? styles.podiumExpLarge : styles.podiumExpSmall,
         ]}
       >
-        {entry.totalMinutes} exp
+        {entry.totalExp} exp
       </Text>
     </View>
   );
@@ -263,7 +263,7 @@ function ListRow({ entry }: { entry: LeaderboardEntry }) {
         </Text>
       </View>
       <View style={styles.listExpWrap}>
-        <Text style={styles.listExpValue}>{entry.totalMinutes}</Text>
+        <Text style={styles.listExpValue}>{entry.totalExp}</Text>
         <Text style={styles.listExpLabel}>exp</Text>
       </View>
     </View>
