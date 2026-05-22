@@ -75,16 +75,23 @@ export async function POST(request) {
       console.log('Deleted wisdoms for user:', userId)
     }
     
-    // 3. 删除用户的 questions
+    // 3. 删除用户提交的 seek_questions
+    //
+    // Stage 6.UserSyncCleanup: this delete previously targeted
+    // public.questions (table never existed) with .eq('user_id', ...).
+    // The real table is public.seek_questions and the user reference
+    // column is submitted_by_user_id. Pre-fix every account deletion
+    // left the user's submitted questions orphaned in DB -- silent
+    // GDPR violation hidden by the silent error swallow.
     const { error: questionsError } = await supabase
-      .from('questions')
+      .from('seek_questions')
       .delete()
-      .eq('user_id', userId)
+      .eq('submitted_by_user_id', userId)
     
     if (questionsError) {
-      console.error('Failed to delete questions:', questionsError)
+      console.error('Failed to delete seek_questions:', questionsError)
     } else {
-      console.log('Deleted questions for user:', userId)
+      console.log('Deleted seek_questions for user:', userId)
     }
     
     // 4. 删除用户的 liked wisdoms 记录

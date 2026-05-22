@@ -307,64 +307,14 @@ export async function GET(request) {
       }
     }
     
-    // 5. 获取用户的 questions
-    const { data: questionsRaw, error: questionsError } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    
-    if (questionsError) {
-      console.error('Questions fetch error:', questionsError)
-    }
-    
-    // 6. 为每个 question 加载匹配的 wisdoms
-    let questions = []
-    if (questionsRaw && questionsRaw.length > 0) {
-      questions = await Promise.all(questionsRaw.map(async (q) => {
-        let matchedWisdoms = []
-        
-        if (q.collected_wisdom_ids && q.collected_wisdom_ids.length > 0) {
-          const { data: matchedData } = await supabase
-            .from('wisdoms')
-            .select('*')
-            .in('id', q.collected_wisdom_ids)
-          
-          if (matchedData && matchedData.length > 0) {
-            const userIds = [...new Set(matchedData.map(w => w.user_id).filter(Boolean))]
-            let usersMap = {}
-            
-            if (userIds.length > 0) {
-              const { data: users } = await supabase
-                .from('profiles')
-                .select('id, display_name, avatar_url')
-                .in('id', userIds)
-              
-              if (users) {
-                usersMap = users.reduce((acc, u) => {
-                  acc[u.id] = { name: u.display_name || 'Anonymous', avatar: u.avatar_url }
-                  return acc
-                }, {})
-              }
-            }
-            
-            matchedWisdoms = matchedData.map(w => ({
-              ...w,
-              user: usersMap[w.user_id] || { name: 'Anonymous', avatar: null },
-            }))
-          }
-        }
-        
-        return {
-          ...q,
-          text: q.question_text,
-          matchedWisdoms: matchedWisdoms,
-          matchedCount: matchedWisdoms.length,
-          isPublic: q.is_public,
-        }
-      }))
-    }
-    
+    // Stage 6.UserSyncCleanup: removed legacy questions fetch block.
+    // It referenced public.questions (table never existed -- real table
+    // is public.seek_questions, accessed via the dedicated
+    // /api/user-questions and /api/seek-questions routes). Every
+    // user-sync GET was silently erroring with PGRST205 on this
+    // SELECT and falling through to return data.questions = [],
+    // which no mobile consumer read.
+
     return Response.json({
       success: true,
       data: {
@@ -374,7 +324,6 @@ export async function GET(request) {
         standaloneCards: standaloneCards || [],
         likedWisdoms: likedWisdoms || [],
         likedDefaultIds: likedDefaultIds || [],
-        questions: questions || [],
         hasCompletedOnboarding: profile?.has_completed_onboarding || false,
         selectedCharacter: profile?.selected_character || 'char-1',
         selectedInterests: profile?.selected_interests || [],
