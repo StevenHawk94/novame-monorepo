@@ -176,17 +176,32 @@ async function handleActive(supabase, txn) {
     return
   }
 
-  // Find user by apple_original_transaction_id stored during first purchase
+  // Find user by apple_original_transaction_id stored during first purchase.
+  //
+  // Stage 6.IAPFix: surface the underlying error (column missing,
+  // RLS denied, etc) instead of swallowing it. The pre-fix code
+  // destructured only `data` and discarded `error`, so when the
+  // apple_* schema columns didn't yet exist this branch silently
+  // returned no rows + the warn line below fired with a generic
+  // "no user found" that hid the real problem (PostgreSQL error
+  // "column apple_original_transaction_id does not exist"). The
+  // schema migration in this commit adds the columns, but the
+  // diagnostic is kept so future drift is caught faster.
   const originalId = String(txn.originalTransactionId)
-  const { data: sub } = await supabase
+  const { data: sub, error: subErr } = await supabase
     .from('subscriptions')
     .select('user_id')
     .eq('apple_original_transaction_id', originalId)
-    .single()
+    .maybeSingle()
+
+  if (subErr) {
+    console.error('[Apple webhook] subscriptions lookup error for originalTxnId=' + originalId + ':', subErr.message)
+    return
+  }
 
   const userId = sub?.user_id
   if (!userId) {
-    console.warn('[Apple webhook] No user found for originalTransactionId:', originalId)
+    console.warn('[Apple webhook] No user has originalTransactionId=' + originalId + ' on file. This is normal for renewals on subscriptions purchased before this server saved apple_* columns; the user will need to re-purchase or restore. After Stage 6.IAPFix all new purchases write apple_* via apple-iap, so this warning should not recur for purchases post-deploy.')
     return
   }
 
@@ -232,17 +247,31 @@ async function handleActive(supabase, txn) {
  * Downgrade user to free when subscription expires or is refunded.
  */
 async function handleExpired(supabase, txn) {
+  // Stage 6.IAPFix: same diagnostic improvement as handleActive.
+  // Note: an unfound expired notification is more concerning than
+  // an unfound activation, because failing to process it leaves
+  // the user permanently on a paid tier in profiles after Apple
+  // has stopped billing them (Apple stops, our DB doesn't know,
+  // user enjoys lifetime paid features). The warn is preserved
+  // until JWS signature verification is added (backlog), at
+  // which point we can also start parsing transactionId out of
+  // the signed payload and match on that as a secondary lookup.
   const originalId = String(txn.originalTransactionId)
 
-  const { data: sub } = await supabase
+  const { data: sub, error: subErr } = await supabase
     .from('subscriptions')
     .select('user_id')
     .eq('apple_original_transaction_id', originalId)
-    .single()
+    .maybeSingle()
+
+  if (subErr) {
+    console.error('[Apple webhook] expired-lookup error for originalTxnId=' + originalId + ':', subErr.message)
+    return
+  }
 
   const userId = sub?.user_id
   if (!userId) {
-    console.warn('[Apple webhook] No user found for expired txn:', originalId)
+    console.warn('[Apple webhook] EXPIRED for unknown originalTxnId=' + originalId + ' — user not downgraded. Possible causes: (a) purchase pre-dates apple_* schema columns, (b) webhook signature spoofing (backlog: implement JWS verification).')
     return
   }
 

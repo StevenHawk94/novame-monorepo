@@ -95,17 +95,39 @@ export async function POST(request) {
       : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
 
     // ── Update profiles.subscription_tier ──
-    await supabase.from('profiles')
+    //
+    // Stage 6.IAPFix: destructure { error } and surface failures.
+    // The pre-fix code awaited the update without checking error,
+    // so RLS rejections / row-not-found / type mismatches all
+    // silently succeeded -- mobile saw tier upgrade but DB never
+    // changed. Same silent-fail family as Stage 6.WisdomFix-S1
+    // (the wisdom_card DB save).
+    const { error: profileErr } = await supabase
+      .from('profiles')
       .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
       .eq('id', userId)
+    if (profileErr) {
+      console.error('[apple-iap] profile update error:', profileErr.message)
+      return NextResponse.json(
+        { success: false, error: 'Failed to update profile tier: ' + profileErr.message },
+        { status: 500 }
+      )
+    }
 
-    // ── Upsert subscriptions table ──
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('user_id', userId)
-      .single()
-
+    // ── Upsert subscriptions table (atomic) ──
+    //
+    // Stage 6.IAPFix: switched from select-then-update/insert
+    // two-step to supabase upsert() with onConflict='user_id'.
+    // The two-step had two flaws:
+    //   1. Race window: concurrent purchase callbacks could both
+    //      see "no existing row" and both try to insert.
+    //   2. Silent error fall-through: neither branch destructured
+    //      error, so DB schema mismatch or RLS rejection passed.
+    //
+    // Stage 6.IAPFix also requires the subscriptions table to
+    // have apple_transaction_id / apple_original_transaction_id /
+    // apple_product_id columns -- added in the corresponding
+    // schema migration (see commit message for the ALTER TABLE).
     const subRow = {
       user_id: userId,
       plan: tier,
@@ -116,16 +138,27 @@ export async function POST(request) {
       apple_transaction_id: String(transactionId),
       apple_original_transaction_id: String(originalTransactionId || transactionId),
       apple_product_id: productId,
-      // Clear any pending changes
+      // Clear any pending changes from a previously-scheduled
+      // downgrade/crossgrade that this purchase supersedes.
       pending_plan: null,
       pending_billing_cycle: null,
       updated_at: new Date().toISOString(),
     }
 
-    if (existingSub) {
-      await supabase.from('subscriptions').update(subRow).eq('user_id', userId)
-    } else {
-      await supabase.from('subscriptions').insert(subRow)
+    const { error: subErr } = await supabase
+      .from('subscriptions')
+      .upsert(subRow, { onConflict: 'user_id' })
+
+    if (subErr) {
+      console.error('[apple-iap] subscription upsert error:', subErr.message)
+      // We already updated profiles.subscription_tier above; the
+      // user is now in a half-state (profile says paid, no
+      // subscription row). Surfacing the error lets the mobile
+      // client retry — the next retry's upsert is idempotent.
+      return NextResponse.json(
+        { success: false, error: 'Failed to save subscription: ' + subErr.message },
+        { status: 500 }
+      )
     }
 
     console.log(`[apple-iap] Activated ${tier} (${billingCycle}) for user ${userId} — txn=${transactionId}`)

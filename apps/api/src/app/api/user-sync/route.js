@@ -62,14 +62,22 @@ export async function GET(request) {
     if (profileError && profileError.code === 'PGRST116') {
       const defaultAvatar = getRandomDefaultAvatar()
       
-      // 获取用户邮箱来生成默认用户名
+      // 获取用户邮箱来生成默认用户名 + 直接写入 profiles.email
       const { data: authUser } = await supabase.auth.admin.getUserById(userId)
-      const defaultDisplayName = getDisplayNameFromEmail(authUser?.user?.email)
-      
+      const authEmail = authUser?.user?.email || null
+      const defaultDisplayName = getDisplayNameFromEmail(authEmail)
+
+      // Stage 6.IAPFix: persist email at profile creation.
+      // Prior to this fix the email was read from auth.users only to
+      // derive display_name and then discarded — leaving profiles.email
+      // NULL for every user (verified across 119 production rows).
+      // Auth flows + admin queries that pivot off profiles need this
+      // column populated.
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
+          email: authEmail,
           display_name: defaultDisplayName,
           avatar_url: defaultAvatar,
           is_default_avatar: true,
@@ -174,6 +182,28 @@ export async function GET(request) {
       console.error('Profile fetch error:', profileError)
     }
     
+    // Stage 6.IAPFix: defensive email backfill. If profile exists
+    // (didn't hit the create branch above) but email is NULL — e.g.
+    // a legacy row from before email was written — fetch from
+    // auth.users once and persist. Self-healing for the column.
+    if (profile && (!profile.email || profile.email === '')) {
+      try {
+        const { data: au } = await supabase.auth.admin.getUserById(userId)
+        const email = au?.user?.email
+        if (email) {
+          const { data: emailUpdated } = await supabase
+            .from('profiles')
+            .update({ email, updated_at: new Date().toISOString() })
+            .eq('id', userId)
+            .select()
+            .single()
+          if (emailUpdated) profile = emailUpdated
+        }
+      } catch (e) {
+        console.warn('[user-sync] email backfill failed:', e.message)
+      }
+    }
+
     // 如果 profile 存在但没有头像，分配一个默认头像
     if (profile && (!profile.avatar_url || profile.avatar_url === '')) {
       const defaultAvatar = getRandomDefaultAvatar()
