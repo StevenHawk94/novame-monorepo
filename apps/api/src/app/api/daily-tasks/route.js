@@ -80,9 +80,24 @@ export async function POST(request) {
     // === CREATE wisdom tasks ===
     if (action === 'create' && tasks && tasks.length > 0) {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      // Stage 6.TaskTextLimit: raised task_text cap from 80 -> 200
+      // chars. The previous 80-char limit was truncating real
+      // AI-generated tasks (e.g. "Close your eyes for sixty seconds
+      // and name three things in your current room tha" -- cut off
+      // mid-word at exactly 80 chars). Verified via SQL aggregation:
+      // wisdom task_type max_len was exactly 80 across 282 rows,
+      // confirming this substring(0, 80) was the unique truncation
+      // source (no other path constrains it). generate-card.js's
+      // source-of-truth for task_1/task_2 is substring(0, 120), so
+      // 200 here provides comfortable headroom while still bounding
+      // the field for UI layout safety.
+      //
+      // Historical 282 rows already truncated stay as-is per product
+      // decision (users complete them in ~24h via expires_at TTL,
+      // new tasks generated after this deploy will be untruncated).
       const rows = tasks.map(t => ({
         user_id: userId,
-        task_text: (t.text || t).substring(0, 80),
+        task_text: (t.text || t).substring(0, 200),
         task_type: 'wisdom',
         exp_reward: 20,
         is_completed: false,
