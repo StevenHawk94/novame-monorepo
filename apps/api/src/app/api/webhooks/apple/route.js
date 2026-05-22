@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import {
   decodeNotificationPayload,
+  decodeTransaction,
+  decodeRenewalInfo,
   isDecodedNotificationDataPayload,
   isDecodedNotificationSummaryPayload,
   APPLE_ROOT_CA_G3_FINGERPRINT,
@@ -142,29 +144,57 @@ export async function POST(request) {
 
     console.log(`[Apple webhook] ${notificationType}${subtype ? ':'+subtype : ''} verified=${!verifyDisabled}`)
 
-    // The library already decoded signedTransactionInfo and
-    // signedRenewalInfo for us (in the verified path) -- they come
-    // back as plain objects, not still-encoded JWS strings. In the
-    // fallback (verifyDisabled) path the data field still has the
-    // raw signed JWS strings, so we must decode them unverified.
-    let transactionInfo = data?.signedTransactionInfo || null
-    let renewalInfo     = data?.signedRenewalInfo || null
+    // Stage 6.WebhookJWS bugfix: app-store-server-api's
+    // decodeNotificationPayload verifies and decodes ONLY the outer
+    // envelope. signedTransactionInfo and signedRenewalInfo remain
+    // JWS strings inside the data field -- per the library's type
+    // declarations (Models.d.ts) they're typed as JWSTransaction /
+    // JWSRenewalInfo, which are string aliases not decoded objects.
+    //
+    // To get productId / originalTransactionId / expiresDate etc. we
+    // must call decodeTransaction / decodeRenewalInfo on the inner
+    // strings, which themselves do cert-chain + signature verification.
+    //
+    // The fallback path (verifyDisabled) decodes the inner JWS strings
+    // without verification, mirroring the unsafe pre-Stage-6.WebhookJWS
+    // behavior.
+    let transactionInfo = null
+    let renewalInfo     = null
 
-    if (verifyDisabled && typeof transactionInfo === 'string') {
-      try {
-        const parts = transactionInfo.split('.')
-        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
-        transactionInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
-      } catch { transactionInfo = null }
-    }
-    if (verifyDisabled && typeof renewalInfo === 'string') {
-      try {
-        const parts = renewalInfo.split('.')
-        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-        const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
-        renewalInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
-      } catch { renewalInfo = null }
+    if (verifyDisabled) {
+      if (typeof data?.signedTransactionInfo === 'string') {
+        try {
+          const parts = data.signedTransactionInfo.split('.')
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+          const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+          transactionInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+        } catch { transactionInfo = null }
+      }
+      if (typeof data?.signedRenewalInfo === 'string') {
+        try {
+          const parts = data.signedRenewalInfo.split('.')
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+          const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4)
+          renewalInfo = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
+        } catch { renewalInfo = null }
+      }
+    } else {
+      // Verified path: use library decoders which do full cert chain
+      // verification on the inner JWS strings.
+      if (data?.signedTransactionInfo) {
+        try {
+          transactionInfo = await decodeTransaction(data.signedTransactionInfo)
+        } catch (txnErr) {
+          console.error('[Apple webhook] inner transactionInfo verification failed:', txnErr.message)
+        }
+      }
+      if (data?.signedRenewalInfo) {
+        try {
+          renewalInfo = await decodeRenewalInfo(data.signedRenewalInfo)
+        } catch (renewErr) {
+          console.error('[Apple webhook] inner renewalInfo verification failed:', renewErr.message)
+        }
+      }
     }
 
     const supabase = getSupabase()
