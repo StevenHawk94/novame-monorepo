@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { callAI } from '@/lib/ai'
 import { generateWisdomCard } from '@/lib/generate-card'
+import { getQuotaPeriodStart, TIER_LIMITS, TIER_RANK } from '@/lib/quota'
 
 export const runtime = 'edge'
 
@@ -95,8 +96,7 @@ export async function POST(request) {
     // by lib/iap.ts -- if the client thinks it has a higher tier than
     // the DB, we trust it for THIS request and reconcile on the next
     // webhook fire.
-    const TIER_LIMITS = { free: 1, basic: 15, pro: 30, ultra: 60 }
-    const TIER_RANK   = { free: 0, basic: 1, pro: 2, ultra: 3 }
+    // Stage 6.QuotaFix: TIER_LIMITS / TIER_RANK imported from @/lib/quota.
 
     let clientTier = null
     try {
@@ -121,21 +121,18 @@ export async function POST(request) {
     }
     const monthlyLimit = TIER_LIMITS[effectiveTier] ?? TIER_LIMITS.free
 
-    const monthStart = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    ).toISOString()
+    // Stage 6.QuotaFix: counter window from @/lib/quota helper.
+    // Free tier: profile.created_at (lifetime).
+    // Paid tier: subscription.current_period_start (per billing cycle).
+    const quotaStart = await getQuotaPeriodStart(supabase, userId)
     const { count: usedCount } = await supabase
       .from('wisdom_cards')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
-      // Stage 5.WR.2 (Bug C): exclude starter / default cards which
-      // have wisdom_id=NULL. Those are gifted to new users by
-      // user-sync and would otherwise consume the user's first
-      // free-tier slot before they publish anything real.
+      // Stage 5.WR.2 (Bug C): exclude starter / default cards
+      // (wisdom_id IS NULL, gifted by user-sync).
       .not('wisdom_id', 'is', null)
-      .gte('created_at', monthStart)
+      .gte('created_at', quotaStart)
     const usedThisMonth = usedCount || 0
 
     if (usedThisMonth >= monthlyLimit) {

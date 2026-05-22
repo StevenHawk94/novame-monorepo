@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getQuotaPeriodStart } from '@/lib/quota'
 
 export const runtime = 'edge'
 
@@ -82,12 +83,16 @@ export async function GET(request) {
 
     const supabase = getSupabase()
 
-    // First-of-month boundary for usedThisMonth, computed server-side
-    // (UTC; matches existing daily-limit semantics).
-    const now = new Date()
-    const firstOfMonth = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-    ).toISOString()
+    // Stage 6.QuotaFix: usedThisMonth now counted by the same
+    // semantics as daily-limit + publish-wisdom (previously this
+    // route counted `wisdoms` rows from calendar month-start, which
+    // disagreed with the quota gates in two ways:
+    //   1. counted wisdoms not wisdom_cards (didn't exclude failed
+    //      card generations or starter cards)
+    //   2. used calendar month, not subscription billing period
+    // Both fixed by routing through @/lib/quota.getQuotaPeriodStart
+    // and counting wisdom_cards with wisdom_id != null.
+    const quotaStart = await getQuotaPeriodStart(supabase, userId)
 
     // 4 parallel queries (totalWords paginated separately below
     // because PostgREST caps non-paginated selects at 1000 rows;
@@ -117,10 +122,11 @@ export async function GET(request) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId),
       supabase
-        .from('wisdoms')
+        .from('wisdom_cards')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('created_at', firstOfMonth),
+        .not('wisdom_id', 'is', null)
+        .gte('created_at', quotaStart),
     ])
 
     if (profileRes.error || !profileRes.data) {

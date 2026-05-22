@@ -199,15 +199,29 @@ async function handleActive(supabase, txn) {
     .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
     .eq('id', userId)
 
-  // Update subscriptions table
+  // Update subscriptions table.
+  //
+  // Stage 6.QuotaFix: current_period_start is now refreshed on every
+  // renewal (previously this update block only touched
+  // current_period_end, leaving period_start frozen at the original
+  // upgrade timestamp -- which made the quota counter window grow
+  // unbounded over time instead of resetting each billing cycle).
+  //
+  // We use new Date() (webhook arrival time) as a close-enough proxy
+  // for the true Apple renewal time. In normal operation this is
+  // accurate to within seconds; under webhook retry it could drift
+  // by minutes. For a higher-fidelity timestamp we would parse
+  // txn.purchaseDate from the JWS payload, but the seconds-to-minutes
+  // approximation is fine for a monthly/yearly quota window.
   await supabase.from('subscriptions')
     .update({
-      plan:               tier,
-      status:             'active',
-      billing_cycle:      billingCycle,
-      apple_product_id:   productId,
-      current_period_end: expiresDate,
-      updated_at:         new Date().toISOString(),
+      plan:                 tier,
+      status:               'active',
+      billing_cycle:        billingCycle,
+      apple_product_id:     productId,
+      current_period_start: new Date().toISOString(),
+      current_period_end:   expiresDate,
+      updated_at:           new Date().toISOString(),
     })
     .eq('user_id', userId)
 

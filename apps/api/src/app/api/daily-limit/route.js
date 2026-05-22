@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getQuotaPeriodStart, TIER_LIMITS, TIER_RANK } from '@/lib/quota'
 
 export const runtime = 'edge'
 
@@ -14,14 +15,8 @@ export const runtime = 'edge'
  * Each wisdom insight generation = 1 analysis.
  */
 
-const TIER_LIMITS = {
-  free: 1,
-  basic: 15,
-  pro: 30,
-  ultra: 60,
-}
-
-const TIER_RANK = { free: 0, basic: 1, pro: 2, ultra: 3 }
+// Stage 6.QuotaFix: TIER_LIMITS / TIER_RANK now centralized in
+// @/lib/quota -- this route imports them.
 
 export async function GET(request) {
   try {
@@ -62,24 +57,23 @@ export async function GET(request) {
     }
     
     const monthlyLimit = TIER_LIMITS[tier] || TIER_LIMITS.free
-    
-    // Count wisdom_cards created this calendar month by this user
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    
+
+    // Stage 6.QuotaFix: counter window is no longer the calendar month.
+    // For free tier -> lifetime (from profile.created_at).
+    // For paid tier -> current billing period (from subscription
+    //                  current_period_start, refreshed on renewal).
+    // See apps/api/src/lib/quota.js for the full semantics.
+    const quotaStart = await getQuotaPeriodStart(supabase, userId)
+
     const { count, error } = await supabase
       .from('wisdom_cards')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       // Stage 5.WR.2 (Bug 1 fix, second pass): exclude starter /
-      // default cards (wisdom_id IS NULL). Same fix as publish-wisdom
-      // — the daily-limit endpoint is the pre-record gate (called
-      // before the user enters record/type screen) and was hitting
-      // the same off-by-one because user-sync inserts a starter card
-      // that this count happily included. Free tier monthlyLimit=1
-      // + 1 starter card = remaining=0 = paywall before first record.
+      // default cards (wisdom_id IS NULL). user-sync inserts a
+      // starter card that we don't want to count against quota.
       .not('wisdom_id', 'is', null)
-      .gte('created_at', monthStart)
+      .gte('created_at', quotaStart)
 
     if (error) console.error('Count error:', error)
     
