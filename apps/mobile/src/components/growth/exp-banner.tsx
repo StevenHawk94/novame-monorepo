@@ -152,7 +152,15 @@ export function ExpBanner({ level, expCurrent, expNeeded }: ExpBannerProps) {
       // Update ref synchronously so a follow-up segment in the same
       // tick reads the true current value, not a stale React state.
       displayXpRef.current = nextVal;
-      setDisplayXp(nextVal);
+      // Stage 6.TaskAnimation monotonic guard: in rapid-tap scenarios
+      // React may re-render with the previous tween's stale committed
+      // displayXp before the new tween's first rAF frame sets a fresh
+      // value. The render sees the old (lower) value transiently --
+      // visible as "33 -> back to 30 -> 33 -> 50" instead of the
+      // intended "33 -> 50". Math.max guards against the backward
+      // step: state is only updated forward. Exp grants are
+      // strictly additive (no path subtracts) so monotonic is safe.
+      setDisplayXp(prev => Math.max(prev, nextVal));
       if (t >= 1) {
         rafIdRef.current = null;
         onDone();
