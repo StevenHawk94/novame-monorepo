@@ -1193,6 +1193,11 @@ const pubStyles = StyleSheet.create({
 //
 // Tier-driven limits:
 //   - typedText cap = tierLimits.dailyTypeChars (Free 2000 / Basic 3000 /
+//     — note: the field name is misleading; this is a PER-INPUT cap
+//     enforced via TextInput maxLength, not a daily-accumulating quota.
+//     There is no backend tracking of typed-char usage across publishes.
+//     Renaming the field in @novame/core would touch many call sites;
+//     deferred to backlog (B-PricingFieldRename).
 //     Pro/Ultra 5000). Server publish-wisdom is the authoritative quota
 //     check; this maxLength is just a UI-side safeguard so we don't send
 //     pointlessly-large blobs over the wire.
@@ -1247,7 +1252,24 @@ function PhaseTypeInput({
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={typeStyles.root}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      // Stage 6.TypeInputScroll bug-fix: was insets.top, which was
+      // wrong. This KeyboardAvoidingView is the root of a
+      // fullScreenModal — no navigation header sits above it, so
+      // its top edge IS the screen top, and the correct offset is 0.
+      //
+      // With insets.top (~47pt on iPhone with notch), the
+      // KeyboardAvoidingView under-compensated by exactly that
+      // amount when the keyboard opened: it added (keyboardHeight -
+      // 47) of bottom padding instead of the full keyboardHeight.
+      // The body got squeezed by 47pt, the counter row collided with
+      // the Transform button, and increasing counterRow.marginBottom
+      // made it worse — a larger margin in a more-squeezed body
+      // produced a tighter visual gap.
+      //
+      // PhasePublishing's KeyboardAvoidingView (which sits in the
+      // same modal) already uses keyboardVerticalOffset={0}; this
+      // brings PhaseTypeInput in line.
+      keyboardVerticalOffset={0}
     >
       <TouchableWithoutFeedback onPress={handleDismissKeyboard} accessible={false}>
         <View style={typeStyles.fullArea}>
@@ -1265,12 +1287,33 @@ function PhaseTypeInput({
             <View style={typeStyles.headerSpacer} />
           </View>
 
-          <ScrollView
-            style={typeStyles.body}
-            contentContainerStyle={typeStyles.bodyContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+          {/* Stage 6.TypeInputScroll: removed the outer ScrollView that
+              previously wrapped this TextInput.
+
+              Old architecture (broken):
+                ScrollView -> TextInput multiline (flex:1, minHeight:280)
+              Inside a ScrollView, child `flex:1` does NOT constrain
+              height — ScrollView content can grow indefinitely. With no
+              maxHeight on the TextInput either, the input expanded
+              line-by-line as the user typed, pushing the cursor below
+              the keyboard fold. The TextInput's own internal scroll
+              (which would normally keep the caret visible) never
+              triggered because the input never ran out of vertical
+              room.
+
+              New architecture (industry standard):
+                View flex:1 -> TextInput multiline flex:1
+              The parent View — bounded by KeyboardAvoidingView above
+              and the footer below — gives TextInput a real fixed
+              height. multiline TextInput has scrollEnabled=true by
+              default; once content exceeds the input's box, RN's
+              native side auto-scrolls so the caret stays visible.
+              This is the same pattern used by RN core docs for
+              multiline inputs that need to stay above the keyboard.
+
+              counterRow is now a sibling AFTER the TextInput in the
+              body container so it's pinned beneath the input box. */}
+          <View style={typeStyles.body}>
             <TextInput
               value={typedText}
               onChangeText={setTypedText}
@@ -1284,13 +1327,13 @@ function PhaseTypeInput({
             />
             <View style={typeStyles.counterRow}>
               <Text style={typeStyles.counterText}>
-                Daily limit: {maxChars.toLocaleString()} chars
+                Max {maxChars.toLocaleString()} characters
               </Text>
               <Text style={typeStyles.counterText}>
                 {typedText.length.toLocaleString()}/{maxChars.toLocaleString()}
               </Text>
             </View>
-          </ScrollView>
+          </View>
 
           <View style={typeStyles.footer}>
             <Pressable
@@ -1373,7 +1416,12 @@ const typeStyles = StyleSheet.create({
   counterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    // 12pt above (small breathing room from the TextInput's bottom
+    // edge) and 12pt below (gap to the Transform button). The
+    // earlier attempts to crank marginBottom up were chasing the
+    // wrong cause — the real fix was keyboardVerticalOffset.
+    marginTop: 12,
+    marginBottom: 12,
   },
   counterText: {
     // Stage 6.RecordVisual: high-contrast on purple bg.
@@ -1384,7 +1432,7 @@ const typeStyles = StyleSheet.create({
   footer: {
     paddingHorizontal: 20,
     paddingBottom: 24,
-    paddingTop: 12,
+    paddingTop: 8,
   },
   descInput: {
     // Stage 6.RecordVisual: white optional-description input.
