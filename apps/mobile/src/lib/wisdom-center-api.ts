@@ -140,3 +140,53 @@ export async function generateWeeklyReport(
     };
   }
 }
+
+// ============================================================
+// updateAspireWords -- Stage 6 editable aspire-words
+// ============================================================
+
+/**
+ * POST /api/update-profile { userId, aspireWords } -- updates the
+ * profile's aspire_words array and recomputes better_self_score
+ * server-side using strategy B (preserve historical aspire_scores).
+ *
+ * Server logic (apps/api/src/app/api/update-profile/route.js):
+ *   - aspire_scores dict left untouched (removed words keep their score,
+ *     re-added words restore from history).
+ *   - better_self_score = round(avg(currentWords.map(w =>
+ *     existingScores[w] ?? 70))). Newly added words contribute 70 to
+ *     the average without being persisted to scores (their persisted
+ *     score is born on the next publish-wisdom that includes them in
+ *     aspire_impacts).
+ */
+export type UpdateAspireWordsResult =
+  | { kind: 'success' }
+  | { kind: 'error'; message: string };
+
+export async function updateAspireWords(
+  userId: string,
+  aspireWords: string[],
+): Promise<UpdateAspireWordsResult> {
+  type WireResponse =
+    | { success: true; profile?: unknown }
+    | { success?: false; error: string };
+
+  try {
+    const data = await apiClient.post<WireResponse>('/api/update-profile', {
+      userId,
+      aspireWords,
+    });
+    if (data.success === true) {
+      return { kind: 'success' };
+    }
+    return {
+      kind: 'error',
+      message: (data as { error: string }).error || 'Update failed',
+    };
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Network error',
+    };
+  }
+}
