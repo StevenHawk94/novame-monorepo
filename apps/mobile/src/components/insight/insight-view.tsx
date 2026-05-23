@@ -31,12 +31,19 @@
 import { useMemo } from 'react';
 import {
   Dimensions,
-  ImageBackground,
-  Image as RNImage,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+// Stage 6.InsightPrefetch: switched from react-native's ImageBackground
+// + Image to expo-image's equivalents. expo-image and react-native use
+// separate caches; the prefetch() warm-up in record.tsx (PhasePublishing)
+// only populates the expo-image cache, so the renderers had to be on
+// the same cache for the prefetch to actually skip the first-decode jank.
+// expo-image's ImageBackground was added in #22347 and exposes the same
+// style / imageStyle / children API as the RN version, so the swap is
+// 1:1 except resizeMode -> contentFit (expo-image's standard prop).
+import { ImageBackground, Image as RNImage } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
@@ -51,7 +58,29 @@ import type {
 // Static asset requires (RN bundler resolves at build time so the
 // images are packaged into the app binary — no network latency).
 // ============================================================
-const CARDS_BACKGROUND = require('../../../assets/images/cards/cards-background.webp');
+// Stage 6.InsightPrefetch: cards-background.webp moved from bundle
+// require() to an R2-hosted remote URI. Two reasons:
+//
+//   1. expo-image's prefetch(urls) accepts only string URLs, NOT
+//      require() asset ids. With a bundle require source the
+//      prefetch cache key (URI form from resolveAssetSource) and
+//      the render cache key (number form from require) are
+//      different, so the prefetch warm-up never benefits the
+//      render path. The user sees a 3-frame staged paint:
+//      (a) no background, (b) front card image appears, (c)
+//      background finally appears with the rest of the
+//      cards-background-anchored UI (collection header, title,
+//      tap-to-flip hint).
+//
+//   2. The same R2 URI is already used by keyword-detail.tsx, so
+//      this aligns insight-view.tsx with project convention and
+//      means the asset is downloaded + disk-cached by expo-image
+//      ONCE per device, then reused everywhere.
+//
+// The remote file needs to be uploaded to R2 at the path below
+// alongside this code deploy. R2 file size should mirror the
+// bundle file (~24 KB at time of writing).
+const CARDS_BACKGROUND = { uri: 'https://media.novameapp.com/cards-background.webp' };
 const EMOTION_IMAGES = {
   sad: require('../../../assets/images/insight/sad.webp'),
   happy: require('../../../assets/images/insight/happy.webp'),
@@ -279,7 +308,8 @@ export function InsightView({
         source={CARDS_BACKGROUND}
         style={[styles.topPurpleWrap, { paddingTop: 24 + topExtraPadding }]}
         imageStyle={styles.topPurpleBg}
-        resizeMode="cover"
+        contentFit="cover"
+        cachePolicy="memory-disk"
       >
         {cardCollection ? (
           <>
@@ -366,7 +396,7 @@ export function InsightView({
             <Text style={styles.emotionBigText}>{emotion || 'Reflective'}</Text>
             <Text style={styles.emotionCaption}>Your Emotion Keyword</Text>
           </View>
-          <RNImage source={emotionImage} style={styles.emotionImage} resizeMode="contain" />
+          <RNImage source={emotionImage} style={styles.emotionImage} contentFit="contain" cachePolicy="memory-disk" />
         </View>
         </View>
       </View>
@@ -482,7 +512,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   topPurpleBg: {
-    // ImageBackground.imageStyle: lets the underlying webp cover.
+    // Legacy: under expo-image's ImageBackground this style key is
+    // ignored (contentFit on the <ImageBackground> prop above is
+    // authoritative). Kept to avoid touching the StyleSheet shape.
     resizeMode: 'cover',
   },
 

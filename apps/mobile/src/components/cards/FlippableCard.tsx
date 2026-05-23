@@ -33,7 +33,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
-import { getCachedAssetUri } from '@/lib/asset-cache';
+// Stage 6.InsightPrefetch: getCachedAssetUri import removed — see
+// the R2_BASE comment in the component body for the rationale.
+// (asset-cache is still imported in other components for video assets.)
 
 const AR = 1024 / 1536;
 
@@ -194,8 +196,24 @@ export function FlippableCard({
 }: FlippableCardProps) {
   const height = Math.round(width / AR);
 
-  const frontUri = frontFilename ? getCachedAssetUri(frontFilename) : null;
-  const backUri = backFilename ? getCachedAssetUri(backFilename) : null;
+  // Stage 6.InsightPrefetch: switched from asset-cache file:// URIs to
+  // direct R2 URLs. Two reasons:
+  //
+  //   1. expo-image's prefetch() and <Image source> share a single
+  //      cache, keyed by URL string. The PhasePublishing pipeline
+  //      prefetches these exact R2 URLs and waits for their onLoad
+  //      before navigating to insight; the renderer here must use
+  //      the SAME URL strings so the cache lookup hits.
+  //   2. expo-image manages its own disk cache, so we get the same
+  //      offline-after-first-load behavior asset-cache provided,
+  //      without maintaining two separate caches for the same files.
+  //
+  // asset-cache is still active in the project for videos and for
+  // onboarding's step-8 pre-warm; we just don't use it for the
+  // insight-screen card art anymore.
+  const R2_BASE = 'https://media.novameapp.com';
+  const frontUri = frontFilename ? `${R2_BASE}/${frontFilename}` : null;
+  const backUri = backFilename ? `${R2_BASE}/${backFilename}` : null;
 
   const rotation = useSharedValue(defaultSide === 'back' ? 180 : 0);
 
@@ -252,6 +270,7 @@ export function FlippableCard({
                 source={{ uri: frontUri }}
                 style={styles.faceImage}
                 contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View style={[styles.placeholderBg, styles.frontPlaceholder]}>
@@ -288,6 +307,7 @@ export function FlippableCard({
                 source={{ uri: backUri }}
                 style={styles.faceImage}
                 contentFit="cover"
+                cachePolicy="memory-disk"
               />
             ) : (
               <View style={[styles.placeholderBg, styles.backPlaceholder]} />

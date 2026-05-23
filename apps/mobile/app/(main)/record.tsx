@@ -20,6 +20,7 @@ import { useEffect, useRef, useState, useMemo} from 'react';
 import {
   Alert,
   ActivityIndicator,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -51,6 +52,15 @@ import { haptics } from '@/lib/haptics';
 import { apiClient } from '@/lib/api';
 import { getCurrentSession } from '@/lib/auth';
 import { getCachedAssetUri } from '@/lib/asset-cache';
+// Stage 6.InsightPrefetch: expo-image's Image.prefetch warms the
+// memory/disk cache so that when PhaseInsight mounts and starts
+// rendering, the cards-background and front card .webp are already
+// in expo-image's cache -- no first-decode jank, no staged paint.
+// IMPORTANT: prefetch URI keys must match the render-side source
+// URIs exactly (expo-image cache is keyed on uri). Both renderers
+// (insight-view.tsx ImageBackground and FlippableCard <Image>)
+// use the same R2 / file:// URI forms we prefetch below.
+import { Image as ExpoImage } from 'expo-image';
 import { clearCachedCharacterState, fetchCharacterState} from '@/lib/character-state';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import { incrementPublishCount, getPublishCount } from '@/lib/publish-count';
@@ -86,6 +96,14 @@ import { invalidateSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
 import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
+
+// Stage 6.InsightPrefetch: prefetch target for the insight page's
+// top purple glow. Matches the URI used by insight-view.tsx's
+// CARDS_BACKGROUND constant. Single source of truth would be
+// nicer but the import graph (record.tsx is not a descendant of
+// insight-view.tsx) makes a shared const awkward; keeping in
+// sync manually here.
+const CARDS_BACKGROUND_R2_URI = 'https://media.novameapp.com/cards-background.webp';
 import { Confetti } from '@/components/cards/Confetti';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import {
@@ -146,6 +164,14 @@ type PhaseProps = {
   // PhaseInsight close handler reads it.
   setQuotaExhaustedAfterPublish?: (v: boolean) => void;
   quotaExhaustedAfterPublish?: boolean;
+  // Stage 6.InsightPrefetch: PhasePublishing calls this with the list
+  // of R2 image URIs that PhaseInsight will need (cards-background +
+  // front + back card art). Setting it triggers the outer record.tsx
+  // render to mount hidden <Image> components that fire onLoad once
+  // the assets are fetched + decoded + GPU-uploaded. The transition
+  // to PhaseInsight is gated on all of those onLoad firing (or a
+  // 15-second safety timeout).
+  setPrefetchUris?: (uris: string[] | null) => void;
 };
 
 // ---- Placeholder primitives (used by phases not yet rewritten) ----
@@ -1585,6 +1611,7 @@ function PhasePublishing({
   seekForceKeyword,
   seekQuestionId,
   setQuotaExhaustedAfterPublish,
+  setPrefetchUris,
 }: PhaseProps) {
   const inflightRef = useRef(false);
 
@@ -1744,7 +1771,44 @@ function PhasePublishing({
           // best-effort
         }
 
-        goTo(PHASE.INSIGHT);
+        // Stage 6.InsightPrefetch: set up image warm-up. The actual wait
+        // for these images to be ready happens in the outer record.tsx
+        // render via hidden <Image> components + onLoad collection. The
+        // navigation to PhaseInsight is deferred to a useEffect that
+        // watches prefetchReady (set when all onLoad fire, OR after a
+        // 15-second safety timeout).
+        //
+        // Why onLoad instead of await ExpoImage.prefetch():
+        //   prefetch() resolves when the bytes hit cache, but the GPU
+        //   texture upload + first paint happens on the first <Image>
+        //   render. That gap caused the staged-paint flicker even with
+        //   prefetch in place. onLoad fires AFTER the full render
+        //   pipeline completes, so by the time we navigate the images
+        //   are GPU-resident and the first paint in PhaseInsight is
+        //   instant.
+        //
+        // The 15s timeout starts NOW (after publish API resolved). If
+        // R2 / network is down, the user enters PhaseInsight anyway
+        // and expo-image's placeholder + transition handles the rest.
+        // AI generation timing is a separate concern handled by the
+        // existing try/catch error path; if publish-wisdom never
+        // resolves, this code is never reached.
+        const R2_BASE = 'https://media.novameapp.com';
+        const urisToWarm: string[] = [CARDS_BACKGROUND_R2_URI];
+        const keywordId = response.card?.keyword_id;
+        if (keywordId) {
+          const frontFilename = `${keywordId}-front.webp`;
+          const category = keywordId.split('-')[0];
+          const backFilename = `${category}-back.webp`;
+          urisToWarm.push(
+            `${R2_BASE}/${frontFilename}`,
+            `${R2_BASE}/${backFilename}`,
+          );
+        }
+        setPrefetchUris?.(urisToWarm);
+        // NOTE: no goTo(PHASE.INSIGHT) here. The prefetch-watching
+        // useEffect in RecordModal handles the transition once
+        // onLoad has fired for every URI (or 15s elapses).
       } catch (err) {
         console.error('[publish] failed:', err);
         // Stage 6.WisdomFix-Retry: simplified failure UX.
@@ -2336,6 +2400,64 @@ export default function RecordModal() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [phase, setPhase] = useState<Phase>(PHASE.CHOOSE);
+
+  // Stage 6.InsightPrefetch: image warm-up state machine.
+  //
+  //   prefetchUris    — set by PhasePublishing once publish-wisdom
+  //                     resolves. Holds [cards-background, front, back]
+  //                     R2 URIs that the upcoming PhaseInsight needs.
+  //   prefetchLoadedRef — running count incremented by each hidden
+  //                     <Image>'s onLoad/onError handler (we count
+  //                     errors as "done" so a missing/broken image
+  //                     can't deadlock the navigation).
+  //   prefetchReady   — flipped true when prefetchLoadedRef >=
+  //                     prefetchUris.length OR a 15s safety timer
+  //                     fires. A separate useEffect watches this and
+  //                     navigates ANALYZING -> INSIGHT.
+  //
+  // Hidden <Image> components are rendered in this component's main
+  // render below, 1x1 transparent, just to drive the onLoad pipeline.
+  const [prefetchUris, setPrefetchUris] = useState<string[] | null>(null);
+  const prefetchLoadedRef = useRef<number>(0);
+  const [prefetchReady, setPrefetchReady] = useState(false);
+
+  // Start the 15s safety timer the moment prefetchUris is set. Reset
+  // the loaded counter and the ready flag — this useEffect can run
+  // multiple times (e.g., user closes insight without finishing, then
+  // publishes another wisdom in the same session).
+  useEffect(() => {
+    if (!prefetchUris) return;
+    prefetchLoadedRef.current = 0;
+    setPrefetchReady(false);
+    const timeoutId = setTimeout(() => {
+      // Hard ceiling — navigate even if some image's onLoad never fires.
+      // expo-image continues loading after PhaseInsight mounts and the
+      // missing image fades in when it arrives (or shows nothing if
+      // the source is permanently unreachable).
+      setPrefetchReady(true);
+    }, 15000);
+    return () => clearTimeout(timeoutId);
+  }, [prefetchUris]);
+
+  // When the images are warm (or timeout fired), advance the phase.
+  // Gated on phase === ANALYZING so a stray prefetchReady=true from a
+  // prior cycle doesn't yank the user out of CHOOSE/RECORDING.
+  useEffect(() => {
+    if (prefetchReady && phase === PHASE.ANALYZING) {
+      setPhase(PHASE.INSIGHT);
+    }
+  }, [prefetchReady, phase]);
+
+  const handlePrefetchImageLoaded = () => {
+    prefetchLoadedRef.current += 1;
+    if (
+      prefetchUris &&
+      prefetchLoadedRef.current >= prefetchUris.length &&
+      !prefetchReady
+    ) {
+      setPrefetchReady(true);
+    }
+  };
   // Stage 5.IAP.5 (Bug #1, aggressive upsell): set to true by
   // PhasePublishing when the just-completed publish consumed the
   // user's last monthly quota slot. PhaseInsight reads this on
@@ -2413,6 +2535,7 @@ export default function RecordModal() {
     seekQuestionText,
     setQuotaExhaustedAfterPublish,
     quotaExhaustedAfterPublish,
+    setPrefetchUris,
   };
 
   return (
@@ -2425,6 +2548,76 @@ export default function RecordModal() {
           the SAME CardSpinAnimation instance persists across the
           PUBLISHING -> ANALYZING phase flip. Only the labels change;
           the Lottie keeps playing without restart. */}
+      {/* Stage 6.InsightPrefetch: hidden 1x1 <Image> components.
+          Mount as soon as PhasePublishing calls setPrefetchUris.
+          Each fires onLoad (or onError) when its R2 image is
+          fetched + decoded + GPU-uploaded — exactly the readiness
+          state we need before navigating to PhaseInsight. With
+          all three onLoad fired, the first paint over there is
+          instant (no staged background -> card -> text flicker).
+
+          opacity 0 + 1x1 size + position absolute keeps them
+          invisible while still in the layout tree so they actually
+          mount and load. pointerEvents none so they don't intercept
+          taps from the spinner / phase below. */}
+      {/* Stage 6.InsightPrefetch (revised): hidden <Image> components
+          must use the SAME target dimensions as PhaseInsight will
+          eventually render at, and cachePolicy='memory-disk' so the
+          decoded GPU texture stays resident across the phase swap.
+
+          Why dimensions matter:
+            - GPU textures are sized to the View dimensions at decode
+              time. If we decode at 1x1 here, the same image at full
+              size later forces a re-decode + re-upload — exactly the
+              first-paint jank we are trying to eliminate.
+            - FlippableCard width is a CONSTANT 285 across all iPhones
+              (see card-dimensions.ts). Card height is width/AR
+              (AR=1024/1536≈0.6667), so 285/0.6667 ≈ 428.
+            - cards-background covers a full-width section roughly
+              500pt tall in PhaseInsight (Block 1+2 region). Using
+              Dimensions.get('window').width × 500 matches well enough
+              that the cache hit holds.
+
+          Why cachePolicy='memory-disk':
+            - The default for <Image> is 'disk' — bytes cached but
+              decoded image evicted from memory each tick. memory-disk
+              keeps the decoded form in RAM so the next render is
+              GPU-instant.
+            - prefetch() defaults to memory-disk too, so this aligns
+              both write and read sides of the cache. */}
+      {prefetchUris ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: -10000,
+            left: -10000,
+            width: Dimensions.get('window').width,
+            height: 1000,
+            opacity: 0,
+          }}
+          pointerEvents="none"
+        >
+          {prefetchUris.map((uri, idx) => {
+            // First URI is the cards-background — render at full
+            // viewport width. Others are card art at fixed 285x428.
+            const isBackground = idx === 0;
+            const w = isBackground ? Dimensions.get('window').width : 285;
+            const h = isBackground ? 500 : 428;
+            return (
+              <ExpoImage
+                key={uri}
+                source={{ uri }}
+                style={{ width: w, height: h }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                onLoad={handlePrefetchImageLoaded}
+                onError={handlePrefetchImageLoaded}
+              />
+            );
+          })}
+        </View>
+      ) : null}
+
       {(phase === PHASE.PUBLISHING || phase === PHASE.ANALYZING) ? (
         <View style={pubgStyles.loaderHost}>
           <CardSpinAnimation
