@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -61,29 +61,44 @@ export default function GrowthCenterModal() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const res = await fetchWisdomCenter(userId);
-      if (cancelled) return;
-      if (res.kind === 'success') {
-        setData(res.data);
-        setError(null);
-      } else {
-        setError(res.message);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+  // Stage 6: useFocusEffect (not useEffect) so that returning from the
+  // edit-aspire-words modal re-fetches the latest aspireWords +
+  // recomputed better_self_score. Without focus-based re-fetch, the
+  // page would show stale data after editing.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      let cancelled = false;
+      (async () => {
+        setLoading(true);
+        const res = await fetchWisdomCenter(userId);
+        if (cancelled) return;
+        if (res.kind === 'success') {
+          setData(res.data);
+          setError(null);
+        } else {
+          setError(res.message);
+        }
+        setLoading(false);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [userId]),
+  );
 
   const handleClose = () => {
     void haptics.light();
     router.back();
+  };
+
+  const handleEditAspireWords = () => {
+    if (!data) return;
+    void haptics.light();
+    router.push({
+      pathname: '/edit-aspire-words',
+      params: { initial: JSON.stringify(data.aspireWords) },
+    });
   };
 
   return (
@@ -94,7 +109,14 @@ export default function GrowthCenterModal() {
           <MaterialIcons name="close" size={20} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.title}>Growth Center</Text>
-        <View style={styles.headerRight} />
+        <Pressable
+          onPress={handleEditAspireWords}
+          style={styles.closeBtn}
+          hitSlop={8}
+          disabled={!data}
+        >
+          <MaterialIcons name="edit" size={18} color="#FFFFFF" />
+        </Pressable>
       </View>
 
       {loading ? (
@@ -117,14 +139,16 @@ export default function GrowthCenterModal() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* 1. Wisdom Portrait */}
+          {/* 1. NovaMe Journey -- Stage 6: replaces AI-generated Wisdom Portrait
+              with a fixed copy. Server still has wisdom_portrait column +
+              data for rollback, but UI no longer reads it. */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <MaterialIcons name="psychology" size={20} color="#A78BFA" />
-              <Text style={styles.cardTitle}>Your Wisdom Portrait</Text>
+              <MaterialIcons name="auto-awesome" size={20} color="#A78BFA" />
+              <Text style={styles.cardTitle}>NovaMe Journey</Text>
             </View>
-            <Text style={styles.portraitText}>
-              {data.portrait || 'Share your wisdom to discover your portrait...'}
+            <Text style={styles.journeyText}>
+              Your growth score reflects every entry and completed task. Stay consistent with your daily logs, complete your tasks, and become the best version of yourself!
             </Text>
           </View>
 
@@ -227,9 +251,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  headerRight: {
-    width: 36,
-  },
   centerFlex: {
     flex: 1,
     alignItems: 'center',
@@ -262,12 +283,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  // 1. Portrait
-  portraitText: {
+  // 1. Journey (Stage 6: replaces portraitText)
+  journeyText: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 14,
     lineHeight: 22,
-    fontStyle: 'italic',
   },
   // 2. Gauge
   gaugeWrap: {
