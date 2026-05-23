@@ -171,7 +171,6 @@ Other required fields below also apply:
 - aspire_impacts
 - task_1_keyword / task_2_keyword
 - daily_index
-- wisdom_portrait (when requested)
 
 # Safety & Transformation Guardrails
 
@@ -186,7 +185,7 @@ Other required fields below also apply:
 Return a valid JSON object containing ALL fields requested in the user prompt. NO markdown fences. NO extra text outside JSON. Use \\n for line breaks within JSON string values. NEVER use markdown bold, asterisks, or hash headers inside output values. Title fields are strictly plain English text starting with a capital letter — never emoji, never punctuation, never quote marks. The output is fed directly into a typography-controlled UI; any prefix character breaks the layout.`
 
 
-function buildUserPrompt(wisdomText, aspireList, shouldUpdatePortrait) {
+function buildUserPrompt(wisdomText, aspireList) {
   return `Analyze the following user's raw wisdom sharing and generate a JSON object.
 
 <user_input>
@@ -238,10 +237,8 @@ ${aspireList ? `
 16. "task_1_keyword": If task_1 links to a keyword from aspire_impacts with "negative" direction, set to that keyword string. Otherwise "".
 
 17. "task_2_keyword": Same logic for task_2.
-` : ''}${shouldUpdatePortrait ? `
-18. "wisdom_portrait": Fun, insightful one-sentence character description of who this person is becoming (under 200 characters). Creative and encouraging.
 ` : ''}
-19. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
+18. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
 
 Return ONLY valid JSON.`
 }
@@ -271,18 +268,19 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   }
 
   let aspireWords = []
-  let shareCount = 0
-  let shouldUpdatePortrait = false
   if (userId) {
+    // Stage 6: wisdom_portrait deprecated. We still increment
+    // wisdom_share_count for back-compat (column read by /api/wisdom-center
+    // GET, no UI consumer remains but the write is harmless and keeps
+    // historical counts continuous).
     const { data: prof } = await supabase.from('profiles').select('aspire_words, wisdom_share_count').eq('id', userId).single()
     aspireWords = prof?.aspire_words || []
-    shareCount = (prof?.wisdom_share_count || 0) + 1
-    shouldUpdatePortrait = shareCount === 1 || shareCount % 6 === 0
-    await supabase.from('profiles').update({ wisdom_share_count: shareCount }).eq('id', userId)
+    const newShareCount = (prof?.wisdom_share_count || 0) + 1
+    await supabase.from('profiles').update({ wisdom_share_count: newShareCount }).eq('id', userId)
   }
   const aspireList = aspireWords.length > 0 ? aspireWords.join(', ') : ''
 
-  const userPrompt = buildUserPrompt(wisdomText, aspireList, shouldUpdatePortrait)
+  const userPrompt = buildUserPrompt(wisdomText, aspireList)
 
   // Stage 5.IAP.5.bugfix.B: when ALL AI providers fail, do NOT fall
   // back to a hardcoded placeholder card. Treat as failure, signal
@@ -438,18 +436,9 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       const vals = Object.values(scores)
       const avg = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 70
       const profileUpdate = { aspire_scores: scores, better_self_score: avg }
-      if (result.wisdom_portrait && shouldUpdatePortrait) {
-        profileUpdate.wisdom_portrait = result.wisdom_portrait.substring(0, 200)
-      }
       await supabase.from('profiles').update(profileUpdate).eq('id', userId)
       updatedAspireScores = scores
     } catch (e) { console.error('Aspire score update error:', e) }
-  } else if (userId && shouldUpdatePortrait && result.wisdom_portrait) {
-    try {
-      await supabase.from('profiles').update({ wisdom_portrait: result.wisdom_portrait.substring(0, 200) }).eq('id', userId)
-    } catch (e) {
-      // best-effort — ignore
-    }
   }
 
   // Save daily_index
@@ -467,7 +456,6 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   cardWithMeta.task_1_keyword = result.task_1_keyword || ''
   cardWithMeta.task_2_keyword = result.task_2_keyword || ''
   cardWithMeta.aspire_impacts = result.aspire_impacts || []
-  if (result.wisdom_portrait) cardWithMeta.wisdom_portrait = result.wisdom_portrait
 
   return {
     success: true,

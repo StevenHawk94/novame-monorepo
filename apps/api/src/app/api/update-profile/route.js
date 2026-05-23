@@ -21,7 +21,7 @@ function getSupabaseAdmin() {
  */
 export async function POST(request) {
   try {
-    const { userId, displayName, avatarUrl, birthday, newEmail, newPassword } = await request.json()
+    const { userId, displayName, avatarUrl, birthday, newEmail, newPassword, aspireWords } = await request.json()
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
@@ -79,6 +79,34 @@ export async function POST(request) {
     
     if (birthday !== undefined) {
       updateData.birthday = birthday
+    }
+
+    // Stage 6: aspire_words update with B-strategy score handling.
+    // Preserves historical aspire_scores untouched (user-produced data
+    // is user-owned -- removed words keep their score in the dict, will
+    // be revived if user re-adds the word later). Better-self-score is
+    // recomputed as avg of CURRENT aspireWords, with unscored new words
+    // defaulting to 70 (matches generate-card.js publish-time default).
+    if (aspireWords !== undefined) {
+      if (!Array.isArray(aspireWords)) {
+        return Response.json({ error: 'aspireWords must be an array' }, { status: 400 })
+      }
+      updateData.aspire_words = aspireWords
+
+      // Fetch current aspire_scores to recompute better_self_score
+      // (we preserve scores untouched; we only recompute the average
+      // for the new aspireWords set).
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('aspire_scores')
+        .eq('id', userId)
+        .single()
+      const existingScores = existing?.aspire_scores || {}
+      if (aspireWords.length > 0) {
+        const vals = aspireWords.map(w => existingScores[w] ?? 70)
+        const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+        updateData.better_self_score = avg
+      }
     }
     
     console.log('Updating profile for user:', userId, updateData)

@@ -405,9 +405,9 @@ export async function POST(request) {
     if (betterSelfScore !== undefined) {
       updates.better_self_score = betterSelfScore
     }
-    if (wisdomPortrait !== undefined) {
-      updates.wisdom_portrait = wisdomPortrait
-    }
+    // Stage 6: wisdom_portrait deprecated. user-sync no longer writes
+    // the field even when client sends it (forward-compat: drop silently).
+    // DB column preserved for rollback safety.
     
     // Upsert profile
     const { data, error } = await supabase
