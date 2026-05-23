@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { haptics } from '@/lib/haptics';
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
 import {
   diffCacheAgainstManifest,
@@ -95,9 +96,33 @@ export default function OnboardingStep1() {
     <ImgPage
       imgSource={require('@/../assets/images/onboarding/ob-1.webp')}
       btn={
-        <PrimaryButton onPress={() => router.push('/(onboarding)/step-2')}>
-          Unlock My Potential
-        </PrimaryButton>
+        <View>
+          <PrimaryButton onPress={() => router.push('/(onboarding)/step-2')}>
+            Unlock My Potential
+          </PrimaryButton>
+          {/* Stage 6.OnboardingSignInShortcut: returning users skip
+              the 11-step onboarding entirely and go straight to
+              sign-in. router.replace (not push) so the back-gesture
+              can't yank them back into onboarding — once they've
+              chosen this path, the onboarding flow is no longer
+              their context. Mirrors the step-11 -> /(auth)/sign-in
+              transition pattern. */}
+          <Pressable
+            onPress={() => {
+              void haptics.light();
+              router.replace('/(auth)/sign-in');
+            }}
+            style={({ pressed }) => [
+              signInLinkStyles.tap,
+              pressed && signInLinkStyles.tapPressed,
+            ]}
+            hitSlop={8}
+          >
+            <Text style={signInLinkStyles.label}>
+              I already have an account
+            </Text>
+          </Pressable>
+        </View>
       }
     >
       <View style={styles.center}>
@@ -131,5 +156,33 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
+  },
+});
+
+// Stage 6.OnboardingSignInShortcut: secondary CTA styling.
+//
+// Visual rules (industry standard for "skip / sign in" links beneath
+// a primary CTA — Duolingo, Headspace, Calm all use this pattern):
+//   - Smaller font (14 vs 18 on the primary button)
+//   - Lower-contrast color (0.6 alpha white) so it reads as a
+//     secondary option, not competing with "Unlock My Potential".
+//   - Centered, with a generous tap area via paddingVertical so
+//     it meets Apple's 44pt minimum HIG target.
+//   - Subtle pressed state (opacity dip) rather than full color
+//     change — this is an alternative path, not the prominent one.
+const signInLinkStyles = StyleSheet.create({
+  tap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  tapPressed: {
+    opacity: 0.5,
+  },
+  label: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    fontFamily: 'Inter_500Medium',
   },
 });
