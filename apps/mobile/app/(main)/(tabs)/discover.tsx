@@ -360,7 +360,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#A855F7',
+    // Stage 6.PinkPalette: purple -> pink (matches PhasePublishing
+    // Transform, PhaseRecording pause button, Insight button on My
+    // Logs rows, Study Mode Start button).
+    backgroundColor: '#EC4899',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#A855F7',

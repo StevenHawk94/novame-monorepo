@@ -94,7 +94,7 @@ export function WisdomLogRow({
             pressed && { opacity: 0.85 },
           ]}
         >
-          <MaterialCommunityIcons name="creation" size={18} color="#C4B5FD" />
+          <MaterialCommunityIcons name="creation" size={18} color="#FFFFFF" />
           <Text style={[styles.actionText, styles.actionTextInsight]}>Insight</Text>
         </Pressable>
       </View>
@@ -176,7 +176,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.06)',
   },
   actionBtnPrimary: {
-    backgroundColor: '#7C3AED',
+    // Stage 6.PinkPalette: purple -> pink (matches PhasePublishing
+    // Transform button, Discover FAB, Study Mode Start button).
+    backgroundColor: '#EC4899',
   },
   actionText: {
     color: '#1F1147',

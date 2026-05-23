@@ -107,17 +107,23 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
     shadowOpacity: interpolate(breath.value, [0, 1], [0.4, 0.7]),
   }));
 
-  // Color palette per state — new design figure 1:
-  //   canStart (wp>=10, mode='play')  -> purple, breathing
+  // Color palette per state:
+  //   canStart (wp>=10, mode='play')  -> pink, breathing
   //   isStudy (study mode active)     -> green, "XP Boost Active"
-  //   wpZero (wp<10)                  -> red, "Low WP" (was grey)
+  //   wpZero (wp<10)                  -> red, "Low WP"
+  //
+  // Stage 6.PinkPalette: canStart state purple -> pink to align with
+  // the app's primary CTA color (PhasePublishing Transform button,
+  // PhaseRecording pause button, Discover FAB, Insight button on My
+  // Logs rows). Purple is now reserved for backgrounds and ambient
+  // states, pink for primary calls-to-action.
   const buttonColors: [string, string] = canStart
-    ? ['#8B5CF6', '#7C3AED']
+    ? ['#F472B6', '#EC4899']
     : isStudy
       ? ['#34D399', '#10B981']
       : ['#F87171', '#EF4444'];
 
-  const shadowColor = canStart ? '#7C3AED' : isStudy ? '#10B981' : '#EF4444';
+  const shadowColor = canStart ? '#EC4899' : isStudy ? '#10B981' : '#EF4444';
 
   return (
     <View style={styles.cardWrap}>

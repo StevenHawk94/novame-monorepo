@@ -48,7 +48,7 @@ export default function WisdomTextModal() {
           hitSlop={12}
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
         >
-          <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
+          <MaterialIcons name="arrow-back" size={22} color="#1F1147" />
         </Pressable>
         <Text style={styles.headerTitle}>Wisdom</Text>
         <View style={styles.headerSpacer} />
@@ -74,9 +74,16 @@ export default function WisdomTextModal() {
 }
 
 const styles = StyleSheet.create({
+  // Stage 6.LightTheme: full inversion from dark (#1A0F3D bg + white
+  // text) to light (white bg + deep-purple text #1F1147). The dark
+  // theme felt heavy for a reading view; light theme reads more like
+  // a journal page, matches the deep-purple text used elsewhere
+  // (Insight cards, PhaseTypeInput input box). All alpha values
+  // mirror the previous dark-mode opacities so the visual hierarchy
+  // (primary > secondary > tertiary text) is preserved.
   root: {
     flex: 1,
-    backgroundColor: '#1A0F3D',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -91,14 +98,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   headerSpacer: {
     width: 36,
     height: 36,
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#1F1147',
     fontSize: 17,
     fontWeight: '700',
   },
@@ -107,20 +114,20 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   time: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(31,17,71,0.4)',
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 12,
   },
   description: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(31,17,71,0.7)',
     fontSize: 14,
     fontStyle: 'italic',
     marginBottom: 16,
     lineHeight: 20,
   },
   body: {
-    color: '#FFFFFF',
+    color: '#1F1147',
     fontSize: 16,
     lineHeight: 26,
   },
@@ -131,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(31,17,71,0.4)',
     fontSize: 14,
   },
 });
