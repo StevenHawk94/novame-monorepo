@@ -38,7 +38,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAudioRecorder, RecordingPresets } from 'expo-audio';
 import type { AudioRecorder } from 'expo-audio';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import LottieView from 'lottie-react-native';
 
 import {
   PRICING_TIERS,
@@ -541,9 +541,31 @@ const chooseStyles = StyleSheet.create({
 //   viewBox 260x260, R=115, glowing dot at progress tip, gradient
 //   #7C3AED → #A855F7 → #C084FC.
 
-const RING_RADIUS = 115;
-const RING_CENTER = 130;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+// Stage 6.RecordingLottie: replaced the SVG-drawn pink progress ring
+// + white inner disc with a Lottie sphere animation that loops while
+// the recording is active. Keeping ringWrap 260×260 means the rest of
+// the screen layout (top RECORDING label, hint block below, control
+// row at bottom) stays untouched. The RING_RADIUS/CENTER/CIRCUMFERENCE
+// geometry constants were SVG-only and have been removed along with
+// the import of react-native-svg.
+const RECORDING_LOTTIE = require('../../assets/animations/recording.json');
+
+// Stage 6.RecordingLottie sizing: ring sphere is 92% of window width
+// for a responsive fill that scales identically across iPhone sizes.
+// Dimensions.get is evaluated once at module load (StyleSheet.create
+// also runs once); record is a portrait-locked fullScreenModal so the
+// cached width never goes stale via rotation.
+//
+// Timer text is 25% of the ring size — preserves the digit-to-sphere
+// visual ratio chosen in design QA at every device width.
+const RING_SIZE = Math.round(Dimensions.get('window').width * 0.92);
+// Timer text display width (not height) should be ~35-40% of the
+// sphere. fontSize controls height; "00:04" in bold Inter renders
+// at a display width of roughly fontSize × 2.45. Solving:
+//   target_width / (ring × 0.025) -> ratio
+// At 14%: width is ~35% of ring. Adjust this constant if the
+// digit-to-sphere ratio needs tuning.
+const TIMER_FONT_SIZE = Math.round(RING_SIZE * 0.14);
 
 function PhaseRecording({
   recorder,
@@ -706,15 +728,6 @@ function PhaseRecording({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordingDurationSec, maxSeconds, isPaused, errored]);
 
-  // ---- ring math ----
-  const progress = Math.min(recordingDurationSec / maxSeconds, 1);
-  const dashOffset = RING_CIRCUMFERENCE * (1 - progress);
-  // Glowing dot position (clockwise from top, -90deg origin)
-  const angleDeg = progress * 360 - 90;
-  const angleRad = (angleDeg * Math.PI) / 180;
-  const dotX = RING_CENTER + RING_RADIUS * Math.cos(angleRad);
-  const dotY = RING_CENTER + RING_RADIUS * Math.sin(angleRad);
-
   const secsLeftToMin = Math.max(
     0,
     MIN_RECORDING_SECONDS - recordingDurationSec,
@@ -752,60 +765,22 @@ function PhaseRecording({
         </View>
       </View>
 
-      {/* Circular progress timer */}
+      {/* Stage 6.RecordingLottie: pulsing sphere replaces the SVG
+          progress ring. Lottie loops while recording is active —
+          there is no need to pause it on isPaused because the visual
+          metaphor is "I'm here listening", not "time elapsing".
+          ringWrap dimensions unchanged (260×260) so the surrounding
+          layout (top label, hint block, controls) is untouched. The
+          timer text overlays the sphere via timerCenter, the same as
+          before. */}
       <View style={recStyles.ringWrap}>
-        <Svg width={260} height={260} viewBox="0 0 260 260">
-          <Defs>
-            {/* Stage 6.RecordVisual: was purple gradient (invisible on purple bg).
-                Pink gradient now contrasts against the new background. */}
-            <LinearGradient id="recGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#F472B6" />
-              <Stop offset="50%" stopColor="#EC4899" />
-              <Stop offset="100%" stopColor="#DB2777" />
-            </LinearGradient>
-          </Defs>
-          {/* White inner disc fills the ring interior so the timer digits
-              sit on a clean white surface against the purple bg.
-              Radius = RING_RADIUS - strokeWidth/2 - 4 so it tucks neatly
-              inside the progress arc without overlapping the stroke. */}
-          <Circle
-            cx={RING_CENTER}
-            cy={RING_CENTER}
-            r={RING_RADIUS - 7}
-            fill="#FFFFFF"
-          />
-          {/* Background track. Stage 6.RecordVisual: white-tint for contrast
-              against the new purple background. */}
-          <Circle
-            cx={RING_CENTER}
-            cy={RING_CENTER}
-            r={RING_RADIUS}
-            fill="none"
-            stroke="rgba(255,255,255,0.25)"
-            strokeWidth={6}
-          />
-          {/* Progress arc — rotated -90deg via origin so it starts at top */}
-          <Circle
-            cx={RING_CENTER}
-            cy={RING_CENTER}
-            r={RING_RADIUS}
-            fill="none"
-            stroke="url(#recGrad)"
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeDasharray={`${RING_CIRCUMFERENCE}`}
-            strokeDashoffset={`${dashOffset}`}
-            transform={`rotate(-90 ${RING_CENTER} ${RING_CENTER})`}
-          />
-          {/* Glowing dot at progress tip. Stage 6.RecordVisual: pink glow. */}
-          {progress > 0.005 ? (
-            <>
-              <Circle cx={dotX} cy={dotY} r={8} fill="rgba(236,72,153,0.4)" />
-              <Circle cx={dotX} cy={dotY} r={5} fill="#F472B6" />
-            </>
-          ) : null}
-        </Svg>
-        {/* Centered timer */}
+        <LottieView
+          source={RECORDING_LOTTIE}
+          autoPlay
+          loop
+          style={recStyles.lottieFill}
+          resizeMode="contain"
+        />
         <View pointerEvents="none" style={recStyles.timerCenter}>
           <Text style={recStyles.timerText}>
             {formatDuration(recordingDurationSec)}
@@ -912,8 +887,12 @@ const recStyles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   ringWrap: {
-    width: 260,
-    height: 260,
+    // Stage 6.RecordingLottie sizing: was fixed 260×260. Now scales
+    // with window width (RING_SIZE = window.width × 0.92) so the
+    // sphere fills the screen proportionally on every device, per
+    // figma reference (~92% width on all iPhones).
+    width: RING_SIZE,
+    height: RING_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 8,
@@ -924,12 +903,26 @@ const recStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   timerText: {
-    // Stage 6.RecordVisual: deep-purple text sits on the new white inner
-    // disc of the ring (white digits on white bg would be invisible).
-    color: '#1F1147',
-    fontSize: 64,
+    // Stage 6.RecordingLottie: deep-purple -> white. The white inner
+    // disc was removed when the SVG ring became a Lottie sphere; the
+    // sphere has pink/purple/orange hues, and white-bold reads best
+    // across all of them.
+    //
+    // fontSize was fixed 64. Now derived from RING_SIZE × 0.25 so
+    // the timer-to-sphere ratio stays constant across device widths.
+    // On a 390pt window: RING_SIZE ≈ 359, fontSize ≈ 90.
+    color: '#FFFFFF',
+    fontSize: TIMER_FONT_SIZE,
     fontFamily: 'Inter_700Bold',
     fontVariant: ['tabular-nums'],
+  },
+  lottieFill: {
+    // Stage 6.RecordingLottie: Lottie occupies the full ringWrap
+    // (now RING_SIZE responsive). resizeMode="contain" keeps the
+    // sphere centered and un-stretched regardless of the asset's
+    // native aspect ratio (recording.json is 700x700 square).
+    width: RING_SIZE,
+    height: RING_SIZE,
   },
   hintBlock: {
     alignItems: 'center',
