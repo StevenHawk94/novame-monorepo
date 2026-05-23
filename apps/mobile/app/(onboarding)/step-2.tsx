@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,8 +8,7 @@ import {
 import { useRouter } from 'expo-router';
 
 import { PrimaryButton, Shell } from '@/components/onboarding/shared';
-import { ASPIRE_WORDS } from '@/components/onboarding/constants';
-import { haptics } from '@/lib/haptics';
+import { AspireWordsPicker } from '@/components/onboarding/aspire-words-picker';
 import {
   getOnboardingState,
   patchOnboardingState,
@@ -29,19 +27,9 @@ export default function OnboardingStep2() {
   const initial = getOnboardingState().aspireWords;
   const [selected, setSelected] = useState<string[]>(initial);
 
-  const toggle = (word: string) => {
-    setSelected((prev) => {
-      let next: string[];
-      if (prev.includes(word)) {
-        next = prev.filter((w) => w !== word);
-      } else if (prev.length < 6) {
-        next = [...prev, word];
-      } else {
-        next = prev; // already 6 picked
-      }
-      patchOnboardingState({ aspireWords: next });
-      return next;
-    });
+  const handleChange = (next: string[]) => {
+    setSelected(next);
+    patchOnboardingState({ aspireWords: next });
   };
 
   const canContinue = selected.length >= 4;
@@ -58,23 +46,7 @@ export default function OnboardingStep2() {
           How would you describe your ideal self?
         </Text>
         <Text style={styles.hint}>Select 4 to 6 keywords</Text>
-        <View style={styles.chipGrid}>
-          {ASPIRE_WORDS.map((word) => {
-            const active = selected.includes(word);
-            return (
-              <Pressable
-                key={word}
-                onPress={() => { void haptics.light(); toggle(word); }}
-                style={[styles.chip, active && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {active ? '✓ ' : ''}
-                  {word}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <AspireWordsPicker selected={selected} onChange={handleChange} />
       </ScrollView>
       <View style={styles.footer}>
         <Text style={styles.counter}>{selected.length}/6 selected</Text>
@@ -114,31 +86,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     marginBottom: 20,
-  },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  chipActive: {
-    backgroundColor: 'rgba(168,85,247,0.25)',
-    borderColor: 'rgba(168,85,247,0.6)',
-  },
-  chipText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-  },
-  chipTextActive: {
-    color: '#C084FC',
   },
   footer: {
     paddingHorizontal: 24,
