@@ -7,6 +7,7 @@ import CardsTab from './_components/CardsTab';
 import DefaultUsersTab from './_components/DefaultUsersTab';
 import RealUsersTab from './_components/RealUsersTab';
 import OrdersTab from './_components/OrdersTab';
+import PricingTab from './_components/PricingTab';
 import SeekQuestionsTab from './_components/SeekQuestionsTab';
 
 type TabId =
@@ -16,6 +17,7 @@ type TabId =
   | 'default-users'
   | 'real-users'
   | 'orders'
+  | 'pricing'
   | 'seek'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
@@ -25,6 +27,7 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'default-users', icon: '👤', label: 'Default Users' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'orders', icon: '📦', label: 'Orders' },
+  { id: 'pricing', icon: '💰', label: 'Pricing' },
   { id: 'seek', icon: '❓', label: 'Seek Questions' },
 ];
 
@@ -66,6 +69,7 @@ export default function AdminDashboard() {
       {tab === 'default-users' && <DefaultUsersTab />}
       {tab === 'real-users' && <RealUsersTab />}
       {tab === 'orders' && <OrdersTab />}
+      {tab === 'pricing' && <PricingTab />}
       {tab === 'seek' && <SeekQuestionsTab />}
     </>
   );
