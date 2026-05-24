@@ -175,6 +175,64 @@ export async function downloadAsset(
   return result.uri;
 }
 
+// ---- product asset cache: versioned filenames ----
+
+/**
+ * Computes the local cache filename for a productAsset, embedding
+ * the manifest updatedAt timestamp.
+ *
+ * Stage B6 fix: pure size-based cache busting fails when the new
+ * content happens to have the same byte size as the old (admin re-
+ * uploads the same file, or two different webp encodings collide on
+ * size). updatedAt-derived filenames guarantee that any manifest
+ * change produces a new local filename, forcing a fresh download.
+ *
+ * R2 always serves at a stable key (book-cover.webp) -- only the
+ * local cache filename is versioned. Cleanup of stale versions
+ * happens at fill time in fillProductAssets.
+ *
+ * Example: filename='book-cover.webp' updatedAt='2026-05-24T16:04:32.057Z'
+ *   -> 'book-cover-v20260524T160432057Z.webp'
+ */
+function productCacheFilename(asset: ProductAssetManifestEntry): string {
+  const lastDot = asset.filename.lastIndexOf('.');
+  const base = lastDot >= 0 ? asset.filename.slice(0, lastDot) : asset.filename;
+  const ext = lastDot >= 0 ? asset.filename.slice(lastDot) : '';
+  // Strip all separators from ISO 8601 to make a filesystem-safe tag.
+  const tag = asset.updatedAt.replace(/[-:.Z]/g, '');
+  return `${base}-v${tag}${ext}`;
+}
+
+/**
+ * Download a single productAsset to its versioned cache filename.
+ *
+ * R2 URL keeps the stable filename (admin doesn't write versioned
+ * keys to R2); we just point the local download destination at the
+ * versioned name.
+ */
+async function downloadProductAsset(
+  baseUrl: string,
+  asset: ProductAssetManifestEntry,
+): Promise<AssetDownloadResult> {
+  const url = `${baseUrl}/${asset.filename}`;
+  const localName = productCacheFilename(asset);
+  const destination = new File(Paths.document, CACHE_SUBDIR, localName);
+  getCacheDir();
+  if (destination.exists) {
+    destination.delete();
+  }
+  try {
+    const result = await File.downloadFileAsync(url, destination);
+    return { filename: localName, status: 'cached', uri: result.uri };
+  } catch (error) {
+    return {
+      filename: localName,
+      status: 'failed',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 // ---- batch downloads ----
 
 /**
@@ -192,9 +250,7 @@ export function diffCacheAgainstManifest(
   const includeCards = filter?.cards ?? true;
   const includeProductAssets = filter?.productAssets ?? true;
   const missing: string[] = [];
-  const checkEntry = (
-    entry: VideoManifestEntry | CardManifestEntry | ProductAssetManifestEntry,
-  ) => {
+  const checkEntry = (entry: VideoManifestEntry | CardManifestEntry) => {
     if (!verifyCachedAsset(entry.filename, entry.size)) {
       missing.push(entry.filename);
     }
@@ -205,8 +261,17 @@ export function diffCacheAgainstManifest(
   if (includeCards) {
     manifest.cards.forEach(checkEntry);
   }
+  // productAssets use versioned local filenames keyed by updatedAt
+  // (Stage B6 size-collision fix). A version mismatch means the
+  // expected local file does not exist yet -- no size compare needed.
   if (includeProductAssets && manifest.productAssets) {
-    manifest.productAssets.forEach(checkEntry);
+    manifest.productAssets.forEach((entry) => {
+      const localName = productCacheFilename(entry);
+      const file = new File(Paths.document, CACHE_SUBDIR, localName);
+      if (!file.exists) {
+        missing.push(localName);
+      }
+    });
   }
   return missing;
 }
@@ -314,16 +379,20 @@ export function getProductAssetUri(id: string): string {
     const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
     return `${base}/${guessFilename}`;
   }
-  // Cache hit (local file): no version param needed -- the file is
-  // already the canonical bytes for this size.
-  const cached = getCachedAssetUri(entry.filename);
+  // Cache hit: look up the versioned local filename. The version tag
+  // is derived from updatedAt, so any admin re-upload produces a new
+  // expected filename and a new cache miss until fillProductAssets
+  // downloads the new content (Stage B6 size-collision fix).
+  const localName = productCacheFilename(entry);
+  const cached = getCachedAssetUri(localName);
   if (cached) return cached;
-  // Cache miss (first launch / cache cleared): return remote URL with
-  // ?v={size} so any HTTP / expo-image / browser cache layer treats
-  // each version as a distinct URL. When admin re-uploads, size
-  // changes, URL changes, no stale cache hit.
+  // Cache miss (first launch / cache cleared / fresh manifest entry):
+  // return remote URL with ?v={updatedAt-tag} so any HTTP / expo-image
+  // / browser cache layer treats each version as a distinct URL. The
+  // updatedAt tag (not raw size) survives size collisions.
   const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
-  return `${base}/${entry.filename}?v=${entry.size}`;
+  const versionTag = entry.updatedAt.replace(/[-:.Z]/g, '');
+  return `${base}/${entry.filename}?v=${versionTag}`;
 }
 
 /**
@@ -342,14 +411,9 @@ export function fillProductAssets(): void {
   void (async () => {
     try {
       // Force-fetch fresh manifest. Unlike getActiveManifest which
-      // prefers the cached copy, we MUST see new sizes here -- the
-      // whole point of this fill is to detect admin uploads since
-      // last launch. Without this, a cached stale manifest would
-      // say all assets are up-to-date and never re-download.
-      //
-      // Fallback to cached manifest only if the network fetch fails.
-      // In that case the diff will see no changes and nothing
-      // downloads, which is OK -- next launch will retry.
+      // prefers the cached copy, we MUST see new sizes / updatedAt
+      // here -- the whole point of this fill is to detect admin
+      // uploads since last launch.
       let manifest: AssetManifest;
       try {
         manifest = await fetchManifestFromR2();
@@ -360,17 +424,53 @@ export function fillProductAssets(): void {
         manifest = cached;
       }
 
-      const missing = diffCacheAgainstManifest(manifest, {
-        videos: false,
-        cards: false,
-        productAssets: true,
-      });
-      if (missing.length === 0) return;
-      await downloadAssets(manifest.baseUrl, missing);
+      // Stage B6: cleanup of stale versioned product asset files.
+      // After admin uploads, the productCacheFilename of each asset
+      // changes (updatedAt tag changes). The old file with the
+      // previous tag stays on disk forever otherwise -- cache grows
+      // unboundedly across many re-uploads. We list the cache dir,
+      // find anything matching the versioned-product pattern that
+      // is NOT in the current valid set, and delete it.
+      try {
+        const validNames = new Set(
+          (manifest.productAssets || []).map(productCacheFilename),
+        );
+        const productBaseNames = (manifest.productAssets || []).map((a) => {
+          const lastDot = a.filename.lastIndexOf('.');
+          return lastDot >= 0 ? a.filename.slice(0, lastDot) : a.filename;
+        });
+        const dir = getCacheDir();
+        const entries = dir.list();
+        for (const item of entries) {
+          if (!(item instanceof File)) continue;
+          const name = item.uri.split('/').pop();
+          if (!name) continue;
+          // Is this a versioned product asset (matches '{base}-v...')?
+          const isProduct = productBaseNames.some((base) =>
+            name.startsWith(`${base}-v`),
+          );
+          if (isProduct && !validNames.has(name)) {
+            item.delete();
+          }
+        }
+      } catch {
+        // Cleanup is best-effort; failure does not block downloads.
+      }
+
+      // Find missing versioned product asset files and download them.
+      const missingProductAssets = (manifest.productAssets || []).filter(
+        (a) => {
+          const localName = productCacheFilename(a);
+          const file = new File(Paths.document, CACHE_SUBDIR, localName);
+          return !file.exists;
+        },
+      );
+      if (missingProductAssets.length === 0) return;
+
+      for (const asset of missingProductAssets) {
+        await downloadProductAsset(manifest.baseUrl, asset);
+      }
     } catch (e) {
-      // Manifest parse / download errored. UI will continue to use
-      // remote URLs via getProductAssetUri (already ?v=size busted);
-      // no user-facing disruption.
       console.warn('[asset-cache] fillProductAssets failed:', e);
     }
   })();
