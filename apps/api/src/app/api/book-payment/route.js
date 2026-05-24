@@ -9,6 +9,11 @@ export const runtime = 'edge'
  * fetches the latest price for the relevant product on every request
  * to enforce the canonical charge amount — never trusts the mobile
  * client's `amount` parameter blindly (cache-staleness or tampering).
+ *
+ * Pricing-display policy (c): mobile force-refreshes /api/app-config
+ * when entering the payment-stub screen, so the displayed price is
+ * always the same as what the server will charge here. No diff-
+ * detection needed in the response.
  */
 function getSupabaseAdmin() {
   return createClient(
@@ -71,14 +76,12 @@ export async function POST(request) {
 
       const token = await getAccessToken()
       // Stage A: server-side price as source of truth. The mobile client
-      // sends `product` ('wisdom_book' | 'wisdom_cards') and the legacy
-      // `amount` (for back-compat); we ignore the latter and look up the
-      // canonical price from app_config. If the mobile-displayed price
-      // differs from the server price (cache staleness), the response
-      // includes `serverPrice` so the client can detect drift.
+      // sends `product` ('wisdom_book' | 'wisdom_cards'); we look up
+      // the canonical price from app_config and use that. The legacy
+      // `amount` field from the client is ignored entirely.
       // Back-compat: when `product` is missing (old client builds before
       // the A3 mobile update), default to 'wisdom_book' to preserve the
-      // pre-Stage-A behavior exactly (PRINTED_BOOK_PRICE).
+      // pre-Stage-A behavior (former PRINTED_BOOK_PRICE constant default).
       const resolvedProduct = product === 'wisdom_cards' ? 'wisdom_cards' : 'wisdom_book'
       const paymentAmount = await getServerPrice(resolvedProduct)
       const currency = 'USD'
@@ -128,8 +131,10 @@ export async function POST(request) {
       const pi = await piRes.json()
       
       // 修改：加上 headers: corsHeaders
-      // Stage A: include `serverPrice` so mobile can detect cache-staleness
-      // (when its cached PRINTED_BOOK_PRICE != server's current value).
+      // Stage A: chosen pricing-display policy is (c) -- mobile force-
+      // refreshes app-config when entering the payment-stub screen, so
+      // mobile-displayed price and server-charged price are guaranteed
+      // to match. No diff-detection fields needed in this response.
       return NextResponse.json(
         {
           success: true,
@@ -137,8 +142,6 @@ export async function POST(request) {
           paymentIntentId: pi.id,
           amount: safeAmount,
           currency,
-          serverPrice: paymentAmount,
-          clientPrice: amount ?? null,
         },
         { headers: corsHeaders }
       )
