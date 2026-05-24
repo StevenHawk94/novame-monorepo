@@ -15,6 +15,7 @@ import { syncOnboardingIfPending } from '@/lib/onboarding';
 import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscription';
 import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
+import { clearCachedConfig } from '@/lib/app-config-api';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
@@ -216,6 +217,10 @@ export default function RootLayout() {
           clearCachedSubscription();
           clearCachedMeStats();
           clearCachedCharacterState();
+          // Stage A (dynamic pricing): clear cached app_config snapshot.
+          // App config is per-app not per-user, but we clear defensively
+          // so cache hygiene is uniform across all MMKV keys.
+          clearCachedConfig();
           // Stage 5.WR.2 (Bug 3): clear skin-unlock tracker so a fresh
           // user on the same device starts with no "already seen"
           // history. Also drain the in-memory queue so leftover
