@@ -65,6 +65,11 @@ export async function createPaymentIntent(
     amount: params.amount,
     orderType: params.orderType,
     originalOrderId: params.originalOrderId,
+    // Stage A (dynamic pricing): server reads canonical price from
+    // app_config by `product`. The `amount` field above is kept for
+    // back-compat but ignored server-side; the server-charged amount
+    // is always the latest DB value.
+    product: params.orderType,
   });
 }
 

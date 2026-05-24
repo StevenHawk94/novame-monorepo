@@ -38,7 +38,7 @@
  *   - dismiss -> SFAuthenticationSession dismissed without redirect
  *                (e.g. user swiped down). Treat as cancel.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -53,7 +53,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 
-import { getCachedConfig } from '@/lib/app-config-api';
+import {
+  fetchAppConfig,
+  getCachedConfig,
+  type AppConfig,
+} from '@/lib/app-config-api';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
 import {
@@ -93,11 +97,31 @@ export default function PaymentModal() {
     }
   }, [params.shipping]);
 
-  // Stage A (dynamic config): read from cached app_config. payment-stub
-  // also force-refreshes on mount in A3.3 (next sub-step) so the
-  // displayed total matches the server-charged amount even if cache
-  // is stale by exactly the wrong second.
-  const config = getCachedConfig();
+  // Stage A (dynamic config / policy c): payment-stub force-refreshes
+  // app_config on mount, bypassing TTL. This guarantees the displayed
+  // total matches the server-charged amount even if cache is stale.
+  //
+  // Initial render uses cached values to avoid an empty-state flash.
+  // After the network fetch lands, setConfig triggers a re-render --
+  // in the rare case prices changed, the user sees the latest values
+  // before tapping Pay. On fetch failure we keep the cached values
+  // and let the server be the source of truth (it always re-reads DB
+  // when creating the paymentIntent).
+  const [config, setConfig] = useState<AppConfig>(() => getCachedConfig());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await fetchAppConfig({ noCache: true });
+      if (cancelled) return;
+      if (result.kind === 'success') {
+        setConfig(result.config);
+      }
+      // On failure, keep cached values silently. The server still
+      // charges the canonical DB price regardless.
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const price =
     product === 'wisdom_book' ? config.printed_book_price : config.wisdom_cards_price;
   const total = price + config.shipping_fee;
