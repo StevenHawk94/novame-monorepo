@@ -214,7 +214,13 @@ async function downloadProductAsset(
   baseUrl: string,
   asset: ProductAssetManifestEntry,
 ): Promise<AssetDownloadResult> {
-  const url = `${baseUrl}/${asset.filename}`;
+  // Stage B6 hardening: append ?v={updatedAt-tag} to the download URL.
+  // R2 is fronted by Cloudflare with cache-control: max-age=14400
+  // on objects, so the bare URL can return a 1-hour-stale edge copy
+  // even after admin re-uploads. The version tag makes each upload's
+  // download URL unique, forcing CDN MISS -> origin fetch.
+  const versionTag = asset.updatedAt.replace(/[-:.Z]/g, '');
+  const url = `${baseUrl}/${asset.filename}?v=${versionTag}`;
   const localName = productCacheFilename(asset);
   const destination = new File(Paths.document, CACHE_SUBDIR, localName);
   getCacheDir();
@@ -262,13 +268,20 @@ export function diffCacheAgainstManifest(
     manifest.cards.forEach(checkEntry);
   }
   // productAssets use versioned local filenames keyed by updatedAt
-  // (Stage B6 size-collision fix). A version mismatch means the
-  // expected local file does not exist yet -- no size compare needed.
+  // (Stage B6 size-collision fix). Defense in depth:
+  //   - filename version mismatch (file missing): obvious cache miss.
+  //   - filename matches but byte size differs: previous download
+  //     received a stale CDN edge cache copy. Delete + redownload.
   if (includeProductAssets && manifest.productAssets) {
     manifest.productAssets.forEach((entry) => {
       const localName = productCacheFilename(entry);
       const file = new File(Paths.document, CACHE_SUBDIR, localName);
       if (!file.exists) {
+        missing.push(localName);
+        return;
+      }
+      if (file.size !== entry.size) {
+        file.delete();
         missing.push(localName);
       }
     });
@@ -410,10 +423,6 @@ export function getProductAssetUri(id: string): string {
 export function fillProductAssets(): void {
   void (async () => {
     try {
-      // Force-fetch fresh manifest. Unlike getActiveManifest which
-      // prefers the cached copy, we MUST see new sizes / updatedAt
-      // here -- the whole point of this fill is to detect admin
-      // uploads since last launch.
       let manifest: AssetManifest;
       try {
         manifest = await fetchManifestFromR2();
@@ -458,11 +467,18 @@ export function fillProductAssets(): void {
       }
 
       // Find missing versioned product asset files and download them.
+      // Includes size mismatch as a stale-content signal (CDN may have
+      // returned a stale edge copy on the previous download attempt).
       const missingProductAssets = (manifest.productAssets || []).filter(
         (a) => {
           const localName = productCacheFilename(a);
           const file = new File(Paths.document, CACHE_SUBDIR, localName);
-          return !file.exists;
+          if (!file.exists) return true;
+          if (file.size !== a.size) {
+            file.delete();
+            return true;
+          }
+          return false;
         },
       );
       if (missingProductAssets.length === 0) return;
