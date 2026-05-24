@@ -15,7 +15,6 @@ export {
   BOOK_UNLOCK_WORDS,
   CARDS_UNLOCK_COUNT,
   PRINTED_BOOK_PRICE,
-  BOOK_MILESTONE_MINS,
 } from '@novame/core'
 
 // Character system (data + rules)

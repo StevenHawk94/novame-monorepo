@@ -1,7 +1,42 @@
 import { NextResponse } from 'next/server'
-import { PRINTED_BOOK_PRICE } from '@/lib/constants'
+import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
+
+/**
+ * Stage A: PRINTED_BOOK_PRICE / WISDOM_CARDS_PRICE / SHIPPING_FEE now
+ * live in Supabase `app_config` and are editable via admin. Server
+ * fetches the latest price for the relevant product on every request
+ * to enforce the canonical charge amount — never trusts the mobile
+ * client's `amount` parameter blindly (cache-staleness or tampering).
+ */
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
+async function getServerPrice(product) {
+  // product: 'wisdom_book' | 'wisdom_cards'
+  const key = product === 'wisdom_cards' ? 'wisdom_cards_price' : 'printed_book_price'
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', key)
+    .single()
+  if (error || !data) {
+    // DB lookup failed -- fall back to safe hardcoded defaults so the
+    // payment flow never completely breaks. Same numbers as the initial
+    // app_config seed so behavior is continuous.
+    console.warn('[book-payment] app_config fetch failed, using fallback:', error?.message)
+    return product === 'wisdom_cards' ? 59.99 : 99.99
+  }
+  const parsed = parseFloat(data.value)
+  return Number.isFinite(parsed) ? parsed : (product === 'wisdom_cards' ? 59.99 : 99.99)
+}
 
 const AIRWALLEX_API_KEY = process.env.AIRWALLEX_API_KEY
 const AIRWALLEX_CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID
@@ -30,12 +65,22 @@ export async function POST(request) {
     const action = body.action || 'create'
 
     if (action === 'create') {
-      const { userId, userEmail, amount, orderType, originalOrderId } = body
+      const { userId, userEmail, amount, orderType, originalOrderId, product } = body
       // 修改：加上 headers: corsHeaders
       if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400, headers: corsHeaders })
 
       const token = await getAccessToken()
-      const paymentAmount = amount || PRINTED_BOOK_PRICE
+      // Stage A: server-side price as source of truth. The mobile client
+      // sends `product` ('wisdom_book' | 'wisdom_cards') and the legacy
+      // `amount` (for back-compat); we ignore the latter and look up the
+      // canonical price from app_config. If the mobile-displayed price
+      // differs from the server price (cache staleness), the response
+      // includes `serverPrice` so the client can detect drift.
+      // Back-compat: when `product` is missing (old client builds before
+      // the A3 mobile update), default to 'wisdom_book' to preserve the
+      // pre-Stage-A behavior exactly (PRINTED_BOOK_PRICE).
+      const resolvedProduct = product === 'wisdom_cards' ? 'wisdom_cards' : 'wisdom_book'
+      const paymentAmount = await getServerPrice(resolvedProduct)
       const currency = 'USD'
 
       let customerId = null
@@ -64,7 +109,7 @@ export async function POST(request) {
         currency,
         merchant_order_id: safeOrderId,
         request_id: `req-${safeOrderId}`,
-        metadata: { user_id: userId, order_type: orderType || 'printed_book', original_order_id: originalOrderId || null, product: 'wisdom_book' },
+        metadata: { user_id: userId, order_type: orderType || 'printed_book', original_order_id: originalOrderId || null, product: resolvedProduct },
       }
       
       if (customerId) piBody.customer_id = customerId
@@ -83,8 +128,18 @@ export async function POST(request) {
       const pi = await piRes.json()
       
       // 修改：加上 headers: corsHeaders
+      // Stage A: include `serverPrice` so mobile can detect cache-staleness
+      // (when its cached PRINTED_BOOK_PRICE != server's current value).
       return NextResponse.json(
-        { success: true, clientSecret: pi.client_secret, paymentIntentId: pi.id, amount: safeAmount, currency }, 
+        {
+          success: true,
+          clientSecret: pi.client_secret,
+          paymentIntentId: pi.id,
+          amount: safeAmount,
+          currency,
+          serverPrice: paymentAmount,
+          clientPrice: amount ?? null,
+        },
         { headers: corsHeaders }
       )
     }
