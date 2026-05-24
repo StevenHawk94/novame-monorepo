@@ -117,7 +117,7 @@ export default function ProductDetailModal() {
   // which returns { uri, cacheKey }. cacheKey embeds the manifest
   // updatedAt tag so admin re-uploads force expo-image to load
   // fresh bytes from disk (instead of serving stale cached pixels).
-  // Combined with cachePolicy="none" on the <Image> below, this is
+  // Combined with cachePolicy="memory" on the <Image> below, this is
   // the Stage B6 final fix for the stale-image bug.
   const heroSource = getProductAssetSource(
     product === 'wisdom_book' ? 'product-book-hero' : 'product-cards-hero',
