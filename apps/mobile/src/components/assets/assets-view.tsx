@@ -38,9 +38,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import {
-  BOOK_UNLOCK_WORDS,
-  CARDS_UNLOCK_COUNT,
-} from '@novame/core';
+  fetchAppConfig,
+  getCachedConfig,
+  isCacheStale,
+} from '@/lib/app-config-api';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -80,15 +81,25 @@ export function AssetsView({ shared }: Props) {
     };
   }, [userId]);
 
+  // Stage A (dynamic config): read unlock thresholds from cached
+  // app_config. Background-refresh once on mount when cache is stale
+  // (1h TTL). Result is eventual consistency -- new thresholds appear
+  // on the next page visit, not the current render. payment-stub
+  // (sub-step A3.3) handles strict refresh for the checkout flow.
+  const config = getCachedConfig();
+  useEffect(() => {
+    if (isCacheStale()) void fetchAppConfig();
+  }, []);
+
   // Stage 3.9.B.3 stub: until stage 5 lands the server-side
   // last_book_applied_at field, we just show total words. Word reset
   // logic ("each successful order zeroes the count") activates then.
   const availableWords = totalWords;
-  const bookProgress = Math.min((availableWords / BOOK_UNLOCK_WORDS) * 100, 100);
-  const bookUnlocked = availableWords >= BOOK_UNLOCK_WORDS;
+  const bookProgress = Math.min((availableWords / config.book_unlock_words) * 100, 100);
+  const bookUnlocked = availableWords >= config.book_unlock_words;
 
-  const cardsProgress = Math.min((collectedKw / CARDS_UNLOCK_COUNT) * 100, 100);
-  const cardsUnlocked = collectedKw >= CARDS_UNLOCK_COUNT;
+  const cardsProgress = Math.min((collectedKw / config.cards_unlock_count) * 100, 100);
+  const cardsUnlocked = collectedKw >= config.cards_unlock_count;
 
   const pendingCardsOrder = useMemo(
     () =>
@@ -144,7 +155,7 @@ export function AssetsView({ shared }: Props) {
         iconSource={BOOK_ICON}
         accent="#F472B6"
         countLabel={availableWords.toLocaleString()}
-        totalLabel={BOOK_UNLOCK_WORDS.toLocaleString()}
+        totalLabel={config.book_unlock_words.toLocaleString()}
         unit="Words"
         sub="To unlock your wisdom book"
         progress={bookProgress}
@@ -155,7 +166,7 @@ export function AssetsView({ shared }: Props) {
         iconSource={CARD_ICON}
         accent="#A855F7"
         countLabel={String(collectedKw)}
-        totalLabel={String(CARDS_UNLOCK_COUNT)}
+        totalLabel={String(config.cards_unlock_count)}
         unit="Cards Type"
         sub="To unlock your wisdom cards deck"
         progress={cardsProgress}

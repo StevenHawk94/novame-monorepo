@@ -35,12 +35,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  BOOK_UNLOCK_WORDS,
-  CARDS_UNLOCK_COUNT,
-  PRINTED_BOOK_PRICE,
-  WISDOM_CARDS_PRICE,
-  SHIPPING_FEE,
-} from '@novame/core';
+  fetchAppConfig,
+  getCachedConfig,
+  isCacheStale,
+} from '@/lib/app-config-api';
 import { fetchUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -138,32 +136,42 @@ export default function ProductDetailModal() {
       ? detailMeta.width / detailMeta.height
       : 4 / 5;
 
+  // Stage A (dynamic config): read prices + thresholds from cached
+  // app_config. Background-refresh when stale (1h TTL). Refresh result
+  // lands on the next page visit -- the actual checkout price gate is
+  // payment-stub's strict refresh in A3.3, and the server still always
+  // charges from DB regardless of what we display here.
+  const config = getCachedConfig();
+  useEffect(() => {
+    if (isCacheStale()) void fetchAppConfig();
+  }, []);
+
   const price =
-    product === 'wisdom_book' ? PRINTED_BOOK_PRICE : WISDOM_CARDS_PRICE;
-  const total = price + SHIPPING_FEE;
+    product === 'wisdom_book' ? config.printed_book_price : config.wisdom_cards_price;
+  const total = price + config.shipping_fee;
 
   // Order CTA state machine.
   let ctaState: 'locked' | 'pending' | 'unlocked' = 'locked';
   let ctaLabel = '';
 
   if (product === 'wisdom_book') {
-    if (totalWords >= BOOK_UNLOCK_WORDS) {
+    if (totalWords >= config.book_unlock_words) {
       ctaState = 'unlocked';
       ctaLabel = `Order — $${total.toFixed(2)}`;
     } else {
       ctaState = 'locked';
-      ctaLabel = `Need ${totalWords.toLocaleString()} / ${BOOK_UNLOCK_WORDS.toLocaleString()} words`;
+      ctaLabel = `Need ${totalWords.toLocaleString()} / ${config.book_unlock_words.toLocaleString()} words`;
     }
   } else {
     if (pendingCardsOrder) {
       ctaState = 'pending';
       ctaLabel = 'Order in progress';
-    } else if (collectedKw >= CARDS_UNLOCK_COUNT) {
+    } else if (collectedKw >= config.cards_unlock_count) {
       ctaState = 'unlocked';
       ctaLabel = `Order — $${total.toFixed(2)}`;
     } else {
       ctaState = 'locked';
-      ctaLabel = `Collect ${collectedKw} / ${CARDS_UNLOCK_COUNT} keywords`;
+      ctaLabel = `Collect ${collectedKw} / ${config.cards_unlock_count} keywords`;
     }
   }
 
@@ -245,7 +253,7 @@ export default function ProductDetailModal() {
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Shipping</Text>
               <Text style={styles.priceValue}>
-                {(SHIPPING_FEE as number) === 0 ? 'Free' : `$${(SHIPPING_FEE as number).toFixed(2)}`}
+                {config.shipping_fee === 0 ? 'Free' : `$${config.shipping_fee.toFixed(2)}`}
               </Text>
             </View>
             <View style={styles.priceDivider} />

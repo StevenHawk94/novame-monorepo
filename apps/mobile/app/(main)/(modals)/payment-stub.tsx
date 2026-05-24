@@ -53,11 +53,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 
-import {
-  PRINTED_BOOK_PRICE,
-  WISDOM_CARDS_PRICE,
-  SHIPPING_FEE,
-} from '@novame/core';
+import { getCachedConfig } from '@/lib/app-config-api';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
 import {
@@ -97,8 +93,14 @@ export default function PaymentModal() {
     }
   }, [params.shipping]);
 
-  const price = product === 'wisdom_book' ? PRINTED_BOOK_PRICE : WISDOM_CARDS_PRICE;
-  const total = price + SHIPPING_FEE;
+  // Stage A (dynamic config): read from cached app_config. payment-stub
+  // also force-refreshes on mount in A3.3 (next sub-step) so the
+  // displayed total matches the server-charged amount even if cache
+  // is stale by exactly the wrong second.
+  const config = getCachedConfig();
+  const price =
+    product === 'wisdom_book' ? config.printed_book_price : config.wisdom_cards_price;
+  const total = price + config.shipping_fee;
 
   const [busy, setBusy] = useState(false);
   const [resultBanner, setResultBanner] = useState<ResultBanner>(null);
@@ -261,9 +263,9 @@ export default function PaymentModal() {
           <View style={styles.cardRow}>
             <Text style={styles.cardLabel}>Shipping</Text>
             <Text style={styles.cardValue}>
-              {(SHIPPING_FEE as number) === 0
+              {config.shipping_fee === 0
                 ? 'Free'
-                : `$${(SHIPPING_FEE as number).toFixed(2)}`}
+                : `$${config.shipping_fee.toFixed(2)}`}
             </Text>
           </View>
           <View style={styles.divider} />
