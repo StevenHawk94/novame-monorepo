@@ -485,6 +485,14 @@ export function fillProductAssets(): void {
         const validNames = new Set(
           (manifest.productAssets || []).map(productCacheFilename),
         );
+        // Build set of original (non-versioned) productAsset filenames
+        // so we can also delete pre-B6 cache entries (book-cover.webp,
+        // cards-cover.webp, etc.). These were created by the original
+        // B5 download code path before filename versioning landed and
+        // would otherwise stay on disk forever, wasting ~530KB.
+        const productOriginalNames = new Set(
+          (manifest.productAssets || []).map((a) => a.filename),
+        );
         const productBaseNames = (manifest.productAssets || []).map((a) => {
           const lastDot = a.filename.lastIndexOf('.');
           return lastDot >= 0 ? a.filename.slice(0, lastDot) : a.filename;
@@ -495,30 +503,19 @@ export function fillProductAssets(): void {
           if (!(item instanceof File)) continue;
           const name = item.uri.split('/').pop();
           if (!name) continue;
-          // Is this a versioned product asset (matches '{base}-v...')?
-          const isProduct = productBaseNames.some((base) =>
-            name.startsWith(`${base}-v`),
-          );
-          if (isProduct && !validNames.has(name)) {
+          // Stale versioned file (matches '{base}-v...' but not current
+          // valid tag)?
+          const isStaleVersioned =
+            productBaseNames.some((base) => name.startsWith(`${base}-v`)) &&
+            !validNames.has(name);
+          // Pre-B6 non-versioned file? (e.g. 'cards-cover.webp')
+          const isLegacyNonVersioned = productOriginalNames.has(name);
+          if (isStaleVersioned || isLegacyNonVersioned) {
             item.delete();
           }
         }
       } catch {
         // Cleanup is best-effort; failure does not block downloads.
-      }
-
-      // Diagnostic: dump every productAsset's state before filter
-      if (manifest.productAssets) {
-        for (const a of manifest.productAssets) {
-          const localName = productCacheFilename(a);
-          const file = new File(Paths.document, CACHE_SUBDIR, localName);
-          console.log('[fill]', a.id,
-            'manifest.size=' + a.size,
-            'manifest.updatedAt=' + a.updatedAt,
-            'localName=' + localName,
-            'local.exists=' + file.exists,
-            'local.size=' + (file.exists ? file.size : 'N/A'));
-        }
       }
 
       const missingProductAssets = (manifest.productAssets || []).filter(
@@ -527,14 +524,12 @@ export function fillProductAssets(): void {
           const file = new File(Paths.document, CACHE_SUBDIR, localName);
           if (!file.exists) return true;
           if (file.size !== a.size) {
-            console.log('[fill] size mismatch, redownload:', localName, 'local=' + file.size, 'expected=' + a.size);
             file.delete();
             return true;
           }
           return false;
         },
       );
-      console.log('[fill] missing count:', missingProductAssets.length);
       if (missingProductAssets.length === 0) return;
 
       for (const asset of missingProductAssets) {

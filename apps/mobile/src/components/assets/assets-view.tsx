@@ -291,7 +291,7 @@ function ProductCell({
       ]}
     >
       <View style={styles.productImgWrap}>
-        <Image source={imgSource} style={styles.productImg} contentFit="cover" cachePolicy="none" />
+        <Image source={imgSource} style={styles.productImg} contentFit="cover" cachePolicy="memory" />
         {!unlocked && !pending ? (
           <View style={styles.productLockOverlay}>
             <MaterialIcons name="lock" size={32} color="rgba(255,255,255,0.6)" />

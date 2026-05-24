@@ -224,7 +224,7 @@ export default function ProductDetailModal() {
         >
           {/* Hero */}
           <View style={styles.heroCard}>
-            <Image source={heroSource} style={styles.heroImg} contentFit="cover" cachePolicy="none" />
+            <Image source={heroSource} style={styles.heroImg} contentFit="cover" cachePolicy="memory" />
           </View>
 
           {/* Tagline */}
@@ -243,7 +243,7 @@ export default function ProductDetailModal() {
                 { aspectRatio: detailAspectRatio },
               ]}
               contentFit="contain"
-              cachePolicy="none"
+              cachePolicy="memory"
               onLoad={(event) => {
                 const w = event.source?.width;
                 const h = event.source?.height;
