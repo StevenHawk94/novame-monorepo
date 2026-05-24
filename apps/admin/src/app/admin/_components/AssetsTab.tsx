@@ -218,7 +218,7 @@ function AssetCard({
       <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-3 flex items-center justify-center">
         {asset.uploaded ? (
           <img
-            src={asset.publicUrl}
+            src={`${asset.publicUrl}?v=${asset.size ?? 0}`}
             alt={label}
             className="w-full h-full object-contain"
             onError={(e) => {

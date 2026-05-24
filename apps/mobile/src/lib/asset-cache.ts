@@ -314,10 +314,16 @@ export function getProductAssetUri(id: string): string {
     const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
     return `${base}/${guessFilename}`;
   }
+  // Cache hit (local file): no version param needed -- the file is
+  // already the canonical bytes for this size.
   const cached = getCachedAssetUri(entry.filename);
   if (cached) return cached;
+  // Cache miss (first launch / cache cleared): return remote URL with
+  // ?v={size} so any HTTP / expo-image / browser cache layer treats
+  // each version as a distinct URL. When admin re-uploads, size
+  // changes, URL changes, no stale cache hit.
   const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
-  return `${base}/${entry.filename}`;
+  return `${base}/${entry.filename}?v=${entry.size}`;
 }
 
 /**
@@ -335,7 +341,25 @@ export function getProductAssetUri(id: string): string {
 export function fillProductAssets(): void {
   void (async () => {
     try {
-      const manifest = await getActiveManifest();
+      // Force-fetch fresh manifest. Unlike getActiveManifest which
+      // prefers the cached copy, we MUST see new sizes here -- the
+      // whole point of this fill is to detect admin uploads since
+      // last launch. Without this, a cached stale manifest would
+      // say all assets are up-to-date and never re-download.
+      //
+      // Fallback to cached manifest only if the network fetch fails.
+      // In that case the diff will see no changes and nothing
+      // downloads, which is OK -- next launch will retry.
+      let manifest: AssetManifest;
+      try {
+        manifest = await fetchManifestFromR2();
+        setCachedManifest(manifest);
+      } catch {
+        const cached = getCachedManifest();
+        if (!cached) return;
+        manifest = cached;
+      }
+
       const missing = diffCacheAgainstManifest(manifest, {
         videos: false,
         cards: false,
@@ -344,9 +368,9 @@ export function fillProductAssets(): void {
       if (missing.length === 0) return;
       await downloadAssets(manifest.baseUrl, missing);
     } catch (e) {
-      // Manifest fetch failed or download errored. UI will continue
-      // to use remote URLs via getProductAssetUri; no user-facing
-      // disruption.
+      // Manifest parse / download errored. UI will continue to use
+      // remote URLs via getProductAssetUri (already ?v=size busted);
+      // no user-facing disruption.
       console.warn('[asset-cache] fillProductAssets failed:', e);
     }
   })();
