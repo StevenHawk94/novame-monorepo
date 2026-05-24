@@ -409,6 +409,47 @@ export function getProductAssetUri(id: string): string {
 }
 
 /**
+ * Returns a complete expo-image source object for a product asset,
+ * including both the uri (resolved by getProductAssetUri) and a
+ * cacheKey that invalidates expo-image's internal cache on content
+ * change.
+ *
+ * Stage B6 final fix: testing revealed that expo-image's internal
+ * cache (Glide on Android, SDWebImage on iOS) does NOT invalidate
+ * purely on uri string change for file:// URIs in some edge cases --
+ * the previous file path was already present in cache and served
+ * stale bytes even after our asset-cache layer wrote new content.
+ *
+ * The cacheKey prop is expo-image's official mechanism for forcing
+ * cache invalidation (per github.com/expo/expo discussion #36940).
+ * We embed the updatedAt tag, so any admin re-upload produces a new
+ * cacheKey and forces expo-image to load from source.
+ *
+ * The 'v2-' prefix is a one-time invalidation token: existing users
+ * upgrading from the previous code path may have stale entries cached
+ * under bare versioned URI keys; with v2- prefixed cacheKeys those
+ * old entries become unreachable and a fresh load happens.
+ *
+ * Consumers should ALSO set cachePolicy="none" on the <Image> to
+ * skip expo-image's cache entirely (we already have our own
+ * asset-cache layer, expo-image's cache is redundant + a known bug
+ * source). This gives defense in depth: cacheKey handles the cache-
+ * aware path, cachePolicy="none" handles any path that ignores
+ * cacheKey.
+ */
+export function getProductAssetSource(id: string): {
+  uri: string;
+  cacheKey: string;
+} {
+  const manifest = getCachedManifest();
+  const entry = manifest?.productAssets?.find((a) => a.id === id);
+  const tag = entry ? entry.updatedAt.replace(/[-:.Z]/g, '') : 'unknown';
+  const cacheKey = `v2-${id}-${tag}`;
+  const uri = getProductAssetUri(id);
+  return { uri, cacheKey };
+}
+
+/**
  * Fires off a background download of all product assets not yet cached.
  *
  * Returns immediately -- caller does not await. Errors are logged and
@@ -466,21 +507,34 @@ export function fillProductAssets(): void {
         // Cleanup is best-effort; failure does not block downloads.
       }
 
-      // Find missing versioned product asset files and download them.
-      // Includes size mismatch as a stale-content signal (CDN may have
-      // returned a stale edge copy on the previous download attempt).
+      // Diagnostic: dump every productAsset's state before filter
+      if (manifest.productAssets) {
+        for (const a of manifest.productAssets) {
+          const localName = productCacheFilename(a);
+          const file = new File(Paths.document, CACHE_SUBDIR, localName);
+          console.log('[fill]', a.id,
+            'manifest.size=' + a.size,
+            'manifest.updatedAt=' + a.updatedAt,
+            'localName=' + localName,
+            'local.exists=' + file.exists,
+            'local.size=' + (file.exists ? file.size : 'N/A'));
+        }
+      }
+
       const missingProductAssets = (manifest.productAssets || []).filter(
         (a) => {
           const localName = productCacheFilename(a);
           const file = new File(Paths.document, CACHE_SUBDIR, localName);
           if (!file.exists) return true;
           if (file.size !== a.size) {
+            console.log('[fill] size mismatch, redownload:', localName, 'local=' + file.size, 'expected=' + a.size);
             file.delete();
             return true;
           }
           return false;
         },
       );
+      console.log('[fill] missing count:', missingProductAssets.length);
       if (missingProductAssets.length === 0) return;
 
       for (const asset of missingProductAssets) {

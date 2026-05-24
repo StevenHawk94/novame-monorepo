@@ -38,7 +38,7 @@ import {
   getCachedConfig,
   isCacheStale,
 } from '@/lib/app-config-api';
-import { getProductAssetUri } from '@/lib/asset-cache';
+import { getProductAssetSource } from '@/lib/asset-cache';
 import { fetchUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -113,22 +113,21 @@ export default function ProductDetailModal() {
     [orders],
   );
 
-  // Stage B: hero + detail images now resolved via getProductAssetUri,
-  // which returns file:// after the background fill lands or remote
-  // https:// URL before. expo-image handles both transparently.
-  const heroSource = {
-    uri: getProductAssetUri(
-      product === 'wisdom_book' ? 'product-book-hero' : 'product-cards-hero',
-    ),
-  };
+  // Stage B: hero + detail images resolved via getProductAssetSource,
+  // which returns { uri, cacheKey }. cacheKey embeds the manifest
+  // updatedAt tag so admin re-uploads force expo-image to load
+  // fresh bytes from disk (instead of serving stale cached pixels).
+  // Combined with cachePolicy="none" on the <Image> below, this is
+  // the Stage B6 final fix for the stale-image bug.
+  const heroSource = getProductAssetSource(
+    product === 'wisdom_book' ? 'product-book-hero' : 'product-cards-hero',
+  );
 
-  const detailSource = {
-    uri: getProductAssetUri(
-      product === 'wisdom_book'
-        ? 'product-book-detail-1'
-        : 'product-cards-detail-1',
-    ),
-  };
+  const detailSource = getProductAssetSource(
+    product === 'wisdom_book'
+      ? 'product-book-detail-1'
+      : 'product-cards-detail-1',
+  );
 
   // Detail image natural aspect ratio. Computed at runtime via the
   // expo-image onLoad event because the source is now a remote /
@@ -225,7 +224,7 @@ export default function ProductDetailModal() {
         >
           {/* Hero */}
           <View style={styles.heroCard}>
-            <Image source={heroSource} style={styles.heroImg} contentFit="cover" />
+            <Image source={heroSource} style={styles.heroImg} contentFit="cover" cachePolicy="none" />
           </View>
 
           {/* Tagline */}
@@ -244,6 +243,7 @@ export default function ProductDetailModal() {
                 { aspectRatio: detailAspectRatio },
               ]}
               contentFit="contain"
+              cachePolicy="none"
               onLoad={(event) => {
                 const w = event.source?.width;
                 const h = event.source?.height;

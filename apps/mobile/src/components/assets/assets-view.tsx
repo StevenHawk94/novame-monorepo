@@ -43,7 +43,7 @@ import {
   getCachedConfig,
   isCacheStale,
 } from '@/lib/app-config-api';
-import { getProductAssetUri } from '@/lib/asset-cache';
+import { getProductAssetSource } from '@/lib/asset-cache';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -177,14 +177,14 @@ export function AssetsView({ shared }: Props) {
       {/* Product cards */}
       <View style={styles.productRow}>
         <ProductCell
-          imgSource={{ uri: getProductAssetUri('product-book-cover') }}
+          imgSource={getProductAssetSource('product-book-cover')}
           title="Personalized Book of Your Growth Journey"
           unlocked={bookUnlocked}
           pending={false}
           onPress={onOpenBook}
         />
         <ProductCell
-          imgSource={{ uri: getProductAssetUri('product-cards-cover') }}
+          imgSource={getProductAssetSource('product-cards-cover')}
           title="Personalized Card Deck of Your Growth Wisdom"
           unlocked={cardsUnlocked}
           pending={!!pendingCardsOrder}
@@ -291,7 +291,7 @@ function ProductCell({
       ]}
     >
       <View style={styles.productImgWrap}>
-        <Image source={imgSource} style={styles.productImg} contentFit="cover" />
+        <Image source={imgSource} style={styles.productImg} contentFit="cover" cachePolicy="none" />
         {!unlocked && !pending ? (
           <View style={styles.productLockOverlay}>
             <MaterialIcons name="lock" size={32} color="rgba(255,255,255,0.6)" />
