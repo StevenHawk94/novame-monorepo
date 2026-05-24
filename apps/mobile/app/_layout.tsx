@@ -16,6 +16,7 @@ import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscripti
 import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
 import { clearCachedConfig } from '@/lib/app-config-api';
+import { fillProductAssets } from '@/lib/asset-cache';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
@@ -134,6 +135,15 @@ export default function RootLayout() {
       cancelled = true;
       clearTimeout(timeoutId);
     };
+  }, []);
+
+  // Stage B: background-download product assets (6 images, ~530KB total).
+  // Fire-and-forget on mount, completely independent of the prewarm
+  // gate so it never delays splash hide. Errors are logged inside.
+  // After this lands, getProductAssetUri returns file:// URIs; before,
+  // it returns remote URLs (expo-image handles both transparently).
+  useEffect(() => {
+    fillProductAssets();
   }, []);
 
   // Hide the native splash once we're ready. Separate effect from

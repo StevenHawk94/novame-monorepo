@@ -21,7 +21,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image as RNImage,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,6 +38,7 @@ import {
   getCachedConfig,
   isCacheStale,
 } from '@/lib/app-config-api';
+import { getProductAssetUri } from '@/lib/asset-cache';
 import { fetchUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -113,28 +113,32 @@ export default function ProductDetailModal() {
     [orders],
   );
 
-  const heroSource =
-    product === 'wisdom_book'
-      ? require('../../../assets/images/product/book-hero.webp')
-      : require('../../../assets/images/product/cards-hero.webp');
+  // Stage B: hero + detail images now resolved via getProductAssetUri,
+  // which returns file:// after the background fill lands or remote
+  // https:// URL before. expo-image handles both transparently.
+  const heroSource = {
+    uri: getProductAssetUri(
+      product === 'wisdom_book' ? 'product-book-hero' : 'product-cards-hero',
+    ),
+  };
 
-  // Detail image is the larger marketing shot rendered below the
-  // hero in the product detail modal. Each product has its own
-  // asset: book-detail-1.webp for the book, cards-detail-1.webp
-  // for the cards.
-  const detailSource =
-    product === 'wisdom_book'
-      ? require('../../../assets/images/product/book-detail-1.webp')
-      : require('../../../assets/images/product/cards-detail-1.webp');
+  const detailSource = {
+    uri: getProductAssetUri(
+      product === 'wisdom_book'
+        ? 'product-book-detail-1'
+        : 'product-cards-detail-1',
+    ),
+  };
 
-  // Resolve detail-image natural aspect ratio so the image renders
-  // unclipped at full natural height. RNImage.resolveAssetSource
-  // works for bundled require()'d assets.
-  const detailMeta = RNImage.resolveAssetSource(detailSource);
-  const detailAspectRatio =
-    detailMeta && detailMeta.width && detailMeta.height
-      ? detailMeta.width / detailMeta.height
-      : 4 / 5;
+  // Detail image natural aspect ratio. Computed at runtime via the
+  // expo-image onLoad event because the source is now a remote /
+  // file:// uri (Stage B), not a bundled require() that would expose
+  // its dimensions synchronously. Start with a 4/5 fallback so the
+  // slot reserves a sensible area, then update once expo-image has
+  // decoded the file. Single frame of 4/5 -> actual ratio is barely
+  // perceptible; this is the standard pattern used by Instagram /
+  // Pinterest for remote images.
+  const [detailAspectRatio, setDetailAspectRatio] = useState(4 / 5);
 
   // Stage A (dynamic config): read prices + thresholds from cached
   // app_config. Background-refresh when stale (1h TTL). Refresh result
@@ -240,6 +244,11 @@ export default function ProductDetailModal() {
                 { aspectRatio: detailAspectRatio },
               ]}
               contentFit="contain"
+              onLoad={(event) => {
+                const w = event.source?.width;
+                const h = event.source?.height;
+                if (w && h) setDetailAspectRatio(w / h);
+              }}
             />
           </View>
 

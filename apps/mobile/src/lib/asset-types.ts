@@ -36,6 +36,28 @@ export type VideoManifestEntry = {
 };
 
 /**
+ * A single product image (e.g. book-cover.webp, cards-hero.webp).
+ *
+ * These 6 images were originally bundled with the mobile app, but
+ * Stage B migrated them to R2 so the admin can replace them without
+ * shipping a new build. See apps/admin AssetsTab for the upload UI.
+ *
+ * Naming convention: the `id` is the admin-side key (e.g.
+ * 'product-book-cover'), `filename` is the R2 storage key (e.g.
+ * 'book-cover.webp'). Mobile consumers look up by `id`.
+ */
+export type ProductAssetManifestEntry = {
+  /** Stable admin-side key, e.g. 'product-book-cover'. */
+  id: string;
+  /** Filename on R2 (bucket root), appended to baseUrl. */
+  filename: string;
+  /** File size in bytes for cache busting. */
+  size: number;
+  /** ISO timestamp of last upload via admin. */
+  updatedAt: string;
+};
+
+/**
  * A single card image (front or back of a wisdom card).
  *
  * Front cards: 48 (4 categories x 12 cards each).
@@ -69,6 +91,12 @@ export type AssetManifest = {
   videos: VideoManifestEntry[];
   /** Wisdom card images. */
   cards: CardManifestEntry[];
+  /**
+   * Product images managed via admin (Stage B onwards). Optional --
+   * older manifests pre-Stage-B don't have this field, callers must
+   * default to [] to keep backward compatibility.
+   */
+  productAssets?: ProductAssetManifestEntry[];
 };
 
 /**

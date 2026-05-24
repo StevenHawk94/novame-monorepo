@@ -5,6 +5,7 @@ import type {
   AssetDownloadResult,
   AssetManifest,
   CardManifestEntry,
+  ProductAssetManifestEntry,
   VideoManifestEntry,
 } from './asset-types';
 
@@ -185,12 +186,15 @@ export async function downloadAsset(
  */
 export function diffCacheAgainstManifest(
   manifest: AssetManifest,
-  filter?: { videos?: boolean; cards?: boolean },
+  filter?: { videos?: boolean; cards?: boolean; productAssets?: boolean },
 ): string[] {
   const includeVideos = filter?.videos ?? true;
   const includeCards = filter?.cards ?? true;
+  const includeProductAssets = filter?.productAssets ?? true;
   const missing: string[] = [];
-  const checkEntry = (entry: VideoManifestEntry | CardManifestEntry) => {
+  const checkEntry = (
+    entry: VideoManifestEntry | CardManifestEntry | ProductAssetManifestEntry,
+  ) => {
     if (!verifyCachedAsset(entry.filename, entry.size)) {
       missing.push(entry.filename);
     }
@@ -200,6 +204,9 @@ export function diffCacheAgainstManifest(
   }
   if (includeCards) {
     manifest.cards.forEach(checkEntry);
+  }
+  if (includeProductAssets && manifest.productAssets) {
+    manifest.productAssets.forEach(checkEntry);
   }
   return missing;
 }
@@ -277,4 +284,70 @@ export async function getActiveManifest(): Promise<AssetManifest> {
   const fresh = await fetchManifestFromR2();
   setCachedManifest(fresh);
   return fresh;
+}
+
+// ---- product-assets helpers (Stage B) ----
+
+/**
+ * Returns the URI for a product asset by its admin-side id.
+ *
+ * Behavior (Stage B policy β):
+ *   - Cache hit:  file:// URI to the locally cached binary.
+ *   - Cache miss: remote https://media.novameapp.com URL.
+ *   - Unknown id (not in manifest): remote URL fallback using id as-is
+ *     filename pattern -- this should not happen in production but
+ *     keeps the function total to avoid undefined hazards in render code.
+ *
+ * The caller never needs to branch on cache state -- expo-image
+ * handles both file:// and https:// transparently. After the
+ * fillProductAssets() background download lands, subsequent calls
+ * for the same id will return file:// URIs.
+ */
+export function getProductAssetUri(id: string): string {
+  const manifest = getCachedManifest();
+  const entry = manifest?.productAssets?.find((a) => a.id === id);
+  if (!entry) {
+    // Unknown id -- fallback assumes id pattern 'product-X-Y' maps to
+    // filename 'X-Y.webp'. This is a defensive last-resort that should
+    // not trip in production because the admin manifest is authoritative.
+    const guessFilename = id.replace(/^product-/, '') + '.webp';
+    const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
+    return `${base}/${guessFilename}`;
+  }
+  const cached = getCachedAssetUri(entry.filename);
+  if (cached) return cached;
+  const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
+  return `${base}/${entry.filename}`;
+}
+
+/**
+ * Fires off a background download of all product assets not yet cached.
+ *
+ * Returns immediately -- caller does not await. Errors are logged and
+ * swallowed; the user-facing image flow tolerates download failure
+ * (expo-image falls back to remote URL via getProductAssetUri).
+ *
+ * Designed to be called from _layout.tsx cold-start mount so every
+ * user (not just new onboarding users) gets their product asset cache
+ * populated. Cheap to call repeatedly -- diff against manifest skips
+ * already-cached items.
+ */
+export function fillProductAssets(): void {
+  void (async () => {
+    try {
+      const manifest = await getActiveManifest();
+      const missing = diffCacheAgainstManifest(manifest, {
+        videos: false,
+        cards: false,
+        productAssets: true,
+      });
+      if (missing.length === 0) return;
+      await downloadAssets(manifest.baseUrl, missing);
+    } catch (e) {
+      // Manifest fetch failed or download errored. UI will continue
+      // to use remote URLs via getProductAssetUri; no user-facing
+      // disruption.
+      console.warn('[asset-cache] fillProductAssets failed:', e);
+    }
+  })();
 }

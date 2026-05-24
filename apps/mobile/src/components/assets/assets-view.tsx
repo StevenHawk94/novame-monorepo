@@ -26,6 +26,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
+  type ImageSourcePropType,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -42,6 +43,7 @@ import {
   getCachedConfig,
   isCacheStale,
 } from '@/lib/app-config-api';
+import { getProductAssetUri } from '@/lib/asset-cache';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
@@ -175,14 +177,14 @@ export function AssetsView({ shared }: Props) {
       {/* Product cards */}
       <View style={styles.productRow}>
         <ProductCell
-          imgSource={require('../../../assets/images/product/book-cover.webp')}
+          imgSource={{ uri: getProductAssetUri('product-book-cover') }}
           title="Personalized Book of Your Growth Journey"
           unlocked={bookUnlocked}
           pending={false}
           onPress={onOpenBook}
         />
         <ProductCell
-          imgSource={require('../../../assets/images/product/cards-cover.webp')}
+          imgSource={{ uri: getProductAssetUri('product-cards-cover') }}
           title="Personalized Card Deck of Your Growth Wisdom"
           unlocked={cardsUnlocked}
           pending={!!pendingCardsOrder}
@@ -264,7 +266,7 @@ function ProductCell({
   pending,
   onPress,
 }: {
-  imgSource: number;
+  imgSource: ImageSourcePropType;
   title: string;
   unlocked: boolean;
   pending: boolean;
