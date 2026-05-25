@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { storage } from './storage';
 
 /**
  * Wisdom Center API wrapper -- Stage 3.10.3 A.
@@ -188,5 +189,107 @@ export async function updateAspireWords(
       kind: 'error',
       message: e instanceof Error ? e.message : 'Network error',
     };
+  }
+}
+
+
+// ============================================================
+// SWR Cache Layer — Stage 6 Bug 3 polish (Wisdom Insight 3-bug
+// real-test fix Layer 2)
+//
+// Prior state: this module had no cache at all. Every visit to
+// Growth Center / Weekly Report / edit-aspire-words / wisdom-insight
+// triggered a full /api/wisdom-center round-trip, with no benefit
+// from prior fetches. The Stage 6 publish-side prefetch strategy
+// requires a cache target so post-publish refreshes have somewhere
+// to land — this layer provides it, matching the SWR pattern of
+// user-stats-api / wisdoms-api / etc.
+//
+// MMKV key: novame_wisdom_center
+//
+// Used by (after commit 18 cache-first wiring lands):
+//   - Growth Center modal (instant render from cache, background refresh)
+//   - wisdom-insight modal (read aspireScores for Block 4b without
+//     blocking on network — closes the "aspire bar missing in
+//     My Logs" issue from the real-test feedback round)
+//   - edit-aspire-words modal (same pattern)
+//
+// Cross-user safety: clearCachedWisdomCenter is called from
+// _layout.tsx SIGNED_IN and SIGNED_OUT handlers (matches the existing
+// pattern for the other 4 user-scoped caches — subscription / me-stats
+// / character-state / config). See DEVELOPMENT.md §4.5 "Why sign-out
+// clearing matters (Bug #5 from 5.IAP.5)" for the original rationale.
+// ============================================================
+
+const WISDOM_CENTER_STORAGE_KEY = 'novame_wisdom_center';
+
+export type CachedWisdomCenter = WisdomCenterData & { lastFetchedAtMs: number };
+
+export function getCachedWisdomCenter(): WisdomCenterData | null {
+  const raw = storage.getString(WISDOM_CENTER_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CachedWisdomCenter;
+    const { lastFetchedAtMs: _ts, ...data } = parsed;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedWisdomCenter(data: WisdomCenterData): void {
+  const payload: CachedWisdomCenter = { ...data, lastFetchedAtMs: Date.now() };
+  storage.set(WISDOM_CENTER_STORAGE_KEY, JSON.stringify(payload));
+}
+
+export function clearCachedWisdomCenter(): void {
+  storage.remove(WISDOM_CENTER_STORAGE_KEY);
+}
+
+/**
+ * Synonym for clearCachedWisdomCenter — same semantics, different
+ * intent for the reader (matches invalidateMeStats / invalidateWisdoms
+ * naming convention used by SWR caches written-through after a mutation).
+ */
+export function invalidateWisdomCenter(): void {
+  storage.remove(WISDOM_CENTER_STORAGE_KEY);
+}
+
+/**
+ * Cache-aware fetch. Preserves the existing fetchWisdomCenter
+ * discriminated-union return contract (caller still pattern-matches
+ * res.kind === 'success'); on success, writes through to MMKV.
+ *
+ * On error, leaves the cache untouched — stale-while-revalidate
+ * semantics. Callers should fall back to getCachedWisdomCenter() for
+ * a last-known-good render in that case.
+ */
+export async function fetchWisdomCenterWithCache(
+  userId: string,
+): Promise<WisdomCenterResult> {
+  const res = await fetchWisdomCenter(userId);
+  if (res.kind === 'success') {
+    setCachedWisdomCenter(res.data);
+  }
+  return res;
+}
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight 3-bug series Layer 1).
+ *
+ * Clears the MMKV cache and immediately fetches the latest payload.
+ * Used by record.tsx publish success path so the post-publish
+ * aspire_scores / better_self_score / shareCount are populated in
+ * cache by the time the user closes the Insight modal and visits
+ * Growth Center or My Logs.
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshWisdomCenter(userId: string): Promise<void> {
+  storage.remove(WISDOM_CENTER_STORAGE_KEY);
+  try {
+    await fetchWisdomCenterWithCache(userId);
+  } catch (e) {
+    console.warn('[refreshWisdomCenter]', e);
   }
 }

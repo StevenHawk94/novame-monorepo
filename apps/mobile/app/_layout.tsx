@@ -16,6 +16,7 @@ import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscripti
 import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
 import { clearCachedConfig, fetchAppConfig } from '@/lib/app-config-api';
+import { clearCachedWisdomCenter } from '@/lib/wisdom-center-api';
 import { fillProductAssets } from '@/lib/asset-cache';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
@@ -212,6 +213,7 @@ export default function RootLayout() {
           clearCachedSubscription();
           clearCachedMeStats();
           clearCachedCharacterState();
+          clearCachedWisdomCenter();
         } catch (e) {
           console.warn('[layout] sign-in cache clear failed:', e);
         }
@@ -238,6 +240,7 @@ export default function RootLayout() {
           clearCachedSubscription();
           clearCachedMeStats();
           clearCachedCharacterState();
+          clearCachedWisdomCenter();
           // Stage A (dynamic pricing): clear cached app_config snapshot.
           // App config is per-app not per-user, but we clear defensively
           // so cache hygiene is uniform across all MMKV keys.
