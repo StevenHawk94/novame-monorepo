@@ -362,6 +362,69 @@ export async function POST(request) {
       )
     }
 
+    // Stage 6 Bug 3 fix: server-side roll the per-wisdom "people
+    // resonated" count, persist it on the wisdom_card so My Logs
+    // re-opens show the SAME number the user saw on the first view,
+    // and accumulate it into profile.people_impacted_display so the
+    // Me page "People Resonated" stat grows with every publish.
+    //
+    // Range 30-999 chosen for healthy growth curve: a typical user
+    // doing ~3 publishes/week accumulates ~80k/year — large enough
+    // to feel meaningful, small enough that the number remains
+    // human-readable for years.
+    //
+    // Defensive: every DB side-effect here is in its own try/catch.
+    // A failure to write community_count, accumulate impacted, or
+    // anything else MUST NOT fail the publish — the wisdom + card
+    // are already saved, the user has already paid quota, and the
+    // celebratory Insight screen must render. We log + continue.
+    let communityCount = null
+    if (generatedCard && generatedCard.id) {
+      communityCount = 30 + Math.floor(Math.random() * 970)
+      // Persist on the wisdom_card so My Logs re-view is stable.
+      try {
+        const { error: ccErr } = await supabase
+          .from('wisdom_cards')
+          .update({ community_count: communityCount })
+          .eq('id', generatedCard.id)
+        if (ccErr) {
+          console.warn('[publish-wisdom] community_count UPDATE failed:', ccErr.message)
+        } else {
+          // Mirror the value onto the in-memory card object so the
+          // response carries it back to mobile without a second fetch.
+          generatedCard.community_count = communityCount
+        }
+      } catch (e) {
+        console.warn('[publish-wisdom] community_count UPDATE exception:', e.message)
+      }
+      // Accumulate to people_impacted_display. Two-step (select-then-
+      // update) rather than RPC: supabase-js doesn't expose atomic
+      // increment without a Postgres function; single-user race window
+      // is negligible (one mobile client per session).
+      try {
+        const { data: prof, error: selErr } = await supabase
+          .from('profiles')
+          .select('people_impacted_display')
+          .eq('id', userId)
+          .single()
+        if (selErr) throw selErr
+        const current = prof?.people_impacted_display || 0
+        const next = current + communityCount
+        const { error: updErr } = await supabase
+          .from('profiles')
+          .update({
+            people_impacted_display: next,
+            people_impacted_updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+        if (updErr) {
+          console.warn('[publish-wisdom] people_impacted_display UPDATE failed:', updErr.message)
+        }
+      } catch (e) {
+        console.warn('[publish-wisdom] people_impacted_display accumulate failed:', e.message)
+      }
+    }
+
     // Stage 5.WR.2 (Bug 1 fix): echo quotaExhausted synchronously so
     // mobile record.tsx can set the paywall-trigger state without a
     // race-prone follow-up fetchDailyLimit call. After this publish
@@ -374,6 +437,11 @@ export async function POST(request) {
       // Stage 6: aspire_scores snapshot after this wisdom's nudge has
       // been applied. Consumed by mobile InsightView's Aspire bar.
       aspireScores: generatedAspireScores,
+      // Stage 6 Bug 3: server-rolled "people resonated" for this wisdom.
+      // null when card generation succeeded but card.id was somehow
+      // missing (extremely defensive — generateWisdomCard always returns
+      // a saved row). Mobile InsightView treats null as "hide the row."
+      communityCount,
       characterBMessage,
       quotaExhausted,
     })
