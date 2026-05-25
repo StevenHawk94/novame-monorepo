@@ -22,6 +22,8 @@ import {
   type PlanBillingSheetRef,
 } from '@/components/me/plan-billing-sheet';
 import { haptics } from '@/lib/haptics';
+import { PRICING_TIERS } from '@novame/core';
+
 import {
   type CachedMeStats,
   clearCachedMeStats,
@@ -84,16 +86,36 @@ export default function MeModal() {
   }, []);
 
   // Stage 5.IAP.x.bugfix: subscribe to IAP purchase-complete events.
-  // When a purchase succeeds while Me modal is open, immediately
-  // refetch me-stats so usedThisMonth / planName / monthlyAnalyses
-  // reflect the new tier without waiting for the 2s polling tick.
+  // When a purchase succeeds while Me modal is open:
+  //   1. Optimistically update planTier / planName / monthlyAnalyses
+  //      from PRICING_TIERS so the new plan reflects IMMEDIATELY,
+  //      without the 1-10s wait for fetchMeStats network round-trip.
+  //   2. Then fire fetchMeStats in the background to reconcile any
+  //      server-side fields we can't derive locally (usedThisMonth,
+  //      etc.) and to confirm the optimistic guess.
+  // Industry standard: SWR / React-Query optimistic-update pattern.
+  // Prevents the "10s data-disappeared" gap reported during testing,
+  // which was caused by invalidateMeStats() clearing the MMKV cache
+  // and the 2s polling below then writing setStats(null) before the
+  // refetch landed.
   useEffect(() => {
     if (!userId) return;
-    const unsubscribe = onPurchaseComplete(() => {
+    const unsubscribe = onPurchaseComplete(({ tier }) => {
+      setStats((prev) => {
+        if (!prev) return prev;
+        const tierInfo = PRICING_TIERS[tier];
+        return {
+          ...prev,
+          planTier: tier,
+          planName: tierInfo.name,
+          monthlyAnalyses: tierInfo.monthlyAnalyses,
+        };
+      });
       void fetchMeStats(userId)
         .then((next) => setStats(next))
         .catch(() => {
-          // best-effort -- 2s polling fallback below will catch up
+          // best-effort -- optimistic update above keeps the UI in
+          // a sensible state regardless.
         });
     });
     return unsubscribe;
@@ -102,10 +124,19 @@ export default function MeModal() {
   // Re-read cache on a 2s tick so a background refetch (e.g. record
   // publish success while this modal happens to be open) reflects in
   // the UI without remount. Cheap because mmkv reads are sync + tiny.
+  //
+  // Defensive: only overwrite when the cache actually has a non-null
+  // record. If a sibling code path called invalidateMeStats() (e.g.
+  // IAP purchase clears me-stats so it refetches with the new tier),
+  // the cache is briefly null during the network round-trip. Writing
+  // setStats(null) here would drop the UI to default placeholders
+  // ("Wisdom Seeker", default avatar, Free) for 1-10s -- the bug
+  // reported in IAP testing. Stale-while-revalidate: keep the old
+  // values until a fresh non-null payload lands.
   useEffect(() => {
     const interval = setInterval(() => {
       const next = getCachedMeStats();
-      if (next?.lastFetchedAtMs !== stats?.lastFetchedAtMs) {
+      if (next && next.lastFetchedAtMs !== stats?.lastFetchedAtMs) {
         setStats(next);
       }
     }, 2000);
