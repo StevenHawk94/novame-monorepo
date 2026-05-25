@@ -30,6 +30,7 @@ import { callAI, parseAIJson } from '@/lib/ai'
 import { ALL_KEYWORD_SLUGS as ALL_KEYWORDS, slugToId, idToSlug } from '@novame/core'
 
 
+import { ASPIRE_POOL } from '@novame/core/constants/aspire-pool'
 const SYSTEM_INSTRUCTION = `# Role: The Grounded Expert Mentor
 
 You are the "Insightful Alchemist," the core intelligence of NovaMe. You are a high-level growth mentor, not a clinical therapist or counselor.
@@ -231,13 +232,13 @@ Return a JSON object with EXACTLY these fields:
 13. "task_1": The 2-Minute Reset (50-100 characters). Execute NOW. Must leverage immediate environment or specific subject from input. Negative -> micro-action to disrupt the immediate physical loop. Positive -> micro-celebration involving win context. NO cliches like "wash your face," "deep breathing," "drink water," "write on a post-it."
 
 14. "task_2": The 24-Hour Watch (50-100 characters). Track TODAY. Micro-habit to JUST NOTICE / COUNT the trigger word or behavior pattern they revealed. Without trying to change, fix, or judge.
-${aspireList ? `
+
 15. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply.
 
 16. "task_1_keyword": If task_1 links to a keyword from aspire_impacts with "negative" direction, set to that keyword string. Otherwise "".
 
 17. "task_2_keyword": Same logic for task_2.
-` : ''}
+
 18. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
 
 Return ONLY valid JSON.`
@@ -267,18 +268,25 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     return { success: false, error: 'Text too short' }
   }
 
-  let aspireWords = []
+  // Stage 6 Bug 2 fix: aspire_impacts match pool expanded from user's
+  // aspire_words (4-6 selected) to the full ASPIRE_POOL (15). The AI
+  // now matches against every growth dimension, not just the user's
+  // current selection — drastically reducing "no aspire bar shown"
+  // outcomes. Persistence of aspire_scores for non-aspire_words keywords
+  // is intentional (B-strategy carryover): if the user later picks one
+  // of those words in Growth Center pencil, their historical score is
+  // already there. better_self_score (avg below) is still scoped to
+  // user.aspire_words only — see PATCH 3.
   if (userId) {
     // Stage 6: wisdom_portrait deprecated. We still increment
     // wisdom_share_count for back-compat (column read by /api/wisdom-center
     // GET, no UI consumer remains but the write is harmless and keeps
     // historical counts continuous).
-    const { data: prof } = await supabase.from('profiles').select('aspire_words, wisdom_share_count').eq('id', userId).single()
-    aspireWords = prof?.aspire_words || []
+    const { data: prof } = await supabase.from('profiles').select('wisdom_share_count').eq('id', userId).single()
     const newShareCount = (prof?.wisdom_share_count || 0) + 1
     await supabase.from('profiles').update({ wisdom_share_count: newShareCount }).eq('id', userId)
   }
-  const aspireList = aspireWords.length > 0 ? aspireWords.join(', ') : ''
+  const aspireList = ASPIRE_POOL.join(', ')
 
   const userPrompt = buildUserPrompt(wisdomText, aspireList)
 
@@ -424,8 +432,20 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   let updatedAspireScores = null
   if (userId && result.aspire_impacts && Array.isArray(result.aspire_impacts) && result.aspire_impacts.length > 0) {
     try {
-      const { data: prof } = await supabase.from('profiles').select('aspire_scores').eq('id', userId).single()
+      // Stage 6 Bug 2 fix: also read aspire_words so better_self_score
+      // can be scoped to the user's 4-6 selected aspire words only.
+      // Matches /api/update-profile's algorithm — both write sites
+      // for better_self_score now use the same formula. Earlier code
+      // used avg(Object.values(scores)) which diluted the score as
+      // ASPIRE_POOL expanded (every newly matched keyword pulled the
+      // average toward its own value).
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('aspire_scores, aspire_words')
+        .eq('id', userId)
+        .single()
       const scores = prof?.aspire_scores || {}
+      const userAspireWords = Array.isArray(prof?.aspire_words) ? prof.aspire_words : []
       for (const impact of result.aspire_impacts) {
         if (impact.keyword && impact.direction) {
           const current = scores[impact.keyword] ?? 70
@@ -433,8 +453,14 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
             ? Math.min(100, current + 2) : Math.max(40, current - 2)
         }
       }
-      const vals = Object.values(scores)
-      const avg = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 70
+      // better_self_score = avg of the user's SELECTED words only
+      // (ASPIRE_POOL match writes scores for all 15, but only the
+      // 4-6 user-picked ones count toward the displayed avg).
+      // Unscored selected words contribute 70 (the seed default).
+      const userScoreVals = userAspireWords.map(w => scores[w] ?? 70)
+      const avg = userScoreVals.length > 0
+        ? Math.round(userScoreVals.reduce((a, b) => a + b, 0) / userScoreVals.length)
+        : 70
       const profileUpdate = { aspire_scores: scores, better_self_score: avg }
       await supabase.from('profiles').update(profileUpdate).eq('id', userId)
       updatedAspireScores = scores
