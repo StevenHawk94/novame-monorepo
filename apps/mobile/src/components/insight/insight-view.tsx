@@ -12,9 +12,14 @@
  *   2. "Wisdom Behind Your Words" page title
  *   3. FlippableCard (front: keyword art + quote, back: insight_full)
  *      + "Tap to Flip" hint
- *   4. "How The Community React" band:
- *      4a. Random community-similar-feeling count
- *      4b. Aspire progress bar (delta + current score + label)
+ *   4. "Your Inner Profile" band:
+ *      4a. Per-wisdom server-rolled "people resonated" count (30-999),
+ *          persisted on wisdom_cards.community_count. Hidden when null
+ *          (historical wisdoms pre-migration 20260525123624).
+ *      4b. Aspire progress bar — keyword label + current score%.
+ *          deltaPercent shown only when non-null (record.tsx PhaseInsight
+ *          shows +2 / -2; My Logs wisdom-insight passes null so the delta
+ *          chip is hidden since publish-time delta isn't replayable).
  *      4c. Big emotion keyword + emotion illustration
  *   5. 3-part Reframe (Mirror Hook / Flipped Lens / Permission Slip)
  *      rendered as purple-titled prose sections (no card chrome)
@@ -233,7 +238,11 @@ export type CardCollectionInfo = {
  */
 export type AspireImpactDisplay = {
   keyword: string;
-  deltaPercent: number; // +2 or -2 (could be expanded in the future)
+  // null when no delta should be displayed (e.g. My Logs re-view —
+  // showing the publish-time +/- on a historical wisdom would be
+  // misleading; only the current score and keyword label render).
+  // record.tsx (post-publish) sets +2 / -2; wisdom-insight.tsx sets null.
+  deltaPercent: number | null;
   currentScore: number; // 0-100, drives the progress bar fill width
 };
 
@@ -305,9 +314,10 @@ export function InsightView({
   const aspireFillPct = aspireImpact
     ? Math.max(0, Math.min(100, aspireImpact.currentScore))
     : 0;
-  const aspireDeltaStr = aspireImpact
-    ? (aspireImpact.deltaPercent >= 0 ? '+' : '') + aspireImpact.deltaPercent + '%'
-    : '';
+  const aspireDeltaStr =
+    aspireImpact && aspireImpact.deltaPercent != null
+      ? (aspireImpact.deltaPercent >= 0 ? '+' : '') + aspireImpact.deltaPercent + '%'
+      : '';
 
   return (
     <View style={styles.container}>
@@ -369,7 +379,7 @@ export function InsightView({
       </ImageBackground>
 
       {/* ============================================================
-          Block 3: How The Community React.
+          Block 3: Your Inner Profile.
           Light-lilac card containing a purple banner header on top
           and a body region beneath. Wrapped in communityCard so
           the rounded corners + overflow:hidden clip the banner's
@@ -377,7 +387,7 @@ export function InsightView({
           ============================================================ */}
       <View style={styles.communityCard}>
         <View style={styles.communityBanner}>
-          <Text style={styles.communityBannerText}>How The Community React</Text>
+          <Text style={styles.communityBannerText}>Your Inner Profile</Text>
         </View>
 
         <View style={styles.communityBody}>
@@ -402,7 +412,9 @@ export function InsightView({
                 <View
                   style={[styles.aspireBarFill, { width: `${aspireFillPct}%` }]}
                 >
-                  <Text style={styles.aspireDeltaInBar}>{aspireDeltaStr}</Text>
+                  {aspireImpact && aspireImpact.deltaPercent != null ? (
+                    <Text style={styles.aspireDeltaInBar}>{aspireDeltaStr}</Text>
+                  ) : null}
                 </View>
               </View>
               <Text style={styles.aspireScoreText}>{aspireFillPct}%</Text>
@@ -602,7 +614,7 @@ const styles = StyleSheet.create({
   },
 
   // ============================================================
-  // Block 3: How The Community React.
+  // Block 3: Your Inner Profile.
   // Light-lilac card (#F4F1FF) with a purple banner across the top.
   // Internal text is BLACK (#000000) on the light bg, except the
   // big pink numerics and the emotion keyword.
