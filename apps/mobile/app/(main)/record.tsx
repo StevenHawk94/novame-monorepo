@@ -145,6 +145,7 @@ type PhaseProps = {
   publishedAspireImpact: AspireImpactDisplay | null;
   setPublishedAspireImpact: (a: AspireImpactDisplay | null) => void;
   communityCount: number;
+  setCommunityCount: (n: number) => void;
   publishedEmotion: string;
   setPublishedEmotion: (s: string) => void;
   lastPublishMessage: string | null;
@@ -1534,6 +1535,13 @@ type PublishWisdomResponse = {
   // trigger the post-publish paywall on PhaseInsight close, replacing
   // the earlier race-prone follow-up fetchDailyLimit pattern.
   quotaExhausted?: boolean;
+  // Stage 6 Bug 3 fix: server-rolled "people resonated" count (30-999)
+  // for THIS wisdom. Server has already persisted it on the
+  // wisdom_cards row and accumulated it into profile.people_impacted_display.
+  // Mobile InsightView Block 3 displays this number. Null in the
+  // defensive case where server's accumulate path was skipped — mobile
+  // falls back to 0 (Block 3 row still renders, value reads "0").
+  communityCount?: number | null;
 };
 
 type PublishedCardData = NonNullable<PublishWisdomResponse['card']>;
@@ -1646,6 +1654,7 @@ function PhasePublishing({
   setPublishedEmotion,
   setPublishedCardCollection,
   setPublishedAspireImpact,
+  setCommunityCount,
   setLastPublishMessage,
   goTo,
   close,
@@ -1715,7 +1724,12 @@ function PhasePublishing({
         // None of these trigger an immediate fetch -- the user pays
         // network cost only for the pages they actually visit next
         // (lazy revalidation).
-        invalidateWisdoms();         // My Logs (new wisdom row)
+        //
+        // NOTE: invalidateWisdoms() is intentionally moved OUT of this
+        // batch and called below, AFTER setPublishedCardCollection has
+        // read the still-correct cachedNow snapshot for Card Collection
+        // counting. Calling it here would clear the cache before the
+        // typesCollected math runs, producing the "always 1" bug.
         invalidateLeaderboard();      // Ranking (totalExp bump after wisdom publish)
         invalidateUserStats();        // Assets (totalWords / uniqueKeywords)
         invalidateSeekQuestions();    // Discover feed (cards count badge)
@@ -1763,6 +1777,18 @@ function PhasePublishing({
           typesCollected: typesCollectedIncludingThis,
           cardsCollectedForKeyword: priorSameKeyword + 1,
         });
+
+        // Stage 6 Bug 1 fix: invalidate AFTER Card Collection math has
+        // finished reading the cache. Calling earlier (as the original
+        // SWR batch did) wiped the cache before typesCollected counted
+        // distinct keywords, so the count was always 0+1=1.
+        invalidateWisdoms();
+
+        // Stage 6 Bug 3 fix: server-rolled per-wisdom resonance count.
+        // Fallback to 0 in the extremely defensive case where the
+        // server's accumulate path was skipped (server returned null);
+        // InsightView Block 3 still renders the row consistently.
+        setCommunityCount(response.communityCount ?? 0);
 
         // Stage 6: compute Aspire progress-bar data from response.
         // The server returned the *post-update* aspire_scores snapshot
@@ -2527,12 +2553,13 @@ export default function RecordModal() {
     useState<CardCollectionInfo | null>(null);
   const [publishedAspireImpact, setPublishedAspireImpact] =
     useState<AspireImpactDisplay | null>(null);
-  // Stage 6: stable community-count for this publish modal session.
-  // useMemo with [] deps keeps the number stable across re-renders.
-  const communityCount = useMemo(
-    () => 50 + Math.floor(Math.random() * 1951),
-    [],
-  );
+  // Stage 6 Bug 3 fix: communityCount is now server-rolled per wisdom
+  // (returned in PublishWisdomResponse.communityCount) and persisted on
+  // the wisdom_cards row. The publish success handler calls
+  // setCommunityCount(response.communityCount ?? 0). Initial state 0
+  // is never observed by InsightView because PhaseInsight only renders
+  // after a successful publish — by then state has been set.
+  const [communityCount, setCommunityCount] = useState<number>(0);
   const [publishedEmotion, setPublishedEmotion] = useState<string>('');
   const [lastPublishMessage, setLastPublishMessage] = useState<string | null>(null);
   const [micDeniedVisible, setMicDeniedVisible] = useState(false);
@@ -2564,6 +2591,7 @@ export default function RecordModal() {
     publishedAspireImpact,
     setPublishedAspireImpact,
     communityCount,
+    setCommunityCount,
     publishedEmotion,
     setPublishedEmotion,
     lastPublishMessage,
