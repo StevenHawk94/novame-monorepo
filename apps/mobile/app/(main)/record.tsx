@@ -89,9 +89,9 @@ import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { storage } from '@/lib/storage';
 import { fetchDailyLimit } from '@/lib/daily-limit-api';
 import { invalidateDailyTasks } from '@/lib/daily-tasks-api';
-import { getCachedWisdoms, invalidateWisdoms } from '@/lib/wisdoms-api';
+import { invalidateWisdoms } from '@/lib/wisdoms-api';
 import { invalidateLeaderboard } from '@/lib/leaderboard-api';
-import { invalidateUserStats } from '@/lib/user-stats-api';
+import { invalidateUserStats, getCachedUserStats } from '@/lib/user-stats-api';
 import { invalidateSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
 import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
@@ -1727,7 +1727,7 @@ function PhasePublishing({
         //
         // NOTE: invalidateWisdoms() is intentionally moved OUT of this
         // batch and called below, AFTER setPublishedCardCollection has
-        // read the still-correct cachedNow snapshot for Card Collection
+        // read the still-correct user-stats cache for Card Collection
         // counting. Calling it here would clear the cache before the
         // typesCollected math runs, producing the "always 1" bug.
         invalidateLeaderboard();      // Ranking (totalExp bump after wisdom publish)
@@ -1748,26 +1748,32 @@ function PhasePublishing({
         setPublishedCard(response.card ?? null);
         setPublishedEmotion(response.card?.wisdom_emotion ?? 'Reflective');
 
-        // Stage 6: compute Card Collection notification data.
-        // "isNewType" is true when the user has zero prior wisdoms in
-        // this keyword. cachedWisdoms holds the user's My Logs feed
-        // (excluding the wisdom we just published). After publish we
-        // need to count *before* this wisdom to know whether it was
-        // a first-of-its-kind.
-        const cachedNow = getCachedWisdoms()?.wisdoms ?? [];
+        // Stage 6 Bug 1 fix: compute Card Collection notification data
+        // from /api/user-stats cache instead of /api/wisdoms cache.
+        //
+        // Why user-stats: /api/user-stats counts ALL wisdom_cards rows
+        // for this user (including the action-initiative starter card
+        // that user-sync inserts at onboarding with wisdom_id=NULL).
+        // /api/wisdoms feed deliberately excludes wisdom_id=NULL rows
+        // (My Logs shows real wisdoms only), so cachedWisdoms misses
+        // the starter card -- the previous algorithm always under-
+        // counted by 1.
+        //
+        // Fallback: if user-stats cache is empty (first-time user
+        // who hasn't opened Assets tab yet), seed with the known
+        // baseline (1 starter card in 1 keyword, action-initiative).
+        // The actual numbers reconcile on next Assets-tab visit when
+        // user-stats fetches fresh.
+        const cachedStats = getCachedUserStats();
         const newKeywordId = response.card?.keyword_id ?? null;
-        const priorSameKeyword = newKeywordId
-          ? cachedNow.filter((w) => w.card?.keyword_id === newKeywordId).length
+        const priorUniqueKeywords = cachedStats?.uniqueKeywords ?? 1;
+        const priorCountForThisKw = newKeywordId
+          ? (cachedStats?.keywordCounts?.[newKeywordId] ?? 0)
           : 0;
-        const isNewType = priorSameKeyword === 0;
-        const priorDistinctTypes = new Set(
-          cachedNow
-            .map((w) => w.card?.keyword_id)
-            .filter((id): id is string => !!id),
-        );
+        const isNewType = priorCountForThisKw === 0;
         const typesCollectedIncludingThis = isNewType
-          ? priorDistinctTypes.size + 1
-          : priorDistinctTypes.size;
+          ? priorUniqueKeywords + 1
+          : priorUniqueKeywords;
         const displayKeyword =
           response.card?.keyword
           ?? (newKeywordId ? idToSlug(newKeywordId) ?? 'Wisdom' : 'Wisdom');
@@ -1775,7 +1781,7 @@ function PhasePublishing({
           isNewType,
           keyword: displayKeyword,
           typesCollected: typesCollectedIncludingThis,
-          cardsCollectedForKeyword: priorSameKeyword + 1,
+          cardsCollectedForKeyword: priorCountForThisKw + 1,
         });
 
         // Stage 6 Bug 1 fix: invalidate AFTER Card Collection math has
