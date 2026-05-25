@@ -26,6 +26,7 @@ export * from './constants/character'
 export * from './constants/exp'
 export * from './constants/recording'
 export * from './constants/categories'
+export * from './constants/aspire-pool'
 
 // Rules (pure functions)
 export * from './rules/format'

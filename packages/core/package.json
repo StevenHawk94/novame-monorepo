@@ -14,6 +14,7 @@
     "./constants/exp": "./src/constants/exp.ts",
     "./constants/recording": "./src/constants/recording.ts",
     "./constants/categories": "./src/constants/categories.ts",
+    "./constants/aspire-pool": "./src/constants/aspire-pool.ts",
     "./rules/character": "./src/rules/character.ts",
     "./rules/exp": "./src/rules/exp.ts",
     "./rules/format": "./src/rules/format.ts"

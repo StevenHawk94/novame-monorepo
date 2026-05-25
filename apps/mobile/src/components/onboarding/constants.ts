@@ -5,23 +5,13 @@
  * contract preservation — D3 "皮囊一样底层不一样").
  */
 
-export const ASPIRE_WORDS = [
-  'Clear-minded',
-  'Present',
-  'Peaceful',
-  'Focused',
-  'Driven',
-  'Disciplined',
-  'Unbothered',
-  'Authentic',
-  'Confident',
-  'Compassionate',
-  'Resilient',
-  'Self-Aware',
-  'Intentional',
-  'Grounded',
-  'Radiant',
-] as const;
+// Stage 6: ASPIRE_WORDS is a re-export of @novame/core's ASPIRE_POOL
+// so server (generate-card.js AI prompt) and mobile (this onboarding
+// picker) share a single source of truth. Adding a new aspire word in
+// @novame/core flows here automatically with zero code change here.
+// Name retained for visual-contract continuity with the Capacitor
+// codebase (the onboarding-picker UI files import { ASPIRE_WORDS }).
+export { ASPIRE_POOL as ASPIRE_WORDS } from '@novame/core/constants/aspire-pool';
 
 export const S4_OPTS = [
   { key: 'A' as const, label: "I'm almost there." },
