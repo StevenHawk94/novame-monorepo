@@ -108,6 +108,11 @@ export async function GET(request) {
             // Stage 6: aspire_impacts now surfaces in insight UI
             // (progress bar in How The Community React section).
             aspire_impacts: card.aspire_impacts,
+            // Stage 6 Bug 3: per-wisdom community_count persists the
+            // "people resonated" number so My Logs re-views see the
+            // same value the user saw at publish time. NULL for
+            // historical rows; mobile InsightView hides the row.
+            community_count: card.community_count,
           }
         : null
       return {

@@ -24,7 +24,6 @@
  *     it stays stable across re-renders but doesn't need to be
  *     serialized in the URL (URLs already get long with the card JSON).
  */
-import { useMemo } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -52,14 +51,12 @@ export default function WisdomInsightModal() {
   const params = useLocalSearchParams<{ payload?: string }>();
   const payload = decodePayload(params.payload);
 
-  // Generate a stable community-count for the lifetime of this modal.
-  // useMemo with [] deps means the number is computed once on mount
-  // and survives every re-render (so the "1,203 people" line doesn't
-  // re-randomize when the user scrolls or the keyboard appears).
-  const communityCount = useMemo(
-    () => 50 + Math.floor(Math.random() * 1951),
-    [],
-  );
+  // Stage 6 Bug 3 fix: communityCount comes from the server-persisted
+  // wisdom_cards.community_count column instead of being random-generated
+  // here. Historical wisdoms (pre-migration 20260525123624) have NULL;
+  // InsightView Block 4a hides in that case rather than fabricating a
+  // number that doesn't match what the user saw on first view.
+  const communityCount = payload?.card?.community_count ?? null;
 
   const goBack = () => {
     void haptics.light();

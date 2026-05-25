@@ -205,6 +205,13 @@ export type InsightCardData = {
   reframe?: ReframeData | null;
   reflective_question?: ReflectiveQuestion | null;
   aspire_impacts?: AspireImpact[] | null;
+  // Stage 6 Bug 3: per-wisdom server-rolled "people resonated" count.
+  // Persisted on wisdom_cards.community_count. Optional + nullable
+  // because wisdom-insight.tsx (My Logs) reads it off InsightCardData
+  // and historical rows have NULL. record.tsx PhaseInsight also lands
+  // here via the same InsightCardData type. InsightView Block 4a
+  // hides when null.
+  community_count?: number | null;
 };
 
 /**
@@ -235,7 +242,12 @@ export type InsightViewProps = {
   emotion: string;
   cardCollection: CardCollectionInfo | null;
   aspireImpact: AspireImpactDisplay | null;
-  communityCount: number;
+  // Stage 6 Bug 3 fix: per-wisdom server-rolled "people resonated" count.
+  // null when the wisdom has no persisted community_count column value
+  // (historical wisdom_cards rows pre-migration 20260525123624). When
+  // null, Block 4a (the big number + subtitle) is hidden — we don't
+  // fabricate a number for historical data.
+  communityCount: number | null;
   /**
    * Optional extra paddingTop added to Block 1+2's ImageBackground
    * topPurpleWrap. Used by record.tsx PhaseInsight to make room for
@@ -280,8 +292,12 @@ export function InsightView({
   const emotionImage = EMOTION_IMAGES[emotionCategory];
 
   // Format community count with thousand separators (1203 -> "1,203").
+  // Empty string when communityCount is null — Block 4a is gated on
+  // the null check below and won't render this anyway, but the guard
+  // prevents the .toLocaleString() crash if anything reaches this hook
+  // unexpectedly.
   const communityCountStr = useMemo(
-    () => communityCount.toLocaleString('en-US'),
+    () => (communityCount == null ? '' : communityCount.toLocaleString('en-US')),
     [communityCount],
   );
 
@@ -365,13 +381,18 @@ export function InsightView({
         </View>
 
         <View style={styles.communityBody}>
-        {/* 4a: similar-feeling count */}
-        <View style={styles.communityRow}>
-          <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
-          <Text style={styles.communityRowCaption}>
-            People in the community{'\n'}have similar feeling
-          </Text>
-        </View>
+        {/* 4a: per-wisdom resonance count. Hidden when null — historical
+            wisdom_cards rows (community_count IS NULL) don't show a
+            number rather than fake one. Subtitle copy rewords to
+            "resonated with you" per Stage 6 Bug 3 rename. */}
+        {communityCount != null ? (
+          <View style={styles.communityRow}>
+            <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
+            <Text style={styles.communityRowCaption}>
+              People in the community{'\n'}resonated with you
+            </Text>
+          </View>
+        ) : null}
 
         {/* 4b: Aspire progress bar (conditional) */}
         {aspireImpact ? (

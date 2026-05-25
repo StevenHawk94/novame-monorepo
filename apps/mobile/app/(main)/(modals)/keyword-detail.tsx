@@ -154,6 +154,10 @@ export default function KeywordDetailModal() {
             reframe: null,
             reflective_question: null,
             aspire_impacts: null,
+            // Stage 6 Bug 3: orphan starter cards have no published
+            // resonance; NULL hides Block 4a in InsightView (matches
+            // the WisdomCardEmbed contract).
+            community_count: null,
           },
         }));
 

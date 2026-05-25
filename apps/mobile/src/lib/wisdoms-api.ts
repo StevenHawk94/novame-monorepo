@@ -74,6 +74,10 @@ export type WisdomCardEmbed = {
   reframe: ReframeData | null;
   reflective_question: ReflectiveQuestion | null;
   aspire_impacts: AspireImpact[] | null;
+  // Stage 6 Bug 3: per-wisdom server-rolled "people resonated" (30-999),
+  // persisted on wisdom_cards.community_count (migration 20260525123624).
+  // NULL for historical wisdoms — Block 4a row hides in that case.
+  community_count: number | null;
 };
 
 export type WisdomLog = {

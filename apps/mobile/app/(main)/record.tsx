@@ -144,8 +144,8 @@ type PhaseProps = {
   setPublishedCardCollection: (c: CardCollectionInfo | null) => void;
   publishedAspireImpact: AspireImpactDisplay | null;
   setPublishedAspireImpact: (a: AspireImpactDisplay | null) => void;
-  communityCount: number;
-  setCommunityCount: (n: number) => void;
+  communityCount: number | null;
+  setCommunityCount: (n: number | null) => void;
   publishedEmotion: string;
   setPublishedEmotion: (s: string) => void;
   lastPublishMessage: string | null;
@@ -1786,9 +1786,10 @@ function PhasePublishing({
 
         // Stage 6 Bug 3 fix: server-rolled per-wisdom resonance count.
         // Fallback to 0 in the extremely defensive case where the
-        // server's accumulate path was skipped (server returned null);
-        // InsightView Block 3 still renders the row consistently.
-        setCommunityCount(response.communityCount ?? 0);
+        // server's accumulate path was skipped (server returned null).
+        // Pass-through null lets InsightView Block 4a hide the row
+        // (matches My Logs historical-wisdom behavior).
+        setCommunityCount(response.communityCount ?? null);
 
         // Stage 6: compute Aspire progress-bar data from response.
         // The server returned the *post-update* aspire_scores snapshot
@@ -2559,7 +2560,7 @@ export default function RecordModal() {
   // setCommunityCount(response.communityCount ?? 0). Initial state 0
   // is never observed by InsightView because PhaseInsight only renders
   // after a successful publish — by then state has been set.
-  const [communityCount, setCommunityCount] = useState<number>(0);
+  const [communityCount, setCommunityCount] = useState<number | null>(null);
   const [publishedEmotion, setPublishedEmotion] = useState<string>('');
   const [lastPublishMessage, setLastPublishMessage] = useState<string | null>(null);
   const [micDeniedVisible, setMicDeniedVisible] = useState(false);
