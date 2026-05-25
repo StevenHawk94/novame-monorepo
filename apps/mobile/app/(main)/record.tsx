@@ -61,7 +61,7 @@ import { getCachedAssetUri } from '@/lib/asset-cache';
 // (insight-view.tsx ImageBackground and FlippableCard <Image>)
 // use the same R2 / file:// URI forms we prefetch below.
 import { Image as ExpoImage } from 'expo-image';
-import { clearCachedCharacterState, fetchCharacterState} from '@/lib/character-state';
+import { clearCachedCharacterState, fetchCharacterState, refreshCharacterState } from '@/lib/character-state';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import { incrementPublishCount, getPublishCount } from '@/lib/publish-count';
 import { getTaskCompletionCount } from '@/lib/task-completion-count';
@@ -88,13 +88,14 @@ import {
 import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { storage } from '@/lib/storage';
 import { fetchDailyLimit } from '@/lib/daily-limit-api';
-import { invalidateDailyTasks } from '@/lib/daily-tasks-api';
-import { invalidateWisdoms } from '@/lib/wisdoms-api';
-import { invalidateLeaderboard } from '@/lib/leaderboard-api';
-import { invalidateUserStats, getCachedUserStats } from '@/lib/user-stats-api';
+import { refreshDailyTasks } from '@/lib/daily-tasks-api';
+import { refreshWisdoms } from '@/lib/wisdoms-api';
+import { refreshLeaderboard } from '@/lib/leaderboard-api';
+import { refreshUserStats, getCachedUserStats } from '@/lib/user-stats-api';
 import { invalidateSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
-import { fetchMeStats, invalidateMeStats } from '@/lib/me-stats';
+import { refreshMeStats } from '@/lib/me-stats';
+import { refreshWisdomCenter } from '@/lib/wisdom-center-api';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
 
 // Stage 6.InsightPrefetch: prefetch target for the insight page's
@@ -1707,33 +1708,6 @@ function PhasePublishing({
           card: response.card ?? null,
         });
 
-        // Me-stats now stale (totalWords / totalCards / usedThisMonth /
-        // totalExp all changed). Invalidate cache + fire silent refetch
-        // so when the user returns to Home and opens Me, the numbers
-        // are current. Stage 3.10.1.
-        invalidateMeStats();
-        void fetchMeStats(userId).catch(() => {});
-
-        // Stage 6 SWR: publish creates 2 new daily tasks (task_1 / task_2).
-        // Invalidate the daily-tasks cache so when the user returns to
-        // Growth tab, the new tasks appear (cache-first read shows old
-        // list instantly + background fetch swaps in fresh data).
-        invalidateDailyTasks();
-
-        // Stage 6 SWR: every Cold-data cache that publish makes stale.
-        // None of these trigger an immediate fetch -- the user pays
-        // network cost only for the pages they actually visit next
-        // (lazy revalidation).
-        //
-        // NOTE: invalidateWisdoms() is intentionally moved OUT of this
-        // batch and called below, AFTER setPublishedCardCollection has
-        // read the still-correct user-stats cache for Card Collection
-        // counting. Calling it here would clear the cache before the
-        // typesCollected math runs, producing the "always 1" bug.
-        invalidateLeaderboard();      // Ranking (totalExp bump after wisdom publish)
-        invalidateUserStats();        // Assets (totalWords / uniqueKeywords)
-        invalidateSeekQuestions();    // Discover feed (cards count badge)
-
         // Stage 5.WR.2 (Bug 1 fix): server-driven paywall trigger.
         // publish-wisdom now echoes a quotaExhausted flag synchronously
         // in its success response (true when usedThisMonth+1 >= monthlyLimit).
@@ -1749,21 +1723,22 @@ function PhasePublishing({
         setPublishedEmotion(response.card?.wisdom_emotion ?? 'Reflective');
 
         // Stage 6 Bug 1 fix: compute Card Collection notification data
-        // from /api/user-stats cache instead of /api/wisdoms cache.
+        // from /api/user-stats cache. /api/user-stats counts ALL
+        // wisdom_cards rows for this user (including the action-
+        // initiative starter card inserted by user-sync at onboarding
+        // with wisdom_id=NULL), so distinct-keyword counting honors
+        // the starter natively.
         //
-        // Why user-stats: /api/user-stats counts ALL wisdom_cards rows
-        // for this user (including the action-initiative starter card
-        // that user-sync inserts at onboarding with wisdom_id=NULL).
-        // /api/wisdoms feed deliberately excludes wisdom_id=NULL rows
-        // (My Logs shows real wisdoms only), so cachedWisdoms misses
-        // the starter card -- the previous algorithm always under-
-        // counted by 1.
+        // The cache read happens BEFORE the refresh batch below so
+        // we see the pre-publish snapshot (subtract this wisdom from
+        // the count, then add +1 only if it introduces a new keyword).
+        // The refresh batch will overwrite this snapshot with the
+        // post-publish state for the NEXT publish to read.
         //
         // Fallback: if user-stats cache is empty (first-time user
         // who hasn't opened Assets tab yet), seed with the known
         // baseline (1 starter card in 1 keyword, action-initiative).
-        // The actual numbers reconcile on next Assets-tab visit when
-        // user-stats fetches fresh.
+        // After the refresh batch lands, subsequent reads are real.
         const cachedStats = getCachedUserStats();
         const newKeywordId = response.card?.keyword_id ?? null;
         const priorUniqueKeywords = cachedStats?.uniqueKeywords ?? 1;
@@ -1784,14 +1759,86 @@ function PhasePublishing({
           cardsCollectedForKeyword: priorCountForThisKw + 1,
         });
 
-        // Stage 6 Bug 1 fix: invalidate AFTER Card Collection math has
-        // finished reading the cache. Calling earlier (as the original
-        // SWR batch did) wiped the cache before typesCollected counted
-        // distinct keywords, so the count was always 0+1=1.
-        invalidateWisdoms();
+        // ============================================================
+        // Stage 6 Wisdom Insight 3-bug series LAYER 1 — publish-side
+        // prefetch all SWR caches affected by this publish.
+        //
+        // Old pattern (replaced this commit):
+        //   invalidateMeStats(); fetchMeStats(...).catch(...);
+        //   invalidateDailyTasks();
+        //   invalidateLeaderboard();
+        //   invalidateUserStats();
+        //   invalidateWisdoms();
+        //   (each cache cleared but only re-populated lazily on the
+        //   tab's next focus -- meant cache was empty during the 3-5
+        //   minute Insight reading window, so the NEXT publish read
+        //   null and computed typesCollected off the fallback baseline,
+        //   producing the "2/48 forever" bug surfaced in real-test.)
+        //
+        // New pattern:
+        //   Promise.allSettled with seven refresh* helpers (added in
+        //   commits dbd5262 + 96e0109). Each refresh*() clears its
+        //   MMKV key then immediately fetches fresh data. Fire-and-
+        //   forget (no await) -- doesn't block PhaseInsight render.
+        //
+        // Business rationale: the user reads the Insight for 3-5
+        // minutes; we use that window to silently warm all affected
+        // caches. When the user closes Insight and navigates to ANY
+        // tab (Home / Growth / Assets / Me / Discover), the data is
+        // already there -- no spinner, no stale numbers, no
+        // "computing..." placeholders.
+        //
+        // Caches refreshed:
+        //   - wisdoms      My Logs row list (used for My Logs UI)
+        //   - user-stats   Assets totals + typesCollected math input
+        //                  for the user's NEXT publish
+        //   - me-stats     Me page stats (totalWords / cards /
+        //                  peopleImpacted / totalExp / etc)
+        //   - daily-tasks  Growth tab task list (publish creates 2
+        //                  new wisdom tasks: task_1 / task_2)
+        //   - leaderboard  Ranking (totalExp bump shifts user's rank)
+        //   - character-state  Home tab EXP / level / WP
+        //   - wisdom-center  Growth Center / Weekly Report /
+        //                    wisdom-insight aspireScores read
+        //
+        // Caches NOT in this batch:
+        //   - seek-questions  cleared via invalidateSeekQuestions()
+        //                     below; no refresh helper exists yet
+        //                     (Discover tab fetches on focus). The
+        //                     Discover badge is the only consumer
+        //                     and it's a low-priority surface.
+        //
+        // Order of operations within this success handler:
+        //   1. typesCollected math reads cachedStats (pre-publish view)
+        //   2. setPublishedCardCollection (state for Insight UI)
+        //   3. setCommunityCount (state for Block 4a)
+        //   4. THIS refresh batch (kicks off in background)
+        //   5. setPublishedAspireImpact (state for Block 4b)
+        //   6. setLastPublishMessage / storage (Home speech bubble)
+        //
+        // The refresh batch runs AFTER the typesCollected snapshot
+        // read so the Bug 1 fix from commit bbc75c1 stays correct.
+        // It runs BEFORE setPublishedAspireImpact (a state setter,
+        // synchronous) so refresh fires as early as possible into
+        // the user's reading window.
+        // ============================================================
+        void Promise.allSettled([
+          refreshWisdoms(userId),
+          refreshUserStats(userId),
+          refreshMeStats(userId),
+          refreshDailyTasks(userId),
+          refreshLeaderboard(),
+          refreshCharacterState(userId),
+          refreshWisdomCenter(userId),
+        ]);
+
+        // Discover-tab badge: no refresh helper for this cache yet,
+        // so we keep the old invalidate-only pattern. Discover tab
+        // re-fetches on focus.
+        invalidateSeekQuestions();
 
         // Stage 6 Bug 3 fix: server-rolled per-wisdom resonance count.
-        // Fallback to 0 in the extremely defensive case where the
+        // Fallback to null in the extremely defensive case where the
         // server's accumulate path was skipped (server returned null).
         // Pass-through null lets InsightView Block 4a hide the row
         // (matches My Logs historical-wisdom behavior).
@@ -2136,6 +2183,14 @@ function PhaseInsight({
       // fetchCharacterState writes MMKV cache as a side effect.
       // We don't need the return value here; we only need the cache
       // to be hot when home tab reads it on focus.
+      //
+      // Note: this is a defensive fallback for the publish-side
+      // refreshCharacterState in PhasePublishing (kicked off ~3-5
+      // minutes earlier when the user submitted). If that refresh
+      // failed (network blip), this PhaseInsight prefetch is the
+      // backup that keeps Home's character data hot. If the publish-
+      // side refresh succeeded, this fetch returns the same data
+      // and is a no-op in effect.
       prefetchRef.current = fetchCharacterState(userId).catch((e) => {
         console.warn('[insight prefetch] fetchCharacterState failed:', e);
       });
