@@ -17,20 +17,31 @@
  *     banner only makes sense in the moment of publishing — replaying
  *     it for historical wisdoms would mislead the user about what was
  *     "just unlocked." InsightView hides Section 1 when null.
- *   - aspireImpact is ALWAYS null here. The current aspire_scores at
- *     publish time aren't replayable, so showing today's bar with
- *     yesterday's delta would be lying.
+ *   - aspireImpact: keyword comes from card.aspire_impacts[0]
+ *     (persisted on the wisdom_card at publish time), currentScore
+ *     from a fresh GET /api/wisdom-center on mount (the LATEST score,
+ *     not the publish-time snapshot). deltaPercent is set to null —
+ *     the publish-time +/-2 nudge isn't replayable from historical
+ *     data, so we hide the delta chip (InsightView gates it on
+ *     deltaPercent != null) while still showing the bar fill + label.
  *   - communityCount is generated fresh in this modal via useMemo so
  *     it stays stable across re-renders but doesn't need to be
  *     serialized in the URL (URLs already get long with the card JSON).
  */
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { InsightView, type InsightCardData } from '@/components/insight/insight-view';
+import {
+  InsightView,
+  type InsightCardData,
+  type AspireImpactDisplay,
+} from '@/components/insight/insight-view';
 import { haptics } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
+import { fetchWisdomCenter } from '@/lib/wisdom-center-api';
 
 type Payload = {
   card: InsightCardData | null;
@@ -58,6 +69,65 @@ export default function WisdomInsightModal() {
   // number that doesn't match what the user saw on first view.
   const communityCount = payload?.card?.community_count ?? null;
 
+  // Stage 6 Bug 3 (My Logs aspire bar): fetch current aspire_scores
+  // on mount so Block 4b can display { keyword from card.aspire_impacts[0],
+  // currentScore from latest aspireScores }. We deliberately fetch
+  // fresh rather than using a cached value -- wisdom-center has no
+  // MMKV cache layer, and the user may have edited their aspire_words
+  // since publish, so we want truth-of-the-moment.
+  //
+  // While the fetch is in flight, aspireImpact stays null and Block 4b
+  // is hidden by InsightView's existing outer guard. Fetch resolves
+  // (typically 300-800ms) -> aspireScores setState -> aspireImpact
+  // recomputes -> bar renders. No layout shift issue because Block 4b
+  // sits below the always-visible emotion row.
+  const [userId, setUserId] = useState<string | null>(null);
+  const [aspireScores, setAspireScores] =
+    useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getSession().then(({ data: sess }) => {
+      if (cancelled) return;
+      setUserId(sess.session?.user?.id ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void fetchWisdomCenter(userId).then((res) => {
+      if (cancelled) return;
+      if (res.kind === 'success') {
+        setAspireScores(res.data.aspireScores);
+      }
+      // On error: leave aspireScores null -> Block 4b stays hidden.
+      // Acceptable failure mode for a non-critical secondary surface.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Derive aspireImpact from the persisted impacts[0] + fresh score.
+  // Null when: no impacts on the card (historical / no match at publish
+  // time) OR aspireScores hasn't loaded yet OR the keyword isn't in the
+  // scores dict (rare, only if user just removed it from Growth Center
+  // pencil and the AI matched it on an old publish — in that case 70
+  // is the seed default everywhere else, used here for consistency).
+  const topImpact = payload?.card?.aspire_impacts?.[0] ?? null;
+  const aspireImpact: AspireImpactDisplay | null =
+    topImpact && aspireScores
+      ? {
+          keyword: topImpact.keyword,
+          deltaPercent: null,
+          currentScore: aspireScores[topImpact.keyword] ?? 70,
+        }
+      : null;
+
   const goBack = () => {
     void haptics.light();
     if (router.canGoBack()) router.back();
@@ -81,7 +151,7 @@ export default function WisdomInsightModal() {
             card={payload.card}
             emotion={payload.emotion}
             cardCollection={null}
-            aspireImpact={null}
+            aspireImpact={aspireImpact}
             communityCount={communityCount}
             topExtraPadding={Math.max(0, insets.top - 4)}
           />
