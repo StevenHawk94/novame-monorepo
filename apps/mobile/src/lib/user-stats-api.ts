@@ -58,3 +58,22 @@ export async function fetchUserStatsWithCache(userId: string): Promise<UserStats
   setCachedUserStats(res);
   return res;
 }
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight Bug 1 root-cause fix).
+ *
+ * Combines invalidate + immediate background fetch into a single call.
+ * Used by record.tsx publish success path so the cache used by
+ * record.tsx's NEXT typesCollected math is already populated with the
+ * post-publish state (instead of falling back to the seed default of 1).
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshUserStats(userId: string): Promise<void> {
+  storage.remove(USER_STATS_STORAGE_KEY);
+  try {
+    await fetchUserStatsWithCache(userId);
+  } catch (e) {
+    console.warn('[refreshUserStats]', e);
+  }
+}

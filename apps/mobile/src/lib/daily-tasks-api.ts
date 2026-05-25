@@ -127,3 +127,22 @@ export async function fetchDailyTasksWithCache(
   setCachedDailyTasks(tasks);
   return tasks;
 }
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight 3-bug series Layer 1).
+ *
+ * Each publish creates new wisdom tasks (task_1 / task_2 from
+ * generate-card.js). This helper clears the stale cache and immediately
+ * fetches the post-publish task list so Growth tab's My Tasks sub-tab
+ * shows new tasks the moment the user returns from the Insight screen.
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshDailyTasks(userId: string): Promise<void> {
+  storage.remove(DAILY_TASKS_STORAGE_KEY);
+  try {
+    await fetchDailyTasksWithCache(userId);
+  } catch (e) {
+    console.warn('[refreshDailyTasks]', e);
+  }
+}

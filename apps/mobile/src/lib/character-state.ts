@@ -213,6 +213,29 @@ export async function fetchCharacterState(
 }
 
 /**
+ * Stage 6 publish-side prefetch (Wisdom Insight 3-bug series Layer 1).
+ *
+ * Combines clear + immediate fetch. Used by record.tsx publish success
+ * path so Home tab's EXP banner / WP / level / outfit reflect the
+ * post-publish character_data state immediately when the user returns.
+ *
+ * Note: fetchCharacterState already does write-through to MMKV, so the
+ * "clear" step here is mostly defensive — it ensures a stale cache
+ * doesn't briefly render between clear-then-fetch if a consumer reads
+ * mid-flight (it won't, since this is fire-and-forget, but explicit
+ * matches the pattern of other refresh* helpers).
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshCharacterState(userId: string): Promise<void> {
+  try {
+    await fetchCharacterState(userId);
+  } catch (e) {
+    console.warn('[refreshCharacterState]', e);
+  }
+}
+
+/**
  * Internal mapper from server response to local cache shape.
  */
 function mapResponseToCache(data: CharacterStateResponse): CachedCharacterState {

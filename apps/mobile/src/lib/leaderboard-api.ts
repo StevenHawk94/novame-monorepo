@@ -106,3 +106,21 @@ export async function fetchLeaderboardWithCache(
   }
   return res;
 }
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight 3-bug series Layer 1).
+ *
+ * No userId param — the leaderboard is global (server merges all real
+ * users with curated seeds). Publish bumps the user's total_exp, which
+ * changes their rank, so the cache becomes stale and must be refreshed.
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshLeaderboard(): Promise<void> {
+  storage.remove(LEADERBOARD_STORAGE_KEY);
+  try {
+    await fetchLeaderboardWithCache();
+  } catch (e) {
+    console.warn('[refreshLeaderboard]', e);
+  }
+}

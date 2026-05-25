@@ -170,3 +170,23 @@ export async function fetchMeStats(userId: string): Promise<CachedMeStats> {
   setCachedMeStats(next);
   return next;
 }
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight 3-bug series Layer 1).
+ *
+ * Replaces the ad-hoc pattern in record.tsx of "invalidateMeStats() +
+ * fire-and-forget fetchMeStats" with a single named helper. Behaviour
+ * is identical (clear + immediate fetch), naming aligns with all other
+ * publish-side prefetch helpers (refreshWisdoms / refreshUserStats /
+ * refreshDailyTasks / refreshLeaderboard / refreshCharacterState).
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshMeStats(userId: string): Promise<void> {
+  storage.remove(STORAGE_KEY);
+  try {
+    await fetchMeStats(userId);
+  } catch (e) {
+    console.warn('[refreshMeStats]', e);
+  }
+}

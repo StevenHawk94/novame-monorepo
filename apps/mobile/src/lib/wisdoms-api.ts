@@ -155,3 +155,28 @@ export async function fetchWisdomsWithCache(
   }
   return res;
 }
+
+/**
+ * Stage 6 publish-side prefetch (Wisdom Insight Bug 1 root-cause fix).
+ *
+ * Combines invalidate + immediate background fetch into a single call.
+ * Used by record.tsx publish success path: while the user reads the
+ * Insight (3-5 minutes typical), this fires in parallel with refreshes
+ * for all other publish-affected caches so MMKV is hot by the time the
+ * user closes the modal and visits any tab.
+ *
+ * Always uses the default first-page view (offset 0, limit 30) — the
+ * cached payload that My Logs and post-publish navigators read.
+ *
+ * fire-and-forget safe: never throws. Errors are logged so they show
+ * up in TestFlight diagnostics without producing unhandled promise
+ * rejection warnings.
+ */
+export async function refreshWisdoms(userId: string): Promise<void> {
+  storage.remove(WISDOMS_STORAGE_KEY);
+  try {
+    await fetchWisdomsWithCache(userId, { limit: 30 });
+  } catch (e) {
+    console.warn('[refreshWisdoms]', e);
+  }
+}
