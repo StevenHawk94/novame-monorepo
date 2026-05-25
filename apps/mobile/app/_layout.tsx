@@ -15,7 +15,7 @@ import { syncOnboardingIfPending } from '@/lib/onboarding';
 import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscription';
 import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
-import { clearCachedConfig } from '@/lib/app-config-api';
+import { clearCachedConfig, fetchAppConfig } from '@/lib/app-config-api';
 import { fillProductAssets } from '@/lib/asset-cache';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
@@ -110,6 +110,13 @@ export default function RootLayout() {
       try {
         const session = await getCurrentSession();
         const userId = session?.user?.id;
+        // app_config is a public GET (no userId needed) and powers
+        // pricing / unlock-threshold UI everywhere. We fire it in
+        // both branches (signed-in and sessionless) so the prewarm
+        // gate consistently waits on it. Result is reactive: pages
+        // that read getCachedConfig() will reflect the latest values
+        // after this fetch lands (via their own useState mirror).
+        const configFetch = fetchAppConfig();
         if (userId) {
           // Three caches the home tab + me page read on first render.
           // allSettled: missing data falls back to local cache or
@@ -118,11 +125,15 @@ export default function RootLayout() {
             fetchCharacterState(userId),
             fetchSubscriptionTier(userId),
             fetchMeStats(userId),
+            configFetch,
           ]);
+        } else {
+          // Sessionless cold start (onboarding incomplete or signed
+          // out): still wait on the config fetch so the (onboarding)
+          // / (auth) flows see fresh thresholds. The 3s timeout cap
+          // protects against slow network.
+          await Promise.allSettled([configFetch]);
         }
-        // Sessionless cold start (onboarding incomplete or signed out):
-        // nothing to prewarm; finish immediately so app/index.tsx can
-        // redirect to (onboarding) or (auth)/sign-in.
       } catch (e) {
         console.warn('[layout] cold-start prewarm error:', e);
       } finally {

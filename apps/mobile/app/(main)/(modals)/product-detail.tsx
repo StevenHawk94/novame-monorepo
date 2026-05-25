@@ -34,9 +34,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  type AppConfig,
   fetchAppConfig,
   getCachedConfig,
-  isCacheStale,
 } from '@/lib/app-config-api';
 import { getProductAssetSource } from '@/lib/asset-cache';
 import { fetchUserStats } from '@/lib/user-stats-api';
@@ -139,14 +139,25 @@ export default function ProductDetailModal() {
   // Pinterest for remote images.
   const [detailAspectRatio, setDetailAspectRatio] = useState(4 / 5);
 
-  // Stage A (dynamic config): read prices + thresholds from cached
-  // app_config. Background-refresh when stale (1h TTL). Refresh result
-  // lands on the next page visit -- the actual checkout price gate is
-  // payment-stub's strict refresh in A3.3, and the server still always
-  // charges from DB regardless of what we display here.
-  const config = getCachedConfig();
+  // Stage A (dynamic config): read prices + unlock thresholds from
+  // app_config. Initialized from MMKV cache for instant first paint,
+  // then background-refreshed on every page mount. When the fetch
+  // lands, setConfig triggers a re-render with the latest values --
+  // combined with the cold-start prewarm in _layout.tsx, admin price
+  // changes are visible within seconds of the user reopening the app.
+  // The actual checkout price gate is still payment-stub's strict
+  // refresh in A3.3, and the server always charges from DB.
+  const [config, setConfig] = useState<AppConfig>(() => getCachedConfig());
   useEffect(() => {
-    if (isCacheStale()) void fetchAppConfig();
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchAppConfig();
+      if (cancelled) return;
+      if (result.kind === 'success') setConfig(result.config);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const price =

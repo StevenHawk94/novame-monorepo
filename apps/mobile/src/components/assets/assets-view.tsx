@@ -39,9 +39,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import {
+  type AppConfig,
   fetchAppConfig,
   getCachedConfig,
-  isCacheStale,
 } from '@/lib/app-config-api';
 import { getProductAssetSource } from '@/lib/asset-cache';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
@@ -83,14 +83,24 @@ export function AssetsView({ shared }: Props) {
     };
   }, [userId]);
 
-  // Stage A (dynamic config): read unlock thresholds from cached
-  // app_config. Background-refresh once on mount when cache is stale
-  // (1h TTL). Result is eventual consistency -- new thresholds appear
-  // on the next page visit, not the current render. payment-stub
-  // (sub-step A3.3) handles strict refresh for the checkout flow.
-  const config = getCachedConfig();
+  // Stage A (dynamic config): read pricing + unlock thresholds from
+  // app_config. Initialized from MMKV cache for instant first paint,
+  // then background-refreshed on every page mount. When the fetch
+  // lands, setConfig triggers a re-render with the latest server
+  // values -- combined with the cold-start prewarm in _layout.tsx,
+  // admin price/threshold changes are reflected within seconds of the
+  // user reopening the app.
+  const [config, setConfig] = useState<AppConfig>(() => getCachedConfig());
   useEffect(() => {
-    if (isCacheStale()) void fetchAppConfig();
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchAppConfig();
+      if (cancelled) return;
+      if (result.kind === 'success') setConfig(result.config);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Stage 3.9.B.3 stub: until stage 5 lands the server-side
