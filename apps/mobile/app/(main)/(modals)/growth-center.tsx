@@ -14,7 +14,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import {
-  fetchWisdomCenter,
+  fetchWisdomCenterWithCache,
+  getCachedWisdomCenter,
   type WisdomCenterData,
 } from '@/lib/wisdom-center-api';
 import { ScoreGauge } from '@/components/growth/score-gauge';
@@ -46,8 +47,16 @@ export default function GrowthCenterModal() {
   const insets = useSafeAreaInsets();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [data, setData] = useState<WisdomCenterData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Stage 6 Bug 3 fix Layer 2: cache-first initial render. If the
+  // wisdom-center cache is populated (e.g. publish-side prefetch from
+  // record.tsx has already landed, or a previous Growth Center visit
+  // wrote through), we render instantly with last-known-good data
+  // and revalidate in the background. Cache miss falls back to the
+  // existing loading-spinner path.
+  const [data, setData] = useState<WisdomCenterData | null>(
+    () => getCachedWisdomCenter(),
+  );
+  const [loading, setLoading] = useState(() => getCachedWisdomCenter() === null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,8 +79,13 @@ export default function GrowthCenterModal() {
       if (!userId) return;
       let cancelled = false;
       (async () => {
-        setLoading(true);
-        const res = await fetchWisdomCenter(userId);
+        // Only show the full-screen loading spinner when we have
+        // nothing to render. With cache-first init, most visits to
+        // Growth Center will already have data on screen -- showing
+        // the spinner over fresh-looking data would be a regression.
+        const hasCache = getCachedWisdomCenter() !== null;
+        if (!hasCache) setLoading(true);
+        const res = await fetchWisdomCenterWithCache(userId);
         if (cancelled) return;
         if (res.kind === 'success') {
           setData(res.data);
@@ -79,7 +93,7 @@ export default function GrowthCenterModal() {
         } else {
           setError(res.message);
         }
-        setLoading(false);
+        if (!hasCache) setLoading(false);
       })();
       return () => {
         cancelled = true;

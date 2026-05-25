@@ -15,7 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { AspireWordsPicker } from '@/components/onboarding/aspire-words-picker';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
-import { updateAspireWords } from '@/lib/wisdom-center-api';
+import { invalidateWisdomCenter, updateAspireWords } from '@/lib/wisdom-center-api';
 
 /**
  * Edit Aspire Words modal -- Stage 6 editable aspire-words feature.
@@ -106,6 +106,12 @@ export default function EditAspireWordsModal() {
     setSaving(false);
 
     if (result.kind === 'success') {
+      // Stage 6 Bug 3 fix Layer 2: invalidate wisdom-center cache so
+      // Growth Center (which now uses cache-first via
+      // fetchWisdomCenterWithCache) doesn't show the OLD aspire_words
+      // for a moment before its useFocusEffect refetch lands. The
+      // next focus triggers a fresh fetch + write-through.
+      invalidateWisdomCenter();
       void haptics.success();
       router.back();
     } else {

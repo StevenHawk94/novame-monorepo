@@ -41,7 +41,10 @@ import {
 } from '@/components/insight/insight-view';
 import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
-import { fetchWisdomCenter } from '@/lib/wisdom-center-api';
+import {
+  fetchWisdomCenterWithCache,
+  getCachedWisdomCenter,
+} from '@/lib/wisdom-center-api';
 
 type Payload = {
   card: InsightCardData | null;
@@ -82,8 +85,15 @@ export default function WisdomInsightModal() {
   // recomputes -> bar renders. No layout shift issue because Block 4b
   // sits below the always-visible emotion row.
   const [userId, setUserId] = useState<string | null>(null);
+  // Stage 6 Bug 3 fix Layer 2: cache-first init. If the
+  // wisdom-center cache is populated (publish-side prefetch from
+  // record.tsx Promise.allSettled batch, or a previous Growth Center
+  // visit), Block 4b's aspire bar renders immediately from cache.
+  // Otherwise stays null and the background fetch below populates it.
   const [aspireScores, setAspireScores] =
-    useState<Record<string, number> | null>(null);
+    useState<Record<string, number> | null>(
+      () => getCachedWisdomCenter()?.aspireScores ?? null,
+    );
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +109,7 @@ export default function WisdomInsightModal() {
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    void fetchWisdomCenter(userId).then((res) => {
+    void fetchWisdomCenterWithCache(userId).then((res) => {
       if (cancelled) return;
       if (res.kind === 'success') {
         setAspireScores(res.data.aspireScores);
