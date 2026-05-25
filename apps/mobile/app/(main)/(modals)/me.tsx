@@ -303,7 +303,7 @@ export default function MeModal() {
               iconColor="#3B82F6"
               iconBg="rgba(59,130,246,0.18)"
               value={fmt(stats?.peopleImpacted)}
-              label="People Impacted"
+              label="People Resonated"
             />
             <StatItem
               icon="star"
