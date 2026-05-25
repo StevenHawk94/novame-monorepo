@@ -1,35 +1,65 @@
 /**
- * Signing-in loading screen (Stage 5.WR.2, Bug 2).
+ * Signing-in loading screen (Stage 5.WR.2, new-user instant-home rewrite).
  *
- * Sits between sign-in success and the home tab to prewarm critical
- * data so the home tab renders fully populated on first frame.
+ * Sits between sign-in success and the home tab. After this rewrite it
+ * exists primarily to provide a visual transition (purple background +
+ * logo + spinner) for ~600ms while data fetches kick off in the
+ * background -- it no longer BLOCKS on those fetches.
  *
- * Before this screen, the user signed in → router.replace to
- * /(main)/(tabs)/ immediately → home tab mounted → showed speech
- * bubble "Loading..." for 1-3 seconds while character-state fetched
- * → Me page header showed "--" until separate me-stats fetch
- * returned. UX felt broken on slower networks.
+ * History:
+ *   v1 (original Stage 5.WR.2): awaited Promise.allSettled([
+ *     fetchCharacterState, fetchSubscriptionTier, fetchMeStats
+ *   ]) with a 3s timeout. This worked for established users on fast
+ *   networks but had two failure modes:
+ *     - New users hit a race between Supabase auth's handle_new_user
+ *       trigger (creating profiles row) and character-state route's
+ *       ensureProfileFields (re-reading it). Result: HTTP 404 within
+ *       ~700ms, fetch rejected, cache stayed null, home displayed
+ *       "Loading..." speech bubble.
+ *     - Even when no race, the three serial server calls (each with
+ *       its own DB round-trips) consistently took 4-5s on cold
+ *       Vercel Edge boots, blowing through the 3s timeout. The home
+ *       tab then rendered before its caches were populated.
  *
- * Now: sign-in success → router.replace to here → this screen
- * runs three fetches in parallel:
- *   - fetchCharacterState (wp, level, exp, mode, outfit, ...)
- *   - fetchSubscriptionTier (free/basic/pro/ultra)
- *   - fetchMeStats (totalWords, totalCards, peopleImpacted, totalExp)
+ *   v2 (this version): instant-default pattern, industry-standard
+ *   stale-while-revalidate. We write known-correct DEFAULT values to
+ *   MMKV immediately (verified to match what the server would return
+ *   for a fresh account), navigate to home, and fire fetches in the
+ *   background. Reactive polling in home/me/growth picks up the
+ *   server-confirmed values within seconds without UI disruption.
  *
- * Then router.replace to /(main)/(tabs)/. By the time home renders,
- * all three MMKV caches are hot — UI renders instantly with real data.
+ * Why this is correct for new users:
+ *   For a newly-signed-up account the server response IS the default
+ *   values -- wp=0, level=1, totalCards=1, planTier='free', etc. So
+ *   client-side defaulting produces the SAME numbers the fetch would
+ *   produce, with zero network wait. The only fields the client
+ *   cannot pre-compute are server-side randomness (the default
+ *   avatar URL assigned by trigger_assign_default_avatar) which
+ *   gracefully renders an empty-string placeholder until the
+ *   background fetch lands.
  *
- * Two safeguards:
- *   - Promise.allSettled (not Promise.all): a failed fetch doesn't
- *     block navigation. The home tab degrades gracefully to its
- *     cached / default state for any data that didn't return.
- *   - 3-second timeout: if all three fetches hang (network down),
- *     force the redirect anyway. The user shouldn't be trapped here.
- *   - 600ms minimum display: prevents a sub-300ms fetch from
- *     producing a one-frame flash that looks like a glitch.
+ * Why this is acceptable for returning users:
+ *   On sign-in the SIGNED_IN handler in _layout.tsx clears the per-
+ *   user caches (to prevent cross-account leakage). The user then
+ *   transits this screen; we now populate caches with DEFAULTS for
+ *   the ~5s the fetch needs. The user sees Free-tier / level-1 stats
+ *   briefly, then the home/me page reactive listeners swap in real
+ *   values once fetchCharacterState / fetchMeStats / fetchSubscription
+ *   resolve. Slight transient mismatch is acceptable -- returning sign-
+ *   in is rare and the user does not interact with stats during the
+ *   transition window.
  *
- * Visual: purple background, centered logo, spinner below. Matches
- * Me page's purple top section (#7C3AED) for visual continuity.
+ * displayName / charName:
+ *   Read from MMKV onboarding state (set at onboarding step 10 before
+ *   sign-in). Carries the user's chosen name into the default cache
+ *   so Me page header and Home speech bubble show the right identity
+ *   from frame 1.
+ *
+ * MIN_DISPLAY_MS = 600ms: keeps the splash visible long enough to
+ * look intentional (not a one-frame flash). Below this, users feel
+ * the transition was glitchy.
+ *
+ * No PREWARM_TIMEOUT_MS needed anymore -- we never wait on fetches.
  */
 
 import { useEffect } from 'react';
@@ -37,19 +67,33 @@ import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
-import { fetchCharacterState } from '@/lib/character-state';
-import { fetchSubscriptionTier } from '@/lib/subscription';
-import { fetchMeStats } from '@/lib/me-stats';
+import {
+  DEFAULT_NEW_USER_CHARACTER_STATE,
+  fetchCharacterState,
+  getCachedCharacterState,
+  setCachedCharacterState,
+} from '@/lib/character-state';
+import {
+  fetchSubscriptionTier,
+  getCachedSubscription,
+  setCachedSubscription,
+} from '@/lib/subscription';
+import {
+  DEFAULT_NEW_USER_ME_STATS,
+  fetchMeStats,
+  getCachedMeStats,
+  setCachedMeStats,
+} from '@/lib/me-stats';
+import { getOnboardingState } from '@/lib/onboarding';
 
 const LOGO = require('../../assets/images/logo.png');
 
-const PREWARM_TIMEOUT_MS = 3000;
 const MIN_DISPLAY_MS = 600;
 
 export default function SigningInScreen() {
   useEffect(() => {
-    let navigated = false;
     const start = Date.now();
+    let navigated = false;
 
     const goHome = () => {
       if (navigated) return;
@@ -61,40 +105,66 @@ export default function SigningInScreen() {
       }, remaining);
     };
 
-    // Timeout safety net — never trap the user here.
-    const timeoutId = setTimeout(() => {
-      console.warn('[signing-in] prewarm timeout, navigating anyway');
-      goHome();
-    }, PREWARM_TIMEOUT_MS);
-
     void (async () => {
       const session = await getCurrentSession();
       const userId = session?.user?.id;
       if (!userId) {
-        // No session somehow — bounce back to sign-in. Should be
+        // No session somehow -- bounce back to sign-in. Should be
         // unreachable in practice (this screen is only entered on
         // sign-in success), but defensive.
-        clearTimeout(timeoutId);
         navigated = true;
         router.replace('/(auth)/sign-in');
         return;
       }
 
-      // Parallel prewarm. allSettled so a single failure doesn't
-      // block navigation.
-      await Promise.allSettled([
-        fetchCharacterState(userId),
-        fetchSubscriptionTier(userId),
-        fetchMeStats(userId),
-      ]);
+      // ---- Step 1: populate caches with DEFAULTS for instant home ----
+      //
+      // Read onboarding state to inject the user's chosen name into
+      // the defaults so Home / Me show the right identity from frame 1.
+      const onboarding = getOnboardingState();
+      const charName = onboarding.charName || '';
 
-      clearTimeout(timeoutId);
+      if (!getCachedCharacterState()) {
+        setCachedCharacterState({
+          ...DEFAULT_NEW_USER_CHARACTER_STATE,
+          charName,
+          wpLastFetchedAtMs: Date.now(),
+        });
+      }
+      if (!getCachedMeStats()) {
+        setCachedMeStats({
+          ...DEFAULT_NEW_USER_ME_STATS,
+          displayName: charName,
+          lastFetchedAtMs: Date.now(),
+        });
+      }
+      if (!getCachedSubscription()) {
+        setCachedSubscription({
+          tier: 'free',
+          lastFetchedAtMs: Date.now(),
+        });
+      }
+
+      // ---- Step 2: fire-and-forget background reconcile ----
+      //
+      // These resolve in 1-5 seconds depending on whether the
+      // handle_new_user trigger has finished writing the profile row.
+      // Home/Me/Growth tabs poll MMKV every 2s; whichever resolves
+      // first repaints the UI silently. Errors are non-fatal -- the
+      // default cache stays in place.
+      void fetchCharacterState(userId).catch((e) => {
+        console.warn('[signing-in] character-state fetch failed:', e?.message || e);
+      });
+      void fetchSubscriptionTier(userId).catch((e) => {
+        console.warn('[signing-in] subscription fetch failed:', e?.message || e);
+      });
+      void fetchMeStats(userId).catch((e) => {
+        console.warn('[signing-in] me-stats fetch failed:', e?.message || e);
+      });
+
+      // ---- Step 3: navigate immediately (respects 600ms minimum) ----
       goHome();
     })();
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
   }, []);
 
   return (

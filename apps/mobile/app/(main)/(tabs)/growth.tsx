@@ -185,6 +185,23 @@ export default function GrowthTab() {
     toastTimerRef.current = setTimeout(() => setToast(null), holdMs);
   };
 
+  // ---- 2s cache reactivity poll (Stage 5.WR.2 instant-default) ----
+  //
+  // Mirrors the pattern in (tabs)/index.tsx and me.tsx: signing-in.tsx
+  // writes default character state and fires fetchCharacterState in
+  // the background. When the fetch resolves we want this tab to
+  // observe the change without requiring a tab switch / focus event.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const next = getCachedCharacterState();
+      if (next && next.wpLastFetchedAtMs !== charState?.wpLastFetchedAtMs) {
+        setCharState(next);
+        setWpVisual(next.wp);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [charState]);
+
   // === Character state ===
   // Stage 5.WR.2 (FIFTH pass): refreshChar race-condition guard.
   //

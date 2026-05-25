@@ -190,6 +190,33 @@ export default function HomeTab() {
     };
   }, []);
 
+  // ---- 2s cache reactivity poll (Stage 5.WR.2 instant-default) ----
+  //
+  // signing-in.tsx writes DEFAULT character state to MMKV and fires
+  // fetchCharacterState in the background, navigating here
+  // immediately. When that background fetch lands (~1-5s later),
+  // MMKV updates but this component's React state does NOT
+  // automatically observe the change. Poll every 2s for a fresh
+  // lastFetchedAtMs and swap in the new state. Same pattern as
+  // me.tsx's existing polling -- cheap because MMKV reads are
+  // synchronous + tiny.
+  //
+  // Null guard mirrors the me.tsx fix: never overwrite a non-null
+  // cachedState with null. If a sibling code path invalidates the
+  // cache (rare; only sign-out paths today), the UI keeps showing
+  // the last known good values until a fresh non-null payload
+  // arrives. Classic stale-while-revalidate.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const next = getCachedCharacterState();
+      if (next && next.wpLastFetchedAtMs !== cachedState?.wpLastFetchedAtMs) {
+        setCachedState(next);
+        setWpVisual(next.wp);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [cachedState]);
+
   // ---- Local WP visual decay every 30s ----
 
   useEffect(() => {

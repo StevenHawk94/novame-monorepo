@@ -29,6 +29,38 @@ import type { LevelInfo } from '@novame/core';
 
 const STORAGE_KEY = 'novame_character_state';
 
+// ---- defaults ----
+
+/**
+ * Default character state for a newly-signed-up user, used as an
+ * instant placeholder by signing-in.tsx so the user can enter Home
+ * with zero network wait. Mirrors the server's auto-created
+ * character_data row (see /api/character-state ensureCharacterData):
+ *   level=1, exp=0, current_outfit=1, unlocked_outfits=[1].
+ *
+ * `charName` is intentionally empty -- signing-in.tsx fills it from
+ * MMKV onboarding state at write time (the user named the companion
+ * during onboarding step 10).
+ *
+ * Stage 5.WR.2 (new-user instant-home pattern): replaces the prior
+ * "show 'Loading...' speech bubble for 1-10s while character-state
+ * round-trips" UX. New users see their real default values from frame
+ * 1; the background fetch reconciles any server-side computed fields
+ * (e.g. wp decay, AFK exp accumulation) within ~5s.
+ */
+export const DEFAULT_NEW_USER_CHARACTER_STATE: CachedCharacterState = {
+  charId: 'char-1',
+  charName: '',
+  mode: 'play',
+  wp: 0,
+  wpLastFetchedAtMs: 0,
+  outfit: 1,
+  unlockedOutfits: [1],
+  level: 1,
+  expCurrent: 0,
+  expNeeded: 20,
+};
+
 // ---- types matching apps/api/src/app/api/character-state/route.js GET shape ----
 
 /**

@@ -30,6 +30,53 @@ import type { PricingTierKey } from '@novame/core';
 
 const STORAGE_KEY = 'novame_me_stats';
 
+// ---- defaults ----
+
+/**
+ * Default me-stats for a newly-signed-up user, used as an instant
+ * placeholder by signing-in.tsx so the Me page can render meaningful
+ * values from frame 1 instead of "Wisdom Seeker" / default avatar /
+ * "--" placeholders.
+ *
+ * Verified against the server contract for a fresh account:
+ *   - totalWords     = 0      (no wisdoms yet)
+ *   - totalCards     = 1      (the onboarding starter card)
+ *   - peopleImpacted = 0      (profile.people_impacted_display default)
+ *   - totalExp       = 0      (character_data default)
+ *   - betterSelfScore= 70     (profile default)
+ *   - usedThisMonth  = 0      (starter card has wisdom_id IS NULL so
+ *                              it is excluded by the me-stats route's
+ *                              .not('wisdom_id','is',null) filter)
+ *   - monthlyAnalyses= 1      (free tier from PRICING_TIERS)
+ *   - planTier       = 'free' (subscription_tier default)
+ *   - planName       = 'Free'
+ *
+ * `displayName` is intentionally empty -- signing-in.tsx fills it
+ * from MMKV onboarding state (user named themselves at step 10).
+ *
+ * `avatarUrl` is intentionally empty -- the server's
+ * trigger_assign_default_avatar randomly selects one of the
+ * default_avatars rows during INSERT, which the client cannot
+ * predict. Me page renders an initials-based placeholder until the
+ * background fetchMeStats() resolves with the assigned URL.
+ *
+ * Stage 5.WR.2 (new-user instant-home pattern).
+ */
+export const DEFAULT_NEW_USER_ME_STATS: CachedMeStats = {
+  totalWords: 0,
+  totalCards: 1,
+  peopleImpacted: 0,
+  totalExp: 0,
+  betterSelfScore: 70,
+  usedThisMonth: 0,
+  monthlyAnalyses: 1,
+  planTier: 'free',
+  planName: 'Free',
+  displayName: '',
+  avatarUrl: '',
+  lastFetchedAtMs: 0,
+};
+
 // ---- types ----
 
 type MeStatsResponse = {
