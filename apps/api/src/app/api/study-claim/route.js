@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getExpNeeded, getLevelFromExp } from '@/lib/exp'
+import { pickStudyBonusTaskTemplate } from '@/lib/study-bonus-tasks'
 
 export const runtime = 'edge'
 
@@ -31,7 +32,7 @@ export async function POST(req) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('active_character_id, afk_study_seconds, people_impacted_display')
+      .select('active_character_id, afk_study_seconds, people_impacted_display, study_bonus_task_index')
       .eq('id', userId).single()
 
     const charId = profile?.active_character_id || 'char-1'
@@ -89,9 +90,38 @@ export async function POST(req) {
 
     // Update people_impacted_display
     const newImpacted = (profile?.people_impacted_display || 0) + totalSouls
+
+    // Stage 6 follow-up: insert study-bonus quest into daily_tasks.
+    // Pick the next template from the user's rotation cursor, INSERT a
+    // daily_task row, and write the incremented cursor back.
+    //
+    // The cursor update is merged into the people_impacted_display
+    // UPDATE below to save one round-trip. Both writes touch profiles
+    // for the same user, so a single UPDATE statement is strictly
+    // cheaper than two.
+    const { text: bonusTaskText, nextIndex: nextBonusIndex } =
+      pickStudyBonusTaskTemplate(profile?.study_bonus_task_index ?? 0)
+    const bonusExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    const { error: bonusInsertError } = await supabase.from('daily_tasks').insert({
+      user_id: userId,
+      task_text: bonusTaskText,
+      task_type: 'study_bonus',
+      exp_reward: 10,
+      is_completed: false,
+      expires_at: bonusExpiresAt,
+    })
+    if (bonusInsertError) {
+      // Non-fatal: log and proceed. The study claim itself succeeded
+      // (EXP awarded, mode reset). Worst case the user misses one
+      // bonus quest -- their cursor still advances on the next claim.
+      console.warn('[study-claim] study_bonus task insert failed:', bonusInsertError)
+    }
+
     await supabase.from('profiles').update({
       people_impacted_display: newImpacted,
       people_impacted_updated_at: new Date().toISOString(),
+      study_bonus_task_index: nextBonusIndex,
     }).eq('id', userId)
 
     return NextResponse.json({
