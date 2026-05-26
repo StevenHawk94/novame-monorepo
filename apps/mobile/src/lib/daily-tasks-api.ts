@@ -103,6 +103,31 @@ export function getCachedDailyTasks(): DailyTask[] | null {
   }
 }
 
+/**
+ * Returns the millisecond timestamp of the last successful daily-tasks
+ * fetch, or null if no cache exists / cache is corrupt.
+ *
+ * Used by growth.tsx for cross-midnight detection (Gap B): if the
+ * cached fetch happened on a different LOCAL calendar day than now,
+ * the cache is stale (daily_love rolled over at server-side midnight,
+ * yesterday's entry is now expired and a new today's entry was created).
+ * The 60s tick inside Growth tab's useFocusEffect compares this
+ * timestamp's date to today's date and triggers a fresh refreshTasks()
+ * when they differ.
+ *
+ * Synchronous; safe to call inside setInterval callbacks.
+ */
+export function getDailyTasksLastFetchedAtMs(): number | null {
+  const raw = storage.getString(DAILY_TASKS_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CachedDailyTasks;
+    return parsed.lastFetchedAtMs ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function setCachedDailyTasks(tasks: DailyTask[]): void {
   const payload: CachedDailyTasks = {
     tasks,

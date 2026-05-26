@@ -48,6 +48,7 @@ import {
   fetchDailyTasks,
   fetchDailyTasksWithCache,
   getCachedDailyTasks,
+  getDailyTasksLastFetchedAtMs,
   type DailyTask,
 } from '@/lib/daily-tasks-api';
 import { getExpNeeded } from '@novame/core';
@@ -294,7 +295,32 @@ export default function GrowthTab() {
     useCallback(() => {
       void refreshChar();
       void refreshTasks();
-      refreshTickRef.current = setInterval(() => void refreshChar(), 60_000);
+      // Gap B (Stage 6 Wisdom Insight series): in-process midnight
+      // rollover detection. Every 60s tick checks whether the cached
+      // daily-tasks fetch happened on a different LOCAL day than now.
+      // If yes, the user has crossed midnight while the app stayed
+      // open (a foreground 30+ min triggers Gap A's refreshAllCaches
+      // and covers this too, but a user actively using the app
+      // through midnight would never background long enough). Calls
+      // refreshTasks (local function -- fetches + setRows) instead
+      // of refreshDailyTasks (lib helper, fire-and-forget without
+      // setState), so the new daily_love appears in the UI within
+      // ~60s of midnight.
+      refreshTickRef.current = setInterval(() => {
+        void refreshChar();
+        const lastMs = getDailyTasksLastFetchedAtMs();
+        if (lastMs !== null) {
+          const lastDate = new Date(lastMs);
+          const nowDate = new Date();
+          const sameDay =
+            lastDate.getFullYear() === nowDate.getFullYear() &&
+            lastDate.getMonth() === nowDate.getMonth() &&
+            lastDate.getDate() === nowDate.getDate();
+          if (!sameDay) {
+            void refreshTasks();
+          }
+        }
+      }, 60_000);
       return () => {
         if (refreshTickRef.current) {
           clearInterval(refreshTickRef.current);
