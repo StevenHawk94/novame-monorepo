@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -27,6 +27,7 @@ import { PRICING_TIERS } from '@novame/core';
 import {
   type CachedMeStats,
   clearCachedMeStats,
+  DEFAULT_NEW_USER_ME_STATS,
   fetchMeStats,
   getCachedMeStats,
 } from '@/lib/me-stats';
@@ -101,11 +102,20 @@ export default function MeModal() {
   useEffect(() => {
     if (!userId) return;
     const unsubscribe = onPurchaseComplete(({ tier }) => {
+      // Stage 6 follow-up (commit 22b): when prev is null we still
+      // construct an optimistic state instead of bailing. This covers
+      // the rare race where the listener fires while the cache was
+      // just invalidated by iap.ts (pre-22a) or a sibling code path,
+      // before the lib-level refreshMeStats from commit 22a writes
+      // back. Bases on DEFAULT_NEW_USER_ME_STATS (the same
+      // placeholder signing-in.tsx seeds for new users) and overlays
+      // the purchased tier info. The subsequent fetchMeStats below
+      // reconciles with server truth within 1-3s.
+      const tierInfo = PRICING_TIERS[tier];
       setStats((prev) => {
-        if (!prev) return prev;
-        const tierInfo = PRICING_TIERS[tier];
+        const base = prev ?? DEFAULT_NEW_USER_ME_STATS;
         return {
-          ...prev,
+          ...base,
           planTier: tier,
           planName: tierInfo.name,
           monthlyAnalyses: tierInfo.monthlyAnalyses,
@@ -120,6 +130,28 @@ export default function MeModal() {
     });
     return unsubscribe;
   }, [userId]);
+
+  // Stage 6 follow-up (commit 22b): silent revalidate-on-focus.
+  // expo-router useFocusEffect fires both on mount and on every
+  // subsequent focus (e.g. user opens paywall -> closes paywall ->
+  // Me page regains focus). Always re-fetch me-stats so the cache
+  // reflects any out-of-band updates that happened while Me was
+  // not focused -- the most common one being subscription tier
+  // change via the publish-wisdom paywall path.
+  //
+  // Fire-and-forget; the write-through inside fetchMeStats updates
+  // MMKV, and the 2s polling below picks it up. We do NOT setStats
+  // directly here because doing so would skip the polling's
+  // lastFetchedAtMs equality check and cause an extra re-render on
+  // every focus even when data hasn't changed.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      void fetchMeStats(userId).catch((e) => {
+        console.warn('[me] focus refetch failed:', e);
+      });
+    }, [userId]),
+  );
 
   // Re-read cache on a 2s tick so a background refetch (e.g. record
   // publish success while this modal happens to be open) reflects in
