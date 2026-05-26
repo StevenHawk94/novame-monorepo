@@ -26,7 +26,8 @@ function getSupabase() {
  *       id, created_at, audio_url, text, categories, duration,
  *       card: { id, keyword_id, quote_short, insight_full,
  *               wisdom_emotion, card_b, card_c, task_1, task_2,
- *               reframe, reflective_question, aspire_impacts } | null
+ *               reframe, reflective_question, aspire_impacts,
+ *               community_count } | null
  *     }],
  *     total: number
  *   }
@@ -71,8 +72,12 @@ export async function GET(request) {
         // Stage 6: wisdom_score removed from select (UI no longer renders
         // a score). card_b/card_c kept for legacy wisdom display fallback.
         // reframe + reflective_question are the new jsonb columns driving
-        // the redesigned insight page.
-        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_emotion, card_b, card_c, task_1, task_2, reframe, reflective_question, aspire_impacts')
+        // the redesigned insight page. community_count (Stage 6 Bug 3)
+        // is the server-rolled "people resonated" 30-999 persisted at
+        // publish time; My Logs Insight reads it via this select to
+        // render InsightView Block 4a -- NULL for historical
+        // pre-migration wisdoms (Block 4a hides on null).
+        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_emotion, card_b, card_c, task_1, task_2, reframe, reflective_question, aspire_impacts, community_count')
         .in('wisdom_id', ids)
 
       if (cErr) {
