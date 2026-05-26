@@ -60,16 +60,54 @@ export function invalidateSeekQuestions(): void {
   }
 }
 
+/**
+ * Stage 6 follow-up (Discover infinite-scroll): fetch a page of
+ * seek-questions with optional cache write-through.
+ *
+ * Pagination semantics (mirrors apps/mobile/src/lib/wisdoms-api.ts):
+ *   - opts.limit  defaults to 20 (matches server-side default in
+ *                 /api/seek-questions route.js).
+ *   - opts.offset defaults to 0.
+ *   - The cache is ONLY written when offset === 0 — pagination
+ *     pages 2..N are returned to the caller but not persisted.
+ *     Rationale: caching a single first-page view is what gives
+ *     instant cold-start render; caching every page combo would
+ *     bloat MMKV with little benefit (a returning user always
+ *     starts at page 0 anyway).
+ *
+ * Client computes hasMore from `returned.length === limit` per the
+ * Q-18.2 = B decision (no separate total-count round-trip).
+ *
+ * Backwards compatible: existing call sites that pass no opts get
+ * { limit: 20, offset: 0 } automatically. refreshSeekQuestions()
+ * still works unchanged — it always fetches page 0 by passing no
+ * opts.
+ */
 export async function fetchSeekQuestionsWithCache(
   filterKey: string,
   selectedKeywords: string[],
+  opts: { limit?: number; offset?: number } = {},
 ): Promise<SeekQuestion[]> {
-  const qs = selectedKeywords.length > 0
-    ? `?keywords=${encodeURIComponent(selectedKeywords.join(','))}`
-    : '';
+  const limit = opts.limit ?? 20;
+  const offset = opts.offset ?? 0;
+
+  const params = new URLSearchParams();
+  if (selectedKeywords.length > 0) {
+    params.set('keywords', selectedKeywords.join(','));
+  }
+  params.set('limit', String(limit));
+  params.set('offset', String(offset));
+  const qs = `?${params.toString()}`;
+
   const data = await apiClient.get<FetchResp>(`/api/seek-questions${qs}`);
   const questions = data.questions ?? [];
-  setCachedSeekQuestions(filterKey, questions);
+
+  // Cache only the first-page view (offset 0) per the wisdoms-api
+  // pattern. Pagination pages 2..N are still returned for caller
+  // append, just not persisted.
+  if (offset === 0) {
+    setCachedSeekQuestions(filterKey, questions);
+  }
   return questions;
 }
 
