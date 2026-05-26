@@ -92,7 +92,7 @@ import { refreshDailyTasks } from '@/lib/daily-tasks-api';
 import { refreshWisdoms } from '@/lib/wisdoms-api';
 import { refreshLeaderboard } from '@/lib/leaderboard-api';
 import { refreshUserStats, getCachedUserStats } from '@/lib/user-stats-api';
-import { invalidateSeekQuestions } from '@/lib/seek-questions-cache';
+import { refreshSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
 import { refreshMeStats } from '@/lib/me-stats';
 import { refreshWisdomCenter } from '@/lib/wisdom-center-api';
@@ -1776,7 +1776,7 @@ function PhasePublishing({
         //   producing the "2/48 forever" bug surfaced in real-test.)
         //
         // New pattern:
-        //   Promise.allSettled with seven refresh* helpers (added in
+        //   Promise.allSettled with eight refresh* helpers (added in
         //   commits dbd5262 + 96e0109). Each refresh*() clears its
         //   MMKV key then immediately fetches fresh data. Fire-and-
         //   forget (no await) -- doesn't block PhaseInsight render.
@@ -1801,12 +1801,15 @@ function PhasePublishing({
         //   - wisdom-center  Growth Center / Weekly Report /
         //                    wisdom-insight aspireScores read
         //
-        // Caches NOT in this batch:
-        //   - seek-questions  cleared via invalidateSeekQuestions()
-        //                     below; no refresh helper exists yet
-        //                     (Discover tab fetches on focus). The
-        //                     Discover badge is the only consumer
-        //                     and it's a low-priority surface.
+        // Caches refreshed (continued):
+        //   - seek-questions  Discover feed (each question's
+        //                     wisdomCount badge may change as new
+        //                     wisdoms reshape the keyword pool).
+        //                     refreshSeekQuestions has no userId arg
+        //                     (global feed) and re-fetches only the
+        //                     default unfiltered slot per Q-G1 = γ
+        //                     -- filtered slots refresh on next
+        //                     Discover useFocusEffect.
         //
         // Order of operations within this success handler:
         //   1. typesCollected math reads cachedStats (pre-publish view)
@@ -1830,12 +1833,8 @@ function PhasePublishing({
           refreshLeaderboard(),
           refreshCharacterState(userId),
           refreshWisdomCenter(userId),
+          refreshSeekQuestions(),
         ]);
-
-        // Discover-tab badge: no refresh helper for this cache yet,
-        // so we keep the old invalidate-only pattern. Discover tab
-        // re-fetches on focus.
-        invalidateSeekQuestions();
 
         // Stage 6 Bug 3 fix: server-rolled per-wisdom resonance count.
         // Fallback to null in the extremely defensive case where the
