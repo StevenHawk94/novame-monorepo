@@ -64,6 +64,12 @@ export default function DiscoverTab() {
   }, [filterKey]);
 
   const router = useRouter();
+  // Stage 6 follow-up (infinite-scroll): PAGE_SIZE matches the server-
+  // side default in /api/seek-questions route.js (commit 59b6e23).
+  // Changing it here without changing the server-side ?limit default
+  // would break the hasMore signal (= returned.length === PAGE_SIZE).
+  const PAGE_SIZE = 20;
+
   const [questions, setQuestions] = useState<SeekQuestion[]>(
     () => getCachedSeekQuestions('') ?? [],
   );
@@ -73,6 +79,15 @@ export default function DiscoverTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
+  // Infinite-scroll state. `page` is 0-indexed and starts at 0 (the
+  // cached / first fetch). `hasMore` defaults to true so the very
+  // first scroll-end can trigger a fetch even before we know whether
+  // page 0 was full -- the loadMore guard re-checks before firing.
+  // `loadingMore` debounces rapid onEndReached fires (FlatList can
+  // fire it multiple times during fast scroll).
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     // Stage 6 SWR: only show spinner if no cache. Pull-to-refresh
@@ -82,15 +97,56 @@ export default function DiscoverTab() {
     else if (mode === 'refresh') setRefreshing(true);
     setError(null);
     try {
-      const qs = await fetchSeekQuestionsWithCache(filterKey, selectedKeywords);
+      const qs = await fetchSeekQuestionsWithCache(
+        filterKey,
+        selectedKeywords,
+        { limit: PAGE_SIZE, offset: 0 },
+      );
       setQuestions(qs);
+      // Reset infinite-scroll state for the new view (filter change,
+      // refresh, or focus return all funnel through here).
+      setPage(0);
+      setHasMore(qs.length === PAGE_SIZE);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load questions');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedKeywords]);
+  }, [selectedKeywords, filterKey]);
+
+  // onEndReached handler: fetches the next page when the user scrolls
+  // close to the bottom of the list. Bailout conditions:
+  //   - loadingMore: in-flight fetch (FlatList fires onEndReached
+  //     multiple times during fast scroll; this debounces).
+  //   - !hasMore: previous page returned less than PAGE_SIZE, so we
+  //     know we're at the end.
+  //   - !questions.length: nothing rendered yet; the initial load
+  //     handles the first page.
+  // Failure mode: a thrown fetch leaves hasMore = true so the user
+  // can retry by continuing to scroll (or refresh) -- we don't
+  // pessimistically disable the feed on transient network errors.
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || questions.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const nextOffset = (page + 1) * PAGE_SIZE;
+      const more = await fetchSeekQuestionsWithCache(
+        filterKey,
+        selectedKeywords,
+        { limit: PAGE_SIZE, offset: nextOffset },
+      );
+      setQuestions((prev) => [...prev, ...more]);
+      setPage((p) => p + 1);
+      setHasMore(more.length === PAGE_SIZE);
+    } catch (e) {
+      console.warn('[discover] loadMore failed:', e);
+      // Do NOT set hasMore=false on error: user can scroll again to
+      // retry. setQuestions stays unchanged.
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, questions.length, page, filterKey, selectedKeywords]);
 
   // Re-fetch on every focus (initial mount + every time the user
   // returns to this tab). Keeps the question list + each card's
@@ -220,6 +276,15 @@ export default function DiscoverTab() {
               titleColor="rgba(255,255,255,0.6)"
             />
           }
+          onEndReached={() => void loadMore()}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator color="rgba(255,255,255,0.5)" />
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -309,6 +374,14 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 120,
+  },
+  // Stage 6 follow-up (infinite-scroll): footer slot below the last
+  // SeekQuestionCard. Renders an ActivityIndicator while loadMore
+  // is in flight; null otherwise (FlatList collapses it). The 20px
+  // padding gives the spinner some breathing room above the FAB.
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
   center: {
     flex: 1,
