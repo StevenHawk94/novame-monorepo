@@ -50,7 +50,7 @@ import {
 } from 'expo-iap';
 
 import { apiClient } from './api';
-import { invalidateMeStats } from './me-stats';
+import { refreshMeStats } from './me-stats';
 import { supabase } from './supabase';
 import {
   clearCachedSubscription,
@@ -557,15 +557,36 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   const tier = PRODUCT_TO_TIER[productId];
   const cycle = PRODUCT_TO_CYCLE[productId];
 
-  // Stage 5.IAP.x.bugfix: invalidate me-stats cache so any UI that
-  // reads it (Me modal usedThisMonth / planName / monthlyAnalyses)
-  // refetches fresh data on next access. The user-facing effect:
-  // upgrading/downgrading immediately reflects in Me page without
-  // having to wait for the 2s polling tick.
+  // Stage 6 follow-up (Me-page subscription regression): proactively
+  // refresh me-stats cache rather than just invalidating it.
+  //
+  // The old `invalidateMeStats()` only removed the MMKV entry and
+  // relied on the UI to re-fetch. This worked when Me modal was
+  // already mounted (its onPurchaseComplete listener ran fetchMeStats
+  // itself). But in the "publish-wisdom -> paywall" path the Me modal
+  // is NOT mounted at purchase time -- record.tsx pushed the paywall
+  // directly. So:
+  //   1) invalidateMeStats cleared the MMKV cache.
+  //   2) Me listener was unsubscribed (Me unmounted before paywall).
+  //   3) Paywall close -> user taps Me -> Me mounts ->
+  //      getCachedMeStats() returns null -> UI shows "--" placeholders
+  //      and "Wisdom Seeker" / "Free Plan" defaults for ~10s until
+  //      some other path (home-tab focus, etc.) reseeds the cache.
+  //
+  // Fix: this lib-level path always re-fetches the cache regardless
+  // of which UI surface is currently mounted. Fire-and-forget so it
+  // doesn't delay paywall close (consistent with record.tsx
+  // publish-side Promise.allSettled refresh batch behaviour).
   try {
-    invalidateMeStats();
-  } catch {
-    // best-effort
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (userId) {
+      void refreshMeStats(userId);
+    }
+  } catch (e) {
+    // best-effort -- console.warn rather than swallow silently so a
+    // sustained outage shows up in Metro logs.
+    console.warn('[iap] me-stats refresh failed:', e);
   }
 
   for (const cb of completeCallbacks) {
