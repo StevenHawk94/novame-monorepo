@@ -106,11 +106,24 @@ export async function GET(request) {
           .filter(Boolean)
       : []
 
+    // Stage 6 follow-up: infinite-scroll pagination. Mobile sends
+    // limit + offset on every fetch; default 20 with hard cap 100
+    // (mirrors /api/wisdoms route pattern). The partial index
+    // idx_seek_questions_published_created (migration 20260526000000)
+    // makes the ORDER BY ... LIMIT ... OFFSET path cheap as the
+    // table grows.
+    //
+    // Client uses questions.length === limit as the hasMore signal
+    // (Q-18.2 = B decision: no separate total count round-trip).
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
+
     let listQuery = supabase
       .from('seek_questions')
       .select('*, seek_question_cards(count)')
       .eq('is_published', true)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (keywordList.length > 0) {
       listQuery = listQuery.in('question_tag', keywordList)
