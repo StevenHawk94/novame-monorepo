@@ -118,11 +118,16 @@ export async function GET(request) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
+    // Ordering: display_order DESC (migration 20260526100000). Existing
+    // questions were one-time shuffled at migration time; new approved
+    // questions get max+1 via the DB trigger, so they land at the top
+    // of the feed naturally (DESC). created_at is preserved on the row
+    // for analytics/admin use but no longer drives the public feed.
     let listQuery = supabase
       .from('seek_questions')
       .select('*, seek_question_cards(count)')
       .eq('is_published', true)
-      .order('created_at', { ascending: false })
+      .order('display_order', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (keywordList.length > 0) {
