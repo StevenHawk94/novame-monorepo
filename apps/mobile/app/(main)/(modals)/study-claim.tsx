@@ -125,7 +125,7 @@ export default function StudyClaimModal() {
           <Text style={styles.tada}>🎉</Text>
           <Text style={styles.title}>Session Complete!</Text>
           <Text style={styles.subtitle}>
-            {charName} completed {result.studyHours}h {result.studyMins}m of life study
+            {charName} has dedicated {result.studyHours}h {result.studyMins}m to mastering your wisdom.
           </Text>
 
           <View style={styles.expCapsule}>
@@ -138,19 +138,7 @@ export default function StudyClaimModal() {
 
           <View style={styles.narrativeCard}>
             <Text style={styles.narrative}>
-              While you were in study mode,{' '}
-              <Text style={styles.narrativeBoldPurple}>
-                {result.totalSouls} lost souls
-              </Text>{' '}
-              passed by. I slipped them your{' '}
-              <Text style={styles.narrativeBoldWhite}>
-                '{result.cardKeyword}'
-              </Text>{' '}
-              card. Your resonance grew by{' '}
-              <Text style={styles.narrativeBoldGreen}>
-                +{result.resonanceBoost}
-              </Text>
-              .
+              {charName} has grown wiser by learning alongside you! They&apos;ve just uncovered a special daily quest to accelerate your growth. Complete it today!
             </Text>
           </View>
 
@@ -178,7 +166,7 @@ export default function StudyClaimModal() {
               pressed && { opacity: 0.85 },
             ]}
           >
-            <Text style={styles.buttonText}>Awesome! 🚀</Text>
+            <Text style={styles.buttonText}>Let&apos;s Do It! 🚀</Text>
           </Pressable>
         </View>
       ) : null}
