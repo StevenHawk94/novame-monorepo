@@ -34,18 +34,27 @@
 /**
  * EXP required to advance from level `lv` to `lv + 1`.
  *
- * 7-segment curve. Bumped level 1-5 in build 11 to slow new-user
- * progression so the first publish doesn't simultaneously trigger
- * the outfit-2 unlock modal and the free-tier paywall.
+ * Stage 6 follow-up: simplified from a 7-segment historical curve
+ * to a 2-segment linear formula:
+ *
+ *   L1-L49:  10 + lv * 10        -> L1=20, L5=60, L49=500
+ *   L50-L98: 500 (flat)
+ *   L99:     0 (cap)
+ *
+ * Cumulative at L50 is 13,240 EXP. At an assumed ~130 EXP/day
+ * steady-state income, this lands the median user at L50 in
+ * ~102 days (≈3.4 months). The L5=60 / cumulative-to-L5=200
+ * preserves the Stage 5.WR.2 modal-stack invariant: a typical
+ * first-publish bundle (~120 EXP) stays below the L5 outfit-2
+ * unlock threshold, so SkinUnlockModal and the free-tier
+ * paywall don't double-stack.
+ *
+ * Keep this in sync with packages/core/src/rules/exp.ts.
  */
 export function getExpNeeded(lv) {
-  if (lv <= 5) return 30 + (lv - 1) * 10
-  if (lv <= 15) return Math.round(50 + (lv - 6) * 4.44)
-  if (lv <= 25) return Math.round(120 + (lv - 16) * 8.89)
-  if (lv <= 40) return Math.round(220 + (lv - 26) * 12.86)
-  if (lv <= 50) return Math.round(420 + (lv - 41) * 13.33)
-  if (lv <= 90) return 800
-  return 1000
+  if (lv <= 49) return 10 + lv * 10
+  if (lv <= 98) return 500
+  return 0
 }
 
 /**

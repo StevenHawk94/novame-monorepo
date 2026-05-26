@@ -1,20 +1,36 @@
 /**
  * @novame/core/rules/exp
  *
- * EXP / level progression — 99 levels with tiered EXP curves.
+ * EXP / level progression — 99 levels, 2-segment linear curve.
  *
- *   Lv.1-5:   20-40,    step=5,  tier sum=150
- *   Lv.6-15:  50-90,    step≈4.44
- *   Lv.16-25: 120-200,  step≈8.89
- *   Lv.26-40: 220-400,  step≈12.86
- *   Lv.41-50: 420-540,  step≈13.33
- *   Lv.51-90: flat 800
- *   Lv.91-99: flat 1000
+ *   Lv.1-49:  linear step 10, expNeeded = 10 + lv*10
+ *             -> L1=20, L2=30, ..., L49=500
+ *   Lv.50-98: flat 500
+ *   Lv.99:    cap (no further progression)
+ *
+ * Design target (Stage 6 follow-up):
+ *   - L5 cumulative ≥ 120 EXP so a typical first publish (~120 EXP)
+ *     can't cross level 5 and trigger the outfit-2 unlock modal at
+ *     the same time as the free-tier paywall (Stage 5.WR.2 modal-
+ *     stack regression).
+ *   - L5 cumulative = 200 (20+30+40+50+60), well above the 120 floor.
+ *   - L50 cumulative = 13,240 EXP. With an assumed steady-state
+ *     ~130 EXP/day from daily tasks + occasional publishes, reaching
+ *     L50 takes ~102 days (≈3.4 months). Calibrated for the reduced
+ *     post-Stage-6 EXP sources (some grinding loops were removed).
+ *   - L50-L98 flat 500 EXP/level so the late-game pace is steady
+ *     and predictable (24,500 EXP across 49 levels ≈ 188 days at
+ *     130 EXP/day after L50). L99 is the cap.
+ *
+ * Formula simplification: L1-L49 collapse to a single expression
+ *   expNeeded(lv) = 10 + lv * 10
+ * which preserves the "round to 10" requirement and is trivially
+ * monotonic. The previous 7-segment curve (with Math.round and
+ * fractional steps like 4.44 / 8.89) was historical accretion and
+ * is replaced wholesale.
  *
  * EXP_TABLE is computed once at module load and frozen for the lifetime
  * of the process — treat it as a static lookup.
- *
- * Behavior preserved 1:1 from apps/api/src/lib/constants.js.
  */
 
 export type ExpRow = {
@@ -38,32 +54,20 @@ function buildExpTable(): readonly ExpRow[] {
 
   for (let lv = 1; lv <= 99; lv++) {
     let expNeeded: number
-    if (lv <= 5) {
-      // Stage 5.WR.2: bumped from `20 + (lv-1)*5` to `30 + (lv-1)*10`
-      // to slow early progression. With the old curve, a new user's
-      // first publish (~90 xp from a typical wisdom score) plus the
-      // 3 starter tasks (30 xp total) = ~120 xp, which crossed
-      // level 5 — the threshold for unlocking outfit 2. That meant
-      // the SkinUnlockModal would fire at the same moment as the
-      // free-tier quota-exhausted paywall, producing a confusing
-      // double-modal stack. With the new curve, level 5 requires
-      // 180 cumulative xp, so the first publish lands the user at
-      // level 3-4 instead. Level 5+ formula unchanged — the total
-      // xp to level 50 only increases by 70, so mid-game progression
-      // is preserved.
-      expNeeded = 30 + (lv - 1) * 10
-    } else if (lv <= 15) {
-      expNeeded = Math.round(50 + (lv - 6) * 4.44)
-    } else if (lv <= 25) {
-      expNeeded = Math.round(120 + (lv - 16) * 8.89)
-    } else if (lv <= 40) {
-      expNeeded = Math.round(220 + (lv - 26) * 12.86)
-    } else if (lv <= 50) {
-      expNeeded = Math.round(420 + (lv - 41) * 13.33)
-    } else if (lv <= 90) {
-      expNeeded = 800
+    if (lv <= 49) {
+      // Linear 10/step: L1=20, L2=30, ..., L49=500. The 200 EXP
+      // accumulated by L5 keeps the first-publish + first-tasks
+      // bundle (~120 EXP) safely below L5, preserving the modal-
+      // stack invariant from the Stage 5.WR.2 fix.
+      expNeeded = 10 + lv * 10
+    } else if (lv <= 98) {
+      // L50-L98 plateau. 500/level chosen to seamlessly continue
+      // from L49=500 with no step discontinuity.
+      expNeeded = 500
     } else {
-      expNeeded = 1000
+      // L99 is the cap. expNeeded = 0 signals "no further progression";
+      // getLevelFromExp() returns progress=1 at this row.
+      expNeeded = 0
     }
 
     cumulative += expNeeded
