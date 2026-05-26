@@ -17,6 +17,11 @@ import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
 import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
 import { clearCachedConfig, fetchAppConfig } from '@/lib/app-config-api';
 import { clearCachedWisdomCenter } from '@/lib/wisdom-center-api';
+import {
+  markRefreshedNow,
+  refreshAllCaches,
+  shouldRefreshAll,
+} from '@/lib/cache-refresh-all';
 import { fillProductAssets } from '@/lib/asset-cache';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
@@ -97,7 +102,16 @@ export default function RootLayout() {
     let cancelled = false;
 
     const finish = () => {
-      if (!cancelled) setIsReady(true);
+      if (!cancelled) {
+        // Q-16.3 = P: stamp the global refresh timestamp now that
+        // cold-start prewarm has run (or timed out). This prevents
+        // the first AppState 'active' tick after cold start from
+        // immediately re-running an 8-cache refresh; the prewarm
+        // already covered the 4 most UI-critical caches, the rest
+        // will fill on first tab focus.
+        markRefreshedNow();
+        setIsReady(true);
+      }
     };
 
     const timeoutId = setTimeout(() => {
@@ -176,6 +190,22 @@ export default function RootLayout() {
     const handleAppStateChange = (state: AppStateStatus) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
+        // Gap A (Stage 6 Wisdom Insight series): when the app
+        // returns from background after 30+ minutes, every cache
+        // the user pulled before backgrounding is potentially
+        // stale. Fire a silent global refresh so any tab the user
+        // opens next reads hot data. Fire-and-forget; no UI
+        // loading per Q-A2 = (iii) decision. 30-min threshold +
+        // user-must-be-signed-in gate are inside shouldRefreshAll
+        // and the getCurrentSession check below.
+        if (shouldRefreshAll()) {
+          void getCurrentSession().then((session) => {
+            const userId = session?.user?.id;
+            if (userId) {
+              void refreshAllCaches(userId);
+            }
+          });
+        }
       } else {
         supabase.auth.stopAutoRefresh();
       }
