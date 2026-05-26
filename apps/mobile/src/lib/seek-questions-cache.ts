@@ -72,3 +72,33 @@ export async function fetchSeekQuestionsWithCache(
   setCachedSeekQuestions(filterKey, questions);
   return questions;
 }
+
+/**
+ * Stage 6 publish-side prefetch + AppState foreground refresh helper.
+ *
+ * Combines invalidate (all filter slots) + immediate fetch of the
+ * default unfiltered feed. Per Q-G1 decision (γ): the default
+ * unfiltered feed covers ~80% of user sessions; users who applied
+ * a filter will see fresh data the next time they navigate back to
+ * Discover (the tab's useFocusEffect refetches the active filter).
+ *
+ * Used by:
+ *   - record.tsx publish success batch (commit 15): publish creates
+ *     new cards across multiple keywords, every question's
+ *     wisdomCount badge is potentially stale.
+ *   - _layout.tsx AppState foreground refresh (commit 16): 30+
+ *     minute background return triggers a global cache refresh;
+ *     this helper is one of the batch entries.
+ *
+ * fire-and-forget safe: never throws.
+ */
+export async function refreshSeekQuestions(): Promise<void> {
+  // invalidateSeekQuestions clears every filter-scoped cache slot;
+  // we then re-fetch only the default unfiltered view.
+  invalidateSeekQuestions();
+  try {
+    await fetchSeekQuestionsWithCache('', []);
+  } catch (e) {
+    console.warn('[refreshSeekQuestions]', e);
+  }
+}
