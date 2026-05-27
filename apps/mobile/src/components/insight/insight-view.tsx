@@ -474,18 +474,17 @@ export function InsightView({
         <View style={styles.peerSection}>
           <View style={styles.peerBubble}>
             <Text style={styles.peerBubbleText}>{peerComment}</Text>
-            <View style={styles.peerBubbleTail} />
-          </View>
-          <View style={styles.peerAttribution}>
-            <RNImage
-              source={PEER_AVATAR}
-              style={styles.peerAvatar}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
-            <Text style={styles.peerAttributionText}>
-              Words from {charName}
-            </Text>
+            <View style={styles.peerAttribution}>
+              <RNImage
+                source={PEER_AVATAR}
+                style={styles.peerAvatar}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+              <Text style={styles.peerAttributionText}>
+                Words from {charName}
+              </Text>
+            </View>
           </View>
         </View>
       ) : null}
@@ -683,7 +682,7 @@ const styles = StyleSheet.create({
   },
   communityBanner: {
     backgroundColor: '#7C3AED',
-    paddingVertical: 10,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   communityBannerText: {
@@ -692,8 +691,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
   },
   communityBody: {
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
   },
   communityRow: {
     flexDirection: 'row',
@@ -702,7 +701,7 @@ const styles = StyleSheet.create({
   },
   communityBigNumber: {
     color: '#EC4899',
-    fontSize: 38,
+    fontSize: 48,
     fontFamily: 'Inter_900Black',
     marginRight: 16,
   },
@@ -769,7 +768,7 @@ const styles = StyleSheet.create({
   },
   emotionBigText: {
     color: '#EC4899',
-    fontSize: 36,
+    fontSize: 44,
     fontFamily: 'Inter_900Black',
     marginBottom: 2,
   },
@@ -906,33 +905,25 @@ const styles = StyleSheet.create({
   peerBubble: {
     backgroundColor: '#EDE6FE',
     borderRadius: 18,
-    paddingVertical: 16,
+    paddingTop: 18,
+    paddingBottom: 16,
     paddingHorizontal: 18,
-    marginBottom: 18,
-    position: 'relative',
   },
   peerBubbleText: {
     color: '#3D2A66',
     fontSize: 14,
     lineHeight: 22,
     fontFamily: 'Inter_400Regular',
+    marginBottom: 16,
   },
-  // Speech-tail: a small rotated square clipped half-inside the
-  // bubble's bottom-left corner to fake a chat-tail without SVG.
-  peerBubbleTail: {
-    position: 'absolute',
-    bottom: -8,
-    left: 28,
-    width: 16,
-    height: 16,
-    backgroundColor: '#EDE6FE',
-    transform: [{ rotate: '45deg' }],
-  },
+  // Stage 6 follow-up (commit 32): avatar + 'Words from {charName}'
+  // moved INSIDE the bubble per design figure. Earlier version had
+  // them outside below the bubble with a speech-tail; new figure
+  // doesn't use a tail and embeds attribution within the bubble.
   peerAttribution: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingLeft: 4,
   },
   peerAvatar: {
     width: 28,
