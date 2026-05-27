@@ -6,8 +6,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Font from 'expo-font';
 import {
-  useFonts,
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
@@ -101,22 +101,44 @@ export default function RootLayout() {
   // a no-op on the onAuthStateChange listener.
   const [isReady, setIsReady] = useState(false);
 
-  // Stage 6 follow-up (commit 31): load Inter font family at startup.
+  // Stage 6 follow-up (commit 31 + commit 33): load Inter font
+  // family at startup using expo-font's imperative Font.loadAsync,
+  // NOT @expo-google-fonts's useFonts hook.
+  //
+  // Why not useFonts: pnpm pulled in a duplicate React 18.3.1 copy
+  // for @expo-google-fonts/inter@0.4.2 (whose package.json declares
+  // no react peerDependency), and React refuses to share fiber state
+  // across two React copies. The result was a hard crash on every
+  // app launch ("Invalid hook call: useState of null") because
+  // useFonts's internal useState was being called against the wrong
+  // React instance. Font.loadAsync is a pure function not bound to
+  // any React internals, so it sidesteps the dual-React issue.
+  //
   // The codebase has 100+ usages of fontFamily: 'Inter_*' across all
-  // screens, but @expo-google-fonts/inter was previously imported as
-  // a package.json dependency only -- never actually loaded via
-  // useFonts. iOS silently fell back to SF Pro for every Inter_*
-  // reference, which explains why the AI insight UI looked "thinner
-  // than the design intends" even with Inter_900Black declared.
-  // Loading the full weight set here makes every existing fontFamily
-  // declaration suddenly render the real Inter glyphs.
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_900Black,
-  });
+  // screens. Before this load, iOS silently fell back to SF Pro for
+  // every reference -- explaining why the AI insight UI looked
+  // "thinner than the design intends" even with Inter_900Black
+  // declared. After this load, every existing fontFamily declaration
+  // renders the real Inter glyphs.
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+  useEffect(() => {
+    Font.loadAsync({
+      Inter_400Regular,
+      Inter_500Medium,
+      Inter_600SemiBold,
+      Inter_700Bold,
+      Inter_900Black,
+    })
+      .then(() => setFontsLoaded(true))
+      .catch((err) => {
+        // Graceful degradation: if font load fails (offline, asset
+        // corrupted, etc), unblock the app so users still get a
+        // working UI with iOS system-font fallback. The dev console
+        // captures the error for triage.
+        console.warn('[_layout] Font.loadAsync failed:', err);
+        setFontsLoaded(true);
+      });
+  }, []);
 
   // Cold-start prewarm. Runs once on mount, independent of the
   // auth-state-change effect below. Promise.allSettled (not all)
