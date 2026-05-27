@@ -53,6 +53,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { getCachedCharacterState } from '@/lib/character-state';
 import type {
   AspireImpact,
   ReflectiveQuestion,
@@ -86,6 +87,13 @@ import type {
 // alongside this code deploy. R2 file size should mirror the
 // bundle file (~24 KB at time of writing).
 const CARDS_BACKGROUND = { uri: 'https://media.novameapp.com/cards-background.webp' };
+
+// Stage 6 follow-up: avatar for the new Truth-Telling Peer block
+// (Section C). Reuses the app's adaptive-icon (the same purple cat
+// graphic that ships with the app bundle) so no new asset upload
+// or R2 plumbing is needed. require() at module scope -- resolved
+// once at app start, cached by Metro thereafter.
+const PEER_AVATAR = require('../../../assets/adaptive-icon.png');
 const EMOTION_IMAGES = {
   sad: require('../../../assets/images/insight/sad.webp'),
   happy: require('../../../assets/images/insight/happy.webp'),
@@ -315,6 +323,21 @@ export function InsightView({
     [communityCount],
   );
 
+  // Stage 6 follow-up: Section C Truth-Telling Peer block. Renders
+  // a chat-bubble between Block 3 (Inner Profile) and Block 4
+  // (Reframe) when card.peer_comment is non-empty. charName comes
+  // from MMKV cache (set during onboarding and refreshed on every
+  // /api/character-state fetch), so InsightView doesn't need a new
+  // prop -- both record.tsx PhaseInsight and wisdom-insight.tsx My
+  // Logs reopen have the same MMKV cache available.
+  const peerComment = card?.peer_comment ?? null;
+  const peerCommentVisible =
+    typeof peerComment === 'string' && peerComment.trim().length > 0;
+  const charName = useMemo(
+    () => getCachedCharacterState()?.charName?.trim() || 'your companion',
+    [],
+  );
+
   // Aspire bar fill clamped 0-100.
   const aspireFillPct = aspireImpact
     ? Math.max(0, Math.min(100, aspireImpact.currentScore))
@@ -438,6 +461,32 @@ export function InsightView({
         </View>
         </View>
       </View>
+
+      {/* ============================================================
+          Block 3.5: Truth-Telling Peer (Section C of the AI prompt).
+          Chat-bubble carrying a 500-700 char Reddit-style top-voted
+          comment, branched by emotional state. Null-gated -- legacy
+          wisdoms (pre-migration 20260527000000) skip the block.
+          ============================================================ */}
+      {peerCommentVisible ? (
+        <View style={styles.peerSection}>
+          <View style={styles.peerBubble}>
+            <Text style={styles.peerBubbleText}>{peerComment}</Text>
+            <View style={styles.peerBubbleTail} />
+          </View>
+          <View style={styles.peerAttribution}>
+            <RNImage
+              source={PEER_AVATAR}
+              style={styles.peerAvatar}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+            />
+            <Text style={styles.peerAttributionText}>
+              Words from {charName}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       {/* ============================================================
           Block 4: 3-part Reframe (or legacy single-section fallback).
@@ -850,5 +899,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_500Medium',
     lineHeight: 21,
+  },
+
+  // ==========================================================
+  // Block 3.5: Truth-Telling Peer Comment (Section C)
+  // Light-purple chat-bubble + tail + avatar + attribution row.
+  // ==========================================================
+  peerSection: {
+    marginTop: 18,
+    marginBottom: 18,
+    paddingHorizontal: 18,
+  },
+  peerBubble: {
+    backgroundColor: '#EDE6FE',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 18,
+    position: 'relative',
+  },
+  peerBubbleText: {
+    color: '#3D2A66',
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: 'Inter_400Regular',
+  },
+  // Speech-tail: a small rotated square clipped half-inside the
+  // bubble's bottom-left corner to fake a chat-tail without SVG.
+  peerBubbleTail: {
+    position: 'absolute',
+    bottom: -8,
+    left: 28,
+    width: 16,
+    height: 16,
+    backgroundColor: '#EDE6FE',
+    transform: [{ rotate: '45deg' }],
+  },
+  peerAttribution: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingLeft: 4,
+  },
+  peerAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  peerAttributionText: {
+    color: '#D946EF',
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
   },
 });
