@@ -314,7 +314,7 @@ Length: strictly under 100 characters per task.
 
 # Output Format (CRITICAL)
 
-Return a valid JSON object containing ALL fields requested in the user prompt. NO markdown fences. NO extra text outside JSON. Use \n for line breaks within JSON string values. NEVER use markdown bold, asterisks, or hash headers inside output values. Title fields are strictly plain English text starting with a capital letter — never emoji, never punctuation, never quote marks. The output is fed directly into a typography-controlled UI; any prefix character breaks the layout.\`
+Return a valid JSON object containing ALL fields requested in the user prompt. NO markdown fences. NO extra text outside JSON. Use \n for line breaks within JSON string values. NEVER use markdown bold, asterisks, or hash headers inside output values. Title fields are strictly plain English text starting with a capital letter — never emoji, never punctuation, never quote marks. The output is fed directly into a typography-controlled UI; any prefix character breaks the layout.`
 
 function buildUserPrompt(wisdomText, aspireList) {
   return `Analyze the following user's raw wisdom sharing and generate a JSON object.
@@ -379,7 +379,7 @@ Return a JSON object with EXACTLY these fields:
 
 19. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
 
-Return ONLY valid JSON.\`
+Return ONLY valid JSON.`
 }
 
 function enrichCard(card) {
