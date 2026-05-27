@@ -158,6 +158,10 @@ export default function KeywordDetailModal() {
             // resonance; NULL hides Block 4a in InsightView (matches
             // the WisdomCardEmbed contract).
             community_count: null,
+            // Stage 6 follow-up: orphan starter cards predate Section C
+            // peer_comment generation; NULL hides the new chat-bubble
+            // block in InsightView (matches WisdomCardEmbed contract).
+            peer_comment: null,
           },
         }));
 

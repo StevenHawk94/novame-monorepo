@@ -78,6 +78,11 @@ export type WisdomCardEmbed = {
   // persisted on wisdom_cards.community_count (migration 20260525123624).
   // NULL for historical wisdoms — Block 4a row hides in that case.
   community_count: number | null;
+  // Stage 6 follow-up: per-wisdom Section C "Truth-Telling Peer"
+  // text (500-700 chars). Persisted on wisdom_cards.peer_comment
+  // (migration 20260527000000). NULL for pre-migration wisdoms;
+  // InsightView hides the new chat-bubble block when null.
+  peer_comment: string | null;
 };
 
 export type WisdomLog = {

@@ -217,6 +217,11 @@ export type InsightCardData = {
   // here via the same InsightCardData type. InsightView Block 4a
   // hides when null.
   community_count?: number | null;
+  // Stage 6 follow-up: Section C "Truth-Telling Peer" text. Same
+  // optionality semantics as community_count -- nullable for pre-
+  // migration rows. InsightView's new chat-bubble block (rendered
+  // between Block 3 and Block 4) hides when null/empty.
+  peer_comment?: string | null;
 };
 
 /**
