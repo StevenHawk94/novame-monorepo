@@ -27,7 +27,7 @@ function getSupabase() {
  *       card: { id, keyword_id, quote_short, insight_full,
  *               wisdom_emotion, card_b, card_c, task_1, task_2,
  *               reframe, reflective_question, aspire_impacts,
- *               community_count } | null
+ *               community_count, peer_comment } | null
  *     }],
  *     total: number
  *   }
@@ -77,7 +77,11 @@ export async function GET(request) {
         // publish time; My Logs Insight reads it via this select to
         // render InsightView Block 4a -- NULL for historical
         // pre-migration wisdoms (Block 4a hides on null).
-        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_emotion, card_b, card_c, task_1, task_2, reframe, reflective_question, aspire_impacts, community_count')
+        // peer_comment (Stage 6 follow-up, commit 29) is the
+        // Section C "Truth-Telling Peer" text block rendered between
+        // Block 3 (Inner Profile) and Block 4 (Reframe). NULL for
+        // pre-migration wisdoms; mobile InsightView hides the block.
+        .select('id, wisdom_id, keyword_id, quote_short, insight_full, wisdom_emotion, card_b, card_c, task_1, task_2, reframe, reflective_question, aspire_impacts, community_count, peer_comment')
         .in('wisdom_id', ids)
 
       if (cErr) {
@@ -118,6 +122,11 @@ export async function GET(request) {
             // same value the user saw at publish time. NULL for
             // historical rows; mobile InsightView hides the row.
             community_count: card.community_count,
+            // Stage 6 follow-up: per-wisdom peer_comment (Section C
+            // "Truth-Telling Peer" text). 500-700 char Reddit-style
+            // commentary anchored to the wisdom at publish time.
+            // NULL for historical rows; InsightView hides the block.
+            peer_comment: card.peer_comment,
           }
         : null
       return {
