@@ -39,7 +39,10 @@ export type ReframeData = {
  * case.
  */
 export type ReflectiveQuestion = {
-  validation: string;
+  // Stage 6 follow-up (commit 30): Section E now generates only the
+  // question. validation kept optional for legacy rows whose
+  // reflective_question jsonb still carries it; new wisdoms omit it.
+  validation?: string;
   question: string;
 };
 

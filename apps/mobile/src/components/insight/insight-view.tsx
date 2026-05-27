@@ -23,7 +23,9 @@
  *      4c. Big emotion keyword + emotion illustration
  *   5. 3-part Reframe (Mirror Hook / Flipped Lens / Permission Slip)
  *      rendered as purple-titled prose sections (no card chrome)
- *   6. "Ask Yourself This" dark card with validation + question
+ *   6. "Ask Yourself This" dark card with the question only.
+ *      (validation preamble removed in commit 30; legacy rows skip
+ *      the validation field even when present.)
  *   7. "Today's Missions to Grow" purple card with task_1 + task_2
  *
  * Legacy compatibility:
@@ -530,7 +532,7 @@ export function InsightView({
       {/* ============================================================
           Section 6: Ask Yourself This (conditional)
           ============================================================ */}
-      {reflective && (reflective.validation || reflective.question) ? (
+      {reflective && reflective.question ? (
         <View style={styles.askCard}>
           <View style={styles.askHeader}>
             <View style={styles.askIconCircle}>
@@ -538,12 +540,10 @@ export function InsightView({
             </View>
             <Text style={styles.askTitle}>Ask Yourself This</Text>
           </View>
-          {reflective.validation ? (
-            <Text style={styles.askValidation}>{reflective.validation}</Text>
-          ) : null}
-          {reflective.question ? (
-            <Text style={styles.askQuestion}>{reflective.question}</Text>
-          ) : null}
+          {/* Stage 6 follow-up (commit 30): validation preamble removed.
+              Only the question renders now. Legacy wisdom rows may
+              still have reflective.validation set; we ignore it. */}
+          <Text style={styles.askQuestion}>{reflective.question}</Text>
         </View>
       ) : null}
 
@@ -838,13 +838,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Inter_700Bold',
-  },
-  askValidation: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 21,
-    marginBottom: 8,
   },
   askQuestion: {
     color: '#FFFFFF',

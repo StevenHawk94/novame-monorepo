@@ -42,10 +42,12 @@
  *     suicide, violence, or illegal acts, the AI freezes all standard
  *     sections and emits a single de-escalation paragraph into
  *     insight_full only. Other text fields become empty strings.
- *   - reflective_question_validation + reflective_question preserved as
- *     separate fields (Section E maps to both), so the existing DB
- *     jsonb reflective_question schema {validation, question} and the
- *     mobile InsightView Block 5 rendering stay 1:1 compatible.
+ *   - Section E now emits ONLY the reflective_question field
+ *     (no validation preamble). DB jsonb reflective_question is
+ *     still {validation?, question} for legacy-row compatibility;
+ *     new wisdoms write {question} only. InsightView Block 5
+ *     renders just the question -- the optional validation field
+ *     on legacy rows is silently skipped.
  */
 
 import { callAI, parseAIJson } from '@/lib/ai'
@@ -105,7 +107,7 @@ Each section advances the emotional arc. No section repeats the emotional ground
 - Section B (quote_short): Bumper sticker. Distill the whole truth into one line.
 - Section C (peer_comment): Close friend who tells it straight. Zoom in — make the person feel seen and protected.
 - Section D (3-part Reframing): Logic-first behavioral mentor. Elevate to mechanism — explain why this happens.
-- Section E (reflective_question + validation): The question that won't let you hide. Seal the escape route — make the freedom real.
+- Section E (reflective_question): The question that won't let you hide. Seal the escape route — make the freedom real.
 - Section F (task_1 + task_2): Bespoke behavioral coach. Move the body — not just the mind.
 
 # RULE 4 — Intensity Calibration (1-10 Scale, Mandatory)
@@ -242,9 +244,7 @@ Part 3 — The Permission Slip
 
 ---
 
-### Section E — Self-Reflection Question — maps to "reflective_question_validation" + "reflective_question"
-
-reflective_question_validation: 1-2 sentences. A grounded, empathetic validation of their struggle (negative emotional state) or warm validation of their positive news (positive state). Direct, not gushing.
+### Section E — Self-Reflection Question — maps to "reflective_question"
 
 reflective_question: ONE single provocative question ending with a question mark. No preamble. No "Ask yourself this." No comforting intro inside the question itself. Goes deeper than surface reflection. Lingers in their mind. Has no "right answer." Guides them from "victim" to "active creator."
 
@@ -345,9 +345,7 @@ Return a JSON object with EXACTLY these fields:
 
 10. "permission_slip_body": Section D Part 3 body (200-400 characters). ONE punchy closing STATEMENT that tells them what this new mechanical perspective authorizes them to do, drop, or feel right now.
 
-11. "reflective_question_validation": Section E first half — 1-2 sentences. Grounded empathetic validation (negative) OR warm brief validation (positive). Direct, not gushing.
-
-12. "reflective_question": Section E second half — ONE single provocative deep question ending with a question mark. No preamble inside the question. Strictly under 150 characters. Route by emotional state:
+11. "reflective_question": Section E — ONE single provocative deep question ending with a question mark. No preamble inside the question. Strictly under 150 characters. Route by emotional state:
     - State 1 Burnout: choice to stay stuck.
     - State 2 Shame: identity under the shame.
     - State 3 Overthinking: action gap.
@@ -357,7 +355,7 @@ Return a JSON object with EXACTLY these fields:
     - State 7 Ordinary Drift: open curiosity only.
     - Conflict Emotion: avoided half.
 
-13. "wisdom_emotion": ONE fine-grained emotion keyword that best describes the mood. Choose exactly ONE from this list:
+12. "wisdom_emotion": ONE fine-grained emotion keyword that best describes the mood. Choose exactly ONE from this list:
     Sad: Discouraged, Bitter, Sad, Apathetic, Disappointed, Dull, Powerless, Upset, Distraught
     Happy: Radiant, Overjoyed, Proud, Fulfilled, Delighted, Joyful, Elated, Hopeful, Optimistic, Connected, Happy, Cheerful, Grateful, Pleasant
     Excited: Thrilled, Pumped, Triumphant, Energized, Motivated, Empowered, Ecstatic, Inspired, Exhilarated, Driven, Buzzing, On Fire, Glowing
@@ -367,17 +365,17 @@ Return a JSON object with EXACTLY these fields:
     Fine: Neutral, Composed, Simple, Mellow, Mild, Grounded, Unbothered, Soft, Balanced, Even, Unemotional, Easy, Present, Low-key, Plain, Steady, Quiet, Meh
     Angry: Resentful, Irritated, Frustrated, Enraged, Outraged, Agitated, Tense, Furious
 
-14. "task_1": Section F first task — The Immediate Pivot (under 100 characters). 2-minute physical tactile action. Must integrate into current ordinary behavior. NO clichés (drinking water, washing face, deep breathing, sky-looking, journaling, meditating, desk-clearing). Calibrate by intensity (1-3 gentle/playful, 4-6 gentle pivot, 7-10 or grief = passive/restorative; State 7 = noticing).
+13. "task_1": Section F first task — The Immediate Pivot (under 100 characters). 2-minute physical tactile action. Must integrate into current ordinary behavior. NO clichés (drinking water, washing face, deep breathing, sky-looking, journaling, meditating, desk-clearing). Calibrate by intensity (1-3 gentle/playful, 4-6 gentle pivot, 7-10 or grief = passive/restorative; State 7 = noticing).
 
-15. "task_2": Section F second task — The Day-Long Experiment (under 100 characters). 24-hour behavioral habit using "When [trigger] happens, immediately execute [action]" loop. Intensity >= 7 or State 5: replace with single soft noticing habit. State 7 / Intensity 1-2: replace with gentle observation experiment.
+14. "task_2": Section F second task — The Day-Long Experiment (under 100 characters). 24-hour behavioral habit using "When [trigger] happens, immediately execute [action]" loop. Intensity >= 7 or State 5: replace with single soft noticing habit. State 7 / Intensity 1-2: replace with gentle observation experiment.
 
-16. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply.
+15. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply.
 
-17. "task_1_keyword": If task_1 links to a keyword from aspire_impacts with "negative" direction, set to that keyword string. Otherwise "".
+16. "task_1_keyword": If task_1 links to a keyword from aspire_impacts with "negative" direction, set to that keyword string. Otherwise "".
 
-18. "task_2_keyword": Same logic for task_2.
+17. "task_2_keyword": Same logic for task_2.
 
-19. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
+18. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
 
 Return ONLY valid JSON.`
 }
@@ -465,7 +463,10 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   // Stage 6 Wisdom Insight redesign: assemble new jsonb columns.
   // `reframe` = 3-part Core Reframing (mirror_hook / flipped_lens /
   // permission_slip), each with {title, body}.
-  // `reflective_question` = {validation, question}.
+  // `reflective_question` = {question} (Stage 6 follow-up commit 30
+  // dropped the validation field -- legacy rows may still carry
+  // {validation, question} and ReflectiveQuestion type marks
+  // validation optional for backward read compatibility).
   const reframe = {
     mirror_hook: {
       title: result.mirror_hook_title || '',
@@ -480,8 +481,12 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       body: result.permission_slip_body || '',
     },
   }
+  // Stage 6 follow-up (commit 30): Section E now emits only the
+  // question -- no validation preamble. Legacy wisdom rows on the
+  // jsonb column may still carry a 'validation' field; mobile
+  // ReflectiveQuestion type marks it optional so legacy rows
+  // remain readable, but new wisdoms write {question} only.
   const reflectiveQuestion = {
-    validation: result.reflective_question_validation || '',
     question: result.reflective_question || '',
   }
 
