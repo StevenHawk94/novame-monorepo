@@ -711,6 +711,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter_500Medium',
     lineHeight: 18,
+    textAlign: 'right',
   },
 
   // 3b Aspire bar
@@ -725,7 +726,7 @@ const styles = StyleSheet.create({
   },
   aspireBarTrack: {
     flex: 1,
-    height: 22,
+    height: 28,
     backgroundColor: '#FCE7F3',
     borderRadius: 999,
     overflow: 'hidden',
@@ -746,9 +747,9 @@ const styles = StyleSheet.create({
   },
   aspireScoreText: {
     color: '#EC4899',
-    fontSize: 22,
+    fontSize: 44,
     fontFamily: 'Inter_900Black',
-    minWidth: 56,
+    minWidth: 84,
     textAlign: 'right',
   },
   aspireLabel: {
@@ -899,7 +900,7 @@ const styles = StyleSheet.create({
   // ==========================================================
   peerSection: {
     marginTop: 18,
-    marginBottom: 18,
+    marginBottom: 32,
     paddingHorizontal: 18,
   },
   peerBubble: {
