@@ -6,6 +6,14 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
@@ -93,6 +101,23 @@ export default function RootLayout() {
   // a no-op on the onAuthStateChange listener.
   const [isReady, setIsReady] = useState(false);
 
+  // Stage 6 follow-up (commit 31): load Inter font family at startup.
+  // The codebase has 100+ usages of fontFamily: 'Inter_*' across all
+  // screens, but @expo-google-fonts/inter was previously imported as
+  // a package.json dependency only -- never actually loaded via
+  // useFonts. iOS silently fell back to SF Pro for every Inter_*
+  // reference, which explains why the AI insight UI looked "thinner
+  // than the design intends" even with Inter_900Black declared.
+  // Loading the full weight set here makes every existing fontFamily
+  // declaration suddenly render the real Inter glyphs.
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_900Black,
+  });
+
   // Cold-start prewarm. Runs once on mount, independent of the
   // auth-state-change effect below. Promise.allSettled (not all)
   // so one slow / failing fetch doesn't drag the others. The
@@ -177,13 +202,20 @@ export default function RootLayout() {
   // before hideAsync triggers — avoids a 1-frame blank window between
   // splash hide and first paint.
   useEffect(() => {
-    if (isReady) {
+    // Stage 6 follow-up (commit 31): wait for BOTH prewarm completion
+    // AND font load before hiding splash. If we hid splash before
+    // fonts loaded, the first frame would paint with SF Pro fallback
+    // glyphs, then visibly reflow once Inter arrived -- a noticeable
+    // flash for the user. The font loads from local bundle assets
+    // (already downloaded with the app binary), so this adds only a
+    // few ms to splash duration.
+    if (isReady && fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {
         // Already hidden (e.g. preventAutoHideAsync returned false on
         // start). Nothing to do.
       });
     }
-  }, [isReady]);
+  }, [isReady, fontsLoaded]);
 
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
