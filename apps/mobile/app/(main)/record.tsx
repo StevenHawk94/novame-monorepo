@@ -1845,12 +1845,22 @@ function PhasePublishing({
 
         // Stage 6: compute Aspire progress-bar data from response.
         // The server returned the *post-update* aspire_scores snapshot
-        // alongside the card. We pick aspire_impacts[0] (the AI's
-        // most-relevant impact for this wisdom) and look up its
-        // current score in the snapshot.
+        // alongside the card.
+        //
+        // Stage 6 follow-up (commit 38): prefer the NEGATIVE impact
+        // when one exists. A publish carries at most one negative
+        // (commit 36 backstop) plus any positives, and the backstop
+        // orders them [...positives, negative] -- so impacts[0] was
+        // always a positive whenever both were present, hiding the
+        // decline the user actually needs to see. The negative is the
+        // actionable one: it dropped -2 AND it's the word both daily
+        // tasks are bound to, so surfacing it tells the user exactly
+        // which trait to earn back. Falls back to the first impact
+        // (a positive) when there's no decline this publish.
         const impacts = response.card?.aspire_impacts ?? [];
-        if (impacts.length > 0 && response.aspireScores) {
-          const top = impacts[0];
+        const top =
+          impacts.find((i) => i.direction === 'negative') ?? impacts[0];
+        if (top && response.aspireScores) {
           const currentScore = response.aspireScores[top.keyword] ?? 70;
           setPublishedAspireImpact({
             keyword: top.keyword,

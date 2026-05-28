@@ -128,7 +128,13 @@ export default function WisdomInsightModal() {
   // scores dict (rare, only if user just removed it from Growth Center
   // pencil and the AI matched it on an old publish — in that case 70
   // is the seed default everywhere else, used here for consistency).
-  const topImpact = payload?.card?.aspire_impacts?.[0] ?? null;
+  // Stage 6 follow-up (commit 38): match record.tsx -- prefer the
+  // negative impact when present so My Logs reopen shows the SAME
+  // trait (the declining, task-bound one) the user saw at publish
+  // time, not a positive that happened to sort first in the array.
+  const impacts = payload?.card?.aspire_impacts ?? [];
+  const topImpact =
+    impacts.find((i) => i.direction === 'negative') ?? impacts[0] ?? null;
   const aspireImpact: AspireImpactDisplay | null =
     topImpact && aspireScores
       ? {
