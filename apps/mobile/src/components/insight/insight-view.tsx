@@ -258,6 +258,12 @@ export type AspireImpactDisplay = {
   // misleading; only the current score and keyword label render).
   // record.tsx (post-publish) sets +2 / -2; wisdom-insight.tsx sets null.
   deltaPercent: number | null;
+  // Stage 6 follow-up (commit 40): drives the bar fill color (green
+  // for growth, red/pink for decline). Always present even when
+  // deltaPercent is null (My Logs reopen) so the color persists on
+  // re-view -- direction comes from card.aspire_impacts, which is
+  // stored, unlike the publish-time delta.
+  direction: 'positive' | 'negative';
   currentScore: number; // 0-100, drives the progress bar fill width
 };
 
@@ -455,7 +461,18 @@ export function InsightView({
             >
               <View style={styles.aspireBarRow}>
                 <View style={styles.aspireBarTrack}>
-                  <View style={[styles.aspireBarFill, { width: `${fillPct}%` }]}>
+                  <View
+                    style={[
+                      styles.aspireBarFill,
+                      {
+                        width: `${fillPct}%`,
+                        backgroundColor:
+                          impact.direction === 'positive'
+                            ? '#00BF63'
+                            : '#F20C78',
+                      },
+                    ]}
+                  >
                     {impact.deltaPercent != null ? (
                       <Text style={styles.aspireDeltaInBar}>{deltaStr}</Text>
                     ) : null}
@@ -744,8 +761,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   aspireBarFill: {
+    // backgroundColor is supplied inline per impact.direction
+    // (commit 40): green #00BF63 for positive, red/pink #F20C78 for
+    // negative. No static color here.
     height: '100%',
-    backgroundColor: '#7C3AED',
     borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',

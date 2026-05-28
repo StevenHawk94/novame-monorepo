@@ -1870,6 +1870,7 @@ function PhasePublishing({
             impacts.map((i) => ({
               keyword: i.keyword,
               deltaPercent: i.direction === 'positive' ? 2 : -2,
+              direction: i.direction,
               currentScore: scoresSnap[i.keyword] ?? 70,
             })),
           );

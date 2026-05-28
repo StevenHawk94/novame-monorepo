@@ -144,6 +144,7 @@ export default function WisdomInsightModal() {
       ? impacts.map((i) => ({
           keyword: i.keyword,
           deltaPercent: null,
+          direction: i.direction,
           currentScore: aspireScores[i.keyword] ?? 70,
         }))
       : [];
