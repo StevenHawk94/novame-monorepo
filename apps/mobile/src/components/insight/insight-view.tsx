@@ -265,7 +265,10 @@ export type InsightViewProps = {
   card: InsightCardData | null;
   emotion: string;
   cardCollection: CardCollectionInfo | null;
-  aspireImpact: AspireImpactDisplay | null;
+  // Stage 6 follow-up (commit 39): now an array of up to 3 impacts
+  // (was a single impact). Renders one Aspire bar per entry.
+  // Empty array = no Aspire section shown.
+  aspireImpacts: AspireImpactDisplay[];
   // Stage 6 Bug 3 fix: per-wisdom server-rolled "people resonated" count.
   // null when the wisdom has no persisted community_count column value
   // (historical wisdom_cards rows pre-migration 20260525123624). When
@@ -291,7 +294,7 @@ export function InsightView({
   card,
   emotion,
   cardCollection,
-  aspireImpact,
+  aspireImpacts,
   communityCount,
   topExtraPadding = 0,
 }: InsightViewProps) {
@@ -339,15 +342,6 @@ export function InsightView({
     () => getCachedCharacterState()?.charName?.trim() || 'your companion',
     [],
   );
-
-  // Aspire bar fill clamped 0-100.
-  const aspireFillPct = aspireImpact
-    ? Math.max(0, Math.min(100, aspireImpact.currentScore))
-    : 0;
-  const aspireDeltaStr =
-    aspireImpact && aspireImpact.deltaPercent != null
-      ? (aspireImpact.deltaPercent >= 0 ? '+' : '') + aspireImpact.deltaPercent + '%'
-      : '';
 
   return (
     <View style={styles.container}>
@@ -423,8 +417,7 @@ export function InsightView({
         <View style={styles.communityBody}>
         {/* 4a: per-wisdom resonance count. Hidden when null — historical
             wisdom_cards rows (community_count IS NULL) don't show a
-            number rather than fake one. Subtitle copy rewords to
-            "resonated with you" per Stage 6 Bug 3 rename. */}
+            number rather than fake one. */}
         {communityCount != null ? (
           <View style={styles.communityRow}>
             <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
@@ -434,26 +427,8 @@ export function InsightView({
           </View>
         ) : null}
 
-        {/* 4b: Aspire progress bar (conditional) */}
-        {aspireImpact ? (
-          <View style={styles.aspireBlock}>
-            <View style={styles.aspireBarRow}>
-              <View style={styles.aspireBarTrack}>
-                <View
-                  style={[styles.aspireBarFill, { width: `${aspireFillPct}%` }]}
-                >
-                  {aspireImpact && aspireImpact.deltaPercent != null ? (
-                    <Text style={styles.aspireDeltaInBar}>{aspireDeltaStr}</Text>
-                  ) : null}
-                </View>
-              </View>
-              <Text style={styles.aspireScoreText}>{aspireFillPct}%</Text>
-            </View>
-            <Text style={styles.aspireLabel}>Your {aspireImpact.keyword}</Text>
-          </View>
-        ) : null}
-
-        {/* 4c: Emotion big text + illustration */}
+        {/* 4b: Emotion big text + illustration (moved above the aspire
+            bars per the commit 39 redesign: number -> emotion -> bars). */}
         <View style={styles.emotionRow}>
           <View style={styles.emotionTextCol}>
             <Text style={styles.emotionBigText}>{emotion || 'Reflective'}</Text>
@@ -461,6 +436,37 @@ export function InsightView({
           </View>
           <RNImage source={emotionImage} style={styles.emotionImage} contentFit="contain" cachePolicy="memory-disk" />
         </View>
+
+        {/* 4c: Aspire progress bars — one per impact (up to 3).
+            Positives first, the single negative (if any) last, matching
+            the server's array ordering. Each bar shows the publish-time
+            delta inside the fill (record.tsx sets +/-2; wisdom-insight
+            passes null so the delta chip hides on My Logs reopen). */}
+        {aspireImpacts.map((impact, idx) => {
+          const fillPct = Math.max(0, Math.min(100, impact.currentScore));
+          const deltaStr =
+            impact.deltaPercent != null
+              ? (impact.deltaPercent >= 0 ? '+' : '') + impact.deltaPercent + '%'
+              : '';
+          return (
+            <View
+              key={`${impact.keyword}-${idx}`}
+              style={[styles.aspireBlock, idx === 0 ? styles.aspireBlockFirst : null]}
+            >
+              <View style={styles.aspireBarRow}>
+                <View style={styles.aspireBarTrack}>
+                  <View style={[styles.aspireBarFill, { width: `${fillPct}%` }]}>
+                    {impact.deltaPercent != null ? (
+                      <Text style={styles.aspireDeltaInBar}>{deltaStr}</Text>
+                    ) : null}
+                  </View>
+                </View>
+                <Text style={styles.aspireScoreText}>{fillPct}%</Text>
+              </View>
+              <Text style={styles.aspireLabel}>Your {impact.keyword}</Text>
+            </View>
+          );
+        })}
         </View>
       </View>
 
@@ -714,9 +720,14 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // 3b Aspire bar
+  // 3b Aspire bar (one per impact, up to 3)
   aspireBlock: {
-    marginBottom: 18,
+    marginBottom: 16,
+  },
+  // First aspire bar gets extra top margin to separate the bar group
+  // from the emotion row above it.
+  aspireBlockFirst: {
+    marginTop: 8,
   },
   aspireBarRow: {
     flexDirection: 'row',

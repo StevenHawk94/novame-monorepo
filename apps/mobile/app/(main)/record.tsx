@@ -143,8 +143,8 @@ type PhaseProps = {
   setPublishedCard: (c: PublishedCardData | null) => void;
   publishedCardCollection: CardCollectionInfo | null;
   setPublishedCardCollection: (c: CardCollectionInfo | null) => void;
-  publishedAspireImpact: AspireImpactDisplay | null;
-  setPublishedAspireImpact: (a: AspireImpactDisplay | null) => void;
+  publishedAspireImpacts: AspireImpactDisplay[];
+  setPublishedAspireImpacts: (a: AspireImpactDisplay[]) => void;
   communityCount: number | null;
   setCommunityCount: (n: number | null) => void;
   publishedEmotion: string;
@@ -1654,7 +1654,7 @@ function PhasePublishing({
   setPublishedCard,
   setPublishedEmotion,
   setPublishedCardCollection,
-  setPublishedAspireImpact,
+  setPublishedAspireImpacts,
   setCommunityCount,
   setLastPublishMessage,
   goTo,
@@ -1816,12 +1816,12 @@ function PhasePublishing({
         //   2. setPublishedCardCollection (state for Insight UI)
         //   3. setCommunityCount (state for Block 4a)
         //   4. THIS refresh batch (kicks off in background)
-        //   5. setPublishedAspireImpact (state for Block 4b)
+        //   5. setPublishedAspireImpacts (state for Block 4b)
         //   6. setLastPublishMessage / storage (Home speech bubble)
         //
         // The refresh batch runs AFTER the typesCollected snapshot
         // read so the Bug 1 fix from commit bbc75c1 stays correct.
-        // It runs BEFORE setPublishedAspireImpact (a state setter,
+        // It runs BEFORE setPublishedAspireImpacts (a state setter,
         // synchronous) so refresh fires as early as possible into
         // the user's reading window.
         // ============================================================
@@ -1857,18 +1857,24 @@ function PhasePublishing({
         // tasks are bound to, so surfacing it tells the user exactly
         // which trait to earn back. Falls back to the first impact
         // (a positive) when there's no decline this publish.
+        // Stage 6 follow-up (commit 39): build the FULL array of
+        // aspire impacts (up to 3, server-capped) so the insight page
+        // renders one bar per impact. Positives first, the single
+        // negative (if any) last -- server already orders it that way,
+        // so map verbatim. Each bar carries its publish-time delta
+        // (+2 positive / -2 negative) and post-update current score.
         const impacts = response.card?.aspire_impacts ?? [];
-        const top =
-          impacts.find((i) => i.direction === 'negative') ?? impacts[0];
-        if (top && response.aspireScores) {
-          const currentScore = response.aspireScores[top.keyword] ?? 70;
-          setPublishedAspireImpact({
-            keyword: top.keyword,
-            deltaPercent: top.direction === 'positive' ? 2 : -2,
-            currentScore,
-          });
+        if (impacts.length > 0 && response.aspireScores) {
+          const scoresSnap = response.aspireScores;
+          setPublishedAspireImpacts(
+            impacts.map((i) => ({
+              keyword: i.keyword,
+              deltaPercent: i.direction === 'positive' ? 2 : -2,
+              currentScore: scoresSnap[i.keyword] ?? 70,
+            })),
+          );
         } else {
-          setPublishedAspireImpact(null);
+          setPublishedAspireImpacts([]);
         }
         if (response.characterBMessage) {
           setLastPublishMessage(response.characterBMessage);
@@ -2167,7 +2173,7 @@ function PhaseInsight({
   publishedCard,
   publishedEmotion,
   publishedCardCollection,
-  publishedAspireImpact,
+  publishedAspireImpacts,
   communityCount,
   close,
   quotaExhaustedAfterPublish,
@@ -2343,7 +2349,7 @@ function PhaseInsight({
           card={publishedCard}
           emotion={publishedEmotion}
           cardCollection={publishedCardCollection}
-          aspireImpact={publishedAspireImpact}
+          aspireImpacts={publishedAspireImpacts}
           communityCount={communityCount}
           topExtraPadding={Math.max(0, insets.top - 4)}
         />
@@ -2622,8 +2628,8 @@ export default function RecordModal() {
   const [publishedCard, setPublishedCard] = useState<PublishedCardData | null>(null);
   const [publishedCardCollection, setPublishedCardCollection] =
     useState<CardCollectionInfo | null>(null);
-  const [publishedAspireImpact, setPublishedAspireImpact] =
-    useState<AspireImpactDisplay | null>(null);
+  const [publishedAspireImpacts, setPublishedAspireImpacts] =
+    useState<AspireImpactDisplay[]>([]);
   // Stage 6 Bug 3 fix: communityCount is now server-rolled per wisdom
   // (returned in PublishWisdomResponse.communityCount) and persisted on
   // the wisdom_cards row. The publish success handler calls
@@ -2659,8 +2665,8 @@ export default function RecordModal() {
     setPublishedCard,
     publishedCardCollection,
     setPublishedCardCollection,
-    publishedAspireImpact,
-    setPublishedAspireImpact,
+    publishedAspireImpacts,
+    setPublishedAspireImpacts,
     communityCount,
     setCommunityCount,
     publishedEmotion,

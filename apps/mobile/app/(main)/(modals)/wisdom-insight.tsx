@@ -132,17 +132,21 @@ export default function WisdomInsightModal() {
   // negative impact when present so My Logs reopen shows the SAME
   // trait (the declining, task-bound one) the user saw at publish
   // time, not a positive that happened to sort first in the array.
+  // Stage 6 follow-up (commit 39): build the full array of impacts
+  // (up to 3) so My Logs reopen renders the same multi-bar Aspire
+  // section as publish time. deltaPercent is null for every bar --
+  // the publish-time +/- isn't stored per-impact and replaying it on
+  // a historical wisdom would mislead, so reopen shows just the bar
+  // fill + current score + label (no delta chip).
   const impacts = payload?.card?.aspire_impacts ?? [];
-  const topImpact =
-    impacts.find((i) => i.direction === 'negative') ?? impacts[0] ?? null;
-  const aspireImpact: AspireImpactDisplay | null =
-    topImpact && aspireScores
-      ? {
-          keyword: topImpact.keyword,
+  const aspireImpacts: AspireImpactDisplay[] =
+    aspireScores
+      ? impacts.map((i) => ({
+          keyword: i.keyword,
           deltaPercent: null,
-          currentScore: aspireScores[topImpact.keyword] ?? 70,
-        }
-      : null;
+          currentScore: aspireScores[i.keyword] ?? 70,
+        }))
+      : [];
 
   const goBack = () => {
     void haptics.light();
@@ -167,7 +171,7 @@ export default function WisdomInsightModal() {
             card={payload.card}
             emotion={payload.emotion}
             cardCollection={null}
-            aspireImpact={aspireImpact}
+            aspireImpacts={aspireImpacts}
             communityCount={communityCount}
             topExtraPadding={Math.max(0, insets.top - 4)}
           />
