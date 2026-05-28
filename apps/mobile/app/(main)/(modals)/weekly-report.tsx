@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -16,6 +16,7 @@ import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import {
   fetchWisdomCenter,
+  fetchReportByWeek,
   generateWeeklyReport,
   type WeeklyReportData,
   type WisdomCenterData,
@@ -68,6 +69,14 @@ function getProgressColor(score: number): string {
 
 export default function WeeklyReportModal() {
   const insets = useSafeAreaInsets();
+  // Task B (commit 35d): when opened from the history list, a
+  // week_start param is present and we load THAT week's report
+  // (cache-first) instead of the default latest/generate flow.
+  const params = useLocalSearchParams<{ week_start?: string }>();
+  const historyWeekStart =
+    typeof params.week_start === 'string' && params.week_start.length > 0
+      ? params.week_start
+      : null;
 
   const [userId, setUserId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
@@ -87,6 +96,27 @@ export default function WeeklyReportModal() {
     if (!userId) return;
     let cancelled = false;
     (async () => {
+      // Task B: historical report path. When a week_start param is
+      // present we load that specific week (cache-first via
+      // fetchReportByWeek) and render it read-only. We still pull
+      // the full envelope for avatars (The Echo avatar row), but the
+      // report body comes from the per-week fetch.
+      if (historyWeekStart) {
+        const [weekRes, envRes] = await Promise.all([
+          fetchReportByWeek(userId, historyWeekStart),
+          fetchWisdomCenter(userId),
+        ]);
+        if (cancelled) return;
+        if (weekRes.kind === 'error') {
+          setPhase({ kind: 'error', message: weekRes.message });
+          return;
+        }
+        const envData =
+          envRes.kind === 'success' ? envRes.data : ({} as WisdomCenterData);
+        setPhase({ kind: 'has-report', report: weekRes.report, data: envData });
+        return;
+      }
+
       const res = await fetchWisdomCenter(userId);
       if (cancelled) return;
       if (res.kind === 'error') {
@@ -112,7 +142,7 @@ export default function WeeklyReportModal() {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, historyWeekStart]);
 
   const handleClose = () => {
     void haptics.light();
@@ -165,7 +195,20 @@ export default function WeeklyReportModal() {
         <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
       </Pressable>
       <Text style={styles.title}>Weekly Evolution Report</Text>
-      <View style={styles.headerRight} />
+      {historyWeekStart ? (
+        <View style={styles.headerRight} />
+      ) : (
+        <Pressable
+          onPress={() => {
+            void haptics.light();
+            router.push('/(main)/(modals)/report-history');
+          }}
+          style={styles.closeBtn}
+          hitSlop={8}
+        >
+          <MaterialIcons name="history" size={20} color="#FFFFFF" />
+        </Pressable>
+      )}
     </View>
   );
 

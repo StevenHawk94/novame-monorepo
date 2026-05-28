@@ -112,7 +112,7 @@ export async function fetchWisdomCenter(
  * { notEnough: true } and we surface a friendly message.
  */
 export type GenerateReportResult =
-  | { kind: 'success'; report: WeeklyReportData }
+  | { kind: 'success'; report: WeeklyReportData; weekStart: string | null }
   | { kind: 'notEnough' }
   | { kind: 'error'; message: string };
 
@@ -125,6 +125,7 @@ export async function generateWeeklyReport(
     cached?: boolean;
     notEnough?: boolean;
     error?: string;
+    weekStart?: string | null;
   };
 
   try {
@@ -133,7 +134,12 @@ export async function generateWeeklyReport(
     });
     if (data.notEnough) return { kind: 'notEnough' };
     if (data.success && data.report) {
-      return { kind: 'success', report: data.report };
+      // Write-through the per-week MMKV cache so opening this report
+      // from the history list later is instant (Q-C1 architecture).
+      if (data.weekStart) {
+        setCachedReportByWeek(data.weekStart, data.report);
+      }
+      return { kind: 'success', report: data.report, weekStart: data.weekStart ?? null };
     }
     return { kind: 'error', message: data.error || 'Failed to generate report' };
   } catch (e) {
@@ -293,5 +299,125 @@ export async function refreshWisdomCenter(userId: string): Promise<void> {
     await fetchWisdomCenterWithCache(userId);
   } catch (e) {
     console.warn('[refreshWisdomCenter]', e);
+  }
+}
+
+// ============================================================
+// Weekly Report history (task B, commit 35d)
+//
+// Architecture (Q-C1):
+//   - The LIST always comes from the server (source of truth,
+//     correct after reinstall / device switch).
+//   - Individual report DETAIL is cached per week_start in MMKV.
+//     Tapping a history row reads cache-first, falls back to the
+//     server per-week endpoint, and writes through on miss.
+//   - generateWeeklyReport's success path (and any per-week fetch)
+//     writes through so the detail is instantly re-openable.
+// ============================================================
+
+/** One row in the history list. report_data intentionally omitted. */
+export type WeeklyReportListItem = {
+  week_start: string; // 'YYYY-MM-DD' (Monday)
+  created_at: string;
+};
+
+export type ReportHistoryResult =
+  | { kind: 'success'; reports: WeeklyReportListItem[] }
+  | { kind: 'error'; message: string };
+
+/**
+ * GET /api/wisdom-center?list=true -- lightweight list of all the
+ * user's weekly reports (week_start + created_at), newest first.
+ * Always hits the server; the list is the source of truth.
+ */
+export async function fetchReportHistory(
+  userId: string,
+): Promise<ReportHistoryResult> {
+  type WireResponse = {
+    success?: boolean;
+    reports?: WeeklyReportListItem[];
+    error?: string;
+  };
+  try {
+    const data = await apiClient.get<WireResponse>(
+      `/api/wisdom-center?userId=${encodeURIComponent(userId)}&list=true`,
+    );
+    if (!data.success) {
+      return { kind: 'error', message: data.error || 'Failed to load history' };
+    }
+    return { kind: 'success', reports: data.reports ?? [] };
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Network error',
+    };
+  }
+}
+
+// ---- Per-week report_data cache (MMKV) ----
+
+/** MMKV key for a single week's cached report_data. */
+function weeklyReportCacheKey(weekStart: string): string {
+  return `novame_weekly_report:${weekStart}`;
+}
+
+export function getCachedReportByWeek(weekStart: string): WeeklyReportData | null {
+  const raw = storage.getString(weeklyReportCacheKey(weekStart));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as WeeklyReportData;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedReportByWeek(
+  weekStart: string,
+  report: WeeklyReportData,
+): void {
+  storage.set(weeklyReportCacheKey(weekStart), JSON.stringify(report));
+}
+
+export type ReportByWeekResult =
+  | { kind: 'success'; report: WeeklyReportData; weekStart: string }
+  | { kind: 'error'; message: string };
+
+/**
+ * Cache-first fetch of a specific week's report_data. Checks MMKV
+ * first (instant open); on a miss, calls the server per-week
+ * endpoint and writes through.
+ */
+export async function fetchReportByWeek(
+  userId: string,
+  weekStart: string,
+): Promise<ReportByWeekResult> {
+  // Cache-first.
+  const cached = getCachedReportByWeek(weekStart);
+  if (cached) {
+    return { kind: 'success', report: cached, weekStart };
+  }
+  type WireResponse = {
+    success?: boolean;
+    report?: WeeklyReportData | null;
+    weekStart?: string;
+    error?: string;
+  };
+  try {
+    const data = await apiClient.get<WireResponse>(
+      `/api/wisdom-center?userId=${encodeURIComponent(userId)}&week_start=${encodeURIComponent(weekStart)}`,
+    );
+    if (!data.success || !data.report) {
+      return {
+        kind: 'error',
+        message: data.error || 'Report not found for that week',
+      };
+    }
+    setCachedReportByWeek(weekStart, data.report);
+    return { kind: 'success', report: data.report, weekStart };
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Network error',
+    };
   }
 }

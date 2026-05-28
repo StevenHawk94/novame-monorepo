@@ -198,7 +198,7 @@ export async function POST(request) {
       .eq('week_start', weekStart)
       .single()
     if (cached?.report_data) {
-      return NextResponse.json({ success: true, report: cached.report_data, cached: true })
+      return NextResponse.json({ success: true, report: cached.report_data, cached: true, weekStart })
     }
 
     // ---- Gate: minimum 2 wisdoms in the rolling 7-day window ----
@@ -433,7 +433,7 @@ OUTPUT: A small partial JSON with prose fields only. Numeric data (questsFinishe
 
     await supabase.from('profiles').update({ last_report_generated_at: now.toISOString() }).eq('id', userId)
 
-    return NextResponse.json({ success: true, report: reportData, cached: false })
+    return NextResponse.json({ success: true, report: reportData, cached: false, weekStart })
   } catch (error) {
     console.error('Wisdom center POST error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
