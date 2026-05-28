@@ -369,7 +369,22 @@ Return a JSON object with EXACTLY these fields:
 
 14. "task_2": Section F second task — The Day-Long Experiment (under 100 characters). 24-hour behavioral habit using "When [trigger] happens, immediately execute [action]" loop. Intensity >= 7 or State 5: replace with single soft noticing habit. State 7 / Intensity 1-2: replace with gentle observation experiment.
 
-15. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply. CRITICAL CONSTRAINT: you may mark MULTIPLE keywords as "positive", but AT MOST ONE keyword may be "negative" — pick the single most prominent regression this entry shows. Never return two or more negative keywords.
+15. "aspire_impacts": Audit which personal growth keywords from [${aspireList}] this entry reflects, and whether the user's described BEHAVIOR moved toward or away from each.
+
+This is an OBJECTIVE BEHAVIORAL AUDIT, independent of your warm/encouraging tone in the other sections. Sections A-F stay supportive, but aspire_impacts must honestly reflect what the user DID. If the entry describes a regression, you MUST mark it negative — do not soften a setback into "positive" just to be encouraging.
+
+For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}:
+
+- "positive": the entry shows the user EMBODYING or PRACTICING this trait — through their state OR their actions. A calm tea-and-book evening embodies "Peaceful"; finishing a hard task embodies "Disciplined"; speaking an uncomfortable truth embodies "Authentic". Positive is the default for any genuine reflection or steady state.
+
+- "negative": the entry describes a CONCRETE BEHAVIOR that BETRAYED or RETREATED FROM this trait — an action, not merely a feeling. Examples:
+    * "Authentic" negative: lied, wore a mask, agreed against their own belief
+    * "Resilient" negative: gave up at the first setback, fled a challenge
+    * "Disciplined" negative: blew off a plan, doom-scrolled all day
+    * "Focused" negative: couldn't stop getting distracted from what mattered
+  A negative feeling alone (anxious, sad, tired) is NOT negative here — only a behavior that actively worked against the trait. "I felt anxious" is neutral/positive (Self-Aware); "I was so anxious I skipped the thing I promised myself I'd do" is a Resilient/Disciplined negative.
+
+Return [] only if no keyword is clearly relevant. CRITICAL CONSTRAINT: multiple keywords may be "positive", but AT MOST ONE may be "negative" — pick the single most prominent regression. Never return two or more negatives.
 
 16. "task_1_keyword": If aspire_impacts contains the (single) "negative" keyword, set this to that exact keyword string. Otherwise "". Both task keywords bind to the SAME declining word so completing both tasks fully offsets the -2 penalty.
 
