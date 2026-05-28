@@ -177,6 +177,36 @@ export async function POST(request) {
     const aspireScores = profile?.aspire_scores || {}
     const betterSelfEnd = profile?.better_self_score ?? 70
     const totalResonance = profile?.people_impacted_display ?? 0
+
+    // Stage 6 follow-up (commit 35): The Echo now reports the SUM of
+    // per-wisdom community_count over the rolling 7-day window, not
+    // the cumulative people_impacted_display lifetime figure. This
+    // ties the weekly report's resonance number to the same
+    // community_count values shown on each wisdom's Inner Profile
+    // block (Block 4a), so the weekly total is a real aggregate of
+    // what the user saw per-card that week. recentCards was already
+    // queried above for trait deltas; we re-query here scoped to all
+    // cards (not gated on aspireWords.length) so resonance is correct
+    // even for users with no aspire words set.
+    const { data: weekCards } = await supabase.from('wisdom_cards')
+      .select('community_count')
+      .eq('user_id', userId)
+      .gte('created_at', weekAgo.toISOString())
+    const weeklyResonance = (weekCards || []).reduce(
+      (sum, c) => sum + (c.community_count || 0),
+      0,
+    )
+
+    // Stage 6 follow-up (commit 35): The Growth Path (formerly The
+    // Pulse) headline number is now the count of daily_tasks the user
+    // actually completed in the rolling 7-day window, replacing the
+    // old "wisdoms shared this week" count. completed_at gate matches
+    // the same weekAgo window used everywhere else in this handler.
+    const { count: questsFinished } = await supabase.from('daily_tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_completed', true)
+      .gte('completed_at', weekAgo.toISOString())
     const name = userName || profile?.display_name || 'you'
 
     // ---- Backend-computed: traitChanges + betterSelfStart ----
@@ -187,7 +217,7 @@ export async function POST(request) {
     let betterSelfStart = betterSelfEnd
     if (aspireWords.length > 0) {
       const { data: recentCards } = await supabase.from('wisdom_cards')
-        .select('aspire_impacts')
+        .select('aspire_impacts, community_count')
         .eq('user_id', userId)
         .gte('created_at', weekAgo.toISOString())
 
@@ -269,14 +299,12 @@ ${wisdomsSummary}
 Generate ONLY these three pieces of prose (numbers above are authoritative — never restate or change them):
 - section2_narrative.journey (150 words, second person, weave in specific anchors from the daily indices)
 - section2_narrative.corelesson (2-3 sentences, single most powerful insight)
-- section3_echo.message (one sentence, poetic, about the CUMULATIVE ripple of their wisdoms reaching others over time — not "this week")
 - section4_path.focusReason (one sentence, why nurturing "${suggestedFocusTrait}" matters next week)
 - section4_path.motto (under 15 words, battle cry energy)
 
 Return ONLY valid JSON in this exact shape, no markdown fences:
 {
   "section2_narrative": { "journey": "...", "corelesson": "..." },
-  "echoMessage": "...",
   "section4_path": { "focusReason": "...", "motto": "..." }
 }`
 
@@ -285,7 +313,7 @@ TONE: Warm, insightful, grounded. Second person ("you"). No markdown bold marker
 DETAIL ANCHORING: Reference specific moments/anchors from the daily indices the user provides. No vague generalities like "you grew this week" — show evidence.
 NO AI-isms ("In conclusion", "Furthermore", "I believe").
 NO empty empathy ("I hear your pain", "this must be hard").
-OUTPUT: A small partial JSON with prose fields only. Numeric data (activeDays / betterSelfStart / betterSelfEnd / traitChanges / totalResonance / focusTrait) is already computed by the system — do NOT include those fields, and do NOT invent or alter the numbers in your prose.`
+OUTPUT: A small partial JSON with prose fields only. Numeric data (questsFinished / betterSelfStart / betterSelfEnd / traitChanges / weeklyResonance / focusTrait) is already computed by the system — do NOT include those fields, and do NOT invent or alter the numbers in your prose.`
 
     const aiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -318,8 +346,6 @@ OUTPUT: A small partial JSON with prose fields only. Numeric data (activeDays / 
       'This week you showed up for yourself with consistency, turning lived experience into transferable wisdom. Each sharing was a quiet act of courage — choosing reflection over silence.'
     const fallbackCoreLesson =
       'The simple act of articulating your experience transforms it. You are not just recording your life; you are distilling it into wisdom that guides your future self.'
-    const fallbackEchoMessage =
-      'Your wisdom has touched a growing community of souls who walk alongside you.'
     const fallbackFocusReason =
       'This quality, when strengthened, will amplify everything else you are building.'
     const fallbackMotto = 'Show up. Reflect. Grow. Repeat.'
@@ -328,7 +354,9 @@ OUTPUT: A small partial JSON with prose fields only. Numeric data (activeDays / 
     // backend always wins on numbers; AI only contributes prose strings.
     const reportData = {
       section1_pulse: {
-        activeDays: wisdoms.length,
+        // Stage 6 follow-up (commit 35): questsFinished replaces the
+        // old activeDays (wisdom publish count) as the headline number.
+        questsFinished: questsFinished || 0,
         betterSelfStart,
         betterSelfEnd,
         traitChanges,
@@ -338,8 +366,12 @@ OUTPUT: A small partial JSON with prose fields only. Numeric data (activeDays / 
         corelesson: aiPartial?.section2_narrative?.corelesson || fallbackCoreLesson,
       },
       section3_echo: {
-        totalResonance,
-        message: aiPartial?.echoMessage || fallbackEchoMessage,
+        // Stage 6 follow-up (commit 35): weeklyResonance (7-day SUM of
+        // community_count) replaces the cumulative totalResonance. The
+        // AI echo message is removed -- mobile now renders a fixed
+        // copy string ("People resonated with you in the past week...")
+        // so there's no per-report AI prose for this section anymore.
+        weeklyResonance,
       },
       section4_path: {
         focusTrait: suggestedFocusTrait,
