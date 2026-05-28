@@ -23,6 +23,21 @@ export async function POST(request) {
   console.log('Transcribe API called')
 
   try {
+    // Security: this endpoint is an INTERNAL transcription worker called
+    // server-to-server by /api/publish-wisdom. It is NOT a user-facing
+    // route. publish-wisdom already enforces the per-user monthly quota
+    // (free: 1 / paid: tiered) BEFORE calling here, so transcribe itself
+    // does no quota accounting. To stop attackers from POSTing audio
+    // directly to api.soulsayit.com/api/transcribe and burning Gemini
+    // spend outside the quota gate, require a shared internal secret.
+    // Normal users never hit this check -- they go through publish-wisdom,
+    // which attaches the secret header on the internal fetch.
+    const internalSecret = request.headers.get('x-internal-secret')
+    if (!process.env.INTERNAL_API_SECRET || internalSecret !== process.env.INTERNAL_API_SECRET) {
+      console.warn('[transcribe] Rejected request without valid internal secret')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const contentType = request.headers.get('content-type') || ''
     let base64Audio = null
 

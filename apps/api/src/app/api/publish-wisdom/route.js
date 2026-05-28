@@ -205,7 +205,15 @@ export async function POST(request) {
         const transcribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://api.soulsayit.com'}/api/transcribe`
         const transcribeResponse = await fetch(transcribeUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            // Internal server-to-server auth: transcribe rejects any
+            // request without this shared secret (set in Vercel env).
+            // This is what distinguishes our legitimate internal call
+            // from an external attacker POSTing audio directly to the
+            // transcribe endpoint to burn Gemini spend.
+            'x-internal-secret': process.env.INTERNAL_API_SECRET || '',
+          },
           body: JSON.stringify({ audioBase64: base64Audio })
         })
 
