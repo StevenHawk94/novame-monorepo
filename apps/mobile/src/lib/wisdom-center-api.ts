@@ -28,7 +28,8 @@ export type DefaultAvatar = {
 /** Server-side report_data shape for the weekly evolution report. */
 export type WeeklyReportData = {
   section1_pulse?: {
-    activeDays?: number;
+    // Stage 6 follow-up (commit 35): questsFinished replaced activeDays.
+    questsFinished?: number;
     betterSelfStart?: number;
     betterSelfEnd?: number;
     traitChanges?: Array<{ trait: string; score?: number; change?: number }>;
@@ -38,8 +39,9 @@ export type WeeklyReportData = {
     corelesson?: string;
   };
   section3_echo?: {
-    totalResonance?: number;
-    message?: string;
+    // Stage 6 follow-up (commit 35): weeklyResonance replaced
+    // totalResonance; message removed (mobile renders fixed copy).
+    weeklyResonance?: number;
   };
   section4_path?: {
     focusTrait?: string;

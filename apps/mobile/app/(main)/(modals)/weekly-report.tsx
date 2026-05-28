@@ -275,8 +275,8 @@ export default function WeeklyReportModal() {
   const betterSelfStart = p.betterSelfStart ?? 70;
   const betterSelfEnd = p.betterSelfEnd ?? 70;
   const scoreDiff = betterSelfEnd - betterSelfStart;
-  const totalResonance = e.totalResonance ?? 0;
-  const activeDays = p.activeDays ?? 0;
+  const weeklyResonance = e.weeklyResonance ?? 0;
+  const questsFinished = p.questsFinished ?? 0;
 
   return (
     <View style={styles.root}>
@@ -294,16 +294,16 @@ export default function WeeklyReportModal() {
           </Text>
         ) : null}
 
-        {/* 1. The Pulse */}
+        {/* 1. The Growth Path (formerly The Pulse) */}
         <View style={styles.card}>
           <SectionLabel icon="monitor-heart" color="#A78BFA">
-            THE PULSE
+            THE GROWTH PATH
           </SectionLabel>
 
           <View style={styles.pulseHeadlineRow}>
-            <Text style={styles.pulseBigNumber}>{activeDays}</Text>
+            <Text style={styles.pulseBigNumber}>{questsFinished}</Text>
             <Text style={styles.pulseSubLabel}>
-              {activeDays === 1 ? 'wisdom' : 'wisdoms'} shared this week
+              Quests Finished This Week
             </Text>
           </View>
 
@@ -389,12 +389,9 @@ export default function WeeklyReportModal() {
           ) : null}
         </View>
 
-        {/* 2. The Narrative */}
+        {/* 2. The Narrative -- single title, no section label */}
         <View style={styles.card}>
-          <SectionLabel icon="auto-stories" color="#60A5FA">
-            THE NARRATIVE
-          </SectionLabel>
-          <Text style={styles.subLabel}>Your week in perspective</Text>
+          <Text style={styles.narrativeTitle}>Your Week In Perspective</Text>
           {n.journey ? (
             <Text style={styles.bodyText}>{n.journey}</Text>
           ) : null}
@@ -406,25 +403,20 @@ export default function WeeklyReportModal() {
           ) : null}
         </View>
 
-        {/* 3. The Echo */}
+        {/* 3. The Echo -- weekly resonance + fixed copy */}
         <View style={styles.card}>
           <SectionLabel icon="favorite" color="#F472B6">
             THE ECHO
           </SectionLabel>
           <View style={styles.echoRow}>
-            <View>
-              <Text style={styles.echoNumber}>
-                {totalResonance.toLocaleString()}
-              </Text>
-              <Text style={styles.echoSubLabel}>
-                souls reached
-              </Text>
-            </View>
+            <Text style={styles.echoNumber}>
+              {weeklyResonance.toLocaleString()}
+            </Text>
             <AvatarRow avatars={data.defaultAvatars ?? []} />
           </View>
-          {e.message ? (
-            <Text style={styles.echoMessage}>{e.message}</Text>
-          ) : null}
+          <Text style={styles.echoMessage}>
+            People resonated with you in the past week. You're not alone on this journey.
+          </Text>
         </View>
 
         {/* 4. The Path Forward */}
@@ -584,6 +576,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '500',
   },
+  // Stage 6 follow-up (commit 35): The Narrative now uses a single
+  // promoted title instead of a section label + small sublabel.
+  narrativeTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
   // Pulse
   pulseHeadlineRow: {
     flexDirection: 'row',
@@ -724,10 +724,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   echoMessage: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
-    lineHeight: 18,
-    fontStyle: 'italic',
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    marginTop: 12,
   },
   // Path
   focusTrait: {
