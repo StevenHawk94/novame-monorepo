@@ -384,7 +384,7 @@ For each clearly relevant keyword return {"keyword": "exact match", "direction":
     * "Focused" negative: couldn't stop getting distracted from what mattered
   A negative feeling alone (anxious, sad, tired) is NOT negative here — only a behavior that actively worked against the trait. "I felt anxious" is neutral/positive (Self-Aware); "I was so anxious I skipped the thing I promised myself I'd do" is a Resilient/Disciplined negative.
 
-Return [] only if no keyword is clearly relevant. CRITICAL CONSTRAINT: multiple keywords may be "positive", but AT MOST ONE may be "negative" — pick the single most prominent regression. Never return two or more negatives.
+CRITICAL CONSTRAINTS: (1) Return between 1 and 3 keywords total — at least 1 (find the closest-matching growth dimension even for an ordinary entry), at most 3 (the most relevant ones; do not flood every loosely-related word). (2) At most ONE of them may be "negative" — pick the single most prominent behavioral regression; the rest must be "positive". Never return two or more negatives.
 
 16. "task_1_keyword": If aspire_impacts contains the (single) "negative" keyword, set this to that exact keyword string. Otherwise "". Both task keywords bind to the SAME declining word so completing both tasks fully offsets the -2 penalty.
 
@@ -504,9 +504,16 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       (i) => i && i.keyword && i.direction === 'negative',
     )
     const keptNegative = negatives.length > 0 ? negatives[0] : null
+    // Stage 6 follow-up (commit 39): cap the TOTAL impacts at 3 so the
+    // insight Aspire section shows at most 3 bars. The single negative
+    // (if any) is always kept; positives fill the remaining slots
+    // (2 when a negative is present, 3 when not). Extra positives the
+    // model returned beyond the cap are dropped.
+    const posLimit = keptNegative ? 2 : 3
+    const keptPositives = positives.slice(0, posLimit)
     result.aspire_impacts = keptNegative
-      ? [...positives, keptNegative]
-      : positives
+      ? [...keptPositives, keptNegative]
+      : keptPositives
     const declineKeyword = keptNegative ? keptNegative.keyword : ''
     result.task_1_keyword = declineKeyword
     result.task_2_keyword = declineKeyword
