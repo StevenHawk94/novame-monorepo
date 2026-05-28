@@ -369,11 +369,11 @@ Return a JSON object with EXACTLY these fields:
 
 14. "task_2": Section F second task — The Day-Long Experiment (under 100 characters). 24-hour behavioral habit using "When [trigger] happens, immediately execute [action]" loop. Intensity >= 7 or State 5: replace with single soft noticing habit. State 7 / Intensity 1-2: replace with gentle observation experiment.
 
-15. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply.
+15. "aspire_impacts": Analyze if the sharing relates to any of these personal growth keywords: [${aspireList}]. For each clearly relevant keyword return {"keyword": "exact match", "direction": "positive" or "negative"}. Return [] if none clearly apply. CRITICAL CONSTRAINT: you may mark MULTIPLE keywords as "positive", but AT MOST ONE keyword may be "negative" — pick the single most prominent regression this entry shows. Never return two or more negative keywords.
 
-16. "task_1_keyword": If task_1 links to a keyword from aspire_impacts with "negative" direction, set to that keyword string. Otherwise "".
+16. "task_1_keyword": If aspire_impacts contains the (single) "negative" keyword, set this to that exact keyword string. Otherwise "". Both task keywords bind to the SAME declining word so completing both tasks fully offsets the -2 penalty.
 
-17. "task_2_keyword": Same logic for task_2.
+17. "task_2_keyword": Set to the SAME negative keyword as task_1_keyword (or "" if there is no negative keyword). task_1_keyword and task_2_keyword must always be identical.
 
 18. "daily_index": Compressed daily index of this sharing (max 200 characters). Capture core emotion, key event/topic, main insight. Used for weekly report synthesis. Example: "Anxious about job interview -> realized preparation = self-trust -> core: letting go of perfectionism builds genuine confidence"
 
@@ -459,6 +459,47 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   result.mirror_hook_title = stripLeadingEmoji(result.mirror_hook_title)
   result.flipped_lens_title = stripLeadingEmoji(result.flipped_lens_title)
   result.permission_slip_title = stripLeadingEmoji(result.permission_slip_title)
+
+  // ============================================================
+  // Stage 6 follow-up (commit 36): single-decline-word enforcement.
+  //
+  // Product rule for the Growth Center score economy:
+  //   - A publish may RAISE multiple aspire words (+2 each); no cap.
+  //   - A publish may LOWER at most ONE aspire word (-2). If the AI
+  //     flags several words as "negative", we keep only the first
+  //     (the most prominent regression) and drop the rest -- those
+  //     other words are simply not nudged this time.
+  //   - The two daily tasks generated from this wisdom (task_1 /
+  //     task_2) are BOTH bound to that single declining word, so
+  //     completing both restores +1 +1 = +2, exactly cancelling the
+  //     -2. (Task completion adds +1 per linked_keyword in
+  //     daily-tasks/route.js.) Positive words never bind a task
+  //     (the gain already landed at publish time).
+  //
+  // This block is the authoritative backstop: even if the prompt
+  // fails to constrain the model, the persisted aspire_impacts, the
+  // score nudges below, and the task_*_keyword fields are all
+  // derived from this normalized result, so they stay consistent.
+  // ============================================================
+  if (Array.isArray(result.aspire_impacts)) {
+    const positives = result.aspire_impacts.filter(
+      (i) => i && i.keyword && i.direction === 'positive',
+    )
+    const negatives = result.aspire_impacts.filter(
+      (i) => i && i.keyword && i.direction === 'negative',
+    )
+    const keptNegative = negatives.length > 0 ? negatives[0] : null
+    result.aspire_impacts = keptNegative
+      ? [...positives, keptNegative]
+      : positives
+    const declineKeyword = keptNegative ? keptNegative.keyword : ''
+    result.task_1_keyword = declineKeyword
+    result.task_2_keyword = declineKeyword
+  } else {
+    result.aspire_impacts = []
+    result.task_1_keyword = ''
+    result.task_2_keyword = ''
+  }
 
   // Stage 6 Wisdom Insight redesign: assemble new jsonb columns.
   // `reframe` = 3-part Core Reframing (mirror_hook / flipped_lens /
