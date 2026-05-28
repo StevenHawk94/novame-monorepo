@@ -26,6 +26,50 @@ export async function GET(request) {
 
     const supabase = getSupabase()
 
+    // ========================================================
+    // Stage 6 follow-up (commit 35c): history list + per-week fetch
+    // branches. Both short-circuit before the heavy profile/resonance
+    // logic below, since neither needs that data.
+    // ========================================================
+
+    // Branch A: ?list=true -> lightweight list of all the user's
+    // weekly reports (week_start + created_at only, no report_data
+    // payload). Powers the history list screen. Newest first.
+    if (searchParams.get('list') === 'true') {
+      const { data: rows, error: listErr } = await supabase
+        .from('weekly_reports')
+        .select('week_start, created_at')
+        .eq('user_id', userId)
+        .order('week_start', { ascending: false })
+      if (listErr) {
+        return NextResponse.json({ error: listErr.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, reports: rows || [] })
+    }
+
+    // Branch B: ?week_start=YYYY-MM-DD -> the report_data for that
+    // specific week. Powers opening a historical report from the
+    // list. Returns report:null if that week has no row (client
+    // handles gracefully).
+    const weekStartParam = searchParams.get('week_start')
+    if (weekStartParam) {
+      const { data: row, error: weekErr } = await supabase
+        .from('weekly_reports')
+        .select('report_data, week_start, created_at')
+        .eq('user_id', userId)
+        .eq('week_start', weekStartParam)
+        .maybeSingle()
+      if (weekErr) {
+        return NextResponse.json({ error: weekErr.message }, { status: 500 })
+      }
+      return NextResponse.json({
+        success: true,
+        report: row?.report_data || null,
+        weekStart: row?.week_start || weekStartParam,
+        reportDate: row?.created_at || null,
+      })
+    }
+
     const { data: profile } = await supabase.from('profiles').select(
       'wisdom_portrait, aspire_scores, aspire_words, better_self_score, community_resonance, community_resonance_updated_at, last_report_generated_at, wisdom_share_count, created_at'
     ).eq('id', userId).single()
