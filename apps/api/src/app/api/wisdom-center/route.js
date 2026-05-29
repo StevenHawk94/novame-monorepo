@@ -182,6 +182,47 @@ export async function POST(request) {
     if (!GEMINI_API_KEY) return NextResponse.json({ error: 'API not configured' })
 
     const supabase = getSupabase()
+
+    // ============================================================
+    // SECURITY: verify the caller's Supabase JWT matches body.userId.
+    //
+    // wisdom-center POST is one of 4 Gemini-burning endpoints. It is
+    // already guarded by two natural gates (per-week cache + a
+    // >=2-wisdoms-this-week minimum), but it historically trusted
+    // body.userId without any identity check. An attacker who knew
+    // a real user's id (and that user happened to satisfy both gates
+    // this week) could spend one Gemini call generating that user's
+    // report -- low-frequency, but still avoidable.
+    //
+    // Fix: read the Authorization Bearer token, resolve it to a
+    // Supabase auth user via service-role client's auth.getUser(jwt)
+    // (which verifies the JWT against the auth server regardless of
+    // which key initialized the client), and require user.id ===
+    // body.userId. Mobile already attaches the token automatically
+    // via apiClient, so this is backend-only and does NOT require
+    // an app release.
+    //
+    // NOTE: this is the first apps/api route to verify a Supabase JWT.
+    // The transcribe internal-secret check (commit 46fd7a2) is a
+    // different pattern -- that one is server-to-server. This is
+    // server-from-mobile.
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[wisdom-center] POST rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !user) {
+      console.warn('[wisdom-center] POST rejected: token verify failed', authErr && authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (user.id !== userId) {
+      console.warn('[wisdom-center] POST rejected: token user', user.id, '!= body userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // ============================================================
+
     const now = new Date()
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000)
 
