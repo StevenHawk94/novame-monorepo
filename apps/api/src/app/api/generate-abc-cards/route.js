@@ -23,6 +23,25 @@ const KEYWORD_TO_ID = {
 
 const ID_TO_KEYWORD = Object.fromEntries(Object.entries(KEYWORD_TO_ID).map(([k, v]) => [v, k]))
 
+// SECURITY (audit follow-up): resolve the caller's Supabase identity from the
+// Authorization: Bearer <jwt> header. generate-abc-cards is dual-mode -- admin
+// (?public=true, token in ADMIN_USER_IDS) browses all cards, while mobile
+// (keyword-detail.tsx, ?userId=...) reads only its own. Returns { user, isAdmin }
+// or { error: NextResponse } (401) to return immediately.
+async function resolveAuth(request, supabase) {
+  const authHeader = request.headers.get('authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!token) {
+    return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+  if (authErr || !user) {
+    return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  return { user, isAdmin: adminIds.includes(user.id), error: null }
+}
+
 // Stage 6 cleanup: the POST handler used to live here. It was a duplicate
 // of generateWisdomCard() in /lib/generate-card.js and was no longer called
 // by anything (publish-wisdom now imports the lib directly). The duplicate
@@ -48,9 +67,28 @@ export async function GET(request) {
     const keywordIds = keywords ? keywords.split(',').map(k => KEYWORD_TO_ID[k.trim()]).filter(Boolean) : []
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    const auth = await resolveAuth(request, supabase)
+    if (auth.error) return auth.error
+    const { user, isAdmin } = auth
+
+    // ?public=true browses ALL users' cards -- admin only.
+    if (isPublic && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    // ?userId=... must match the caller (or be admin).
+    if (userId && !isAdmin && userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     if (wisdomId) {
       const { data } = await supabase.from('wisdom_cards').select('*').eq('wisdom_id', wisdomId).limit(1)
-      if (data && data.length > 0) return NextResponse.json({ success: true, card: enrichCard(data[0]) })
+      if (data && data.length > 0) {
+        const card = data[0]
+        if (!isAdmin && card.user_id && card.user_id !== user.id) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+        return NextResponse.json({ success: true, card: enrichCard(card) })
+      }
       return NextResponse.json({ success: true, card: null })
     }
     if (isPublic) {

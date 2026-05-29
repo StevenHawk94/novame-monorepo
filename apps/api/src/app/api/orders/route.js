@@ -7,6 +7,25 @@ function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
+// SECURITY (audit follow-up): resolve the caller's Supabase identity from the
+// Authorization: Bearer <jwt> header. /api/orders is dual-mode -- the admin web
+// (token in ADMIN_USER_IDS) manages all orders, while mobile users (orders-api.ts)
+// read/create/patch only their own. Returns { user, isAdmin } on success, or an
+// { error: NextResponse } (401) the caller returns immediately on missing/invalid token.
+async function resolveAuth(request, supabase) {
+  const authHeader = request.headers.get('authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!token) {
+    return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+  if (authErr || !user) {
+    return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  return { user, isAdmin: adminIds.includes(user.id), error: null }
+}
+
 /**
  * POST: Create a new order
  */
@@ -21,6 +40,13 @@ export async function POST(request) {
     }
 
     const supabase = getSupabase()
+
+    const auth = await resolveAuth(request, supabase)
+    if (auth.error) return auth.error
+    if (!auth.isAdmin && auth.user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { data: profile } = await supabase.from('profiles').select('display_name, email').eq('id', userId).single()
 
     const { data: order, error } = await supabase.from('orders').insert({
@@ -67,9 +93,16 @@ export async function GET(request) {
 
     const supabase = getSupabase()
 
+    const auth = await resolveAuth(request, supabase)
+    if (auth.error) return auth.error
+    const { user, isAdmin } = auth
+
     if (orderId && download) {
       const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single()
       if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+      if (!isAdmin && order.user_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
 
       if (download === 'book') {
         const { data: wisdoms } = await supabase.from('wisdoms')
@@ -89,6 +122,10 @@ export async function GET(request) {
         const { data: cards } = await supabase.from('wisdom_cards').select('keyword_id, quote_short, insight_full').in('id', cardIds)
         return NextResponse.json({ success: true, type: 'cards', customerName: order.customer_name, cards: cards || [] })
       }
+    }
+
+    if (!isAdmin && userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
@@ -120,6 +157,16 @@ export async function PATCH(request) {
     if (!validStatuses.includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
 
     const supabase = getSupabase()
+
+    const auth = await resolveAuth(request, supabase)
+    if (auth.error) return auth.error
+    if (!auth.isAdmin) {
+      const { data: existing } = await supabase.from('orders').select('user_id').eq('id', orderId).single()
+      if (!existing || existing.user_id !== auth.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
     const updates = { status, updated_at: new Date().toISOString() }
     
     if (trackingNumber) updates.tracking_number = trackingNumber
