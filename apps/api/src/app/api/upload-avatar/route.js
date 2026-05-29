@@ -195,7 +195,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Avatar upload error:', error)
     return Response.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

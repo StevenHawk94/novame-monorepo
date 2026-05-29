@@ -89,7 +89,8 @@ export async function POST(request) {
     })
 
     if (error) {
-      return redirectWithError('Supabase auth failed: ' + error.message)
+      console.error('[Apple Callback] Supabase auth failed:', error)
+      return redirectWithError('Authentication failed')
     }
 
     if (!data.session) {
@@ -112,7 +113,7 @@ export async function POST(request) {
 
   } catch (err) {
     console.error('[Apple Callback] Unexpected error:', err)
-    return redirectWithError('Unexpected error: ' + err.message)
+    return redirectWithError('Unexpected error')
   }
 }
 
