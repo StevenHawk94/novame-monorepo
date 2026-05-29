@@ -79,7 +79,50 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required data' }, { status: 400 })
     }
 
+    // Create the service-role Supabase client here so we can use it
+    // both for the token verification block below and for the rest
+    // of the publish flow that follows.
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // ============================================================
+    // SECURITY: verify the caller's Supabase JWT matches body.userId.
+    //
+    // publish-wisdom is the highest-frequency Gemini-burning endpoint
+    // (every wisdom publish calls generate-card -> callAI). It already
+    // has a per-user monthly tier quota (TIER_LIMITS) gating wisdom
+    // creation, but that quota only kicks in when a wisdom INSERT
+    // SUCCEEDS -- if an attacker POSTs with a fake userId that fails
+    // the wisdoms-table foreign key to auth.users, the INSERT errors
+    // out AFTER generate-card has already called Gemini. The failed
+    // request does not increment the user's quota counter (no row
+    // written), so the attacker can spam fake userIds and burn Gemini
+    // indefinitely. Module 6 pentest #1 confirmed this -- 500 errors
+    // returned, but Gemini was called first.
+    //
+    // Fix: same pattern as wisdom-center (commit 099973f). Read
+    // Authorization Bearer token, resolve to a Supabase auth user via
+    // service-role client's auth.getUser(jwt), and require user.id ===
+    // body.userId. Mobile already attaches the token automatically via
+    // apiClient (record.tsx lines 1566 / 1593), and grep confirms no
+    // apps/api server-to-server caller fetches /api/publish-wisdom, so
+    // adding 401 enforcement is backend-only and does NOT require an
+    // app release.
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[publish-wisdom] POST rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[publish-wisdom] POST rejected: token verify failed', authErr && authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[publish-wisdom] POST rejected: token user', authUser.id, '!= body userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // ============================================================
 
     // ---- Stage 5.IAP.4: monthly insight quota gate ----
     // Mirror the algorithm used in /api/daily-limit (count
