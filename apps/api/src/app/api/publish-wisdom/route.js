@@ -215,23 +215,50 @@ export async function POST(request) {
     let transcribedText = ''
     let categories = ['Life']
 
+    // Phase A.3 (Module 6 #4 followup): audio is now ephemeral.
+    // We upload to storage to feed it into transcribe, then delete
+    // the file regardless of whether the publish succeeds, fails
+    // transcription, or fails card generation. Mobile no longer
+    // plays audio (the response's audioUrl is a dead field kept for
+    // type compatibility), so retaining the file gives an attack
+    // surface for zero user value.
+    //
+    // audioFilename is declared at function scope so the success
+    // return, the TRANSCRIPTION_FAILED short-circuit, and the
+    // CARD_GENERATION_FAILED rollback can all reach the cleanup.
+    // For typed mode it stays null and cleanupAudioFile() is a no-op.
+    let audioFilename = null
+    const cleanupAudioFile = async () => {
+      if (!audioFilename) return
+      try {
+        const { error: delErr } = await supabase.storage.from('audio').remove([audioFilename])
+        if (delErr) {
+          console.warn('[publish-wisdom] audio cleanup failed (non-fatal):', delErr.message)
+        } else {
+          console.log('[publish-wisdom] audio cleaned up:', audioFilename)
+        }
+      } catch (e) {
+        console.warn('[publish-wisdom] audio cleanup exception (non-fatal):', e && e.message)
+      }
+    }
+
     if (isTyped) {
       transcribedText = typedText
     } else {
       const timestamp = Date.now()
-      const filename = `${userId}/${timestamp}.webm`
+      audioFilename = `${userId}/${timestamp}.webm`
       const arrayBuffer = await audioFile.arrayBuffer()
       const buffer = new Uint8Array(arrayBuffer)
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('audio').upload(filename, buffer, { contentType: 'audio/webm', upsert: false })
+        .from('audio').upload(audioFilename, buffer, { contentType: 'audio/webm', upsert: false })
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
         return NextResponse.json({ error: 'Failed to upload audio' }, { status: 500 })
       }
 
-      const { data: { publicUrl: audioPublicUrl } } = supabase.storage.from('audio').getPublicUrl(filename)
+      const { data: { publicUrl: audioPublicUrl } } = supabase.storage.from('audio').getPublicUrl(audioFilename)
       publicUrl = audioPublicUrl
 
       try {
@@ -285,6 +312,10 @@ export async function POST(request) {
     const minTextLength = 5
     if (!transcribedText || transcribedText.trim().length < minTextLength) {
       console.warn('[publish-wisdom] TRANSCRIPTION_FAILED: text too short or empty')
+      // Phase A.3: clean up the uploaded audio before returning the
+      // 422. Mobile retries by re-recording, not by retrying the same
+      // audio, so the file is dead weight + a privacy attack surface.
+      await cleanupAudioFile()
       return NextResponse.json(
         {
           error: 'Could not transcribe your recording. Please try again.',
@@ -298,7 +329,10 @@ export async function POST(request) {
     // Save to database
     const insertData = {
       user_id: userId,
-      audio_url: publicUrl || '',
+      // Phase A.3: audio is ephemeral (deleted at success/fail path
+      // ends). Mobile does not consume this field, so persist '' to
+      // keep the DB consistent with the storage-side cleanup.
+      audio_url: '',
       text: transcribedText,
       description: description,
       duration_seconds: isTyped ? 0 : duration,
@@ -404,6 +438,10 @@ export async function POST(request) {
       } catch (delErr) {
         console.error('[publish-wisdom] rollback delete failed:', delErr)
       }
+      // Phase A.3: also clean the audio file. The wisdom row was just
+      // rolled back so no row references this audio anymore -- it would
+      // be an orphan + attack surface if left in storage.
+      await cleanupAudioFile()
       return NextResponse.json(
         {
           error: 'Could not generate your wisdom card. Please try again.',
@@ -481,9 +519,15 @@ export async function POST(request) {
     // race-prone follow-up fetchDailyLimit call. After this publish
     // succeeds, usedThisMonth + 1 is the new count.
     const quotaExhausted = (usedThisMonth + 1) >= monthlyLimit
+    // Phase A.3: success path also deletes the audio. Mobile does not
+    // play audio (only displays transcribed text), so the file has no
+    // user-facing purpose past this point. Returning audioUrl as ''
+    // because the field is a dead type-compat field; the URL would
+    // 404 in a few seconds anyway once cleanup completes.
+    await cleanupAudioFile()
     return NextResponse.json({
       success: true,
-      wisdom: { id: wisdom.id, audioUrl: publicUrl, text: transcribedText, categories, duration: isTyped ? 0 : duration, isPublic },
+      wisdom: { id: wisdom.id, audioUrl: '', text: transcribedText, categories, duration: isTyped ? 0 : duration, isPublic },
       card: generatedCard,
       // Stage 6: aspire_scores snapshot after this wisdom's nudge has
       // been applied. Consumed by mobile InsightView's Aspire bar.
