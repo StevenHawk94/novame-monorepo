@@ -36,6 +36,34 @@ export async function POST(request) {
     }
     
     const supabase = getSupabaseAdmin()
+
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 1): require Bearer token matching
+    // body.userId. delete-account is the highest-impact endpoint --
+    // it cascade-deletes ALL of a user's data + their Supabase Auth
+    // entry. Before this guard, any anon caller knowing a user UUID
+    // could permanently destroy that account.
+    //
+    // Mobile attaches the token automatically via apiClient
+    // (apps/mobile/src/lib/account-api.ts line 130), so backend-only.
+    // Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f).
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[delete-account] POST rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[delete-account] POST rejected: token verify failed', authErr && authErr.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[delete-account] POST rejected: token user', authUser.id, '!= body userId', userId)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     
     console.log('Starting account deletion for user:', userId)
     

@@ -22,6 +22,32 @@ export async function GET(request) {
 
     const supabase = getSupabase()
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 1): require Bearer token matching
+    // ?userId. subscriptions GET returns the user's full billing row
+    // (plan, status, period dates, Airwallex/Google/Apple identifiers).
+    // Without this guard, any anon caller knowing a user UUID could
+    // read another user's billing history. No live mobile caller as
+    // of this commit (Plan & Billing modal in mobile uses a stub
+    // Alert; real history lands in a future stage), but adding the
+    // guard preserves the route for when that feature is wired up.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[subscriptions] GET rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[subscriptions] GET rejected: token verify failed', authErr && authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[subscriptions] GET rejected: token user', authUser.id, '!= query userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Get current subscription row
     const { data: sub } = await supabase
       .from('subscriptions')

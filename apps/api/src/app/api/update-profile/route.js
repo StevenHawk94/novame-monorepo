@@ -29,6 +29,34 @@ export async function POST(request) {
     
     const supabase = getSupabaseAdmin()
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 1): require Bearer token matching
+    // body.userId. update-profile uses Supabase admin API to change
+    // a user's email and password -- without this guard, any anon
+    // caller knowing a user UUID could take over that account by
+    // changing the registered email or password.
+    //
+    // Mobile attaches the token automatically via apiClient
+    // (apps/mobile/src/lib/wisdom-center-api.ts line 184 +
+    //  account-api.ts), so backend-only. Same pattern as
+    // publish-wisdom (commit 84e8151).
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[update-profile] POST rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[update-profile] POST rejected: token verify failed', authErr && authErr.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[update-profile] POST rejected: token user', authUser.id, '!= body userId', userId)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Handle email change via admin API
     if (newEmail) {
       try {
