@@ -19,12 +19,39 @@ export async function GET() {
   }
 }
 
+// Admin allowlist helper -- shared by POST and DELETE.
+// Reads ADMIN_USER_IDS env var (comma-separated UUIDs), verifies the
+// caller's Bearer token via auth.getUser, returns null on success or
+// a NextResponse 401/403 on failure.
+async function checkAdminAuth(request, supabase) {
+  const authHeader = request.headers.get('authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!token) {
+    console.warn('[force-update] rejected: no bearer token')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+  if (authErr || !user) {
+    console.warn('[force-update] rejected: token verify failed', authErr && authErr.message)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (!adminIds.includes(user.id)) {
+    console.warn('[force-update] rejected: user', user.id, 'not in ADMIN_USER_IDS allowlist')
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return null // success
+}
+
 // POST: Create a new force update notification (admin)
 export async function POST(request) {
   try {
+    const supabase = getSupabase()
+    const authError = await checkAdminAuth(request, supabase)
+    if (authError) return authError
+
     const { version, message } = await request.json()
     if (!version || !message) return NextResponse.json({ error: 'Missing version or message' }, { status: 400 })
-    const supabase = getSupabase()
     // Deactivate all existing
     await supabase.from('force_updates').update({ is_active: false }).eq('is_active', true)
     // Create new
@@ -37,9 +64,12 @@ export async function POST(request) {
 }
 
 // DELETE: Deactivate force update (admin)
-export async function DELETE() {
+export async function DELETE(request) {
   try {
     const supabase = getSupabase()
+    const authError = await checkAdminAuth(request, supabase)
+    if (authError) return authError
+
     await supabase.from('force_updates').update({ is_active: false }).eq('is_active', true)
     return NextResponse.json({ success: true })
   } catch (e) {

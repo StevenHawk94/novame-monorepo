@@ -18,9 +18,51 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const userTier = searchParams.get('userTier') || 'free'
 
     const supabase = getSupabase()
+
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // ?userId. announcements returns content potentially scoped by
+    // user tier (free vs paid announcements); previously ?userTier
+    // was trusted from the query string, letting any anon caller
+    // see paid-tier marketing content.
+    //
+    // No live mobile caller right now (announcement display is
+    // not yet wired up in app), so adding the guard is safe.
+    // When the announcement UI is implemented, it will go through
+    // apiClient which attaches the token automatically.
+    //
+    // We also no longer trust query userTier -- we look up the
+    // user's tier from the profiles row using the verified user.id
+    // so attackers cannot promote themselves to see paid-only
+    // content.
+    // ============================================================
+    if (!userId) {
+      return Response.json({ error: 'Missing userId' }, { status: 400 })
+    }
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[announcements] GET rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[announcements] GET rejected: token verify failed', authErr && authErr.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[announcements] GET rejected: token user', authUser.id, '!= query userId', userId)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // DB-authoritative tier (do NOT trust query string)
+    const { data: profileTier } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', userId)
+      .single()
+    const userTier = profileTier?.subscription_tier || 'free'
     const now = new Date().toISOString()
 
     // 获取所有活跃的公告
