@@ -27,6 +27,7 @@ import {
 } from '@/lib/constants';
 import { getCurrentSession } from '@/lib/auth';
 import { subscribeHomeRefresh } from '@/lib/home-refresh-signal';
+import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { haptics } from '@/lib/haptics';
 import { storage } from '@/lib/storage';
 
@@ -347,7 +348,6 @@ export default function HomeTab() {
               icon="emoji-events"
               onPress={() => { void haptics.light(); router.push('/(main)/(modals)/ranking'); }}
             />
-            {/* Stage 3.8.1 DEV: reanimated v4 smoke test entry — DELETE before commit */}
           </View>
         </View>
 
@@ -400,6 +400,7 @@ export default function HomeTab() {
             </Text>
           </View>
         </View>
+        <AnnouncementGate />
       </SafeAreaView>
     </View>
   );
