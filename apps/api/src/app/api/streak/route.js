@@ -20,6 +20,33 @@ export async function GET(request) {
       return NextResponse.json({ success: false, error: 'Missing userId' })
     }
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // ?userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[streak] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[streak] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[streak] rejected: token user', _authUser.id, '!= query userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY

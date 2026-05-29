@@ -34,6 +34,33 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[ai-consent GET] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[ai-consent GET] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[ai-consent GET] rejected: token user', _authUser.id, '!= userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('profiles')
@@ -74,6 +101,33 @@ export async function POST(request) {
     const { userId } = body
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    }
+
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[ai-consent POST] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[ai-consent POST] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[ai-consent POST] rejected: token user', _authUser.id, '!= userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const supabase = getSupabase()

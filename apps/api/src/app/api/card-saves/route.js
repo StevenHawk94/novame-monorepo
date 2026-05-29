@@ -19,6 +19,33 @@ export async function GET(request) {
     const userId = searchParams.get('userId')
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[card-saves GET] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[card-saves GET] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[card-saves GET] rejected: token user', _authUser.id, '!= userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = getSupabase()
 
     // Get saved cards with card details
@@ -60,6 +87,33 @@ export async function POST(request) {
   try {
     const { userId, cardId } = await request.json()
     if (!userId || !cardId) return NextResponse.json({ error: 'Missing userId or cardId' }, { status: 400 })
+
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[card-saves POST] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[card-saves POST] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[card-saves POST] rejected: token user', _authUser.id, '!= userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const supabase = getSupabase()
 
@@ -113,6 +167,33 @@ export async function DELETE(request) {
   try {
     const { userId, cardId } = await request.json()
     if (!userId || !cardId) return NextResponse.json({ error: 'Missing userId or cardId' }, { status: 400 })
+
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2): require Bearer token matching
+    // userId. Same pattern as publish-wisdom (commit 84e8151) and
+    // wisdom-center (commit 099973f). Mobile uses apiClient which
+    // attaches the token automatically; backend-only change.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[card-saves DELETE] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[card-saves DELETE] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[card-saves DELETE] rejected: token user', _authUser.id, '!= userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const supabase = getSupabase()
     await supabase.from('card_saves').delete().eq('user_id', userId).eq('card_id', cardId)
