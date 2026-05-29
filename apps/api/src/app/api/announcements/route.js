@@ -147,6 +147,27 @@ export async function POST(request) {
 
     const supabase = getSupabase()
 
+    // SECURITY (audit follow-up): require a Bearer token matching body.userId,
+    // same gate as the GET handler. Without this, an anonymous caller could
+    // mark announcements read for an arbitrary user (mild griefing -- suppress
+    // someone's announcements). The mobile caller (announcements-api.ts) sends
+    // the token automatically via apiClient.
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[announcements] POST rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    if (authErr || !authUser) {
+      console.warn('[announcements] POST rejected: token verify failed', authErr && authErr.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (authUser.id !== userId) {
+      console.warn('[announcements] POST rejected: token user', authUser.id, '!= body userId', userId)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // 使用 upsert 避免重复
     const { error } = await supabase
       .from('user_read_announcements')
