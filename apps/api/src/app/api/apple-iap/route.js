@@ -78,6 +78,42 @@ export async function POST(request) {
       )
     }
 
+    // ============================================================
+    // SECURITY (Module 6 #6 Step 2 batch 5): require Bearer token
+    // matching body.userId. Without this guard, an anon caller could
+    // POST any { userId, fake transactionId, productId: 'novame.ultra.
+    // yearly' } and the route would activate an Ultra subscription
+    // for that target user. The header comment about Apple's webhook
+    // auto-refunding fake transactions is too optimistic -- the
+    // webhook only acts on real Apple server-to-server notifications,
+    // so a fake transactionId never triggers a REFUND event.
+    //
+    // Mobile attaches the token via apiClient (iap.ts:658), called
+    // from uploadPurchaseToServer() which already requires an active
+    // Supabase session (no purchase flow runs pre-signup), so the
+    // gate has zero impact on legitimate paths.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[apple-iap] rejected: no bearer token')
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[apple-iap] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[apple-iap] rejected: token user', _authUser.id, '!= body userId', userId)
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
     const tier = PRODUCT_TO_TIER[productId]
     if (!tier) {
       return NextResponse.json(

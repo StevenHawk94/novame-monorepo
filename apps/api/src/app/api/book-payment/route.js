@@ -74,6 +74,43 @@ export async function POST(request) {
       // 修改：加上 headers: corsHeaders
       if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400, headers: corsHeaders })
 
+      // ============================================================
+      // SECURITY (Module 6 #6 Step 2 batch 5): require Bearer token
+      // matching body.userId. Without this guard, an anon caller could
+      // POST a paymentIntent creation with any userId, which means the
+      // resulting Airwallex PaymentIntent metadata would carry that
+      // target user as user_id -- and when the webhook fires it would
+      // mutate the target user's order/profile state. Mobile attaches
+      // the token via apiClient.post (airwallex-api.ts line 61);
+      // payment-stub.tsx requires an active session before reaching
+      // here, so the gate has zero impact on legitimate paths.
+      //
+      // Note: we shadow the outer `const token = await getAccessToken()`
+      // (Airwallex access token, used several lines below) with a
+      // separate `_authToken` to avoid name collision. Variable scope
+      // is the same try-block.
+      // ============================================================
+      const _authHeader = request.headers.get('authorization') || ''
+      const _authToken = _authHeader.replace(/^Bearer\s+/i, '').trim()
+      if (!_authToken) {
+        console.warn('[book-payment] rejected: no bearer token')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      }
+      const _authSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(_authToken)
+      if (_authErr || !_authUser) {
+        console.warn('[book-payment] rejected: token verify failed', _authErr && _authErr.message)
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      }
+      if (_authUser.id !== userId) {
+        console.warn('[book-payment] rejected: token user', _authUser.id, '!= body userId', userId)
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      }
+
       const token = await getAccessToken()
       // Stage A: server-side price as source of truth. The mobile client
       // sends `product` ('wisdom_book' | 'wisdom_cards'); we look up
