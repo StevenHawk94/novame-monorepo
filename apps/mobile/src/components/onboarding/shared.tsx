@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import {
   ActivityIndicator,
   ImageSourcePropType,
@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Shared building blocks for the 11 onboarding screens (stage 3.5).
@@ -61,6 +63,9 @@ export function PrimaryButton({
   disabled,
   loading,
 }: PrimaryButtonProps) {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const btnStyles = useMemo(() => makeBtnStyles(scale, t), [scale, t]);
   return (
     <Pressable
       onPress={onPress}
@@ -80,10 +85,14 @@ export function PrimaryButton({
   );
 }
 
-const btnStyles = StyleSheet.create({
+function makeBtnStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   btn: {
     width: '100%',
-    height: 56,
+    height: Math.max(44, scale(56)),
     borderRadius: 28,
     backgroundColor: '#A855F7',
     alignItems: 'center',
@@ -97,10 +106,11 @@ const btnStyles = StyleSheet.create({
   },
   label: {
     color: '#FFFFFF',
-    fontSize: 18,
+    ...t.headline,
     fontFamily: 'Inter_700Bold',
   },
-});
+  });
+}
 
 // ---- BackButton ----
 
@@ -137,6 +147,8 @@ type ShellProps = {
 };
 
 export function Shell({ children, step, onBack }: ShellProps) {
+  const { scale } = useResponsive();
+  const shellStyles = useMemo(() => makeShellStyles(scale), [scale]);
   return (
     <SafeAreaView style={shellStyles.root} edges={['top', 'left', 'right']}>
       <View style={shellStyles.header}>
@@ -151,7 +163,8 @@ export function Shell({ children, step, onBack }: ShellProps) {
   );
 }
 
-const shellStyles = StyleSheet.create({
+function makeShellStyles(scale: (n: number) => number) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0A0820',
@@ -159,10 +172,10 @@ const shellStyles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-    gap: 12,
+    paddingHorizontal: scale(20),
+    paddingTop: scale(12),
+    paddingBottom: scale(8),
+    gap: scale(12),
   },
   headerSpacer: {
     width: 40,
@@ -173,7 +186,8 @@ const shellStyles = StyleSheet.create({
   body: {
     flex: 1,
   },
-});
+  });
+}
 
 // ---- ImgPage (full-bleed image at top + content below) ----
 
@@ -186,6 +200,8 @@ type ImgPageProps = {
 };
 
 export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPageProps) {
+  const { scale } = useResponsive();
+  const imgPageStyles = useMemo(() => makeImgPageStyles(scale), [scale]);
   return (
     <SafeAreaView style={imgPageStyles.root} edges={['top', 'left', 'right', 'bottom']}>
       <View style={imgPageStyles.imageContainer}>
@@ -207,7 +223,8 @@ export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPage
   );
 }
 
-const imgPageStyles = StyleSheet.create({
+function makeImgPageStyles(scale: (n: number) => number) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0A0820',
@@ -232,23 +249,26 @@ const imgPageStyles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 96,
+    height: scale(96),
     backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: scale(28),
     justifyContent: 'center',
   },
   footer: {
-    paddingHorizontal: 28,
-    paddingBottom: 16,
+    paddingHorizontal: scale(28),
+    paddingBottom: scale(16),
   },
-});
+  });
+}
 
 // ---- HighlightedText (parses {bold} segments) ----
 
 export function HighlightedText({ text }: { text: string }) {
+  const t = useTextStyle();
+  const hiStyles = useMemo(() => makeHiStyles(t), [t]);
   const parts = text.split(/\{|\}/);
   return (
     <Text style={hiStyles.body}>
@@ -265,11 +285,11 @@ export function HighlightedText({ text }: { text: string }) {
   );
 }
 
-const hiStyles = StyleSheet.create({
+function makeHiStyles(t: ReturnType<typeof useTextStyle>) {
+  return StyleSheet.create({
   body: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    lineHeight: 22,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
     fontStyle: 'italic',
   },
@@ -278,4 +298,5 @@ const hiStyles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     fontStyle: 'normal',
   },
-});
+  });
+}
