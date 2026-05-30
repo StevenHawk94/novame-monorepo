@@ -148,7 +148,11 @@ export default function OrdersTab() {
             <div className="col-span-2">
               <strong>Shipping:</strong> {editOrder.shipping_name},{' '}
               {editOrder.shipping_address}, {editOrder.shipping_city},{' '}
-              {editOrder.shipping_state} {editOrder.shipping_zip}
+              {editOrder.shipping_state} {editOrder.shipping_zip},{' '}
+              {editOrder.shipping_country}
+            </div>
+            <div className="col-span-2">
+              <strong>Phone:</strong> {editOrder.shipping_phone || 'N/A'}
             </div>
           </div>
           <div className="flex gap-3 mb-3">
