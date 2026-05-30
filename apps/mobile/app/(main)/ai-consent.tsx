@@ -87,7 +87,7 @@ export default function AiConsentModal() {
     void haptics.light();
     void Linking.openURL('https://novameapp.com/ai-features').catch(() => {
       Alert.alert(
-        'Could not open page',
+        'Unable to open page',
         'Please visit novameapp.com/ai-features in your browser.',
       );
     });
@@ -109,7 +109,7 @@ export default function AiConsentModal() {
     if (!userId) {
       setBusy(false);
       Alert.alert(
-        'Not signed in',
+        'Session expired',
         'Please sign in again to continue.',
       );
       return;

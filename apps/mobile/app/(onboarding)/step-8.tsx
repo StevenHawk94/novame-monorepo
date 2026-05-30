@@ -49,12 +49,12 @@ export default function OnboardingStep8() {
     <Shell step={8}>
       {showConfetti ? <Confetti /> : null}
       <View style={styles.body}>
-        <Text style={styles.eyebrow}>Look at that.</Text>
+        <Text style={styles.eyebrow}>Here it is.</Text>
         <Text style={styles.headline}>
-          Your initiative to simply download this app holds a lesson!
+          Even downloading this app was a step toward growth.
         </Text>
         <Text style={styles.subheadline}>
-          Even the smallest whisper of a thought holds the power to transform.
+          Every thought, no matter how small, has the power to change you.
         </Text>
         <View style={styles.cardContainer}>
           <FlippableCard

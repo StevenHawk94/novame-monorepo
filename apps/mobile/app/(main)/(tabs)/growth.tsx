@@ -368,8 +368,8 @@ export default function GrowthTab() {
     if (!userId || switchingMode) return;
     if (wpVisual <= 0) {
       Alert.alert(
-        'WP empty',
-        'Wait for your companion to recover, then start study mode again.',
+        'WP: 0%',
+        'Share a passing thought or a moment from your day to recharge and unlock Study Mode again.',
       );
       return;
     }
@@ -569,7 +569,7 @@ export default function GrowthTab() {
       {/* Sub-tab segmented header */}
       <View style={styles.segHeader}>
         <PagerTabBar
-          tabs={['My Tasks', 'My Logs']}
+          tabs={['My Quests', 'My Logs']}
           scrollProgress={scrollProgress}
           activeIndex={subTab === 'tasks' ? 0 : 1}
           onTabPress={(i) => {
@@ -622,7 +622,7 @@ export default function GrowthTab() {
               <View style={styles.heroBlock}>
                 <View style={styles.heroTitleRow}>
                   <Text style={styles.heroTitle}>
-                    Finish Your Tasks to Power Up Your Pal and Yourself!
+                    Finish Your Daily Quests to Power Up with Your Pal!
                   </Text>
                   <Image
                     source={CHARACTERS_IMAGE_SOURCE}
@@ -639,7 +639,7 @@ export default function GrowthTab() {
                 />
               </View>
               <View style={styles.tasksBlock}>
-                <Text style={styles.tasksHeader}>Growth Tasks</Text>
+                <Text style={styles.tasksHeader}>Growth Quests</Text>
                 {tasksLoading ? (
                   <View style={styles.tasksLoading}>
                     <ActivityIndicator size="small" color="#A855F7" />
@@ -649,7 +649,7 @@ export default function GrowthTab() {
                     <MaterialIcons name="check-circle" size={42} color="rgba(255,255,255,0.18)" />
                     <Text style={styles.tasksEmptyTitle}>All caught up</Text>
                     <Text style={styles.tasksEmptySub}>
-                      Share a wisdom to unlock more tasks
+                      Share a moment to unlock more quests.
                     </Text>
                   </View>
                 ) : (
@@ -679,9 +679,9 @@ export default function GrowthTab() {
                 ) : logs.length === 0 ? (
                   <View style={styles.logsEmpty}>
                     <MaterialIcons name="auto-awesome" size={42} color="rgba(255,255,255,0.18)" />
-                    <Text style={styles.logsEmptyTitle}>No wisdoms yet</Text>
+                    <Text style={styles.logsEmptyTitle}>Nothing shared yet</Text>
                     <Text style={styles.logsEmptySub}>
-                      Tap the mic to share your first one
+                      Tap the mic to share your first moment
                     </Text>
                   </View>
                 ) : (

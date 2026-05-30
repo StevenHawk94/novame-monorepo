@@ -212,7 +212,7 @@ export default function DiscoverTab() {
     <View style={styles.root}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Questions From Community</Text>
+        <Text style={styles.title}>Questions from the Community</Text>
         <Pressable
           onPress={openFilter}
           hitSlop={12}
@@ -243,7 +243,7 @@ export default function DiscoverTab() {
       ) : error ? (
         <View style={styles.center}>
           <MaterialIcons name="cloud-off" size={48} color="rgba(255,255,255,0.25)" />
-          <Text style={styles.errorTitle}>Couldn\'t load questions</Text>
+          <Text style={styles.errorTitle}>Unable to Load Questions</Text>
           <Text style={styles.errorSub}>{error}</Text>
           <Pressable onPress={() => { void haptics.light(); void load('initial'); }} style={styles.retryBtn}>
             <Text style={styles.retryText}>Try again</Text>

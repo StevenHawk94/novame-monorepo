@@ -104,7 +104,7 @@ export function SkinUnlockModal({ outfitNum, userId }: SkinUnlockModalProps) {
             <Image source={image} style={styles.image} resizeMode="contain" />
           </View>
 
-          <Text style={styles.subhead}>Do you want to switch now?</Text>
+          <Text style={styles.subhead}>Would you like to switch to it now?</Text>
 
           <View style={styles.buttonRow}>
             <Pressable

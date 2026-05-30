@@ -139,7 +139,7 @@ export default function NewQuestionScreen() {
       >
         {/* Lead copy */}
         <Text style={styles.lead}>
-          Share what you{'\u2019'}re wrestling with. The community will offer wisdom in response.
+          Ask the community something you{'\u2019'}re struggling with or curious about.
         </Text>
 
         {/* Textarea */}
@@ -169,7 +169,7 @@ export default function NewQuestionScreen() {
         </View>
 
         <Text style={styles.note}>
-          Note: a moderator will review your question before it appears in Discover.
+          Your question will be reviewed before appearing in Discover.
         </Text>
       </ScrollView>
 

@@ -356,7 +356,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
         </Text>
         <Text style={chooseStyles.subtitle}>
           {seekForceKeyword
-            ? 'Offer a moment/a thought in your life that that can create the wisdom to answer the question.'
+            ? 'Offer a moment or thought from your life that can create the wisdom to answer this question.'
             : 'Share a moment you witnessed, an action you took, or a thought that\u2019s lingering in your mind.'}
         </Text>
       </View>
@@ -1299,7 +1299,7 @@ function PhaseTypeInput({
             >
               <MaterialIcons name="arrow-back" size={24} color="#1F1147" />
             </Pressable>
-            <Text style={typeStyles.headerTitle}>Unload Your Mind Here</Text>
+            <Text style={typeStyles.headerTitle}>What's on Your Mind?</Text>
             <View style={typeStyles.headerSpacer} />
           </View>
 
@@ -2852,16 +2852,16 @@ export default function RecordModal() {
             mode="continuous"
             label1={
               phase === PHASE.PUBLISHING
-                ? 'Wait for it...'
+                ? 'Reading every words you\'ve shared'
                 : 'Generating your wisdom card...'
             }
             label2={
-              phase === PHASE.PUBLISHING ? 'Your legacy is loading.' : undefined
+              phase === PHASE.PUBLISHING ? 'Absorbing your thoughts...' : undefined
             }
             sublabel={
               phase === PHASE.PUBLISHING
                 ? 'Almost there'
-                : 'Analyzing patterns and insights'
+                : 'Ready in about 15–20 seconds.'
             }
           />
         </View>

@@ -129,7 +129,7 @@ export default function OnboardingStep1() {
         <Text style={styles.brand}>NovaMe</Text>
         <Text style={styles.tagline}>Journal. Reflect. Evolve.</Text>
         <Text style={styles.subtagline}>
-          Unlock personal growth through reflective wisdom.
+          Unlock personal growth through your own lived experience.
         </Text>
       </View>
     </ImgPage>

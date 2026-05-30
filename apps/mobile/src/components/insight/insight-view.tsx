@@ -428,7 +428,7 @@ export function InsightView({
           <View style={styles.communityRow}>
             <Text style={styles.communityBigNumber}>{communityCountStr}</Text>
             <Text style={styles.communityRowCaption}>
-              People in the community{'\n'}resonated with you
+              people in the community{'\n'}resonated with your words.
             </Text>
           </View>
         ) : null}
@@ -578,7 +578,7 @@ export function InsightView({
             <View style={styles.missionsIconCircle}>
               <MaterialIcons name="check" size={16} color="#FFFFFF" />
             </View>
-            <Text style={styles.missionsTitle}>Today's Missions to Grow</Text>
+            <Text style={styles.missionsTitle}>Today's Growth Quests</Text>
           </View>
           {card?.task_1 ? (
             <View style={styles.missionRow}>

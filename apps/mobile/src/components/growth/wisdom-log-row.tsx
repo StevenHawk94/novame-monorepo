@@ -25,7 +25,7 @@ export type WisdomLogRowProps = {
   onMenu: (id: string) => void;
 };
 
-const FALLBACK_TEXT = '(no transcript)';
+const FALLBACK_TEXT = '(no transcript available)';
 
 export function WisdomLogRow({
   wisdom,

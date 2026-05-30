@@ -167,8 +167,8 @@ export default function WeeklyReportModal() {
     } else if (res.kind === 'notEnough') {
       void haptics.warning();
       Alert.alert(
-        'Not enough wisdoms yet',
-        'Share at least 2 wisdoms in the past 7 days to unlock your report.',
+        'Not enough moments shared yet',
+        'Share at least 2 moments in 7 days to unlock your first weekly growth report.',
       );
       // Generate failed because the threshold wasn't met -- fall back
       // to the "didn't meet" empty state. We assume latestReport
@@ -194,7 +194,7 @@ export default function WeeklyReportModal() {
       <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={8}>
         <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
       </Pressable>
-      <Text style={styles.title}>Weekly Evolution Report</Text>
+      <Text style={styles.title}>Weekly Growth Report</Text>
       {historyWeekStart ? (
         <View style={styles.headerRight} />
       ) : (
@@ -249,8 +249,7 @@ export default function WeeklyReportModal() {
           <Text style={styles.emptyEmoji}>📝</Text>
           <Text style={styles.emptyTitle}>No Report Yet</Text>
           <Text style={styles.emptyDesc}>
-            Share at least 2 wisdoms in 7 days to unlock your first
-            weekly evolution report.
+            Share at least 2 moments in 7 days to unlock your first weekly growth report.
           </Text>
         </View>
       </View>
@@ -265,9 +264,7 @@ export default function WeeklyReportModal() {
           <Text style={styles.emptyEmoji}>🌱</Text>
           <Text style={styles.emptyTitle}>No New Report</Text>
           <Text style={styles.emptyDesc}>
-            You didn't meet the requirement in the past 7 days
-            (minimum 2 wisdoms). Keep sharing -- your next report
-            unlocks once you do.
+            You shared fewer than 2 moments in the past 7 days. Keep going — your next report unlocks as soon as you do.
           </Text>
         </View>
       </View>
@@ -282,8 +279,7 @@ export default function WeeklyReportModal() {
           <Text style={styles.emptyEmoji}>✨</Text>
           <Text style={styles.emptyTitle}>Your Report is Ready</Text>
           <Text style={styles.emptyDesc}>
-            Tap below to generate this week's evolution report from the
-            wisdoms you shared.
+            Tap below to generate your weekly growth report based on what you've shared.
           </Text>
           <Pressable
             onPress={handleGenerate}
@@ -346,7 +342,7 @@ export default function WeeklyReportModal() {
           <View style={styles.pulseHeadlineRow}>
             <Text style={styles.pulseBigNumber}>{questsFinished}</Text>
             <Text style={styles.pulseSubLabel}>
-              Quests Finished This Week
+              Quests Completed This Week
             </Text>
           </View>
 

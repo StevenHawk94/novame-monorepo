@@ -154,9 +154,9 @@ export function AssetsView({ shared }: Props) {
         end={{ x: 1, y: 1 }}
         style={styles.banner}
       >
-        <Text style={styles.bannerTitle}>Manifest Your Wisdom</Text>
+        <Text style={styles.bannerTitle}>Your Wisdom, Made Real</Text>
         <Text style={styles.bannerSubtitle}>
-          Bring Your Wisdom Assets to Life
+          Turn your journey into something you can hold.
         </Text>
       </LinearGradient>
 

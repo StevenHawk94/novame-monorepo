@@ -255,7 +255,7 @@ export default function SeekQuestionScreen() {
             <View style={styles.emptyBlock}>
               <MaterialIcons name="auto-awesome" size={42} color="rgba(255,255,255,0.18)" />
               <Text style={styles.emptyTitle}>No wisdoms yet</Text>
-              <Text style={styles.emptySub}>Be the first to offer one</Text>
+              <Text style={styles.emptySub}>Be the first to offer your wisdom.</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -281,7 +281,7 @@ export default function SeekQuestionScreen() {
               style={styles.ctaBtn}
             >
               <MaterialIcons name="auto-awesome" size={18} color="#FFFFFF" />
-              <Text style={styles.ctaText}>Offer Wisdom</Text>
+              <Text style={styles.ctaText}>Share Wisdom</Text>
             </LinearGradient>
           </Pressable>
         </View>

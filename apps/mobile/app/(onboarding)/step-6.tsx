@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
 
 /**
- * Step 6 — "Here's the truth: You won't grow by copying someone else's story."
+ * Step 6 — "You won't grow by copying someone else's story."
  *
  * Static copy screen. Image background ob-6.webp.
  */
@@ -21,11 +21,10 @@ export default function OnboardingStep6() {
     >
       <View style={styles.center}>
         <Text style={styles.headline}>
-          Here&apos;s the truth: You won&apos;t grow by copying someone else&apos;s story.
+          You won&apos;t grow by copying someone else&apos;s story.
         </Text>
         <Text style={styles.body}>
-          True growth comes from decoding your own life. Your raw, authentic
-          experiences already hold the wisdom you need.
+          True growth comes from your own story — your raw, unfiltered experiences already hold the wisdom you’ve been searching for.
         </Text>
       </View>
     </ImgPage>

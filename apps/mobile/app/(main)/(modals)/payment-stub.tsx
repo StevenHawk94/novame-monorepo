@@ -335,7 +335,7 @@ export default function PaymentModal() {
             />
             <Text style={styles.bannerText}>
               {resultBanner.kind === 'cancel'
-                ? "Payment cancelled. Tap Pay to try again — your address is saved."
+                ? "Payment cancelled. Your address is saved — tap below to try again."
                 : resultBanner.message}
             </Text>
           </View>

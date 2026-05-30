@@ -186,7 +186,7 @@ export default function CardsSelectModal() {
       });
       Alert.alert(
         'Deck complete',
-        'Your 48 cards are locked in. We will print and ship within a few business days.',
+        'We\'ll begin printing your deck and ship it within 10-15 business days. Since this is a custom piece, it takes a little extra time to craft with care.',
         [
           {
             text: 'OK',
@@ -212,7 +212,7 @@ export default function CardsSelectModal() {
     if (selectedIds.size > 0) {
       Alert.alert(
         'Discard selection?',
-        'Your card picks will not be saved. You can come back and try again later.',
+        'Your selections will not be saved. You can come back and try again later.',
         [
           { text: 'Stay', style: 'cancel' },
           {
@@ -262,8 +262,7 @@ export default function CardsSelectModal() {
           />
           <Text style={styles.emptyTitle}>No wisdom cards yet</Text>
           <Text style={styles.emptyBody}>
-            Share a wisdom from the Record tab and a card will appear in
-            your collection. Come back here once you have at least
+            Share a moment from the Record tab and a wisdom card will appear in your collection. Come back once you have collected
             {' ' + REQUIRED_COUNT} cards.
           </Text>
         </View>
@@ -298,7 +297,7 @@ export default function CardsSelectModal() {
                 color="rgba(192,132,252,0.85)"
               />
               <Text style={styles.hintBannerText}>
-                Tap to add. Long-press to preview both sides.
+                Tap to add a card, or long-press to preview both sides.
               </Text>
             </View>
           ) : null}
@@ -559,7 +558,7 @@ function PreviewModal({
             {idToSlug(kwId) ?? 'Wisdom'}
           </Text>
           <Text style={previewStyles.subtitle}>
-            Tap card to flip. Long-press hint: both sides.
+            Tap to flip. Long-press to see both sides.
           </Text>
 
           <View style={previewStyles.cardWrap}>

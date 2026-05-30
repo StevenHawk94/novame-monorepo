@@ -164,7 +164,7 @@ export default function MyQuestionsScreen() {
           <MaterialIcons name="inbox" size={48} color="rgba(255,255,255,0.18)" />
           <Text style={styles.emptyTitle}>No questions yet</Text>
           <Text style={styles.emptySub}>
-            Your submitted questions will appear here for tracking.
+            Questions you've submitted will appear here.
           </Text>
         </View>
       ) : (

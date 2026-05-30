@@ -481,7 +481,7 @@ export default function SubscriptionPaywallModal() {
         {pendingChange === 'upgrade' ? (
           <View style={styles.hintBannerUpgrade}>
             <Text style={styles.hintBannerText}>
-              Starts immediately. Unused time on your current plan is credited toward the new one.
+              Starts immediately. Pay only the prorated difference to upgrade.
             </Text>
           </View>
         ) : null}

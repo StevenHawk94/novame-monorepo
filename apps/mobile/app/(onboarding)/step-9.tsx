@@ -162,7 +162,7 @@ export default function OnboardingStep9() {
           Don&apos;t just take our word for it.
         </Text>
         <Text style={styles.subheadline}>
-          See how others are turning their everyday moments into lasting wisdom.
+          See how people just like you are turning everyday moments into lasting wisdom.
         </Text>
 
         <View style={styles.carouselWrap}>

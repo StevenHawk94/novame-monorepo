@@ -77,7 +77,7 @@ export default function EditAspireWordsModal() {
     }
     Alert.alert(
       'Discard changes?',
-      'Your edits to aspire words will be lost.',
+      'Your changes to aspire words will be discarded.',
       [
         { text: 'Cancel', style: 'cancel' },
         {

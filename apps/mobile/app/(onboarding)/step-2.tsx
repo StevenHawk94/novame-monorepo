@@ -41,7 +41,7 @@ export default function OnboardingStep2() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.headline}>Take a deep breath.</Text>
+        <Text style={styles.headline}>Close your eyes and imagine.</Text>
         <Text style={styles.subheadline}>
           How would you describe your ideal self?
         </Text>

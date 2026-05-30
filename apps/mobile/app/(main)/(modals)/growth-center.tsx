@@ -162,7 +162,7 @@ export default function GrowthCenterModal() {
               <Text style={styles.cardTitle}>NovaMe Journey</Text>
             </View>
             <Text style={styles.journeyText}>
-              Your growth score reflects every entry and completed task. Stay consistent with your daily logs, complete your tasks, and become the best version of yourself!
+              Your growth score reflects every entry and completed quests. Stay consistent, complete your quests, and grow toward your best self.
             </Text>
           </View>
 

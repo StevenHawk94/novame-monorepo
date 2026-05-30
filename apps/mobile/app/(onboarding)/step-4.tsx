@@ -24,7 +24,7 @@ export default function OnboardingStep4() {
   return (
     <Shell step={4} onBack={() => router.back()}>
       <View style={styles.body}>
-        <Text style={styles.headline}>Let&apos;s be real...</Text>
+        <Text style={styles.headline}>Be honest with yourself.</Text>
         <Text style={styles.subheadline}>
           How far away does that version of you feel right now?
         </Text>

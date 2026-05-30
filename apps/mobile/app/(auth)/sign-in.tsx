@@ -272,10 +272,10 @@ export default function AuthScreen() {
         <View style={styles.body}>
           <Branding />
           <Text style={styles.headline}>
-            Save your progress and claim your first card.
+            Keep your journey safe and ready to continue.
           </Text>
           <Text style={styles.subheadline}>
-            Create an account to keep everything safe.
+            Your wisdoms and cards will be waiting for you.
           </Text>
           <View style={styles.buttonGroup}>
             {/* Sign in with Apple — HIG-compliant white variant */}

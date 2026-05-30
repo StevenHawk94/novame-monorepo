@@ -29,7 +29,7 @@ export function ForceUpdateGate({ message }: { message: string | null }) {
           <Text style={styles.message}>
             {message && message.trim().length > 0
               ? message
-              : 'This version is no longer supported. Please update to continue using NovaMe.'}
+              : 'This version of NovaMe is out of date. Please update to continue.'}
           </Text>
           <Pressable
             onPress={handleUpdate}

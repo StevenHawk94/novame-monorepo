@@ -250,7 +250,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
     } else {
       body = (
         <>
-          <Text style={styles.title}>Sorry to hear that 🤍</Text>
+          <Text style={styles.title}>Thanks for being honest. 🤍</Text>
           <Text style={styles.subtitle}>
             Tell us what's not working -- we read every message and
             we'll do our best to make it right.

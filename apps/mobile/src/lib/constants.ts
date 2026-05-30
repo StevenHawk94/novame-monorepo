@@ -77,20 +77,20 @@ export function getUnlockedOutfits(level: number): number[] {
 // ---- Speech bubble messages ----
 
 export const SPEECH_BUBBLE_HUNGRY = [
-  'I need some inspiration, what you have in mind now?',
-  'Energy low! One reflection from you is the best way to get my gears turning again.',
+  'I need some inspiration. What\'s on your mind right now?',
+  'One reflection from you is all I need to get going again.',
   "I'm collecting shiny little thoughts! Did you find any good ones today?",
-  "I'm feeling a bit dim now. Do you have a spare spark of wisdom I can borrow?",
+  "I'm feeling a bit dull. Do you have a spare spark of wisdom I can borrow?",
   'My brain is officially mush. Just tell me one thing you saw or felt today.',
   "My inner light is flickering... could you brighten me up with a story from your day?",
-  "I'm hungry for a breakthrough! Do you have any 'Aha!' moments on the menu today?",
+  "Do you have any 'Aha!' moments to share today?",
   'My poor brain is a bit lonely. Mind sharing a private thought to keep it company?',
   "I feel like I'm losing my way. Can you guide me with a perspective only you have?",
   "Everything feels a bit 'blah' right now. I bet your day had a hidden gem that could fix that.",
   'My little tummy is rumbling for some deep thoughts!',
-  "I'm feeling a bit small. Remind me how big the world is through your eyes?",
-  'My wisdom-levels are low, feed me the smartest thing you thought of today!',
-  "I'm craving something sweet... like a fresh new perspective!",
+  "I'm feeling a bit small. Can you remind me how big the world looks through your eyes?",
+  'My energy is low — feed me the smartest thing you thought of today!',
+  "I'm craving something fresh — a new perspective from your day, maybe?",
   "I'm on a strict diet of pure inspiration. Feed me today's brightest thought!",
 ] as const;
 
@@ -98,7 +98,7 @@ export const SPEECH_BUBBLE_STUDY = [
   "I'm absorbing every spark you share.",
   "I'm focusing deeply on your truth.",
   "I'm locking in your hidden insights.",
-  "I'm evolving with your today's share.",
+  "I'm evolving with every moment you share.",
   "I'm transforming your thoughts into light.",
   "I'm feeling the power of your words.",
   "I'm syncing my energy with yours.",
@@ -121,10 +121,10 @@ export const SPEECH_BUBBLE_PLAY = [
 ] as const;
 
 export const SPEECH_BUBBLE_HUNGER_WARNING = [
-  "I'm getting tired... my learning efficiency is dropping.",
-  "Running low on energy... I can't focus as well anymore.",
+  "I'm getting tired... I could really use some wisdom from you.",
+  "Running low on energy... Share a thought to help me focus again.",
   'My willpower is fading... record some wisdom to recharge me!',
-  "Battery critical! I need some 'human energy.' What's on your mind right now?",
+  "Battery critical! I need your thoughts to keep going.",
   'My energy is fading. Share a thought with me? I need the spark to keep going.',
   'Feeling a bit weak... Even a tiny slice of your day would give me a huge boost!',
   'Focusing is getting harder. A quick insight would really boost my stats.',
@@ -136,7 +136,7 @@ export const SPEECH_BUBBLE_HUNGER_WARNING = [
  *
  * Mirrors the old HomeView updateBubble logic exactly:
  *   - new user without any wisdoms (charName set, wisdoms.length === 0):
- *     "Share your first story to power up {charName}!"
+ *     "Share your first moment to power up {charName}!"
  *   - WP <= 0: random from HUNGRY
  *   - WP <= HUNGER_THRESHOLD: random from HUNGER_WARNING
  *   - mode === 'study': random from STUDY

@@ -118,9 +118,9 @@ export function CollectionView({ shared }: Props) {
         end={{ x: 1, y: 1 }}
         style={styles.banner}
       >
-        <Text style={styles.bannerTitle}>Your Achievement</Text>
+        <Text style={styles.bannerTitle}>Your Collection</Text>
         <Text style={styles.bannerSubtitle}>
-          Capturing every moment of your growth.
+          Every card reflects a part of who you're becoming.
         </Text>
       </LinearGradient>
 

@@ -296,7 +296,7 @@ export default function MeModal() {
           <View style={styles.cardHeaderRow}>
             <View style={styles.cardHeaderLeft}>
               <MaterialIcons name="star" size={18} color="#FBBF24" />
-              <Text style={styles.cardHeaderTitle}>Better Self Match</Text>
+              <Text style={styles.cardHeaderTitle}>Ideal Self Score</Text>
             </View>
             <View style={styles.cardHeaderRight}>
               <Text style={styles.cardHeaderHint}>Details</Text>
@@ -314,7 +314,7 @@ export default function MeModal() {
 
         {/* 3. Wisdom Stats 2x2 */}
         <View style={styles.card}>
-          <Text style={styles.statsHeader}>YOUR WISDOM STATS</Text>
+          <Text style={styles.statsHeader}>Your Journey Stats</Text>
           <View style={styles.statsGrid}>
             <StatItem
               icon="edit-note"

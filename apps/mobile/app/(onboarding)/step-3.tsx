@@ -403,7 +403,7 @@ function FinalLine() {
         ]}
       >
         <Text style={styles.finalText}>
-          Wow, That's a beautiful version!
+          Wow, I absolutely love that version of you.
         </Text>
       </Animated.View>
     </View>

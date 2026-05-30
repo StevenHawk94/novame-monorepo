@@ -97,7 +97,7 @@ export default function SupportModal() {
     void haptics.light();
     if (busy) return;
     if (!userId) {
-      setStatus({ kind: 'error', text: 'Not signed in. Please re-launch the app.' });
+      setStatus({ kind: 'error', text: 'Session expired. Please restart the app and sign in again.' });
       return;
     }
     if (!category) {

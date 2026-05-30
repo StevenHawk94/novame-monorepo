@@ -49,7 +49,7 @@ type ProductKey = 'wisdom_book' | 'wisdom_cards';
 const COPY: Record<ProductKey, { title: string; tagline: string }> = {
   wisdom_book: {
     title: 'Wisdom Book',
-    tagline: 'A printed hardcover of every wisdom you have shared.',
+    tagline: 'A printed hardcover book of your shared moments and the journey of your growth.',
   },
   wisdom_cards: {
     title: 'Wisdom Cards',
@@ -174,7 +174,7 @@ export default function ProductDetailModal() {
       ctaLabel = `Order — $${total.toFixed(2)}`;
     } else {
       ctaState = 'locked';
-      ctaLabel = `Need ${totalWords.toLocaleString()} / ${config.book_unlock_words.toLocaleString()} words`;
+      ctaLabel = `${totalWords.toLocaleString()} / ${config.book_unlock_words.toLocaleString()} words to unlock`;
     }
   } else {
     if (pendingCardsOrder) {
@@ -185,7 +185,7 @@ export default function ProductDetailModal() {
       ctaLabel = `Order — $${total.toFixed(2)}`;
     } else {
       ctaState = 'locked';
-      ctaLabel = `Collect ${collectedKw} / ${config.cards_unlock_count} keywords`;
+      ctaLabel = `${collectedKw} / ${config.cards_unlock_count} keywords to unlock`;
     }
   }
 

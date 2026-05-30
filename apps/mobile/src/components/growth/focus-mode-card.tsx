@@ -76,10 +76,10 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
   const studyCountdown = `${studyH}h ${studyM}m`;
 
   const sublabel = isStudy
-    ? `XP is gaining faster, Your Pal will finish study in ${studyCountdown}`
+    ? `XP is accumulating faster. Study ends in ${studyCountdown}.`
     : wpZero
       ? 'Recover Your WP to Start'
-      : 'Start to boost your XP faster';
+      : 'Activate to earn XP faster';
 
   // Breathing animation SharedValue. Oscillates 0 <-> 1 when canStart,
   // held at 0 otherwise. Cancellation is explicit on the else branch
