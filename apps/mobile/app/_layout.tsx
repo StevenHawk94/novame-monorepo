@@ -34,6 +34,8 @@ import { fillProductAssets } from '@/lib/asset-cache';
 import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
+import { checkForceUpdate } from '@/lib/force-update';
+import { ForceUpdateGate } from '@/components/main/force-update-gate';
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
 // the global scope of the module that owns the root component, NOT
@@ -100,6 +102,22 @@ export default function RootLayout() {
   // covers cold starts (process launch), where INITIAL_SESSION is
   // a no-op on the onAuthStateChange listener.
   const [isReady, setIsReady] = useState(false);
+
+  // Force-update (hard update) gate. Checked in the background on mount,
+  // INDEPENDENT of the prewarm gate above -- checkForceUpdate() fails open on
+  // every error and we never let it block splash hide / app render. When it
+  // resolves required=true (installed version < server min_version, platform
+  // matches), we overlay an unescapable full-screen update screen.
+  const [forceUpdate, setForceUpdate] = useState<{ message: string | null } | null>(null);
+  useEffect(() => {
+    let active = true;
+    void checkForceUpdate().then((res) => {
+      if (active && res.required) setForceUpdate({ message: res.message });
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Stage 6 follow-up (commit 31 + commit 33): load Inter font
   // family at startup using expo-font's imperative Font.loadAsync,
@@ -367,6 +385,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemeProvider>
             <Stack screenOptions={{ headerShown: false }} />
+            {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
           </ThemeProvider>
         </SafeAreaProvider>
       </BottomSheetModalProvider>
