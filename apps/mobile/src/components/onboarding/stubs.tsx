@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -6,6 +6,8 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Stage 3.5 stub components for FlippableCard, CardSpinAnimation, Confetti.
@@ -39,6 +41,9 @@ export function FlippableCardStub({
   quoteShort,
   width,
 }: FlippableCardStubProps) {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const flippableStyles = useMemo(() => makeFlippableStyles(scale, t), [scale, t]);
   const height = width * 1.5;
   return (
     <View
@@ -72,7 +77,11 @@ export function FlippableCardStub({
   );
 }
 
-const flippableStyles = StyleSheet.create({
+function makeFlippableStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   card: {
     backgroundColor: '#1A1430',
     overflow: 'hidden',
@@ -101,17 +110,17 @@ const flippableStyles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: scale(16),
     backgroundColor: 'rgba(15, 11, 46, 0.85)',
   },
   quote: {
     color: '#FFFFFF',
-    fontSize: 13,
-    lineHeight: 18,
+    ...t.footnote,
     fontFamily: 'Inter_500Medium',
     fontStyle: 'italic',
   },
-});
+  });
+}
 
 // ---- CardSpinStub ----
 
@@ -153,6 +162,9 @@ export function CardSpinStub({
   duration,
   onDone,
 }: CardSpinStubProps) {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const spinStyles = useMemo(() => makeSpinStyles(scale, t), [scale, t]);
   useEffect(() => {
     if (mode !== 'timed') return;
     if (typeof duration !== 'number' || !onDone) return;
@@ -169,35 +181,40 @@ export function CardSpinStub({
   );
 }
 
-const spinStyles = StyleSheet.create({
+function makeSpinStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0F0B2E',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
   },
   label1: {
     color: '#FFFFFF',
-    fontSize: 18,
+    ...t.headline,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginTop: 32,
+    marginTop: scale(32),
   },
   label2: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_500Medium',
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: scale(6),
   },
   sublabel: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    marginTop: 8,
+    marginTop: scale(8),
   },
-});
+  });
+}
 
 // ---- ConfettiStub ----
 
