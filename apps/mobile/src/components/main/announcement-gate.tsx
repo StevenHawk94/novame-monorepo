@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getCurrentSession } from '@/lib/auth';
 import {
@@ -109,6 +109,11 @@ export function AnnouncementGate() {
     >
       <Pressable style={styles.backdrop} onPress={close}>
         <Pressable style={styles.card} onPress={() => {}}>
+          <Image
+            source={require('../../../assets/adaptive-icon.png')}
+            style={styles.icon}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>{announcement.title}</Text>
           <Text style={styles.body}>{announcement.content}</Text>
           <Pressable style={styles.button} onPress={close}>
@@ -131,28 +136,37 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 24,
-    paddingHorizontal: 22,
+    backgroundColor: '#7C3AED',
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 64,
+    height: 64,
+    marginBottom: 14,
   },
   title: {
-    color: '#1F1147',
-    fontSize: 18,
+    color: '#FFFFFF',
+    fontSize: 22,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 10,
+    textAlign: 'center',
+    marginBottom: 14,
   },
   body: {
-    color: '#4B4364',
+    color: 'rgba(255,255,255,0.92)',
     fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 22,
+    lineHeight: 23,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   button: {
     backgroundColor: '#EC4899',
     borderRadius: 999,
-    paddingVertical: 13,
+    paddingVertical: 15,
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   buttonText: {
     color: '#FFFFFF',

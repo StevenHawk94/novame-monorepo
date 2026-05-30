@@ -132,7 +132,7 @@ function backFontSize(
   // even when content actually fit at a larger size.
   const safetyMargin = 1.0;
   const scale = width / 270;
-  const baseSizes = [18, 17, 16, 15, 14, 13, 12, 11];
+  const baseSizes = [18, 17.5, 17, 16.5, 16, 15.5, 15, 14.5, 14, 13.5, 13, 12.5, 12, 11.5, 11];
 
   function totalLinesFor(size: number): number {
     // Inter is a narrow sans-serif. Empirical avg glyph width ratio:
@@ -142,7 +142,7 @@ function backFontSize(
     // These are tuned conservatively — slight over-estimate of glyph
     // width is safer than under-estimate (which causes content overflow).
     const charWidthRatio =
-      size >= 14 ? 0.48 : size >= 12 ? 0.50 : 0.52;
+      size >= 14 ? 0.47 : size >= 12 ? 0.48 : 0.50;
     const charsPerLine = Math.floor(availW / (size * charWidthRatio));
     if (charsPerLine <= 0) return Infinity;
     const paragraphs = text.split('\n');
@@ -157,14 +157,14 @@ function backFontSize(
     return totalLines;
   }
 
-  // Priority 1: largest font that fits at default line-height 1.5.
+  // Priority 1: largest font that fits at the real effective line-height (1.4).
   for (const base of baseSizes) {
     const size = Math.round(base * scale * 10) / 10;
     if (size < 11) continue;
     const lines = totalLinesFor(size);
-    const textHeight = lines * size * 1.5 * safetyMargin;
+    const textHeight = lines * size * 1.4 * safetyMargin;
     if (textHeight <= availH) {
-      return { size, lineHeightRatio: 1.5 };
+      return { size, lineHeightRatio: 1.4 };
     }
   }
 
