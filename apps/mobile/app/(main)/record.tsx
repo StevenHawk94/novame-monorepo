@@ -87,6 +87,12 @@ import {
 } from '@/lib/permissions';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { storage } from '@/lib/storage';
+import {
+  saveRecordDraft,
+  clearRecordDraft,
+  loadValidRecordDraft,
+  draftToRecordingResult,
+} from '@/lib/record-draft';
 import { fetchDailyLimit } from '@/lib/daily-limit-api';
 import { refreshDailyTasks } from '@/lib/daily-tasks-api';
 import { refreshWisdoms } from '@/lib/wisdoms-api';
@@ -576,6 +582,8 @@ function PhaseRecording({
   setRecordingResult,
   goTo,
   close,
+  seekForceKeyword,
+  seekQuestionId,
 }: PhaseProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [showMinWarning, setShowMinWarning] = useState(false);
@@ -701,6 +709,16 @@ function PhaseRecording({
         return;
       }
       setRecordingResult(result);
+      // Stage: record-draft. Persist the just-finished recording as the single
+      // unfinished-recording draft (copies audio to documentDirectory + MMKV
+      // meta) so a failed/interrupted Transform can be resumed on next entry.
+      // Fail-safe inside saveRecordDraft -- never blocks advancing to publish.
+      void saveRecordDraft({
+        sourceUri: result.uri,
+        durationSec: recordingDurationSec,
+        forceKeyword: seekForceKeyword || null,
+        seekQuestionId: seekQuestionId || null,
+      });
       goTo(PHASE.PUBLISH);
     } catch (err) {
       console.error('[record] save failed:', err);
@@ -1052,6 +1070,9 @@ function PhasePublish({
     haptics.light();
     Keyboard.dismiss();
     void cancelRecorder(recorder);
+    // Stage: record-draft. Cancel on the confirm screen is a deliberate
+    // discard -- drop the unfinished-recording draft saved at handleSave.
+    void clearRecordDraft();
     close();
   };
 
@@ -1907,6 +1928,10 @@ function PhasePublishing({
         } catch {
           // best-effort
         }
+        // Stage: record-draft. Successful publish -> drop the unfinished-
+        // recording draft too (audio file + meta). Failure paths intentionally
+        // keep it so the user can resume.
+        void clearRecordDraft();
 
         // Stage 6.InsightPrefetch: set up image warm-up. The actual wait
         // for these images to be ready happens in the outer record.tsx
@@ -2537,14 +2562,70 @@ export default function RecordModal() {
   // + seekQuestionId on publish so the card art matches the tag and
   // the new card is automatically linked to the question.
   const seekParams = useLocalSearchParams<RecordRouteParams>();
-  const seekQuestionId = (seekParams.questionId || '').trim();
-  const seekForceKeyword = (seekParams.forceKeyword || '').trim();
+  // restoredSeek: when an unfinished-recording draft is resumed, its saved
+  // seek context (forceKeyword / questionId) overrides the route params, which
+  // are empty when the user re-enters from the bottom tab rather than a Seek
+  // CTA. null = no draft restored; use the route params as-is.
+  const [restoredSeek, setRestoredSeek] = useState<{
+    forceKeyword: string | null;
+    seekQuestionId: string | null;
+  } | null>(null);
+  const seekQuestionId =
+    restoredSeek?.seekQuestionId ?? (seekParams.questionId || '').trim();
+  const seekForceKeyword =
+    restoredSeek?.forceKeyword ?? (seekParams.forceKeyword || '').trim();
   const seekQuestionText = (seekParams.questionText || '').trim();
   const isSeekContext = seekQuestionId.length > 0;
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [phase, setPhase] = useState<Phase>(PHASE.CHOOSE);
+
+  // Stage: record-draft. On mount, check for a single unfinished-recording
+  // draft (audio persisted in documentDirectory + MMKV meta from a prior
+  // handleSave whose Transform never succeeded). If present and its file is
+  // still on disk, prompt the user: Continue (hydrate state + jump straight to
+  // the PUBLISH confirm screen so one Transform tap retries) or Discard (clear
+  // the draft). Runs once; the ref guards against StrictMode double-invoke.
+  const draftCheckedRef = useRef(false);
+  useEffect(() => {
+    if (draftCheckedRef.current) return;
+    draftCheckedRef.current = true;
+    let active = true;
+    (async () => {
+      const draft = await loadValidRecordDraft();
+      if (!active || !draft) return;
+      Alert.alert(
+        'Unfinished Recording',
+        'You have a recording that wasn\'t published yet. Continue with it?',
+        [
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => {
+              void clearRecordDraft();
+            },
+          },
+          {
+            text: 'Continue',
+            onPress: () => {
+              setRecordingResult(draftToRecordingResult(draft));
+              setRecordingDurationSec(draft.durationSec);
+              setRestoredSeek({
+                forceKeyword: draft.forceKeyword,
+                seekQuestionId: draft.seekQuestionId,
+              });
+              setPhase(PHASE.PUBLISH);
+            },
+          },
+        ],
+        { cancelable: false },
+      );
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Stage 6.InsightPrefetch: image warm-up state machine.
   //
