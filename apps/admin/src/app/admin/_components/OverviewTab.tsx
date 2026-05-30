@@ -17,6 +17,16 @@ type Dashboard = {
   totalUsers: number;
 };
 
+type ForceUpdateRow = {
+  id: string;
+  min_version: string | null;
+  version: string | null;
+  message: string | null;
+  platform: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+};
+
 type Period = 'today' | '7days' | '30days' | '180days' | 'all';
 
 const PERIODS: Period[] = ['today', '7days', '30days', '180days', 'all'];
@@ -32,15 +42,31 @@ export default function OverviewTab({
   const [period, setPeriod] = useState<Period>('all');
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(initLoading);
-  const [fuVersion, setFuVersion] = useState('');
+  const [fuMinVersion, setFuMinVersion] = useState('');
   const [fuMessage, setFuMessage] = useState('');
+  const [fuPlatform, setFuPlatform] = useState<'ios' | 'android' | 'all'>('all');
   const [fuActive, setFuActive] = useState(false);
   const [fuSending, setFuSending] = useState(false);
+  const [fuHistory, setFuHistory] = useState<ForceUpdateRow[]>([]);
 
   useEffect(() => {
     loadDash();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
+
+  useEffect(() => {
+    loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const d = await apiClient.get<{ success?: boolean; history?: ForceUpdateRow[] }>(
+        '/api/force-update?history=true',
+      );
+      if (d.success) setFuHistory(d.history ?? []);
+    } catch {}
+  };
 
   const loadDash = async () => {
     setLoading(true);
@@ -55,18 +81,41 @@ export default function OverviewTab({
   };
 
   const sendForceUpdate = async () => {
-    if (!fuVersion || !fuMessage) return alert('Fill version and message');
+    if (!fuMinVersion || !fuMessage) return alert('Fill minimum version and message');
+    if (!/^\d+\.\d+\.\d+$/.test(fuMinVersion.trim())) {
+      return alert('Minimum version must be semver, e.g. 1.2.0');
+    }
+    if (
+      !confirm(
+        `Force ALL users below version ${fuMinVersion.trim()} (${fuPlatform}) to update?\n\n` +
+          'They will be blocked from using the app until they update. Make sure ' +
+          'this version is already live on the App Store.',
+      )
+    ) {
+      return;
+    }
     setFuSending(true);
-    await apiClient.post('/api/force-update', { version: fuVersion, message: fuMessage });
-    setFuVersion('');
-    setFuMessage('');
-    loadDash();
+    try {
+      await apiClient.post('/api/force-update', {
+        minVersion: fuMinVersion.trim(),
+        message: fuMessage,
+        platform: fuPlatform,
+      });
+      setFuMinVersion('');
+      setFuMessage('');
+      setFuPlatform('all');
+      loadDash();
+      loadHistory();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to send force update');
+    }
     setFuSending(false);
   };
 
   const cancelForceUpdate = async () => {
     await apiClient.delete('/api/force-update');
     loadDash();
+    loadHistory();
   };
 
   return (
@@ -134,11 +183,20 @@ export default function OverviewTab({
               ) : (
                 <div className="flex gap-3">
                   <input
-                    value={fuVersion}
-                    onChange={(e) => setFuVersion(e.target.value)}
-                    placeholder="Version (e.g. 1.2.0)"
-                    className="border rounded-lg px-3 py-2 text-sm text-black w-32"
+                    value={fuMinVersion}
+                    onChange={(e) => setFuMinVersion(e.target.value)}
+                    placeholder="Min version (e.g. 1.2.0)"
+                    className="border rounded-lg px-3 py-2 text-sm text-black w-36"
                   />
+                  <select
+                    value={fuPlatform}
+                    onChange={(e) => setFuPlatform(e.target.value as 'ios' | 'android' | 'all')}
+                    className="border rounded-lg px-3 py-2 text-sm text-black w-28"
+                  >
+                    <option value="all">All</option>
+                    <option value="ios">iOS</option>
+                    <option value="android">Android</option>
+                  </select>
                   <input
                     value={fuMessage}
                     onChange={(e) => setFuMessage(e.target.value)}
@@ -152,6 +210,53 @@ export default function OverviewTab({
                   >
                     {fuSending ? '...' : 'Send'}
                   </button>
+                </div>
+              )}
+            </div>
+
+            {/* Force Update History */}
+            <div className="bg-white rounded-xl p-5 border mb-6">
+              <h3 className="font-bold text-black mb-3">
+                🕘 Force Update History ({fuHistory.length})
+              </h3>
+              {fuHistory.length === 0 ? (
+                <p className="text-gray-500 text-sm">No force updates created yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-black">
+                    <thead>
+                      <tr className="text-left text-gray-500 border-b">
+                        <th className="py-2 pr-4">Min Version</th>
+                        <th className="py-2 pr-4">Platform</th>
+                        <th className="py-2 pr-4">Status</th>
+                        <th className="py-2 pr-4">Message</th>
+                        <th className="py-2 pr-4">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fuHistory.map((row) => (
+                        <tr key={row.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-mono">
+                            {row.min_version ?? row.version ?? '—'}
+                          </td>
+                          <td className="py-2 pr-4">{row.platform ?? 'all'}</td>
+                          <td className="py-2 pr-4">
+                            {row.is_active ? (
+                              <span className="text-red-600 font-bold">ACTIVE</span>
+                            ) : (
+                              <span className="text-gray-400">inactive</span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4 max-w-xs truncate">{row.message ?? '—'}</td>
+                          <td className="py-2 pr-4 text-gray-500 whitespace-nowrap">
+                            {row.created_at
+                              ? new Date(row.created_at).toLocaleString()
+                              : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

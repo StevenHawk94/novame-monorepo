@@ -8,9 +8,27 @@ function getSupabase() {
 }
 
 // GET: Check if there's an active force update
-export async function GET() {
+export async function GET(request) {
   try {
     const supabase = getSupabase()
+
+    // ?history=true: admin-only full history list (audit view of every
+    // force-update ever created). Requires Bearer token in ADMIN_USER_IDS.
+    // The default (no param) path stays PUBLIC -- mobile polls it on launch
+    // to read the single active row, so it must not require auth.
+    const { searchParams } = new URL(request.url)
+    if (searchParams.get('history') === 'true') {
+      const authError = await checkAdminAuth(request, supabase)
+      if (authError) return authError
+      const { data, error } = await supabase
+        .from('force_updates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, history: data || [] })
+    }
+
     const { data } = await supabase.from('force_updates').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(1)
     const active = data?.[0] || null
     return NextResponse.json({ success: true, forceUpdate: active })
@@ -50,12 +68,22 @@ export async function POST(request) {
     const authError = await checkAdminAuth(request, supabase)
     if (authError) return authError
 
-    const { version, message } = await request.json()
-    if (!version || !message) return NextResponse.json({ error: 'Missing version or message' }, { status: 400 })
+    const { minVersion, message, platform } = await request.json()
+    if (!minVersion || !message) return NextResponse.json({ error: 'Missing minVersion or message' }, { status: 400 })
+    // Validate semver shape (major.minor.patch, digits only). The mobile
+    // client fails OPEN on anything it can't parse, but reject obviously
+    // bad input here so admins get immediate feedback instead of silently
+    // shipping a no-op force-update.
+    if (!/^\d+\.\d+\.\d+$/.test(String(minVersion).trim())) {
+      return NextResponse.json({ error: 'minVersion must be semver, e.g. 1.2.0' }, { status: 400 })
+    }
+    const normalizedPlatform = ['ios', 'android', 'all'].includes(platform) ? platform : 'all'
     // Deactivate all existing
     await supabase.from('force_updates').update({ is_active: false }).eq('is_active', true)
-    // Create new
-    const { data, error } = await supabase.from('force_updates').insert({ version, message, is_active: true }).select().single()
+    // Create new. `version` is a legacy NOT NULL column, now deprecated in
+    // favor of `min_version`; we store the same value to satisfy the
+    // constraint without a schema change.
+    const { data, error } = await supabase.from('force_updates').insert({ version: String(minVersion).trim(), min_version: String(minVersion).trim(), message, platform: normalizedPlatform, is_active: true }).select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, forceUpdate: data })
   } catch (e) {
