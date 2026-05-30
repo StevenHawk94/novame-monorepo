@@ -25,4 +25,6 @@ export type Order = {
   shipping_city?: string
   shipping_state?: string
   shipping_zip?: string
+  shipping_country?: string
+  shipping_phone?: string
 }
