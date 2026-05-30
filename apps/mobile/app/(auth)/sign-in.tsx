@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -15,6 +15,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { storage } from '@/lib/storage';
 import { haptics } from '@/lib/haptics';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 import {
   sendPasswordReset,
@@ -86,6 +87,9 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
 }
 
 export default function AuthScreen() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -548,11 +552,15 @@ export default function AuthScreen() {
 
 // ---- styles ----
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0F0B2E',
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
     justifyContent: 'space-between',
   },
   body: {
@@ -561,75 +569,71 @@ const styles = StyleSheet.create({
   },
   brand: {
     color: '#C084FC',
-    fontSize: 32,
-    fontWeight: '700',
+    ...t.title1,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: scale(32),
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
-    lineHeight: 36,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 15,
+    ...t.subheadline,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 36,
+    marginBottom: scale(36),
   },
   subheadlineSmall: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: scale(24),
   },
   formTitle: {
     color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '700',
+    ...t.title1,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 32,
+    marginBottom: scale(32),
   },
   input: {
     backgroundColor: '#1A1A2E',
     borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(18),
+    ...t.callout,
     fontFamily: 'Inter_400Regular',
     color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   otpInput: {
-    fontSize: 24,
+    ...t.title2,
+    fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
     letterSpacing: 8,
   },
   buttonGroup: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   btnSlot: {
     // Each button isolated in its own View so the touch responder
     // system treats them as separate hit-test regions. 16px spacing
     // chosen for visual uniformity across all 3 buttons.
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   btn: {
     borderRadius: 16,
-    paddingVertical: 16,
-    minHeight: 50, // Apple HIG minimum tappable height
+    paddingVertical: scale(16),
+    minHeight: Math.max(44, scale(50)), // Apple HIG minimum tappable height
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
   btnIcon: {
-    marginRight: 10,
+    marginRight: scale(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -640,8 +644,7 @@ const styles = StyleSheet.create({
   },
   btnAppleText: {
     color: '#000000',
-    fontSize: 17,
-    fontWeight: '600',
+    ...t.headline,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.4,
   },
@@ -657,20 +660,18 @@ const styles = StyleSheet.create({
   // with Google" wording + colors are intact, so 17pt SemiBold is compliant.
   btnGoogleText: {
     color: '#1F1F1F',
-    fontSize: 17,
-    fontWeight: '600',
+    ...t.headline,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.4,
   },
 
   btnPrimary: {
     backgroundColor: '#A855F7',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   btnPrimaryText: {
     color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
+    ...t.headline,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.4,
   },
@@ -678,57 +679,57 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   bottomLinkRow: {
-    marginTop: 24,
+    marginTop: scale(24),
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   forgotLinkRow: {
-    marginBottom: 16,
+    marginBottom: scale(16),
     alignSelf: 'flex-start',
   },
   backLink: {
-    marginTop: 16,
+    marginTop: scale(16),
     alignItems: 'center',
   },
   dimText: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
   },
   boldLinkText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    ...t.footnote,
     fontWeight: '700',
     fontFamily: 'Inter_700Bold',
   },
   linkText: {
     color: '#C084FC',
-    fontSize: 14,
+    ...t.footnote,
     fontWeight: '600',
     fontFamily: 'Inter_600SemiBold',
   },
   messages: {
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   errorText: {
     color: '#EF4444',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   infoText: {
     color: '#C084FC',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   footer: {
-    paddingBottom: 16,
+    paddingBottom: scale(16),
   },
   footerText: {
     color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
+    ...t.caption,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
   },
@@ -739,14 +740,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   devLinkRow: {
-    marginTop: 16,
+    marginTop: scale(16),
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   devLinkText: {
     color: 'rgba(255,255,255,0.35)',
-    fontSize: 12,
+    ...t.caption,
     fontFamily: 'Inter_400Regular',
     fontStyle: 'italic',
   },
-});
+  });
+}
