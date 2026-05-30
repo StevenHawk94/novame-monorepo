@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -13,6 +13,7 @@ import {
   getOnboardingState,
   patchOnboardingState,
 } from '@/lib/onboarding';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 2 — "How would you describe your ideal self?" word selector.
@@ -23,6 +24,9 @@ import {
  * selections.
  */
 export default function OnboardingStep2() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const initial = getOnboardingState().aspireWords;
   const [selected, setSelected] = useState<string[]>(initial);
@@ -61,42 +65,47 @@ export default function OnboardingStep2() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingHorizontal: scale(24),
+    paddingTop: scale(16),
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.9)',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   hint: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 24,
-    gap: 12,
+    paddingHorizontal: scale(24),
+    paddingTop: scale(8),
+    paddingBottom: scale(24),
+    gap: scale(12),
   },
   counter: {
     color: 'rgba(255,255,255,0.3)',
-    fontSize: 12,
+    ...t.caption,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
   },
-});
+  });
+}
