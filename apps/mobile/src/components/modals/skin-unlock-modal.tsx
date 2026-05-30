@@ -31,7 +31,7 @@ import {
   View,
 } from 'react-native';
 
-import { switchOutfit } from '@/lib/character-state';
+import { switchOutfit, markSkinSeen } from '@/lib/character-state';
 import { dequeueSkinUnlock } from '@/lib/skin-unlock-store';
 import { haptics } from '@/lib/haptics';
 
@@ -64,9 +64,10 @@ export function SkinUnlockModal({ outfitNum, userId }: SkinUnlockModalProps) {
     setBusy(true);
     try {
       await switchOutfit(userId, outfitNum);
-      // Success — dequeue and close. The fresh CachedCharacterState
-      // is already written to MMKV by switchOutfit, so the next
-      // home tab focus will pick it up via getCachedCharacterState.
+      // Mark this outfit's unlock modal as seen (DB) so it never re-fires,
+      // then dequeue + close. The fresh CachedCharacterState is already
+      // written to MMKV by switchOutfit; next home focus picks it up.
+      void markSkinSeen(userId, outfitNum);
       dequeueSkinUnlock();
     } catch (e) {
       console.warn('[skin-unlock-modal] switchOutfit failed:', e);
@@ -78,6 +79,8 @@ export function SkinUnlockModal({ outfitNum, userId }: SkinUnlockModalProps) {
   const handleLater = () => {
     void haptics.light();
     if (busy) return;
+    // Seen = shown, regardless of Switch vs Later: mark so it never re-fires.
+    if (userId) void markSkinSeen(userId, outfitNum);
     dequeueSkinUnlock();
   };
 

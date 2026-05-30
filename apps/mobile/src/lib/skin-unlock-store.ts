@@ -29,8 +29,8 @@ function notify() {
 
 /**
  * Append outfit numbers to the unlock queue. Called by
- * fetchCharacterState after detectNewlyUnlockedOutfits returns
- * non-empty.
+ * fetchCharacterState after computing pending unlocks
+ * (getUnlockedOutfits(level) minus DB seenSkinUnlocks minus outfit 1).
  *
  * Idempotency: outfit numbers already in the queue are not re-added
  * (covers the rare double-fetch race where two fetchCharacterState

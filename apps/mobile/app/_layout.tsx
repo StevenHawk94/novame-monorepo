@@ -31,7 +31,6 @@ import {
   shouldRefreshAll,
 } from '@/lib/cache-refresh-all';
 import { fillProductAssets } from '@/lib/asset-cache';
-import { clearSkinUnlockTracker } from '@/lib/skin-unlock-tracker';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
@@ -351,7 +350,6 @@ export default function RootLayout() {
           // user on the same device starts with no "already seen"
           // history. Also drain the in-memory queue so leftover
           // modals from the prior session don't flash on sign-in.
-          clearSkinUnlockTracker();
           clearSkinUnlockQueue();
           // Onboarding cache: scoped to the previous user's uncommitted
           // onboarding draft. Safe to clear unconditionally.

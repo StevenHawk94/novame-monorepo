@@ -1,8 +1,8 @@
 import { storage } from './storage';
 import { apiClient } from './api';
 import { setAiConsentFromServer } from './ai-consent';
-import { detectNewlyUnlockedOutfits } from './skin-unlock-tracker';
 import { enqueueSkinUnlocks } from './skin-unlock-store';
+import { getUnlockedOutfits } from '@novame/core';
 import {
   type CharacterMode,
   WP_PLAY_DECAY_PER_HOUR,
@@ -103,6 +103,13 @@ export type CharacterStateResponse = {
    * requireAiConsent is synchronous and survives offline use.
    */
   aiConsentAt: string | null;
+  /**
+   * Outfit numbers (2-6) whose unlock modal this user has already been
+   * shown (DB-authoritative, from user_seen_skin_unlocks). Used to compute
+   * which unlock modals still need to fire: getUnlockedOutfits(level) minus
+   * this set minus outfit 1. Replaces the old MMKV lastShownLevel tracker.
+   */
+  seenSkinUnlocks: number[];
 };
 
 /**
@@ -192,20 +199,22 @@ export async function fetchCharacterState(
   // writes its own MMKV).
   setAiConsentFromServer(data.aiConsentAt);
 
-    // Stage 5.WR.2 (Bug 3): detect skin unlocks crossed by the new level
-    // and enqueue them for the global SkinUnlockModal (rendered in tabs
-    // _layout.tsx). detectNewlyUnlockedOutfits writes lastShownLevel
-    // to MMKV synchronously before returning, so a concurrent second
-    // fetch (e.g. 60s setInterval firing while focus refetch is in
-    // flight) will see the updated state and return [].
+    // Skin-unlock detection (DB-authoritative). The set of outfits that
+    // SHOULD have an unlock modal = getUnlockedOutfits(level) minus outfit 1
+    // (default skin, never notified). Subtract the server's seenSkinUnlocks
+    // (already shown for this user, persisted in user_seen_skin_unlocks) to
+    // get those still pending. This survives re-login / cache clear, fixing
+    // the old MMKV-tracker bug that re-fired the whole backlog every login.
     try {
-      const newlyUnlocked = detectNewlyUnlockedOutfits(next.level);
-      if (newlyUnlocked.length > 0) {
-        enqueueSkinUnlocks(newlyUnlocked);
+      const seen = new Set(data.seenSkinUnlocks ?? []);
+      const pending = getUnlockedOutfits(next.level).filter(
+        (n) => n !== 1 && !seen.has(n),
+      );
+      if (pending.length > 0) {
+        enqueueSkinUnlocks(pending);
       }
     } catch (e) {
-      // Non-fatal: tracking error doesn't break the data fetch. Log so
-      // we'd notice it in TestFlight if it started failing systemically.
+      // Non-fatal: a detection error must not break the data fetch.
       console.warn('[character-state] skin unlock detection failed:', e);
     }
 
@@ -301,6 +310,27 @@ export async function switchOutfit(
     outfitNum,
   });
   return fetchCharacterState(userId);
+}
+
+/**
+ * Marks a skin-unlock modal as seen for this user so it never fires again
+ * (persisted in user_seen_skin_unlocks; survives re-login / cache clear).
+ * Fire-and-forget: errors are swallowed -- worst case the modal reappears on
+ * a later fetch, which is the pre-fix behavior, not a regression.
+ */
+export async function markSkinSeen(
+  userId: string,
+  outfitNum: number,
+): Promise<void> {
+  try {
+    await apiClient.post('/api/character-state', {
+      userId,
+      action: 'mark_skin_seen',
+      outfitNum,
+    });
+  } catch (e) {
+    console.warn('[character-state] markSkinSeen failed:', e);
+  }
 }
 
 /**

@@ -196,6 +196,15 @@ export async function GET(request) {
 
     const { data: allChars } = await supabase.from('character_data').select('*').eq('user_id', userId).order('character_id')
 
+    // Skin-unlock "seen" set (DB-authoritative). Mobile computes which
+    // outfit-unlock modals to show as getUnlockedOutfits(level) - seen - {1}.
+    // Replaces the old MMKV-only tracker that re-fired on every re-login.
+    const { data: seenRows } = await supabase
+      .from('user_seen_skin_unlocks')
+      .select('outfit_num')
+      .eq('user_id', userId)
+    const seenSkinUnlocks = (seenRows || []).map(r => r.outfit_num)
+
     return NextResponse.json({
       success: true,
       activeCharacterId: charId,
@@ -205,6 +214,7 @@ export async function GET(request) {
       levelInfo,
       allCharacters: allChars || [],
       aiConsentAt: profile.ai_consent_at ?? null,
+      seenSkinUnlocks,
     })
   } catch (error) {
     console.error('GET character-state error:', error)
@@ -376,6 +386,21 @@ export async function POST(request) {
       }).eq('id', charData.id)
 
       return NextResponse.json({ success: true, expGained: amount, newTotalExp, levelInfo, unlockedOutfits: unlocked })
+    }
+
+    if (action === 'mark_skin_seen') {
+      // Record that the user has been shown the unlock modal for this outfit,
+      // so it never re-fires (survives re-login / cache clear). Upsert =
+      // idempotent; outfit 1 is the default skin and should never be sent.
+      const outfitNum = parseInt(body.outfitNum, 10)
+      if (!Number.isInteger(outfitNum) || outfitNum < 2 || outfitNum > 6) {
+        return NextResponse.json({ error: 'Invalid outfitNum' }, { status: 400 })
+      }
+      const { error: seenErr } = await supabase
+        .from('user_seen_skin_unlocks')
+        .upsert({ user_id: userId, outfit_num: outfitNum }, { onConflict: 'user_id,outfit_num' })
+      if (seenErr) return NextResponse.json({ error: seenErr.message }, { status: 500 })
+      return NextResponse.json({ success: true })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
