@@ -18,6 +18,8 @@
 
 export * from './colors'
 export * from './typography'
+export * from './textStyle'
+export * from './responsive'
 export * from './spacing'
 export * from './shadows'
 export * from './animations'
