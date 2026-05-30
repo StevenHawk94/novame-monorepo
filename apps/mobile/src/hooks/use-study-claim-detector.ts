@@ -22,6 +22,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 
 import {
+  requestModalSlot,
+  releaseModalSlot,
+  useActiveModalSlot,
+} from '@/lib/modal-coordinator';
+
+import {
   applyLocalWPDecay,
   fetchCharacterState,
   getCachedCharacterState,
@@ -55,14 +61,38 @@ export function useStudyClaimDetector() {
     [],
   );
 
+  // Coordinator (announcement > claim > skin): instead of pushing the route
+  // immediately, register intent. The push happens only once claim becomes the
+  // active (highest-priority requested) slot -- i.e. after any announcement
+  // closes -- via the effect below. claimingRef latches so we request/push at
+  // most once per detected condition.
   const triggerClaim = useCallback(() => {
     if (claimingRef.current) return;
     claimingRef.current = true;
-    router.push('/(main)/(modals)/study-claim');
+    requestModalSlot('claim');
+    // Safety release of the latch in case the modal is dismissed by gesture
+    // without unmount-release firing (defensive; unmount cleanup is primary).
     setTimeout(() => {
       claimingRef.current = false;
     }, 60_000);
   }, []);
+
+  // Push the study-claim route only when claim is the active slot. This makes
+  // claim yield to a higher-priority announcement and only surface after it
+  // closes. pushedRef guards against a double-push if active flips twice.
+  const activeSlot = useActiveModalSlot();
+  const pushedRef = useRef(false);
+  useEffect(() => {
+    if (activeSlot === 'claim' && claimingRef.current && !pushedRef.current) {
+      pushedRef.current = true;
+      router.push('/(main)/(modals)/study-claim');
+    }
+    if (activeSlot !== 'claim') {
+      // Reset push latch once we are no longer active (modal closed -> slot
+      // released by the study-claim screen), so a future condition can push again.
+      pushedRef.current = false;
+    }
+  }, [activeSlot]);
 
   // Active first-fetch on mount: as soon as userId resolves, hit the
   // server and decide synchronously whether to push the modal. This

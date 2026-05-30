@@ -10,6 +10,11 @@ import {
   type RatingPromptSheetRef,
 } from '@/components/rating/rating-prompt-sheet';
 import { useSkinUnlockHead } from '@/lib/skin-unlock-store';
+import {
+  requestModalSlot,
+  releaseModalSlot,
+  useActiveModalSlot,
+} from '@/lib/modal-coordinator';
 import { subscribeRatingPromptRequest } from '@/lib/rating-prompt';
 import { getCurrentSession } from '@/lib/auth';
 
@@ -36,6 +41,24 @@ export default function TabsLayout() {
   // the same modal surface.
   const queueHead = useSkinUnlockHead();
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Coordinator (announcement > claim > skin): request a slot while the queue
+  // has a pending unlock; release when it drains. The modal renders only when
+  // skin is the active (highest-priority requested) slot, so it waits behind
+  // an announcement or claim instead of stacking/racing. markSeen still fires
+  // inside SkinUnlockModal on Switch/Later -- i.e. only when actually shown.
+  const activeSlot = useActiveModalSlot();
+  useEffect(() => {
+    if (queueHead !== undefined) {
+      requestModalSlot('skin');
+    } else {
+      releaseModalSlot('skin');
+    }
+  }, [queueHead]);
+  // Release on unmount so a pending request never outlives this layout.
+  useEffect(() => {
+    return () => releaseModalSlot('skin');
+  }, []);
   useEffect(() => {
     // Cache the user id once for the modal's switchOutfit call.
     // It's stable for the lifetime of this layout (signing out
@@ -66,7 +89,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="discover" options={{ title: 'Discover' }} />
         <Tabs.Screen name="assets" options={{ title: 'Assets' }} />
       </Tabs>
-      {queueHead !== undefined ? (
+      {queueHead !== undefined && activeSlot === 'skin' ? (
         <SkinUnlockModal outfitNum={queueHead} userId={userId} />
       ) : null}
       <RatingPromptSheet ref={ratingSheetRef} />

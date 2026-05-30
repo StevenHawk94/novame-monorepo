@@ -7,6 +7,11 @@ import {
   markAnnouncementRead,
   type Announcement,
 } from '@/lib/announcements-api';
+import {
+  requestModalSlot,
+  releaseModalSlot,
+  useActiveModalSlot,
+} from '@/lib/modal-coordinator';
 
 const THROTTLE_MS = 10 * 60 * 1000; // Q1b = 10 min between foreground checks
 
@@ -45,8 +50,38 @@ export function AnnouncementGate() {
     const next = await fetchUnreadAnnouncement(userId);
     if (next) {
       setAnnouncement(next);
-      void markAnnouncementRead(userId, next.id); // Q2 = read on display
+      // Coordinator (announcement > claim > skin): request a slot; do NOT
+      // mark read here. markRead fires only when we actually become the
+      // active modal and render (see effect below), so a queued-but-hidden
+      // announcement is never marked seen.
+      requestModalSlot('announcement');
     }
+  }, []);
+
+  const active = useActiveModalSlot();
+  const isActive = active === 'announcement';
+
+  // Mark read the instant we actually display (active + have content) -- Q2
+  // "read on display" semantics, now coordinated so it never fires while
+  // queued behind a higher-priority modal (none exists above announcement,
+  // but this keeps the rule uniform and correct if priorities change).
+  const announcementId = announcement?.id;
+  useEffect(() => {
+    if (!isActive || !announcementId) return;
+    let cancelled = false;
+    void getCurrentSession().then((session) => {
+      const userId = session?.user?.id;
+      if (!cancelled && userId) void markAnnouncementRead(userId, announcementId);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, announcementId]);
+
+  // Release the slot when this gate unmounts (e.g. user navigates away from
+  // Home) so a stuck request never blocks claim/skin.
+  useEffect(() => {
+    return () => releaseModalSlot('announcement');
   }, []);
 
   useEffect(() => {
@@ -57,20 +92,26 @@ export function AnnouncementGate() {
     return () => sub.remove();
   }, [check]);
 
-  if (!announcement) return null;
+  // Only render when we are the active (highest-priority requested) modal.
+  if (!announcement || !isActive) return null;
+
+  const close = () => {
+    setAnnouncement(null);
+    releaseModalSlot('announcement');
+  };
 
   return (
     <Modal
       transparent
       visible
       animationType="fade"
-      onRequestClose={() => setAnnouncement(null)}
+      onRequestClose={close}
     >
-      <Pressable style={styles.backdrop} onPress={() => setAnnouncement(null)}>
+      <Pressable style={styles.backdrop} onPress={close}>
         <Pressable style={styles.card} onPress={() => {}}>
           <Text style={styles.title}>{announcement.title}</Text>
           <Text style={styles.body}>{announcement.content}</Text>
-          <Pressable style={styles.button} onPress={() => setAnnouncement(null)}>
+          <Pressable style={styles.button} onPress={close}>
             <Text style={styles.buttonText}>Got it</Text>
           </Pressable>
         </Pressable>

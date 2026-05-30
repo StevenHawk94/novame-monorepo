@@ -26,6 +26,7 @@ import {
 import { postStudyClaim, type StudyClaimResponse } from '@/lib/study-claim-api';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
+import { releaseModalSlot } from '@/lib/modal-coordinator';
 
 const FILL_DURATION_MS = 900;
 
@@ -37,6 +38,13 @@ export default function StudyClaimModal() {
   const [submitting, setSubmitting] = useState(true);
 
   const charName = getCachedCharacterState()?.charName || 'Your companion';
+
+  // Release the coordinator's claim slot whenever this screen unmounts --
+  // covers every exit path (Awesome button router.back, swipe dismiss, replace)
+  // so the next-priority modal (skin) can surface and the slot never sticks.
+  useEffect(() => {
+    return () => releaseModalSlot('claim');
+  }, []);
 
   const progress = useSharedValue(0);
   const targetRef = useRef(0);
