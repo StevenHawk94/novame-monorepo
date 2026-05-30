@@ -19,13 +19,8 @@
  *     the modal via gesture rather than the Awesome button.
  */
 import { useCallback, useEffect, useRef } from 'react';
-import { router } from 'expo-router';
 
-import {
-  requestModalSlot,
-  releaseModalSlot,
-  useActiveModalSlot,
-} from '@/lib/modal-coordinator';
+import { requestStudyClaim } from '@/lib/study-claim-store';
 
 import {
   applyLocalWPDecay,
@@ -61,38 +56,23 @@ export function useStudyClaimDetector() {
     [],
   );
 
-  // Coordinator (announcement > claim > skin): instead of pushing the route
-  // immediately, register intent. The push happens only once claim becomes the
-  // active (highest-priority requested) slot -- i.e. after any announcement
-  // closes -- via the effect below. claimingRef latches so we request/push at
-  // most once per detected condition.
+  // Mark a study-claim as pending in the global store. The modal is rendered
+  // and coordinated (announcement > claim > skin) by (tabs)/_layout.tsx, which
+  // subscribes to study-claim-store and shows <StudyClaimModal> when claim is
+  // the active coordinator slot. claimingRef latches so we request at most once
+  // per detected condition; it releases when the modal closes (clearStudyClaim
+  // in the store flips pending to null, but the latch is time-based here as a
+  // defensive reset for the gesture-dismiss case).
   const triggerClaim = useCallback(() => {
     if (claimingRef.current) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
     claimingRef.current = true;
-    requestModalSlot('claim');
-    // Safety release of the latch in case the modal is dismissed by gesture
-    // without unmount-release firing (defensive; unmount cleanup is primary).
+    requestStudyClaim(userId);
     setTimeout(() => {
       claimingRef.current = false;
     }, 60_000);
   }, []);
-
-  // Push the study-claim route only when claim is the active slot. This makes
-  // claim yield to a higher-priority announcement and only surface after it
-  // closes. pushedRef guards against a double-push if active flips twice.
-  const activeSlot = useActiveModalSlot();
-  const pushedRef = useRef(false);
-  useEffect(() => {
-    if (activeSlot === 'claim' && claimingRef.current && !pushedRef.current) {
-      pushedRef.current = true;
-      router.push('/(main)/(modals)/study-claim');
-    }
-    if (activeSlot !== 'claim') {
-      // Reset push latch once we are no longer active (modal closed -> slot
-      // released by the study-claim screen), so a future condition can push again.
-      pushedRef.current = false;
-    }
-  }, [activeSlot]);
 
   // Active first-fetch on mount: as soon as userId resolves, hit the
   // server and decide synchronously whether to push the modal. This
@@ -121,7 +101,6 @@ export function useStudyClaimDetector() {
       }
 
       try {
-        console.log('[claim-detector] fetching server state…');
         const fresh = await fetchCharacterState(userId);
         if (cancelled) return;
         if (evaluate(fresh.mode, fresh.wp, fresh.wpLastFetchedAtMs)) {

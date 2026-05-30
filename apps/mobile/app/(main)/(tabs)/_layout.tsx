@@ -5,11 +5,16 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
 import { SkinUnlockModal } from '@/components/modals/skin-unlock-modal';
+import { StudyClaimModal } from '@/components/modals/study-claim-modal';
 import {
   RatingPromptSheet,
   type RatingPromptSheetRef,
 } from '@/components/rating/rating-prompt-sheet';
 import { useSkinUnlockHead } from '@/lib/skin-unlock-store';
+import {
+  useStudyClaimPending,
+  clearStudyClaim,
+} from '@/lib/study-claim-store';
 import {
   requestModalSlot,
   releaseModalSlot,
@@ -59,6 +64,22 @@ export default function TabsLayout() {
   useEffect(() => {
     return () => releaseModalSlot('skin');
   }, []);
+
+  // Study-claim: same coordinator pattern as skin. Detector sets a pending
+  // claim in study-claim-store; we request the 'claim' slot while pending and
+  // render <StudyClaimModal> only when claim is the active (highest-priority)
+  // slot, so it yields to an announcement and surfaces before skin.
+  const claimPending = useStudyClaimPending();
+  useEffect(() => {
+    if (claimPending) {
+      requestModalSlot('claim');
+    } else {
+      releaseModalSlot('claim');
+    }
+  }, [claimPending]);
+  useEffect(() => {
+    return () => releaseModalSlot('claim');
+  }, []);
   useEffect(() => {
     // Cache the user id once for the modal's switchOutfit call.
     // It's stable for the lifetime of this layout (signing out
@@ -91,6 +112,15 @@ export default function TabsLayout() {
       </Tabs>
       {queueHead !== undefined && activeSlot === 'skin' ? (
         <SkinUnlockModal outfitNum={queueHead} userId={userId} />
+      ) : null}
+      {claimPending && activeSlot === 'claim' ? (
+        <StudyClaimModal
+          userId={claimPending.userId}
+          onClose={() => {
+            clearStudyClaim();
+            releaseModalSlot('claim');
+          }}
+        />
       ) : null}
       <RatingPromptSheet ref={ratingSheetRef} />
     </BottomSheetModalProvider>
