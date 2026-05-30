@@ -1343,7 +1343,7 @@ function PhaseTypeInput({
             />
             <View style={typeStyles.counterRow}>
               <Text style={typeStyles.counterText}>
-                Max {maxChars.toLocaleString()} characters
+                Max {maxChars.toLocaleString()} characters · Plan: {tierLimits.name}
               </Text>
               <Text style={typeStyles.counterText}>
                 {typedText.length.toLocaleString()}/{maxChars.toLocaleString()}
