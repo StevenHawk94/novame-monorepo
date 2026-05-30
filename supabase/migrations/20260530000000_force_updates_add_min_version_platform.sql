@@ -1,0 +1,31 @@
+-- ============================================================
+-- Force-update: add semver gate columns.
+--
+-- The force_updates table previously held only a free-text `version`
+-- + `message`, with no structured way to compare against the user's
+-- installed app version. Mobile never consumed it, so toggling it did
+-- nothing on the client.
+--
+-- Adds:
+--   min_version text  -- minimum supported semver (e.g. '1.2.0'). When
+--                        the client's CFBundleShortVersionString is
+--                        below this, mobile shows a blocking hard-update
+--                        screen. NULLABLE: legacy active rows have no
+--                        min_version, and the client fails OPEN (no
+--                        forced update) on null/invalid, so an
+--                        unconfigured row can never brick users.
+--   platform text     -- 'ios' | 'android' | 'all'. Default 'all' so
+--                        existing rows stay valid and apply everywhere.
+--
+-- Legacy `version` / `message` are intentionally kept: `version` is
+-- still written by the admin POST (NOT NULL, no default) and is now
+-- deprecated in favor of min_version; `message` is reused as the
+-- update-prompt body copy.
+--
+-- Single-active semantics are unchanged (admin POST deactivates all
+-- others before inserting). Idempotent: add column if not exists.
+-- Already applied to the remote DB; this file only syncs git.
+-- ============================================================
+alter table public.force_updates
+  add column if not exists min_version text,
+  add column if not exists platform text not null default 'all';
