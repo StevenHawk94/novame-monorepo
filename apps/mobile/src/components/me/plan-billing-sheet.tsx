@@ -87,8 +87,6 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
     dismiss: () => sheetRef.current?.dismiss(),
   }));
 
-  const snapPoints = useMemo(() => ['55%', '95%'], []);
-
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -130,12 +128,10 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
   return (
     <BottomSheetModal
       ref={sheetRef}
-      snapPoints={snapPoints}
-      index={0}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.grabber}
-      enableDynamicSizing={false}
+      enableDynamicSizing
     >
       <BottomSheetView
         style={[
@@ -226,7 +222,6 @@ const styles = StyleSheet.create({
     height: 4,
   },
   content: {
-    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
   },
