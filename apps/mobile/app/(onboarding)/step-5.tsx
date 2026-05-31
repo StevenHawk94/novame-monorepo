@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
 import { S4_RESP } from '@/components/onboarding/constants';
 import { getOnboardingState } from '@/lib/onboarding';
+import { useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 5 — Response keyed by sa choice from step 4.
@@ -12,6 +14,8 @@ import { getOnboardingState } from '@/lib/onboarding';
  * back to the B response (the most neutral and encouraging one).
  */
 export default function OnboardingStep5() {
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(t), [t]);
   const router = useRouter();
   const sa = getOnboardingState().sa;
   const text = (sa && S4_RESP[sa]) || S4_RESP.B;
@@ -30,12 +34,13 @@ export default function OnboardingStep5() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(t: ReturnType<typeof useTextStyle>) {
+  return StyleSheet.create({
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    lineHeight: 30,
   },
-});
+  });
+}

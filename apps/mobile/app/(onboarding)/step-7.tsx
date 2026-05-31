@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -9,6 +9,7 @@ import {
   getOnboardingState,
   patchOnboardingState,
 } from '@/lib/onboarding';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 7 — "Why did you open NovaMe today?"
@@ -19,6 +20,9 @@ import {
  * the spinning animation reveals their first card).
  */
 export default function OnboardingStep7() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const initial = getOnboardingState().s7;
   const [picked, setPicked] = useState<'A' | 'B' | 'C' | 'D' | null>(initial);
@@ -62,25 +66,29 @@ export default function OnboardingStep7() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   body: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
     justifyContent: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   options: {
     gap: 12,
@@ -98,11 +106,13 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     color: '#FFFFFF',
-    fontSize: 14,
+    ...t.footnote,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: scale(24),
+    paddingBottom: scale(24),
   },
-});
+  });
+}

@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 6 — "You won't grow by copying someone else's story."
@@ -9,6 +11,9 @@ import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
  * Static copy screen. Image background ob-6.webp.
  */
 export default function OnboardingStep6() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   return (
     <ImgPage
@@ -31,23 +36,26 @@ export default function OnboardingStep6() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   center: {
     alignItems: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    lineHeight: 30,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   body: {
     color: 'rgba(255,255,255,0.45)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
     textAlign: 'center',
   },
-});
+  });
+}

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -9,6 +10,7 @@ import {
   getOnboardingState,
   markOnboardingComplete,
 } from '@/lib/onboarding';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 11 — Finish.
@@ -31,6 +33,9 @@ import {
  * be present in any branch building this screen.
  */
 export default function OnboardingStep11() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const charName = getOnboardingState().charName.trim();
 
@@ -56,26 +61,30 @@ export default function OnboardingStep11() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   center: {
     alignItems: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 24,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   body: {
     color: 'rgba(255,255,255,0.45)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 22,
     textAlign: 'center',
   },
   charName: {
     color: '#C084FC',
     fontFamily: 'Inter_700Bold',
   },
-});
+  });
+}

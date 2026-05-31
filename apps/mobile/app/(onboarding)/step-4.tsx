@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -5,6 +6,7 @@ import { Shell } from '@/components/onboarding/shared';
 import { S4_OPTS } from '@/components/onboarding/constants';
 import { patchOnboardingState } from '@/lib/onboarding';
 import { haptics } from '@/lib/haptics';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 4 — "How far away does that version of you feel right now?"
@@ -14,6 +16,9 @@ import { haptics } from '@/lib/haptics';
  * the choice).
  */
 export default function OnboardingStep4() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
 
   const handleSelect = (key: 'A' | 'B' | 'C') => {
@@ -48,26 +53,30 @@ export default function OnboardingStep4() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   body: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
     justifyContent: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 18,
+    ...t.headline,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
+    marginBottom: scale(32),
   },
   options: {
     gap: 12,
@@ -87,13 +96,16 @@ const styles = StyleSheet.create({
   },
   optionKey: {
     color: 'rgba(255,255,255,0.3)',
-    fontSize: 16,
+    ...t.callout,
+    fontWeight: '700',
     fontFamily: 'Inter_700Bold',
   },
   optionLabel: {
     color: '#FFFFFF',
-    fontSize: 16,
+    ...t.callout,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
     flex: 1,
   },
-});
+  });
+}
