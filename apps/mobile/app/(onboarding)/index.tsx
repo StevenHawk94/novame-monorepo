@@ -153,6 +153,7 @@ function makeStyles(
     color: '#FFFFFF',
     ...t.title1,
     fontFamily: 'Inter_700Bold',
+    textAlign: 'center',
     marginBottom: scale(12),
   },
   tagline: {
@@ -160,12 +161,14 @@ function makeStyles(
     ...t.headline,
     fontWeight: '500',
     fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
     marginBottom: scale(8),
   },
   subtagline: {
     color: 'rgba(255,255,255,0.4)',
     ...t.footnote,
     fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
   },
   });
 }
