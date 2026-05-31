@@ -566,7 +566,12 @@ const RECORDING_LOTTIE = require('../../assets/animations/recording.json');
 //
 // Timer text is 25% of the ring size — preserves the digit-to-sphere
 // visual ratio chosen in design QA at every device width.
-const RING_SIZE = Math.round(Dimensions.get('window').width * 0.92);
+const RING_SIZE = Math.round(
+  Math.min(
+    Dimensions.get('window').width * 0.92,
+    Dimensions.get('window').height * 0.42,
+  ),
+);
 // Timer text display width (not height) should be ~35-40% of the
 // sphere. fontSize controls height; "00:04" in bold Inter renders
 // at a display width of roughly fontSize × 2.45. Solving:
@@ -585,6 +590,7 @@ function PhaseRecording({
   seekForceKeyword,
   seekQuestionId,
 }: PhaseProps) {
+  const insets = useSafeAreaInsets();
   const [isPaused, setIsPaused] = useState(false);
   const [showMinWarning, setShowMinWarning] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -776,7 +782,7 @@ function PhaseRecording({
   }
 
   return (
-    <View style={recStyles.root}>
+    <View style={[recStyles.root, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
       {/* Top "Recording" indicator */}
       <View style={recStyles.topIndicator}>
         <View style={recStyles.topIndicatorRow}>
