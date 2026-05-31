@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -88,6 +89,8 @@ function calcSaving(monthly: number, yearly: number): number {
 
 export default function SubscriptionPaywallModal() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => makeStyles(width), [width]);
   const [cycle, setCycle] = useState<Cycle>('monthly');
   const [selected, setSelected] = useState<TierDisplay['key']>('pro');
 
@@ -519,7 +522,9 @@ export default function SubscriptionPaywallModal() {
 
 // ---- styles ----
 
-const styles = StyleSheet.create({
+function makeStyles(width: number) {
+  const shrink = (n: number) => (width <= 380 ? Math.round(n * 0.85) : n);
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0F0B2E',
@@ -531,7 +536,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: shrink(32),
   },
   closeBtn: {
     width: 36,
@@ -573,22 +578,22 @@ const styles = StyleSheet.create({
   },
   heroLine1: {
     color: '#FFFFFF',
-    fontSize: 36,
+    fontSize: shrink(36),
     fontWeight: '900',
-    lineHeight: 42,
+    lineHeight: shrink(42),
   },
   heroLine2: {
     color: '#C084FC',
-    fontSize: 36,
+    fontSize: shrink(36),
     fontWeight: '900',
-    lineHeight: 42,
-    marginBottom: 16,
+    lineHeight: shrink(42),
+    marginBottom: shrink(16),
   },
   heroDesc: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 28,
+    fontSize: shrink(14),
+    lineHeight: shrink(22),
+    marginBottom: shrink(28),
   },
   // Toggle
   toggleWrap: {
@@ -597,7 +602,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 999,
     padding: 4,
-    marginBottom: 24,
+    marginBottom: shrink(24),
   },
   toggleBtn: {
     flexDirection: 'row',
@@ -631,15 +636,15 @@ const styles = StyleSheet.create({
   },
   // Tier cards
   tierList: {
-    gap: 12,
-    marginBottom: 24,
+    gap: shrink(12),
+    marginBottom: shrink(24),
   },
   tierCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    gap: shrink(14),
+    paddingVertical: shrink(16),
+    paddingHorizontal: shrink(16),
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 16,
     borderWidth: 2,
@@ -671,7 +676,7 @@ const styles = StyleSheet.create({
   },
   tierName: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: shrink(18),
     fontWeight: '700',
   },
   savingChip: {
@@ -695,7 +700,7 @@ const styles = StyleSheet.create({
   },
   tierPrice: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: shrink(22),
     fontWeight: '900',
   },
   tierPriceUnit: {
@@ -717,7 +722,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: shrink(16),
     backgroundColor: '#0F0B2E',
   },
   currentBadge: {
@@ -755,15 +760,15 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   subscribeBtn: {
-    paddingVertical: 18,
+    paddingVertical: shrink(18),
     backgroundColor: '#A855F7',
     borderRadius: 999,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: shrink(12),
   },
   subscribeBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: shrink(16),
     fontWeight: '700',
   },
   footerLinks: {
@@ -781,4 +786,5 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
   },
-});
+  });
+}
