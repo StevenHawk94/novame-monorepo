@@ -144,9 +144,10 @@ type ShellProps = {
   children: ReactNode;
   step: number;
   onBack?: () => void;
+  hideProgress?: boolean;
 };
 
-export function Shell({ children, step, onBack }: ShellProps) {
+export function Shell({ children, step, onBack, hideProgress }: ShellProps) {
   const { scale } = useResponsive();
   const shellStyles = useMemo(() => makeShellStyles(scale), [scale]);
   return (
@@ -154,7 +155,7 @@ export function Shell({ children, step, onBack }: ShellProps) {
       <View style={shellStyles.header}>
         {onBack ? <BackButton onPress={onBack} /> : <View style={shellStyles.headerSpacer} />}
         <View style={shellStyles.progressContainer}>
-          <ProgressBar step={step} />
+          {hideProgress ? null : <ProgressBar step={step} />}
         </View>
         <View style={shellStyles.headerSpacer} />
       </View>

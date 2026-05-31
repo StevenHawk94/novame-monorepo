@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dimensions,
   StyleSheet,
@@ -16,6 +16,7 @@ import { FlippableCard } from '@/components/cards/FlippableCard';
 import { INITIATIVE_CARD } from '@/components/onboarding/constants';
 import { getCachedAssetUri } from '@/lib/asset-cache';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
  * Step 8 — "Look at that. Your initiative... holds a lesson!"
@@ -35,6 +36,9 @@ import { getStandardCardWidth } from '@/lib/card-dimensions';
  * will add a real confetti burst.
  */
 export default function OnboardingStep8() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const [showConfetti] = useState(true);
 
@@ -46,7 +50,7 @@ export default function OnboardingStep8() {
   // const backFilename = 'action-back.webp';
 
   return (
-    <Shell step={8}>
+    <Shell step={8} hideProgress>
       {showConfetti ? <Confetti /> : null}
       <View style={styles.body}>
         <Text style={styles.eyebrow}>Here it is.</Text>
@@ -76,33 +80,39 @@ export default function OnboardingStep8() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   body: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
   },
   eyebrow: {
     color: '#C4B5FD',
-    fontSize: 13,
+    ...t.footnote,
+    fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 18,
+    ...t.headline,
+    fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 12,
+    ...t.caption,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   cardContainer: {
     alignItems: 'center',
@@ -110,12 +120,13 @@ const styles = StyleSheet.create({
   },
   flipHint: {
     color: 'rgba(255,255,255,0.25)',
-    fontSize: 11,
+    ...t.caption2,
     fontFamily: 'Inter_400Regular',
-    marginTop: 12,
+    marginTop: scale(12),
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: scale(24),
+    paddingBottom: scale(24),
   },
-});
+  });
+}

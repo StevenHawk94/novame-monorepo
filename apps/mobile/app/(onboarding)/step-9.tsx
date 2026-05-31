@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -20,6 +20,7 @@ import {
 } from '@/components/onboarding/shared';
 import { REVIEWS } from '@/components/onboarding/constants';
 import { haptics } from '@/lib/haptics';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 // Static require() map for review avatars. React Native's require()
 // can only take a string literal, not a variable, so this map is the
@@ -51,6 +52,9 @@ const RESUME_DELAY_MS = 1500;
 type Review = (typeof REVIEWS)[number];
 
 export default function OnboardingStep9() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const [idx, setIdx] = useState(0);
   const listRef = useRef<FlatList<Review>>(null);
@@ -207,25 +211,29 @@ export default function OnboardingStep9() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   body: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: scale(24),
     justifyContent: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   carouselWrap: {
     marginBottom: 16,
@@ -235,8 +243,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
-    padding: 20,
-    minHeight: 260,
+    padding: scale(20),
+    minHeight: scale(260),
     justifyContent: 'center',
   },
   stars: {
@@ -262,7 +270,8 @@ const styles = StyleSheet.create({
   },
   authorName: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
+    ...t.footnote,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
   },
   dots: {
@@ -281,7 +290,8 @@ const styles = StyleSheet.create({
     width: 20, // Active dot wider for clearer state
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: scale(24),
+    paddingBottom: scale(24),
   },
-});
+  });
+}
