@@ -57,7 +57,6 @@ export function AspireWordsPicker({
             style={[styles.chip, active && styles.chipActive]}
           >
             <Text style={[styles.chipText, active && styles.chipTextActive]}>
-              {active ? '✓ ' : ''}
               {word}
             </Text>
           </Pressable>
