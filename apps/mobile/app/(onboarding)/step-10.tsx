@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
 import { PrimaryButton } from '@/components/onboarding/shared';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 import {
   getOnboardingState,
   patchOnboardingState,
@@ -40,6 +41,9 @@ import {
  * for the explicit dismiss path.
  */
 export default function OnboardingStep10() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const router = useRouter();
   const initial = getOnboardingState().charName;
   const [name, setName] = useState(initial);
@@ -112,7 +116,7 @@ export default function OnboardingStep10() {
 
           {/* Content + Input */}
           <View style={styles.content}>
-            <Text style={styles.headline}>Meet your growth companion.</Text>
+            <Text style={styles.headline}>Meet Your Companion</Text>
             <Text style={styles.subheadline}>
               Your companion listens to your voice, catches your fleeting thoughts, and weaves them into wisdom.
             </Text>
@@ -148,7 +152,11 @@ export default function OnboardingStep10() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0A0820',
@@ -168,39 +176,39 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: scale(28),
     justifyContent: 'center',
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 22,
+    ...t.title2,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subheadline: {
     color: 'rgba(255,255,255,0.45)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   eyebrow: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 11,
+    ...t.caption2,
     fontFamily: 'Inter_500Medium',
     textTransform: 'uppercase',
     letterSpacing: 1,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   input: {
     width: '100%',
-    height: 56,
+    height: Math.max(44, scale(56)),
     borderRadius: 16,
-    paddingHorizontal: 20,
-    fontSize: 20,
+    paddingHorizontal: scale(20),
+    ...t.title3,
+    fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
@@ -210,13 +218,14 @@ const styles = StyleSheet.create({
   },
   counter: {
     color: 'rgba(255,255,255,0.25)',
-    fontSize: 11,
+    ...t.caption2,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: scale(6),
   },
   footer: {
-    paddingHorizontal: 28,
-    paddingBottom: 16,
+    paddingHorizontal: scale(28),
+    paddingBottom: scale(16),
   },
-});
+  });
+}
