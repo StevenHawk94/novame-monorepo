@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
+import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 import {
   diffCacheAgainstManifest,
   downloadAssets,
@@ -30,6 +31,10 @@ import {
  * (placeholder image when card art is not yet downloaded).
  */
 export default function OnboardingStep1() {
+  const { scale } = useResponsive();
+  const t = useTextStyle();
+  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
+  const signInLinkStyles = useMemo(() => makeSignInLinkStyles(scale, t), [scale, t]);
   const router = useRouter();
 
   useEffect(() => {
@@ -136,28 +141,34 @@ export default function OnboardingStep1() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   center: {
     alignItems: 'center',
   },
   brand: {
     color: '#FFFFFF',
-    fontSize: 32,
+    ...t.title1,
     fontFamily: 'Inter_700Bold',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   tagline: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 18,
+    ...t.headline,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subtagline: {
     color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    ...t.footnote,
     fontFamily: 'Inter_400Regular',
   },
-});
+  });
+}
 
 // Stage 6.OnboardingSignInShortcut: secondary CTA styling.
 //
@@ -170,19 +181,25 @@ const styles = StyleSheet.create({
 //     it meets Apple's 44pt minimum HIG target.
 //   - Subtle pressed state (opacity dip) rather than full color
 //     change — this is an alternative path, not the prominent one.
-const signInLinkStyles = StyleSheet.create({
+function makeSignInLinkStyles(
+  scale: (n: number) => number,
+  t: ReturnType<typeof useTextStyle>,
+) {
+  return StyleSheet.create({
   tap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
+    paddingVertical: scale(14),
+    marginTop: scale(4),
   },
   tapPressed: {
     opacity: 0.5,
   },
   label: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
+    ...t.footnote,
+    fontWeight: '500',
     fontFamily: 'Inter_500Medium',
   },
-});
+  });
+}
