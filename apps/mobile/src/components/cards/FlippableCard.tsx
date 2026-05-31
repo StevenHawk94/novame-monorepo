@@ -130,7 +130,7 @@ function backFontSize(
   // region. Previous 1.08 buffer caused under-estimation of fit and
   // forced the algorithm to drop to smaller font + tighter line-height
   // even when content actually fit at a larger size.
-  const safetyMargin = 1.0;
+  const safetyMargin = 1.04;
   const scale = width / 270;
   const baseSizes = [18, 17.5, 17, 16.5, 16, 15.5, 15, 14.5, 14, 13.5, 13, 12.5, 12, 11.5, 11];
 
@@ -143,7 +143,7 @@ function backFontSize(
     // width is safer than under-estimate (which causes content overflow).
     const charWidthRatio =
       size >= 14 ? 0.47 : size >= 12 ? 0.48 : 0.50;
-    const charsPerLine = Math.floor(availW / (size * charWidthRatio));
+    const charsPerLine = Math.floor((availW / (size * charWidthRatio)) * 0.88);
     if (charsPerLine <= 0) return Infinity;
     const paragraphs = text.split('\n');
     let totalLines = 0;
@@ -281,6 +281,7 @@ export function FlippableCard({
               <Text
                 style={[styles.frontQuote, { fontSize: qSize }]}
                 numberOfLines={4}
+                allowFontScaling={false}
               >
                 {quoteShort || ''}
               </Text>
@@ -321,6 +322,7 @@ export function FlippableCard({
                     lineHeight: iTypo.size * iTypo.lineHeightRatio,
                   },
                 ]}
+                allowFontScaling={false}
               >
                 {insightFull || ''}
               </Text>
