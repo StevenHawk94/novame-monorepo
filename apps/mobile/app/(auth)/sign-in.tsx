@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
+import { hideSplashOnce } from '@/lib/splash';
 import { storage } from '@/lib/storage';
 import { haptics } from '@/lib/haptics';
 import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
@@ -272,7 +273,7 @@ export default function AuthScreen() {
 
   if (mode === 'login') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} onLayout={hideSplashOnce}>
         <View style={styles.body}>
           <Branding />
           <Text style={styles.headline}>

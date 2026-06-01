@@ -30,6 +30,7 @@ import { subscribeHomeRefresh } from '@/lib/home-refresh-signal';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { haptics } from '@/lib/haptics';
 import { storage } from '@/lib/storage';
+import { hideSplashOnce } from '@/lib/splash';
 
 /**
  * Home tab — the central NovaMe experience.
@@ -324,7 +325,7 @@ export default function HomeTab() {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} onLayout={hideSplashOnce}>
       <Image
         source={require('@/../assets/images/home/bg-night.webp')}
         style={styles.bg}

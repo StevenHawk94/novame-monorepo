@@ -35,6 +35,7 @@ import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
+import { hideSplashOnce } from '@/lib/splash';
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
 // the global scope of the module that owns the root component, NOT
@@ -240,21 +241,21 @@ export default function RootLayout() {
   // the prewarm itself so React re-renders the JSX (return <Stack />)
   // before hideAsync triggers — avoids a 1-frame blank window between
   // splash hide and first paint.
+  // Splash is no longer hidden here on prewarm completion. Industry-
+  // standard pattern: the native splash stays up until the first real
+  // destination screen (home / onboarding / auth) finishes its initial
+  // layout and calls hideSplashOnce() from its root onLayout. That
+  // guarantees no blank/placeholder frame between splash and content.
+  //
+  // This effect is only a defensive fallback: if no destination screen
+  // ever signals layout (unexpected error, navigation edge case), force
+  // the splash to hide after 10s so the user is never stuck on it.
   useEffect(() => {
-    // Stage 6 follow-up (commit 31): wait for BOTH prewarm completion
-    // AND font load before hiding splash. If we hid splash before
-    // fonts loaded, the first frame would paint with SF Pro fallback
-    // glyphs, then visibly reflow once Inter arrived -- a noticeable
-    // flash for the user. The font loads from local bundle assets
-    // (already downloaded with the app binary), so this adds only a
-    // few ms to splash duration.
-    if (isReady && fontsLoaded) {
-      SplashScreen.hideAsync().catch(() => {
-        // Already hidden (e.g. preventAutoHideAsync returned false on
-        // start). Nothing to do.
-      });
-    }
-  }, [isReady, fontsLoaded]);
+    const fallback = setTimeout(() => {
+      hideSplashOnce();
+    }, 10000);
+    return () => clearTimeout(fallback);
+  }, []);
 
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
@@ -382,7 +383,13 @@ export default function RootLayout() {
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <ThemeProvider>
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: '#0F0B2E' },
+                animation: 'none',
+              }}
+            />
             {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
           </ThemeProvider>
         </SafeAreaProvider>

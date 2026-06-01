@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { isOnboardingDone } from '@/lib/onboarding';
@@ -54,19 +53,14 @@ export default function Index() {
     };
   }, []);
 
+  // Session check still pending. Return null and let the native splash
+  // (kept visible via preventAutoHideAsync in _layout.tsx) stay up. We
+  // intentionally render no loading screen of our own here — the splash
+  // IS the loading screen, and it persists until the destination screen
+  // signals first layout via hideSplashOnce(). This avoids a second,
+  // redundant loading screen flashing between splash and content.
   if (hasSession === null) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#7C3AED',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
-    );
+    return null;
   }
 
   if (hasSession) {

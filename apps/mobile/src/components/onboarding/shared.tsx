@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { hideSplashOnce } from '@/lib/splash';
 import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 /**
@@ -204,7 +205,11 @@ export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPage
   const { scale } = useResponsive();
   const imgPageStyles = useMemo(() => makeImgPageStyles(scale), [scale]);
   return (
-    <SafeAreaView style={imgPageStyles.root} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView
+      style={imgPageStyles.root}
+      edges={['top', 'left', 'right', 'bottom']}
+      onLayout={hideSplashOnce}
+    >
       <View style={imgPageStyles.imageContainer}>
         {vidUri ? (
           // step-10 hands an expo-video player here via a render prop.
