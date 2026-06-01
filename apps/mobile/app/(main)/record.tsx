@@ -1244,6 +1244,24 @@ function PhaseTypeInput({
   const canTransform = trimmedLength >= MIN_TYPED_CHARS;
   const insets = useSafeAreaInsets();
 
+  // Stage 6.TypeInputNoFlash: give the input a FIXED height instead of
+  // flex:1. When the input filled all space above the footer (flex:1),
+  // opening the keyboard collapsed a large white area, producing a
+  // jarring flash between "no keyboard" and "keyboard up". With a fixed
+  // height sized to roughly the room left ABOVE the keyboard, the white
+  // box stays the same size whether the keyboard is up or not — only the
+  // keyboard itself slides in, so there is no white-area jump. multiline
+  // TextInput keeps scrollEnabled by default, so long text scrolls inside
+  // the fixed box (caret stays visible), preserving the earlier
+  // multiline-scroll fix.
+  const screenH = Dimensions.get('window').height;
+  // height - top(paddingTop80 + header~56) - footer~80 - counter~40
+  //        - keyboard(~36% of screen) - small margin
+  const typeInputHeight = Math.max(
+    150,
+    Math.round(screenH * 0.64 - 276),
+  );
+
   // Stage 3.10.x: keyboardVerticalOffset = top safe-area inset so the
   // input + Transform button stay above the keyboard. iOS modals have
   // a status-bar offset KeyboardAvoidingView doesn't auto-detect.
@@ -1345,7 +1363,7 @@ function PhaseTypeInput({
               multiline
               autoFocus
               textAlignVertical="top"
-              style={[typeStyles.mainInput, typeStyles.mainInputFlex]}
+              style={[typeStyles.mainInput, { height: typeInputHeight }]}
             />
             <View style={typeStyles.counterRow}>
               <Text style={typeStyles.counterText}>
@@ -1356,6 +1374,8 @@ function PhaseTypeInput({
               </Text>
             </View>
           </View>
+
+          <View style={{ flex: 1 }} />
 
           <View style={typeStyles.footer}>
             <Pressable
@@ -1412,7 +1432,15 @@ const typeStyles = StyleSheet.create({
     width: 40,
   },
   body: {
-    flex: 1,
+    // Stage 6.TypeInputNoFlash: NOT flex:1. The input is now a fixed
+    // height, so the body wraps (input + counter) at a fixed natural
+    // height. A flex:1 body would shrink as the KeyboardAvoidingView
+    // adds bottom padding during the keyboard-open animation; with a
+    // fixed-height input that doesn't absorb the shrink, the counter
+    // overflowed into the footer mid-animation (Transform overlapped
+    // the counter on first open). A spacer below absorbs the height
+    // change instead, keeping the counter pinned under the input and
+    // the footer at the bottom.
     paddingHorizontal: 20,
   },
   bodyContent: {
