@@ -73,6 +73,20 @@ import { hideSplashOnce } from '@/lib/splash';
  * Returning a no-op press handler for these placeholder buttons keeps
  * the layout / accessibility correct without committing to the wiring.
  */
+// Session-scoped speech-bubble selection. pickSpeechBubble() is random
+// (randomFrom), and the `bubble` useMemo below recomputes whenever
+// cachedState / wpVisual / publishMsgTick change — which all churn during
+// cold-start warmup. Without memoizing the *chosen sentence*, the bubble
+// visibly flickered through 2-3 random lines on launch. We cache the
+// picked sentence per "category" (hungry / warning / study / play) at
+// module scope: it survives re-renders and tab switches (so the line stays
+// fixed while the user is in the app), and resets on cold start (process
+// relaunch reloads the JS bundle, clearing this) — so each fresh launch
+// shows a new random line, exactly as designed. A genuine category change
+// (mode switch, hunger threshold crossing) re-picks; publish-wisdom shows
+// its specific AI message via the branch above, bypassing this cache.
+let sessionBubble: { category: string; sentence: string } | null = null;
+
 export default function HomeTab() {
   const router = useRouter();
 
@@ -278,7 +292,26 @@ export default function HomeTab() {
       }
     }
 
-    return pickSpeechBubble(wpVisual, cachedState.mode, hasNoWisdoms, cachedState.charName);
+    // Determine the current category. Same category across re-renders
+    // → reuse the already-picked sentence (no flicker, stable during the
+    // session). Category change (or first pick this launch) → pick a new
+    // random line and cache it.
+    let category: string;
+    if (wpVisual <= 0) category = 'hungry';
+    else if (wpVisual <= WP_HUNGER_THRESHOLD) category = 'warning';
+    else if (cachedState.mode === 'study') category = 'study';
+    else category = 'play';
+    if (sessionBubble && sessionBubble.category === category) {
+      return sessionBubble.sentence;
+    }
+    const sentence = pickSpeechBubble(
+      wpVisual,
+      cachedState.mode,
+      hasNoWisdoms,
+      cachedState.charName,
+    );
+    sessionBubble = { category, sentence };
+    return sentence;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cachedState, wpVisual, publishMsgTick]);
 
