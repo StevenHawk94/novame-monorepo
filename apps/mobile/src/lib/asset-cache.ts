@@ -107,7 +107,18 @@ export function getCachedManifest(): AssetManifest | null {
   const raw = storage.getString(STORAGE_KEY_MANIFEST);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AssetManifest;
+    const parsed = JSON.parse(raw) as AssetManifest;
+    // Staleness guard: a cached manifest from before the dir-aware
+    // migration carries no `dir` on its entries. Treat such a
+    // structurally-old cache as absent so callers fetch a fresh one
+    // (which has dir) instead of resolving every folder asset to the
+    // bucket root. Any future R2 re-org that repoints dirs rides the
+    // same refresh path. Probe the first video entry: post-migration
+    // dir is always present (even '' for root), so dir===undefined
+    // means the whole cache predates the migration.
+    const firstVideo = parsed.videos?.[0];
+    if (firstVideo && firstVideo.dir === undefined) return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -159,11 +170,42 @@ export function verifyCachedAsset(filename: string, expectedSize: number): boole
  * — same filename always lands at the same path, allowing idempotent
  * re-downloads after failure.
  */
+/**
+ * Builds a full asset URL from baseUrl + R2 directory prefix + bare filename.
+ * `dir` is the folder the file physically lives in on R2 ('' = bucket root).
+ * Every path segment is encodeURIComponent'd so folders with spaces
+ * (e.g. 'cards art', 'product details') become %20-escaped.
+ */
+export function buildAssetUrl(
+  baseUrl: string,
+  dir: string | undefined,
+  filename: string,
+): string {
+  const segs = (dir ? dir.split('/') : []).concat(filename);
+  return `${baseUrl}/${segs.map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * Resolves the R2 directory prefix for a bare filename by looking it up
+ * in the cached manifest (videos / cards / productAssets). Returns '' if
+ * not found (treated as bucket root) so callers degrade safely when the
+ * cached manifest predates the dir field or the filename is unknown.
+ */
+export function dirForFilename(filename: string): string {
+  const m = getCachedManifest();
+  if (!m) return '';
+  const hit =
+    m.videos?.find((v) => v.filename === filename) ??
+    m.cards?.find((c) => c.filename === filename) ??
+    m.productAssets?.find((p) => p.filename === filename);
+  return hit?.dir ?? '';
+}
+
 export async function downloadAsset(
   baseUrl: string,
   filename: string,
 ): Promise<string> {
-  const url = `${baseUrl}/${filename}`;
+  const url = buildAssetUrl(baseUrl, dirForFilename(filename), filename);
   const destination = new File(Paths.document, CACHE_SUBDIR, filename);
   // Ensure parent directory exists before download.
   getCacheDir();
@@ -220,7 +262,7 @@ async function downloadProductAsset(
   // even after admin re-uploads. The version tag makes each upload's
   // download URL unique, forcing CDN MISS -> origin fetch.
   const versionTag = asset.updatedAt.replace(/[-:.Z]/g, '');
-  const url = `${baseUrl}/${asset.filename}?v=${versionTag}`;
+  const url = `${buildAssetUrl(baseUrl, asset.dir, asset.filename)}?v=${versionTag}`;
   const localName = productCacheFilename(asset);
   const destination = new File(Paths.document, CACHE_SUBDIR, localName);
   getCacheDir();
@@ -405,7 +447,7 @@ export function getProductAssetUri(id: string): string {
   // updatedAt tag (not raw size) survives size collisions.
   const base = manifest?.baseUrl ?? 'https://media.novameapp.com';
   const versionTag = entry.updatedAt.replace(/[-:.Z]/g, '');
-  return `${base}/${entry.filename}?v=${versionTag}`;
+  return `${buildAssetUrl(base, entry.dir, entry.filename)}?v=${versionTag}`;
 }
 
 /**

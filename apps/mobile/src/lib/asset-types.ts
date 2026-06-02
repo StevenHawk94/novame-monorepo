@@ -27,6 +27,8 @@ export type VideoManifestEntry = {
   id: string;
   /** Filename on R2, appended to baseUrl to build full URL. */
   filename: string;
+  /** R2 directory prefix the file lives in ('' = bucket root). Live manifest always sets it. */
+  dir?: string;
   /** File size in bytes (from generation-time stat). */
   size: number;
   /** Outfit number 1-6 (corresponds to skin / clothing variant). */
@@ -51,6 +53,8 @@ export type ProductAssetManifestEntry = {
   id: string;
   /** Filename on R2 (bucket root), appended to baseUrl. */
   filename: string;
+  /** R2 directory prefix the file lives in ('' = bucket root). Live manifest always sets it. */
+  dir?: string;
   /** File size in bytes for cache busting. */
   size: number;
   /** ISO timestamp of last upload via admin. */
@@ -72,6 +76,8 @@ export type CardManifestEntry = {
   id: string;
   /** Filename on R2. */
   filename: string;
+  /** R2 directory prefix the file lives in ('' = bucket root). Live manifest always sets it. */
+  dir?: string;
   /** File size in bytes. */
   size: number;
   /** Category the card belongs to. */

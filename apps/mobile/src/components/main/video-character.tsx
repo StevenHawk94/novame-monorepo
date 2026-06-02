@@ -3,7 +3,7 @@ import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useFocusEffect } from 'expo-router';
 
-import { getCachedAssetUri } from '@/lib/asset-cache';
+import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
 import type { CharacterState } from '@/lib/constants';
 
 /**
@@ -61,7 +61,7 @@ function buildFilename(characterId: string, outfit: number, state: CharacterStat
  */
 function resolveSource(filename: string): string {
   const local = getCachedAssetUri(filename);
-  return local ?? `${R2_BASE_URL}/${filename}`;
+  return local ?? buildAssetUrl(R2_BASE_URL, dirForFilename(filename), filename);
 }
 
 export function VideoCharacter({

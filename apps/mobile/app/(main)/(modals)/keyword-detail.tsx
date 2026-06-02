@@ -217,7 +217,7 @@ export default function KeywordDetailModal() {
 
   return (
     <ImageBackground
-      source={{ uri: 'https://media.novameapp.com/cards/cards-background.webp' }}
+      source={{ uri: 'https://media.novameapp.com/cards-background.webp' }}
       style={styles.root}
     >
       <View style={[styles.tint, { paddingTop: insets.top + 8 }]} />

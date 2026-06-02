@@ -51,7 +51,7 @@ import {
 import { haptics } from '@/lib/haptics';
 import { apiClient } from '@/lib/api';
 import { getCurrentSession } from '@/lib/auth';
-import { getCachedAssetUri } from '@/lib/asset-cache';
+import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
 // Stage 6.InsightPrefetch: expo-image's Image.prefetch warms the
 // memory/disk cache so that when PhaseInsight mounts and starts
 // rendering, the cards-background and front card .webp are already
@@ -1997,8 +1997,8 @@ function PhasePublishing({
           const category = keywordId.split('-')[0];
           const backFilename = `${category}-back.webp`;
           urisToWarm.push(
-            `${R2_BASE}/${frontFilename}`,
-            `${R2_BASE}/${backFilename}`,
+            buildAssetUrl(R2_BASE, dirForFilename(frontFilename), frontFilename),
+            buildAssetUrl(R2_BASE, dirForFilename(backFilename), backFilename),
           );
         }
         setPrefetchUris?.(urisToWarm);

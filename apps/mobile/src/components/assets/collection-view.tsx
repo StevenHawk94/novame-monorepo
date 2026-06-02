@@ -33,7 +33,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { slugToId } from '@novame/core';
-import { getCachedAssetUri } from '@/lib/asset-cache';
+import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
 import type { AssetsTabSharedState } from '@/lib/assets-tab-shared';
 
 type Category = {
@@ -213,7 +213,7 @@ function KeywordCell({
   const cached = getCachedAssetUri(filename);
   const src = cached
     ? { uri: cached }
-    : { uri: `https://media.novameapp.com/${filename}` };
+    : { uri: buildAssetUrl('https://media.novameapp.com', dirForFilename(filename), filename) };
 
   return (
     <Pressable

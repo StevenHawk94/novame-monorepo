@@ -49,7 +49,7 @@ import { ALL_KEYWORD_SLUGS, slugToId, idToSlug } from '@novame/core';
 import { supabase } from '@/lib/supabase';
 import { fetchWisdoms, type WisdomCardEmbed } from '@/lib/wisdoms-api';
 import { updateOrder } from '@/lib/orders-api';
-import { getCachedAssetUri } from '@/lib/asset-cache';
+import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
 import { haptics } from '@/lib/haptics';
@@ -64,7 +64,7 @@ const REQUIRED_COUNT = 48;
 // first paint because tab thumbnails request keyword art the user
 // may not have viewed before.)
 const CARD_FALLBACK_URL = (filename: string) =>
-  `https://media.novameapp.com/${filename}`;
+  buildAssetUrl('https://media.novameapp.com', dirForFilename(filename), filename);
 
 type CardItem = WisdomCardEmbed & {
   id: string;

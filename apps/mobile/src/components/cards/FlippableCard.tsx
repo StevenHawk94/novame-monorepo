@@ -36,6 +36,7 @@ import { Image } from 'expo-image';
 // Stage 6.InsightPrefetch: getCachedAssetUri import removed — see
 // the R2_BASE comment in the component body for the rationale.
 // (asset-cache is still imported in other components for video assets.)
+import { buildAssetUrl, dirForFilename } from '@/lib/asset-cache';
 
 const AR = 1024 / 1536;
 
@@ -212,8 +213,12 @@ export function FlippableCard({
   // onboarding's step-8 pre-warm; we just don't use it for the
   // insight-screen card art anymore.
   const R2_BASE = 'https://media.novameapp.com';
-  const frontUri = frontFilename ? `${R2_BASE}/${frontFilename}` : null;
-  const backUri = backFilename ? `${R2_BASE}/${backFilename}` : null;
+  const frontUri = frontFilename
+    ? buildAssetUrl(R2_BASE, dirForFilename(frontFilename), frontFilename)
+    : null;
+  const backUri = backFilename
+    ? buildAssetUrl(R2_BASE, dirForFilename(backFilename), backFilename)
+    : null;
 
   const rotation = useSharedValue(defaultSide === 'back' ? 180 : 0);
 

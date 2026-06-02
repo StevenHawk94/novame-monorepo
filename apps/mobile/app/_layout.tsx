@@ -30,7 +30,7 @@ import {
   refreshAllCaches,
   shouldRefreshAll,
 } from '@/lib/cache-refresh-all';
-import { fillProductAssets } from '@/lib/asset-cache';
+import { fetchManifestFromR2, fillProductAssets, setCachedManifest } from '@/lib/asset-cache';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
@@ -197,6 +197,15 @@ export default function RootLayout() {
         // that read getCachedConfig() will reflect the latest values
         // after this fetch lands (via their own useState mirror).
         const configFetch = fetchAppConfig();
+        // Manifest staleness hardening: refresh the asset manifest as
+        // part of the gated prewarm so the cached manifest carries
+        // current `dir` values before any card/video renders. Best-
+        // effort: on failure we keep the existing cache, and
+        // getCachedManifest's dir guard prevents serving a pre-
+        // migration manifest. Tiny JSON, bounded by PREWARM_TIMEOUT_MS.
+        const manifestFetch = fetchManifestFromR2()
+          .then(setCachedManifest)
+          .catch(() => {});
         if (userId) {
           // Three caches the home tab + me page read on first render.
           // allSettled: missing data falls back to local cache or
@@ -206,13 +215,14 @@ export default function RootLayout() {
             fetchSubscriptionTier(userId),
             fetchMeStats(userId),
             configFetch,
+            manifestFetch,
           ]);
         } else {
           // Sessionless cold start (onboarding incomplete or signed
           // out): still wait on the config fetch so the (onboarding)
           // / (auth) flows see fresh thresholds. The 3s timeout cap
           // protects against slow network.
-          await Promise.allSettled([configFetch]);
+          await Promise.allSettled([configFetch, manifestFetch]);
         }
       } catch (e) {
         console.warn('[layout] cold-start prewarm error:', e);
