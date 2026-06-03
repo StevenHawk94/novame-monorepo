@@ -383,6 +383,7 @@ export async function POST(request) {
     let generatedCard = null
     let generatedAspireScores = null
     let cardGenerationFailed = false
+    let lowQualityInput = false
     if (wisdom.id && transcribedText && transcribedText.length > 5) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
@@ -420,6 +421,12 @@ export async function POST(request) {
           }
         } else {
           cardGenerationFailed = true
+          // A2: distinguish "input was junk" (user must change content,
+          // surfaced as 422) from a genuine generation failure (retryable,
+          // 500). generateWisdomCard's prefilter returns this code.
+          if (cardResult && cardResult.code === 'LOW_QUALITY_INPUT') {
+            lowQualityInput = true
+          }
         }
       } catch (e) {
         console.error('[publish-wisdom] Card generation exception:', e.message)
@@ -442,6 +449,18 @@ export async function POST(request) {
       // rolled back so no row references this audio anymore -- it would
       // be an orphan + attack surface if left in storage.
       await cleanupAudioFile()
+      if (lowQualityInput) {
+        // Input could not yield a meaningful insight. Wisdom row already
+        // rolled back above + no quota burned. 422 so mobile shows the
+        // gentle "I didn't quite catch that" prompt and returns to choose.
+        return NextResponse.json(
+          {
+            error: 'That didn\'t give me enough to work with. Try again.',
+            code: 'LOW_QUALITY_INPUT',
+          },
+          { status: 422 }
+        )
+      }
       return NextResponse.json(
         {
           error: 'Could not generate your wisdom card. Please try again.',

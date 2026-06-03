@@ -93,13 +93,13 @@ import {
   loadValidRecordDraft,
   draftToRecordingResult,
 } from '@/lib/record-draft';
-import { fetchDailyLimit } from '@/lib/daily-limit-api';
 import { refreshDailyTasks } from '@/lib/daily-tasks-api';
 import { refreshWisdoms } from '@/lib/wisdoms-api';
 import { refreshLeaderboard } from '@/lib/leaderboard-api';
 import { refreshUserStats, getCachedUserStats } from '@/lib/user-stats-api';
 import { refreshSeekQuestions } from '@/lib/seek-questions-cache';
 import { ApiError } from '@novame/api-client';
+import { isQuotaKnownExhausted, setQuotaExhausted } from '@/lib/quota-flag';
 import { refreshMeStats } from '@/lib/me-stats';
 import { refreshWisdomCenter } from '@/lib/wisdom-center-api';
 import { CardSpinAnimation } from '@/components/cards/CardSpinAnimation';
@@ -282,41 +282,11 @@ const phStyles = StyleSheet.create({
 function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProps) {
   const [requesting, setRequesting] = useState(false);
 
-  // Stage 5.IAP.4: pre-flight quota check. If the user is at or over
-  // their monthly insight quota, close this modal and push the
-  // paywall. We do NOT block on the request -- if it fails (network),
-  // we fall through to letting the user record/type and let the
-  // server-side gate in publish-wisdom catch it.
-  const checkQuotaThenAdvance = async (
-    next: typeof PHASE.RECORDING | typeof PHASE.TYPE_INPUT,
-  ): Promise<void> => {
-    try {
-      const session = await getCurrentSession();
-      const userId = session?.user?.id;
-      if (!userId) {
-        // No session shouldn't happen at this point but if it does,
-        // skip the check rather than block.
-        goTo(next);
-        return;
-      }
-      const limit = await fetchDailyLimit(userId);
-      if (!limit.allowed) {
-        haptics.warning();
-        close();
-        // Wait one tick so the close animation can begin before we
-        // push the paywall on top of the modal stack.
-        setTimeout(() => {
-          router.push('/(main)/(modals)/subscription-paywall');
-        }, 100);
-        return;
-      }
-    } catch (e) {
-      console.warn('[record/choose] quota pre-check failed:', e);
-      // fall through -- server will block if actually over.
-    }
-    goTo(next);
-  };
-
+  // Quota is NOT pre-checked here anymore. Entering record/type must be
+  // instant; the quota gate lives at Transform time (local fast-path via
+  // the quota-exhausted flag, with the publish-wisdom 402 as the
+  // authoritative backstop). This removed a blocking fetchDailyLimit on
+  // every entry that added ~1s of latency to opening record/type.
   const handleRecordTap = async () => {
     if (requesting) return;
     haptics.light();
@@ -324,7 +294,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
     try {
       const res = await requestMicPermission();
       if (res.granted) {
-        await checkQuotaThenAdvance(PHASE.RECORDING);
+        goTo(PHASE.RECORDING);
       } else if (!res.canAskAgain) {
         // System will not show prompt again — direct user to Settings.
         showMicDenied();
@@ -338,7 +308,7 @@ function PhaseChoose({ goTo, close, showMicDenied, seekForceKeyword }: PhaseProp
 
   const handleTypeTap = () => {
     void haptics.light();
-    void checkQuotaThenAdvance(PHASE.TYPE_INPUT);
+    goTo(PHASE.TYPE_INPUT);
   };
 
   return (
@@ -1069,17 +1039,42 @@ function PhasePublish({
   const handleTransform = () => {
     haptics.medium();
     Keyboard.dismiss();
+    // Fast-path: if the server's last verdict was "out of quota", pop the
+    // paywall instantly (stay on this confirm screen so the recording is
+    // preserved). Otherwise proceed; publish-wisdom's 402 is the backstop.
+    if (isQuotaKnownExhausted()) {
+      haptics.warning();
+      router.push('/(main)/(modals)/subscription-paywall');
+      return;
+    }
     goTo(PHASE.PUBLISHING);
   };
 
   const handleCancel = () => {
     haptics.light();
     Keyboard.dismiss();
-    void cancelRecorder(recorder);
-    // Stage: record-draft. Cancel on the confirm screen is a deliberate
-    // discard -- drop the unfinished-recording draft saved at handleSave.
-    void clearRecordDraft();
-    close();
+    // Confirm before discarding — the recording on this screen is not yet
+    // saved/published, and an accidental Cancel tap would lose it. Discard
+    // drops the recorder + the unfinished-recording draft (a deliberate
+    // discard, distinct from an accidental interruption which keeps the
+    // draft for the next-open "continue?" prompt). Keep stays on this screen.
+    Alert.alert(
+      'Discard recording?',
+      'Your recording will not be saved.',
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: () => {
+            void cancelRecorder(recorder);
+            void clearRecordDraft();
+            close();
+          },
+        },
+      ],
+      { cancelable: true },
+    );
   };
 
   const handleDismissKeyboard = () => {
@@ -1281,6 +1276,13 @@ function PhaseTypeInput({
     if (!canTransform) return;
     haptics.medium();
     Keyboard.dismiss();
+    // Fast-path: known-exhausted -> instant paywall, stay on the input
+    // screen (typed text is auto-saved as a draft). 402 is the backstop.
+    if (isQuotaKnownExhausted()) {
+      haptics.warning();
+      router.push('/(main)/(modals)/subscription-paywall');
+      return;
+    }
     goTo(PHASE.PUBLISHING);
   };
 
@@ -1369,8 +1371,15 @@ function PhaseTypeInput({
               <Text style={typeStyles.counterText}>
                 Max {maxChars.toLocaleString()} characters · Plan: {tierLimits.name}
               </Text>
-              <Text style={typeStyles.counterText}>
-                {typedText.length.toLocaleString()}/{maxChars.toLocaleString()}
+              <Text
+                style={[
+                  typeStyles.counterText,
+                  !canTransform ? typeStyles.counterTextBelowMin : null,
+                ]}
+              >
+                {canTransform
+                  ? `${typedText.length.toLocaleString()}/${maxChars.toLocaleString()}`
+                  : `${(MIN_TYPED_CHARS - trimmedLength).toLocaleString()} more to go`}
               </Text>
             </View>
           </View>
@@ -1472,6 +1481,10 @@ const typeStyles = StyleSheet.create({
     // wrong cause — the real fix was keyboardVerticalOffset.
     marginTop: 12,
     marginBottom: 12,
+  },
+  counterTextBelowMin: {
+    color: '#7C3AED',
+    fontFamily: 'Inter_600SemiBold',
   },
   counterText: {
     // Stage 6.RecordVisual: high-contrast on purple bg.
@@ -1706,6 +1719,7 @@ function PhasePublishing({
   recordingResult,
   description,
   typedText,
+  setTypedText,
   setPublishedCard,
   setPublishedEmotion,
   setPublishedCardCollection,
@@ -1773,6 +1787,10 @@ function PhasePublishing({
         if (response.quotaExhausted) {
           setQuotaExhaustedAfterPublish?.(true);
         }
+        // Persist the server's verdict so the NEXT Transform can decide
+        // locally without a network round-trip. true -> remember "out";
+        // false -> clear (still has room). Server stays authoritative.
+        setQuotaExhausted(response.quotaExhausted === true);
 
         setPublishedCard(response.card ?? null);
         setPublishedEmotion(response.card?.wisdom_emotion ?? 'Reflective');
@@ -2036,10 +2054,40 @@ function PhasePublishing({
 
           if (err.status === 402 && code === 'QUOTA_EXCEEDED') {
             inflightRef.current = false;
-            close();
-            setTimeout(() => {
-              router.push('/(main)/(modals)/subscription-paywall');
-            }, 100);
+            // Cross-device / drift case: local flag thought we had room but
+            // the server says we're out. Remember it so the next Transform
+            // fast-paths, return to the Transform screen (recording / typed
+            // text preserved — NOT close()), and overlay the paywall. After
+            // purchase the user lands back here and can Transform again.
+            setQuotaExhausted(true);
+            goTo(isTyped ? PHASE.TYPE_INPUT : PHASE.PUBLISH);
+            router.push('/(main)/(modals)/subscription-paywall');
+            return;
+          }
+          // 422: the input could not produce a meaningful insight — either
+          // the recording transcribed to near-nothing (TRANSCRIPTION_FAILED)
+          // or the content was too low-quality to reflect on
+          // (LOW_QUALITY_INPUT). Either way: do NOT enter insight, do NOT
+          // write a My Logs row, do NOT burn quota (server already bailed
+          // before insert). Show a gentle prompt and return to the choose
+          // screen so the user can start over. Clear the typed draft so a
+          // fresh attempt starts clean.
+          if (err.status === 422) {
+            inflightRef.current = false;
+            setTypedText('');
+            Alert.alert(
+              '',
+              "I didn't quite catch that, but don't worry. Take your time to figure out what you want to say. I'm not going anywhere.",
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    goTo(PHASE.CHOOSE);
+                  },
+                },
+              ],
+              { cancelable: false },
+            );
             return;
           }
         }

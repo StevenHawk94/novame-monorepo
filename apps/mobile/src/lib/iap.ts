@@ -50,6 +50,7 @@ import {
 } from 'expo-iap';
 
 import { apiClient } from './api';
+import { clearQuotaExhausted } from './quota-flag';
 import { refreshMeStats } from './me-stats';
 import { supabase } from './supabase';
 import {
@@ -675,6 +676,10 @@ async function refreshSubscriptionCache(): Promise<void> {
   clearCachedSubscription();
   try {
     await fetchSubscriptionTier(userId);
+    // A purchase just upgraded the tier, so any locally-remembered
+    // "quota exhausted" verdict from the old tier is now stale. Clear it
+    // so the next Transform proceeds instead of popping the paywall again.
+    clearQuotaExhausted();
   } catch (e) {
     console.warn('[iap] cache refresh failed:', e);
   }

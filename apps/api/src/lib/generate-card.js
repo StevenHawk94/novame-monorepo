@@ -419,6 +419,38 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     return { success: false, error: 'Text too short' }
   }
 
+  // A2 low-quality input prefilter (cheap regex, runs BEFORE any AI call).
+  // Catches only OBVIOUS garbage so a meaningful insight can't be generated
+  // from it (and no quota is burned). Deliberately conservative — anything
+  // that looks like a real human sentence passes through to the AI. We do
+  // NOT try to judge semantic emptiness here (that risks rejecting terse but
+  // genuine entries like "today was hard"); we only reject mechanical junk.
+  const lowQuality = (() => {
+    const t = (wisdomText || '').trim();
+    const collapsed = t.replace(/\s+/g, ' ');
+    const noSpace = collapsed.replace(/\s/g, '');
+    if (noSpace.length === 0) return true;
+    // (a) one character repeated for the whole input (aaaa, 1111, ....)
+    if (/^(.)\1*$/.test(noSpace)) return true;
+    // (b) a short pattern (<=2 chars) tiled to fill the input (ababab, 121212)
+    if (noSpace.length >= 6 && /^(.{1,2}?)\1+$/.test(noSpace)) return true;
+    // (c) digits / punctuation only — no letters in any script at all
+    //     (\p{L} = any Unicode letter, so CJK / accented text still passes)
+    if (!/\p{L}/u.test(noSpace)) return true;
+    // (d) a single long unbroken token with no real letters mixed in:
+    //     >=20 chars, zero spaces, and <30% letters (keyboard-mash like
+    //     "asdkjh213/.,zxcmn"). Real words have spaces or are letter-dense.
+    if (noSpace.length >= 20 && !collapsed.includes(' ')) {
+      const letters = (noSpace.match(/\p{L}/gu) || []).length;
+      if (letters / noSpace.length < 0.3) return true;
+    }
+    return false;
+  })();
+  if (lowQuality) {
+    console.warn('[generate-card] LOW_QUALITY_INPUT rejected by prefilter');
+    return { success: false, code: 'LOW_QUALITY_INPUT', error: 'Low quality input' };
+  }
+
   // Stage 6 Bug 2 fix: aspire_impacts match pool expanded from user's
   // aspire_words (4-6 selected) to the full ASPIRE_POOL (15). The AI
   // now matches against every growth dimension, not just the user's
