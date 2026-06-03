@@ -309,7 +309,12 @@ export async function POST(request) {
     // success response with card=null and ALSO consumed the monthly
     // quota (because some prior code paths could still write a
     // wisdom_card stub). The fix: bail out here before any DB write.
-    const minTextLength = 5
+    // Raised 5 -> 10: silence/near-silence transcribes to junk like
+    // "00:01" (len 5) which slipped through < 5 AND through the card-gen
+    // > 5 gate, landing in the skip branch and leaving an empty wisdom
+    // row. A real spoken sentence is well over 10 chars; 10 cleanly
+    // rejects the time-stamp-shaped silence artifacts.
+    const minTextLength = 10
     if (!transcribedText || transcribedText.trim().length < minTextLength) {
       console.warn('[publish-wisdom] TRANSCRIPTION_FAILED: text too short or empty')
       // Phase A.3: clean up the uploaded audio before returning the
@@ -384,7 +389,7 @@ export async function POST(request) {
     let generatedAspireScores = null
     let cardGenerationFailed = false
     let lowQualityInput = false
-    if (wisdom.id && transcribedText && transcribedText.length > 5) {
+    if (wisdom.id && transcribedText && transcribedText.trim().length >= minTextLength) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
         const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar)
@@ -433,7 +438,12 @@ export async function POST(request) {
         cardGenerationFailed = true
       }
     } else {
-      console.log('[publish-wisdom] Skipped card generation — text too short or empty:', (transcribedText || '').length, 'chars')
+      // Defensive: if we ever reach here the text was unusable but the
+      // 422 gate above didn't catch it. Never leave an orphan wisdom row
+      // with no card — roll it back via the cardGenerationFailed path.
+      console.warn('[publish-wisdom] Skipped card generation — rolling back orphan wisdom row:', (transcribedText || '').length, 'chars')
+      cardGenerationFailed = true
+      lowQualityInput = true
     }
 
     // Stage 5.IAP.4: if card generation failed, undo the wisdom write
