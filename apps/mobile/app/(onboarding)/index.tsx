@@ -1,17 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
 import { ImgPage, PrimaryButton } from '@/components/onboarding/shared';
 import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
-import {
-  diffCacheAgainstManifest,
-  downloadAssets,
-  fetchManifestFromR2,
-  setCachedManifest,
-  STEP_8_CARDS,
-} from '@/lib/asset-cache';
 
 /**
  * Step 1 — Welcome.
@@ -36,66 +29,6 @@ export default function OnboardingStep1() {
   const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const signInLinkStyles = useMemo(() => makeSignInLinkStyles(scale, t), [scale, t]);
   const router = useRouter();
-
-  useEffect(() => {
-    // Fire-and-forget: fetch manifest + download outfit-1 (foreground)
-    // then queue everything else (background).
-    (async () => {
-      try {
-        const manifest = await fetchManifestFromR2();
-        setCachedManifest(manifest);
-
-        // ---- Phase 1 (awaited): outfit-1 videos + step-8 cards ----
-        // These are the assets the user MUST see during onboarding.
-        // Block until they're cached so step 8 never renders an empty
-        // placeholder card. Total payload ~9 MB (videos) + 2x ~50 KB
-        // (cards) = ~9.1 MB — finishes well before the user reaches
-        // step 8 even on a slow connection.
-        const outfit1Names = manifest.videos
-          .filter((v) => v.outfit === 1)
-          .map((v) => v.filename);
-        const step8CardNames = STEP_8_CARDS.filter((filename) =>
-          manifest.cards.some((c) => c.filename === filename),
-        );
-        const phase1Targets = [...outfit1Names, ...step8CardNames];
-
-        // Only download those that are actually missing or stale.
-        const phase1Missing = phase1Targets.filter((filename) => {
-          const videoEntry = manifest.videos.find(
-            (v) => v.filename === filename,
-          );
-          const cardEntry = manifest.cards.find(
-            (c) => c.filename === filename,
-          );
-          const entry = videoEntry ?? cardEntry;
-          if (!entry) return false;
-          return (
-            diffCacheAgainstManifest({
-              ...manifest,
-              videos: videoEntry ? [videoEntry] : [],
-              cards: cardEntry ? [cardEntry] : [],
-            }).length > 0
-          );
-        });
-
-        if (phase1Missing.length > 0) {
-          await downloadAssets(manifest.baseUrl, phase1Missing);
-        }
-
-        // ---- Phase 2 (fire-and-forget): everything else ----
-        // outfit-2..6 videos + the other 50 cards. Not awaited so user
-        // can advance through onboarding immediately. By the time they
-        // reach the main tabs these will (mostly) be cached.
-        const remaining = diffCacheAgainstManifest(manifest);
-        if (remaining.length > 0) {
-          void downloadAssets(manifest.baseUrl, remaining);
-        }
-      } catch {
-        // Network / R2 errors are non-fatal during onboarding —
-        // downloads will retry on next launch via the same flow.
-      }
-    })();
-  }, []);
 
   return (
     <ImgPage

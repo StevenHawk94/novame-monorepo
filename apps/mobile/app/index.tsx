@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { isOnboardingDone } from '@/lib/onboarding';
+import { ensureP0Ready } from '@/lib/download-queue';
+import { AssetGateError } from '@/components/main/asset-gate-error';
+
+// P0 asset gate timeout for returning (session) cold starts. Independent
+// of _layout's PREWARM_TIMEOUT_MS (that's for data fetches). P0 assets
+// total ~766KB so this only trips on poor/no network.
+const P0_ASSET_TIMEOUT_MS = 15000;
 
 /**
  * Startup route — decides where to send the user after launch.
@@ -39,6 +46,8 @@ import { isOnboardingDone } from '@/lib/onboarding';
 export default function Index() {
   const onboardingDone = isOnboardingDone();
   const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [p0State, setP0State] = useState<'pending' | 'ready' | 'failed'>('pending');
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +62,29 @@ export default function Index() {
     };
   }, []);
 
+  // P0 asset gate — only for returning users heading to Home. Awaits
+  // ensureP0Ready() (bucket-root assets) before redirecting; on a 15s
+  // timeout (poor network) shows AssetGateError with Retry. Sessionless
+  // paths (onboarding / auth) never trigger this. retryNonce re-runs it.
+  useEffect(() => {
+    if (hasSession !== true) return;
+    let cancelled = false;
+    setP0State('pending');
+    const timer = setTimeout(() => {
+      if (!cancelled) setP0State('failed');
+    }, P0_ASSET_TIMEOUT_MS);
+    void ensureP0Ready().then(() => {
+      if (!cancelled) {
+        clearTimeout(timer);
+        setP0State('ready');
+      }
+    });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [hasSession, retryNonce]);
+
   // Session check still pending. Return null and let the native splash
   // (kept visible via preventAutoHideAsync in _layout.tsx) stay up. We
   // intentionally render no loading screen of our own here — the splash
@@ -64,7 +96,12 @@ export default function Index() {
   }
 
   if (hasSession) {
-    return <Redirect href="/(main)/(tabs)" />;
+    if (p0State === 'ready') return <Redirect href="/(main)/(tabs)" />;
+    if (p0State === 'failed') {
+      return <AssetGateError onRetry={() => setRetryNonce((n) => n + 1)} />;
+    }
+    // p0 pending: keep the native splash up while P0 assets download.
+    return null;
   }
 
   if (!onboardingDone) {

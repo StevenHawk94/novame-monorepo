@@ -4,6 +4,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { useFocusEffect } from 'expo-router';
 
 import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
+import { bumpToFront } from '@/lib/download-queue';
 import type { CharacterState } from '@/lib/constants';
 
 /**
@@ -73,6 +74,18 @@ export function VideoCharacter({
   // Compute the initial source once for useVideoPlayer's mount-time setup.
   const initialFilename = buildFilename(characterId, outfit, state);
   const [currentFilename, setCurrentFilename] = useState(initialFilename);
+
+  // P1 action-triggered priority: when the video we need to show right
+  // now isn't cached locally (resolveSource is falling back to the R2
+  // CDN), bump it to the front of the download queue so it lands in
+  // the local cache ASAP (next time it plays from file://, offline-
+  // capable). Idempotent + does not touch the player; the CDN fallback
+  // already shows the video immediately.
+  useEffect(() => {
+    if (getCachedAssetUri(currentFilename) === null) {
+      bumpToFront(currentFilename);
+    }
+  }, [currentFilename]);
 
   const player = useVideoPlayer(resolveSource(initialFilename), (p) => {
     p.loop = true;

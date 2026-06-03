@@ -236,7 +236,7 @@ export async function downloadAsset(
  * Example: filename='book-cover.webp' updatedAt='2026-05-24T16:04:32.057Z'
  *   -> 'book-cover-v20260524T160432057Z.webp'
  */
-function productCacheFilename(asset: ProductAssetManifestEntry): string {
+export function productCacheFilename(asset: ProductAssetManifestEntry): string {
   const lastDot = asset.filename.lastIndexOf('.');
   const base = lastDot >= 0 ? asset.filename.slice(0, lastDot) : asset.filename;
   const ext = lastDot >= 0 ? asset.filename.slice(lastDot) : '';
@@ -252,7 +252,7 @@ function productCacheFilename(asset: ProductAssetManifestEntry): string {
  * keys to R2); we just point the local download destination at the
  * versioned name.
  */
-async function downloadProductAsset(
+export async function downloadProductAsset(
   baseUrl: string,
   asset: ProductAssetManifestEntry,
 ): Promise<AssetDownloadResult> {

@@ -30,7 +30,8 @@ import {
   refreshAllCaches,
   shouldRefreshAll,
 } from '@/lib/cache-refresh-all';
-import { fetchManifestFromR2, fillProductAssets, setCachedManifest } from '@/lib/asset-cache';
+import { fetchManifestFromR2, setCachedManifest } from '@/lib/asset-cache';
+import { startDownloadQueue } from '@/lib/download-queue';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
@@ -238,13 +239,14 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Stage B: background-download product assets (6 images, ~530KB total).
-  // Fire-and-forget on mount, completely independent of the prewarm
-  // gate so it never delays splash hide. Errors are logged inside.
-  // After this lands, getProductAssetUri returns file:// URIs; before,
-  // it returns remote URLs (expo-image handles both transparently).
+  // P1: start the priority download queue on mount. enqueues P0
+  // (bucket-root assets) first, then chains P1 (cards art ->
+  // chars-video -> product details) in the background at concurrency 3.
+  // Fire-and-forget + idempotent; never delays splash hide. Replaces the
+  // old fillProductAssets() fire-and-forget — productAssets are now
+  // downloaded by the queue (P0: book/cards-cover; P1: product details).
   useEffect(() => {
-    fillProductAssets();
+    startDownloadQueue();
   }, []);
 
   // Hide the native splash once we're ready. Separate effect from
