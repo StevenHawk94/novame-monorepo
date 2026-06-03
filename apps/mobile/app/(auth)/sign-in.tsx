@@ -473,6 +473,13 @@ export default function AuthScreen() {
   if (mode === 'verify') {
     return (
       <SafeAreaView style={styles.container}>
+        <Pressable
+          onPress={() => { void haptics.light(); goTo('register'); }}
+          hitSlop={12}
+          style={({ pressed }) => [styles.topBackButton, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.topBackArrow}>{'\u2190'}</Text>
+        </Pressable>
         <View style={styles.body}>
           <Branding />
           <Text style={styles.formTitle}>Verify email</Text>
@@ -502,9 +509,7 @@ export default function AuthScreen() {
               <Text style={styles.btnPrimaryText}>Verify</Text>
             )}
           </Pressable>
-          <Pressable onPress={() => goTo('register')} style={styles.backLink}>
-            <Text style={styles.linkText}>Back</Text>
-          </Pressable>
+
         </View>
         <Footer />
       </SafeAreaView>
@@ -688,6 +693,19 @@ function makeStyles(
   forgotLinkRow: {
     marginBottom: scale(16),
     alignSelf: 'flex-start',
+  },
+  topBackButton: {
+    position: 'absolute',
+    top: 56,
+    left: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  topBackArrow: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontFamily: 'Inter_600SemiBold',
+    lineHeight: 28,
   },
   backLink: {
     marginTop: scale(16),

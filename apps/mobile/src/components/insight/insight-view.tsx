@@ -380,10 +380,10 @@ export function InsightView({
                 <Text style={styles.collectionKeywordText}>
                   {cardCollection.keyword}
                 </Text>
+                {cardCollection.isNewType ? (
+                  <Text style={styles.collectionNewBadge}>New</Text>
+                ) : null}
               </View>
-              {cardCollection.isNewType ? (
-                <Text style={styles.collectionNewBadge}>New</Text>
-              ) : null}
             </View>
 
             <Text style={styles.collectionSubtitle}>
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   },
   collectionKeywordRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
@@ -646,6 +646,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 8,
     borderRadius: 999,
+    // relative so the New badge can anchor to the pill's top-right
+    // without consuming layout width (keeps the pill itself centered).
+    position: 'relative',
   },
   collectionKeywordText: {
     color: '#FFFFFF',
@@ -657,8 +660,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_700Bold',
     fontStyle: 'italic',
-    marginLeft: -6,
-    marginTop: -8,
+    // Absolute badge anchored to the pill's top-right corner. Out of
+    // normal flow, so it doesn't shift the pill off-center.
+    position: 'absolute',
+    top: -14,
+    right: -10,
   },
   collectionSubtitle: {
     color: 'rgba(255,255,255,0.85)',
