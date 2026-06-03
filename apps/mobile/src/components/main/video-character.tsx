@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useFocusEffect } from 'expo-router';
@@ -74,6 +74,13 @@ export function VideoCharacter({
   // Compute the initial source once for useVideoPlayer's mount-time setup.
   const initialFilename = buildFilename(characterId, outfit, state);
   const [currentFilename, setCurrentFilename] = useState(initialFilename);
+  // Keep the latest filename in a ref so the statusChange listener (whose
+  // effect deps are [player]) reads the current value, not a stale closure.
+  const currentFilenameRef = useRef(currentFilename);
+  currentFilenameRef.current = currentFilename;
+  // Guard so an 'error' status retries the source at most once per filename
+  // (avoids an infinite reload loop / battery drain on a hard failure).
+  const retriedFilenameRef = useRef<string | null>(null);
 
   // P1 action-triggered priority: when the video we need to show right
   // now isn't cached locally (resolveSource is falling back to the R2
@@ -153,6 +160,26 @@ export function VideoCharacter({
           player.play();
         } catch {
           // best-effort
+        }
+        return;
+      }
+      // Error fallback: if the source fails to load (P1 clip not yet
+      // downloaded AND the CDN fetch failed), retry the source ONCE for
+      // the current filename. resolveSource re-evaluates cache vs CDN, so
+      // a clip that finished downloading in the meantime now resolves to
+      // the local file://. Bump it to the front of the queue too. Capped
+      // at one retry per filename to avoid an infinite error->retry loop.
+      if (status === 'error') {
+        const fn = currentFilenameRef.current;
+        if (retriedFilenameRef.current !== fn) {
+          retriedFilenameRef.current = fn;
+          bumpToFront(fn);
+          try {
+            player.replace(resolveSource(fn));
+            player.play();
+          } catch {
+            // best-effort; leave the player as-is if replace throws
+          }
         }
       }
     });

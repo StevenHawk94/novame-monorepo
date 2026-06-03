@@ -5,6 +5,8 @@ import { enqueueSkinUnlocks } from './skin-unlock-store';
 import { getUnlockedOutfits } from '@novame/core';
 import {
   type CharacterMode,
+  type CharacterState,
+  getCharacterState,
   WP_PLAY_DECAY_PER_HOUR,
   WP_STUDY_DECAY_PER_HOUR,
 } from './constants';
@@ -148,6 +150,32 @@ export type CachedCharacterState = {
  * Reads cached character state from MMKV. Returns null if no cache
  * exists (first launch after sign-in) or if the cached value is corrupt.
  */
+/**
+ * Computes the filename of the video the Home screen will play on its
+ * FIRST frame, derived from the cached character state (charId / outfit
+ * / mode / wp). Single source of truth shared by the Home tab's video
+ * pick and the P0 asset gate (app/index.tsx), so the gate waits for the
+ * exact clip the user is about to see — not a hard-coded default.
+ *
+ * Mirrors video-character.tsx's buildFilename + the Home tab's
+ * getCharacterState(wpVisual, mode) logic.
+ *
+ * No cache (brand-new user / fresh install): defaults to
+ * char1-outfit1-hungry.mp4 — outfit 1 + wp 0 -> 'hungry' — which is a
+ * bucket-root P0 asset already guaranteed present, so the gate passes
+ * instantly for new users.
+ */
+export function getHomeVideoFilename(): string {
+  const cached = getCachedCharacterState();
+  const charId = cached?.charId ?? 'char-1';
+  const outfit = cached?.outfit ?? 1;
+  const mode: CharacterMode = cached?.mode ?? 'play';
+  const wp = cached?.wp ?? 0;
+  const state: CharacterState = getCharacterState(wp, mode);
+  const charNum = charId.replace('char-', '');
+  return `char${charNum}-outfit${outfit}-${state}.mp4`;
+}
+
 export function getCachedCharacterState(): CachedCharacterState | null {
   const raw = storage.getString(STORAGE_KEY);
   if (!raw) return null;

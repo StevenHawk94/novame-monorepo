@@ -202,7 +202,7 @@ function buildP1Tasks(m: AssetManifest): DLTask[] {
 }
 
 /** Enqueue all P0 assets; resolves when every P0 task is done/skipped. */
-export async function ensureP0Ready(): Promise<void> {
+export async function ensureP0Ready(homeVideoFilename?: string): Promise<void> {
   const m = await ensureManifest();
   if (!m) return; // no manifest: can't download; gate timeout + CDN fallback cover it
   if (!p0Promise) {
@@ -212,6 +212,28 @@ export async function ensureP0Ready(): Promise<void> {
   }
   for (const t of buildP0Tasks(m)) {
     if (!hasTask(t.key)) tasks.push(t);
+  }
+  // Dynamically include the video the Home screen will actually play on
+  // its first frame. For a returning user this is their current state's
+  // clip (e.g. char1-outfitN-study.mp4) which lives in chars-video/ = P1;
+  // promote it to P0 so the gate waits for it and Home plays it locally
+  // (no CDN dependency, no failure placeholder). New users pass
+  // char1-outfit1-hungry.mp4 which is already a root P0 asset.
+  if (homeVideoFilename) {
+    const v = m.videos.find((x) => x.filename === homeVideoFilename);
+    if (v) {
+      const existing = tasks.find((t) => t.key === v.filename);
+      if (!existing) {
+        tasks.push({
+          key: v.filename, kind: 'video', filename: v.filename,
+          dir: v.dir ?? '', size: v.size, tier: 0, seq: -1, status: 'queued',
+        });
+      } else if (existing.status === 'queued' || existing.status === 'failed') {
+        existing.tier = 0;
+        existing.seq = -1;
+        existing.status = 'queued';
+      }
+    }
   }
   pump(m.baseUrl);
   maybeResolveP0();

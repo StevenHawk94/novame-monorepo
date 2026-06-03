@@ -1,68 +1,33 @@
 /**
- * Signing-in loading screen (Stage 5.WR.2, new-user instant-home rewrite).
+ * Signing-in loading screen — P0 asset gate on the login path.
  *
- * Sits between sign-in success and the home tab. After this rewrite it
- * exists primarily to provide a visual transition (purple background +
- * logo + spinner) for ~600ms while data fetches kick off in the
- * background -- it no longer BLOCKS on those fetches.
+ * Sits between sign-in success (_layout SIGNED_IN -> router.replace here)
+ * and the home tab. This screen is the login-path equivalent of the
+ * cold-start P0 gate in app/index.tsx: it holds the purple loading screen
+ * until the assets the Home screen needs on its first frame are local,
+ * then navigates to Home.
  *
- * History:
- *   v1 (original Stage 5.WR.2): awaited Promise.allSettled([
- *     fetchCharacterState, fetchSubscriptionTier, fetchMeStats
- *   ]) with a 3s timeout. This worked for established users on fast
- *   networks but had two failure modes:
- *     - New users hit a race between Supabase auth's handle_new_user
- *       trigger (creating profiles row) and character-state route's
- *       ensureProfileFields (re-reading it). Result: HTTP 404 within
- *       ~700ms, fetch rejected, cache stayed null, home displayed
- *       "Loading..." speech bubble.
- *     - Even when no race, the three serial server calls (each with
- *       its own DB round-trips) consistently took 4-5s on cold
- *       Vercel Edge boots, blowing through the 3s timeout. The home
- *       tab then rendered before its caches were populated.
+ * Why gate here (not just cold start): logging in is an in-app navigation
+ * that never re-runs app/index.tsx, so without a gate here the user lands
+ * on Home before their current-state video is downloaded — showing a
+ * failure placeholder. SIGNED_IN clears character-state cache, so we must
+ * await fetchCharacterState() to learn the user's REAL state (wp / mode /
+ * outfit) before computing which video to gate; otherwise we'd gate the
+ * default 'hungry' clip and miss a returning user's study/chill clip.
  *
- *   v2 (this version): instant-default pattern, industry-standard
- *   stale-while-revalidate. We write known-correct DEFAULT values to
- *   MMKV immediately (verified to match what the server would return
- *   for a fresh account), navigate to home, and fire fetches in the
- *   background. Reactive polling in home/me/growth picks up the
- *   server-confirmed values within seconds without UI disruption.
- *
- * Why this is correct for new users:
- *   For a newly-signed-up account the server response IS the default
- *   values -- wp=0, level=1, totalCards=1, planTier='free', etc. So
- *   client-side defaulting produces the SAME numbers the fetch would
- *   produce, with zero network wait. The only fields the client
- *   cannot pre-compute are server-side randomness (the default
- *   avatar URL assigned by trigger_assign_default_avatar) which
- *   gracefully renders an empty-string placeholder until the
- *   background fetch lands.
- *
- * Why this is acceptable for returning users:
- *   On sign-in the SIGNED_IN handler in _layout.tsx clears the per-
- *   user caches (to prevent cross-account leakage). The user then
- *   transits this screen; we now populate caches with DEFAULTS for
- *   the ~5s the fetch needs. The user sees Free-tier / level-1 stats
- *   briefly, then the home/me page reactive listeners swap in real
- *   values once fetchCharacterState / fetchMeStats / fetchSubscription
- *   resolve. Slight transient mismatch is acceptable -- returning sign-
- *   in is rare and the user does not interact with stats during the
- *   transition window.
- *
- * displayName / charName:
- *   Read from MMKV onboarding state (set at onboarding step 10 before
- *   sign-in). Carries the user's chosen name into the default cache
- *   so Me page header and Home speech bubble show the right identity
- *   from frame 1.
- *
- * MIN_DISPLAY_MS = 600ms: keeps the splash visible long enough to
- * look intentional (not a one-frame flash). Below this, users feel
- * the transition was glitchy.
- *
- * No PREWARM_TIMEOUT_MS needed anymore -- we never wait on fetches.
+ * Flow:
+ *   1. Seed default caches (so a new-user 404 on fetch still has values).
+ *   2. await fetchCharacterState -> real wp/mode/outfit in cache.
+ *   3. await ensureP0Ready(getHomeVideoFilename()) -> the real first-frame
+ *      video is local (root P0 assets + that clip), gating the screen.
+ *   4. subscription / me-stats fetch fire-and-forget (don't block video).
+ *   5. Success -> navigate to Home (keeping MIN_DISPLAY_MS minimum).
+ *   6. 15s timeout (poor network) -> AssetGateError with Retry, same as
+ *      the cold-start gate. Connecting to <1MB of assets shouldn't take
+ *      longer; if it does, the app is barely usable, so we hold here.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
@@ -71,6 +36,7 @@ import {
   DEFAULT_NEW_USER_CHARACTER_STATE,
   fetchCharacterState,
   getCachedCharacterState,
+  getHomeVideoFilename,
   setCachedCharacterState,
 } from '@/lib/character-state';
 import {
@@ -85,45 +51,55 @@ import {
   setCachedMeStats,
 } from '@/lib/me-stats';
 import { getOnboardingState } from '@/lib/onboarding';
+import { ensureP0Ready } from '@/lib/download-queue';
+import { AssetGateError } from '@/components/main/asset-gate-error';
 
 const LOGO = require('../../assets/images/logo.png');
 
 const MIN_DISPLAY_MS = 600;
+// Same budget as the cold-start gate in app/index.tsx. P0 + the first-frame
+// video total well under 1MB; exceeding this means a very poor network.
+const P0_ASSET_TIMEOUT_MS = 15000;
 
 export default function SigningInScreen() {
+  const [gateState, setGateState] = useState<'pending' | 'failed'>('pending');
+  const [retryNonce, setRetryNonce] = useState(0);
+
   useEffect(() => {
     const start = Date.now();
+    let cancelled = false;
     let navigated = false;
 
     const goHome = () => {
-      if (navigated) return;
+      if (navigated || cancelled) return;
       navigated = true;
       const elapsed = Date.now() - start;
       const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
       setTimeout(() => {
-        router.replace('/(main)/(tabs)');
+        if (!cancelled) router.replace('/(main)/(tabs)');
       }, remaining);
     };
+
+    // Overall timeout: if the gate hasn't completed within budget, show the
+    // error screen (poor/no network). Retry re-runs the whole effect.
+    const timer = setTimeout(() => {
+      if (!cancelled && !navigated) setGateState('failed');
+    }, P0_ASSET_TIMEOUT_MS);
 
     void (async () => {
       const session = await getCurrentSession();
       const userId = session?.user?.id;
       if (!userId) {
-        // No session somehow -- bounce back to sign-in. Should be
-        // unreachable in practice (this screen is only entered on
-        // sign-in success), but defensive.
+        // Defensive: should be unreachable (only entered on sign-in success).
         navigated = true;
+        clearTimeout(timer);
         router.replace('/(auth)/sign-in');
         return;
       }
 
-      // ---- Step 1: populate caches with DEFAULTS for instant home ----
-      //
-      // Read onboarding state to inject the user's chosen name into
-      // the defaults so Home / Me show the right identity from frame 1.
+      // ---- 1. Seed default caches (fallback if fetch 404s for new users) ----
       const onboarding = getOnboardingState();
       const charName = onboarding.charName || '';
-
       if (!getCachedCharacterState()) {
         setCachedCharacterState({
           ...DEFAULT_NEW_USER_CHARACTER_STATE,
@@ -139,33 +115,46 @@ export default function SigningInScreen() {
         });
       }
       if (!getCachedSubscription()) {
-        setCachedSubscription({
-          tier: 'free',
-          lastFetchedAtMs: Date.now(),
-        });
+        setCachedSubscription({ tier: 'free', lastFetchedAtMs: Date.now() });
       }
 
-      // ---- Step 2: fire-and-forget background reconcile ----
-      //
-      // These resolve in 1-5 seconds depending on whether the
-      // handle_new_user trigger has finished writing the profile row.
-      // Home/Me/Growth tabs poll MMKV every 2s; whichever resolves
-      // first repaints the UI silently. Errors are non-fatal -- the
-      // default cache stays in place.
-      void fetchCharacterState(userId).catch((e) => {
-        console.warn('[signing-in] character-state fetch failed:', e?.message || e);
-      });
+      // ---- 2. await REAL character-state so we gate the right video ----
+      // SIGNED_IN cleared this cache, so without awaiting we'd only have the
+      // default (hungry). On failure (new-user trigger race -> 404) we keep
+      // the seeded default, which resolves to the root 'hungry' clip.
+      try {
+        await fetchCharacterState(userId);
+      } catch (e) {
+        console.warn('[signing-in] character-state fetch failed:', (e as Error)?.message || e);
+      }
+      if (cancelled) return;
+
+      // ---- 3. subscription / me-stats: background, don't block the video ----
       void fetchSubscriptionTier(userId).catch((e) => {
-        console.warn('[signing-in] subscription fetch failed:', e?.message || e);
+        console.warn('[signing-in] subscription fetch failed:', (e as Error)?.message || e);
       });
       void fetchMeStats(userId).catch((e) => {
-        console.warn('[signing-in] me-stats fetch failed:', e?.message || e);
+        console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      // ---- Step 3: navigate immediately (respects 600ms minimum) ----
+      // ---- 4. gate the first-frame video (real state now in cache) ----
+      await ensureP0Ready(getHomeVideoFilename());
+      if (cancelled) return;
+
+      // ---- 5. ready -> Home ----
+      clearTimeout(timer);
       goHome();
     })();
-  }, []);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [retryNonce]);
+
+  if (gateState === 'failed') {
+    return <AssetGateError onRetry={() => setRetryNonce((n) => n + 1)} />;
+  }
 
   return (
     <View style={styles.root}>

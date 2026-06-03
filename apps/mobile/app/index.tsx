@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { isOnboardingDone } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
+import { getHomeVideoFilename } from '@/lib/character-state';
 import { AssetGateError } from '@/components/main/asset-gate-error';
 
 // P0 asset gate timeout for returning (session) cold starts. Independent
@@ -73,7 +74,7 @@ export default function Index() {
     const timer = setTimeout(() => {
       if (!cancelled) setP0State('failed');
     }, P0_ASSET_TIMEOUT_MS);
-    void ensureP0Ready().then(() => {
+    void ensureP0Ready(getHomeVideoFilename()).then(() => {
       if (!cancelled) {
         clearTimeout(timer);
         setP0State('ready');
