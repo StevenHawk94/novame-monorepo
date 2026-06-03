@@ -36,6 +36,7 @@ import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
+import { ErrorBoundary } from '@/components/main/error-boundary';
 import { hideSplashOnce } from '@/lib/splash';
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
@@ -395,14 +396,16 @@ export default function RootLayout() {
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <ThemeProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: '#0F0B2E' },
-                animation: 'none',
-              }}
-            />
-            {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+            <ErrorBoundary>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: '#0F0B2E' },
+                  animation: 'none',
+                }}
+              />
+              {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+            </ErrorBoundary>
           </ThemeProvider>
         </SafeAreaProvider>
       </BottomSheetModalProvider>
