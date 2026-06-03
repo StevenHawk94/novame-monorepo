@@ -307,7 +307,12 @@ export default function GrowthTab() {
       // setState), so the new daily_love appears in the UI within
       // ~60s of midnight.
       refreshTickRef.current = setInterval(() => {
-        void refreshChar();
+        // NOTE: intentionally NOT calling refreshChar() here. While the
+        // user sits on this screen the EXP bar is optimistic-driven; a
+        // periodic character-state fetch could land mid-animation and
+        // rewind the bar. charState is reconciled on focus (entry) and
+        // on blur (exit) instead. This interval only handles the midnight
+        // daily-tasks rollover.
         const lastMs = getDailyTasksLastFetchedAtMs();
         if (lastMs !== null) {
           const lastDate = new Date(lastMs);
@@ -326,6 +331,11 @@ export default function GrowthTab() {
           clearInterval(refreshTickRef.current);
           refreshTickRef.current = null;
         }
+        // Silent reconcile on leave: the user no longer sees the EXP bar,
+        // so pulling authoritative character-state here corrects any drift
+        // between the optimistic value and the server total without a
+        // visible rewind. Next entry's focus refreshChar shows truth.
+        void refreshChar();
       };
     }, [refreshChar, refreshTasks]),
   );
@@ -492,8 +502,18 @@ export default function GrowthTab() {
           showToast(`\u{1F389} Level ${result.newLevel} reached!`, 'success', 3000);
         }, 600);
       }
-      // Pull authoritative character state from server.
-      void refreshChar();
+      // EXP bar is driven PURELY by the optimistic update above while the
+      // user is on this screen — we deliberately do NOT reconcile from the
+      // server here. Reconciling per-completion (whether via this response
+      // or a separate fetch) makes the bar jitter/rewind under rapid taps:
+      // responses arrive out of order, each carrying an intermediate
+      // server snapshot, and every setState re-drives the bar animation.
+      // Since the EXP reward is a fixed constant and the optimistic math
+      // uses the same @novame/core formula as the server, the optimistic
+      // value is authoritative-equivalent. Server truth is reconciled
+      // silently on blur (see useFocusEffect cleanup) when the bar is off
+      // screen, so any drift corrects without a visible rewind.
+      // result.* is still used above for the EXP / level-up toasts.
 
       // Stage 6.RatingPrompt: increment lifetime task completion
       // counter + check if we should surface the rating prompt.

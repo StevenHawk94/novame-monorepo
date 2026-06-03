@@ -51,6 +51,10 @@ import {
   setCachedMeStats,
 } from '@/lib/me-stats';
 import { getOnboardingState } from '@/lib/onboarding';
+import { fetchSeekQuestionsWithCache } from '@/lib/seek-questions-cache';
+import { fetchUserStatsWithCache } from '@/lib/user-stats-api';
+import { fetchDailyTasksWithCache } from '@/lib/daily-tasks-api';
+import { fetchWisdomsWithCache } from '@/lib/wisdoms-api';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { AssetGateError } from '@/components/main/asset-gate-error';
 
@@ -139,6 +143,22 @@ export default function SigningInScreen() {
 
       // ---- 4. gate the first-frame video (real state now in cache) ----
       await ensureP0Ready(getHomeVideoFilename());
+      if (cancelled) return;
+
+      // ---- 5. warm the OTHER tabs' data before Home shows ----
+      // New users have no cached data for Growth / Discover / Assets, so the
+      // first time they switch to each tab it shows a loading spinner. Warm
+      // those caches here, while the loading screen is still up, so every
+      // tab renders instantly (cache-first) on first visit. allSettled (not
+      // all) so a slow/failing single endpoint can't block Home — a tab that
+      // didn't warm just fetches on its own first focus, same as today. The
+      // whole signing-in flow is still bounded by P0_ASSET_TIMEOUT_MS.
+      await Promise.allSettled([
+        fetchDailyTasksWithCache(userId),       // Growth — My Quest tasks
+        fetchWisdomsWithCache(userId),          // Growth — My Logs
+        fetchSeekQuestionsWithCache('', []),    // Discover — default question feed
+        fetchUserStatsWithCache(userId),        // Assets — collection stats
+      ]);
       if (cancelled) return;
 
       // ---- 5. ready -> Home ----
