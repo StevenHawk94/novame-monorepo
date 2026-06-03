@@ -46,6 +46,7 @@ import Carousel from 'react-native-reanimated-carousel';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
 import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
+import { getCachedKeywordDetail, setCachedKeywordDetail } from '@/lib/keyword-detail-cache';
 import { apiClient } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
@@ -65,8 +66,12 @@ export default function KeywordDetailModal() {
   const name = params.name ?? '';
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [wisdoms, setWisdoms] = useState<WisdomLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Cache-first: seed from the per-keyword cache so the carousel renders
+  // instantly. loading is true only when there's no cache (first-ever open
+  // of this keyword); otherwise we show cached cards and refresh silently.
+  const cachedInitial = getCachedKeywordDetail(slug);
+  const [wisdoms, setWisdoms] = useState<WisdomLog[]>(cachedInitial ?? []);
+  const [loading, setLoading] = useState(cachedInitial === null);
   const [centerIdx, setCenterIdx] = useState(0);
 
   // Stage 6 swipe-vs-tap: Carousel sets isScrolling=true on pan-begin
@@ -169,7 +174,9 @@ export default function KeywordDetailModal() {
         // wisdoms in newest-first order. This puts the action-
         // initiative starter card at the front of the carousel for
         // new users.
-        setWisdoms([...orphanWisdoms, ...filteredWisdoms]);
+        const merged = [...orphanWisdoms, ...filteredWisdoms];
+        setWisdoms(merged);
+        setCachedKeywordDetail(slug, merged);
       } catch (e) {
         console.warn('[keyword-detail] fetch failed:', e);
       } finally {
