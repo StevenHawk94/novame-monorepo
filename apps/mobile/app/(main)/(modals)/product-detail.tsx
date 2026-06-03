@@ -20,7 +20,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,7 +38,7 @@ import {
   getCachedConfig,
 } from '@/lib/app-config-api';
 import { getProductAssetSource } from '@/lib/asset-cache';
-import { fetchUserStats } from '@/lib/user-stats-api';
+import { fetchUserStats, getCachedUserStats } from '@/lib/user-stats-api';
 import { fetchOrders, type Order } from '@/lib/orders-api';
 import { supabase } from '@/lib/supabase';
 import { haptics } from '@/lib/haptics';
@@ -68,11 +67,17 @@ export default function ProductDetailModal() {
   const product: ProductKey =
     params.product === 'wisdom_cards' ? 'wisdom_cards' : 'wisdom_book';
 
+  // Cache-first: seed from MMKV user-stats so the page renders
+  // instantly with no loading spinner. Background fetch below refreshes
+  // (SWR). New users have no cache -> 0/0, which matches the backend
+  // (uniqueKeywords counts wisdom_cards rows, created only on publish;
+  // the onboarding card is a display-only constant, not a wisdom_cards
+  // row). totalWords is likewise 0 for a fresh user.
+  const cachedStats = getCachedUserStats();
   const [userId, setUserId] = useState<string | null>(null);
-  const [totalWords, setTotalWords] = useState(0);
-  const [collectedKw, setCollectedKw] = useState(0);
+  const [totalWords, setTotalWords] = useState(cachedStats?.totalWords ?? 0);
+  const [collectedKw, setCollectedKw] = useState(cachedStats?.uniqueKeywords ?? 0);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -84,19 +89,25 @@ export default function ProductDetailModal() {
     if (!userId) return;
     let cancelled = false;
     (async () => {
+      // Background SWR refresh. Does NOT gate rendering — the page is
+      // already showing cached user-stats. user-stats and orders settle
+      // independently; orders only affects the wisdom_cards "Order in
+      // progress" CTA state, which updates non-destructively when it lands.
       try {
-        const [sRes, oRes] = await Promise.all([
+        const [sRes, oRes] = await Promise.allSettled([
           fetchUserStats(userId),
           fetchOrders(userId),
         ]);
         if (cancelled) return;
-        setTotalWords(sRes.totalWords);
-        setCollectedKw(sRes.uniqueKeywords);
-        setOrders(oRes.orders ?? []);
+        if (sRes.status === 'fulfilled') {
+          setTotalWords(sRes.value.totalWords);
+          setCollectedKw(sRes.value.uniqueKeywords);
+        }
+        if (oRes.status === 'fulfilled') {
+          setOrders(oRes.value.orders ?? []);
+        }
       } catch (e) {
-        console.warn('[product-detail] fetch failed:', e);
-      } finally {
-        if (!cancelled) setLoading(false);
+        console.warn('[product-detail] background refresh failed:', e);
       }
     })();
     return () => {
@@ -221,12 +232,7 @@ export default function ProductDetailModal() {
         <Text style={styles.headerTitle}>{COPY[product].title}</Text>
       </View>
 
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#A855F7" />
-        </View>
-      ) : (
-        <ScrollView
+      <ScrollView
           contentContainerStyle={[
             styles.scroll,
             { paddingBottom: 140 + insets.bottom },
@@ -284,16 +290,14 @@ export default function ProductDetailModal() {
           </View>
           ) : null}
         </ScrollView>
-      )}
 
       {/* Sticky CTA */}
-      {!loading ? (
-        <View
-          style={[
-            styles.footer,
-            { paddingBottom: insets.bottom + 16 },
-          ]}
-        >
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: insets.bottom + 16 },
+        ]}
+      >
           <Pressable
             onPress={onOrder}
             disabled={ctaState !== 'unlocked'}
@@ -324,7 +328,6 @@ export default function ProductDetailModal() {
             )}
           </Pressable>
         </View>
-      ) : null}
     </View>
   );
 }
