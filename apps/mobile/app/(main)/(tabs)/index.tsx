@@ -392,7 +392,9 @@ export default function HomeTab() {
         <View style={styles.bubbleWrap}>
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>{`"${bubble}"`}</Text>
-            <View style={styles.bubbleTail} />
+            <View style={styles.bubbleTailWrap} pointerEvents="none">
+              <View style={styles.bubbleTail} />
+            </View>
           </View>
         </View>
 
@@ -525,11 +527,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
   },
-  bubbleTail: {
+  // Tail wrapper spans the full bubble width and centers the triangle via
+  // flex. This is geometrically exact for a zero-size border-triangle —
+  // unlike left:'50%' + marginLeft/transform, which rendered off-center
+  // on this RN version. The triangle inherits the bubble's true center.
+  bubbleTailWrap: {
     position: 'absolute',
+    left: 0,
+    right: 0,
     bottom: -6,
-    left: '50%',
-    marginLeft: -6,
+    alignItems: 'center',
+  },
+  bubbleTail: {
     width: 0,
     height: 0,
     borderLeftWidth: 6,

@@ -265,5 +265,10 @@ const styles = StyleSheet.create({
   video: {
     width: '100%',
     height: '100%',
+    // Overscan: scale the video up slightly so the outermost 1-2px (where
+    // cover-scaling samples the frame boundary and shimmers) get clipped by
+    // root's overflow:'hidden'. Standard fix for edge flicker on a small
+    // source video being upscaled. 1.05 = ~2.5% cropped off each edge.
+    transform: [{ scale: 1.05 }],
   },
 });
