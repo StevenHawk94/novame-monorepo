@@ -433,6 +433,31 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     return { success: false, error: e.message || 'AI generation failed' }
   }
 
+  // Stage 1 crisis short-circuit: the prompt instructs the model to return
+  // {"crisis": true, "crisis_message": "..."} (and nothing else) when the
+  // entry contains self-harm / suicidal / violence / illegal themes. We do
+  // NOT save anything and we do NOT treat this as a generation failure --
+  // it is a deliberate safe response. publish-wisdom rolls back the wisdom
+  // row, burns no quota, and surfaces crisisMessage to the client, which
+  // shows it in a plain dialog instead of entering the insight view.
+  if (result && result.crisis === true) {
+    const CRISIS_FALLBACK =
+      "What you're sharing sounds really heavy, and it deserves more than an analysis right now.\n\n" +
+      "If you're going through something that feels too big to carry alone, please reach out to someone who can actually be there with you:\n\n" +
+      "\u00b7 International Association for Suicide Prevention (directory of crisis centres by country): https://www.iasp.info/resources/Crisis_Centres/\n" +
+      "\u00b7 Crisis Text Line (US/UK/IE/CA): Text HOME to 741741\n" +
+      "\u00b7 Or speak to someone you trust \u2014 a friend, a family member, anyone who knows you.\n\n" +
+      "You don't have to have it figured out before you reach out."
+    return {
+      success: false,
+      crisis: true,
+      crisisMessage:
+        typeof result.crisis_message === 'string' && result.crisis_message.trim().length > 0
+          ? result.crisis_message
+          : CRISIS_FALLBACK,
+    }
+  }
+
   // Stage 6.WisdomFix-S3: emoji sanitize.
   // The prompt instructs AI to emit plain-text titles (no emoji
   // prefix), but Gemini/DeepSeek occasionally ignore the negative

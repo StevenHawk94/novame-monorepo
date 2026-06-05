@@ -389,6 +389,8 @@ export async function POST(request) {
     let generatedAspireScores = null
     let cardGenerationFailed = false
     let lowQualityInput = false
+    let crisisDetected = false
+    let crisisMessage = ''
     if (wisdom.id && transcribedText && transcribedText.trim().length >= minTextLength) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
@@ -432,6 +434,13 @@ export async function POST(request) {
           if (cardResult && cardResult.code === 'LOW_QUALITY_INPUT') {
             lowQualityInput = true
           }
+          // Crisis: the entry tripped the safety detector. Roll back like
+          // any non-card result (shared cleanup below) but surface the safe
+          // message instead of a failure/low-quality response.
+          if (cardResult && cardResult.crisis === true) {
+            crisisDetected = true
+            crisisMessage = cardResult.crisisMessage || ''
+          }
         }
       } catch (e) {
         console.error('[publish-wisdom] Card generation exception:', e.message)
@@ -459,6 +468,20 @@ export async function POST(request) {
       // rolled back so no row references this audio anymore -- it would
       // be an orphan + attack surface if left in storage.
       await cleanupAudioFile()
+      if (crisisDetected) {
+        // Safe-response path. Wisdom row already rolled back + no quota
+        // burned. 403 + CRISIS_DETECTED so the client shows the crisis
+        // message in a plain dialog and does NOT enter the insight view
+        // or write a My Logs row.
+        return NextResponse.json(
+          {
+            error: 'crisis',
+            code: 'CRISIS_DETECTED',
+            message: crisisMessage,
+          },
+          { status: 403 }
+        )
+      }
       if (lowQualityInput) {
         // Input could not yield a meaningful insight. Wisdom row already
         // rolled back above + no quota burned. 422 so mobile shows the

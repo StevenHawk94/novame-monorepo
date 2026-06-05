@@ -2052,6 +2052,38 @@ function PhasePublishing({
               ? (err.body as { code?: string }).code
               : undefined;
 
+          // Crisis: the entry tripped the server-side safety detector
+          // (self-harm / suicidal / violence / illegal themes). The server
+          // already rolled back the wisdom row and burned no quota. Show the
+          // safe message in a plain dialog and leave the whole flow — do NOT
+          // enter insight, do NOT write a My Logs row. Highest priority, so
+          // it is checked before the quota / low-quality branches.
+          if (err.status === 403 && code === 'CRISIS_DETECTED') {
+            inflightRef.current = false;
+            const crisisMsg =
+              typeof err.body === 'object' &&
+              err.body !== null &&
+              'message' in err.body &&
+              typeof (err.body as { message?: string }).message === 'string' &&
+              (err.body as { message?: string }).message!.trim().length > 0
+                ? (err.body as { message?: string }).message!
+                : "What you're sharing sounds really heavy, and it deserves more than an analysis right now.\n\nIf you're going through something that feels too big to carry alone, please reach out to someone who can actually be there with you:\n\n\u00b7 International Association for Suicide Prevention: https://www.iasp.info/resources/Crisis_Centres/\n\u00b7 Crisis Text Line (US/UK/IE/CA): Text HOME to 741741\n\u00b7 Or speak to someone you trust \u2014 a friend, a family member, anyone who knows you.\n\nYou don't have to have it figured out before you reach out.";
+            Alert.alert(
+              '',
+              crisisMsg,
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    close();
+                  },
+                },
+              ],
+              { cancelable: false },
+            );
+            return;
+          }
+
           if (err.status === 402 && code === 'QUOTA_EXCEEDED') {
             inflightRef.current = false;
             // Cross-device / drift case: local flag thought we had room but
