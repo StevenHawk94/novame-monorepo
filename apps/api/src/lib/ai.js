@@ -179,10 +179,43 @@ export async function callAI(opts) {
 /**
  * Parse JSON from AI text output (handles markdown fences, trailing text, etc.)
  */
+// Escape bare control chars that appear INSIDE JSON string literals.
+// Models occasionally emit a real newline/tab inside a string value
+// instead of the escaped \\n / \\t, which makes JSON.parse throw
+// "Bad control character in string literal". We walk the text tracking
+// whether we're inside a string and escape only those in-string control
+// chars, leaving structural whitespace untouched.
+function sanitizeJsonControlChars(s) {
+  let out = ''
+  let inString = false
+  let escaped = false
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]
+    const code = s.charCodeAt(i)
+    if (escaped) { out += ch; escaped = false; continue }
+    if (ch === '\\') { out += ch; escaped = true; continue }
+    if (ch === '"') { inString = !inString; out += ch; continue }
+    if (inString && code < 0x20) {
+      if (ch === '\n') out += '\\n'
+      else if (ch === '\r') out += '\\r'
+      else if (ch === '\t') out += '\\t'
+      else out += '\\u' + code.toString(16).padStart(4, '0')
+      continue
+    }
+    out += ch
+  }
+  return out
+}
+
 export function parseAIJson(rawText) {
   const cleaned = rawText
     .replace(/```json\s*/gi, '')
     .replace(/```\s*/g, '')
     .trim()
-  return JSON.parse(cleaned)
+  try {
+    return JSON.parse(cleaned)
+  } catch (e) {
+    // Bare control chars in string values -> sanitize and retry once.
+    return JSON.parse(sanitizeJsonControlChars(cleaned))
+  }
 }
