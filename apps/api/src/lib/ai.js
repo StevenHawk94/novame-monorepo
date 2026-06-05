@@ -16,8 +16,8 @@ const GEMINI_API_KEY = () => process.env.GEMINI_API_KEY
 const DEEPSEEK_API_KEY = () => process.env.DEEPSEEK_API_KEY
 
 const GEMINI_MODELS = [
-  'gemini-2.5-flash-lite',
   'gemini-3.1-flash-lite',
+  'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
 ]
 

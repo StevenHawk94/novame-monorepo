@@ -2,6 +2,48 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { callAI } from '@/lib/ai'
 import { generateWisdomCard } from '@/lib/generate-card'
+
+// Server-side self-harm / suicide pre-check (deterministic, runs BEFORE
+// the AI call). The AI prompt's Stage 1 is a second-layer fallback, but
+// LLMs (esp. flash-lite) have been observed to ignore the instruction and
+// generate a normal card even for explicit suicidal text — a real safety
+// failure. This regex catches explicit FIRST-PERSON intent ("I want to
+// kill myself", "I don't want to live", self-harm) while deliberately NOT
+// firing on idioms ("dying to see it"), third-person ("my friend wants to
+// die"), or ordinary negative venting ("I'm so done with everything") —
+// those are exactly what the app exists to help with. Violence-toward-
+// others / illegal content is intentionally left to the AI prompt's Stage
+// 1 (a regex can't separate a genuine threat from angry venting).
+// English-only by product decision.
+function detectSelfHarmCrisis(text) {
+  const t = (text || '').toLowerCase().replace(/\s+/g, ' ').trim()
+  const patterns = [
+    /\bi (?:want|wanna|need) to die\b/,
+    /\bi (?:don'?t|do not) (?:want|wanna) to (?:live|be alive)\b/,
+    /\bi (?:want to |wanna |am going to |going to |will )?kill myself\b/,
+    /\bi'?ll kill myself\b/,
+    /\bi'?m going to kill myself\b/,
+    /\bi (?:want to|wanna) end my life\b/,
+    /\bi (?:want to|wanna) take my own life\b/,
+    /\bi(?:'?m| am|'?d be| would be) better off dead\b/,
+    /\bi(?:'?m| am) suicidal\b/,
+    /\bi have no reason to live\b/,
+    /\bi (?:want to|wanna) (?:hurt|harm) myself\b/,
+    /\bi (?:cut|cutting) myself\b/,
+    /\bi (?:want to|wanna) cut myself\b/,
+    /\bi(?:'?ve| have)? ?(?:been )?self[- ]?harm(?:ing|ed)?\b/,
+    /\bi self[- ]?harm\b/,
+  ]
+  return patterns.some((re) => re.test(t))
+}
+
+const CRISIS_MESSAGE =
+  "What you're sharing sounds really heavy, and it deserves more than an analysis right now.\n\n" +
+  "If you're going through something that feels too big to carry alone, please reach out to someone who can actually be there with you:\n\n" +
+  "\u00b7 International Association for Suicide Prevention (directory of crisis centres by country): https://www.iasp.info/resources/Crisis_Centres/\n" +
+  "\u00b7 Crisis Text Line (US/UK/IE/CA): Text HOME to 741741\n" +
+  "\u00b7 Or speak to someone you trust \u2014 a friend, a family member, anyone who knows you.\n\n" +
+  "You don't have to have it figured out before you reach out."
 import { getQuotaPeriodStart, TIER_LIMITS, TIER_RANK } from '@/lib/quota'
 
 export const runtime = 'edge'
@@ -330,6 +372,24 @@ export async function POST(request) {
       )
     }
     // ---- end hardening ----
+
+    // Self-harm / suicide pre-check (deterministic, before AI + before
+    // inserting the wisdom row). On hit: clean the audio, do NOT insert a
+    // wisdom row, do NOT call the AI, do NOT burn quota. Return 403
+    // CRISIS_DETECTED with the safe message so the client shows it in a
+    // plain dialog and exits the flow.
+    if (detectSelfHarmCrisis(transcribedText)) {
+      console.warn('[publish-wisdom] CRISIS_DETECTED by server pre-check — no row inserted')
+      await cleanupAudioFile()
+      return NextResponse.json(
+        {
+          error: 'crisis',
+          code: 'CRISIS_DETECTED',
+          message: CRISIS_MESSAGE,
+        },
+        { status: 403 }
+      )
+    }
 
     // Save to database
     const insertData = {
