@@ -174,7 +174,35 @@ export async function POST(request) {
       
       return Response.json({ error: 'Failed to update profile', details: error.message }, { status: 500 })
     }
-    
+
+    // Cascade name/avatar changes to the redundant snapshots stamped on
+    // the user's previously-published content, so a rename / new avatar
+    // also shows up on their existing cards and seek questions (not just
+    // the Me page / leaderboard, which read profiles live). Only runs when
+    // display_name or avatar_url actually changed. Best-effort: a cascade
+    // failure must NOT fail the profile update itself (that already
+    // succeeded) — we log and move on. Clients see the new values on the
+    // next SWR refresh of the seek / cards feeds.
+    if (displayName !== undefined || avatarUrl !== undefined) {
+      const cascade = {}
+      if (displayName !== undefined) cascade.creator_name = updateData.display_name
+      if (avatarUrl !== undefined) cascade.creator_avatar = updateData.avatar_url
+      try {
+        const { error: wcErr } = await supabase
+          .from('wisdom_cards')
+          .update(cascade)
+          .eq('user_id', userId)
+        if (wcErr) console.error('[update-profile] wisdom_cards cascade failed (non-blocking):', wcErr.message)
+        const { error: sqErr } = await supabase
+          .from('seek_questions')
+          .update(cascade)
+          .eq('submitted_by_user_id', userId)
+        if (sqErr) console.error('[update-profile] seek_questions cascade failed (non-blocking):', sqErr.message)
+      } catch (cascadeErr) {
+        console.error('[update-profile] creator name/avatar cascade exception (non-blocking):', cascadeErr && cascadeErr.message)
+      }
+    }
+
     return Response.json({ success: true, profile: data })
     
   } catch (error) {
