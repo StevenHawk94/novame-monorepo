@@ -518,7 +518,7 @@ export async function POST(request) {
     // Stage 5.IAP.4: if card generation failed, undo the wisdom write
     // so the user is not consuming a quota slot for a broken result.
     if (cardGenerationFailed) {
-      console.warn('[publish-wisdom] CARD_GENERATION_FAILED -- rolling back wisdom row', wisdom.id)
+      console.warn('[publish-wisdom]', crisisDetected ? 'CRISIS_DETECTED (AI second-layer) -- rolling back wisdom row' : 'CARD_GENERATION_FAILED -- rolling back wisdom row', wisdom.id)
       try {
         await supabase.from('wisdoms').delete().eq('id', wisdom.id)
       } catch (delErr) {
