@@ -71,6 +71,7 @@ import {
   emitRatingPromptRequest,
 } from '@/lib/rating-prompt';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { storage as growthStorage } from '@/lib/storage';
 
 // New design figure 1: hero illustration (samurai + black cat) sits to
 // the right of the "Finish Your Tasks to Power Up Your Pal and Yourself!"
@@ -80,6 +81,22 @@ const CHARACTERS_IMAGE_SOURCE = require('../../../assets/images/growth/character
 type SubTab = 'tasks' | 'logs';
 
 const SCREEN_W = Dimensions.get('window').width;
+
+// Cached hero-block height per screen width, so a cold start can paint the
+// correct purple/dark split on the very first frame instead of flashing the
+// dark root bg before content mounts. Measured via onLayout, persisted to
+// MMKV (survives process kill). First-ever launch (no cache) falls back to
+// an estimate; every cold start after that is pixel-accurate.
+const HERO_H_KEY = `growth_hero_h_${Math.round(SCREEN_W)}`;
+function getCachedHeroHeight(): number | null {
+  const raw = growthStorage.getString(HERO_H_KEY);
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+function setCachedHeroHeight(h: number): void {
+  growthStorage.set(HERO_H_KEY, String(Math.round(h)));
+}
 
 // Per-row UI flags layered on top of the server task data so we can
 // drive the optimistic complete -> confetti -> remove animation
@@ -581,8 +598,28 @@ export default function GrowthTab() {
   const bottomTabH = 56 + 1 + insets.bottom;
   const carouselHeight = screenH - insets.top - headerH - bottomTabH;
 
+  // Cold-start anti-flash: a two-tone backdrop (purple hero region on top,
+  // dark task region below) painted UNDER the Carousel, so before content
+  // mounts the user sees the correct page colors instead of the dark root
+  // bg flashing through. The split sits at the bottom of the hero block.
+  // Hero height is fixed for a given screen (fixed content: title + art +
+  // Lv card + Focus Mode card), so we measure it once via onLayout and
+  // cache it in MMKV; subsequent cold starts paint the exact split on the
+  // first frame. First-ever launch falls back to ~42% of screen height.
+  const [heroH, setHeroH] = useState<number>(
+    () => getCachedHeroHeight() ?? Math.round(screenH * 0.42),
+  );
+
   return (
     <View style={styles.root}>
+      {/* Cold-start two-tone backdrop (under everything, no touch). Purple
+          from the top down to the hero's bottom edge, dark below — matching
+          the final layout's color split so a cold start never flashes the
+          dark root bg before the Carousel content mounts. */}
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={{ height: insets.top + headerH + heroH, backgroundColor: '#7C3AED' }} />
+        <View style={{ flex: 1, backgroundColor: '#1A0F3D' }} />
+      </View>
       {/* Status bar area: purple, matches segHeader. Sized to the top
           safe-area inset so it covers exactly the status bar region. */}
       <View style={[styles.statusBarBg, { height: insets.top }]} />
@@ -639,7 +676,16 @@ export default function GrowthTab() {
               {/* Purple hero block -- "Finish Your Tasks to Power Up Your Pal
                   and Yourself!" title + characters illustration + Lv card +
                   Focus Mode card. Background is loading-page purple #7C3AED. */}
-              <View style={styles.heroBlock}>
+              <View
+                style={styles.heroBlock}
+                onLayout={(e) => {
+                  const h = e.nativeEvent.layout.height;
+                  if (h > 0 && Math.abs(h - heroH) > 1) {
+                    setHeroH(h);
+                    setCachedHeroHeight(h);
+                  }
+                }}
+              >
                 <View style={styles.heroTitleRow}>
                   <Text style={styles.heroTitle}>
                     Finish Your Daily Quests to Power Up with Your Pal!

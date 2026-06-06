@@ -39,12 +39,13 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ImageBackground } from 'expo-image';
+import { Image, ImageBackground } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import Carousel from 'react-native-reanimated-carousel';
 
 import { FlippableCard } from '@/components/cards/FlippableCard';
+import { buildAssetUrl, dirForFilename } from '@/lib/asset-cache';
 import { fetchWisdoms, type WisdomLog } from '@/lib/wisdoms-api';
 import { getCachedKeywordDetail, setCachedKeywordDetail } from '@/lib/keyword-detail-cache';
 import { apiClient } from '@/lib/api';
@@ -177,6 +178,35 @@ export default function KeywordDetailModal() {
         const merged = [...orphanWisdoms, ...filteredWisdoms];
         setWisdoms(merged);
         setCachedKeywordDetail(slug, merged);
+
+        // Decode the card art into the in-memory image cache BEFORE we drop
+        // the loading state. Every card on this screen shares one front +
+        // one back image (slug-front / category-back), so we only need to
+        // warm two URLs. Without this the spinner ends as soon as the DATA
+        // arrives, but the art is still only on disk -- expo-image then
+        // needs a beat to read+decode it, which is the blank-card flash.
+        // Warming to memory here means the spinner ends only once the art
+        // is ready to paint instantly. URLs MUST match FlippableCard's
+        // exactly (same buildAssetUrl + dirForFilename) or the URL-keyed
+        // cache won't hit. Bounded by a 2.5s race so a slow network can
+        // never wedge the spinner open.
+        const _cat = slug.split('-')[0] ?? 'mind';
+        const _frontFn = `${slug}-front.webp`;
+        const _backFn = `${_cat}-back.webp`;
+        const _R2 = 'https://media.novameapp.com';
+        const _artUrls = [
+          buildAssetUrl(_R2, dirForFilename(_frontFn), _frontFn),
+          buildAssetUrl(_R2, dirForFilename(_backFn), _backFn),
+        ];
+        try {
+          await Promise.race([
+            Image.prefetch(_artUrls, 'memory-disk'),
+            new Promise((resolve) => setTimeout(resolve, 2500)),
+          ]);
+        } catch {
+          // prefetch failure must never block showing the cards
+        }
+        if (cancelled) return;
       } catch (e) {
         console.warn('[keyword-detail] fetch failed:', e);
       } finally {

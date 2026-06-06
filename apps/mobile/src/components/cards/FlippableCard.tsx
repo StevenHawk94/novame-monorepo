@@ -38,6 +38,14 @@ import { Image } from 'expo-image';
 // (asset-cache is still imported in other components for video assets.)
 import { buildAssetUrl, dirForFilename } from '@/lib/asset-cache';
 
+// A neutral dark blurhash shown while the card art decodes from disk
+// cache. expo-image's memory-disk cache is instant on memory hit but has
+// a brief decode delay on disk hit (first view after the in-memory entry
+// is evicted); the placeholder + fade transition turns that blank moment
+// into a smooth fade-in instead of a black flash. Dark muted tone to match
+// the card frame.
+const CARD_PLACEHOLDER_BLURHASH = 'L03[?nof00ay~qof9Fay00fQ-;fQ';
+
 const AR = 1024 / 1536;
 
 const DOMAIN_GLOW: Record<string, string> = {
@@ -276,6 +284,10 @@ export function FlippableCard({
                 style={styles.faceImage}
                 contentFit="cover"
                 cachePolicy="memory-disk"
+                recyclingKey={frontUri}
+                placeholder={{ blurhash: CARD_PLACEHOLDER_BLURHASH }}
+                placeholderContentFit="cover"
+                transition={180}
               />
             ) : (
               <View style={[styles.placeholderBg, styles.frontPlaceholder]}>
@@ -314,6 +326,10 @@ export function FlippableCard({
                 style={styles.faceImage}
                 contentFit="cover"
                 cachePolicy="memory-disk"
+                recyclingKey={backUri}
+                placeholder={{ blurhash: CARD_PLACEHOLDER_BLURHASH }}
+                placeholderContentFit="cover"
+                transition={180}
               />
             ) : (
               <View style={[styles.placeholderBg, styles.backPlaceholder]} />
