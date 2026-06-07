@@ -94,7 +94,7 @@ export async function POST(request) {
               contents: [{
                 parts: [
                   { inline_data: { mime_type: 'audio/webm', data: base64Audio } },
-                  { text: 'Transcribe this audio recording exactly as spoken. Return ONLY the transcription text, nothing else. No quotes, no explanations, just the spoken words.' }
+                  { text: 'Transcribe this English audio recording word-for-word, exactly as spoken. The speaker is speaking English -- transcribe in English only, never translate or romanize into another language. If a short stretch is unclear, choose the most plausible ENGLISH words from context rather than guessing similar-sounding words. Return ONLY the verbatim English transcription: no quotes, no explanations, no extra text.' }
                 ]
               }],
               generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
