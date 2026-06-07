@@ -1665,21 +1665,15 @@ async function fireRecordCompleteSideEffects(args: {
   userId: string;
   card: PublishedCardData | null;
 }): Promise<void> {
-  // Stage 6: wisdomScore parameter removed. The server-side
-  // record_complete action no longer awards EXP based on a per-wisdom
-  // AI score — EXP is now earned from completing daily tasks only.
-  // What the call still does (unchanged):
-  //   - increments total_recording_seconds / total_cards_created
-  //   - restores WP to 100 + bumps last_recording_at (drives Home's
-  //     hungry -> chill mode swap on the character animation)
-  apiClient
-    .post('/api/character-state', {
-      userId: args.userId,
-      action: 'record_complete',
-    })
-    .catch((err) => console.warn('[publish] character-state failed:', err));
+  // WP restore + card/recording counters are now done SERVER-SIDE inside
+  // publish-wisdom, bound atomically to a successfully created card. The
+  // client no longer fires record_complete: that separate request could be
+  // skipped on a client timeout / network error even when the server had
+  // already succeeded, leaving Home stuck on the hungry video. Home now
+  // picks up the restored WP on its next character-state fetch (insight
+  // close refresh, or cold start).
 
-  // 2. daily-tasks — create wisdom tasks from card.task_1/task_2.
+  // daily-tasks — create wisdom tasks from card.task_1/task_2.
   if (args.card?.task_1 || args.card?.task_2) {
     const tasks: Array<{ text: string; keyword: string }> = [];
     if (args.card.task_1) {
@@ -2125,19 +2119,42 @@ function PhasePublishing({
         }
 
         inflightRef.current = false;
-        Alert.alert(
-          'Generation Failed',
-          'Please try again later.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                close();
+        // Distinguish a real server failure from a network-layer error.
+        // An ApiError means the server returned an HTTP response (e.g. a
+        // 500) -- a genuine failure, nothing was created. A non-ApiError
+        // (fetch timeout / dropped connection) means we never got a
+        // response: the request may well have reached the server and
+        // succeeded anyway (card written, quota spent). In that case we
+        // must NOT tell the user it "failed" -- point them to My Logs.
+        if (err instanceof ApiError) {
+          Alert.alert(
+            'Generation Failed',
+            'Please try again later.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  close();
+                },
               },
-            },
-          ],
-          { cancelable: false },
-        );
+            ],
+            { cancelable: false },
+          );
+        } else {
+          Alert.alert(
+            'Connection Interrupted',
+            "Your connection dropped while saving. Your reflection may still have gone through — please check My Logs in a moment before trying again.",
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  close();
+                },
+              },
+            ],
+            { cancelable: false },
+          );
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { callAI } from '@/lib/ai'
 import { generateWisdomCard } from '@/lib/generate-card'
+import { restoreWpOnPublish } from '@/lib/character'
 
 // Server-side self-harm / suicide pre-check (deterministic, runs BEFORE
 // the AI call). The AI prompt's Stage 1 is a second-layer fallback, but
@@ -463,6 +464,19 @@ export async function POST(request) {
           // can size its Aspire progress bar without a follow-up
           // /api/profile fetch. Null when no aspire_impacts applied.
           generatedAspireScores = cardResult.aspireScores ?? null
+          // Transform succeeded (a card was created). Restore WP to 100 +
+          // bump last_recording_at and increment the card/recording
+          // counters, atomically bound to publish success on the server.
+          // This is the AUTHORITATIVE WP-restore: it no longer depends on
+          // the client firing a separate /api/character-state
+          // record_complete request, which could be skipped when the
+          // client times out / hits a network error even though the server
+          // succeeded (Home would then stay stuck on the hungry video).
+          // Best-effort: never throws (card is already saved).
+          await restoreWpOnPublish(supabase, userId, {
+            durationSeconds: isTyped ? 0 : duration,
+            countCard: true,
+          })
           // If this wisdom was offered for a Seek question, link the
           // newly-created card to the question. Best-effort: failure
           // here is logged but does not fail the publish call (the

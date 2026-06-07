@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getExpNeeded, getLevelFromExp } from '@/lib/exp'
+import { restoreWpOnPublish } from '@/lib/character'
 
 export const runtime = 'edge'
 
@@ -299,51 +300,20 @@ export async function POST(request) {
     }
 
     if (action === 'record_complete') {
-      // Stage 6 Wisdom Insight redesign: EXP gain from publishing a
-      // wisdom has been REMOVED. Previously expGained = wisdom_score
-      // from AI analysis (70-100), but wisdom_score itself is now gone
-      // from the prompt / DB insert. EXP is now earned by completing
-      // daily tasks only (see /api/daily-tasks).
+      // WP-only now. The authoritative WP restore AND the card/recording
+      // counters moved into publish-wisdom, bound atomically to a
+      // successfully created card (see restoreWpOnPublish). That removes
+      // the old failure mode where a client timeout / network error after
+      // a successful server publish skipped this request, leaving Home
+      // stuck on the hungry video.
       //
-      // What this action STILL does (unchanged):
-      //   1. Increment recording stats (total_recording_seconds,
-      //      total_cards_created) for character_data analytics.
-      //   2. Restore WP to 100 + bump last_recording_at. This is the
-      //      mechanism that drives Home page hungry -> chill character
-      //      animation transition (Home reads WP / last_recording_at
-      //      to decide which mode video to play).
-      const { durationSeconds } = body
-
-      const { data: profile } = await supabase.from('profiles').select('active_character_id').eq('id', userId).single()
-      const charId = profile?.active_character_id || 'char-1'
-
-      // Ensure character exists
-      const charData = await ensureCharacterData(supabase, userId, charId)
-      if (!charData) return NextResponse.json({ success: false, error: 'Failed to get/create character data' })
-
-      const newRecSecs = (charData.total_recording_seconds || 0) + (durationSeconds || 0)
-      const newCards = (charData.total_cards_created || 0) + 1
-
-      const { error: updateErr } = await supabase.from('character_data').update({
-        total_recording_seconds: newRecSecs,
-        total_cards_created: newCards,
-      }).eq('id', charData.id)
-
-      if (updateErr) console.error('character_data update error:', updateErr)
-
-      // Restore WP -- still the trigger for Home page hungry -> chill mode swap.
-      const { error: wpErr } = await supabase.from('profiles').update({
-        wp: WP_MAX,
-        wp_last_updated: new Date().toISOString(),
-        last_recording_at: new Date().toISOString(),
-      }).eq('id', userId)
-
-      if (wpErr) console.error('profiles WP update error:', wpErr)
-
-      return NextResponse.json({
-        success: true,
-        wp: WP_MAX,
-      })
+      // This legacy action is kept as a WP-only, idempotent no-harm path:
+      // older clients still calling it during the app rollout only
+      // re-affirm WP=100 and bump last_recording_at; they do NOT increment
+      // total_cards_created again (publish-wisdom already did), so there is
+      // no double-count. New clients stop calling it entirely.
+      await restoreWpOnPublish(supabase, userId, { countCard: false })
+      return NextResponse.json({ success: true, wp: WP_MAX })
     }
 
     if (action === 'init_character') {
