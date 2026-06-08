@@ -298,7 +298,6 @@ export default function HomeTab() {
     // random line and cache it.
     let category: string;
     if (wpVisual <= 0) category = 'hungry';
-    else if (wpVisual <= WP_HUNGER_THRESHOLD) category = 'warning';
     else if (cachedState.mode === 'study') category = 'study';
     else category = 'play';
     if (sessionBubble && sessionBubble.category === category) {

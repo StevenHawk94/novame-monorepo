@@ -154,8 +154,11 @@ export function pickSpeechBubble(
   if (hasNoWisdoms && charName) {
     return `Share your first story to power up ${charName}!`;
   }
+  // Speech matches the video state one-to-one (getCharacterState): the
+  // companion is hungry only at WP 0, otherwise study/chill by mode.
+  // No mid-range "warning" copy -- that would say "getting hungry" while
+  // the video is still chilling, which reads as inconsistent.
   if (wp <= 0) return randomFrom(SPEECH_BUBBLE_HUNGRY);
-  if (wp <= WP_HUNGER_THRESHOLD) return randomFrom(SPEECH_BUBBLE_HUNGER_WARNING);
   if (mode === 'study') return randomFrom(SPEECH_BUBBLE_STUDY);
   return randomFrom(SPEECH_BUBBLE_PLAY);
 }

@@ -25,13 +25,13 @@ function calcWP(wpStart, mode, elapsedMs) {
 }
 
 function calcAFKExp(mode, wp, accumSecs, newSecs) {
+  // XP accrues only while WP > 0 (WP === 0 means hungry: no earning).
+  // No hunger-threshold tiering -- a single rate per mode:
+  //   study: 10 xp/hr, play (chill): 2 xp/hr.
   if (wp <= 0) return { exp: 0, remain: accumSecs + newSecs }
   const total = accumSecs + newSecs
-  const hungry = wp <= WP_HUNGER
-  let secsPerExp
-  // Study: 10xp/hr full, 10xp/2hr hungry. Play: 10xp/4hr full, 10xp/8hr hungry
-  if (mode === 'study') secsPerExp = (hungry ? 0.2 : 0.1) * 3600
-  else secsPerExp = (hungry ? 0.8 : 0.4) * 3600
+  // secsPerExp = 3600 / (xp per hour)
+  const secsPerExp = mode === 'study' ? 3600 / 10 : 3600 / 2
   return { exp: Math.floor(total / secsPerExp), remain: total % secsPerExp }
 }
 
