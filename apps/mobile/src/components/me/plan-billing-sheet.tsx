@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import {
-  Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -28,6 +28,7 @@ import { PRICING_TIERS, type PricingTierKey } from '@novame/core';
 
 import { haptics } from '@/lib/haptics';
 import { getCachedSubscription } from '@/lib/subscription';
+import { presentOfferCodeRedemption } from '@/lib/iap';
 
 /**
  * Plan & Billing bottom sheet -- Stage 3.10.4.
@@ -117,12 +118,14 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
     }, 280);
   };
 
-  const handleHistory = () => {
+  const handleRedeemCode = () => {
     void haptics.light();
-    Alert.alert(
-      'No Billing History',
-      'Your billing history will appear here once you subscribe.',
-    );
+    // Apple's redemption sheet is a system full-screen modal; it covers
+    // this bottom sheet, so we don't dismiss first. The redeemed tier is
+    // synced by the global purchase listener and reflected when the Me
+    // page regains focus (no in-app success alert -- Apple's sheet already
+    // confirms, matching the paywall's silent-success standard).
+    void presentOfferCodeRedemption();
   };
 
   return (
@@ -186,21 +189,23 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
           </Text>
         </Pressable>
 
-        {/* Billing History */}
-        <Pressable
-          onPress={handleHistory}
-          style={({ pressed }) => [
-            styles.secondaryBtn,
-            { opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <MaterialIcons
-            name="receipt-long"
-            size={20}
-            color="rgba(255,255,255,0.6)"
-          />
-          <Text style={styles.secondaryBtnText}>Billing History</Text>
-        </Pressable>
+        {/* Redeem Code (iOS only -- Apple offer code redemption) */}
+        {Platform.OS === 'ios' && (
+          <Pressable
+            onPress={handleRedeemCode}
+            style={({ pressed }) => [
+              styles.secondaryBtn,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <MaterialIcons
+              name="redeem"
+              size={20}
+              color="rgba(255,255,255,0.6)"
+            />
+            <Text style={styles.secondaryBtnText}>Redeem Code</Text>
+          </Pressable>
+        )}
       </BottomSheetView>
     </BottomSheetModal>
   );

@@ -41,6 +41,7 @@ import {
   finishTransaction,
   restorePurchases,
   getAvailablePurchases,
+  presentCodeRedemptionSheetIOS,
   purchaseUpdatedListener,
   purchaseErrorListener,
   ErrorCode,
@@ -709,6 +710,45 @@ export type SubscriptionChange =
   | 'upgrade'     // higher tier (immediate)
   | 'downgrade'   // lower tier (scheduled)
   | 'crossgrade'; // same tier, different cycle (scheduled per Apple StoreKit 2)
+
+/**
+ * Present Apple's offer-code redemption sheet (iOS only; real device
+ * only -- not the simulator, and offer codes are not redeemable in
+ * Sandbox/TestFlight per Apple, so this is testable only in a live
+ * build with a real code).
+ *
+ * We mark the flow as user-initiated (same flag + 60s auto-clear as
+ * purchaseSubscription) so the redeemed transaction fires
+ * completeCallbacks -- refreshing the subscription cache + me-stats --
+ * instead of going through the silent auto-renewal branch. Like a normal
+ * purchase we do NOT show our own success alert: Apple's redemption sheet
+ * already confirms success, and the Me page reflects the new tier on its
+ * next focus (same industry-standard rationale as the paywall).
+ *
+ * Best-effort: never throws. On failure we clear the user-initiated flag
+ * so a later unrelated transaction isn't mislabelled.
+ */
+export async function presentOfferCodeRedemption(): Promise<void> {
+  if (Platform.OS !== 'ios') return;
+
+  userInitiatedInFlight = true;
+  if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
+  userInitiatedTimer = setTimeout(() => {
+    userInitiatedInFlight = false;
+    userInitiatedTimer = null;
+  }, 60000);
+
+  try {
+    await presentCodeRedemptionSheetIOS();
+  } catch (e) {
+    console.warn('[iap] offer code redemption sheet failed:', e);
+    userInitiatedInFlight = false;
+    if (userInitiatedTimer) {
+      clearTimeout(userInitiatedTimer);
+      userInitiatedTimer = null;
+    }
+  }
+}
 
 export function classifySubscriptionChange(
   current: { tier: PricingTierKey; cycle?: 'monthly' | 'yearly' | null },
