@@ -51,7 +51,7 @@ import {
   getDailyTasksLastFetchedAtMs,
   type DailyTask,
 } from '@/lib/daily-tasks-api';
-import { getExpNeeded } from '@novame/core';
+import { getExpNeeded, getLevelFromExp } from '@novame/core';
 import {
   fetchWisdomsWithCache,
   getCachedWisdoms,
@@ -252,7 +252,16 @@ export default function GrowthTab() {
       const next = await fetchCharacterState(userId);
       // Drop stale response: a newer refreshChar has been issued.
       if (seq !== refreshCharSeqRef.current) return;
-      setCharState(next);
+      // Monotonic guard: lifetime EXP only ever increases. If a focus/blur
+      // fetch returns a server total BELOW our current (optimistic) total
+      // -- e.g. a just-completed task hasn't been persisted yet -- keep the
+      // higher local EXP so the bar never visibly rewinds. Non-EXP fields
+      // (mode/outfit/wp/etc.) always take the fresh server value.
+      setCharState((prev) =>
+        prev && next.totalExp < prev.totalExp
+          ? { ...next, totalExp: prev.totalExp, level: prev.level, expCurrent: prev.expCurrent, expNeeded: prev.expNeeded }
+          : next,
+      );
       setWpVisual(next.wp);
     } catch (e) {
       // Don't gate the warn on seq — even stale failures are worth
@@ -480,19 +489,20 @@ export default function GrowthTab() {
     const reward = target.task.exp_reward;
     setCharState((prev) => {
       if (!prev) return prev;
-      let newCurrent = prev.expCurrent + reward;
-      let newLevel = prev.level;
-      let newNeeded = prev.expNeeded;
-      while (newCurrent >= newNeeded && newLevel < 99) {
-        newCurrent -= newNeeded;
-        newLevel += 1;
-        newNeeded = getExpNeeded(newLevel);
-      }
+      // Optimistic update via the SAME model the server uses: add the
+      // reward to the authoritative total_exp, then derive (level,
+      // currentExp, expNeeded) with getLevelFromExp. The server does
+      // exactly getLevelFromExp(oldTotalExp + reward), so this optimistic
+      // value is mathematically identical to the server's result -- no
+      // cross-level drift, no jump when the server later reconciles.
+      const newTotalExp = prev.totalExp + reward;
+      const info = getLevelFromExp(newTotalExp);
       return {
         ...prev,
-        expCurrent: newCurrent,
-        expNeeded: newNeeded,
-        level: newLevel,
+        totalExp: newTotalExp,
+        level: info.level,
+        expCurrent: info.currentExp,
+        expNeeded: info.expNeeded,
       };
     });
 

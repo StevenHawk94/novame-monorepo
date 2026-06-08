@@ -61,6 +61,7 @@ export const DEFAULT_NEW_USER_CHARACTER_STATE: CachedCharacterState = {
   level: 1,
   expCurrent: 0,
   expNeeded: 20,
+  totalExp: 0,
 };
 
 // ---- types matching apps/api/src/app/api/character-state/route.js GET shape ----
@@ -142,6 +143,10 @@ export type CachedCharacterState = {
   expCurrent: number;
   /** EXP needed to reach the next level. */
   expNeeded: number;
+  /** Authoritative total lifetime EXP. Single source for optimistic math:
+   * the client computes (level, expCurrent) via getLevelFromExp(totalExp),
+   * the SAME function the server uses, so optimistic == server value. */
+  totalExp: number;
 };
 
 // ---- mmkv read / write ----
@@ -287,6 +292,7 @@ function mapResponseToCache(data: CharacterStateResponse): CachedCharacterState 
     level: data.levelInfo.level,
     expCurrent: data.levelInfo.currentExp,
     expNeeded: data.levelInfo.expNeeded,
+    totalExp: data.levelInfo.totalExp,
   };
 }
 
