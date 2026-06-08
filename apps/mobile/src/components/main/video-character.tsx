@@ -187,18 +187,33 @@ export function VideoCharacter({
   }, [player]);
 
   // Stage 6 keep-playing safeguard layer 3: loop fallback.
-  // player.loop = true is set at construction, but some iOS versions
-  // and replaced sources occasionally fire playToEnd without auto-
-  // restart. Force-replay on end is a defensive safety net.
+  // player.loop = true restarts the clip seamlessly on its own at the
+  // loop point. We must NOT call player.play() immediately on playToEnd:
+  // that fights the seamless restart and produces a visible hitch on the
+  // last frame every cycle. Instead we wait a beat and only force-replay
+  // if the loop genuinely failed to restart (a rare iOS / just-replaced-
+  // source edge case the original safety net was guarding). On a healthy
+  // loop the player is already playing by then, so we do nothing and the
+  // loop stays seamless. (Tab/background/publish pauses are handled by
+  // the AppState, useFocusEffect, and statusChange layers above, which
+  // resume immediately -- this layer only covers a stalled loop point.)
   useEffect(() => {
+    let restartTimer: ReturnType<typeof setTimeout> | null = null;
     const sub = player.addListener('playToEnd', () => {
-      try {
-        player.play();
-      } catch {
-        // best-effort
-      }
+      if (restartTimer) clearTimeout(restartTimer);
+      restartTimer = setTimeout(() => {
+        restartTimer = null;
+        try {
+          if (!player.playing) player.play();
+        } catch {
+          // best-effort
+        }
+      }, 100);
     });
-    return () => sub.remove();
+    return () => {
+      if (restartTimer) clearTimeout(restartTimer);
+      sub.remove();
+    };
   }, [player]);
 
   // Swap source when outfit/state changes without remounting the VideoView.
