@@ -46,6 +46,7 @@ const REVIEW_AVATARS: Record<string, number> = {
  * Note: the previous 4-second auto-advance is preserved.
  */
 
+const CARD_GAP = 16;
 const ROTATE_MS = 4000;
 const RESUME_DELAY_MS = 1500;
 
@@ -63,7 +64,10 @@ export default function OnboardingStep9() {
   const isUserInteracting = useRef(false);
 
   const screenWidth = Dimensions.get('window').width;
-  // ItemWidth = screen width minus the body horizontal padding (24*2)
+  // Step unit for paging = screen width minus the body horizontal
+  // padding (24*2). Each swipe advances exactly one itemWidth. The card
+  // itself is CARD_GAP narrower (with CARD_GAP/2 margin each side) so
+  // adjacent cards have a visible gutter instead of touching edge-to-edge.
   const itemWidth = screenWidth - 48;
 
   // ---- Auto-rotation control ----
@@ -137,7 +141,7 @@ export default function OnboardingStep9() {
   // ---- Render ----
 
   const renderItem: ListRenderItem<Review> = ({ item }) => (
-    <View style={[styles.card, { width: itemWidth }]}>
+    <View style={[styles.card, { width: itemWidth - CARD_GAP, marginHorizontal: CARD_GAP / 2 }]}>
       <View style={styles.stars}>
         {[1, 2, 3, 4, 5].map((i) => (
           <Text key={i} style={styles.star}>
@@ -176,7 +180,6 @@ export default function OnboardingStep9() {
             renderItem={renderItem}
             keyExtractor={(item) => item.name}
             horizontal
-            pagingEnabled
             showsHorizontalScrollIndicator={false}
             onScrollBeginDrag={handleScrollBeginDrag}
             onMomentumScrollEnd={handleMomentumScrollEnd}

@@ -415,7 +415,7 @@ function FinalLine() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0820',
+    backgroundColor: '#000000',
   },
   absLayer: {
     position: 'absolute',

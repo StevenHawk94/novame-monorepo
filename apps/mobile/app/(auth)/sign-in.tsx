@@ -565,7 +565,7 @@ function makeStyles(
   return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#000000',
     paddingHorizontal: scale(24),
     justifyContent: 'space-between',
   },

@@ -159,7 +159,7 @@ function makeStyles(
   return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0820',
+    backgroundColor: '#000000',
   },
   flex: {
     flex: 1,
@@ -168,7 +168,7 @@ function makeStyles(
     width: '100%',
     aspectRatio: 7 / 6,
     overflow: 'hidden',
-    backgroundColor: '#1A1430',
+    backgroundColor: '#000000',
   },
   video: {
     width: '100%',

@@ -169,7 +169,7 @@ function makeShellStyles(scale: (n: number) => number) {
   return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0820',
+    backgroundColor: '#000000',
   },
   header: {
     flexDirection: 'row',
@@ -233,7 +233,7 @@ function makeImgPageStyles(scale: (n: number) => number) {
   return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0A0820',
+    backgroundColor: '#000000',
   },
   imageContainer: {
     width: '100%',
@@ -248,7 +248,7 @@ function makeImgPageStyles(scale: (n: number) => number) {
   imagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#1A1430',
+    backgroundColor: '#000000',
   },
   gradient: {
     position: 'absolute',

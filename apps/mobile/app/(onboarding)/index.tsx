@@ -64,10 +64,16 @@ export default function OnboardingStep1() {
       }
     >
       <View style={styles.center}>
-        <Text style={styles.brand}>NovaMe</Text>
-        <Text style={styles.tagline}>Journal. Reflect. Evolve.</Text>
+        <Image
+          source={require('@/../assets/images/onboarding/ob-1-logo.webp')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.tagline}>
+          Be Your <Text style={styles.taglineAccent}>Better Self</Text>
+        </Text>
         <Text style={styles.subtagline}>
-          Unlock personal growth through your own lived experience.
+          A personal growth companion to find your spark in everyday life.
         </Text>
       </View>
     </ImgPage>
@@ -82,26 +88,28 @@ function makeStyles(
   center: {
     alignItems: 'center',
   },
-  brand: {
-    color: '#FFFFFF',
-    ...t.title1,
-    fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
-    marginBottom: scale(12),
+  logo: {
+    width: scale(200),
+    height: scale(56),
+    marginBottom: scale(16),
   },
   tagline: {
-    color: 'rgba(255,255,255,0.6)',
-    ...t.headline,
-    fontWeight: '500',
-    fontFamily: 'Inter_500Medium',
+    color: '#FFFFFF',
+    ...t.title1,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: scale(8),
+    marginBottom: scale(16),
+  },
+  taglineAccent: {
+    color: '#FACC15',
   },
   subtagline: {
-    color: 'rgba(255,255,255,0.4)',
-    ...t.footnote,
+    color: 'rgba(255,255,255,0.6)',
+    ...t.subheadline,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
+    lineHeight: scale(22),
   },
   });
 }
