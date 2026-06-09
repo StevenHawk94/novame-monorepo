@@ -5,26 +5,14 @@ import { pickStudyBonusTaskTemplate } from '@/lib/study-bonus-tasks'
 
 export const runtime = 'edge'
 
-const WP_MAX = 100
-const WP_HUNGER = 40
-
-const STUDY_WP_DECAY_PER_HR = 10   // study mode drains 10 WP/hr
-const STUDY_XP_PER_HR = 10         // study earns 10 xp/hr while WP > 0
-
-// EXP earned during a study session. XP accrues at 10/hr only while WP > 0;
-// once WP hits 0 the companion is hungry and stops earning. So the earning
-// window is capped at the time it takes the starting WP to decay to 0
-// (startWp / 10 hours). Net effect: 1 xp per WP point consumed, capped at
-// the starting WP (max 100 xp for a full-WP session).
-function calcStudyExp(startWp, elapsedSecs) {
-  if (!startWp || startWp <= 0) return 0
-  const elapsedHrs = elapsedSecs / 3600
-  const hrsUntilEmpty = startWp / STUDY_WP_DECAY_PER_HR
-  const earningHrs = Math.min(elapsedHrs, hrsUntilEmpty)
-  return Math.max(0, Math.floor(earningHrs * STUDY_XP_PER_HR))
-}
-
-
+// EXP earned during a study session is settled here, once, when WP hits
+// 0. It is NOT computed in this route -- character-state accumulates the
+// WP>0 seconds into profiles.afk_study_seconds during the session (the
+// single source of truth, allowing mid-session WP refills via publish).
+// We just convert that counter: 360 seconds = 1 XP (sub-360 leftover is
+// dropped, e.g. 365s -> 1 XP, 720s -> 2 XP). The Growth bar stays put
+// during study and jumps once here at claim.
+const STUDY_SECS_PER_XP = 360
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -74,18 +62,17 @@ export async function POST(req) {
       .from('character_data').select('*')
       .eq('user_id', userId).eq('character_id', charId).single()
 
-    // Study duration: derived server-side from mode_changed_at (set when
-    // the user switched into study mode) -- the client does not send a
-    // start time. The starting WP is profile.wp (written at that switch).
-    const startMs = profile?.mode_changed_at ? new Date(profile.mode_changed_at).getTime() : Date.now() - 3600000
-    const durationSecs = Math.max(0, Math.floor((Date.now() - startMs) / 1000))
-    const studyHours = Math.floor(durationSecs / 3600)
-    const studyMins = Math.floor((durationSecs % 3600) / 60)
+    // The WP>0 seconds accumulated during this study session, settled by
+    // character-state into afk_study_seconds. This is the actual time WP
+    // was positive (i.e. time until WP reached 0), not wall-clock since
+    // mode switch -- so post-drain idle time is correctly excluded, and
+    // any mid-session publish refills are already folded in.
+    const accumSecs = profile?.afk_study_seconds || 0
+    const studyHours = Math.floor(accumSecs / 3600)
+    const studyMins = Math.floor((accumSecs % 3600) / 60)
 
-    // EXP earned = 10/hr while WP > 0, capped at the time WP took to reach 0
-    // (startWp / 10 hours). startWp comes from profile.wp (value at switch).
-    const startWp = profile?.wp ?? 0
-    const expGained = calcStudyExp(startWp, durationSecs)
+    // 360 s = 1 XP, sub-360 leftover dropped.
+    const expGained = Math.floor(accumSecs / STUDY_SECS_PER_XP)
 
     // Souls: base random + per-wisdom bonus
     const baseSouls = 3 + Math.floor(Math.random() * 28)

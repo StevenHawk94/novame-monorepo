@@ -174,21 +174,52 @@ export async function GET(request) {
     const currentWP = calcWP(profile.wp ?? 0, mode, Math.max(0, elapsed))
 
     const elapsedSecs = Math.max(0, Math.floor(elapsed / 1000))
-    const afkAccum = mode === 'study' ? (profile.afk_study_seconds || 0) : (profile.afk_play_seconds || 0)
-    const afk = (profile.wp || 0) > 0 ? calcAFKExp(mode, currentWP, afkAccum, elapsedSecs) : { exp: 0, remain: afkAccum + elapsedSecs }
 
-    const totalExp = (charData?.total_exp || 0) + afk.exp
+    // Only count time while WP is actually > 0. WP decays at a fixed
+    // rate, so cap the counted window at the moment WP would hit 0
+    // (startWp / rate hours). Without this cap, a long elapsed gap after
+    // WP already drained to 0 would over-credit time (and XP).
+    const decayRate = mode === 'study' ? WP_STUDY_DECAY : WP_PLAY_DECAY
+    const startWp = profile.wp ?? 0
+    const secsUntilEmpty = startWp > 0 ? Math.floor((startWp / decayRate) * 3600) : 0
+    const effectiveSecs = Math.min(elapsedSecs, secsUntilEmpty)
+
+    // EXP accrual differs by mode:
+    //   - study: do NOT convert to XP here. Accumulate the WP>0 seconds
+    //     into afk_study_seconds and let study-claim settle the whole
+    //     session in one go (floor(seconds / 360) = 1 XP per 360s) when
+    //     WP reaches 0. So the Growth bar does not move during study; it
+    //     jumps once at claim. WP can be refilled mid-session by
+    //     publishing, and the counter simply keeps accumulating.
+    //   - play (chill): convert in real time at 2 xp/hr, same as before.
+    let afkExp = 0
+    let afkRemain
+    if (mode === 'study') {
+      afkRemain = (profile.afk_study_seconds || 0) + effectiveSecs
+    } else {
+      const afk = startWp > 0
+        ? calcAFKExp(mode, currentWP, profile.afk_play_seconds || 0, effectiveSecs)
+        : { exp: 0, remain: (profile.afk_play_seconds || 0) + effectiveSecs }
+      afkExp = afk.exp
+      afkRemain = afk.remain
+    }
+
+    // The level/progress the client sees. study earns are deferred to
+    // claim, so during study this is just the persisted total_exp (bar
+    // stays put). play folds in any real-time earn.
+    const totalExp = (charData?.total_exp || 0) + afkExp
     const levelInfo = getLevelFromExp(totalExp)
 
     // Write back
-    if (afk.exp > 0 || currentWP !== (profile.wp ?? 0)) {
+    const counterChanged = mode === 'study' && effectiveSecs > 0
+    if (afkExp > 0 || currentWP !== (profile.wp ?? 0) || counterChanged) {
       await supabase.from('profiles').update({
         wp: currentWP,
         wp_last_updated: new Date(now).toISOString(),
-        [mode === 'study' ? 'afk_study_seconds' : 'afk_play_seconds']: afk.remain,
+        [mode === 'study' ? 'afk_study_seconds' : 'afk_play_seconds']: afkRemain,
       }).eq('id', userId)
 
-      if (afk.exp > 0 && charData) {
+      if (afkExp > 0 && charData) {
         await supabase.from('character_data').update({
           total_exp: totalExp, exp: levelInfo.currentExp, level: levelInfo.level,
         }).eq('id', charData.id)
@@ -274,6 +305,11 @@ export async function POST(request) {
       await supabase.from('profiles').update({
         character_mode: mode, wp: currentWP,
         wp_last_updated: new Date().toISOString(), mode_changed_at: new Date().toISOString(),
+        // Entering study starts a fresh claim cycle: reset the WP>0
+        // second counter so the previous session's leftover never bleeds
+        // into the new one. (Leaving study -> play does not touch it; the
+        // claim flow zeroes it on settle.)
+        ...(mode === 'study' ? { afk_study_seconds: 0 } : {}),
       }).eq('id', userId)
 
       return NextResponse.json({ success: true, mode, wp: currentWP })

@@ -1,4 +1,4 @@
-import { WP_MAX } from '@/lib/constants'
+import { WP_MAX, WP_STUDY_DECAY_PER_HOUR } from '@/lib/constants'
 
 export { WP_MAX }
 
@@ -58,12 +58,46 @@ export async function ensureCharacterData(supabase, userId, characterId) {
  *                                   during the client rollout (WP-only).
  */
 export async function restoreWpOnPublish(supabase, userId, { durationSeconds = 0, countCard = true } = {}) {
-  const nowIso = new Date().toISOString()
+  const now = Date.now()
+  const nowIso = new Date(now).toISOString()
 
-  // WP restore (always) — the Home hungry->chill trigger.
+  // Study-session timing carry-over (best-effort, must never block the WP
+  // restore below). A publish during study refills WP to 100 and resets
+  // wp_last_updated, so the WP>0 time BEFORE this publish would be lost if
+  // we didn't settle it first. We fold that pre-publish WP>0 stretch into
+  // afk_study_seconds (the claim counter) before resetting the baseline,
+  // so a study session whose WP is repeatedly refilled by publishing keeps
+  // accumulating time across refills. Only applies in study mode; play
+  // earns in real time and doesn't use this counter. If anything here
+  // fails we simply skip the carry-over and still restore WP.
+  let studyCarrySecs
+  try {
+    const { data: pre } = await supabase
+      .from('profiles')
+      .select('character_mode, wp, wp_last_updated, afk_study_seconds')
+      .eq('id', userId).single()
+    const preWp = pre?.wp ?? 0
+    if (pre?.character_mode === 'study' && preWp > 0) {
+      const lastMs = pre.wp_last_updated ? new Date(pre.wp_last_updated).getTime() : now
+      const elapsedSecs = Math.max(0, Math.floor((now - lastMs) / 1000))
+      // Cap the counted window at the moment WP would have hit 0.
+      const secsUntilEmpty = Math.floor((preWp / WP_STUDY_DECAY_PER_HOUR) * 3600)
+      const effectiveSecs = Math.min(elapsedSecs, secsUntilEmpty)
+      studyCarrySecs = (pre.afk_study_seconds || 0) + effectiveSecs
+    }
+  } catch (e) {
+    console.error('[character] study carry-over read failed:', e && e.message)
+  }
+
+  // WP restore (always) — the Home hungry->chill trigger. We also write
+  // the carried-over study counter in the SAME update when present (study
+  // publish), so it's atomic with the baseline reset; play publishes leave
+  // afk_study_seconds untouched.
+  const wpUpdate = { wp: WP_MAX, wp_last_updated: nowIso, last_recording_at: nowIso }
+  if (studyCarrySecs !== undefined) wpUpdate.afk_study_seconds = studyCarrySecs
   const { error: wpErr } = await supabase
     .from('profiles')
-    .update({ wp: WP_MAX, wp_last_updated: nowIso, last_recording_at: nowIso })
+    .update(wpUpdate)
     .eq('id', userId)
   if (wpErr) console.error('[character] WP restore failed:', wpErr.message)
 
