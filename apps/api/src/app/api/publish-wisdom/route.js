@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callAI } from '@/lib/ai'
 import { generateWisdomCard } from '@/lib/generate-card'
 import { restoreWpOnPublish } from '@/lib/character'
+import { createWisdomQuests } from '@/lib/daily-tasks'
 
 // Server-side self-harm / suicide pre-check (deterministic, runs BEFORE
 // the AI call). The AI prompt's Stage 1 is a second-layer fallback, but
@@ -477,6 +478,33 @@ export async function POST(request) {
             durationSeconds: isTyped ? 0 : duration,
             countCard: true,
           })
+          // Create the wisdom quests (task_1 / task_2) here, server-side,
+          // bound atomically to the just-created card. Previously the
+          // client fired a separate POST /api/daily-tasks after publish,
+          // which could be skipped on a client network error even though
+          // the publish itself succeeded -- so the user's card existed but
+          // their Growth quests silently never appeared. This is the same
+          // failure mode the WP restore moved server-side; quests now
+          // follow the card. await'd so they exist before the response
+          // returns and the client's post-publish refreshDailyTasks picks
+          // them up. createWisdomQuests is best-effort (never throws), so a
+          // quest insert failure can't break the publish.
+          if (generatedCard.task_1 || generatedCard.task_2) {
+            const quests = []
+            if (generatedCard.task_1) {
+              quests.push({
+                text: generatedCard.task_1,
+                keyword: generatedCard.task_1_keyword || '',
+              })
+            }
+            if (generatedCard.task_2) {
+              quests.push({
+                text: generatedCard.task_2,
+                keyword: generatedCard.task_2_keyword || '',
+              })
+            }
+            await createWisdomQuests(supabase, userId, quests)
+          }
           // If this wisdom was offered for a Seek question, link the
           // newly-created card to the question. Best-effort: failure
           // here is logged but does not fail the publish call (the

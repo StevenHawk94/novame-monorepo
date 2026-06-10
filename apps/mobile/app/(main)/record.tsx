@@ -1661,43 +1661,6 @@ async function callPublishWisdom(args: {
   return apiClient.post<PublishWisdomResponse>('/api/publish-wisdom', fd);
 }
 
-async function fireRecordCompleteSideEffects(args: {
-  userId: string;
-  card: PublishedCardData | null;
-}): Promise<void> {
-  // WP restore + card/recording counters are now done SERVER-SIDE inside
-  // publish-wisdom, bound atomically to a successfully created card. The
-  // client no longer fires record_complete: that separate request could be
-  // skipped on a client timeout / network error even when the server had
-  // already succeeded, leaving Home stuck on the hungry video. Home now
-  // picks up the restored WP on its next character-state fetch (insight
-  // close refresh, or cold start).
-
-  // daily-tasks — create wisdom tasks from card.task_1/task_2.
-  if (args.card?.task_1 || args.card?.task_2) {
-    const tasks: Array<{ text: string; keyword: string }> = [];
-    if (args.card.task_1) {
-      tasks.push({
-        text: args.card.task_1,
-        keyword: args.card.task_1_keyword ?? '',
-      });
-    }
-    if (args.card.task_2) {
-      tasks.push({
-        text: args.card.task_2,
-        keyword: args.card.task_2_keyword ?? '',
-      });
-    }
-    apiClient
-      .post('/api/daily-tasks', {
-        userId: args.userId,
-        action: 'create',
-        tasks,
-      })
-      .catch((err) => console.warn('[publish] daily-tasks failed:', err));
-  }
-}
-
 // ---- Phase: publishing (3.7.7 real publish call + 2.5s minimum hold) ----
 //
 // Runs the publish lifecycle. We start the network request immediately
@@ -1766,10 +1729,6 @@ function PhasePublishing({
           throw new Error('publish-wisdom returned non-success');
         }
 
-        void fireRecordCompleteSideEffects({
-          userId,
-          card: response.card ?? null,
-        });
 
         // Stage 5.WR.2 (Bug 1 fix): server-driven paywall trigger.
         // publish-wisdom now echoes a quotaExhausted flag synchronously
