@@ -16,7 +16,16 @@
 
 import { useEffect, useState } from 'react';
 
-type ClaimState = { userId: string } | null;
+import type { StudyClaimResponse } from '@/lib/study-claim-api';
+
+// `result` is the pre-settled study-claim payload when the claim was
+// already POSTed before the modal mounts (e.g. on the splash gate before
+// entering Home). When present, the modal renders it directly and skips
+// its own postStudyClaim call. When absent (in-session detection /
+// background return that wasn't pre-fetched), the modal self-fetches as
+// before. Pre-settling is safe to not pre-fetch because study-claim is
+// idempotent (it zeroes afk_study_seconds, so a second call settles 0).
+type ClaimState = { userId: string; result?: StudyClaimResponse } | null;
 type Listener = (state: ClaimState) => void;
 
 let _pending: ClaimState = null;
@@ -31,9 +40,22 @@ function notify(): void {
  * same user does not re-notify (avoids redundant renders from the detector's
  * cache + server double-trigger).
  */
-export function requestStudyClaim(userId: string): void {
-  if (_pending && _pending.userId === userId) return;
-  _pending = { userId };
+export function requestStudyClaim(
+  userId: string,
+  result?: StudyClaimResponse,
+): void {
+  // Idempotent on userId, BUT if a result is now available and the
+  // existing pending entry has none, upgrade it in place (the splash
+  // gate may pre-settle slightly after the detector's cache-optimistic
+  // request). Re-notify so the modal picks up the ready result.
+  if (_pending && _pending.userId === userId) {
+    if (result && !_pending.result) {
+      _pending = { userId, result };
+      notify();
+    }
+    return;
+  }
+  _pending = { userId, result };
   notify();
 }
 
@@ -44,6 +66,29 @@ export function clearStudyClaim(): void {
   if (_pending === null) return;
   _pending = null;
   notify();
+}
+
+// ---- Cold-start claim ownership ----
+//
+// The splash gate (app/index.tsx) is the single owner of the cold-start
+// study-claim: it pre-settles the claim before entering Home so the modal
+// shows instantly with no spinner. The in-session detector
+// (use-study-claim-detector) must NOT also trigger a claim on its initial
+// fetch, or the two would race and double-POST (the second POST settles 0
+// because study-claim zeroes afk_study_seconds, which would flash "+0 XP").
+//
+// The gate sets this flag in its finally block (settled / nothing-to-claim
+// / timeout / error -- always), and the detector checks it to skip exactly
+// its one initial fetch. The detector's 30s in-session poll is unaffected:
+// by the time it could fire, the gate has long since run.
+let _coldStartClaimHandled = false;
+
+export function markColdStartClaimHandled(): void {
+  _coldStartClaimHandled = true;
+}
+
+export function wasColdStartClaimHandled(): boolean {
+  return _coldStartClaimHandled;
 }
 
 /**

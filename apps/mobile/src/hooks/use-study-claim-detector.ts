@@ -20,7 +20,10 @@
  */
 import { useCallback, useEffect, useRef } from 'react';
 
-import { requestStudyClaim } from '@/lib/study-claim-store';
+import {
+  requestStudyClaim,
+  wasColdStartClaimHandled,
+} from '@/lib/study-claim-store';
 
 import {
   applyLocalWPDecay,
@@ -82,6 +85,16 @@ export function useStudyClaimDetector() {
 
     let cancelled = false;
     const tryInitialFetch = async () => {
+      // If the splash gate (app/index.tsx) already owns the cold-start
+      // claim (it pre-settled and stashed the result), skip the initial
+      // trigger entirely -- otherwise we'd race a second postStudyClaim
+      // against the already-settled one and flash "+0 XP". The 30s
+      // in-session poll below is unaffected; it covers WP hitting 0 later
+      // in the session / on background return, long after the gate ran.
+      if (wasColdStartClaimHandled()) {
+        initialFetchDoneRef.current = true;
+        return;
+      }
       // Wait briefly for userId to land.
       for (let i = 0; i < 20 && !userIdRef.current; i++) {
         await new Promise((r) => setTimeout(r, 100));

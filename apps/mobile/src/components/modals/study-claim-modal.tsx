@@ -42,15 +42,30 @@ const FILL_DURATION_MS = 900;
 type StudyClaimModalProps = {
   /** The authenticated user id to claim for. */
   userId: string;
+  /**
+   * Pre-settled claim result. When provided (the splash gate already
+   * POSTed the claim before entering Home), the modal renders it directly
+   * and does NOT call postStudyClaim again. When omitted (in-session
+   * detection / background return), the modal self-fetches as before.
+   */
+  initialResult?: StudyClaimResponse | null;
   /** Called when the user dismisses (Awesome / Close button). */
   onClose: () => void;
 };
 
-export function StudyClaimModal({ userId, onClose }: StudyClaimModalProps) {
+export function StudyClaimModal({
+  userId,
+  initialResult,
+  onClose,
+}: StudyClaimModalProps) {
   const insets = useSafeAreaInsets();
-  const [result, setResult] = useState<StudyClaimResponse | null>(null);
+  // Seed from the pre-settled result if present, so the success UI shows
+  // immediately with no spinner. submitting starts false in that case.
+  const [result, setResult] = useState<StudyClaimResponse | null>(
+    initialResult ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(true);
+  const [submitting, setSubmitting] = useState(!initialResult);
 
   const charName = getCachedCharacterState()?.charName || 'Your companion';
 
@@ -59,22 +74,38 @@ export function StudyClaimModal({ userId, onClose }: StudyClaimModalProps) {
 
   useEffect(() => {
     let cancelled = false;
+
+    // Shared helper: animate the EXP bar to the result's fill ratio.
+    const animateTo = (res: StudyClaimResponse) => {
+      const target =
+        res.newExpNeeded > 0
+          ? Math.min(1, Math.max(0, res.newExp / res.newExpNeeded))
+          : 0;
+      targetRef.current = target;
+      setTimeout(() => {
+        progress.value = withTiming(target, {
+          duration: FILL_DURATION_MS,
+          easing: Easing.out(Easing.cubic),
+        });
+      }, 400);
+    };
+
+    // Pre-settled path: the splash gate already claimed and handed us the
+    // result. Skip the network call entirely -- just play the fill anim.
+    if (initialResult) {
+      animateTo(initialResult);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Self-fetch path (in-session detection / background return): claim now.
     (async () => {
       try {
         const res = await postStudyClaim(userId);
         if (cancelled) return;
         setResult(res);
-        const target =
-          res.newExpNeeded > 0
-            ? Math.min(1, Math.max(0, res.newExp / res.newExpNeeded))
-            : 0;
-        targetRef.current = target;
-        setTimeout(() => {
-          progress.value = withTiming(target, {
-            duration: FILL_DURATION_MS,
-            easing: Easing.out(Easing.cubic),
-          });
-        }, 400);
+        animateTo(res);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : 'Could not claim session');
@@ -85,7 +116,7 @@ export function StudyClaimModal({ userId, onClose }: StudyClaimModalProps) {
     return () => {
       cancelled = true;
     };
-  }, [userId, progress]);
+  }, [userId, initialResult, progress]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,

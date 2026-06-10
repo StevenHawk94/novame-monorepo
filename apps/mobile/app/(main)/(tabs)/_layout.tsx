@@ -116,6 +116,7 @@ export default function TabsLayout() {
       {claimPending && activeSlot === 'claim' ? (
         <StudyClaimModal
           userId={claimPending.userId}
+          initialResult={claimPending.result ?? null}
           onClose={() => {
             clearStudyClaim();
             releaseModalSlot('claim');
