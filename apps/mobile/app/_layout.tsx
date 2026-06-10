@@ -27,7 +27,6 @@ import { clearCachedConfig, fetchAppConfig } from '@/lib/app-config-api';
 import { clearCachedWisdomCenter } from '@/lib/wisdom-center-api';
 import {
   markRefreshedNow,
-  refreshAllCaches,
   shouldRefreshAll,
 } from '@/lib/cache-refresh-all';
 import { fetchManifestFromR2, setCachedManifest } from '@/lib/asset-cache';
@@ -36,6 +35,11 @@ import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
+import { BackgroundResumeOverlay } from '@/components/main/background-resume-overlay';
+import {
+  showResumeOverlay,
+  useResumeOverlayVisible,
+} from '@/lib/background-resume-store';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { hideSplashOnce } from '@/lib/splash';
 
@@ -111,6 +115,10 @@ export default function RootLayout() {
   // resolves required=true (installed version < server min_version, platform
   // matches), we overlay an unescapable full-screen update screen.
   const [forceUpdate, setForceUpdate] = useState<{ message: string | null } | null>(null);
+  // Background-resume overlay visibility (long-background return). Hook must
+  // be above the `if (!isReady) return null` early return per the rules of
+  // hooks. The overlay itself runs the claim pre-settle + cache refresh.
+  const resumeVisible = useResumeOverlayVisible();
   useEffect(() => {
     let active = true;
     void checkForceUpdate().then((res) => {
@@ -284,12 +292,18 @@ export default function RootLayout() {
         // user-must-be-signed-in gate are inside shouldRefreshAll
         // and the getCurrentSession check below.
         if (shouldRefreshAll()) {
-          void getCurrentSession().then((session) => {
-            const userId = session?.user?.id;
-            if (userId) {
-              void refreshAllCaches(userId);
-            }
-          });
+          // Long background return (>= 30-min staleness window). Show the
+          // resume overlay, which runs the study-claim pre-settle AND
+          // refreshAllCaches behind a launch-style screen, then hides
+          // itself -- so the user lands on fresh data with the claim modal
+          // (if any) ready, instead of a silent refresh + an in-Home
+          // "Wrapping up..." spinner. The overlay only shows for a signed-
+          // in user; if there's no session it self-finishes immediately.
+          // (Cold start does NOT reach here as a refresh: prewarm stamps
+          // markRefreshedNow, so the first 'active' tick sees fresh data
+          // and shouldRefreshAll() is false -- cold start uses the native
+          // splash gate in app/index.tsx instead.)
+          showResumeOverlay();
         }
       } else {
         supabase.auth.stopAutoRefresh();
@@ -405,6 +419,7 @@ export default function RootLayout() {
                 }}
               />
               {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+              {resumeVisible ? <BackgroundResumeOverlay /> : null}
             </ErrorBoundary>
           </ThemeProvider>
         </SafeAreaProvider>

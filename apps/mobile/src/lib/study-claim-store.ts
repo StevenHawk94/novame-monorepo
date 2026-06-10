@@ -91,6 +91,30 @@ export function wasColdStartClaimHandled(): boolean {
   return _coldStartClaimHandled;
 }
 
+// ---- External-claim ownership (background-resume overlay) ----
+//
+// Separate from the cold-start flag (which is one-shot and only gates the
+// detector's INITIAL fetch). The background-resume overlay can run many
+// times over an app's lifetime and overlaps the detector's 30s in-session
+// poll, so it needs a resettable flag that the poll also honours. While
+// true, the detector's poll skips triggering -- the overlay owns the claim
+// for this resume and will POST exactly once via preSettleStudyClaim. The
+// overlay sets it before settling and clears it when done (success, nothing
+// to claim, error, or timeout), so the poll resumes as the normal fallback.
+let _externalClaimInFlight = false;
+
+export function beginExternalClaim(): void {
+  _externalClaimInFlight = true;
+}
+
+export function endExternalClaim(): void {
+  _externalClaimInFlight = false;
+}
+
+export function isExternalClaimInFlight(): boolean {
+  return _externalClaimInFlight;
+}
+
 /**
  * React hook: current pending claim state (or null). Re-renders the consumer
  * when it changes. Used by (tabs)/_layout.tsx.

@@ -23,6 +23,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import {
   requestStudyClaim,
   wasColdStartClaimHandled,
+  isExternalClaimInFlight,
 } from '@/lib/study-claim-store';
 
 import {
@@ -139,6 +140,12 @@ export function useStudyClaimDetector() {
   useEffect(() => {
     const tick = () => {
       if (claimingRef.current) return;
+      // The background-resume overlay owns the claim while it settles
+      // (it POSTs exactly once via preSettleStudyClaim). Skip the poll so
+      // we don't race a second POST against the about-to-be-zeroed counter
+      // -- the overlay clears this when it's done and the poll resumes as
+      // the normal in-session fallback.
+      if (isExternalClaimInFlight()) return;
       const cached = getCachedCharacterState();
       if (!cached) return;
       if (!evaluate(cached.mode, cached.wp, cached.wpLastFetchedAtMs)) return;

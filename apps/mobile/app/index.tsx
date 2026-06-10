@@ -3,16 +3,9 @@ import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { isOnboardingDone } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
-import {
-  applyLocalWPDecay,
-  fetchCharacterState,
-  getHomeVideoFilename,
-} from '@/lib/character-state';
-import { postStudyClaim } from '@/lib/study-claim-api';
-import {
-  requestStudyClaim,
-  markColdStartClaimHandled,
-} from '@/lib/study-claim-store';
+import { getHomeVideoFilename } from '@/lib/character-state';
+import { preSettleStudyClaim } from '@/lib/pre-settle-study-claim';
+import { markColdStartClaimHandled } from '@/lib/study-claim-store';
 import { AssetGateError } from '@/components/main/asset-gate-error';
 
 // P0 asset gate timeout for returning (session) cold starts. Independent
@@ -129,37 +122,18 @@ export default function Index() {
         const session = await getCurrentSession();
         const userId = session?.user?.id;
         if (!userId) return;
-        const fresh = await fetchCharacterState(userId);
-        if (cancelled) return;
-        const wpNow = applyLocalWPDecay(
-          fresh.wp,
-          fresh.mode,
-          fresh.wpLastFetchedAtMs,
-        );
-        if (fresh.mode === 'study' && wpNow <= 0) {
-          // A claim needs settling. Two ordering rules matter here:
-          //
-          // 1. Claim ownership BEFORE the POST. postStudyClaim settles +
-          //    zeroes afk_study_seconds server-side regardless of the
-          //    client, so the moment we fire it we must be the sole owner
-          //    -- mark it now so the in-session detector skips its initial
-          //    trigger and can never race a second POST (which would read
-          //    the zeroed counter and flash "+0 XP").
-          //
-          // 2. Stash the result WITHOUT a cancelled guard. The 8s gate
-          //    timeout may have already released Home (slow POST) and
-          //    unmounted this screen, but study-claim-store is module-
-          //    level and outlives us. Writing the result there guarantees
-          //    the modal still surfaces in Home with the correct payload
-          //    instead of the claim being silently lost.
-          //
-          // The gate timeout is deliberately NOT cleared: on a very slow
-          // POST we'd rather enter Home at 8s and let the result pop a
-          // moment later than strand the user on the splash indefinitely.
-          markColdStartClaimHandled();
-          const result = await postStudyClaim(userId);
-          requestStudyClaim(userId, result);
-        }
+        // Shared settle sequence. onClaimOwned marks the cold-start flag
+        // BEFORE the POST so the detector's initial fetch yields (no
+        // double-POST / "+0 XP"). isCancelled is checked after the fetch
+        // but before the POST: if the 8s timeout already released Home and
+        // unmounted us mid-fetch, we bail without POSTing and let the
+        // in-session detector settle it (the counter is untouched). Once
+        // the POST starts, the result is stashed in the module-level store
+        // regardless of unmount, so it can't be lost.
+        await preSettleStudyClaim(userId, {
+          onClaimOwned: markColdStartClaimHandled,
+          isCancelled: () => cancelled,
+        });
       } catch (e) {
         console.warn('[index] claim pre-settle failed (non-fatal):', e);
       } finally {
