@@ -68,14 +68,7 @@
       "expo-notifications",
       "./plugins/with-photo-permissions",
       "expo-iap",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useModularHeaders": true
-          }
-        }
-      ]
+      "./plugins/with-ios-modular-headers"
     ],
     "experiments": {
       "typedRoutes": true
