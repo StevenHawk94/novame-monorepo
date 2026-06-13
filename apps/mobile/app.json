@@ -67,7 +67,15 @@
       "expo-web-browser",
       "expo-notifications",
       "./plugins/with-photo-permissions",
-      "expo-iap"
+      "expo-iap",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useModularHeaders": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
