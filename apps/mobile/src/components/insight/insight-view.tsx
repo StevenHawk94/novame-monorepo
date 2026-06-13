@@ -513,29 +513,30 @@ export function InsightView({
       ) : null}
 
       {/* ============================================================
-          Block 4: 3-part Reframe (or legacy single-section fallback).
-          White root bg, purple titles, BLACK body text. No emoji
-          prefix on titles (prompt now outputs plain text).
+          Block 4: "The Concept" — one headline + two paragraphs
+          (or legacy single-section fallback). White root bg, purple
+          headline, BLACK body text. No emoji prefix (plain text).
           ============================================================ */}
       {reframe ? (
+        // Module 3 "The Concept": one headline + two paragraphs.
+        //   mirror_hook.title  -> the concept headline (purple)
+        //   mirror_hook.body   -> paragraph 1 (what the concept is)
+        //   flipped_lens.body  -> paragraph 2 (how it shows up here),
+        //                         separated from paragraph 1 by a blank line.
+        // flipped_lens.title / permission_slip.* are no longer produced by
+        // the model; legacy rows that still carry them are intentionally
+        // not rendered.
         <View style={styles.reframeSection}>
-          {reframe.mirror_hook.title || reframe.mirror_hook.body ? (
-            <View style={styles.reframePart}>
-              <Text style={styles.reframeTitle}>{reframe.mirror_hook.title}</Text>
-              <Text style={styles.reframeBody}>{reframe.mirror_hook.body}</Text>
-            </View>
+          {reframe.mirror_hook.title ? (
+            <Text style={styles.reframeTitle}>{reframe.mirror_hook.title}</Text>
           ) : null}
-          {reframe.flipped_lens.title || reframe.flipped_lens.body ? (
-            <View style={styles.reframePart}>
-              <Text style={styles.reframeTitle}>{reframe.flipped_lens.title}</Text>
-              <Text style={styles.reframeBody}>{reframe.flipped_lens.body}</Text>
-            </View>
+          {reframe.mirror_hook.body ? (
+            <Text style={styles.reframeBody}>{reframe.mirror_hook.body}</Text>
           ) : null}
-          {reframe.permission_slip.title || reframe.permission_slip.body ? (
-            <View style={styles.reframePart}>
-              <Text style={styles.reframeTitle}>{reframe.permission_slip.title}</Text>
-              <Text style={styles.reframeBody}>{reframe.permission_slip.body}</Text>
-            </View>
+          {reframe.flipped_lens.body ? (
+            <Text style={[styles.reframeBody, styles.reframePara2]}>
+              {reframe.flipped_lens.body}
+            </Text>
           ) : null}
         </View>
       ) : legacyB.body ? (
@@ -827,7 +828,11 @@ const styles = StyleSheet.create({
   // ============================================================
   reframeSection: {
     paddingHorizontal: 24,
-    marginBottom: 8,
+    // Module 3 "The Concept" is now a flat title + 2 paragraphs (no
+    // per-part wrapper). Restore the bottom gap the old last reframePart
+    // (marginBottom 24) used to provide, so the block doesn't crowd the
+    // "Ask Yourself This" card below it.
+    marginBottom: 32,
   },
   reframePart: {
     marginBottom: 24,
@@ -844,6 +849,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
     lineHeight: 23,
+  },
+  // Paragraph 2 of "The Concept": blank-line gap below paragraph 1.
+  reframePara2: {
+    marginTop: 18,
   },
 
   // ============================================================
