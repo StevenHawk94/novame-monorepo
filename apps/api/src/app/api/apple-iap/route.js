@@ -164,12 +164,34 @@ export async function POST(request) {
     // have apple_transaction_id / apple_original_transaction_id /
     // apple_product_id columns -- added in the corresponding
     // schema migration (see commit message for the ALTER TABLE).
+    // QuotaFix: current_period_start is a STABLE billing-period anchor, NOT the
+    // upload time. A cold-start restore / unfinished-transaction re-report of an
+    // already-active subscription must NOT reset it -- resetting it zeroes the
+    // per-period quota counter on every relaunch (= unlimited usage). Advance it
+    // only for a brand-new subscription or a genuine renewal (incoming expiry
+    // moves past the stored period end). Matches Apple's per-transaction
+    // purchaseDate model + Stripe's billing_cycle_anchor (preserve, don't reset).
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('current_period_start, current_period_end, status')
+      .eq('user_id', userId)
+      .maybeSingle()
+    const isSamePeriod =
+      existingSub &&
+      existingSub.status === 'active' &&
+      existingSub.current_period_start &&
+      existingSub.current_period_end &&
+      new Date(periodEnd).getTime() <= new Date(existingSub.current_period_end).getTime()
+    const periodStart = isSamePeriod
+      ? existingSub.current_period_start
+      : new Date().toISOString()
+
     const subRow = {
       user_id: userId,
       plan: tier,
       status: 'active',
       billing_cycle: billingCycle,
-      current_period_start: new Date().toISOString(),
+      current_period_start: periodStart,
       current_period_end: periodEnd,
       apple_transaction_id: String(transactionId),
       apple_original_transaction_id: String(originalTransactionId || transactionId),
