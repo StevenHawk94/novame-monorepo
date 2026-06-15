@@ -657,12 +657,26 @@ async function uploadPurchaseToServer(purchase: Purchase): Promise<void> {
       ? purchase.originalTransactionIdentifierIOS
       : String(purchase.id);
 
+  // A2: send the StoreKit 2 signed transaction (JWS) so the server can
+  // verify it with Apple instead of trusting the plain fields. In expo-iap
+  // 4.2.4 the unified `purchaseToken` carries the iOS JWS (types.d.ts:
+  // "Unified purchase token (iOS JWS, Android purchaseToken)"). Sent now
+  // (1.0.7); the server starts REQUIRING + verifying it only after 1.0.7
+  // is forced live, so older clients are never broken mid-rollout.
+  const jws =
+    'purchaseToken' in purchase &&
+    typeof purchase.purchaseToken === 'string' &&
+    purchase.purchaseToken
+      ? purchase.purchaseToken
+      : null;
+
   const data = await apiClient.post<AppleIapResponse>('/api/apple-iap', {
     userId,
     transactionId: String(purchase.id),
     productId: purchase.productId,
     originalTransactionId: originalTxnId,
     expiresDate: expiresIso,
+    jws,
   });
 
   if (!data.success) {

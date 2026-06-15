@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { decodeTransaction } from 'app-store-server-api'
 
-export const runtime = 'edge'
+// A2: nodejs runtime required -- app-store-server-api's decodeTransaction
+// uses Node crypto for X.509 cert-chain validation (not available on Edge),
+// same as webhooks/apple. Cold start ~200-500ms; fine for this endpoint.
+export const runtime = 'nodejs'
 
 /**
  * POST /api/apple-iap
@@ -63,12 +67,15 @@ const PRODUCT_TO_CYCLE = {
 
 export async function POST(request) {
   try {
-    const {
+    // A2: let (not const) -- productId/transactionId/originalTransactionId/
+    // expiresDate are re-derived from Apple's verified JWS below.
+    let {
       userId,
       transactionId,
       productId,
       originalTransactionId,
       expiresDate,
+      jws,
     } = await request.json()
 
     if (!userId || !transactionId || !productId) {
@@ -113,6 +120,54 @@ export async function POST(request) {
       console.warn('[apple-iap] rejected: token user', _authUser.id, '!= body userId', userId)
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+
+    // ============================================================
+    // SECURITY (A2): verify the StoreKit 2 signed transaction (JWS) with
+    // Apple before granting anything. This route previously trusted the
+    // client-supplied productId/expiresDate/transactionId, so a signed-in
+    // user could POST productId:'novame.ultra.yearly' + a far-future expiry
+    // and self-grant Ultra for free (the webhook only fires for REAL Apple
+    // transactions, so a fabricated id is never caught/refunded). We now
+    // REQUIRE the JWS (purchase.purchaseToken on the client) and re-derive
+    // the authoritative fields from Apple's signed payload. decodeTransaction
+    // verifies the cert chain + signature (same lib + pattern as the Apple
+    // webhook). Fail-closed: no jws / invalid / wrong bundle -> 401.
+    // ============================================================
+    if (!jws || typeof jws !== 'string') {
+      console.warn('[apple-iap] rejected: missing jws')
+      return NextResponse.json(
+        { success: false, error: 'Missing signed transaction', code: 'JWS_REQUIRED' },
+        { status: 401 }
+      )
+    }
+    let verifiedTxn
+    try {
+      verifiedTxn = await decodeTransaction(jws)
+    } catch (e) {
+      console.warn('[apple-iap] rejected: JWS verification failed:', e && e.message)
+      return NextResponse.json(
+        { success: false, error: 'Invalid signed transaction' },
+        { status: 401 }
+      )
+    }
+    const EXPECTED_BUNDLE_ID = 'com.novame.app'
+    if (verifiedTxn.bundleId && verifiedTxn.bundleId !== EXPECTED_BUNDLE_ID) {
+      console.warn('[apple-iap] rejected: bundleId mismatch', verifiedTxn.bundleId)
+      return NextResponse.json(
+        { success: false, error: 'Bundle ID mismatch' },
+        { status: 401 }
+      )
+    }
+    // Re-derive authoritative fields from Apple's signed data; the
+    // client-supplied values are now ignored (overwritten).
+    productId = verifiedTxn.productId
+    transactionId = String(verifiedTxn.transactionId)
+    originalTransactionId = verifiedTxn.originalTransactionId
+      ? String(verifiedTxn.originalTransactionId)
+      : transactionId
+    expiresDate = verifiedTxn.expiresDate
+      ? new Date(verifiedTxn.expiresDate).toISOString()
+      : null
 
     const tier = PRODUCT_TO_TIER[productId]
     if (!tier) {
