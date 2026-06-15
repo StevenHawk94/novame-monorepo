@@ -158,10 +158,21 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 })
       }
 
-      // Mark completed
-      await supabase.from('daily_tasks')
+      // Mark completed -- atomic compare-and-swap. The extra
+      // .eq('is_completed', false) makes the flip conditional, so when two
+      // 'complete' requests for the SAME task race (both passed the fetch
+      // above while is_completed was still false), only ONE actually
+      // updates a row; the loser gets 0 rows back and skips the reward.
+      // Without this the EXP award below ran twice -> double EXP (and
+      // leaderboard inflation, since rank = character_data.total_exp).
+      const { data: claimedRows } = await supabase.from('daily_tasks')
         .update({ is_completed: true, completed_at: new Date().toISOString() })
         .eq('id', taskId)
+        .eq('is_completed', false)
+        .select('id')
+      if (!claimedRows || claimedRows.length === 0) {
+        return NextResponse.json({ success: true, expGained: 0, alreadyCompleted: true })
+      }
 
       // Get character data - uses total_exp system
       const { data: profile } = await supabase.from('profiles').select('active_character_id').eq('id', userId).single()

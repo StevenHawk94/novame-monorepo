@@ -23,6 +23,11 @@ export async function POST(req) {
     const { userId, studyStartedAt, wisdomsCreatedDuringStudy = 0 } = await req.json()
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
+    // B3: wisdomsCreatedDuringStudy is client-supplied and drives the
+    // per-wisdom souls loop below. Clamp so a malicious value can neither
+    // inflate souls nor spin an unbounded loop on Edge.
+    const wisdomsCreated = Math.min(Math.max(0, Math.floor(Number(wisdomsCreatedDuringStudy) || 0)), 50)
+
     // ============================================================
     // SECURITY (Module 6 #6 Step 2): require Bearer token matching
     // userId. Same pattern as publish-wisdom (commit 84e8151) and
@@ -68,6 +73,43 @@ export async function POST(req) {
     // mode switch -- so post-drain idle time is correctly excluded, and
     // any mid-session publish refills are already folded in.
     const accumSecs = profile?.afk_study_seconds || 0
+
+    // ============================================================
+    // ATOMIC CLAIM (B1 + B2): settle in ONE conditional update. Flip
+    // study->play and zero the counter only if we are STILL in study mode
+    // AND the counter still equals what we just read AND time is banked
+    // (accumSecs > 0). Award below runs only when this update changed a row:
+    //   B1 (concurrent double-claim): 2nd request finds counter already 0
+    //       / mode already play -> 0 rows -> no double award.
+    //   B2 (claim with nothing banked / not in study): accumSecs<=0 or
+    //       mode!=study -> 0 rows -> no free souls / bonus task.
+    // The redundant mode/afk write further down is now harmless (idempotent).
+    // ============================================================
+    let claimed = false
+    if (accumSecs > 0) {
+      const { data: claimRows } = await supabase
+        .from('profiles')
+        .update({ character_mode: 'play', afk_study_seconds: 0 })
+        .eq('id', userId)
+        .eq('character_mode', 'study')
+        .eq('afk_study_seconds', accumSecs)
+        .select('id')
+      claimed = !!(claimRows && claimRows.length > 0)
+    }
+    if (!claimed) {
+      // Nothing to settle. Still leave study mode (if we were in it) so the
+      // client's detector doesn't re-trigger, but award NOTHING.
+      await supabase.from('profiles')
+        .update({ character_mode: 'play' })
+        .eq('id', userId)
+        .eq('character_mode', 'study')
+      return NextResponse.json({
+        success: true,
+        expGained: 0, studyHours: 0, studyMins: 0, totalSouls: 0,
+        cardKeyword: 'Momentum', resonanceBoost: 0, nothingToClaim: true,
+      })
+    }
+
     const studyHours = Math.floor(accumSecs / 3600)
     const studyMins = Math.floor((accumSecs % 3600) / 60)
 
@@ -77,7 +119,7 @@ export async function POST(req) {
     // Souls: base random + per-wisdom bonus
     const baseSouls = 3 + Math.floor(Math.random() * 28)
     let totalSouls = baseSouls
-    for (let i = 0; i < wisdomsCreatedDuringStudy; i++) {
+    for (let i = 0; i < wisdomsCreated; i++) {
       totalSouls += 3 + Math.floor(Math.random() * 28)
     }
 

@@ -112,6 +112,38 @@ export async function POST(request) {
         { status: 400 }
       )
     }
+
+    // ============================================================
+    // SECURITY (B4): require a Bearer token matching body userId.
+    // Before this gate upload-avatar was fully unauthenticated -- anyone
+    // could (a) burn Google Vision SafeSearch spend by POSTing images in
+    // a loop, and (b) overwrite ANY user's avatar (userId is client-
+    // supplied + upsert:true). Mobile sends the token via apiClient even
+    // for multipart FormData (packages/api-client attaches Authorization
+    // outside the FormData branch), so legit uploads are unaffected.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const authToken = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!authToken) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const authClient = getSupabaseAdmin()
+    const { data: { user: authUser }, error: authErr } = await authClient.auth.getUser(authToken)
+    if (authErr || !authUser || authUser.id !== userId) {
+      console.warn('[upload-avatar] rejected: token/user mismatch')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Validate type + size BEFORE the Vision call so a bad/oversized file
+    // can't burn Vision spend or balloon memory. Avatars are small images.
+    const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+    const MAX_AVATAR_BYTES = 8 * 1024 * 1024
+    if (imageFile.type && !ALLOWED_AVATAR_TYPES.includes(String(imageFile.type).toLowerCase())) {
+      return Response.json({ error: 'Unsupported image type', code: 'BAD_TYPE' }, { status: 400 })
+    }
+    if (typeof imageFile.size === 'number' && imageFile.size > MAX_AVATAR_BYTES) {
+      return Response.json({ error: 'Image too large (max 8MB)', code: 'TOO_LARGE' }, { status: 400 })
+    }
     
     console.log('Processing avatar upload for user:', userId)
     console.log('Image file type:', imageFile.type, 'size:', imageFile.size)
