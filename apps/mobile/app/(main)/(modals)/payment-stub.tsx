@@ -210,8 +210,14 @@ export default function PaymentModal() {
           // order-detail screen which polls until the status flips.
           if (router.canGoBack()) router.back(); // pop payment-stub
           router.push({
+            // A (bugfix): order-detail reads the id from params.id
+            // (useLocalSearchParams<{ id?: string }>). We were passing it as
+            // `orderId`, so params.id was undefined -> order-detail's fetch
+            // effect bailed (`if (!userId || !orderId) return`) and the
+            // loading spinner never cleared (infinite spin after payment).
+            // order-history passes { id } and works; match that key.
             pathname: '/(main)/(modals)/order-detail',
-            params: { orderId },
+            params: { id: orderId },
           });
           return;
         }
