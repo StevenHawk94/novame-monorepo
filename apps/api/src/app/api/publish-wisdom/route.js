@@ -452,11 +452,12 @@ export async function POST(request) {
     let cardGenerationFailed = false
     let lowQualityInput = false
     let crisisDetected = false
+    let quotaExceededAtInsert = false
     let crisisMessage = ''
     if (wisdom.id && transcribedText && transcribedText.trim().length >= minTextLength) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
-        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar)
+        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar, quotaStart, monthlyLimit)
         console.log('[publish-wisdom] Card generation result:', cardResult.success ? 'success' : 'failed', 'keyword:', cardResult.keyword || 'n/a')
         if (cardResult.success && cardResult.card) {
           generatedCard = cardResult.card
@@ -536,6 +537,11 @@ export async function POST(request) {
           if (cardResult && cardResult.code === 'LOW_QUALITY_INPUT') {
             lowQualityInput = true
           }
+          // Atomic quota RPC rejected at insert (lost a concurrent race /
+          // truly over quota). Surfaced as 402 below, same as the early gate.
+          if (cardResult && cardResult.code === 'QUOTA_EXCEEDED') {
+            quotaExceededAtInsert = true
+          }
           // Crisis: the entry tripped the safety detector. Roll back like
           // any non-card result (shared cleanup below) but surface the safe
           // message instead of a failure/low-quality response.
@@ -594,6 +600,17 @@ export async function POST(request) {
             code: 'LOW_QUALITY_INPUT',
           },
           { status: 422 }
+        )
+      }
+      if (quotaExceededAtInsert) {
+        return NextResponse.json(
+          {
+            error: 'Monthly insight quota exceeded',
+            code: 'QUOTA_EXCEEDED',
+            tier: effectiveTier,
+            monthlyLimit,
+          },
+          { status: 402 }
         )
       }
       return NextResponse.json(

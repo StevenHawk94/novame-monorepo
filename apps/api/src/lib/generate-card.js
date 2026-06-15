@@ -470,7 +470,7 @@ function enrichCard(card) {
  * @param {string|null} creatorAvatar - Avatar URL to stamp on wisdom_cards.creator_avatar
  * @returns {{ success: boolean, card?: object, keyword?: string, keywordId?: string }}
  */
-export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null, creatorName = null, creatorAvatar = null) {
+export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null, creatorName = null, creatorAvatar = null, quotaPeriodStart = null, monthlyLimit = null) {
   if (!wisdomText || wisdomText.length <= 5) {
     return { success: false, error: 'Text too short' }
   }
@@ -694,9 +694,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     return { success: false, error: `slugToId failed for "${matchedKeyword}"` }
   }
 
-  const { data: savedCard, error: dbError } = await supabase
-    .from('wisdom_cards')
-    .insert({
+  const cardPayload = {
       wisdom_id: wisdomId || null,
       user_id: userId || null,
       keyword_id: keywordId,
@@ -724,9 +722,39 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
       aspire_impacts: Array.isArray(result.aspire_impacts) && result.aspire_impacts.length > 0
         ? result.aspire_impacts
         : null,
+  }
+
+  // ============================================================
+  // Quota-safe insert (publish-quota race fix). When the caller passes the
+  // billing-period start + limit (publish-wisdom does), route the INSERT
+  // through insert_wisdom_card_if_under_quota: it re-counts cards in the
+  // window under a per-user advisory lock and inserts ONLY if still under
+  // quota, closing the TOCTOU where concurrent publishes each pass a stale
+  // pre-check and all create a card. Falls back to a plain insert when the
+  // params are absent (defensive; publish-wisdom is the only caller and
+  // always passes them).
+  // ============================================================
+  let savedCard = null
+  let dbError = null
+  if (quotaPeriodStart != null && monthlyLimit != null) {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('insert_wisdom_card_if_under_quota', {
+      p_user_id: userId,
+      p_period_start: quotaPeriodStart,
+      p_limit: monthlyLimit,
+      p_card: cardPayload,
     })
-    .select()
-    .single()
+    if (rpcErr) {
+      dbError = rpcErr
+    } else if (rpcData && rpcData.quota_exceeded === true) {
+      return { success: false, code: 'QUOTA_EXCEEDED' }
+    } else {
+      savedCard = (rpcData && rpcData.card) || null
+    }
+  } else {
+    const _ins = await supabase.from('wisdom_cards').insert(cardPayload).select().single()
+    savedCard = _ins.data
+    dbError = _ins.error
+  }
 
   // Stage 6.WisdomFix-S1: DB save failure must propagate as a
   // hard failure, not a silent fallback. The pre-fix code returned
