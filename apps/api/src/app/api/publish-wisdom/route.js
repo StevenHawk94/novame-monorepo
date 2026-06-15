@@ -46,7 +46,7 @@ const CRISIS_MESSAGE =
   "\u00b7 Crisis Text Line (US/UK/IE/CA): Text HOME to 741741\n" +
   "\u00b7 Or speak to someone you trust \u2014 a friend, a family member, anyone who knows you.\n\n" +
   "You don't have to have it figured out before you reach out."
-import { getQuotaPeriodStart, TIER_LIMITS, TIER_RANK } from '@/lib/quota'
+import { getQuotaPeriodStart, TIER_LIMITS } from '@/lib/quota'
 
 export const runtime = 'edge'
 
@@ -176,36 +176,21 @@ export async function POST(request) {
     // route the user to the paywall instead of showing a generic
     // error.
     //
-    // We respect a clientTier hint passed from mobile (mirroring
-    // daily-limit's race-condition handling). After a fresh purchase
-    // the StoreKit dialog can return before the apple-iap upload +
-    // DB write settle. The mobile MMKV cache is updated optimistically
-    // by lib/iap.ts -- if the client thinks it has a higher tier than
-    // the DB, we trust it for THIS request and reconcile on the next
-    // webhook fire.
-    // Stage 6.QuotaFix: TIER_LIMITS / TIER_RANK imported from @/lib/quota.
-
-    let clientTier = null
-    try {
-      // JSON requests: clientTier was destructured into typedText et al
-      // above -- but we read it again here so this block is positionally
-      // independent (easier to maintain). Falls through to null on
-      // multipart since FormData lookup is one-shot above.
-      clientTier = (contentType.includes('application/json'))
-        ? null  // JSON path: re-parse not possible (body was consumed). Mobile sets clientTier on form fields below for the file path; for typed wisdoms we accept the DB tier as authoritative since typed mode is fast and webhook race is rare.
-        : null
-    } catch { /* swallow */ }
-
+    // C4: DB subscription_tier is authoritative for quota. The old
+    // "optimistic clientTier" path here was dead code -- clientTier was
+    // assigned null on every branch, so the if below never fired and
+    // effectiveTier always equalled dbTier. We deliberately do NOT trust a
+    // client-supplied tier: that would be a quota-bypass hole (a caller
+    // could claim 'ultra' to lift their limit). The post-purchase race the
+    // old comment worried about is covered server-side -- apple-iap sets
+    // profiles.subscription_tier before returning, so the client refreshes
+    // to the correct tier before its next publish.
     const { data: tierProfile } = await supabase
       .from('profiles')
       .select('subscription_tier')
       .eq('id', userId)
       .single()
-    const dbTier = tierProfile?.subscription_tier || 'free'
-    let effectiveTier = dbTier
-    if (clientTier && (TIER_RANK[clientTier] ?? -1) > (TIER_RANK[dbTier] ?? 0)) {
-      effectiveTier = clientTier
-    }
+    const effectiveTier = tierProfile?.subscription_tier || 'free'
     const monthlyLimit = TIER_LIMITS[effectiveTier] ?? TIER_LIMITS.free
 
     // Stage 6.QuotaFix: counter window from @/lib/quota helper.
@@ -434,17 +419,10 @@ export async function POST(request) {
       await supabase.from('profiles').update({ last_wisdom_created_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', userId)
     }
 
-    // Auto-comment for public wisdoms
-    if (wisdom.id && transcribedText && isPublic) {
-      try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://api.soulsayit.com'
-        fetch(`${appUrl}/api/wisdom-comments`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wisdomId: wisdom.id, wisdomText: transcribedText }),
-        }).catch(e => console.log('Auto-comment fetch failed:', e.message))
-      } catch (e) { console.log('Comment scheduling skipped:', e.message) }
-    }
+    // C1: removed dead auto-comment call. It POSTed to /api/wisdom-comments,
+    // a route that does not exist in this project, so every public publish
+    // fired a fire-and-forget request that always 404'd silently (no
+    // auto-comments were ever created). Dropped to stop the wasted request.
 
     // Generate wisdom insight card — direct call (no HTTP self-fetch)
     let generatedCard = null

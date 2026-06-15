@@ -321,8 +321,13 @@ export async function POST(request) {
       if (!charData?.is_unlocked) return NextResponse.json({ success: false, error: 'Character not unlocked' })
 
       const { data: curProfile } = await supabase.from('profiles').select('wp').eq('id', userId).single()
+      // C3: do NOT reset wp_last_updated on character switch. WP lives on
+      // profiles (per-user, not per-character), so the decay clock must keep
+      // running across a switch. Resetting it to now refunded all elapsed
+      // decay (free WP); leaving it untouched lets the next character-state
+      // GET compute the correct elapsed decay from the original baseline.
       await supabase.from('profiles').update({
-        active_character_id: characterId, wp_last_updated: new Date().toISOString(),
+        active_character_id: characterId,
       }).eq('id', userId)
 
       return NextResponse.json({ success: true, characterId, wp: curProfile?.wp || 0 })
@@ -370,29 +375,13 @@ export async function POST(request) {
       return NextResponse.json({ success: true })
     }
 
-    if (action === 'add_exp') {
-      // Generic EXP addition (for default tasks, etc.)
-      const amount = Math.min(Math.max(parseInt(body.amount) || 10, 1), 100) // clamp 1-100
-
-      const { data: profile } = await supabase.from('profiles').select('active_character_id').eq('id', userId).single()
-      const charId = profile?.active_character_id || 'char-1'
-      const charData = await ensureCharacterData(supabase, userId, charId)
-      if (!charData) return NextResponse.json({ success: false, error: 'Failed to get character data' })
-
-      const newTotalExp = (charData.total_exp || 0) + amount
-      const levelInfo = getLevelFromExp(newTotalExp)
-      const outfitLevels = [1, 5, 10, 20, 30, 50]
-      const unlocked = outfitLevels.filter(lv => levelInfo.level >= lv).map((_, i) => i + 1)
-
-      await supabase.from('character_data').update({
-        total_exp: newTotalExp,
-        exp: levelInfo.currentExp,
-        level: levelInfo.level,
-        unlocked_outfits: unlocked,
-      }).eq('id', charData.id)
-
-      return NextResponse.json({ success: true, expGained: amount, newTotalExp, levelInfo, unlockedOutfits: unlocked })
-    }
+    // C2: removed the 'add_exp' action -- a client-callable endpoint that
+    // added arbitrary EXP (clamped 1-100) straight to the caller's own
+    // character. It had ZERO callers anywhere in the repo, so it was dead
+    // code AND a latent self-award / leaderboard-inflation surface
+    // (rank = character_data.total_exp). Dropped per the audit's
+    // delete-orphan-routes principle. EXP is awarded only via legitimate
+    // flows (study-claim, daily-tasks completion, publish quests).
 
     if (action === 'mark_skin_seen') {
       // Record that the user has been shown the unlock modal for this outfit,
