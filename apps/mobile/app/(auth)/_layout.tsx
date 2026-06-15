@@ -7,5 +7,14 @@ import { Stack } from 'expo-router';
  * password reset, etc.
  */
 export default function AuthLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // Auth screens are pure black -- override the root Stack's #0F0B2E
+        // so there's no dark-purple flash on the auth path.
+        contentStyle: { backgroundColor: '#000000' },
+      }}
+    />
+  );
 }

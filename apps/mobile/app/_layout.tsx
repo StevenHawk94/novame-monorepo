@@ -413,8 +413,13 @@ export default function RootLayout() {
             <ErrorBoundary>
               <Stack
                 screenOptions={{
+                  // Global default = black. The native splash->JS handoff gap
+                  // on first launch (and the index.tsx redirect window) shows
+                  // this navigator content background; black keeps it seamless
+                  // with onboarding/auth (also black). The Home group re-pins
+                  // #0F0B2E in (main)/_layout.tsx so Home looks unchanged.
                   headerShown: false,
-                  contentStyle: { backgroundColor: '#0F0B2E' },
+                  contentStyle: { backgroundColor: '#000000' },
                   animation: 'none',
                 }}
               />

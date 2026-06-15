@@ -19,7 +19,16 @@ export default function MainLayout() {
   useStudyClaimDetector();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        // Re-pin the app's #0F0B2E dark-purple theme for the authenticated
+        // app. The root Stack default is now black (for a seamless startup
+        // gap); pinning it here keeps Home / tabs / modals visually identical
+        // and avoids any black flash on signed-in cold start.
+        contentStyle: { backgroundColor: '#0F0B2E' },
+      }}
+    >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
       {/* ai-consent is a transparent overlay that preserves the spatial

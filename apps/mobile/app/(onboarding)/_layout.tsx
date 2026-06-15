@@ -26,6 +26,10 @@ export default function OnboardingLayout() {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
+        // Onboarding is pure black -- override the root Stack's #0F0B2E
+        // theme so the splash->first-paint window is black (seamless),
+        // not a dark-purple flash. Home keeps #0F0B2E via the root Stack.
+        contentStyle: { backgroundColor: '#000000' },
       }}
     />
   );

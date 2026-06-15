@@ -201,6 +201,13 @@ type ImgPageProps = {
   vidPoster?: ReactNode;
 };
 
+// Fix B (splash timing): when a page has a full-bleed image, the native
+// splash is held until the IMAGE has loaded (onLoad on <Image> below)
+// instead of hiding on the root onLayout -- onLayout fires before the image
+// paints, so the user would otherwise see the splash drop to a half-drawn
+// screen. Pages with no image hide on layout (nothing to wait for). Only the
+// first screen per launch actually hides the splash (hideSplashOnce is
+// idempotent); the 10s fallback in _layout covers a never-firing onLoad.
 export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPageProps) {
   const { scale } = useResponsive();
   const imgPageStyles = useMemo(() => makeImgPageStyles(scale), [scale]);
@@ -208,7 +215,7 @@ export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPage
     <SafeAreaView
       style={imgPageStyles.root}
       edges={['top', 'left', 'right', 'bottom']}
-      onLayout={hideSplashOnce}
+      onLayout={imgSource ? undefined : hideSplashOnce}
     >
       <View style={imgPageStyles.imageContainer}>
         {vidUri ? (
@@ -217,7 +224,7 @@ export function ImgPage({ children, btn, imgSource, vidUri, vidPoster }: ImgPage
           // shared component framework-agnostic.
           vidPoster ?? null
         ) : imgSource ? (
-          <Image source={imgSource} style={imgPageStyles.image} resizeMode="cover" />
+          <Image source={imgSource} style={imgPageStyles.image} resizeMode="cover" onLoad={hideSplashOnce} />
         ) : (
           <View style={imgPageStyles.imagePlaceholder} />
         )}
