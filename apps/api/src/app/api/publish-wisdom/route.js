@@ -435,7 +435,7 @@ export async function POST(request) {
     if (wisdom.id && transcribedText && transcribedText.trim().length >= minTextLength) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
-        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar, quotaStart, monthlyLimit)
+        const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar, quotaStart, monthlyLimit, seekQuestionId ? 'Opinion/Perspective' : null)
         console.log('[publish-wisdom] Card generation result:', cardResult.success ? 'success' : 'failed', 'keyword:', cardResult.keyword || 'n/a')
         if (cardResult.success && cardResult.card) {
           generatedCard = cardResult.card

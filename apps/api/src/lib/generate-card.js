@@ -384,7 +384,17 @@ Format rules (mandatory): One concrete physical action per task. Name the specif
 3. **No Platform Traces or Clinical Overreach**: The final output must be completely clean of internet-meta terms (like "OP") and carry absolutely no medical or diagnostic tone. It should sound like a deeply insightful, wise, grounded real-world peer.
 4. **Output Contract**: Return a single valid JSON object containing EXACTLY the fields requested in the user prompt. No markdown fences. No extra text outside the JSON. Use \n for line breaks within JSON string values. (If Stage 1 crisis triggered, return ONLY the crisis JSON described there instead.)`
 
-function buildUserPrompt(wisdomText, aspireList) {
+function buildUserPrompt(wisdomText, aspireList, forceCategory = null) {
+  // When forceCategory is set (e.g. a publish that originated from a
+  // Discover question is always classified as Opinion/Perspective), inject
+  // an authoritative override that supersedes the Stage 2 classification.
+  // Empty string when not forced -> the prompt is byte-identical to before.
+  const categoryOverride = forceCategory
+    ? `## CATEGORY OVERRIDE (authoritative — supersedes Stage 2 classification)
+This entry was submitted in response to a community Discover question — the user is offering a view or take in response to a prompt, not journaling their own experience or emotional state. The Category Classification is PRE-DETERMINED and LOCKED to ${forceCategory}. Skip Stage 2 classification entirely; treat the category as ${forceCategory} and apply the ${forceCategory} angle block for EVERY module in Stage 5. (Safety / Stage 1, the Intensity Scale, Detail Anchors, and all format rules still apply normally.)
+
+`
+    : '';
   return `Analyze the following user's raw journal entry and generate a JSON object.
 
 <user_input>
@@ -393,7 +403,7 @@ ${wisdomText.substring(0, 5000)}
 
 FIRST: if Stage 1 crisis detection in your instructions triggers, return ONLY {"crisis": true, "crisis_message": "..."} and nothing else — ignore every field below.
 
-OTHERWISE return a JSON object with EXACTLY these fields. The single Category you classified in Stage 2 (Life Moments / Achievement-Celebration / Aspiration-Goals / Confusion-Uncertainty / Anxiety-Worry / Venting-Frustration / Opinion-Perspective) is the analytical angle for every module — apply the matching category block from your Stage 5 instructions:
+${categoryOverride}OTHERWISE return a JSON object with EXACTLY these fields. The single Category you classified in Stage 2 (Life Moments / Achievement-Celebration / Aspiration-Goals / Confusion-Uncertainty / Anxiety-Worry / Venting-Frustration / Opinion-Perspective) is the analytical angle for every module — apply the matching category block from your Stage 5 instructions:
 
 1. "keyword": Pick exactly ONE keyword from this list that best captures the core theme: [${ALL_KEYWORDS.join(', ')}]
 
@@ -470,7 +480,7 @@ function enrichCard(card) {
  * @param {string|null} creatorAvatar - Avatar URL to stamp on wisdom_cards.creator_avatar
  * @returns {{ success: boolean, card?: object, keyword?: string, keywordId?: string }}
  */
-export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null, creatorName = null, creatorAvatar = null, quotaPeriodStart = null, monthlyLimit = null) {
+export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId, forceKeyword = null, creatorName = null, creatorAvatar = null, quotaPeriodStart = null, monthlyLimit = null, forceCategory = null) {
   if (!wisdomText || wisdomText.length <= 5) {
     return { success: false, error: 'Text too short' }
   }
@@ -527,7 +537,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
   }
   const aspireList = ASPIRE_POOL.join(', ')
 
-  const userPrompt = buildUserPrompt(wisdomText, aspireList)
+  const userPrompt = buildUserPrompt(wisdomText, aspireList, forceCategory)
 
   // Stage 5.IAP.5.bugfix.B: when ALL AI providers fail, do NOT fall
   // back to a hardcoded placeholder card. Treat as failure, signal
