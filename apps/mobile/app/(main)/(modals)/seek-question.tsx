@@ -47,6 +47,12 @@ import {
 import { supabase } from '@/lib/supabase';
 import { SeekCardRow } from '@/components/seek/seek-card-row';
 import type { SeekCard, SeekQuestion } from '@/lib/seek-types';
+import {
+  getCachedSeekCards,
+  setCachedSeekCards,
+  invalidateSeekCards,
+  isFresh,
+} from '@/lib/seek-cards-cache';
 import { haptics } from '@/lib/haptics';
 import { requireAiConsent } from '@/lib/ai-consent';
 
@@ -79,6 +85,10 @@ export default function SeekQuestionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const reportSheetRef = useRef<ReportSheetRef>(null);
+  // Set when the user leaves to offer their own wisdom; the return
+  // focus then force-refreshes (bypassing TTL) so their new card
+  // shows even inside the 60s freshness window.
+  const pendingOfferRef = useRef(false);
 
   // Resolve current user id once (used by save guard + API).
   useEffect(() => {
@@ -87,68 +97,101 @@ export default function SeekQuestionScreen() {
     });
   }, []);
 
-  const load = useCallback(async () => {
-    if (!questionId) {
-      setError('Missing question id');
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      // Append userId so the server can filter out cards this user
-      // has blocked. Without userId the server skips the block filter
-      // and returns all cards — used as a transitional path during
-      // sign-out / before session is resolved.
-      const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
-      const data = await apiClient.get<FetchResp & { question?: SeekQuestion }>(
-        `/api/seek-questions?questionId=${encodeURIComponent(questionId)}${userIdParam}`,
-      );
-      const fetched = data.cards ?? [];
-      setCards(fetched);
-      // Prefer server question if present (more authoritative than param).
-      if (data.question) setQuestion(data.question);
-
-      // Prefetch the visible (back) card faces into expo-image's cache
-      // BEFORE clearing the spinner, so cards render complete the instant
-      // it goes away — no second, visible image-load phase. Previously the
-      // spinner cleared right after the data fetch, then each FlippableCard
-      // streamed its R2 .webp in on-screen (the "card rendering" the user
-      // saw). FlippableCard renders these exact R2 URLs with
-      // cachePolicy="memory-disk", so a warm prefetch is an instant hit.
-      // Capped so a slow/failed CDN never hangs the spinner (we fall
-      // through to the old streaming behavior in that case).
+  // Prefetch front + back faces for a list of cards into expo-image's
+  // cache. capMs bounds the wait so we never hang the spinner / render;
+  // FlippableCard renders these exact R2 URLs (cachePolicy memory-disk),
+  // so a warm prefetch is an instant cache hit.
+  const prefetchCardFaces = useCallback(
+    async (list: SeekCard[], capMs: number) => {
       try {
         const R2_BASE = 'https://media.novameapp.com';
-        // back: shared per category ({category}-back.webp); front: one per
-        // keyword ({keyword_id}-front.webp). Prefetch BOTH so the visible
-        // (back) face AND the flip (front) face are warm before the spinner
-        // clears — flipping a card is then seamless too.
-        const cardFilenames: string[] = [];
-        for (const c of fetched) {
+        const filenames: string[] = [];
+        for (const c of list) {
           if (!c.keyword_id) continue;
-          cardFilenames.push(`${c.keyword_id}-front.webp`);
-          cardFilenames.push(`${c.keyword_id.split('-')[0]}-back.webp`);
+          filenames.push(`${c.keyword_id}-front.webp`);
+          filenames.push(`${c.keyword_id.split('-')[0]}-back.webp`);
         }
-        const cardUrls = Array.from(new Set(cardFilenames)).map((fn) =>
+        const urls = Array.from(new Set(filenames)).map((fn) =>
           buildAssetUrl(R2_BASE, dirForFilename(fn), fn),
         );
-        if (cardUrls.length > 0) {
+        if (urls.length > 0) {
           await Promise.race([
-            ExpoImage.prefetch(cardUrls),
-            new Promise((resolve) => setTimeout(resolve, 3500)),
+            ExpoImage.prefetch(urls),
+            new Promise((resolve) => setTimeout(resolve, capMs)),
           ]);
         }
       } catch {
-        // Prefetch failure is non-fatal — cards still render (images
-        // just stream in as before). Never block the spinner on it.
+        // Prefetch failure is non-fatal — images stream in as a fallback.
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load wisdoms');
-    } finally {
-      setLoading(false);
-    }
-  }, [questionId, userId]);
+    },
+    [],
+  );
+
+  // SWR loader (cache-then-network, TTL=60s). force=true bypasses the
+  // freshness short-circuit (used after the user offers their own wisdom
+  // so their new card shows on return without waiting for TTL to expire).
+  const load = useCallback(
+    async (force = false) => {
+      if (!questionId) {
+        setError('Missing question id');
+        setLoading(false);
+        return;
+      }
+
+      // Cache hit -> render immediately (fast open, no full-screen
+      // spinner). We still SHORT-prefetch faces (2s cap) before swapping
+      // in, so a hit always reveals the COMPLETE card even if expo-image
+      // evicted the images since the last visit.
+      const cached = getCachedSeekCards(questionId, userId);
+      if (cached) {
+        await prefetchCardFaces(cached.cards, 2000);
+        setCards(cached.cards);
+        if (cached.question) setQuestion(cached.question);
+        setLoading(false);
+        // Fresh and not forced -> trust cache, skip the network entirely.
+        if (!force && isFresh(cached)) return;
+        // Stale or forced -> fall through to a SILENT background refresh
+        // (loading already false; the old snapshot stays on screen).
+      } else {
+        // Cache miss (first visit) -> full spinner.
+        setLoading(true);
+      }
+
+      setError(null);
+      try {
+        // Append userId so the server can filter out cards this user
+        // has blocked. Without userId the server skips the block filter
+        // and returns all cards — used as a transitional path during
+        // sign-out / before session is resolved.
+        const userIdParam = userId ? `&userId=${encodeURIComponent(userId)}` : '';
+        const data = await apiClient.get<FetchResp & { question?: SeekQuestion }>(
+          `/api/seek-questions?questionId=${encodeURIComponent(questionId)}${userIdParam}`,
+        );
+        const fetched = data.cards ?? [];
+        const q = data.question ?? cached?.question ?? null;
+
+        // Cache MISS -> wait (4s cap) for faces before first paint so the
+        // reveal is complete. Background refresh (cards already on screen)
+        // -> no blocking; unchanged cards are warm, new ones stream in.
+        if (!cached) {
+          await prefetchCardFaces(fetched, 4000);
+        }
+
+        setCards(fetched);
+        if (data.question) setQuestion(data.question);
+        setCachedSeekCards(questionId, userId, fetched, q);
+      } catch (e) {
+        // Only surface an error if there is nothing on screen (true miss).
+        // On a background refresh we keep the cached snapshot visible.
+        if (!cached) {
+          setError(e instanceof Error ? e.message : 'Failed to load wisdoms');
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [questionId, userId, prefetchCardFaces],
+  );
 
   // Re-fetch on every focus (initial mount + every time the user
   // returns to this modal from another screen, e.g. back from record
@@ -156,8 +199,16 @@ export default function SeekQuestionScreen() {
   // wisdoms appear without manual pull-to-refresh.
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      // After offering your own wisdom, force a refresh (bypass TTL) so
+      // your new card appears on return even inside the 60s window.
+      if (pendingOfferRef.current) {
+        pendingOfferRef.current = false;
+        invalidateSeekCards(questionId, userId);
+        void load(true);
+      } else {
+        void load(false);
+      }
+    }, [load, questionId, userId]),
   );
 
   const onBlock = async (card: SeekCard) => {
@@ -169,6 +220,16 @@ export default function SeekQuestionScreen() {
     const idx = snapshot.findIndex((c) => c.id === card.id);
     setCards((prev) => prev.filter((c) => c.id !== card.id));
     const result = await blockWisdomCard(userId, card.id);
+    if (result.success) {
+      // Keep the cache consistent so the blocked card cannot reappear
+      // from a still-fresh cache hit on the next visit.
+      setCachedSeekCards(
+        questionId,
+        userId,
+        snapshot.filter((c) => c.id !== card.id),
+        question,
+      );
+    }
     if (!result.success) {
       // Roll back: insert at original index.
       setCards((prev) => {
@@ -211,6 +272,15 @@ export default function SeekQuestionScreen() {
     // Optimistic remove.
     setCards((prev) => prev.filter((c) => c.id !== cardId));
     const result = await reportWisdomCard(userId, cardId, reason, detail);
+    if (result.success) {
+      // Keep the cache consistent (reported card is auto-blocked).
+      setCachedSeekCards(
+        questionId,
+        userId,
+        snapshot.filter((c) => c.id !== cardId),
+        question,
+      );
+    }
     if (!result.success) {
       // Roll back to original list position.
       if (original) {
@@ -247,6 +317,8 @@ export default function SeekQuestionScreen() {
     // AI consent gate: pushes consent modal with this target as `next`
     // if not agreed. The modal will router.replace to `target` after
     // Agree; we must NOT push it again here on the false path.
+    // Mark so the return focus force-refreshes (see useFocusEffect).
+    pendingOfferRef.current = true;
     const proceed = requireAiConsent(target);
     if (!proceed) return;
     router.push(target as never);
