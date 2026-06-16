@@ -17,7 +17,7 @@
  *   - Footer CTA "Continue Card Selection" only when status is
  *     pending_selection (stage 5 will wire the actual selection UI).
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -27,7 +27,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -88,25 +88,33 @@ export default function OrderDetailModal() {
     });
   }, []);
 
-  useEffect(() => {
-    if (!userId || !orderId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchOrders(userId);
-        if (cancelled) return;
-        const found = (res.orders ?? []).find((o) => o.id === orderId) ?? null;
-        setOrder(found);
-      } catch (e) {
-        console.warn('[order-detail] fetch failed:', e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, orderId]);
+  // Re-fetch on every focus (not just mount). After submitting a deck in
+  // cards-select and tapping OK, we router.back() to THIS already-mounted
+  // screen; a mount-only effect would keep showing the stale
+  // pending_selection status. useFocusEffect re-runs so the status reflects
+  // the server (now 'paid' + no Continue CTA). Also re-runs when userId
+  // resolves, since that dep change happens while this screen is focused.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId || !orderId) return;
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetchOrders(userId);
+          if (cancelled) return;
+          const found = (res.orders ?? []).find((o) => o.id === orderId) ?? null;
+          setOrder(found);
+        } catch (e) {
+          console.warn('[order-detail] fetch failed:', e);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [userId, orderId]),
+  );
 
   const goBack = () => {
     void haptics.light();

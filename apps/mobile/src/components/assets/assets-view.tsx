@@ -24,7 +24,7 @@
  * History button currently opens stub modal routes added in
  * 3.9.B.4-6.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   type ImageSourcePropType,
   Pressable,
@@ -33,7 +33,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -67,21 +67,28 @@ export function AssetsView({ shared }: Props) {
     });
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetchOrders(userId);
-        if (!cancelled) setOrders(res.orders ?? []);
-      } catch (e) {
-        console.warn('[assets] fetch orders failed:', e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+  // Re-fetch on focus (not just mount): returning to the Assets tab after
+  // submitting a deck (order pending_selection -> paid) must flip the deck
+  // CTA from "Continue" back to "Order"/done and drop the pending badge. A
+  // mount-only effect kept showing the stale pending order. Re-runs when
+  // userId resolves too (dep change while focused).
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetchOrders(userId);
+          if (!cancelled) setOrders(res.orders ?? []);
+        } catch (e) {
+          console.warn('[assets] fetch orders failed:', e);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [userId]),
+  );
 
   // Stage A (dynamic config): read pricing + unlock thresholds from
   // app_config. Initialized from MMKV cache for instant first paint,
