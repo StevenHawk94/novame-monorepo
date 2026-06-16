@@ -59,6 +59,7 @@ import {
 } from '@/lib/wisdoms-api';
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
+import { getCachedMeStats } from '@/lib/me-stats';
 import { haptics } from '@/lib/haptics';
 import {
   incrementTaskCompletionCount,
@@ -171,9 +172,9 @@ export default function GrowthTab() {
     });
   }, []);
 
-  // Fetch the author profile (display_name + avatar_url) once we
-  // know who the user is. All wisdom log rows share this since the
-  // feed only shows the user's own wisdoms.
+  // Fetch the author profile (display_name + avatar_url). All wisdom log
+  // rows share this since the feed only shows the user's own wisdoms.
+  // Cold-start populate: one network read when the user resolves.
   useEffect(() => {
     if (!userId) return;
     void supabase
@@ -190,6 +191,24 @@ export default function GrowthTab() {
         }
       });
   }, [userId]);
+
+  // C: when this tab regains focus, sync the author header from the
+  // me-stats cache instead of re-querying the network. Account Management
+  // already refreshes that cache (invalidateMeStats + fetchMeStats) on
+  // avatar/name change, so returning to My Logs reflects the new picture /
+  // name instantly with ZERO extra requests. Guarded by (avatarUrl ||
+  // displayName) so a cold/empty cache never blanks what we loaded above.
+  useFocusEffect(
+    useCallback(() => {
+      const c = getCachedMeStats();
+      if (c && (c.avatarUrl || c.displayName)) {
+        setAuthorProfile({
+          display_name: c.displayName || 'You',
+          avatar_url: c.avatarUrl || null,
+        });
+      }
+    }, []),
+  );
 
   useEffect(() => {
     return () => {
