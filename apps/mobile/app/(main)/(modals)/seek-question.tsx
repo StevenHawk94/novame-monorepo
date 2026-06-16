@@ -29,12 +29,14 @@ import {
   Text,
   View, Alert,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image as ExpoImage } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiClient } from '@/lib/api';
 import { getStandardCardWidth } from '@/lib/card-dimensions';
+import { buildAssetUrl, dirForFilename } from '@/lib/asset-cache';
 import { blockWisdomCard } from '@/lib/wisdom-card-blocks';
 import { reportWisdomCard } from '@/lib/wisdom-card-reports';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -102,9 +104,45 @@ export default function SeekQuestionScreen() {
       const data = await apiClient.get<FetchResp & { question?: SeekQuestion }>(
         `/api/seek-questions?questionId=${encodeURIComponent(questionId)}${userIdParam}`,
       );
-      setCards(data.cards ?? []);
+      const fetched = data.cards ?? [];
+      setCards(fetched);
       // Prefer server question if present (more authoritative than param).
       if (data.question) setQuestion(data.question);
+
+      // Prefetch the visible (back) card faces into expo-image's cache
+      // BEFORE clearing the spinner, so cards render complete the instant
+      // it goes away — no second, visible image-load phase. Previously the
+      // spinner cleared right after the data fetch, then each FlippableCard
+      // streamed its R2 .webp in on-screen (the "card rendering" the user
+      // saw). FlippableCard renders these exact R2 URLs with
+      // cachePolicy="memory-disk", so a warm prefetch is an instant hit.
+      // Capped so a slow/failed CDN never hangs the spinner (we fall
+      // through to the old streaming behavior in that case).
+      try {
+        const R2_BASE = 'https://media.novameapp.com';
+        // back: shared per category ({category}-back.webp); front: one per
+        // keyword ({keyword_id}-front.webp). Prefetch BOTH so the visible
+        // (back) face AND the flip (front) face are warm before the spinner
+        // clears — flipping a card is then seamless too.
+        const cardFilenames: string[] = [];
+        for (const c of fetched) {
+          if (!c.keyword_id) continue;
+          cardFilenames.push(`${c.keyword_id}-front.webp`);
+          cardFilenames.push(`${c.keyword_id.split('-')[0]}-back.webp`);
+        }
+        const cardUrls = Array.from(new Set(cardFilenames)).map((fn) =>
+          buildAssetUrl(R2_BASE, dirForFilename(fn), fn),
+        );
+        if (cardUrls.length > 0) {
+          await Promise.race([
+            ExpoImage.prefetch(cardUrls),
+            new Promise((resolve) => setTimeout(resolve, 3500)),
+          ]);
+        }
+      } catch {
+        // Prefetch failure is non-fatal — cards still render (images
+        // just stream in as before). Never block the spinner on it.
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load wisdoms');
     } finally {
