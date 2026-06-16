@@ -36,7 +36,7 @@
  * the flag is in-memory and resets on next launch.
  */
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, StyleSheet, View } from 'react-native';
 
 import { getCurrentSession } from '@/lib/auth';
 import { preSettleStudyClaim } from '@/lib/pre-settle-study-claim';
@@ -102,7 +102,7 @@ export function BackgroundResumeOverlay() {
   }, []);
 
   return (
-    <Modal visible transparent={false} animationType="fade" onRequestClose={() => {}}>
+    <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.root}>
         <Image source={LOGO} style={styles.logo} resizeMode="contain" />
         <ActivityIndicator
@@ -110,7 +110,6 @@ export function BackgroundResumeOverlay() {
           color="rgba(255,255,255,0.85)"
           style={styles.spinner}
         />
-        <Text style={styles.label}>Welcome back…</Text>
       </View>
     </Modal>
   );
@@ -130,11 +129,5 @@ const styles = StyleSheet.create({
   },
   spinner: {
     marginTop: 4,
-  },
-  label: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 16,
   },
 });
