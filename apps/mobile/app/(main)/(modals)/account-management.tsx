@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { haptics } from '@/lib/haptics';
@@ -173,7 +174,26 @@ export default function AccountManagementModal() {
 
     setBusy(true);
     void haptics.medium();
-    const res = await uploadAvatar(userId, asset.uri, asset.mimeType ?? 'image/jpeg');
+
+    // B: normalize the cropped image before upload. iOS allowsEditing
+    // returns a square crop, but the file can carry EXIF orientation /
+    // non-exact dimensions that make expo-image render it off-center in the
+    // circle (square crop, but NOT center-aligned). Re-encoding via
+    // manipulateAsync bakes the orientation into pixels and emits a clean
+    // square JPEG, so square-crop -> circle-display lands exactly centered.
+    let uploadUri = asset.uri;
+    try {
+      const normalized = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 512 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      uploadUri = normalized.uri;
+    } catch (e) {
+      console.warn('[avatar] normalize failed; uploading original:', e);
+    }
+
+    const res = await uploadAvatar(userId, uploadUri, 'image/jpeg');
     setBusy(false);
 
     if (res.kind === 'success') {
@@ -382,6 +402,7 @@ export default function AccountManagementModal() {
                     source={{ uri: avatarUrl }}
                     style={styles.avatarImg}
                     contentFit="cover"
+                    contentPosition="center"
                   />
                 ) : (
                   <MaterialIcons name="person" size={36} color="#FFFFFF" />
