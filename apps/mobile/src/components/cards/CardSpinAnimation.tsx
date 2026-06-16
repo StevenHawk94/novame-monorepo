@@ -105,11 +105,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 24,
+    // Gap-to-text knob: distance from the Lottie's bottom edge to label1.
+    // Smaller = text sits closer to the animation.
+    paddingTop: 8,
   },
   lottie: {
-    width: 220,
-    height: 220,
+    // Size knob: -30% from the original 220.
+    width: 154,
+    height: 154,
   },
   label1: {
     color: '#FFFFFF',

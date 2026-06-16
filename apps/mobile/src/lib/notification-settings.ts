@@ -75,6 +75,31 @@ function setNotificationSettings(s: NotificationSettings): void {
   storage.set(STORAGE_KEY, JSON.stringify(s));
 }
 
+// ---- post-purchase one-time opt-in prompt ----
+
+const PROMPTED_AFTER_PURCHASE_KEY = 'novame_notif_prompted_after_purchase';
+
+/** True once we've auto-shown the post-purchase notification opt-in. */
+export function hasPromptedNotifAfterPurchase(): boolean {
+  return storage.getString(PROMPTED_AFTER_PURCHASE_KEY) === '1';
+}
+
+/** Mark the one-time post-purchase notification opt-in as shown. */
+export function markNotifPromptedAfterPurchase(): void {
+  storage.set(PROMPTED_AFTER_PURCHASE_KEY, '1');
+}
+
+/**
+ * Whether to auto-present the notification opt-in after a subscription
+ * purchase: only once ever, and only if the user hasn't already enabled
+ * the daily reminder.
+ */
+export function shouldPromptNotifAfterPurchase(): boolean {
+  if (hasPromptedNotifAfterPurchase()) return false;
+  if (getNotificationSettings().enabled) return false;
+  return true;
+}
+
 // ---- permission ----
 
 export type PermissionResult = 'granted' | 'denied' | 'undetermined';

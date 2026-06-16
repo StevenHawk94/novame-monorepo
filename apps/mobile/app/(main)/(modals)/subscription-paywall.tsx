@@ -31,6 +31,10 @@ import {
 } from '@/lib/iap';
 import { getCachedSubscription } from '@/lib/subscription';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
+import {
+  shouldPromptNotifAfterPurchase,
+  markNotifPromptedAfterPurchase,
+} from '@/lib/notification-settings';
 
 /**
  * Subscription Paywall overlay -- Stage 3.10.4.
@@ -136,7 +140,19 @@ export default function SubscriptionPaywallModal() {
       // subscription tier change (free → paid). Paywall doesn't
       // refresh home itself; the signal lets home subscribers refetch.
       emitHomeRefresh();
+      // Task 2: after a (first) subscription purchase, auto-present the
+      // notification opt-in ONCE. Guard = never-prompted + reminder not
+      // already enabled (shouldPromptNotifAfterPurchase). Deferred so the
+      // paywall's dismiss animation finishes before the notification modal
+      // presents (otherwise back() + push() race in the same tick).
+      const promptNotif = shouldPromptNotifAfterPurchase();
+      if (promptNotif) markNotifPromptedAfterPurchase();
       if (router.canGoBack()) router.back();
+      if (promptNotif) {
+        setTimeout(() => {
+          router.push('/(main)/(modals)/notification-settings');
+        }, 450);
+      }
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
