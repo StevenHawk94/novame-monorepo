@@ -10,8 +10,14 @@ export const runtime = 'edge'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const status = searchParams.get('status') || 'unknown'
-  const paymentIntentId = searchParams.get('payment_intent_id') || ''
+  // SECURITY (#4): status + paymentIntentId are inlined into JS below.
+  // Normalize status to a known enum and strictly validate the id so neither
+  // can break out of the script context (defense-in-depth with JSON.stringify
+  // at the injection site).
+  const rawStatus = searchParams.get('status') || 'unknown'
+  const status = ['success', 'fail', 'cancel'].includes(rawStatus) ? rawStatus : 'unknown'
+  const rawPiId = searchParams.get('payment_intent_id') || ''
+  const paymentIntentId = /^[A-Za-z0-9._-]{1,128}$/.test(rawPiId) ? rawPiId : ''
 
   const isSuccess = status === 'success'
   const isCancel = status === 'cancel'
@@ -77,8 +83,8 @@ export async function GET(request) {
   <script>
     // 准备支付结果数据
     var result = {
-      status: '${status}',
-      paymentIntentId: '${paymentIntentId}',
+      status: ${JSON.stringify(status)},
+      paymentIntentId: ${JSON.stringify(paymentIntentId)},
       timestamp: Date.now()
     };
 

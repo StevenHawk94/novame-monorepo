@@ -49,11 +49,19 @@ export async function POST(request) {
 
     const { data: profile } = await supabase.from('profiles').select('display_name, email').eq('id', userId).single()
 
+    // SECURITY (#1 payment-bypass fix): a non-admin caller must NEVER create
+    // an order already in a paid/fulfilled state. Reaching 'paid' is driven
+    // only by the verified Airwallex webhook or an admin. Non-admins are
+    // forced to 'pending_payment' regardless of the status they POST. Admins
+    // keep the prior behavior (honor client status, else product default).
+    const effectiveStatus = auth.isAdmin
+      ? (status || (productType === 'wisdom_cards' ? 'pending_selection' : 'paid'))
+      : 'pending_payment'
+
     const { data: order, error } = await supabase.from('orders').insert({
       user_id: userId,
       product_type: productType,
-      // 修改：如果前端传了 status 就用前端的，否则默认
-      status: status || (productType === 'wisdom_cards' ? 'pending_selection' : 'paid'),
+      status: effectiveStatus,
       amount: parseFloat(amount),
       currency: 'USD',
       payment_intent_id: paymentIntentId || null,
@@ -161,8 +169,31 @@ export async function PATCH(request) {
     const auth = await resolveAuth(request, supabase)
     if (auth.error) return auth.error
     if (!auth.isAdmin) {
-      const { data: existing } = await supabase.from('orders').select('user_id').eq('id', orderId).single()
+      const { data: existing } = await supabase.from('orders').select('user_id, status').eq('id', orderId).single()
       if (!existing || existing.user_id !== auth.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      // SECURITY (#1 payment-bypass fix): non-admin status transitions are
+      // tightly whitelisted. Reaching 'paid' is legitimate ONLY as the
+      // cards-select finalization (pending_selection -> paid WITH
+      // selectedCardIds); 'pending_selection' is set exclusively by the
+      // verified Airwallex webhook, so a row in that state proves payment
+      // cleared. The only other allowed non-admin write is payment-stub
+      // attaching its paymentIntentId to its own still-pending order (status
+      // unchanged). Everything else (pending_payment -> paid bypass, ->
+      // pending_selection, -> processing/shipped/delivered/cancelled/refunded)
+      // is admin/webhook-only.
+      const cur = existing.status
+      const isCardsFinalize =
+        cur === 'pending_selection' &&
+        status === 'paid' &&
+        Array.isArray(selectedCardIds) &&
+        selectedCardIds.length > 0
+      const isPendingIntentAttach =
+        cur === 'pending_payment' &&
+        status === 'pending_payment'
+      if (!isCardsFinalize && !isPendingIntentAttach) {
+        console.warn('[orders] PATCH rejected: non-admin illegal transition', cur, '->', status, 'order', orderId)
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

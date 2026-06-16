@@ -88,14 +88,6 @@ export async function POST(request) {
       case 'payment_intent.failed':
         await handlePaymentFailed(supabase, event.data.object)
         break
-      case 'subscription.created':
-      case 'subscription.updated':
-        await handleSubscriptionUpdate(supabase, event.data.object)
-        break
-      case 'subscription.cancelled':
-      case 'subscription.expired':
-        await handleSubscriptionEnd(supabase, event.data.object)
-        break
     }
 
     return NextResponse.json({ received: true })
@@ -120,6 +112,13 @@ async function handlePaymentSuccess(supabase, paymentIntent) {
     // 智能路由：根据 orderType 决定去更新哪张表
     if (orderType === 'printed' || orderType === 'ebook') {
       // 路由 A：WisdomBookOverlay 产生的订单 (写 book_orders 表)
+      // P2-b① idempotency: a retried/duplicate succeeded event must not
+      // re-apply the word-progress deduction below. Skip if already paid.
+      const { data: existingBook } = await supabase.from('book_orders').select('status').eq('id', orderId).single()
+      if (existingBook?.status === 'paid') {
+        console.log(`[Webhook] Book Order ${orderId} already paid — skipping (idempotent)`)
+        return
+      }
       await supabase.from('book_orders').update({
         status: 'paid',
         payment_status: 'paid',
@@ -136,6 +135,15 @@ async function handlePaymentSuccess(supabase, paymentIntent) {
     } 
     else if (orderType === 'wisdom_cards' || orderType === 'wisdom_book') {
       // 路由 B：AssetsView 产生的订单 (写 orders 表)
+      // P2-b① only-advance: a retried/out-of-order succeeded event must not
+      // reset an order that already moved past pending_payment (e.g. the user
+      // already selected cards -> 'paid'). Only advance the initial
+      // pending_payment order; otherwise skip.
+      const { data: existingOrder } = await supabase.from('orders').select('status').eq('id', orderId).single()
+      if (existingOrder && existingOrder.status !== 'pending_payment') {
+        console.log(`[Webhook] Assets Order ${orderId} already advanced (status=${existingOrder.status}) — skipping`)
+        return
+      }
       const nextStatus = (orderType === 'wisdom_cards') ? 'pending_selection' : 'paid'
       await supabase.from('orders').update({
         status: nextStatus,
@@ -147,48 +155,11 @@ async function handlePaymentSuccess(supabase, paymentIntent) {
     }
     return
   }
-
-  // ==========================================
-  // 2. 处理订阅 (Subscriptions)
-  // ==========================================
-  const userId = metadata.user_id
-  const plan = metadata.plan
-  if (userId && plan) {
-    const isYearly = metadata.billing_cycle === 'yearly'
-    const periodEnd = new Date()
-    periodEnd.setMonth(periodEnd.getMonth() + (isYearly ? 12 : 1))
-
-    await supabase.from('subscriptions').upsert({
-      user_id: userId, plan: plan, status: 'active',
-      billing_cycle: isYearly ? 'yearly' : 'monthly',
-      current_period_start: new Date().toISOString(),
-      current_period_end: periodEnd.toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-    console.log(`[Webhook] Subscription activated for user ${userId}`)
-  }
 }
 
 async function handlePaymentFailed(supabase, paymentIntent) {
   const userId = paymentIntent.metadata?.user_id
   if (userId && paymentIntent.metadata?.plan) {
     await supabase.from('subscriptions').update({ status: 'past_due', updated_at: new Date().toISOString() }).eq('user_id', userId)
-  }
-}
-
-async function handleSubscriptionUpdate(supabase, subscription) {
-  const userId = subscription.metadata?.user_id
-  if (userId) {
-    await supabase.from('subscriptions').upsert({
-      user_id: userId, plan: subscription.metadata?.plan || 'premium',
-      status: 'active', updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-  }
-}
-
-async function handleSubscriptionEnd(supabase, subscription) {
-  const userId = subscription.metadata?.user_id
-  if (userId) {
-    await supabase.from('subscriptions').update({ plan: 'free', status: 'active', updated_at: new Date().toISOString() }).eq('user_id', userId)
   }
 }

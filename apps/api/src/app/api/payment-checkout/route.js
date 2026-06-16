@@ -1,13 +1,32 @@
 export const runtime = 'edge'
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const intentId = searchParams.get('intentId')
-  const clientSecret = searchParams.get('clientSecret')
+  const url = new URL(request.url)
+  const { searchParams } = url
+
+  // SECURITY (#4): public GET whose params are inlined into the page below.
+  // Strictly validate the Airwallex identifiers (base64url/JWT-safe charset)
+  // and reject anything else so nothing can break out of the JS string
+  // context. Values are still JSON.stringify'd at the injection site as
+  // defense-in-depth.
+  const ID_RE = /^[A-Za-z0-9._-]{1,1024}$/
+  const intentId = searchParams.get('intentId') || ''
+  const clientSecret = searchParams.get('clientSecret') || ''
   const amount = searchParams.get('amount')
-  const successUrl = searchParams.get('successUrl')
-  const failUrl = searchParams.get('failUrl')
-  const cancelUrl = searchParams.get('cancelUrl')
+  if (!ID_RE.test(intentId) || !ID_RE.test(clientSecret)) {
+    return new Response(
+      '<!DOCTYPE html><meta charset="utf-8"><body style="font-family:-apple-system,sans-serif;background:#0F0B2E;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><p>Invalid checkout parameters.</p></body>',
+      { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } },
+    )
+  }
+  // SECURITY (#4 open-redirect): do NOT trust client-supplied result URLs --
+  // Airwallex redirects to these after payment, so an attacker-controlled
+  // value is an open-redirect / phishing vector. Reconstruct from THIS
+  // request's own origin; they always point at our own payment-result bridge.
+  const origin = url.origin
+  const successUrl = `${origin}/api/payment-result?status=success`
+  const failUrl = `${origin}/api/payment-result?status=fail`
+  const cancelUrl = `${origin}/api/payment-result?status=cancel`
 
   // 这个页面会短暂显示一个加载动画，然后迅速被 Airwallex SDK 接管并重定向
   const html = `<!DOCTYPE html>
@@ -36,13 +55,13 @@ export async function GET(request) {
       enabledElements: ['payments']
     }).then(function(res) {
       res.payments.redirectToCheckout({
-        intent_id: '${intentId}',
-        client_secret: '${clientSecret}',
+        intent_id: ${JSON.stringify(intentId)},
+        client_secret: ${JSON.stringify(clientSecret)},
         currency: 'USD',
         country_code: 'HK',
-        successUrl: '${successUrl}',
-        failUrl: '${failUrl}',
-        cancelUrl: '${cancelUrl}',
+        successUrl: ${JSON.stringify(successUrl)},
+        failUrl: ${JSON.stringify(failUrl)},
+        cancelUrl: ${JSON.stringify(cancelUrl)},
         appearance: { 
           mode: 'light',
           variables: { colorBrand: '#A855F7' }

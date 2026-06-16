@@ -290,7 +290,7 @@ async function handleActive(supabase, txn) {
   const originalId = String(txn.originalTransactionId)
   const { data: sub, error: subErr } = await supabase
     .from('subscriptions')
-    .select('user_id')
+    .select('user_id, current_period_start, current_period_end, status')
     .eq('apple_original_transaction_id', originalId)
     .maybeSingle()
 
@@ -308,6 +308,28 @@ async function handleActive(supabase, txn) {
   const expiresDate = txn.expiresDate
     ? new Date(txn.expiresDate).toISOString()
     : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
+
+  // #2/#3 (out-of-order + quota-reset guard): Apple does NOT guarantee
+  // notification ordering and retries deliveries. Compare this event's
+  // expiry against the period we already have on file.
+  const incomingExpiryMs = new Date(expiresDate).getTime()
+  const storedEndMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : 0
+  // Stale/duplicate activation: we already have a period ending LATER than
+  // this event's expiry -> ignore entirely (don't roll the period backward
+  // or reset the quota window). Primary upgrade path is the client apple-iap
+  // call; the webhook is confirmatory, so skipping a stale event here is safe.
+  if (storedEndMs && incomingExpiryMs && incomingExpiryMs < storedEndMs) {
+    console.warn(`[Apple webhook] stale activation ignored for user ${userId} (incoming expiry ${expiresDate} < stored end ${sub.current_period_end})`)
+    return
+  }
+  // Advance current_period_start ONLY for a genuinely new period (expiry
+  // moves past the stored end). A duplicate/retried event for the SAME period
+  // preserves the existing start so the per-period quota window is not reset
+  // (mirrors the apple-iap isSamePeriod guard).
+  const isNewPeriod = !storedEndMs || incomingExpiryMs > storedEndMs
+  const periodStart = (isNewPeriod || !sub?.current_period_start)
+    ? new Date().toISOString()
+    : sub.current_period_start
 
   // Update profiles.subscription_tier
   await supabase.from('profiles')
@@ -334,7 +356,7 @@ async function handleActive(supabase, txn) {
       status:               'active',
       billing_cycle:        billingCycle,
       apple_product_id:     productId,
-      current_period_start: new Date().toISOString(),
+      current_period_start: periodStart,
       current_period_end:   expiresDate,
       updated_at:           new Date().toISOString(),
     })
@@ -360,7 +382,7 @@ async function handleExpired(supabase, txn) {
 
   const { data: sub, error: subErr } = await supabase
     .from('subscriptions')
-    .select('user_id')
+    .select('user_id, current_period_end')
     .eq('apple_original_transaction_id', originalId)
     .maybeSingle()
 
@@ -372,6 +394,17 @@ async function handleExpired(supabase, txn) {
   const userId = sub?.user_id
   if (!userId) {
     console.warn('[Apple webhook] EXPIRED for unknown originalTxnId=' + originalId + ' — user not downgraded. Possible causes: (a) purchase pre-dates apple_* schema columns, (b) webhook signature spoofing (backlog: implement JWS verification).')
+    return
+  }
+
+  // #3 (out-of-order guard): a stale EXPIRED that arrives AFTER a newer
+  // renewal must not downgrade an active subscriber. If we already have a
+  // period ending LATER than this expiring transaction's expiry, a renewal
+  // has superseded it -> ignore this event.
+  const incomingExpiryMs = txn.expiresDate ? new Date(txn.expiresDate).getTime() : 0
+  const storedEndMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : 0
+  if (storedEndMs && incomingExpiryMs && storedEndMs > incomingExpiryMs) {
+    console.warn(`[Apple webhook] stale EXPIRED ignored for user ${userId} (stored end ${sub.current_period_end} is later than expiring txn ${new Date(incomingExpiryMs).toISOString()} -> superseded by renewal)`)
     return
   }
 
