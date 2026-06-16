@@ -95,9 +95,6 @@ export default function SubscriptionPaywallModal() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const styles = useMemo(() => makeStyles(width), [width]);
-  const [cycle, setCycle] = useState<Cycle>('monthly');
-  const [selected, setSelected] = useState<TierDisplay['key']>('pro');
-
   // Stage 5.IAP.5: read current subscription so the paywall can
   // distinguish new / upgrade / downgrade / crossgrade and show the
   // right CTA + hint banner. The cache is updated by lib/iap.ts after
@@ -114,6 +111,17 @@ export default function SubscriptionPaywallModal() {
     (cachedSub as { cycle?: Cycle } | null)?.cycle === 'yearly'
       ? 'yearly'
       : 'monthly';
+
+  // UX: when the user already subscribes, default the paywall selection to
+  // their CURRENT plan + cycle so the "Manage Subscription" affordance
+  // (rendered only when the selected card == current plan) is visible
+  // immediately on open. New / free users keep the recommended 'pro'.
+  const [cycle, setCycle] = useState<Cycle>(
+    currentTier !== 'free' ? currentCycle : 'monthly',
+  );
+  const [selected, setSelected] = useState<TierDisplay['key']>(
+    currentTier !== 'free' ? currentTier : 'pro',
+  );
 
   // Pending change classification (recomputed on every cycle/selected
   // change). Drives the CTA label, hint banner, and disabled state.
