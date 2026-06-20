@@ -20,8 +20,8 @@
  *      this prompt.
  *
  *   2. ENGAGEMENT MILESTONE -- either condition triggers:
- *        - publish count in [3, 10, 30]  (record flow engagement)
- *        - daily task completion count in [10, 50, 100]  (growth
+ *        - publish count in [3, 10, 50]  (record flow engagement)
+ *        - daily task completion count in [8, 60, 200]  (growth
  *          engagement, independent of publish quota)
  *
  *      Why OR not AND: different user personas use the app
@@ -54,8 +54,8 @@ const KEY_USER_EXPRESSED = 'novame_rating_prompt_user_expressed';
 
 // ---- Trigger configuration ----
 
-const TRIGGER_PUBLISH_COUNTS: readonly number[] = [3, 10, 30];
-const TRIGGER_TASK_COUNTS: readonly number[] = [10, 50, 100];
+const TRIGGER_PUBLISH_COUNTS: readonly number[] = [3, 10, 50];
+const TRIGGER_TASK_COUNTS: readonly number[] = [8, 60, 200];
 const COOLDOWN_DAYS = 60;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 
