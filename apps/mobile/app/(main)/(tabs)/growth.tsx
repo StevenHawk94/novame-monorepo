@@ -60,6 +60,7 @@ import {
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
 import { getCachedMeStats } from '@/lib/me-stats';
+import { setInsightPayload } from '@/lib/insight-payload-store';
 import { haptics } from '@/lib/haptics';
 import {
   incrementTaskCompletionCount,
@@ -472,18 +473,19 @@ export default function GrowthTab() {
   const onLogInsight = (id: string) => {
     const w = logs.find((x) => x.id === id);
     if (!w) return;
-    // Stage 6: payload no longer carries score (the score ring is gone
-    // from the redesigned InsightView). cardCollection and aspireImpact
-    // are also not serialized -- the wisdom-insight modal sets them to
-    // null because "just unlocked" / "current aspire score" semantics
-    // don't apply when re-reading a historical wisdom.
-    const payload = encodeURIComponent(
-      JSON.stringify({
-        card: w.card,
-        emotion: w.card?.wisdom_emotion ?? 'Reflective',
-      }),
-    );
-    router.push(`/(main)/(modals)/wisdom-insight?payload=${payload}`);
+    // White-screen fix: stash the full payload in a module-level store and
+    // navigate with only the short wisdomId. Long cards (Stage-6 reframe)
+    // produced ~4900-char encoded URLs that the native nav layer truncated,
+    // breaking JSON.parse in the modal -> permanent white screen. The store
+    // has no length limit. The modal reads the store first (by id) and only
+    // falls back to the URL payload if the store slot is missing (e.g. cold
+    // launch with a restored route).
+    const insightPayload = {
+      card: w.card,
+      emotion: w.card?.wisdom_emotion ?? 'Reflective',
+    };
+    setInsightPayload(id, insightPayload);
+    router.push(`/(main)/(modals)/wisdom-insight?id=${id}`);
   };
 
   // ... menu — stage 3.10 will surface delete + share options here.

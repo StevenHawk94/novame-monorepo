@@ -45,6 +45,7 @@ import {
   fetchWisdomCenterWithCache,
   getCachedWisdomCenter,
 } from '@/lib/wisdom-center-api';
+import { getInsightPayload } from '@/lib/insight-payload-store';
 
 type Payload = {
   card: InsightCardData | null;
@@ -62,8 +63,14 @@ function decodePayload(raw: string | undefined): Payload | null {
 
 export default function WisdomInsightModal() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ payload?: string }>();
-  const payload = decodePayload(params.payload);
+  const params = useLocalSearchParams<{ id?: string; payload?: string }>();
+  // White-screen fix: prefer the module-level store (keyed by wisdomId) which
+  // has no length limit. Fall back to the URL `payload` param only when the
+  // store slot is missing (back-compat / cold-launch restored route). The
+  // store path is why long cards no longer truncate -> no more white screen.
+  const payload =
+    (params.id ? getInsightPayload(params.id) : null) ??
+    decodePayload(params.payload);
 
   // Stage 6 Bug 3 fix: communityCount comes from the server-persisted
   // wisdom_cards.community_count column instead of being random-generated
@@ -179,7 +186,13 @@ export default function WisdomInsightModal() {
         </ScrollView>
       ) : (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Could not load this insight.</Text>
+          <Text style={styles.emptyText}>Couldn't open this insight.</Text>
+          <Pressable
+            onPress={goBack}
+            style={({ pressed }) => [styles.emptyBackBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.emptyBackLabel}>Go Back</Text>
+          </Pressable>
         </View>
       )}
       {/* Floating back button on top of the purple ImageBackground.
@@ -263,7 +276,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
+    // Root background is #FFFFFF; use a dark tone so this is visible
+    // (the old white-on-white was the "white screen" the user saw).
+    color: 'rgba(31,17,71,0.7)',
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  emptyBackBtn: {
+    backgroundColor: '#7C5CFC',
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 36,
+  },
+  emptyBackLabel: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontFamily: 'Inter_700Bold',
   },
 });

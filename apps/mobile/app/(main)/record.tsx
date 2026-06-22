@@ -786,6 +786,11 @@ function PhaseRecording({
 
       {/* Min warning + plan/limit hint */}
       <View style={recStyles.hintBlock}>
+        {/* Static mic-distance guidance (no metering on expo-audio 1.1.1;
+            this is the lightweight always-on hint. The server-side
+            TRANSCRIPTION_UNCLEAR guard is the backstop for genuinely
+            inaudible recordings). */}
+        <Text style={recStyles.micHint}>🎙 Speak close to your mic for the clearest recording</Text>
         {secsLeftToMin > 0 ? (
           <Text
             style={[
@@ -923,7 +928,14 @@ const recStyles = StyleSheet.create({
   hintBlock: {
     alignItems: 'center',
     marginTop: 28,
-    height: 52,
+    height: 76,
+  },
+  micHint: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 6,
+    textAlign: 'center',
   },
   minHint: {
     // Stage 6.RecordVisual: bumped contrast 0.6 -> 0.9 + size 13 -> 15.
@@ -2060,9 +2072,17 @@ function PhasePublishing({
           if (err.status === 422) {
             inflightRef.current = false;
             setTypedText('');
+            // Map the server's transcription code to a specific, actionable
+            // message. UNCLEAR => mic/distance issue; TOO_SHORT => speak more.
+            const msg422 =
+              code === 'TRANSCRIPTION_UNCLEAR'
+                ? "We can't hear you, please speak closer to the microphone."
+                : code === 'TRANSCRIPTION_TOO_SHORT'
+                ? 'Your audio is too short, please try again.'
+                : "I didn't quite catch that, but don't worry. Take your time to figure out what you want to say. I'm not going anywhere.";
             Alert.alert(
               '',
-              "I didn't quite catch that, but don't worry. Take your time to figure out what you want to say. I'm not going anywhere.",
+              msg422,
               [
                 {
                   text: 'OK',
