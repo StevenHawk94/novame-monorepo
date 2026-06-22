@@ -463,7 +463,7 @@ export async function POST(request) {
     let crisisDetected = false
     let quotaExceededAtInsert = false
     let crisisMessage = ''
-    if (wisdom.id && transcribedText && transcribedText.trim().length >= minTextLength) {
+    if (wisdom.id && tt.length >= 10) {
       console.log('[publish-wisdom] Generating card for wisdom:', wisdom.id, 'text length:', transcribedText.length)
       try {
         const cardResult = await generateWisdomCard(supabase, wisdom.id, transcribedText, userId, forceKeyword, creatorName, creatorAvatar, quotaStart, monthlyLimit, seekQuestionId ? 'Opinion/Perspective' : null)
