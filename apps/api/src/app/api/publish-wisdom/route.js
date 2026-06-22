@@ -343,17 +343,48 @@ export async function POST(request) {
     // > 5 gate, landing in the skip branch and leaving an empty wisdom
     // row. A real spoken sentence is well over 10 chars; 10 cleanly
     // rejects the time-stamp-shaped silence artifacts.
-    const minTextLength = 10
-    if (!transcribedText || transcribedText.trim().length < minTextLength) {
-      console.warn('[publish-wisdom] TRANSCRIPTION_FAILED: text too short or empty')
-      // Phase A.3: clean up the uploaded audio before returning the
-      // 422. Mobile retries by re-recording, not by retrying the same
-      // audio, so the file is dead weight + a privacy attack surface.
+    // Three-state transcription validation (audio mode only; typed text
+    // skips the refusal check). Order matters: UNCLEAR first, then TOO_SHORT.
+    const tt = (transcribedText || '').trim()
+    const ttLower = tt.toLowerCase()
+    const refusalSignals = [
+      'i cannot fulfill this request',
+      "i can't fulfill this request",
+      'too short to transcribe',
+      'unable to transcribe',
+      'cannot transcribe',
+      "can't transcribe",
+      'no discernible speech',
+      'no audible speech',
+      'no speech detected',
+      'the audio provided is too',
+    ]
+    const looksLikeRefusal = !isTyped && refusalSignals.some((sig) => ttLower.includes(sig))
+
+    // (1) UNCLEAR: empty, junk-short (<10 = silence artifacts), or a refusal
+    //     sentence => the mic likely didn't capture clear speech.
+    if (!tt || tt.length < 10 || looksLikeRefusal) {
+      console.warn('[publish-wisdom] TRANSCRIPTION_UNCLEAR:', tt.substring(0, 80) || '(empty)')
       await cleanupAudioFile()
       return NextResponse.json(
         {
-          error: 'Could not transcribe your recording. Please try again.',
-          code: 'TRANSCRIPTION_FAILED',
+          error: "We can't hear you, please speak closer to the microphone.",
+          code: 'TRANSCRIPTION_UNCLEAR',
+        },
+        { status: 422 }
+      )
+    }
+
+    // (2) TOO_SHORT: clear speech but under the minimum length for a
+    //     meaningful insight (200 chars).
+    const MIN_TRANSCRIPT_CHARS = 200
+    if (tt.length < MIN_TRANSCRIPT_CHARS) {
+      console.warn('[publish-wisdom] TRANSCRIPTION_TOO_SHORT: len', tt.length)
+      await cleanupAudioFile()
+      return NextResponse.json(
+        {
+          error: 'Your audio is too short, please try again.',
+          code: 'TRANSCRIPTION_TOO_SHORT',
         },
         { status: 422 }
       )

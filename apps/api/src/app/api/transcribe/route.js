@@ -19,6 +19,30 @@ const SAFETY_NONE = [
   { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
 ]
 
+
+// Detect Gemini's natural-language refusal (returned instead of empty text on
+// short/unclear audio). Only matches transcriber meta-refusal phrasing a real
+// speaker would never say, to avoid false-positives on genuine speech.
+function looksLikeTranscriptionRefusal(text) {
+  if (!text) return false
+  const t = text.toLowerCase()
+  const signals = [
+    'i cannot fulfill this request',
+    "i can't fulfill this request",
+    'too short to transcribe',
+    'unable to transcribe',
+    'cannot transcribe',
+    "can't transcribe",
+    'no discernible speech',
+    'no audible speech',
+    'there is no speech',
+    'the audio provided is too',
+    'audio is too short',
+    'no speech detected',
+  ]
+  return signals.some((p) => t.includes(p))
+}
+
 export async function POST(request) {
   console.log('Transcribe API called')
 
@@ -107,7 +131,16 @@ export async function POST(request) {
           const data = await response.json()
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
           if (text) {
-            transcriptionResult = text.trim()
+            const cleaned = text.trim()
+            // Gemini returns an English REFUSAL sentence (not empty) when the
+            // audio is too short/unclear. Treat such meta-refusals as a
+            // FAILURE so the caller rejects instead of using the refusal text.
+            if (looksLikeTranscriptionRefusal(cleaned)) {
+              console.warn('[transcribe] refusal/failure message, treating as failed:', cleaned.substring(0, 120))
+              lastError = 'transcription refusal'
+              continue
+            }
+            transcriptionResult = cleaned
             console.log('Transcription successful with model:', model)
             break
           }
