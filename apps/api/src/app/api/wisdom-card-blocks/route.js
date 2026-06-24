@@ -37,6 +37,20 @@ export async function POST(request) {
       )
     }
 
+    // ============================================================
+    // SECURITY (P3): derive the user from the Bearer token; IGNORE
+    // body.userId. service-role client (RLS bypassed) -- without this,
+    // anyone could forge blocks for any user. We write user_id =
+    // _authUser.id. Mobile apiClient attaches the token.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const _authSupabase = getSupabase()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authedUserId = _authUser.id
+
     const supabase = getSupabase()
 
     // Check for existing block first to preserve the original timestamp
@@ -44,7 +58,7 @@ export async function POST(request) {
     const { data: existing, error: readErr } = await supabase
       .from('wisdom_card_blocks')
       .select('blocked_at')
-      .eq('user_id', userId)
+      .eq('user_id', authedUserId)
       .eq('card_id', cardId)
       .maybeSingle()
 
@@ -64,7 +78,7 @@ export async function POST(request) {
     const now = new Date().toISOString()
     const { error: insertErr } = await supabase
       .from('wisdom_card_blocks')
-      .insert({ user_id: userId, card_id: cardId, blocked_at: now })
+      .insert({ user_id: authedUserId, card_id: cardId, blocked_at: now })
 
     if (insertErr) {
       console.error('POST wisdom-card-blocks insert error:', insertErr)

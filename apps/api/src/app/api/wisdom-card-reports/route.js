@@ -82,6 +82,22 @@ export async function POST(request) {
       ? String(detail).trim().slice(0, 500) || null
       : null
 
+    // ============================================================
+    // SECURITY (P3): derive the reporter from the Bearer token; IGNORE
+    // body.userId. service-role client (RLS bypassed) -- without this,
+    // anyone could forge reports as many fake users to flood the Apple
+    // Guideline 1.2 moderation queue. Token-ize -> one report per real
+    // account per card (existing unique-constraint idempotency holds).
+    // Mobile apiClient attaches the token.
+    // ============================================================
+    const _authHeader = request.headers.get('authorization') || ''
+    const _token = _authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!_token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const _authSupabase = getSupabase()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(_token)
+    if (_authErr || !_authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authedUserId = _authUser.id
+
     const supabase = getSupabase()
 
     // Idempotency check: did this user already report this card?
@@ -90,7 +106,7 @@ export async function POST(request) {
     const { data: existing, error: readErr } = await supabase
       .from('wisdom_card_reports')
       .select('reported_at, status')
-      .eq('user_id', userId)
+      .eq('user_id', authedUserId)
       .eq('card_id', cardId)
       .maybeSingle()
 
@@ -102,7 +118,7 @@ export async function POST(request) {
     if (existing) {
       // Still attempt auto-block (idempotent on server side too) in
       // case the original block somehow failed.
-      void autoBlock(supabase, userId, cardId)
+      void autoBlock(supabase, authedUserId, cardId)
       return NextResponse.json({
         success: true,
         reportedAt: existing.reported_at,
@@ -114,7 +130,7 @@ export async function POST(request) {
     const { error: insertErr } = await supabase
       .from('wisdom_card_reports')
       .insert({
-        user_id: userId,
+        user_id: authedUserId,
         card_id: cardId,
         reason,
         detail: cleanDetail,
@@ -129,7 +145,7 @@ export async function POST(request) {
 
     // Auto-block side effect. Errors logged but not propagated -- the
     // primary contract (report stored for admin review) succeeded.
-    void autoBlock(supabase, userId, cardId)
+    void autoBlock(supabase, authedUserId, cardId)
 
     return NextResponse.json({ success: true, reportedAt: now })
   } catch (error) {
