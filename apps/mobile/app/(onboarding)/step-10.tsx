@@ -116,15 +116,15 @@ export default function OnboardingStep10() {
 
           {/* Content + Input */}
           <View style={styles.content}>
-            <Text style={styles.headline}>Meet Your Companion</Text>
+            <Text style={styles.headline}>Meet the one who listens.</Text>
             <Text style={styles.subheadline}>
-              Your companion listens to your voice, catches your fleeting thoughts, and weaves them into wisdom.
+              Your companion doesn’t judge, doesn’t rush, and never skips the hard parts.{'\n'}{'\n'}They’re here for every vent, every win, every “I don’t know how to explain this feeling.”
             </Text>
-            <Text style={styles.eyebrow}>Every guide needs a name</Text>
+            <Text style={styles.eyebrow}>Give them a name. Make it yours.</Text>
             <TextInput
               value={name}
               onChangeText={handleChange}
-              placeholder="Type Name Here"
+              placeholder="Name your companion..."
               placeholderTextColor="rgba(255,255,255,0.25)"
               maxLength={12}
               style={styles.input}

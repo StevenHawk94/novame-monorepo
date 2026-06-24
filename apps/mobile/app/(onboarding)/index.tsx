@@ -36,7 +36,7 @@ export default function OnboardingStep1() {
       btn={
         <View>
           <PrimaryButton onPress={() => router.push('/(onboarding)/step-2')}>
-            Unlock My Potential
+            Start Finding Mine
           </PrimaryButton>
           {/* Stage 6.OnboardingSignInShortcut: returning users skip
               the 11-step onboarding entirely and go straight to
@@ -70,10 +70,10 @@ export default function OnboardingStep1() {
           resizeMode="contain"
         />
         <Text style={styles.tagline}>
-          Be Your <Text style={styles.taglineAccent}>Better Self</Text>
+          Your raw days hold real wisdom.
         </Text>
         <Text style={styles.subtagline}>
-          A personal growth companion to find your spark in everyday life.
+          You already have what you need to grow.{'\n'}NovaMe helps you find it.
         </Text>
       </View>
     </ImgPage>

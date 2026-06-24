@@ -14,39 +14,39 @@
 export { ASPIRE_POOL as ASPIRE_WORDS } from '@novame/core/constants/aspire-pool';
 
 export const S4_OPTS = [
-  { key: 'A' as const, label: "I'm almost there." },
-  { key: 'B' as const, label: 'It feels like a journey.' },
-  { key: 'C' as const, label: 'Honestly? Miles away.' },
+  { key: 'A' as const, label: 'Closer than I think — I just need clarity.' },
+  { key: 'B' as const, label: 'Like a real journey. Some days closer, some days not.' },
+  { key: 'C' as const, label: "Far. And that's exactly why I'm here." },
 ];
 
 export const S4_RESP: Record<'A' | 'B' | 'C', string> = {
-  A: "Love that energy. Let's close that final gap together.",
-  B: "Every great journey starts exactly where you are. You're in the right place.",
-  C: "That's completely okay. The biggest transformations often start from the hardest places.",
+  A: "You already know what you need.\nLet's help you hear it clearly.",
+  B: "Up some days, not others.\nThat's not a setback. That's what real growth actually looks like.",
+  C: "Noted. And respected.\nKnowing exactly where you stand is more honest than most people ever get.",
 };
 
 export const S7_OPTS = [
-  { key: 'A' as const, label: "I'm ready to discover who I really am." },
-  { key: 'B' as const, label: "I'm carrying a lot and need to let it go." },
-  { key: 'C' as const, label: 'I just want to become a better version of myself.' },
-  { key: 'D' as const, label: "Honestly, I'm just looking for a spark of inspiration." },
+  { key: 'A' as const, label: "I'm ready to stop guessing and start knowing myself." },
+  { key: 'B' as const, label: "I'm carrying a lot. I just need somewhere to put it." },
+  { key: 'C' as const, label: "I know there's a version of me I haven't met yet." },
+  { key: 'D' as const, label: "Honestly? I'm not sure. I just felt like something needed to change." },
 ];
 
 export const REVIEWS = [
   {
     name: 'Sarah T.',
     avatarFile: 'ob-9-user1.webp',
-    text: "I used to overthink everything. Now, instead of spiraling, I just hit 'Release' and talk to my companion. It takes my messy, midnight thoughts and {transforms them into real clarity}. It literally feels like magic.",
+    text: "I'm the person who used to lie awake rewriting conversations in my head at 2am. Now I just open NovaMe and let it out. Somehow it turns that whole mess into something I can actually work with. I don't know how it does that, but it does.",
   },
   {
     name: 'Michael R.',
     avatarFile: 'ob-9-user2.webp',
-    text: "It's not just for the hard days. I record my sudden sparks of inspiration and random daily thoughts here too. Seeing my own life decoded into these {beautiful Wisdom Cards} completely changed how I view myself.",
+    text: "I started using it on a bad day. But then I kept opening it on the normal days too — random thoughts, something that made me laugh, a work thing I couldn't shake. I didn't expect it to matter. But looking back at my cards now, I can actually see myself changing. That's wild.",
   },
   {
     name: 'Elena K.',
     avatarFile: 'ob-9-user3.webp',
-    text: "I spent years looking for advice from others, but this completely shifted my perspective. It takes my messy, everyday thoughts and reflects back a quiet wisdom I didn't even know I possessed, showing me the answers were already inside me. I'm not trying to become someone else anymore — I'm finally meeting the {best version of myself}.",
+    text: "I've read a lot of self-help. Listened to a lot of podcasts. Followed a lot of people who seemed to have it figured out. None of it really stuck. This is different because it's literally made from things I said. It's not someone else's framework. It's just — me, but clearer. I didn't expect that to hit as hard as it did.",
   },
 ];
 
@@ -54,7 +54,7 @@ export const INITIATIVE_CARD = {
   keywordId: 'action-initiative',
   cardNumber: 1,
   quoteShort:
-    'The simple act of showing up is the first step of every great awakening.',
+    "You showed up before you felt ready. That's not small. That's how it always starts.",
   insightFull:
-    "The sheer act of showing up is your first profound breakthrough. You are here because a quiet part of you is demanding growth. Many ignore that inner voice, but you chose to listen. This desire to evolve is never just a fleeting thought—it is a grounding strength and the true engine of your transformation. Actively seeking change proves the seeds of your highest self are already taking root. You don't need every answer mapped out today; you only need the courage to begin. Your willingness to change is the magic.",
+    "Something made you open this app today. Maybe you couldn't name it. Maybe it was just a quiet pull—a feeling that things could be different. That pull is real. And it's been there longer than you think. Most people feel it and scroll past, burying it under noise. But you stopped. You chose to look closer. You don't need to know where this is going yet, nor do you need to have the answers figured out. You just need to stay curious about yourself. That's all this takes. Listen to the quiet.",
 };

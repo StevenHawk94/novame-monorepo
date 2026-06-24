@@ -53,12 +53,11 @@ export default function OnboardingStep8() {
     <Shell step={8} hideProgress>
       {showConfetti ? <Confetti /> : null}
       <View style={styles.body}>
-        <Text style={styles.eyebrow}>Here it is.</Text>
         <Text style={styles.headline}>
-          Even downloading this app was a step toward growth.
+          See how that works?
         </Text>
         <Text style={styles.subheadline}>
-          Every thought, no matter how small, has the power to change you.
+          Even the smallest thing you share holds something worth keeping.
         </Text>
         <View style={styles.cardContainer}>
           <FlippableCard
@@ -90,14 +89,6 @@ function makeStyles(
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: scale(24),
-  },
-  eyebrow: {
-    color: '#C4B5FD',
-    ...t.footnote,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
-    textAlign: 'center',
-    marginBottom: scale(4),
   },
   headline: {
     color: '#FFFFFF',

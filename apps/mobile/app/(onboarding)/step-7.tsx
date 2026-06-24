@@ -35,9 +35,9 @@ export default function OnboardingStep7() {
   return (
     <Shell step={7} onBack={() => router.back()}>
       <View style={styles.body}>
-        <Text style={styles.headline}>Show us why you’re here.</Text>
+        <Text style={styles.headline}>What brought you here today?</Text>
         <Text style={styles.subheadline}>
-          Why did you open NovaMe today?
+          No filter needed. Just type the first thing that comes to mind
         </Text>
         <View style={styles.options}>
           {S7_OPTS.map((opt) => {
@@ -59,7 +59,7 @@ export default function OnboardingStep7() {
           disabled={!picked}
           onPress={() => router.push('/(onboarding)/step-spinning')}
         >
-          Turn This Into Wisdom
+          ✨ Transform My Answer
         </PrimaryButton>
       </View>
     </Shell>

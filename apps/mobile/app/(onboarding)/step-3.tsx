@@ -34,7 +34,7 @@ const PHASE_DURATIONS = {
   WORDS: 1400,
   CONVERGE: 600,
   BURST: 1000,
-  FINAL_HOLD: 1500,
+  FINAL_HOLD: 2500,
 };
 const FINAL_OVERLAP_MS = 300; // final text appears 300ms before burst ends
 const NAV_DELAY_MS =
@@ -403,7 +403,7 @@ function FinalLine() {
         ]}
       >
         <Text style={styles.finalText}>
-          Wow, I absolutely love that version of you.
+          That version of you is real.{'\n'}Not a fantasy. Not too much to ask for.{'\n'}It’s already in you, and we will help you manifest it.
         </Text>
       </Animated.View>
     </View>

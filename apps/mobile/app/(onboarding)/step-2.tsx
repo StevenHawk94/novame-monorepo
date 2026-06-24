@@ -45,11 +45,11 @@ export default function OnboardingStep2() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.headline}>Close your eyes and imagine.</Text>
+        <Text style={styles.headline}>Let’s start with you.</Text>
         <Text style={styles.subheadline}>
-          How would you describe your ideal self?
+          When you imagine the version of yourself you’re working toward, which words feel like that person?
         </Text>
-        <Text style={styles.hint}>Select 4 to 6 keywords</Text>
+        <Text style={styles.hint}>Pick 4 to 6. Don’t overthink it.</Text>
         <AspireWordsPicker selected={selected} onChange={handleChange} />
       </ScrollView>
       <View style={styles.footer}>

@@ -167,10 +167,10 @@ export default function OnboardingStep9() {
     <Shell step={9} onBack={() => router.back()}>
       <View style={styles.body}>
         <Text style={styles.headline}>
-          Don&apos;t just take our word for it.
+          You’re not the only one.
         </Text>
         <Text style={styles.subheadline}>
-          See how people just like you are turning everyday moments into lasting wisdom.
+          People use NovaMe for completely different things, and that’s the whole point.
         </Text>
 
         <View style={styles.carouselWrap}>

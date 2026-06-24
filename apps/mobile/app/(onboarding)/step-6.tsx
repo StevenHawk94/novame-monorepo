@@ -26,10 +26,10 @@ export default function OnboardingStep6() {
     >
       <View style={styles.center}>
         <Text style={styles.headline}>
-          You won&apos;t grow by copying someone else&apos;s story.
+          Nobody else’s journey can teach you yours.{'\n'}That’s because borrowed wisdom doesn’t stick.
         </Text>
         <Text style={styles.body}>
-          True growth comes from your own story — your raw, unfiltered experiences already hold the wisdom you’ve been searching for.
+          The answers you actually need are already inside your daily moments.{'\n'}NovaMe helps you decode them.
         </Text>
       </View>
     </ImgPage>

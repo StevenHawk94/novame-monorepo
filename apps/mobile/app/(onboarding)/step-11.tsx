@@ -47,14 +47,13 @@ export default function OnboardingStep11() {
   return (
     <ImgPage
       imgSource={require('@/../assets/images/onboarding/ob-11.webp')}
-      btn={<PrimaryButton onPress={handleStart}>Start Journey</PrimaryButton>}
+      btn={<PrimaryButton onPress={handleStart}>Let’s Go</PrimaryButton>}
     >
       <View style={styles.center}>
-        <Text style={styles.headline}>Your journey begins now.</Text>
+        <Text style={styles.headline}>Ready when you are.</Text>
         <Text style={styles.body}>
-          Share whatever is on your mind: a passing thought, a sudden mood, or a fleeting moment.{' '}
-          <Text style={styles.charName}>{charName}</Text>{' '}
-          will find the lesson within, guiding you closer to the person you&apos;ve always wanted to become.
+          Whenever something comes up — a thought, a feeling, a moment you want to hold onto — just tell{' '}
+          <Text style={styles.charName}>{charName}</Text>.{'\n'}{'\n'}They’ll help you find what it means.
         </Text>
       </View>
     </ImgPage>

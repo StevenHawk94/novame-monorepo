@@ -29,9 +29,9 @@ export default function OnboardingStep4() {
   return (
     <Shell step={4} onBack={() => router.back()}>
       <View style={styles.body}>
-        <Text style={styles.headline}>Be honest with yourself.</Text>
+        <Text style={styles.headline}>How does the gap feel right now?</Text>
         <Text style={styles.subheadline}>
-          How far away does that version of you feel right now?
+          Be honest. There’s no wrong answer here.
         </Text>
         <View style={styles.options}>
           {S4_OPTS.map((opt) => (

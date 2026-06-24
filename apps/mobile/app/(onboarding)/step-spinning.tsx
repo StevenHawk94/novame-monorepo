@@ -104,8 +104,8 @@ export default function OnboardingStepSpinning() {
   return (
     <View style={styles.root}>
       <CardSpinAnimation
-        label1="Crafting your first Wisdom Card..."
-        sublabel="Just a moment"
+        label1="Reading your selection..."
+        sublabel="Finding the lesson inside it..."
         duration={ANIMATION_DURATION_MS}
         onDone={() => setAnimationDone(true)}
       />
