@@ -178,6 +178,21 @@ export async function POST(request) {
     if (action === 'contribute') {
       if (!questionId || !cardId) return NextResponse.json({ error: 'Missing questionId or cardId' }, { status: 400 })
 
+      // SECURITY (P2): you may only contribute a card you own. Without this
+      // a caller could attach a victim's private card to a public question,
+      // exposing its quote_short + insight_full in the Seek feed. Mirrors
+      // generate-abc-cards: null user_id = shared/seed card (allowed); a
+      // non-null owner must match the authed user.
+      const { data: _ownCard } = await supabase
+        .from('wisdom_cards')
+        .select('user_id')
+        .eq('id', cardId)
+        .single()
+      if (!_ownCard) return NextResponse.json({ error: 'Card not found' }, { status: 404 })
+      if (_ownCard.user_id && _ownCard.user_id !== authedUserId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
       const { data: existing } = await supabase
         .from('seek_question_cards')
         .select('id')

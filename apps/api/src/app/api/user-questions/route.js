@@ -14,6 +14,17 @@ export async function GET(req) {
     const userId = searchParams.get('userId')
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
+    // SECURITY (P2 read-guard): require a Bearer token matching ?userId.
+    // user-questions GET leaks a user's submitted questions + rejection
+    // reasons via the service-role client (RLS bypassed). apiClient attaches token.
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const _authSupabase = getSupabase()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (_authUser.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const supabase = getSupabase()
     const { data: questions } = await supabase
       .from('seek_questions')

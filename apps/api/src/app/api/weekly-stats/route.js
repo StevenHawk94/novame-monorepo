@@ -25,6 +25,17 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+
+    // SECURITY (P2 read-guard): require a Bearer token matching ?userId.
+    // weekly-stats leaks another user's weekly counts via the service-role
+    // client (RLS bypassed). Mobile apiClient attaches the token.
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    const _authSupabaseWs = getSupabaseAdmin()
+    const { data: { user: _authUserWs }, error: _authErrWs } = await _authSupabaseWs.auth.getUser(token)
+    if (_authErrWs || !_authUserWs) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    if (_authUserWs.id !== userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
