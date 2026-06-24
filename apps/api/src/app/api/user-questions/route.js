@@ -38,13 +38,33 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Question must be 200 characters or less' }, { status: 400 })
     }
 
+    // ============================================================
+    // SECURITY: derive the author from the Bearer token; IGNORE any
+    // userId in the body. service-role client (RLS bypassed) -- without
+    // this, anyone could post a Seek question as ANY user, with the
+    // victim's display_name + avatar attached. We use _authUser.id for
+    // the profile lookup and submitted_by, so a spoofed body.userId is
+    // inert. Mobile apiClient attaches the token.
+    // ============================================================
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = getSupabase()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const authedUserId = _authUser.id
+
     const supabase = getSupabase()
 
     // Get user profile for display name + avatar
     const { data: profile } = await supabase
       .from('profiles')
       .select('display_name, avatar_url')
-      .eq('id', userId).single()
+      .eq('id', authedUserId).single()
 
     const { data, error } = await supabase
       .from('seek_questions')
@@ -53,7 +73,7 @@ export async function POST(req) {
         question_tag: '',
         creator_name: profile?.display_name || 'Community Member',
         creator_avatar: profile?.avatar_url || '',
-        submitted_by_user_id: userId,
+        submitted_by_user_id: authedUserId,
         status: 'pending',      // pending | approved | rejected
         is_published: false,
         card_count: 0,

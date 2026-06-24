@@ -154,6 +154,25 @@ export async function POST(request) {
     const { userId, action, questionId, cardId } = await request.json()
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
+    // ============================================================
+    // SECURITY: derive the contributor from the Bearer token; IGNORE
+    // body.userId. service-role client (RLS bypassed) -- without this,
+    // anyone could attach a card to a question as any contributed_by.
+    // We set contributed_by = _authUser.id. Mobile apiClient attaches
+    // the token. (Ownership of cardId is a separate follow-up.)
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = getSupabase()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const authedUserId = _authUser.id
+
     const supabase = getSupabase()
 
     if (action === 'contribute') {
@@ -173,7 +192,7 @@ export async function POST(request) {
       await supabase.from('seek_question_cards').insert({
         question_id: questionId,
         card_id: cardId,
-        contributed_by: userId,
+        contributed_by: authedUserId,
       })
 
       return NextResponse.json({ success: true })
