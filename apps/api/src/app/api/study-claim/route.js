@@ -103,10 +103,18 @@ export async function POST(req) {
         .update({ character_mode: 'play' })
         .eq('id', userId)
         .eq('character_mode', 'study')
+      // Backfill the user's CURRENT level/exp so the response shape is never
+      // partial (the modal renders coherent Lv./XP, +0 gained, if it ever
+      // surfaces). The client ALSO suppresses the celebration on
+      // nothingToClaim, so this is defense-in-depth on the contract.
+      const curLevelInfo = getLevelFromExp(charData?.total_exp || 0)
       return NextResponse.json({
         success: true,
         expGained: 0, studyHours: 0, studyMins: 0, totalSouls: 0,
         cardKeyword: 'Momentum', resonanceBoost: 0, nothingToClaim: true,
+        oldExp: curLevelInfo.currentExp, oldLevel: curLevelInfo.level, oldExpNeeded: curLevelInfo.expNeeded,
+        newExp: curLevelInfo.currentExp, newLevel: curLevelInfo.level, newExpNeeded: curLevelInfo.expNeeded,
+        leveledUp: false,
       })
     }
 

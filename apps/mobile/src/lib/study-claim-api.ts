@@ -18,6 +18,9 @@ export type StudyClaimResponse = {
   newLevel: number;
   newExpNeeded: number;
   leveledUp: boolean;
+  /** Server signals a no-op claim (already settled / 0 banked). The modal
+   *  suppresses the celebration when this is true. */
+  nothingToClaim?: boolean;
 };
 
 export async function postStudyClaim(

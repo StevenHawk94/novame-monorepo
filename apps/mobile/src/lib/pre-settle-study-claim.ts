@@ -60,6 +60,10 @@ export async function preSettleStudyClaim(
   if (fresh.mode === 'study' && wpNow <= 0) {
     opts.onClaimOwned?.();
     const result = await postStudyClaim(userId);
+    // No-op claim (already settled / nothing banked): don't stash, so the
+    // cold-start / resume path never mounts a blank "+0 XP" modal. Ownership
+    // was marked above, so the in-session detector won't re-fire either.
+    if (result?.nothingToClaim) return false;
     requestStudyClaim(userId, result);
     return true;
   }

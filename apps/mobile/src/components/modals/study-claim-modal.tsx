@@ -118,6 +118,15 @@ export function StudyClaimModal({
     };
   }, [userId, initialResult, progress]);
 
+  // Suppress the celebration for a no-op claim (already settled / nothing
+  // banked). The server returns nothingToClaim:true; we close immediately so
+  // the coordinator releases the 'claim' slot and the user never sees a blank
+  // "+0 XP" modal. Covers both the pre-settled (initialResult) and
+  // self-fetched paths since both resolve into `result`.
+  useEffect(() => {
+    if (result?.nothingToClaim) onClose();
+  }, [result, onClose]);
+
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
   }));
@@ -155,7 +164,7 @@ export function StudyClaimModal({
               <Text style={styles.buttonText}>Close</Text>
             </Pressable>
           </View>
-        ) : result ? (
+        ) : result && !result.nothingToClaim ? (
           <View style={styles.card}>
             <Text style={styles.tada}>🎉</Text>
             <Text style={styles.title}>Session Complete!</Text>
