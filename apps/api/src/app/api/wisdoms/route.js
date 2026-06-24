@@ -40,6 +40,36 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
 
+    // ============================================================
+    // SECURITY: require a Bearer token whose user matches ?userId.
+    // /api/wisdoms returns the caller's OWN private journal entries
+    // (text + insight cards). This route uses the service-role client
+    // (RLS bypassed), so this app-layer guard is the ONLY access
+    // control. Same inline pattern as me-stats / daily-tasks. Mobile
+    // apiClient attaches the token automatically, so legitimate
+    // callers are unaffected; only direct cross-user reads are blocked.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[wisdoms] rejected: no bearer token')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    if (_authErr || !_authUser) {
+      console.warn('[wisdoms] rejected: token verify failed', _authErr && _authErr.message)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUser.id !== userId) {
+      console.warn('[wisdoms] rejected: token user', _authUser.id, '!= query userId', userId)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const limit = Math.min(parseInt(searchParams.get('limit') || '30', 10), 100)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 

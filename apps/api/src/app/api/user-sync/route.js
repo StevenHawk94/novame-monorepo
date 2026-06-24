@@ -44,6 +44,30 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+
+    // ============================================================
+    // SECURITY: require a Bearer token whose user matches ?userId.
+    // user-sync GET returns the FULL profile row (email, birthday,
+    // aspire data, subscription_tier) via the service-role client
+    // (RLS bypassed) -- without this guard anyone could read any
+    // user's profile by id. Mobile apiClient attaches the token.
+    // ============================================================
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!token) {
+      console.warn('[user-sync GET] rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabaseGet = getSupabaseAdmin()
+    const { data: { user: _authUserGet }, error: _authErrGet } = await _authSupabaseGet.auth.getUser(token)
+    if (_authErrGet || !_authUserGet) {
+      console.warn('[user-sync GET] rejected: token verify failed', _authErrGet && _authErrGet.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (_authUserGet.id !== userId) {
+      console.warn('[user-sync GET] rejected: token user', _authUserGet.id, '!= query userId', userId)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
@@ -359,6 +383,28 @@ export async function POST(request) {
       betterSelfScore,
       wisdomPortrait,
     } = await request.json()
+
+    // ============================================================
+    // SECURITY: derive the user from the Bearer token; IGNORE any
+    // userId in the request body. user-sync POST upserts a profile via
+    // the service-role client (RLS bypassed) -- without this, anyone
+    // could overwrite ANY user's profile by POSTing their id. We write
+    // to _authUser.id only, so a spoofed body.userId can at most target
+    // the caller's own row. Mobile apiClient attaches the token.
+    // ============================================================
+    const _authHeader = request.headers.get('authorization') || ''
+    const _token = _authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!_token) {
+      console.warn('[user-sync POST] rejected: no bearer token')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const _authSupabasePost = getSupabaseAdmin()
+    const { data: { user: _authUser }, error: _authErr } = await _authSupabasePost.auth.getUser(_token)
+    if (_authErr || !_authUser) {
+      console.warn('[user-sync POST] rejected: token verify failed', _authErr && _authErr.message)
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const authedUserId = _authUser.id
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
@@ -413,7 +459,7 @@ export async function POST(request) {
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
-        id: userId,
+        id: authedUserId,
         ...updates,
       })
       .select()
