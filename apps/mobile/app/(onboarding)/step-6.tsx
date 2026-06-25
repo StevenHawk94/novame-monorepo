@@ -26,10 +26,10 @@ export default function OnboardingStep6() {
     >
       <View style={styles.center}>
         <Text style={styles.headline}>
-          Nobody else’s journey can teach you yours.{'\n'}That’s because borrowed wisdom doesn’t stick.
+          Nobody else’s journey can teach you yours.
         </Text>
         <Text style={styles.body}>
-          The answers you actually need are already inside your daily moments.{'\n'}NovaMe helps you decode them.
+          The answers you actually need are already inside your daily moments.
         </Text>
       </View>
     </ImgPage>

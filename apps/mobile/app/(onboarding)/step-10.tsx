@@ -118,13 +118,13 @@ export default function OnboardingStep10() {
           <View style={styles.content}>
             <Text style={styles.headline}>Meet the one who listens.</Text>
             <Text style={styles.subheadline}>
-              Your companion doesn’t judge, doesn’t rush, and never skips the hard parts.{'\n'}{'\n'}They’re here for every vent, every win, every “I don’t know how to explain this feeling.”
+              Your guide through the journey to your best self.
             </Text>
-            <Text style={styles.eyebrow}>Give them a name. Make it yours.</Text>
+            <Text style={styles.eyebrow}>Give Them A Name.</Text>
             <TextInput
               value={name}
               onChangeText={handleChange}
-              placeholder="Name your companion..."
+              placeholder="Type Here"
               placeholderTextColor="rgba(255,255,255,0.25)"
               maxLength={12}
               style={styles.input}

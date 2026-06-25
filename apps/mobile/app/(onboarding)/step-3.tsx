@@ -403,7 +403,7 @@ function FinalLine() {
         ]}
       >
         <Text style={styles.finalText}>
-          That version of you is real.{'\n'}Not a fantasy. Not too much to ask for.{'\n'}It’s already in you, and we will help you manifest it.
+          That version of you is real, not a fantasy.{'\n'}{'\n'}It’s already in you, we will help you manifest it.
         </Text>
       </Animated.View>
     </View>
