@@ -175,6 +175,22 @@ export async function POST(request) {
       return Response.json({ error: 'Failed to update profile', details: error.message }, { status: 500 })
     }
 
+    // When aspire_words changed, invalidate this week's cached weekly
+    // report so it regenerates with the new trait set (otherwise the
+    // user sees stale traits for the rest of the ISO week). Best-effort.
+    if (aspireWords !== undefined) {
+      const _now = new Date()
+      const _dow = _now.getDay()
+      const _mon = new Date(_now)
+      _mon.setDate(_now.getDate() - (_dow === 0 ? 6 : _dow - 1))
+      const _weekStart = _mon.toISOString().split('T')[0]
+      await supabase
+        .from('weekly_reports')
+        .delete()
+        .eq('user_id', userId)
+        .eq('week_start', _weekStart)
+    }
+
     // Cascade name/avatar changes to the redundant snapshots stamped on
     // the user's previously-published content, so a rename / new avatar
     // also shows up on their existing cards and seek questions (not just
