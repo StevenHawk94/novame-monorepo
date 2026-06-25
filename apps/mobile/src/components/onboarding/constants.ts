@@ -54,7 +54,7 @@ export const INITIATIVE_CARD = {
   keywordId: 'action-initiative',
   cardNumber: 1,
   quoteShort:
-    "You showed up before you felt ready. That's not small. That's how it always starts.",
+    "By showing up, you've already beaten the crowd and your past self.",
   insightFull:
     "Something made you open this app today. Maybe you couldn't name it. Maybe it was just a quiet pull—a feeling that things could be different. That pull is real. And it's been there longer than you think. Most people feel it and scroll past, burying it under noise. But you stopped. You chose to look closer. You don't need to know where this is going yet, nor do you need to have the answers figured out. You just need to stay curious about yourself. That's all this takes. Listen to the quiet.",
 };

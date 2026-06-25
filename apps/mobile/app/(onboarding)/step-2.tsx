@@ -78,8 +78,9 @@ function makeStyles(
     paddingTop: scale(16),
   },
   headline: {
-    color: '#FFFFFF',
-    ...t.title2,
+    color: '#A855F7',
+    ...t.footnote,
+    fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     marginBottom: scale(4),
   },

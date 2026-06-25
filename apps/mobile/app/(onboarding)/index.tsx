@@ -70,7 +70,7 @@ export default function OnboardingStep1() {
           resizeMode="contain"
         />
         <Text style={styles.tagline}>
-          Your raw days hold real wisdom.
+          Your raw days hold <Text style={styles.taglineAccent}>real wisdom</Text>.
         </Text>
         <Text style={styles.subtagline}>
           You already have what you need to grow.{'\n'}NovaMe helps you find it.

@@ -110,7 +110,7 @@ function makeStyles(
     justifyContent: 'center',
   },
   flipHint: {
-    color: 'rgba(255,255,255,0.25)',
+    color: '#A855F7',
     ...t.caption2,
     fontFamily: 'Inter_400Regular',
     marginTop: scale(12),
