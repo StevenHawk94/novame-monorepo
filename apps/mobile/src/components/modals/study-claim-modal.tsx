@@ -141,6 +141,14 @@ export function StudyClaimModal({
     onClose();
   };
 
+  // No-op claim (already settled / nothing banked): render nothing at all --
+  // no <Modal>, so the transparent full-screen overlay can never block Home
+  // touches. The nothingToClaim effect above has already called onClose() to
+  // release the coordinator's 'claim' slot.
+  if (result?.nothingToClaim) {
+    return null;
+  }
+
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={[styles.root, { paddingBottom: insets.bottom + 16 }]}>
