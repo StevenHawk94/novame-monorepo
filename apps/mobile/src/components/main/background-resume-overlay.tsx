@@ -36,7 +36,7 @@
  * the flag is in-memory and resets on next launch.
  */
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, StyleSheet, View } from 'react-native';
+import { Image, Modal, StyleSheet, View } from 'react-native';
 
 import { getCurrentSession } from '@/lib/auth';
 import { preSettleStudyClaim } from '@/lib/pre-settle-study-claim';
@@ -47,7 +47,7 @@ import {
 import { refreshAllCaches } from '@/lib/cache-refresh-all';
 import { hideResumeOverlay } from '@/lib/background-resume-store';
 
-const LOGO = require('../../../assets/images/logo.png');
+const SPLASH = require('../../../assets/splash.png');
 const RESUME_TIMEOUT_MS = 8000;
 
 export function BackgroundResumeOverlay() {
@@ -104,30 +104,23 @@ export function BackgroundResumeOverlay() {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.root}>
-        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-        <ActivityIndicator
-          size="small"
-          color="rgba(255,255,255,0.85)"
-          style={styles.spinner}
-        />
+        <Image source={SPLASH} style={styles.splashImage} resizeMode="contain" />
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  // Mirror the native splash exactly: full-bleed splash.png contained on
+  // the same #7C3AED, no spinner -- so the iOS launch-screen flash on a
+  // long-background resume transitions seamlessly into this overlay and the
+  // user perceives a single continuous launch screen.
   root: {
     flex: 1,
     backgroundColor: '#7C3AED',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 24,
-  },
-  spinner: {
-    marginTop: 4,
+  splashImage: {
+    width: '100%',
+    height: '100%',
   },
 });
