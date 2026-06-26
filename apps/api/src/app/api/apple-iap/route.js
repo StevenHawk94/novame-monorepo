@@ -228,12 +228,18 @@ export async function POST(request) {
     // purchaseDate model + Stripe's billing_cycle_anchor (preserve, don't reset).
     const { data: existingSub } = await supabase
       .from('subscriptions')
-      .select('current_period_start, current_period_end, status')
+      .select('current_period_start, current_period_end, status, plan')
       .eq('user_id', userId)
       .maybeSingle()
     const isSamePeriod =
       existingSub &&
       existingSub.status === 'active' &&
+      // QuotaFix-2: only preserve the period anchor within the SAME tier.
+      // A genuine tier change (e.g. basic -> pro upgrade) must reset the
+      // quota window to now, otherwise the prior tier's usage keeps
+      // counting against the new, higher limit (e.g. 11/15 -> 11/30
+      // instead of 0/30). Same-tier reactivation/restore still preserves.
+      existingSub.plan === tier &&
       existingSub.current_period_start &&
       existingSub.current_period_end &&
       new Date(periodEnd).getTime() <= new Date(existingSub.current_period_end).getTime()
