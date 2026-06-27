@@ -422,7 +422,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     const aiResult = await callAI({
       systemInstruction: SYSTEM_INSTRUCTION,
       userText: userPrompt,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 5000, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.7, maxOutputTokens: 5000, thinkingConfig: { thinkingBudget: 1024 } },
     })
     console.log(`[generate-card] Used model: ${aiResult.model}`)
     result = parseAIJson(aiResult.text)
