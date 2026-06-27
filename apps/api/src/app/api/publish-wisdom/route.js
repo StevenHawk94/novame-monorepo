@@ -443,10 +443,17 @@ export async function POST(request) {
       } catch (e) { console.log('Engagement boost scheduling failed:', e.message) }
     }
 
-    // Character B message
+    // Character B message — when there is text, fire the call NOW but DON'T
+    // await it here, so it runs in parallel with the (slower) insight card
+    // generation below instead of adding its round-trip to the publish chain
+    // sequentially. Both only consume transcribedText and are independent.
+    // generateCharacterBMessage never throws (it catches internally and
+    // returns a fallback), so an orphaned promise on an early return is safe.
+    // Awaited just before the response is assembled.
     let characterBMessage = null
+    let characterBPromise = null
     if (transcribedText) {
-      characterBMessage = await generateCharacterBMessage(userId, transcribedText, supabase)
+      characterBPromise = generateCharacterBMessage(userId, transcribedText, supabase)
     } else {
       await supabase.from('profiles').update({ last_wisdom_created_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', userId)
     }
@@ -706,6 +713,9 @@ export async function POST(request) {
     // because the field is a dead type-compat field; the URL would
     // 404 in a few seconds anyway once cleanup completes.
     await cleanupAudioFile()
+    // Resolve the character-B message started in parallel with card
+    // generation above (by now it is almost always already settled).
+    if (characterBPromise) characterBMessage = await characterBPromise
     return NextResponse.json({
       success: true,
       wisdom: { id: wisdom.id, audioUrl: '', text: transcribedText, categories, duration: isTyped ? 0 : duration, isPublic },
