@@ -1,12 +1,10 @@
 /**
- * lib/ai.js — Shared AI invocation layer with 4-tier fallback
+ * lib/ai.js — Shared AI invocation layer with Gemini -> DeepSeek fallback
  *
- * Tier 1: gemini-2.5-flash-lite      (cheapest, fastest, default)
- * Tier 2: gemini-3.1-flash-lite      (newer generation lite, fallback if Tier 1 fails)
- * Tier 3: gemini-2.5-flash           (heavier Gemini model)
- * Tier 4: deepseek-chat (V3.2)       (external fallback if all Gemini fails)
+ * Tier 1: gemini-2.5-flash           (primary)
+ * Tier 2: deepseek-chat (V3.2)       (external fallback if Gemini fails)
  *
- * Per-call timeout: 5s (4 tiers x 5s = 20s, fits within Vercel edge 25s limit).
+ * Per-call timeout: 5s (fits within Vercel edge 25s limit).
  *
  * All Gemini calls use system_instruction separation to maximize implicit cache hits.
  * Safety filters set to BLOCK_NONE so user diary content (emotions, stress, anger) is never blocked.
@@ -16,8 +14,6 @@ const GEMINI_API_KEY = () => process.env.GEMINI_API_KEY
 const DEEPSEEK_API_KEY = () => process.env.DEEPSEEK_API_KEY
 
 const GEMINI_MODELS = [
-  'gemini-3.1-flash-lite',
-  'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
 ]
 

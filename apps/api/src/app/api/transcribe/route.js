@@ -7,9 +7,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 // Transcription uses multimodal (audio input) — DeepSeek can't do this,
 // so we use Gemini-only fallback chain.
 const MODELS = [
-  'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
+  'gemini-3.1-flash-lite',
 ]
 
 const SAFETY_NONE = [
