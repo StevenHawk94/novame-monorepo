@@ -24,6 +24,7 @@ import {
   requestStudyClaim,
   wasColdStartClaimHandled,
   isExternalClaimInFlight,
+  isClaimDeferred,
 } from '@/lib/study-claim-store';
 
 import {
@@ -146,6 +147,10 @@ export function useStudyClaimDetector() {
       // -- the overlay clears this when it's done and the poll resumes as
       // the normal in-session fallback.
       if (isExternalClaimInFlight()) return;
+      // A prior claim attempt failed with a network error and was deferred
+      // to the Growth "Claim" button + next app open. Don't auto-pop here --
+      // that would interrupt whatever the user is currently doing.
+      if (isClaimDeferred()) return;
       const cached = getCachedCharacterState();
       if (!cached) return;
       if (!evaluate(cached.mode, cached.wp, cached.wpLastFetchedAtMs)) return;

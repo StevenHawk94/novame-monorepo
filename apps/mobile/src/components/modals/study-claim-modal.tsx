@@ -35,6 +35,7 @@ import {
   getCachedCharacterState,
 } from '@/lib/character-state';
 import { postStudyClaim, type StudyClaimResponse } from '@/lib/study-claim-api';
+import { setClaimDeferred } from '@/lib/study-claim-store';
 import { haptics } from '@/lib/haptics';
 
 const FILL_DURATION_MS = 900;
@@ -104,11 +105,26 @@ export function StudyClaimModal({
       try {
         const res = await postStudyClaim(userId);
         if (cancelled) return;
+        setClaimDeferred(false);
         setResult(res);
         animateTo(res);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Could not claim session');
+        const msg = e instanceof Error ? e.message : '';
+        // Network failure (offline / server unreachable): don't show an
+        // error wall and don't auto-retry. Defer instead -- the session
+        // stays claimable server-side; the Growth button shows "Claim" and
+        // it auto-pops next app open. Non-network errors still surface.
+        if (
+          msg.includes('Network request failed') ||
+          msg.includes('NetworkError') ||
+          msg.includes('Failed to fetch')
+        ) {
+          setClaimDeferred(true);
+          onClose();
+          return;
+        }
+        setError(msg || 'Could not claim session');
       } finally {
         if (!cancelled) setSubmitting(false);
       }

@@ -60,6 +60,7 @@ import {
 import { WisdomLogRow } from '@/components/growth/wisdom-log-row';
 import { supabase } from '@/lib/supabase';
 import { getCachedMeStats } from '@/lib/me-stats';
+import { requestStudyClaim, setClaimDeferred } from '@/lib/study-claim-store';
 import { setInsightPayload } from '@/lib/insight-payload-store';
 import { haptics } from '@/lib/haptics';
 import {
@@ -445,6 +446,16 @@ export default function GrowthTab() {
     }
   };
 
+  // Manual claim from the Growth Study-Mode button: fires when a finished
+  // session's reward couldn't be auto-claimed (network). Clears the deferred
+  // flag and pops the claim modal; on success the 2s cache poll flips the
+  // button back to its normal state within ~2s.
+  const onClaimStudy = useCallback(() => {
+    if (!userId) return;
+    setClaimDeferred(false);
+    requestStudyClaim(userId);
+  }, [userId]);
+
   // === Task completion flow ===
   // Industry-standard optimistic flow: the user sees the row vanish
   // and the EXP bar start filling immediately, before the server
@@ -733,6 +744,7 @@ export default function GrowthTab() {
                   wp={wpVisual}
                   busy={switchingMode}
                   onStart={onStartFocus}
+                  onClaim={onClaimStudy}
                 />
               </View>
               <View style={styles.tasksBlock}>

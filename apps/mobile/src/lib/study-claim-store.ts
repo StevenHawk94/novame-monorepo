@@ -115,6 +115,25 @@ export function isExternalClaimInFlight(): boolean {
   return _externalClaimInFlight;
 }
 
+// ---- Deferred claim (network failure) ----
+//
+// When a claim POST fails with a NETWORK error (device offline / server
+// unreachable), we do NOT show an error and do NOT auto-retry -- a sudden
+// modal mid-recording would break the experience. The claim is "deferred":
+// the in-session poll skips auto-popping it, and the Growth Study-Mode
+// button surfaces a manual "Claim" (the session stays 'study' server-side,
+// so the user can't start a new study anyway). It auto-pops on the next app
+// open -- this in-memory flag resets on cold start.
+let _claimDeferred = false;
+
+export function setClaimDeferred(v: boolean): void {
+  _claimDeferred = v;
+}
+
+export function isClaimDeferred(): boolean {
+  return _claimDeferred;
+}
+
 /**
  * React hook: current pending claim state (or null). Re-renders the consumer
  * when it changes. Used by (tabs)/_layout.tsx.

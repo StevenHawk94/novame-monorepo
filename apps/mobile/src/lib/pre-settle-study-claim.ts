@@ -36,7 +36,7 @@ import {
   fetchCharacterState,
 } from '@/lib/character-state';
 import { postStudyClaim } from '@/lib/study-claim-api';
-import { requestStudyClaim } from '@/lib/study-claim-store';
+import { requestStudyClaim, setClaimDeferred } from '@/lib/study-claim-store';
 
 type PreSettleOpts = {
   /** Invoked right before the POST so the caller can claim ownership. */
@@ -59,13 +59,32 @@ export async function preSettleStudyClaim(
   const wpNow = applyLocalWPDecay(fresh.wp, fresh.mode, fresh.wpLastFetchedAtMs);
   if (fresh.mode === 'study' && wpNow <= 0) {
     opts.onClaimOwned?.();
-    const result = await postStudyClaim(userId);
-    // No-op claim (already settled / nothing banked): don't stash, so the
-    // cold-start / resume path never mounts a blank "+0 XP" modal. Ownership
-    // was marked above, so the in-session detector won't re-fire either.
-    if (result?.nothingToClaim) return false;
-    requestStudyClaim(userId, result);
-    return true;
+    try {
+      const result = await postStudyClaim(userId);
+      setClaimDeferred(false);
+      // No-op claim (already settled / nothing banked): don't stash, so the
+      // cold-start / resume path never mounts a blank "+0 XP" modal. Ownership
+      // was marked above, so the in-session detector won't re-fire either.
+      if (result?.nothingToClaim) return false;
+      requestStudyClaim(userId, result);
+      return true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      // Network failure on the cold-start / resume claim: defer instead of
+      // surfacing or auto-retrying. The session stays 'study' server-side;
+      // the Growth button shows "Claim" and it auto-pops next app open.
+      // Re-throw non-network errors so genuine server bugs still surface
+      // (the in-session detector will then settle / show them).
+      if (
+        msg.includes('Network request failed') ||
+        msg.includes('NetworkError') ||
+        msg.includes('Failed to fetch')
+      ) {
+        setClaimDeferred(true);
+        return false;
+      }
+      throw e;
+    }
   }
   return false;
 }

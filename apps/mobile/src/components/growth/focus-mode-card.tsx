@@ -56,14 +56,29 @@ export type FocusModeCardProps = {
   wp: number;
   busy?: boolean;
   onStart: () => void;
+  /** Tapped when the button is in the "Claim" state (study ended, wp<=0). */
+  onClaim?: () => void;
 };
 
-export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
+export function FocusModeCard({ mode, wp, busy, onStart, onClaim }: FocusModeCardProps) {
   const isStudy = mode === 'study';
   const wpZero = wp <= 0;
+  // A finished study session stays mode === 'study' server-side until the
+  // claim POST flips it to 'play'. In that pending state (wp <= 0) the button
+  // is the manual "Claim" affordance -- a pink CTA, not the disabled green
+  // "XP Boost Active". Purely derived from mode/wp, so it leaves this state
+  // automatically within ~2s of a successful claim (the 2s cache poll).
+  const claimable = isStudy && wpZero;
   const canStart = !isStudy && !wpZero && !busy;
+  const ctaPink = canStart || claimable;
 
-  const buttonLabel = isStudy ? 'XP Boost Active' : wpZero ? 'Low WP' : 'Start';
+  const buttonLabel = claimable
+    ? 'Claim'
+    : isStudy
+      ? 'XP Boost Active'
+      : wpZero
+        ? 'Low WP'
+        : 'Start';
 
   // Countdown when study mode is active: time remaining until WP hits 0.
   // wp / decayPerHour = hours remaining. Recomputed on every render
@@ -75,11 +90,13 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
   const studyM = studyTotalMinutes % 60;
   const studyCountdown = `${studyH}h ${studyM}m`;
 
-  const sublabel = isStudy
-    ? `XP is accumulating faster. Study ends in ${studyCountdown}.`
-    : wpZero
-      ? 'Recover Your WP to Start'
-      : 'Activate to earn XP faster';
+  const sublabel = claimable
+    ? 'Session complete — claim your XP reward.'
+    : isStudy
+      ? `XP is accumulating faster. Study ends in ${studyCountdown}.`
+      : wpZero
+        ? 'Recover Your WP to Start'
+        : 'Activate to earn XP faster';
 
   // Breathing animation SharedValue. Oscillates 0 <-> 1 when canStart,
   // held at 0 otherwise. Cancellation is explicit on the else branch
@@ -117,13 +134,13 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
   // PhaseRecording pause button, Discover FAB, Insight button on My
   // Logs rows). Purple is now reserved for backgrounds and ambient
   // states, pink for primary calls-to-action.
-  const buttonColors: [string, string] = canStart
+  const buttonColors: [string, string] = ctaPink
     ? ['#F472B6', '#EC4899']
     : isStudy
       ? ['#34D399', '#10B981']
       : ['#F87171', '#EF4444'];
 
-  const shadowColor = canStart ? '#EC4899' : isStudy ? '#10B981' : '#EF4444';
+  const shadowColor = ctaPink ? '#EC4899' : isStudy ? '#10B981' : '#EF4444';
 
   return (
     <View style={styles.cardWrap}>
@@ -150,13 +167,13 @@ export function FocusModeCard({ mode, wp, busy, onStart }: FocusModeCardProps) {
             shadowColor only. */}
         <Animated.View style={canStart ? breathStyle : undefined}>
           <Pressable
-            onPress={onStart}
-            disabled={!canStart}
+            onPress={claimable ? onClaim : onStart}
+            disabled={!ctaPink}
             style={({ pressed }) => [
               styles.btnWrap,
               { shadowColor },
-              !canStart && styles.btnWrapDisabled,
-              pressed && canStart && styles.btnWrapPressed,
+              !ctaPink && styles.btnWrapDisabled,
+              pressed && ctaPink && styles.btnWrapPressed,
             ]}
           >
             <LinearGradient
