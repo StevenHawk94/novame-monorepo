@@ -1709,7 +1709,7 @@ function PhasePublishing({
     inflightRef.current = true;
 
     const isTyped = !recordingResult; // entered from type-input branch
-    const minHoldMs = 2500;
+    const minHoldMs = 5000;
 
     (async () => {
       try {
@@ -2990,7 +2990,7 @@ export default function RecordModal() {
             sublabel={
               phase === PHASE.PUBLISHING
                 ? 'Almost there'
-                : 'Ready in about 15–20 seconds.'
+                : 'Ready in about 30–40 seconds.'
             }
           />
         </View>
