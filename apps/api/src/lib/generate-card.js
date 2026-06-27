@@ -243,7 +243,7 @@ These are generation conditions, not post-generation fixes. Do not produce any b
 - insight_full and mirror_hook_body must be doing different jobs — not overlapping.
 - reflective_question must be under 25 words, unanswerable in a sentence, and invite — not corner.
 - Both tasks must use specific details from the entry — not generic self-improvement instructions.
-- LENGTH IS A HARD CAP, NOT A TARGET: every field MUST stay within its character maximum — insight_full ≤ 600 (~95 words), peer_comment ≤ 700 (~110 words), mirror_hook_body ≤ 700 (~110 words), flipped_lens_body ≤ 1000 (~160 words), quote_short ≤ 60, each task ≤ 100. The UI clips anything longer, so going over is a visible defect. Count as you write; if a draft block runs over its cap, cut and tighten it until it fits BEFORE returning. When richness and the cap conflict, the cap always wins.
+- LENGTH MUST LAND INSIDE THE RANGE — RESPECT BOTH ENDS: each field has a stated character range; the output has to fall inside it. insight_full 500–600, peer_comment 500–700, mirror_hook_body 600–700, flipped_lens_body 800–1000, quote_short ≤ 60, each task 10–30 words (≤ 100 chars). Do NOT fall below the minimum (a short block reads thin and unfinished) and do NOT exceed the maximum (the UI clips anything longer). Aim for the upper-middle of each range; expand with specific concrete detail to reach the floor, and trim only if you run over the ceiling. Count as you write.
 - LANGUAGE: write every field in natural English, regardless of the language the user's entry is written in. Never output any other language.
 - Every block must pass this test: could this have been written without reading this specific entry? If yes, it is not specific enough — do not write it.
 - Every sentence must pass this test: could this appear on a Pinterest board or a Headspace notification? If yes, it is not earned enough — do not write it.
@@ -422,7 +422,7 @@ export async function generateWisdomCard(supabase, wisdomId, wisdomText, userId,
     const aiResult = await callAI({
       systemInstruction: SYSTEM_INSTRUCTION,
       userText: userPrompt,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 5000 },
+      generationConfig: { temperature: 0.7, maxOutputTokens: 5000, thinkingConfig: { thinkingBudget: 0 } },
     })
     console.log(`[generate-card] Used model: ${aiResult.model}`)
     result = parseAIJson(aiResult.text)
