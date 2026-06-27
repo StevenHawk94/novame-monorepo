@@ -69,7 +69,7 @@ Examples:
 - "Whoa, look at you dropping major truth bombs! I'm taking notes over here before you start charging for this wisdom."
 - "Are you secretly a wise old owl in a human suit? Because that was some next-level, mind-blowing insight."`,
         userText: wisdomText.substring(0, 500),
-        generationConfig: { temperature: 0.9, maxOutputTokens: 50 },
+        generationConfig: { temperature: 0.9, maxOutputTokens: 80, thinkingConfig: { thinkingBudget: 0 } },
       })
       if (text) generatedMessage = text
     } catch (aiError) {
