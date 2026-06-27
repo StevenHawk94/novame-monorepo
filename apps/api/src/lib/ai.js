@@ -29,7 +29,7 @@ const SAFETY_NONE = [
  * fetch wrapper with hard timeout via AbortController.
  * Default 8s — fits within Vercel 25s limit when chained across 3 model tiers.
  */
-async function fetchWithTimeout(url, options, timeoutMs = 5000) {
+async function fetchWithTimeout(url, options, timeoutMs = 15000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {

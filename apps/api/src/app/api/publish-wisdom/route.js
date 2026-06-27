@@ -48,7 +48,8 @@ const CRISIS_MESSAGE =
   "You don't have to have it figured out before you reach out."
 import { getQuotaPeriodStart, TIER_LIMITS } from '@/lib/quota'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY

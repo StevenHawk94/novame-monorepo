@@ -2105,7 +2105,26 @@ function PhasePublishing({
         // response: the request may well have reached the server and
         // succeeded anyway (card written, quota spent). In that case we
         // must NOT tell the user it "failed" -- point them to My Logs.
-        if (err instanceof ApiError) {
+        if (err instanceof ApiError && err.status === 504) {
+          // A 504 is a Vercel gateway timeout: the server DID receive the
+          // request and the work (card + quota) usually completed -- only the
+          // gateway gave up waiting for the slow AI generation. This is NOT a
+          // failure, so don't say it failed. (publish-wisdom now runs on Node
+          // with maxDuration 60s, so this should be rare.)
+          Alert.alert(
+            'Almost there',
+            'Your insight is taking a little longer to finish. It may already be saved \u2014 check My Logs in a moment.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  close();
+                },
+              },
+            ],
+            { cancelable: false },
+          );
+        } else if (err instanceof ApiError) {
           Alert.alert(
             'Generation Failed',
             'Please try again later.',
