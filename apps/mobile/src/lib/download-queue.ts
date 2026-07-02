@@ -34,6 +34,32 @@ import type { AssetManifest, ProductAssetManifestEntry } from './asset-types';
 
 const MAX_CONCURRENCY = 3;
 
+// P0 assets must eventually land, so a tier-0 download that stalls or fails
+// is retried forever with capped exponential backoff. Each attempt is bounded
+// by a timeout because File.downloadFileAsync has no cancellation: a stalled
+// connection would otherwise hang the task in 'active' forever and never
+// resolve the P0 gate. A timed-out native download is left to die on its own;
+// the next attempt re-downloads and verifyCachedAsset's size check self-heals
+// any partial/corrupt file, so no temp-file dance is needed.
+const DOWNLOAD_ATTEMPT_TIMEOUT_MS = 12000;
+const P0_RETRY_MAX_BACKOFF_MS = 30000;
+
+function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('download attempt timeout')), ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
+
 // P1 folder download order (Q-P1: cards art -> chars-video -> product details).
 const P1_DIR_SEQ: Record<string, number> = {
   'cards art': 0,
@@ -60,6 +86,8 @@ type DLTask = {
   tier: 0 | 1;
   seq: number; // order within tier (lower = earlier)
   status: 'queued' | 'active' | 'done' | 'failed';
+  attempts?: number; // tier-0 retry count (undefined = 0). Tier 0 retries forever.
+  nextAttemptAt?: number; // earliest ms a queued task may be picked (backoff gate; undefined/0 = now)
 };
 
 let tasks: DLTask[] = [];
@@ -109,21 +137,38 @@ async function runTask(t: DLTask, baseUrl: string): Promise<void> {
     return;
   }
   try {
-    if (t.kind === 'product' && t.product) {
-      await downloadProductAsset(baseUrl, t.product);
-    } else {
-      await downloadAsset(baseUrl, t.filename);
-    }
+    const dl =
+      t.kind === 'product' && t.product
+        ? downloadProductAsset(baseUrl, t.product)
+        : downloadAsset(baseUrl, t.filename);
+    await withTimeout(dl, DOWNLOAD_ATTEMPT_TIMEOUT_MS);
     t.status = 'done';
   } catch {
-    t.status = 'failed'; // non-blocking; retried on bumpToFront or next launch
+    if (t.tier === 0) {
+      // P0 must eventually land: retry forever with capped exponential
+      // backoff. Re-queue (status stays a P0 'queued' so maybeResolveP0 will
+      // NOT resolve until this genuinely completes) and schedule a pump after
+      // the backoff; pickNext skips it until nextAttemptAt is reached.
+      t.attempts = (t.attempts ?? 0) + 1;
+      const backoff = Math.min(
+        1000 * 2 ** Math.min(t.attempts - 1, 5),
+        P0_RETRY_MAX_BACKOFF_MS,
+      );
+      t.nextAttemptAt = Date.now() + backoff;
+      t.status = 'queued';
+      setTimeout(() => pump(baseUrl), backoff);
+    } else {
+      t.status = 'failed'; // P1: non-blocking; retried on bumpToFront or next launch
+    }
   }
 }
 
 function pickNext(): DLTask | null {
   let best: DLTask | null = null;
+  const now = Date.now();
   for (const t of tasks) {
     if (t.status !== 'queued') continue;
+    if ((t.nextAttemptAt ?? 0) > now) continue; // backoff: not yet eligible
     if (!best) {
       best = t;
       continue;
