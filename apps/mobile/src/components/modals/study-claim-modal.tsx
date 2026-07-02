@@ -108,6 +108,15 @@ export function StudyClaimModal({
     //     best-effort; don't wreck a shown celebration over a transient error).
     if (initialResult) {
       animateTo(initialResult);
+      // Only optimistic (locally-computed) results still need settling. A
+      // result that already came from a POST (splash gate / background-resume
+      // pre-settle) is authoritative -- re-POSTing it would hit an
+      // already-zeroed counter, return nothingToClaim, and close the modal.
+      if (!initialResult.optimistic) {
+        return () => {
+          cancelled = true;
+        };
+      }
       (async () => {
         try {
           const authoritative = await postStudyClaim(userId);

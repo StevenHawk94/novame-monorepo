@@ -23,6 +23,13 @@ export type StudyClaimResponse = {
   /** Server signals a no-op claim (already settled / 0 banked). The modal
    *  suppresses the celebration when this is true. */
   nothingToClaim?: boolean;
+  /** Client-only marker: this result was computed locally by
+   *  computeLocalStudyClaim (optimistic) and has NOT been settled server-side
+   *  yet, so the modal must fire postStudyClaim in the background. Results that
+   *  came from an actual POST (splash gate / background-resume pre-settle) omit
+   *  this, and the modal must NOT re-POST them (that would hit an already-zeroed
+   *  counter and return nothingToClaim, closing the modal). */
+  optimistic?: boolean;
 };
 
 export async function postStudyClaim(
@@ -85,5 +92,6 @@ export function computeLocalStudyClaim(
     newExpNeeded: newLevelInfo.expNeeded,
     leveledUp: newLevelInfo.level > oldLevelInfo.level,
     nothingToClaim: secs <= 0,
+    optimistic: true,
   };
 }

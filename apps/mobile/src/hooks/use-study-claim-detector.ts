@@ -117,19 +117,12 @@ export function useStudyClaimDetector() {
       const userId = userIdRef.current;
       if (!userId || cancelled) return;
 
-      // Optimistic check against cache first — if cached state already
-      // says we should claim, push immediately while the network call
-      // confirms in the background.
-      const cached = getCachedCharacterState();
-      if (
-        cached &&
-        evaluate(cached.mode, cached.wp, cached.wpLastFetchedAtMs)
-      ) {
-        triggerClaim(
-          computeLocalStudyClaim(cached.afkStudySeconds ?? 0, cached.totalExp),
-        );
-      }
-
+      // Q11: do NOT pop from cache here. On the main cold-start case (study
+      // started, then the process was killed for hours) the cache's
+      // afkStudySeconds is stale/too-low -- popping from it would show a
+      // wrong (small) XP or get skipped as 0. Fetch first and pop from the
+      // fetched terminal value so the number is correct in one shot. Home has
+      // already entered on the P0 gate, so this costs nothing visible there.
       try {
         const fresh = await fetchCharacterState(userId);
         if (cancelled) return;
