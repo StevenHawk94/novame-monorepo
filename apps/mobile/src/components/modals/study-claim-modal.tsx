@@ -91,10 +91,48 @@ export function StudyClaimModal({
       }, 400);
     };
 
-    // Pre-settled path: the splash gate already claimed and handed us the
-    // result. Skip the network call entirely -- just play the fill anim.
+    // Optimistic path: we were handed a locally-computed result, so the
+    // success UI shows instantly (no spinner). But nothing has been settled
+    // server-side yet -- fire postStudyClaim in the BACKGROUND to actually
+    // settle (award XP, flip mode->play, zero afk_study_seconds) and to get
+    // the authoritative values. Then reconcile silently:
+    //   - success: overwrite the optimistic result with the server's (the
+    //     local XP can be slightly low when the cache was stale; this quietly
+    //     bumps the bar up to the real value). souls/cardKeyword are ignored.
+    //   - nothingToClaim: the effect below closes the modal (already-settled,
+    //     e.g. multi-device) -- Home rolls back the optimistic XP (step 6).
+    //   - network failure (offline): defer + close (unchanged behaviour);
+    //     Home rolls back the optimistic XP (step 6). The session stays
+    //     claimable and re-pops on the next app open.
+    //   - other error: keep the optimistic result on screen (reconcile is
+    //     best-effort; don't wreck a shown celebration over a transient error).
     if (initialResult) {
       animateTo(initialResult);
+      (async () => {
+        try {
+          const authoritative = await postStudyClaim(userId);
+          if (cancelled) return;
+          setClaimDeferred(false);
+          setResult(authoritative);
+          if (!authoritative.nothingToClaim) animateTo(authoritative);
+        } catch (e) {
+          if (cancelled) return;
+          const msg = e instanceof Error ? e.message : '';
+          if (
+            msg.includes('Network request failed') ||
+            msg.includes('NetworkError') ||
+            msg.includes('Failed to fetch')
+          ) {
+            // Offline: not settled. Defer to Growth "Claim" / next app open
+            // and close (Q5e-1). Home rolls back the optimistic XP (step 6).
+            setClaimDeferred(true);
+            onClose();
+            return;
+          }
+          // Non-network error: leave the optimistic celebration as-is.
+          console.warn('[study-claim] background reconcile failed:', msg);
+        }
+      })();
       return () => {
         cancelled = true;
       };

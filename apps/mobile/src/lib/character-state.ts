@@ -62,6 +62,7 @@ export const DEFAULT_NEW_USER_CHARACTER_STATE: CachedCharacterState = {
   expCurrent: 0,
   expNeeded: 20,
   totalExp: 0,
+  afkStudySeconds: 0,
 };
 
 // ---- types matching apps/api/src/app/api/character-state/route.js GET shape ----
@@ -113,6 +114,14 @@ export type CharacterStateResponse = {
    * this set minus outfit 1. Replaces the old MMKV lastShownLevel tracker.
    */
   seenSkinUnlocks: number[];
+  /**
+   * Accumulated WP>0 study seconds (profiles.afk_study_seconds) as of this
+   * fetch — the exact counter study-claim settles as floor(secs/360) XP.
+   * Lets the client compute the claim result locally for an instant modal,
+   * reconciled by the authoritative postStudyClaim afterwards. 0 outside a
+   * live/unsettled study session.
+   */
+  afkStudySeconds: number;
 };
 
 /**
@@ -147,6 +156,10 @@ export type CachedCharacterState = {
    * the client computes (level, expCurrent) via getLevelFromExp(totalExp),
    * the SAME function the server uses, so optimistic == server value. */
   totalExp: number;
+  /** Accumulated WP>0 study seconds as of the last fetch. Mirrors
+   * profiles.afk_study_seconds; used to compute the study-claim result
+   * locally (floor(secs/360) XP). 0 outside a live/unsettled study session. */
+  afkStudySeconds: number;
 };
 
 // ---- mmkv read / write ----
@@ -293,6 +306,7 @@ function mapResponseToCache(data: CharacterStateResponse): CachedCharacterState 
     expCurrent: data.levelInfo.currentExp,
     expNeeded: data.levelInfo.expNeeded,
     totalExp: data.levelInfo.totalExp,
+    afkStudySeconds: data.afkStudySeconds ?? 0,
   };
 }
 

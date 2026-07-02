@@ -247,6 +247,13 @@ export async function GET(request) {
       allCharacters: allChars || [],
       aiConsentAt: profile.ai_consent_at ?? null,
       seenSkinUnlocks,
+      // Accumulated WP>0 study seconds (profiles.afk_study_seconds), the
+      // exact counter study-claim settles as floor(secs/360) XP. Exposed so
+      // the client can optimistically compute the claim result locally
+      // (instant modal, no spinner) and reconcile with the authoritative
+      // POST afterwards. Study mode returns the just-accumulated afkRemain;
+      // other modes return the persisted value (0 after a prior claim).
+      afkStudySeconds: mode === 'study' ? afkRemain : (profile.afk_study_seconds || 0),
     })
   } catch (error) {
     console.error('GET character-state error:', error)

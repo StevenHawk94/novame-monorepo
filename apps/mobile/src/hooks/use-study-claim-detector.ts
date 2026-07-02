@@ -32,6 +32,10 @@ import {
   fetchCharacterState,
   getCachedCharacterState,
 } from '@/lib/character-state';
+import {
+  computeLocalStudyClaim,
+  type StudyClaimResponse,
+} from '@/lib/study-claim-api';
 import { supabase } from '@/lib/supabase';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -68,12 +72,21 @@ export function useStudyClaimDetector() {
   // per detected condition; it releases when the modal closes (clearStudyClaim
   // in the store flips pending to null, but the latch is time-based here as a
   // defensive reset for the gesture-dismiss case).
-  const triggerClaim = useCallback(() => {
+  const triggerClaim = useCallback((result: StudyClaimResponse) => {
     if (claimingRef.current) return;
     const userId = userIdRef.current;
     if (!userId) return;
+    // Nothing actually banked (stale/empty cache computed 0 XP): don't pop a
+    // modal that the nothingToClaim path would instantly close (a visible
+    // flicker). A subsequent fresh-fetch trigger with the real accumSecs
+    // pops it properly. (In-session/poll callers only reach here after
+    // evaluate() confirmed wp<=0, so a real session still pops.)
+    if (result.nothingToClaim) return;
     claimingRef.current = true;
-    requestStudyClaim(userId);
+    // Optimistic local result -> instant modal, no spinner. The modal's
+    // background postStudyClaim reconciles to the authoritative values
+    // (and server-random souls / cardKeyword) afterwards.
+    requestStudyClaim(userId, result);
     setTimeout(() => {
       claimingRef.current = false;
     }, 60_000);
@@ -112,14 +125,18 @@ export function useStudyClaimDetector() {
         cached &&
         evaluate(cached.mode, cached.wp, cached.wpLastFetchedAtMs)
       ) {
-        triggerClaim();
+        triggerClaim(
+          computeLocalStudyClaim(cached.afkStudySeconds ?? 0, cached.totalExp),
+        );
       }
 
       try {
         const fresh = await fetchCharacterState(userId);
         if (cancelled) return;
         if (evaluate(fresh.mode, fresh.wp, fresh.wpLastFetchedAtMs)) {
-          triggerClaim();
+          triggerClaim(
+            computeLocalStudyClaim(fresh.afkStudySeconds ?? 0, fresh.totalExp),
+          );
         }
       } catch (e) {
         console.warn('[claim-detector] initial fetch failed:', e);
@@ -162,7 +179,9 @@ export function useStudyClaimDetector() {
       void fetchCharacterState(userId)
         .then((fresh) => {
           if (evaluate(fresh.mode, fresh.wp, fresh.wpLastFetchedAtMs)) {
-            triggerClaim();
+            triggerClaim(
+              computeLocalStudyClaim(fresh.afkStudySeconds ?? 0, fresh.totalExp),
+            );
           }
         })
         .catch(() => {
