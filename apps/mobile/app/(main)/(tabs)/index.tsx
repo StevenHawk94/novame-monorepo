@@ -357,7 +357,7 @@ export default function HomeTab() {
   };
 
   return (
-    <View style={styles.root} onLayout={hideSplashOnce}>
+    <View style={styles.root}>
       <Image
         source={require('@/../assets/images/home/bg-night.webp')}
         style={styles.bg}
@@ -400,7 +400,12 @@ export default function HomeTab() {
         {/* Video */}
         <View style={styles.videoWrap}>
           <View style={styles.videoFrame}>
-            <VideoCharacter characterId={charId} outfit={outfit} state={videoState} />
+            <VideoCharacter
+              characterId={charId}
+              outfit={outfit}
+              state={videoState}
+              onReady={hideSplashOnce}
+            />
           </View>
         </View>
 

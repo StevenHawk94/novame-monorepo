@@ -264,13 +264,19 @@ export default function RootLayout() {
   // splash hide and first paint.
   // Splash is no longer hidden here on prewarm completion. Industry-
   // standard pattern: the native splash stays up until the first real
-  // destination screen (home / onboarding / auth) finishes its initial
-  // layout and calls hideSplashOnce() from its root onLayout. That
-  // guarantees no blank/placeholder frame between splash and content.
+  // destination screen has actually painted its initial content, then
+  // calls hideSplashOnce() — guaranteeing no blank/placeholder frame
+  // between splash and content. Each destination hides it from its own
+  // "content is painted" signal, not on mere layout:
+  //   - home:       the character VideoView's onFirstFrameRender (the
+  //                 first frame is painted, so no black gap on hand-off).
+  //   - onboarding: the page <Image>'s onLoad.
+  //   - auth:       its root onLayout.
   //
   // This effect is only a defensive fallback: if no destination screen
-  // ever signals layout (unexpected error, navigation edge case), force
-  // the splash to hide after 10s so the user is never stuck on it.
+  // ever signals (unexpected error, navigation edge case, or a signal
+  // that never fires), force the splash to hide after 10s so the user is
+  // never stuck on it.
   useEffect(() => {
     const fallback = setTimeout(() => {
       hideSplashOnce();

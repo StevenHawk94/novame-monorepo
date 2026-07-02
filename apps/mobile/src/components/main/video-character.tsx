@@ -42,6 +42,11 @@ type VideoCharacterProps = {
   state: CharacterState;
   /** Optional tap handler — used by Home for skin / character interaction. */
   onPress?: () => void;
+  /** Fired exactly once when the first frame is displayable (status →
+   *  readyToPlay). Home passes hideSplashOnce so the native splash is held
+   *  until the home video has actually painted (no black flash). Optional:
+   *  callers that don't pass it are entirely unaffected. */
+  onReady?: () => void;
 };
 
 /**
@@ -70,6 +75,7 @@ export function VideoCharacter({
   outfit,
   state,
   onPress,
+  onReady,
 }: VideoCharacterProps) {
   // Compute the initial source once for useVideoPlayer's mount-time setup.
   const initialFilename = buildFilename(characterId, outfit, state);
@@ -186,6 +192,24 @@ export function VideoCharacter({
     return () => sub.remove();
   }, [player]);
 
+  // First-frame readiness signal (splash hand-off). Fired from the
+  // VideoView's onFirstFrameRender below (see videoView) — the precise
+  // "first frame has been painted into the view" callback, which is what
+  // expo-video documents for hiding a cover image concealing initial load.
+  // We use it (not the player's 'readyToPlay' status, which fires a frame
+  // earlier when the player is merely buffered) so there is no black gap
+  // between the native splash and the painted Home video. onFirstFrameRender
+  // can re-fire on later track/source changes, so this ref latches it to a
+  // single onReady() for the component's lifetime. No-ops when onReady is
+  // absent, so every non-Home caller is unaffected. (_layout's 10s splash
+  // fallback still covers a callback that never fires.)
+  const readyFiredRef = useRef(false);
+  const handleFirstFrame = useCallback(() => {
+    if (!onReady || readyFiredRef.current) return;
+    readyFiredRef.current = true;
+    onReady();
+  }, [onReady]);
+
   // Stage 6 keep-playing safeguard layer 3: loop fallback.
   // player.loop = true restarts the clip seamlessly on its own at the
   // loop point. We must NOT call player.play() immediately on playToEnd:
@@ -257,6 +281,7 @@ export function VideoCharacter({
       style={styles.video}
       contentFit="cover"
       nativeControls={false}
+      onFirstFrameRender={handleFirstFrame}
     />
   );
 
