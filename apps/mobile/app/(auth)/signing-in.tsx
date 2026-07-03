@@ -61,9 +61,18 @@ import { AssetGateError } from '@/components/main/asset-gate-error';
 const LOGO = require('../../assets/images/logo.png');
 
 const MIN_DISPLAY_MS = 600;
-// Same budget as the cold-start gate in app/index.tsx. P0 + the first-frame
-// video total well under 1MB; exceeding this means a very poor network.
-const P0_ASSET_TIMEOUT_MS = 15000;
+// P0 gate budget. P0 (root assets + the first-frame video) totals well
+// under 1MB; downloads never stop retrying in the background (see
+// download-queue), so this is only how long we WAIT before showing the
+// retry screen -- not a hard stop.
+const P0_ASSET_TIMEOUT_MS = 30000;
+
+// Soft budget for warming the other tabs' data. P0 (the video) is the only
+// hard gate; if the tab-warm requests haven't finished within this window we
+// stop waiting and enter Home, letting them finish in the background (each
+// tab fetches on its own first focus anyway). Keeps a slow non-essential
+// endpoint from holding Home for the full P0 budget.
+const TAB_WARM_SOFT_TIMEOUT_MS = 5000;
 
 export default function SigningInScreen() {
   const [gateState, setGateState] = useState<'pending' | 'failed'>('pending');
@@ -73,9 +82,13 @@ export default function SigningInScreen() {
     const start = Date.now();
     let cancelled = false;
     let navigated = false;
+    let gateFailed = false;
 
     const goHome = () => {
-      if (navigated || cancelled) return;
+      // Once the gate has shown the retry screen, only an explicit Retry
+      // (which re-runs this effect) may enter Home -- a P0 download that
+      // finishes in the background afterwards must NOT auto-navigate.
+      if (navigated || cancelled || gateFailed) return;
       navigated = true;
       const elapsed = Date.now() - start;
       const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
@@ -87,7 +100,10 @@ export default function SigningInScreen() {
     // Overall timeout: if the gate hasn't completed within budget, show the
     // error screen (poor/no network). Retry re-runs the whole effect.
     const timer = setTimeout(() => {
-      if (!cancelled && !navigated) setGateState('failed');
+      if (!cancelled && !navigated) {
+        gateFailed = true;
+        setGateState('failed');
+      }
     }, P0_ASSET_TIMEOUT_MS);
 
     void (async () => {
@@ -153,11 +169,18 @@ export default function SigningInScreen() {
       // all) so a slow/failing single endpoint can't block Home — a tab that
       // didn't warm just fetches on its own first focus, same as today. The
       // whole signing-in flow is still bounded by P0_ASSET_TIMEOUT_MS.
-      await Promise.allSettled([
+      const warmAll = Promise.allSettled([
         fetchDailyTasksWithCache(userId),       // Growth — My Quest tasks
         fetchWisdomsWithCache(userId),          // Growth — My Logs
         fetchSeekQuestionsWithCache('', []),    // Discover — default question feed
         fetchUserStatsWithCache(userId),        // Assets — collection stats
+      ]);
+      // Soft-gate: wait up to TAB_WARM_SOFT_TIMEOUT_MS, then proceed and let
+      // any unfinished warms complete in the background (allSettled keeps
+      // them alive; a tab that didn't warm fetches on its own first focus).
+      await Promise.race([
+        warmAll,
+        new Promise((resolve) => setTimeout(resolve, TAB_WARM_SOFT_TIMEOUT_MS)),
       ]);
       if (cancelled) return;
 
