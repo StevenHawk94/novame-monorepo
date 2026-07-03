@@ -1,5 +1,12 @@
 import { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
@@ -26,7 +33,14 @@ import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 export default function OnboardingStep1() {
   const { scale } = useResponsive();
   const t = useTextStyle();
-  const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
+  // iPhone SE / small-height devices: the full-bleed ImgPage image
+  // (aspectRatio 7/6) eats ~321pt on a 375-wide screen, leaving little
+  // vertical room, so the primary button was overlapping the tagline.
+  // On short screens shrink the title + tighten spacing; taller screens
+  // are unchanged (the responsive system's SE baseline is 1:1 there).
+  const { height } = useWindowDimensions();
+  const isShort = height < 700;
+  const styles = useMemo(() => makeStyles(scale, t, isShort), [scale, t, isShort]);
   const signInLinkStyles = useMemo(() => makeSignInLinkStyles(scale, t), [scale, t]);
   const router = useRouter();
 
@@ -83,23 +97,33 @@ export default function OnboardingStep1() {
 function makeStyles(
   scale: (n: number) => number,
   t: ReturnType<typeof useTextStyle>,
+  isShort: boolean,
 ) {
   return StyleSheet.create({
   center: {
     alignItems: 'center',
   },
   logo: {
-    width: scale(200),
-    height: scale(56),
-    marginBottom: scale(16),
+    width: scale(isShort ? 160 : 200),
+    height: scale(isShort ? 44 : 56),
+    marginBottom: scale(isShort ? 8 : 16),
   },
   tagline: {
     color: '#FFFFFF',
     ...t.title1,
+    // Short screens: shrink the title below the title1 token so the
+    // full-bleed image + title + subtitle + button all fit without the
+    // button overlapping. lineHeight is reduced proportionally.
+    ...(isShort
+      ? (() => {
+          const shrunk = Math.round((t.title1.fontSize ?? 28) * 0.8);
+          return { fontSize: shrunk, lineHeight: Math.round(shrunk * 1.15) };
+        })()
+      : null),
     fontWeight: '700',
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: scale(16),
+    marginBottom: scale(isShort ? 8 : 16),
   },
   taglineAccent: {
     color: '#FACC15',
@@ -107,9 +131,10 @@ function makeStyles(
   subtagline: {
     color: 'rgba(255,255,255,0.6)',
     ...t.subheadline,
+    ...(isShort ? { fontSize: Math.round((t.subheadline.fontSize ?? 15) * 0.92) } : null),
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
-    lineHeight: scale(22),
+    lineHeight: scale(isShort ? 18 : 22),
   },
   });
 }
