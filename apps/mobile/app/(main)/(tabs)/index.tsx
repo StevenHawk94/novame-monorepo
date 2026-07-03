@@ -26,6 +26,7 @@ import {
   WP_HUNGER_THRESHOLD,
 } from '@/lib/constants';
 import { getCurrentSession } from '@/lib/auth';
+import { fetchReportEligibility } from '@/lib/wisdom-center-api';
 import { subscribeHomeRefresh } from '@/lib/home-refresh-signal';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { haptics } from '@/lib/haptics';
@@ -346,6 +347,52 @@ export default function HomeTab() {
       ? '#A855F7'
       : '#34D399';
 
+  // ---- Weekly-report red dot (independent of splash/startup) ----
+  // Runs only AFTER Home has mounted, at most once per calendar day, and
+  // never blocks anything. The dot lights when the server says a report is
+  // available and the user hasn't opened the report for this "round" yet.
+  // "Round" is fingerprinted by reportDate (last_report_generated_at): after
+  // the user generates a report it changes, so the next eligible window
+  // re-lights. Opening the report marks the current fingerprint seen (Q1-A:
+  // opened == read, even if not generated).
+  const WR_DOT_CHECKED_DATE_KEY = 'novame_wr_dot_checked_date';
+  const WR_DOT_SEEN_KEY = 'novame_wr_dot_seen';
+  const [wrDot, setWrDot] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const todayStr = new Date().toDateString();
+    if (storage.getString(WR_DOT_CHECKED_DATE_KEY) === todayStr) return; // once/day
+    void (async () => {
+      const session = await getCurrentSession();
+      const uid = session?.user?.id;
+      if (!uid || cancelled) return;
+      const res = await fetchReportEligibility(uid);
+      if (cancelled || res.kind !== 'success') return;
+      storage.set(WR_DOT_CHECKED_DATE_KEY, todayStr);
+      const fingerprint = res.data.reportDate ?? 'pending';
+      const seen = storage.getString(WR_DOT_SEEN_KEY);
+      setWrDot(res.data.reportAvailable && seen !== fingerprint);
+      // Stash the current fingerprint so the open handler can mark it seen.
+      wrFingerprintRef.current = fingerprint;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const wrFingerprintRef = useRef<string>('pending');
+
+  const openWeeklyReport = () => {
+    void haptics.light();
+    // Q1-A: opening counts as read for this round -> clear + persist.
+    if (wrDot) {
+      storage.set(WR_DOT_SEEN_KEY, wrFingerprintRef.current);
+      setWrDot(false);
+    }
+    router.push('/(main)/(modals)/weekly-report');
+  };
+
   const handleMePress = () => {
     void haptics.light();
     router.push('/(main)/(modals)/me');
@@ -375,7 +422,8 @@ export default function HomeTab() {
             />
             <TopBarButton
               icon="description"
-              onPress={() => { void haptics.light(); router.push('/(main)/(modals)/weekly-report'); }}
+              showDot={wrDot}
+              onPress={openWeeklyReport}
             />
             <TopBarButton
               icon="emoji-events"
@@ -450,10 +498,19 @@ export default function HomeTab() {
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
-function TopBarButton({ icon, onPress }: { icon: IconName; onPress: () => void }) {
+function TopBarButton({
+  icon,
+  onPress,
+  showDot,
+}: {
+  icon: IconName;
+  onPress: () => void;
+  showDot?: boolean;
+}) {
   return (
     <Pressable onPress={onPress} style={styles.topBarBtn}>
       <MaterialIcons name={icon} size={18} color="#FFFFFF" />
+      {showDot ? <View style={styles.topBarDot} /> : null}
     </Pressable>
   );
 }
@@ -505,6 +562,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  topBarDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#0F0B2E',
   },
   flexSpacer: {
     flex: 1,
