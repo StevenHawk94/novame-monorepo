@@ -106,6 +106,53 @@ export async function fetchWisdomCenter(
 }
 
 /**
+ * GET /api/wisdom-center?eligibility=true -- lightweight "can generate a
+ * report this week" check. Returns only { reportAvailable, reportDate }
+ * (runs just the two cheap queries reportAvailable needs), skipping the
+ * heavy resonance refresh / latestReport / portrait+avatars work of the
+ * full GET. Powers the Home red dot and the instant weekly-report open.
+ */
+export type ReportEligibility = {
+  reportAvailable: boolean;
+  reportDate: string | null;
+};
+
+export type ReportEligibilityResult =
+  | { kind: 'success'; data: ReportEligibility }
+  | { kind: 'error'; message: string };
+
+export async function fetchReportEligibility(
+  userId: string,
+): Promise<ReportEligibilityResult> {
+  type WireResponse = {
+    success?: boolean;
+    reportAvailable?: boolean;
+    reportDate?: string | null;
+    error?: string;
+  };
+  try {
+    const data = await apiClient.get<WireResponse>(
+      `/api/wisdom-center?userId=${encodeURIComponent(userId)}&eligibility=true`,
+    );
+    if (!data.success) {
+      return { kind: 'error', message: data.error || 'Failed to load' };
+    }
+    return {
+      kind: 'success',
+      data: {
+        reportAvailable: data.reportAvailable ?? false,
+        reportDate: data.reportDate ?? null,
+      },
+    };
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Network error',
+    };
+  }
+}
+
+/**
  * POST /api/wisdom-center -- generate a fresh weekly report. Used by
  * Stage 3.10.3 B (Weekly Report overlay). Server checks the user has
  * shared >=2 wisdoms this week before generating; if not, returns

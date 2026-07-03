@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,9 @@ import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import {
   fetchWisdomCenter,
+  fetchWisdomCenterWithCache,
+  getCachedWisdomCenter,
+  fetchReportEligibility,
   fetchReportByWeek,
   generateWeeklyReport,
   type WeeklyReportData,
@@ -54,6 +57,7 @@ import { AvatarRow } from '@/components/growth/avatar-row';
 
 type Phase =
   | { kind: 'loading' }
+  | { kind: 'loading-hint' } // first-ever open, no cache: neutral "preparing" + rule tip, fetch in background
   | { kind: 'error'; message: string }
   | { kind: 'has-report'; report: WeeklyReportData; data: WisdomCenterData }
   | { kind: 'can-generate'; data: WisdomCenterData }
@@ -65,6 +69,29 @@ function getProgressColor(score: number): string {
   if (score >= 80) return '#22C55E';
   if (score >= 60) return '#EAB308';
   return '#EF4444';
+}
+
+// A cached report is worth showing instantly if it exists and its
+// reportDate is within the 7-day validity window (mirrors the server's
+// daysSinceLastReport>=7 -> a new report becomes available rule).
+function reportInValidWindow(data: WisdomCenterData): boolean {
+  if (!data.latestReport || !data.reportDate) return false;
+  const days = (Date.now() - new Date(data.reportDate).getTime()) / (24 * 60 * 60 * 1000);
+  return days < 7;
+}
+
+// Derive the phase to show from a full WisdomCenterData envelope (cache or
+// fresh). Report-in-window -> show it; else available -> generate CTA; else
+// prior report -> show it; else first-timer empty state.
+function phaseFromData(data: WisdomCenterData): Phase {
+  if (reportInValidWindow(data)) {
+    return { kind: 'has-report', report: data.latestReport as WeeklyReportData, data };
+  }
+  if (data.reportAvailable) return { kind: 'can-generate', data };
+  if (data.latestReport) {
+    return { kind: 'has-report', report: data.latestReport, data };
+  }
+  return { kind: 'too-few-first-time', data };
 }
 
 export default function WeeklyReportModal() {
@@ -79,7 +106,20 @@ export default function WeeklyReportModal() {
       : null;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
+  // First frame decision (no network): history opens always load; the
+  // default open renders instantly from the wisdom-center cache when present
+  // (report-in-window -> report, else CTA/empty), and otherwise shows a
+  // neutral "preparing + rule tip" hint instead of a blank spinner. The
+  // background effect below then reconciles with the light eligibility check
+  // and a full refresh.
+  const [phase, setPhase] = useState<Phase>(() => {
+    if (historyWeekStart) return { kind: 'loading' };
+    const cached = getCachedWisdomCenter();
+    return cached ? phaseFromData(cached) : { kind: 'loading-hint' };
+  });
+  // Latches once the user acts (taps Generate). After that, background
+  // reconciles must NOT overwrite the phase out from under them.
+  const userActedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,26 +157,39 @@ export default function WeeklyReportModal() {
         return;
       }
 
-      const res = await fetchWisdomCenter(userId);
-      if (cancelled) return;
+      const hadCache = getCachedWisdomCenter() !== null;
+
+      // Light, fast eligibility check first: corrects the available/empty
+      // decision (the only thing that gates the Generate CTA) without waiting
+      // for the heavy full GET. Skip applying it if the user already acted.
+      const elig = await fetchReportEligibility(userId);
+      if (cancelled || userActedRef.current) return;
+      if (elig.kind === 'success') {
+        const cached = getCachedWisdomCenter();
+        // Keep showing an in-window cached report (report content changes at
+        // most weekly); otherwise reflect the fresh available/empty decision.
+        if (!(cached && reportInValidWindow(cached))) {
+          if (elig.data.reportAvailable) {
+            setPhase((p) =>
+              p.kind === 'has-report' ? p : { kind: 'can-generate', data: (cached ?? ({} as WisdomCenterData)) });
+          } else if (!cached) {
+            setPhase({ kind: 'too-few-first-time', data: {} as WisdomCenterData });
+          }
+        }
+      }
+
+      // Full refresh: writes through the cache and fills report/avatars.
+      // Only drives the visible phase when we had no cache to begin with
+      // (first-ever open) and the user hasn't acted -- otherwise the cached
+      // render already stands and we just refresh silently for next time.
+      const res = await fetchWisdomCenterWithCache(userId);
+      if (cancelled || userActedRef.current) return;
       if (res.kind === 'error') {
-        setPhase({ kind: 'error', message: res.message });
+        if (!hadCache) setPhase({ kind: 'error', message: res.message });
         return;
       }
-      const data = res.data;
-      if (data.reportAvailable) {
-        // Server says: 7 days since last report AND >=2 wisdoms in the
-        // last 7 days. Always invite the user to generate, even if a
-        // stale report exists -- they want to see this week's growth.
-        setPhase({ kind: 'can-generate', data });
-      } else if (data.latestReport) {
-        // Not in a fresh-generate window yet, but we have a prior
-        // report to show. Render it with the reportDate so the user
-        // knows what week it covers.
-        setPhase({ kind: 'has-report', report: data.latestReport, data });
-      } else {
-        // Never generated a report at all -- first-time user path.
-        setPhase({ kind: 'too-few-first-time', data });
+      if (!hadCache) {
+        setPhase(phaseFromData(res.data));
       }
     })();
     return () => {
@@ -151,6 +204,7 @@ export default function WeeklyReportModal() {
 
   const handleGenerate = async () => {
     if (!userId) return;
+    userActedRef.current = true;
     void haptics.medium();
     setPhase({ kind: 'generating' });
     const res = await generateWeeklyReport(userId);
@@ -225,6 +279,23 @@ export default function WeeklyReportModal() {
               Generating your weekly report...
             </Text>
           ) : null}
+        </View>
+      </View>
+    );
+  }
+
+  if (phase.kind === 'loading-hint') {
+    return (
+      <View style={styles.root}>
+        {Header}
+        <View style={styles.centerFlex}>
+          <ActivityIndicator color="#A855F7" size="large" />
+          <Text style={[styles.emptyTitle, { marginTop: 20 }]}>
+            Preparing your report
+          </Text>
+          <Text style={styles.emptyDesc}>
+            Share at least 2 moments within 7 days to unlock a new weekly growth report.
+          </Text>
         </View>
       </View>
     );

@@ -71,6 +71,38 @@ export async function GET(request) {
       })
     }
 
+    // Branch C: ?eligibility=true -> lightweight "can the user generate a
+    // report this week" check. Powers the Home weekly-report red dot and the
+    // instant open of the weekly-report modal WITHOUT the heavy resonance
+    // refresh / latestReport fetch / portrait+avatars assembly below. Runs
+    // only the two cheap queries the reportAvailable formula needs (read
+    // last_report_generated_at + count wisdoms in the last 7 days), reusing
+    // the exact same rule as the full GET so the two can never drift.
+    if (searchParams.get('eligibility') === 'true') {
+      const { data: liteProfile } = await supabase.from('profiles')
+        .select('last_report_generated_at, created_at')
+        .eq('id', userId).single()
+      if (!liteProfile) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+      }
+      const nowE = new Date()
+      const userCreatedE = new Date(liteProfile.created_at || nowE)
+      const daysSinceCreationE = Math.floor((nowE - userCreatedE) / (24 * 60 * 60 * 1000))
+      const lastReportAtE = liteProfile.last_report_generated_at ? new Date(liteProfile.last_report_generated_at) : null
+      const daysSinceLastReportE = lastReportAtE ? Math.floor((nowE - lastReportAtE) / (24 * 60 * 60 * 1000)) : daysSinceCreationE
+      const weekAgoE = new Date(nowE - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const { count: recentSharesE } = await supabase.from('wisdoms')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', weekAgoE)
+      const reportAvailableE = daysSinceLastReportE >= 7 && (recentSharesE || 0) >= 2
+      return NextResponse.json({
+        success: true,
+        reportAvailable: reportAvailableE,
+        reportDate: lastReportAtE ? lastReportAtE.toISOString() : null,
+      })
+    }
+
     const { data: profile } = await supabase.from('profiles').select(
       'wisdom_portrait, aspire_scores, aspire_words, better_self_score, community_resonance, community_resonance_updated_at, last_report_generated_at, wisdom_share_count, created_at'
     ).eq('id', userId).single()
