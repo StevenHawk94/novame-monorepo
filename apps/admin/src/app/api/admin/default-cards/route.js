@@ -21,15 +21,42 @@ export async function GET(request) {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { searchParams } = new URL(request.url)
+    const search = (searchParams.get('search') || '').trim()
 
-    const { data, error } = await supabase
+    // Optional pagination: when ?page= is present, return one page + total
+    // + hasMore (admin CardsTab paginates 30/page). Without it, behaviour is
+    // unchanged (returns all default cards) so other callers aren't affected.
+    const hasPaging = searchParams.get('page') !== null
+    const page = parseInt(searchParams.get('page') || '0', 10)
+    const limit = parseInt(searchParams.get('limit') || '30', 10)
+
+    let query = supabase
       .from('wisdom_cards')
-      .select('*')
+      .select('*', hasPaging ? { count: 'exact' } : undefined)
       .is('user_id', null)
       .order('created_at', { ascending: false })
 
+    if (search) {
+      query = query.or(
+        `keyword_id.ilike.%${search}%,quote_short.ilike.%${search}%,insight_full.ilike.%${search}%,creator_name.ilike.%${search}%`,
+      )
+    }
+    if (hasPaging) {
+      query = query.range(page * limit, (page + 1) * limit - 1)
+    }
+
+    const { data, count, error } = await query
     if (error) throw error
 
+    if (hasPaging) {
+      return NextResponse.json({
+        success: true,
+        cards: data || [],
+        total: count || 0,
+        hasMore: (page + 1) * limit < (count || 0),
+      })
+    }
     return NextResponse.json({ success: true, cards: data || [] })
   } catch (e) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 })

@@ -24,6 +24,24 @@ export async function GET(request) {
     const search = searchParams.get('search') || ''
 
     const supabase = getSupabase()
+
+    // Detail mode: ?id=<wisdomId> returns the full wisdom row (complete
+    // user input `text`) plus its generated wisdom_cards (all AI-output
+    // blocks: quote_short / insight_full / peer_comment / reframe /
+    // reflective_question / task_1 / task_2 / wisdom_score / wisdom_emotion /
+    // keyword_id / aspire_impacts / card_a|b|c). Powers the admin Posts
+    // detail view (input + output in one place). Does not touch the list path.
+    const detailId = searchParams.get('id')
+    if (detailId) {
+      const { data: wisdom, error: wErr } = await supabase
+        .from('wisdoms').select('*').eq('id', detailId).single()
+      if (wErr) return Response.json({ error: wErr.message }, { status: 500 })
+      const { data: cards } = await supabase
+        .from('wisdom_cards').select('*')
+        .eq('wisdom_id', detailId)
+        .order('created_at', { ascending: false })
+      return Response.json({ success: true, wisdom, cards: cards || [] })
+    }
     let query = supabase.from('wisdoms').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(page * limit, (page + 1) * limit - 1)
 
     if (filter === 'default') query = query.is('user_id', null)
