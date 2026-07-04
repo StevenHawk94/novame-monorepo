@@ -8,8 +8,10 @@ import { AssetGateError } from '@/components/main/asset-gate-error';
 
 // P0 asset gate timeout for returning (session) cold starts. Independent
 // of _layout's PREWARM_TIMEOUT_MS (that's for data fetches). P0 assets
-// total ~766KB so this only trips on poor/no network.
-const P0_ASSET_TIMEOUT_MS = 15000;
+// total ~766KB and the download queue retries forever in the background,
+// so this is only how long we WAIT before showing the retry screen -- not
+// a hard stop. Kept in sync with the signing-in path (30s).
+const P0_ASSET_TIMEOUT_MS = 30000;
 
 /**
  * Startup route — decides where to send the user after launch.
@@ -70,12 +72,20 @@ export default function Index() {
   useEffect(() => {
     if (hasSession !== true) return;
     let cancelled = false;
+    // Once the retry screen has shown for this attempt, a P0 download that
+    // finishes in the background must NOT auto-enter Home -- only an explicit
+    // Retry (which bumps retryNonce and re-runs this effect with a fresh
+    // budget) may proceed. Mirrors the signing-in gate's gateFailed latch.
+    let gateFailed = false;
     setP0State('pending');
     const timer = setTimeout(() => {
-      if (!cancelled) setP0State('failed');
+      if (!cancelled) {
+        gateFailed = true;
+        setP0State('failed');
+      }
     }, P0_ASSET_TIMEOUT_MS);
     void ensureP0Ready(getHomeVideoFilename()).then(() => {
-      if (!cancelled) {
+      if (!cancelled && !gateFailed) {
         clearTimeout(timer);
         setP0State('ready');
       }
