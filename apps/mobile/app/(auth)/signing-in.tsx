@@ -1,78 +1,53 @@
-/**
- * Signing-in loading screen — P0 asset gate on the login path.
- *
- * Sits between sign-in success (_layout SIGNED_IN -> router.replace here)
- * and the home tab. This screen is the login-path equivalent of the
- * cold-start P0 gate in app/index.tsx: it holds the purple loading screen
- * until the assets the Home screen needs on its first frame are local,
- * then navigates to Home.
- *
- * Why gate here (not just cold start): logging in is an in-app navigation
- * that never re-runs app/index.tsx, so without a gate here the user lands
- * on Home before their current-state video is downloaded — showing a
- * failure placeholder. SIGNED_IN clears character-state cache, so we must
- * await fetchCharacterState() to learn the user's REAL state (wp / mode /
- * outfit) before computing which video to gate; otherwise we'd gate the
- * default 'hungry' clip and miss a returning user's study/chill clip.
- *
- * Flow:
- *   1. Seed default caches (so a new-user 404 on fetch still has values).
- *   2. await fetchCharacterState -> real wp/mode/outfit in cache.
- *   3. await ensureP0Ready(getHomeVideoFilename()) -> the real first-frame
- *      video is local (root P0 assets + that clip), gating the screen.
- *   4. subscription / me-stats fetch fire-and-forget (don't block video).
- *   5. Success -> navigate to Home (keeping MIN_DISPLAY_MS minimum).
- *   6. 15s timeout (poor network) -> AssetGateError with Retry, same as
- *      the cold-start gate. Connecting to <1MB of assets shouldn't take
- *      longer; if it does, the app is barely usable, so we hold here.
- */
-
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
 import {
-  DEFAULT_NEW_USER_CHARACTER_STATE,
-  fetchCharacterState,
-  getCachedCharacterState,
-  getHomeVideoFilename,
-  setCachedCharacterState,
-} from '@/lib/character-state';
-import {
   fetchSubscriptionTier,
   getCachedSubscription,
   setCachedSubscription,
 } from '@/lib/subscription';
-import {
-  DEFAULT_NEW_USER_ME_STATS,
-  fetchMeStats,
-  getCachedMeStats,
-  setCachedMeStats,
-} from '@/lib/me-stats';
-import { getOnboardingState } from '@/lib/onboarding';
-import { fetchSeekQuestionsWithCache } from '@/lib/seek-questions-cache';
-import { fetchUserStatsWithCache } from '@/lib/user-stats-api';
-import { fetchDailyTasksWithCache } from '@/lib/daily-tasks-api';
-import { fetchWisdomsWithCache } from '@/lib/wisdoms-api';
+import { fetchMeStats } from '@/lib/me-stats';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { AssetGateError } from '@/components/main/asset-gate-error';
+
+/**
+ * P0 asset gate on the login path.
+ *
+ * Signing in is an in-app navigation that never re-runs app/index.tsx, so
+ * without a gate here the user lands on Home before its assets are local.
+ *
+ * What changed
+ * ------------
+ * v1 awaited fetchCharacterState() first, purely so it could compute WHICH
+ * video to gate: the clip depends on the user's willpower and mode, and the
+ * SIGNED_IN handler had just cleared that cache. character-state is gone, and
+ * so is the argument -- ensureP0Ready() still downloads every bucket-root
+ * asset, it just no longer receives a hint about one extra file.
+ *
+ * This is harmless today (Phase A's Home is a placeholder with no video) and
+ * NOT harmless in Phase C. When the companion returns, the first-frame video
+ * depends on its sleep/fly state, and this gate has to be rebuilt around it.
+ *
+ * Also gone: the tab warm. It prefetched Growth, Discover and Assets, three
+ * tabs that no longer exist.
+ *
+ * The gateFailed latch stays, and it is subtle enough to be worth stating: a
+ * P0 download that completes AFTER the retry screen has appeared must not
+ * silently navigate the user into Home. Only an explicit Retry, which re-runs
+ * this effect, may do that.
+ */
 
 const LOGO = require('../../assets/images/logo.png');
 
 const MIN_DISPLAY_MS = 600;
-// P0 gate budget. P0 (root assets + the first-frame video) totals well
-// under 1MB; downloads never stop retrying in the background (see
-// download-queue), so this is only how long we WAIT before showing the
-// retry screen -- not a hard stop.
-const P0_ASSET_TIMEOUT_MS = 30000;
 
-// Soft budget for warming the other tabs' data. P0 (the video) is the only
-// hard gate; if the tab-warm requests haven't finished within this window we
-// stop waiting and enter Home, letting them finish in the background (each
-// tab fetches on its own first focus anyway). Keeps a slow non-essential
-// endpoint from holding Home for the full P0 budget.
-const TAB_WARM_SOFT_TIMEOUT_MS = 5000;
+/**
+ * How long we WAIT before offering Retry -- not a hard stop. The download queue
+ * never stops retrying in the background, and P0 is well under 1MB.
+ */
+const P0_ASSET_TIMEOUT_MS = 30000;
 
 export default function SigningInScreen() {
   const [gateState, setGateState] = useState<'pending' | 'failed'>('pending');
@@ -85,20 +60,14 @@ export default function SigningInScreen() {
     let gateFailed = false;
 
     const goHome = () => {
-      // Once the gate has shown the retry screen, only an explicit Retry
-      // (which re-runs this effect) may enter Home -- a P0 download that
-      // finishes in the background afterwards must NOT auto-navigate.
       if (navigated || cancelled || gateFailed) return;
       navigated = true;
       const elapsed = Date.now() - start;
-      const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
       setTimeout(() => {
         if (!cancelled) router.replace('/(main)/(tabs)');
-      }, remaining);
+      }, Math.max(0, MIN_DISPLAY_MS - elapsed));
     };
 
-    // Overall timeout: if the gate hasn't completed within budget, show the
-    // error screen (poor/no network). Retry re-runs the whole effect.
     const timer = setTimeout(() => {
       if (!cancelled && !navigated) {
         gateFailed = true;
@@ -110,46 +79,16 @@ export default function SigningInScreen() {
       const session = await getCurrentSession();
       const userId = session?.user?.id;
       if (!userId) {
-        // Defensive: should be unreachable (only entered on sign-in success).
         navigated = true;
         clearTimeout(timer);
         router.replace('/(auth)/sign-in');
         return;
       }
 
-      // ---- 1. Seed default caches (fallback if fetch 404s for new users) ----
-      const onboarding = getOnboardingState();
-      const charName = onboarding.charName || '';
-      if (!getCachedCharacterState()) {
-        setCachedCharacterState({
-          ...DEFAULT_NEW_USER_CHARACTER_STATE,
-          charName,
-          wpLastFetchedAtMs: Date.now(),
-        });
-      }
-      if (!getCachedMeStats()) {
-        setCachedMeStats({
-          ...DEFAULT_NEW_USER_ME_STATS,
-          displayName: charName,
-          lastFetchedAtMs: Date.now(),
-        });
-      }
       if (!getCachedSubscription()) {
         setCachedSubscription({ tier: 'free', lastFetchedAtMs: Date.now() });
       }
 
-      // ---- 2. await REAL character-state so we gate the right video ----
-      // SIGNED_IN cleared this cache, so without awaiting we'd only have the
-      // default (hungry). On failure (new-user trigger race -> 404) we keep
-      // the seeded default, which resolves to the root 'hungry' clip.
-      try {
-        await fetchCharacterState(userId);
-      } catch (e) {
-        console.warn('[signing-in] character-state fetch failed:', (e as Error)?.message || e);
-      }
-      if (cancelled) return;
-
-      // ---- 3. subscription / me-stats: background, don't block the video ----
       void fetchSubscriptionTier(userId).catch((e) => {
         console.warn('[signing-in] subscription fetch failed:', (e as Error)?.message || e);
       });
@@ -157,34 +96,9 @@ export default function SigningInScreen() {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      // ---- 4. gate the first-frame video (real state now in cache) ----
-      await ensureP0Ready(getHomeVideoFilename());
+      await ensureP0Ready();
       if (cancelled) return;
 
-      // ---- 5. warm the OTHER tabs' data before Home shows ----
-      // New users have no cached data for Growth / Discover / Assets, so the
-      // first time they switch to each tab it shows a loading spinner. Warm
-      // those caches here, while the loading screen is still up, so every
-      // tab renders instantly (cache-first) on first visit. allSettled (not
-      // all) so a slow/failing single endpoint can't block Home — a tab that
-      // didn't warm just fetches on its own first focus, same as today. The
-      // whole signing-in flow is still bounded by P0_ASSET_TIMEOUT_MS.
-      const warmAll = Promise.allSettled([
-        fetchDailyTasksWithCache(userId),       // Growth — My Quest tasks
-        fetchWisdomsWithCache(userId),          // Growth — My Logs
-        fetchSeekQuestionsWithCache('', []),    // Discover — default question feed
-        fetchUserStatsWithCache(userId),        // Assets — collection stats
-      ]);
-      // Soft-gate: wait up to TAB_WARM_SOFT_TIMEOUT_MS, then proceed and let
-      // any unfinished warms complete in the background (allSettled keeps
-      // them alive; a tab that didn't warm fetches on its own first focus).
-      await Promise.race([
-        warmAll,
-        new Promise((resolve) => setTimeout(resolve, TAB_WARM_SOFT_TIMEOUT_MS)),
-      ]);
-      if (cancelled) return;
-
-      // ---- 5. ready -> Home ----
       clearTimeout(timer);
       goHome();
     })();
@@ -202,28 +116,13 @@ export default function SigningInScreen() {
   return (
     <View style={styles.root}>
       <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-      <ActivityIndicator
-        size="small"
-        color="rgba(255,255,255,0.85)"
-        style={styles.spinner}
-      />
+      <ActivityIndicator size="small" color="rgba(255,255,255,0.85)" style={styles.spinner} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#7C3AED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 24,
-  },
-  spinner: {
-    marginTop: 4,
-  },
+  root: { flex: 1, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 96, height: 96, marginBottom: 24 },
+  spinner: { marginTop: 4 },
 });

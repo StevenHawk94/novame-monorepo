@@ -14,7 +14,6 @@ import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { hideSplashOnce } from '@/lib/splash';
-import { storage } from '@/lib/storage';
 import { haptics } from '@/lib/haptics';
 import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
@@ -101,20 +100,9 @@ export default function AuthScreen() {
   const [infoMsg, setInfoMsg] = useState('');
   const router = useRouter();
 
-  // ---- dev-only: replay onboarding ----
-  const replayOnboarding = () => {
-    void haptics.light();
-    // Clear onboarding done flag so the boot redirector + onboarding
-    // flow treat the user as fresh. We delete the whole state key
-    // (rather than patching) so step-2..11 also start clean.
-    try {
-      storage.remove('novame_onboarding_state');
-    } catch {
-      // best effort — even if delete fails, replace() will still
-      // navigate; user will see step 1 splash regardless.
-    }
-    router.replace('/(onboarding)');
-  };
+  // The dev-only "replay onboarding" button lived here. The eleven-step flow is
+  // deleted and the six-step one does not exist yet, so there is nowhere to
+  // replay to. Restore it in Phase C, against the new flow.
 
   const clearMessages = () => {
     setErrorMsg('');
@@ -338,11 +326,6 @@ export default function AuthScreen() {
             <Text style={styles.dimText}>Already have an account? </Text>
             <Text style={styles.boldLinkText}>Log in</Text>
           </Pressable>
-          {__DEV__ ? (
-            <Pressable onPress={replayOnboarding} style={styles.devLinkRow}>
-              <Text style={styles.devLinkText}>↩︎ Replay onboarding (dev)</Text>
-            </Pressable>
-          ) : null}
         </View>
         <Footer />
       </SafeAreaView>
@@ -757,17 +740,6 @@ function makeStyles(
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  devLinkRow: {
-    marginTop: scale(16),
-    alignItems: 'center',
-    paddingVertical: scale(8),
-  },
-  devLinkText: {
-    color: 'rgba(255,255,255,0.35)',
-    ...t.caption,
-    fontFamily: 'Inter_400Regular',
-    fontStyle: 'italic',
   },
   });
 }

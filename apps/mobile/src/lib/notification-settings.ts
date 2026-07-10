@@ -1,7 +1,6 @@
 import * as Notifications from 'expo-notifications';
 
 import { storage } from './storage';
-import { getCachedCharacterState } from './character-state';
 
 /**
  * Notification settings -- Stage 3.10.2 C2.
@@ -135,7 +134,7 @@ export async function requestNotificationPermission(): Promise<PermissionResult>
 // ---- schedule / cancel ----
 
 function buildBody(): string {
-  const charName = getCachedCharacterState()?.charName?.trim() || 'your companion';
+  const charName = 'your companion';
   return `How was your day? ${charName} wants to hear about your life moments.`;
 }
 

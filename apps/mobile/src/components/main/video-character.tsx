@@ -5,7 +5,12 @@ import { useFocusEffect } from 'expo-router';
 
 import { buildAssetUrl, dirForFilename, getCachedAssetUri } from '@/lib/asset-cache';
 import { bumpToFront } from '@/lib/download-queue';
-import type { CharacterState } from '@/lib/constants';
+/**
+ * Phase A: @/lib/constants died with the willpower system (D5). The three v1
+ * states are inlined so this component still compiles. Phase C replaces them
+ * with the companion's 'sleep' | 'fly'.
+ */
+type CharacterState = 'hungry' | 'study' | 'chill';
 
 /**
  * Animated character video view (stage 3.6).

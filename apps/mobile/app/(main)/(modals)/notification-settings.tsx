@@ -18,7 +18,6 @@ import {
   requestNotificationPermission,
   scheduleDailyReminder,
 } from '@/lib/notification-settings';
-import { getCachedCharacterState } from '@/lib/character-state';
 
 /**
  * Notification Settings overlay -- Stage 3.10.2 C2.
@@ -147,7 +146,7 @@ export default function NotificationSettingsModal() {
   // ---- character name for prompt copy ----
 
   const charName =
-    getCachedCharacterState()?.charName?.trim() || 'your companion';
+    'your companion';
 
   // ---- ask phase ----
 

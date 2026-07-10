@@ -4,74 +4,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
-import { requireAiConsent } from '@/lib/ai-consent';
 
 /**
- * Custom bottom tab bar for the (main)/(tabs) layout.
+ * Bottom tab bar for (main)/(tabs).
  *
- * 1:1 visual replica of the old NovaMe Capacitor BottomNav (4 tabs +
- * a centered raised mic button between Growth and Discover), but built
- * on top of expo-router + react-navigation BottomTabBarProps.
+ * v1 drew four tabs around a raised mic button, held centred by a '__mic__'
+ * sentinel in the order array so that space-around split the row two and two.
+ * Five real tabs leave no centre slot, so the sentinel, the mic styles, and
+ * the AI-consent gate all go. Reflect is entered from Home now, next to Focus.
  *
- * Layout:
- *   Home (/) | Growth | Mic (raised) | Discover | Assets
- *   ^^^ left two ^^^   ^^^ center ^^^   ^^^ right two ^^^
- *
- * The mic button is NOT a tab — it's a router.push to the
- * (main)/(modals)/record screen. Pressing it does not change the
- * underlying tab.
- *
- * Visual constants come from old BottomNav.js (Stage 3.6 prep
- * extracted these as authoritative):
- *   - Background: #0A0A0F (--color-bg-secondary)
- *   - Border-top: 1px rgba(255,255,255,0.04)
- *   - Tab item: 64x48, icon 22px, label 9px
- *   - Active color: #C084FC + drop-shadow rgba(168,85,247,0.6)
- *   - Inactive color: rgba(255,255,255,0.3)
- *   - Mic button: 52x52 round, gradient #A855F7 to #7C3AED,
- *     raised 20px above the bar
- *   - Tab row height: 56px + safe-area-inset-bottom
+ * Icons are placeholders; Phase C swaps in the illustrated set.
  */
-
-// ---- icon mapping per route name ----
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
-const ROUTE_ICONS: Record<string, IconName> = {
-  index: 'home',
-  growth: 'trending-up',
-  discover: 'explore',
-  assets: 'diamond',
-};
+const TABS: ReadonlyArray<{ name: string; icon: IconName; label: string }> = [
+  { name: 'index', icon: 'home', label: 'Home' },
+  { name: 'bags', icon: 'work', label: 'Bags' },
+  { name: 'skills', icon: 'auto-awesome', label: 'Skills' },
+  { name: 'friends', icon: 'people', label: 'Friends' },
+  { name: 'status', icon: 'show-chart', label: 'Status' },
+];
 
-const ROUTE_LABELS: Record<string, string> = {
-  index: 'Home',
-  growth: 'Growth',
-  discover: 'Discover',
-  assets: 'Assets',
-};
-
-/**
- * Custom tab bar — the function passed to <Tabs tabBar={...} />.
- *
- * Renders the 4 declared tab routes plus an interleaved center mic
- * button. The mic button does not consume a route slot in the
- * underlying navigator — it's purely an overlay button that triggers
- * router.push to /(main)/record.
- */
-export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
 
-  // Map of routeName -> route object so we can render in our own order
-  // (and inject the mic button between index 1 and 2).
   const routesByName = new Map<string, (typeof state.routes)[number]>();
   state.routes.forEach((r) => routesByName.set(r.name, r));
-
-  const order = ['index', 'growth', '__mic__', 'discover', 'assets'] as const;
 
   const handleTabPress = (routeName: string, isFocused: boolean) => {
     void haptics.light();
@@ -90,35 +51,21 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     }
   };
 
-  const handleMicPress = () => {
-    void haptics.medium();
-    // AI consent gate: requireAiConsent pushes the consent modal if
-    // not yet agreed and returns false; we MUST abort here to avoid
-    // a double-push. On Agree, the consent modal router.replaces to
-    // /(main)/(modals)/record itself.
-    const proceed = requireAiConsent('/(main)/record');
-    if (!proceed) return;
-    router.push('/(main)/record');
-  };
-
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.row}>
-        {order.map((slot) => {
-          if (slot === '__mic__') {
-            return <MicButton key="mic" onPress={handleMicPress} />;
-          }
-          const route = routesByName.get(slot);
+        {TABS.map((tab) => {
+          const route = routesByName.get(tab.name);
           if (!route) return null;
           const isFocused =
-            state.index === state.routes.findIndex((r) => r.name === slot);
+            state.index === state.routes.findIndex((r) => r.name === tab.name);
           return (
             <TabButton
               key={route.key}
-              icon={ROUTE_ICONS[slot]}
-              label={ROUTE_LABELS[slot]}
+              icon={tab.icon}
+              label={tab.label}
               isFocused={isFocused}
-              onPress={() => handleTabPress(slot, isFocused)}
+              onPress={() => handleTabPress(tab.name, isFocused)}
             />
           );
         })}
@@ -126,8 +73,6 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     </View>
   );
 }
-
-// ---- TabButton subcomponent ----
 
 type TabButtonProps = {
   icon: IconName;
@@ -146,88 +91,14 @@ function TabButton({ icon, label, isFocused, onPress }: TabButtonProps): ReactNo
   );
 }
 
-// ---- MicButton subcomponent ----
-
-type MicButtonProps = {
-  onPress: () => void;
-};
-
-function MicButton({ onPress }: MicButtonProps): ReactNode {
-  return (
-    <View style={styles.micWrap}>
-      <Pressable onPress={onPress} style={styles.micBtn} hitSlop={8}>
-        <MaterialIcons name="mic" size={26} color="#FFFFFF" />
-      </Pressable>
-    </View>
-  );
-}
-
-// ---- styles ----
-
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#0A0A0F',
-    borderTopWidth: 0,
-    // Subpixel-rounding fix (industry-standard for this exact bug):
-    //
-    // React Native's iOS layout engine computes positions in floating-
-    // point logical pixels, then rounds at render time. When the screen
-    // height divides unevenly across nested containers (root paddingTop +
-    // segHeader + Carousel + BottomTab paddingBottom), the boundary
-    // between the Carousel's bottom and the BottomTab's top can land
-    // on a 0.5px subpixel position. The renderer can't draw half a
-    // physical pixel, so it leaves a 0.5-1px gap that exposes
-    // whatever is BEHIND -- in our case, the purple root bg, which
-    // shows as a thin purple line above the tab bar.
-    //
-    // Reported as a known iOS behavior in multiple facebook/react-
-    // native issues (#12681, #29010, ...). The accepted fix in the
-    // RN community is to micro-overlap adjacent containers by 1 logical
-    // pixel via marginTop: -1 or transform translateY -0.5, which
-    // guarantees the lower container covers any subpixel gap above
-    // it. Choosing marginTop here because it's pure layout (no
-    // transform compositing overhead) and works on all platforms.
-    // Visual concealment instead of margin trick: see growth.tsx
-    // for the root-bg-matches-tabBar-bg approach that eliminates
-    // the visible 1px subpixel gap line.
-    marginTop: 0,
-  },
+  container: { backgroundColor: '#0A0A0F' },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
     height: 56,
   },
-  tabBtn: {
-    width: 64,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  tabLabel: {
-    fontSize: 9,
-    lineHeight: 11,
-    fontFamily: 'Inter_600SemiBold',
-  },
-  micWrap: {
-    width: 64,
-    alignItems: 'center',
-    marginTop: -20,
-  },
-  micBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#A855F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Single-color background instead of gradient to avoid pulling in
-    // expo-linear-gradient just for this. Visual difference is minor.
-    shadowColor: '#A855F7',
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 6,
-  },
+  tabBtn: { width: 64, height: 48, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  tabLabel: { fontSize: 9, lineHeight: 11, fontFamily: 'Inter_600SemiBold' },
 });

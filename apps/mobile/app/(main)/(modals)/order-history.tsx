@@ -108,7 +108,7 @@ export default function OrderHistoryModal() {
   const goBack = () => {
     void haptics.light();
     if (router.canGoBack()) router.back();
-    else router.replace('/(main)/(tabs)/assets');
+    else router.replace('/(main)/(tabs)/bags');
   };
 
   const openDetail = (order: Order) => {
@@ -142,7 +142,7 @@ export default function OrderHistoryModal() {
   const browseProducts = () => {
     void haptics.light();
     if (router.canGoBack()) router.back();
-    else router.replace('/(main)/(tabs)/assets');
+    else router.replace('/(main)/(tabs)/bags');
   };
 
   return (

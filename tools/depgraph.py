@@ -10,7 +10,6 @@ confidently tell you a file has no importers.
 """
 import json
 import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -67,4 +66,4 @@ if __name__ == '__main__':
     out = Path('/tmp/novame-graph.json')
     out.write_text(json.dumps(g, indent=1))
     edges = sum(len(v) for v in g['imports'].values())
-    print(f'{len(g["files"])} files, {edges} internal edges -> {out}', file=sys.stderr)
+    print(f'{len(g["files"])} files, {edges} internal edges -> {out}')

@@ -34,7 +34,6 @@ import {
   invalidateMeStats,
 } from '@/lib/me-stats';
 import { clearCachedSubscription } from '@/lib/subscription';
-import { clearCachedCharacterState } from '@/lib/character-state';
 
 /**
  * Account Management overlay -- Stage 3.10.2 C1.
@@ -334,7 +333,6 @@ export default function AccountManagementModal() {
     // Server already destroyed the user. Clear local caches + sign out.
     clearCachedMeStats();
     clearCachedSubscription();
-    clearCachedCharacterState();
     await signOut();
     router.replace('/');
   };

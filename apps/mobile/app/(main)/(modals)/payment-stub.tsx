@@ -265,7 +265,7 @@ export default function PaymentModal() {
   const goBack = () => {
     void haptics.light();
     if (router.canGoBack()) router.back();
-    else router.replace('/(main)/(tabs)/assets');
+    else router.replace('/(main)/(tabs)/bags');
   };
 
   return (

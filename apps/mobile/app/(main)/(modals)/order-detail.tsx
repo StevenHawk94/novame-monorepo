@@ -119,18 +119,15 @@ export default function OrderDetailModal() {
   const goBack = () => {
     void haptics.light();
     if (router.canGoBack()) router.back();
-    else router.replace('/(main)/(tabs)/assets');
+    else router.replace('/(main)/(tabs)/bags');
   };
 
   const onContinueSelection = () => {
     void haptics.light();
-    // Stage 5.AIR.2: route to the cards-select modal carrying the
-    // current orderId. cards-select handles the deck composition
-    // and PATCHes the order to status='paid' on submit.
-    router.push({
-      pathname: '/(main)/(modals)/cards-select',
-      params: { orderId: order?.id ?? '' },
-    });
+    // Phase A: cards-select composed a deck of 48 keyword cards, and both the
+    // cards and the modal are gone. v2.0 prints an object codex and a skill
+    // deck instead; their composer lands in Phase C. The button stays so the
+    // order flow's shape stays legible, but it navigates nowhere yet.
   };
 
   return (

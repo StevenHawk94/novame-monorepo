@@ -3,13 +3,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 /**
- * Me -- Phase A placeholder.
+ * Reflect -- Phase A placeholder.
  *
- * Gutted in Phase A: every number it displayed came from character-state,
- * me-stats, or the aspire gauges, and the first two are being replaced
- * while the third is gone. Rebuilt in Phase C against companions and gems.
+ * Replaces (main)/record.tsx, whose 3,028 lines were half audio capture
+ * (removed by decision D2) and half a publish pipeline against tables that
+ * no longer exist. Phase C: prompt selection, typed input capped at 5,000
+ * characters, object matching, and the skill roll.
+ *
+ * fullScreenModal is inherited from (main)/_layout.tsx and is deliberate: it
+ * is the only presentation on iOS that disables the downward dismiss gesture,
+ * which would otherwise discard an unpublished entry.
  */
-export default function MeScreen() {
+export default function ReflectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   return (
@@ -18,7 +23,7 @@ export default function MeScreen() {
         <Text style={styles.closeText}>Close</Text>
       </Pressable>
       <View style={styles.center}>
-        <Text style={styles.title}>Me</Text>
+        <Text style={styles.title}>Reflect</Text>
       </View>
     </View>
   );
@@ -29,9 +34,5 @@ const styles = StyleSheet.create({
   close: { alignSelf: 'flex-start', padding: 8 },
   closeText: { color: 'rgba(255,255,255,0.6)', fontSize: 15 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 15,
-    fontFamily: 'Inter_600SemiBold',
-  },
+  title: { color: 'rgba(255,255,255,0.35)', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
 });

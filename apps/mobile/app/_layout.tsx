@@ -19,10 +19,8 @@ import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
 import { initIAP, cleanupIAP } from '@/lib/iap';
-import { syncOnboardingIfPending } from '@/lib/onboarding';
 import { fetchSubscriptionTier } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
-import { fetchCharacterState } from '@/lib/character-state';
 import { fetchAppConfig } from '@/lib/app-config-api';
 import {
   markRefreshedNow,
@@ -230,7 +228,6 @@ export default function RootLayout() {
           // allSettled: missing data falls back to local cache or
           // sensible defaults, doesn't block navigation.
           await Promise.allSettled([
-            fetchCharacterState(userId),
             fetchSubscriptionTier(userId),
             fetchMeStats(userId),
             configFetch,
@@ -371,7 +368,6 @@ export default function RootLayout() {
         // swallowed inside syncOnboardingIfPending so navigation never
         // blocks. Stage 3.5 (B40) deferred this from 3.4 step 5.
         if (session?.user?.id) {
-          void syncOnboardingIfPending(session.user.id);
         }
         // Stage 5.WR.2 (Bug 2 fix): route through signing-in screen
         // so it can prewarm character-state / subscription / me-stats

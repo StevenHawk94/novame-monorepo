@@ -1,63 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
-import { getCurrentSession } from '@/lib/auth';
-import { isOnboardingDone } from '@/lib/onboarding';
-import { ensureP0Ready } from '@/lib/download-queue';
-import { getHomeVideoFilename } from '@/lib/character-state';
-import { AssetGateError } from '@/components/main/asset-gate-error';
 
-// P0 asset gate timeout for returning (session) cold starts. Independent
-// of _layout's PREWARM_TIMEOUT_MS (that's for data fetches). P0 assets
-// total ~766KB and the download queue retries forever in the background,
-// so this is only how long we WAIT before showing the retry screen -- not
-// a hard stop. Kept in sync with the signing-in path (30s).
-const P0_ASSET_TIMEOUT_MS = 30000;
+import { AssetGateError } from '@/components/main/asset-gate-error';
+import { getCurrentSession } from '@/lib/auth';
+import { ensureP0Ready } from '@/lib/download-queue';
 
 /**
- * Startup route — decides where to send the user after launch.
+ * Entry gate. Blocks on P0 assets, then routes on session.
  *
- * Routing gate (session-first, industry-standard):
+ * Phase A dropped the onboarding branch. The eleven-step v1 flow is gone and
+ * the six-step v2.0 flow does not exist yet, so there is nowhere to send a
+ * user who has not finished it. Routing to a screen that is not there is
+ * worse than not routing: a stub `isOnboardingDone()` returning false would
+ * have been a lie the compiler happily accepts. Phase C restores the branch.
  *
- *   session exists                      → /(main)/(tabs)
- *   no session + onboarding not done    → /(onboarding)
- *   no session + onboarding done        → /(auth)/sign-in
- *
- * Why session-first:
- *
- * A valid session is the authoritative signal that the user is signed
- * in. Because onboarding always precedes account creation, anyone who
- * has a session has necessarily completed onboarding. We therefore
- * never gate a signed-in user on the local `done` flag — that flag can
- * be cleared by the post-sign-in server sync (syncOnboardingDataToServer
- * calls clearOnboardingState on success), by sign-out, or lost on
- * reinstall. Relying on it caused signed-in users to be bounced back to
- * onboarding on cold start after the sync cleared the local state.
- *
- * The local onboarding flag (MMKV "novame_onboarding_state".done) is
- * only consulted when there is NO session — to distinguish a brand-new
- * user (never onboarded) from a returning user who finished onboarding
- * but is signed out / not yet signed in.
- *
- * getCurrentSession() reads from AsyncStorage (async on RN), so we show
- * the launch loading screen until the read resolves, then redirect.
- * Every launch passes through this brief loading state — the standard
- * cold-start pattern.
- *
- * After this initial dispatch, app/_layout.tsx's onAuthStateChange
- * listener takes over for any subsequent sign-in / sign-out events.
+ * ensureP0Ready() takes an optional filename -- v1 passed the home video so it
+ * would be on disk before the first frame. That filename came from
+ * character-state, and the v2.0 P0 set is companion videos anyway. Passing
+ * nothing still downloads every bucket-root asset; only the extra hint is lost.
  */
+type Gate = 'loading' | 'ready' | 'failed';
+
 export default function Index() {
-  const onboardingDone = isOnboardingDone();
+  const [gate, setGate] = useState<Gate>('loading');
   const [hasSession, setHasSession] = useState<boolean | null>(null);
-  const [p0State, setP0State] = useState<'pending' | 'ready' | 'failed'>('pending');
-  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const session = await getCurrentSession();
-      if (!cancelled) {
-        setHasSession(session !== null);
+      if (cancelled) return;
+      setHasSession(Boolean(session));
+      try {
+        await ensureP0Ready();
+        if (!cancelled) setGate('ready');
+      } catch {
+        if (!cancelled) setGate('failed');
       }
     })();
     return () => {
@@ -65,64 +43,7 @@ export default function Index() {
     };
   }, []);
 
-  // P0 asset gate — only for returning users heading to Home. Awaits
-  // ensureP0Ready() (bucket-root assets) before redirecting; on a 15s
-  // timeout (poor network) shows AssetGateError with Retry. Sessionless
-  // paths (onboarding / auth) never trigger this. retryNonce re-runs it.
-  useEffect(() => {
-    if (hasSession !== true) return;
-    let cancelled = false;
-    // Once the retry screen has shown for this attempt, a P0 download that
-    // finishes in the background must NOT auto-enter Home -- only an explicit
-    // Retry (which bumps retryNonce and re-runs this effect with a fresh
-    // budget) may proceed. Mirrors the signing-in gate's gateFailed latch.
-    let gateFailed = false;
-    setP0State('pending');
-    const timer = setTimeout(() => {
-      if (!cancelled) {
-        gateFailed = true;
-        setP0State('failed');
-      }
-    }, P0_ASSET_TIMEOUT_MS);
-    void ensureP0Ready(getHomeVideoFilename()).then(() => {
-      if (!cancelled && !gateFailed) {
-        clearTimeout(timer);
-        setP0State('ready');
-      }
-    });
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [hasSession, retryNonce]);
-
-  // Session check still pending. Return null and let the native splash
-  // (kept visible via preventAutoHideAsync in _layout.tsx) stay up. We
-  // intentionally render no loading screen of our own here — the splash
-  // IS the loading screen, and it persists until the destination screen
-  // signals first layout via hideSplashOnce(). This avoids a second,
-  // redundant loading screen flashing between splash and content.
-  if (hasSession === null) {
-    return null;
-  }
-
-  if (hasSession) {
-    if (p0State === 'failed') {
-      return <AssetGateError onRetry={() => setRetryNonce((n) => n + 1)} />;
-    }
-    // Enter Home as soon as P0 assets are ready. The study-claim is no
-    // longer settled here (that blocked Home on two network round-trips);
-    // the in-session detector settles it optimistically just after Home
-    // mounts (instant modal, background reconcile).
-    if (p0State === 'ready') {
-      return <Redirect href="/(main)/(tabs)" />;
-    }
-    // Still gating: keep the native splash up.
-    return null;
-  }
-
-  if (!onboardingDone) {
-    return <Redirect href="/(onboarding)" />;
-  }
-  return <Redirect href="/(auth)/sign-in" />;
+  if (gate === 'failed') return <AssetGateError onRetry={() => setGate('loading')} />;
+  if (gate === 'loading' || hasSession === null) return null;
+  return <Redirect href={hasSession ? '/(main)/(tabs)' : '/(auth)/sign-in'} />;
 }

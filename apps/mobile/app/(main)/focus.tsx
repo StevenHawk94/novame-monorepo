@@ -3,13 +3,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 /**
- * Me -- Phase A placeholder.
+ * Focus -- Phase A placeholder.
  *
- * Gutted in Phase A: every number it displayed came from character-state,
- * me-stats, or the aspire gauges, and the first two are being replaced
- * while the third is gone. Rebuilt in Phase C against companions and gems.
+ * New in v2.0. Home carries two entries, Focus and Reflect (PRD 12). Phase C:
+ * scene picker, sequential audio playback with the next track prefetched on
+ * play, and XP only on a full listen.
  */
-export default function MeScreen() {
+export default function FocusScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   return (
@@ -18,7 +18,7 @@ export default function MeScreen() {
         <Text style={styles.closeText}>Close</Text>
       </Pressable>
       <View style={styles.center}>
-        <Text style={styles.title}>Me</Text>
+        <Text style={styles.title}>Focus</Text>
       </View>
     </View>
   );
@@ -29,9 +29,5 @@ const styles = StyleSheet.create({
   close: { alignSelf: 'flex-start', padding: 8 },
   closeText: { color: 'rgba(255,255,255,0.6)', fontSize: 15 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 15,
-    fontFamily: 'Inter_600SemiBold',
-  },
+  title: { color: 'rgba(255,255,255,0.35)', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
 });

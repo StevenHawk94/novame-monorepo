@@ -1,0 +1,199 @@
+# NovaMe v2.0 —— 147 个 mobile 文件的去留
+#
+# DELETE   文件消失。喂给 plan-delete.py 算闭包。
+# REWRITE  文件保留(路由骨架 / 基础设施),Phase C 换内容。不进删除集。
+# KEEP     原样保留,v2.0 直接复用。
+#
+# 依据:NovaMe-v2.0-决策记录-v1.md 的 22 条已决项。
+# 每一条 DELETE 都能追溯到一个决策编号。
+
+# ═══════════════════════════════ 路由骨架 ═══════════════════════════════
+REWRITE  apps/mobile/app/_layout.tsx                    # 根布局。tab 结构变,provider 不变
+REWRITE  apps/mobile/app/index.tsx                      # 启动重定向。onboarding 判定变
+KEEP     apps/mobile/app/(auth)/_layout.tsx
+REWRITE  apps/mobile/app/(auth)/sign-in.tsx             # 773 行。auth 逻辑留,dev replay 按钮删
+REWRITE  apps/mobile/app/(auth)/signing-in.tsx          # 预热的 4 个缓存全部换掉
+REWRITE  apps/mobile/app/(main)/_layout.tsx
+REWRITE  apps/mobile/app/(main)/(tabs)/_layout.tsx      # 4 tab -> 5 tab
+REWRITE  apps/mobile/app/(main)/(modals)/_layout.tsx
+
+# ═══════════════════════ Discover / Seek 公域 feed ═══════════════════════
+# PRD §0.1「只做私域好友关心,不做陌生人广场式 feed」
+DELETE   apps/mobile/app/(main)/(tabs)/discover.tsx
+DELETE   apps/mobile/app/(main)/(modals)/discover-filter.tsx
+DELETE   apps/mobile/app/(main)/(modals)/seek-question.tsx
+DELETE   apps/mobile/app/(main)/(modals)/new-question.tsx
+DELETE   apps/mobile/app/(main)/(modals)/my-questions.tsx
+DELETE   apps/mobile/src/components/seek/report-sheet.tsx
+DELETE   apps/mobile/src/components/seek/seek-card-row.tsx
+DELETE   apps/mobile/src/components/seek/seek-question-card.tsx
+DELETE   apps/mobile/src/lib/seek-cards-cache.ts
+DELETE   apps/mobile/src/lib/seek-questions-cache.ts
+DELETE   apps/mobile/src/lib/seek-types.ts
+DELETE   apps/mobile/src/lib/wisdom-card-blocks.ts
+DELETE   apps/mobile/src/lib/wisdom-card-reports.ts
+
+# ═══════════════ aspire / Growth Center / Weekly Report ═══════════════
+# D3(8 维度 Gems 取代 aspire) + D6b(周报删除)
+DELETE   apps/mobile/app/(main)/(tabs)/growth.tsx
+DELETE   apps/mobile/app/(main)/(modals)/growth-center.tsx
+DELETE   apps/mobile/app/(main)/(modals)/edit-aspire-words.tsx
+DELETE   apps/mobile/app/(main)/(modals)/weekly-report.tsx
+DELETE   apps/mobile/app/(main)/(modals)/report-history.tsx
+DELETE   apps/mobile/src/components/growth/avatar-row.tsx
+DELETE   apps/mobile/src/components/growth/exp-banner.tsx
+DELETE   apps/mobile/src/components/growth/score-gauge.tsx
+DELETE   apps/mobile/src/components/growth/wisdom-log-row.tsx
+DELETE   apps/mobile/src/components/onboarding/aspire-words-picker.tsx
+DELETE   apps/mobile/src/components/me/mini-gauge.tsx
+DELETE   apps/mobile/src/lib/wisdom-center-api.ts
+DELETE   apps/mobile/src/lib/wisdoms-api.ts
+DELETE   apps/mobile/src/lib/user-stats-api.ts
+DELETE   apps/mobile/src/lib/daily-tasks-api.ts
+
+# ═══════════════ 48 关键词卡 / Assets / insight 六模块 ═══════════════
+# 物件收藏 + 8 类技能卡取代。六模块内容架构仅 Visit Master 复用(在 api 侧)
+DELETE   apps/mobile/app/(main)/(tabs)/assets.tsx
+DELETE   apps/mobile/app/(main)/(modals)/keyword-detail.tsx
+DELETE   apps/mobile/app/(main)/(modals)/wisdom-insight.tsx
+DELETE   apps/mobile/app/(main)/(modals)/wisdom-text.tsx
+DELETE   apps/mobile/app/(main)/(modals)/cards-select.tsx
+DELETE   apps/mobile/src/components/assets/assets-view.tsx
+DELETE   apps/mobile/src/components/assets/collection-view.tsx
+DELETE   apps/mobile/src/components/cards/FlippableCard.tsx
+DELETE   apps/mobile/src/components/insight/insight-view.tsx
+DELETE   apps/mobile/src/lib/keyword-detail-cache.ts
+DELETE   apps/mobile/src/lib/insight-payload-store.ts
+DELETE   apps/mobile/src/lib/assets-tab-shared.ts
+DELETE   apps/mobile/src/lib/card-dimensions.ts
+
+# ═════════════════ WP / study-claim / streak / AFK ═════════════════
+# D5「整体废弃」
+DELETE   apps/mobile/src/components/modals/study-claim-modal.tsx
+DELETE   apps/mobile/src/components/growth/focus-mode-card.tsx
+DELETE   apps/mobile/src/hooks/use-study-claim-detector.ts
+DELETE   apps/mobile/src/lib/study-claim-api.ts
+DELETE   apps/mobile/src/lib/study-claim-store.ts
+DELETE   apps/mobile/src/lib/pre-settle-study-claim.ts
+DELETE   apps/mobile/src/lib/character-state.ts
+DELETE   apps/mobile/src/lib/constants.ts
+
+# ═══════════════════════ 语音录制 + 转录 ═══════════════════════
+# D2「删除语音输入,Reflect 只支持打字」
+DELETE   apps/mobile/app/(main)/record.tsx
+DELETE   apps/mobile/src/lib/audio-recorder.ts
+DELETE   apps/mobile/src/lib/record-draft.ts
+DELETE   apps/mobile/src/lib/permissions.ts
+
+# ═══════════════════════ Onboarding(全删重写)═══════════════════════
+# 11 步 -> Ob1-6 + First Steps 6 项。aspire words / 4 域 / char-1 命名全变
+DELETE   apps/mobile/app/(onboarding)/_layout.tsx
+DELETE   apps/mobile/app/(onboarding)/index.tsx
+DELETE   apps/mobile/app/(onboarding)/step-2.tsx
+DELETE   apps/mobile/app/(onboarding)/step-3.tsx
+DELETE   apps/mobile/app/(onboarding)/step-4.tsx
+DELETE   apps/mobile/app/(onboarding)/step-5.tsx
+DELETE   apps/mobile/app/(onboarding)/step-6.tsx
+DELETE   apps/mobile/app/(onboarding)/step-7.tsx
+DELETE   apps/mobile/app/(onboarding)/step-8.tsx
+DELETE   apps/mobile/app/(onboarding)/step-9.tsx
+DELETE   apps/mobile/app/(onboarding)/step-10.tsx
+DELETE   apps/mobile/app/(onboarding)/step-11.tsx
+DELETE   apps/mobile/app/(onboarding)/step-spinning.tsx
+DELETE   apps/mobile/src/components/onboarding/constants.ts
+DELETE   apps/mobile/src/components/onboarding/shared.tsx
+DELETE   apps/mobile/src/lib/onboarding.ts
+
+# ═══════════════════════ 宠物 / 皮肤(重写)═══════════════════════
+# 单角色 char-1 + 6 outfit + WP -> 3 宠物 x 6 形态 x sleep/fly
+REWRITE  apps/mobile/app/(main)/(tabs)/index.tsx        # 697 行。Home
+REWRITE  apps/mobile/app/(main)/(modals)/skin-select.tsx
+REWRITE  apps/mobile/src/components/main/video-character.tsx
+REWRITE  apps/mobile/src/components/main/bottom-tab-bar.tsx  # 4 tab + 悬浮麦克风 -> 5 真 tab
+REWRITE  apps/mobile/src/components/modals/skin-unlock-modal.tsx
+REWRITE  apps/mobile/src/lib/skin-unlock-store.ts
+
+# ═══════════════════════ Me / 排行榜(重写)═══════════════════════
+REWRITE  apps/mobile/app/(main)/(modals)/me.tsx         # 763 行。数据源全变
+REWRITE  apps/mobile/app/(main)/(modals)/ranking.tsx    # C9:移除技能数
+REWRITE  apps/mobile/src/lib/leaderboard-api.ts
+REWRITE  apps/mobile/src/lib/me-stats.ts
+
+# ═══════════════════════ 订阅(重写:座位制)═══════════════════════
+# D4:3 档 6 product -> solo.monthly / solo.yearly / duo.yearly
+REWRITE  apps/mobile/app/(main)/(modals)/subscription-paywall.tsx
+REWRITE  apps/mobile/src/lib/iap.ts
+REWRITE  apps/mobile/src/lib/subscription.ts
+REWRITE  apps/mobile/src/components/me/plan-billing-sheet.tsx
+REWRITE  apps/mobile/src/lib/quota-flag.ts              # 配额语义 -> 3 次/天
+
+# ═══════════════════════ 电商(D6a 保留)═══════════════════════
+# 保留的是【支付链路】(airwallex-api / orders-api,纯 API 封装),
+# 不是【电商页面】。页面全部 REWRITE:
+#   - 商品变了:48 张智慧卡 -> 物件图鉴册 / 技能卡实体牌组
+#   - 解锁门槛变了:uniqueKeywords >= 48 -> 物件收集数
+#   - 下单后跳转变了:(tabs)/assets -> (tabs)/bags
+#   - cards-select(选 48 张)整个作废
+REWRITE  apps/mobile/app/(main)/(modals)/product-detail.tsx  # 解锁门槛: 48 关键词 -> 物件数
+REWRITE  apps/mobile/app/(main)/(modals)/shipping-form.tsx   # ->assets
+REWRITE  apps/mobile/app/(main)/(modals)/payment-stub.tsx    # ->assets
+REWRITE  apps/mobile/app/(main)/(modals)/order-history.tsx   # ->assets x2
+REWRITE  apps/mobile/app/(main)/(modals)/order-detail.tsx    # ->assets, ->cards-select
+KEEP     apps/mobile/src/lib/airwallex-api.ts
+KEEP     apps/mobile/src/lib/orders-api.ts
+
+# ═══════════════════════ 基础设施(KEEP)═══════════════════════
+KEEP     apps/mobile/app/(main)/ai-consent.tsx
+REWRITE  apps/mobile/app/(main)/(modals)/account-management.tsx  # 删 3 行冗余 clearCachedX
+REWRITE  apps/mobile/app/(main)/(modals)/notification-settings.tsx
+KEEP     apps/mobile/app/(main)/(modals)/support.tsx
+KEEP     apps/mobile/src/components/main/announcement-gate.tsx
+KEEP     apps/mobile/src/components/main/asset-gate-error.tsx
+REWRITE  apps/mobile/src/components/main/background-resume-overlay.tsx  # 80/126 行是 study-claim
+KEEP     apps/mobile/src/components/main/error-boundary.tsx
+KEEP     apps/mobile/src/components/main/force-update-gate.tsx
+KEEP     apps/mobile/src/components/rating/rating-prompt-sheet.tsx
+KEEP     apps/mobile/src/components/ui/toast.tsx
+KEEP     apps/mobile/src/components/ui/pager-tab-bar.tsx
+KEEP     apps/mobile/src/hooks/use-responsive.ts
+KEEP     apps/mobile/src/lib/account-api.ts
+KEEP     apps/mobile/src/lib/ai-consent.ts
+KEEP     apps/mobile/src/lib/announcements-api.ts
+KEEP     apps/mobile/src/lib/api.ts
+KEEP     apps/mobile/src/lib/app-config-api.ts
+KEEP     apps/mobile/src/lib/asset-cache.ts
+KEEP     apps/mobile/src/lib/asset-types.ts
+KEEP     apps/mobile/src/lib/auth.ts
+KEEP     apps/mobile/src/lib/background-resume-store.ts
+KEEP     apps/mobile/src/lib/download-queue.ts
+KEEP     apps/mobile/src/lib/force-update.ts
+KEEP     apps/mobile/src/lib/haptics.ts
+KEEP     apps/mobile/src/lib/home-refresh-signal.ts
+KEEP     apps/mobile/src/lib/modal-coordinator.ts
+REWRITE  apps/mobile/src/lib/notification-settings.ts  # buildBody() 取宠物名
+KEEP     apps/mobile/src/lib/publish-count.ts
+KEEP     apps/mobile/src/lib/rating-prompt.ts
+KEEP     apps/mobile/src/lib/relative-time.ts
+KEEP     apps/mobile/src/lib/splash.ts
+KEEP     apps/mobile/src/lib/storage.ts
+KEEP     apps/mobile/src/lib/supabase.ts
+KEEP     apps/mobile/src/lib/support-api.ts
+KEEP     apps/mobile/src/lib/task-completion-count.ts
+KEEP     apps/mobile/src/shared/storage/artifacts.ts
+KEEP     apps/mobile/src/shared/storage/index.ts
+KEEP     apps/mobile/src/shared/storage/keys.ts
+KEEP     apps/mobile/src/shared/storage/mmkv.ts
+KEEP     apps/mobile/src/shared/storage/registry.ts
+KEEP     apps/mobile/src/theme/index.ts
+KEEP     apps/mobile/src/theme/theme-context.tsx
+KEEP     apps/mobile/src/theme/use-theme.ts
+
+# ═══════════════════════ Phase B 取代 ═══════════════════════
+REWRITE  apps/mobile/src/lib/cache-refresh-all.ts       # createResource 的 invalidateBy
+
+# ═══════════════════════ 庆祝动效(删了重写)═══════════════════════
+# 与 v1 的卡片尺寸 / 域色 / EXP 曲线耦合。v2.0 的道具弹窗(5x2 错峰)、
+# 技能卡翻转、驯服成功各有自己的节奏,重写比适配便宜。
+DELETE   apps/mobile/src/components/cards/CardSpinAnimation.tsx
+DELETE   apps/mobile/src/components/cards/Confetti.tsx
+DELETE   apps/mobile/src/components/growth/burst-confetti.tsx
