@@ -64,3 +64,5 @@ video-manifest.json
 # Apple authentication keys (ASC API, APNs, Sign In with Apple) — never commit
 *.p8
 AuthKey_*.p8
+
+*.zip
