@@ -20,11 +20,10 @@ import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { syncOnboardingIfPending } from '@/lib/onboarding';
-import { clearCachedSubscription, fetchSubscriptionTier } from '@/lib/subscription';
-import { clearCachedMeStats, fetchMeStats } from '@/lib/me-stats';
-import { clearCachedCharacterState, fetchCharacterState } from '@/lib/character-state';
-import { clearCachedConfig, fetchAppConfig } from '@/lib/app-config-api';
-import { clearCachedWisdomCenter } from '@/lib/wisdom-center-api';
+import { fetchSubscriptionTier } from '@/lib/subscription';
+import { fetchMeStats } from '@/lib/me-stats';
+import { fetchCharacterState } from '@/lib/character-state';
+import { fetchAppConfig } from '@/lib/app-config-api';
 import {
   markRefreshedNow,
   shouldRefreshAll,
@@ -32,7 +31,6 @@ import {
 import { fetchManifestFromR2, setCachedManifest } from '@/lib/asset-cache';
 import { startDownloadQueue } from '@/lib/download-queue';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
-import { storage } from '@/lib/storage';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
 import { BackgroundResumeOverlay } from '@/components/main/background-resume-overlay';
@@ -42,6 +40,12 @@ import {
 } from '@/lib/background-resume-store';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { hideSplashOnce } from '@/lib/splash';
+import {
+  assertAllKeysRegistered,
+  clearOnSignIn,
+  clearOnSignOut,
+  debugAccountKeysRemaining,
+} from '@/shared/storage';
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
 // the global scope of the module that owns the root component, NOT
@@ -52,6 +56,11 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   // Silent — if it returns false the splash was already hidden, which
   // is fine; we just skip the manual hide path.
 });
+
+// Dev-only. Fails loudly if MMKV holds a key that was never declared in
+// src/shared/storage/keys.ts. An undeclared key has no scope, which means
+// nothing will ever clear it on sign-out -- the exact shape of P0-1.
+assertAllKeysRegistered();
 
 // Hard timeout on cold-start prewarm. Per Apple App Store guidance and
 // the expo docs, the splash must hide within a few seconds even if
@@ -327,31 +336,35 @@ export default function RootLayout() {
       data: { subscription: authSub },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        // Stage 5.WR.2 (cache-stale fix): defensively clear per-user
-        // MMKV caches on SIGNED_IN, not just SIGNED_OUT. The
-        // SIGNED_OUT-only handler doesn't cover edge cases like:
-        //   - User force-quits the app instead of signing out
-        //   - User switches accounts after expo-dev-client hot restart
-        //   - Apple Sign In re-authenticates as a different user
-        // In all of these, the previous user's cached subscription /
-        // me-stats / character-state would render for ~20 seconds
-        // until the first authoritative fetch returns. Clearing on
-        // SIGNED_IN guarantees the UI starts blank for the new user.
+        // SIGNED_IN fires without a preceding SIGNED_OUT more often than you
+        // would expect: a force-quit leaves the Supabase session in
+        // AsyncStorage, an expo-dev-client hot restart reuses it, and Apple
+        // Sign In can re-authenticate as a different account outright. So this
+        // path has to scrub, not just SIGNED_OUT.
         //
-        // We do NOT clear onboarding_state / shipping here:
-        //   - onboarding_state: in-progress draft scoped to the new
-        //     user (a brand-new account has none yet; a returning
-        //     mid-onboarding user gets to resume).
-        //   - shipping: physical address, doesn't affect any auth-
-        //     gated UI and survives the user switch deliberately.
+        // Every 'user'-scoped key goes, not the four this handler happened to
+        // name. Which keys those are is decided in shared/storage/keys.ts, once,
+        // rather than remembered here every time someone adds a cache.
+        //
+        // 'preauth' is deliberately spared. novame_onboarding_state holds
+        // answers the *arriving* user typed minutes ago, and
+        // syncOnboardingIfPending() below reads MMKV on its first synchronous
+        // line -- clear it here and pendingSync reads false, the sync never
+        // runs, and their aspire words never reach the server. The old comment
+        // that used to sit here got the conclusion right for the wrong reason.
+        //
+        // novame.shipping is NOT spared, despite what that comment claimed. It
+        // is the previous user's home address, and it renders straight into
+        // the next user's shipping form.
         try {
-          clearCachedSubscription();
-          clearCachedMeStats();
-          clearCachedCharacterState();
-          clearCachedWisdomCenter();
+          clearOnSignIn();
         } catch (e) {
           console.warn('[layout] sign-in cache clear failed:', e);
         }
+        // Dev-only. Should print exactly one survivor: [preauth]
+        // novame_onboarding_state. Anything else is a key that outlived its
+        // owner.
+        debugAccountKeysRemaining('SIGNED_IN');
 
         // Fire-and-forget onboarding sync if there is pending mmkv data
         // from a fresh onboarding completion. Errors are logged and
@@ -372,27 +385,26 @@ export default function RootLayout() {
         // SIGNED_OUT: 'Use this to clean up any local storage your
         // application has associated with the user.'
         try {
-          clearCachedSubscription();
-          clearCachedMeStats();
-          clearCachedCharacterState();
-          clearCachedWisdomCenter();
-          // Stage A (dynamic pricing): clear cached app_config snapshot.
-          // App config is per-app not per-user, but we clear defensively
-          // so cache hygiene is uniform across all MMKV keys.
-          clearCachedConfig();
-          // Stage 5.WR.2 (Bug 3): clear skin-unlock tracker so a fresh
-          // user on the same device starts with no "already seen"
-          // history. Also drain the in-memory queue so leftover
-          // modals from the prior session don't flash on sign-in.
+          // 'user' + 'preauth'. The onboarding draft belonged to the account
+          // that is leaving, and every cache derived from an authenticated
+          // request goes with it -- including the pointer to an unpublished
+          // voice recording, whose .m4a is deleted by that key's onClear hook.
+          //
+          // novame_app_config is no longer cleared. It is 'device' scoped:
+          // pricing and unlock thresholds are properties of the app, not of
+          // the account. The old handler cleared it "defensively", which bought
+          // nothing and cost a refetch on every sign-out.
+          clearOnSignOut();
+          // An in-memory queue, not MMKV. The registry cannot see it, so it
+          // still has to be drained by hand: leftover unlock modals from the
+          // prior session would otherwise flash on the next sign-in.
           clearSkinUnlockQueue();
-          // Onboarding cache: scoped to the previous user's uncommitted
-          // onboarding draft. Safe to clear unconditionally.
-          storage.remove('novame_onboarding_state');
-          // Shipping form cache: address belongs to the previous user.
-          storage.remove('novame.shipping');
         } catch (e) {
           console.warn('[layout] sign-out cache clear failed:', e);
         }
+        // Dev-only. Should print zero survivors. Whatever it does print is
+        // what the next user to sign in on this phone would have read.
+        debugAccountKeysRemaining('SIGNED_OUT');
         router.replace('/(auth)/sign-in');
       }
       // INITIAL_SESSION / TOKEN_REFRESHED / USER_UPDATED: no-op here.

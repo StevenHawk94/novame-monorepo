@@ -1,0 +1,260 @@
+import { deleteRecordDraftAudio } from './artifacts';
+import { defineKey, definePrefixKey } from './registry';
+
+/**
+ * THE key manifest. Every MMKV key in the app, declared exactly once, with an
+ * explicit scope. Nowhere else.
+ * ===========================================================================
+ *
+ * Choosing a scope
+ * ----------------
+ *   'user'    The value describes the signed-in account: anything derived from
+ *             an authenticated API call, anything the user typed, any counter
+ *             about their behaviour.
+ *
+ *             WHEN IN DOUBT, CHOOSE THIS. Over-clearing costs one extra fetch.
+ *             Under-clearing means user B reads user A's data.
+ *
+ *   'device'  The value describes this phone: notification schedule, the R2
+ *             asset manifest, "have we already asked for a rating". Survives a
+ *             user switch on purpose.
+ *
+ * How this list was established (2026-07)
+ * ---------------------------------------
+ * Not by reading the sign-out handler -- that handler was the bug. Every entry
+ * below was derived from a scan of the real tree for string and template
+ * literals, cross-checked against every storage read and write call site,
+ * with three assertions:
+ *
+ *   - `iap.ts` never touches `storage`, so its six `novame.*` literals are App
+ *     Store product IDs, not keys.
+ *   - The two multi-line `storage.set(` calls (ai-consent.ts, record.tsx) pass
+ *     the keys claimed here.
+ *   - `novame_weekly_report:` has a getString and a set, and no remove anywhere
+ *     in the repo. It leaks by construction.
+ *
+ * Before the registry, sign-out cleared 6 of these 31 keys. The 14 user-scoped
+ * keys marked LEAKED below survived a user switch on a shared device.
+ *
+ * Retirement (Phase 2)
+ * --------------------
+ * Voice recording, the weekly report, Discover/Seek, and the 48-keyword card
+ * system are all removed in v2.0. Their keys must NOT be deleted from this
+ * file when their writers go away: users upgrading from 1.0.x still carry that
+ * data on disk, and `clearScope()` is the only thing that will ever remove it.
+ * Mark them clear-only, like `kLeaderboardLegacy` below.
+ * ===========================================================================
+ */
+
+// ===========================================================================
+// USER SCOPE (24) -- cleared on SIGNED_IN and on SIGNED_OUT
+// ===========================================================================
+
+// --- Authenticated API caches ---------------------------------------------
+
+/** subscription.ts: STORAGE_KEY */
+export const kSubscription = defineKey('novame_subscription', 'user');
+
+/** me-stats.ts: STORAGE_KEY */
+export const kMeStats = defineKey('novame_me_stats', 'user');
+
+/** character-state.ts: STORAGE_KEY */
+export const kCharacterState = defineKey('novame_character_state', 'user');
+
+/** wisdom-center-api.ts: WISDOM_CENTER_STORAGE_KEY */
+export const kWisdomCenter = defineKey('novame_wisdom_center', 'user');
+
+/** LEAKED. wisdoms-api.ts: WISDOMS_STORAGE_KEY -- the user's own entries. */
+export const kWisdomLogs = defineKey('novame_wisdom_logs', 'user');
+
+/** LEAKED. user-stats-api.ts: USER_STATS_STORAGE_KEY -- word counts, keywords. */
+export const kUserStats = defineKey('novame_user_stats', 'user');
+
+/** LEAKED. daily-tasks-api.ts: DAILY_TASKS_STORAGE_KEY */
+export const kDailyTasks = defineKey('novame_daily_tasks', 'user');
+
+/**
+ * LEAKED. keyword-detail-cache.ts: PREFIX, read as `PREFIX + slug`.
+ *
+ * The name says artwork; the value is `WisdomLog[]` -- the user's own journal
+ * entries filtered by keyword. Nothing about this key is user-agnostic.
+ */
+export const kKeywordDetail = definePrefixKey('novame_kwdetail:', 'user');
+
+/**
+ * LEAKED, and the one the literal scan missed on the first pass.
+ *
+ * wisdom-center-api.ts: `weeklyReportCacheKey(weekStart)` builds it with a
+ * template literal, so a scan for quoted strings never saw it. It has a
+ * getString (:412) and a set (:425) and no remove anywhere in the repo, while
+ * its neighbour WISDOM_CENTER_STORAGE_KEY is cleared in three places. The
+ * value is the user's AI-generated weekly report.
+ */
+export const kWeeklyReport = definePrefixKey('novame_weekly_report:', 'user');
+
+/**
+ * LEAKED. leaderboard-api.ts: LEADERBOARD_STORAGE_KEY.
+ *
+ * Public data, so 'device' would technically hold -- but it embeds the
+ * viewer's own rank, and one refetch after sign-in is free. When in doubt.
+ */
+export const kLeaderboard = defineKey('novame_leaderboard_v2', 'user');
+
+/**
+ * Clear-only. Never written by current code: leaderboard-api.ts:71 records that
+ * the key was renamed to `_v2` so stale caches would be ignored. Ignored, but
+ * not deleted -- every install that predates the rename still carries it.
+ * Registered so `clearScope` collects it and `assertAllKeysRegistered` stays
+ * quiet.
+ */
+export const kLeaderboardLegacy = defineKey('novame_leaderboard', 'user');
+
+/**
+ * LEAKED. seek-cards-cache.ts: PREFIX, read as `keyFor(questionId, userId)`.
+ * The userId is baked into the suffix, so a switch orphans rather than leaks --
+ * but it is still the previous account's data sitting on the disk.
+ */
+export const kSeekCards = definePrefixKey('novame_seek_cards_', 'user');
+
+// --- Drafts: the incident --------------------------------------------------
+
+/**
+ * LEAKED, AND THE ONE THAT MATTERED.
+ *
+ * record-draft.ts: META_KEY. The value is `{ audioUri, durationSec, ... }`
+ * where audioUri points at `documentDirectory/novame_record_draft.m4a` -- an
+ * unpublished voice recording. User B signing in on the same phone was offered
+ * user A's recording to resume and publish.
+ *
+ * `onClear` deletes the audio file, not merely the pointer.
+ */
+export const kRecordDraft = defineKey('novame_record_draft', 'user', {
+  onClear: deleteRecordDraftAudio,
+});
+
+/** LEAKED. record.tsx:1944,2829,2834,2836 -- unpublished typed text. */
+export const kRecordTypedDraft = defineKey('novame_record_typed_draft', 'user');
+
+/** LEAKED. record.tsx:1928 (multi-line set) -- AI line about A's last entry. */
+export const kLastPublishMessage = defineKey('novame_last_publish_message', 'user');
+
+// --- Consent and entitlement -----------------------------------------------
+
+/**
+ * LEAKED. ai-consent.ts: STORAGE_KEY.
+ *
+ * `hasAiConsented()` reads this synchronously before any AI-touching flow
+ * opens. A new user could pass that gate on the previous user's consent, in
+ * the window before `fetchCharacterState` overwrote it from the server.
+ * Bounded, and it self-heals -- but it is a consent record. Treat it as one.
+ */
+export const kAiConsent = defineKey('novame.ai_consent', 'user');
+
+/**
+ * LEAKED. quota-flag.ts: KEY.
+ *
+ * The ONLY native-boolean key in the app: `storage.set(KEY, true)` +
+ * `storage.getBoolean(KEY)`. Every other key is a string. (Repo-wide,
+ * getBoolean appears once; getString 32 times; getNumber never.)
+ *
+ * Phase 0 does not touch reads, so this does not matter yet. Phase 1's typed
+ * accessors MUST dispatch on the stored primitive, or `getString` on this key
+ * returns undefined and the local paywall short-circuit silently dies.
+ */
+export const kQuotaExhausted = defineKey('novame_quota_exhausted', 'user');
+
+// --- Behaviour counters ----------------------------------------------------
+
+/** LEAKED. publish-count.ts: PUBLISH_COUNT_KEY. */
+export const kPublishCount = defineKey('novame_publish_count', 'user');
+
+/** LEAKED. task-completion-count.ts: TASK_COMPLETION_COUNT_KEY. */
+export const kTaskCompletionCount = defineKey('novame_task_completion_count', 'user');
+
+/**
+ * LEAKED. (tabs)/index.tsx: WR_DOT_SEEN_KEY.
+ * Despite the name, the value is a fingerprint string, not a boolean.
+ */
+export const kWeeklyReportDotSeen = defineKey('novame_wr_dot_seen', 'user');
+
+/** LEAKED. (tabs)/index.tsx: WR_DOT_CHECKED_DATE_KEY -- a yyyy-mm-dd string. */
+export const kWeeklyReportDotCheckedDate = defineKey('novame_wr_dot_checked_date', 'user');
+
+/** LEAKED. notification-settings.ts: PROMPTED_AFTER_PURCHASE_KEY. */
+export const kNotifPromptedAfterPurchase = defineKey(
+  'novame_notif_prompted_after_purchase',
+  'user',
+);
+
+// --- Forms and flows -------------------------------------------------------
+
+/**
+ * onboarding.ts: STORAGE_KEY. 'preauth', not 'user'.
+ *
+ * The 11-step flow runs before sign-in, so at SIGNED_IN this blob belongs to
+ * the person who just typed it. Clearing it there is not hygiene, it is data
+ * loss: `syncOnboardingIfPending` (onboarding.ts:216) reads MMKV on its first
+ * synchronous line and returns early when `pendingSync` is false, so the
+ * aspire words and companion name never reach the server.
+ *
+ * At SIGNED_OUT the same blob belongs to the departing user, and goes.
+ *
+ * Also removed by (auth)/sign-in.tsx:111 -- a dev-only "replay onboarding"
+ * button, unrelated to auth lifecycle.
+ */
+export const kOnboardingState = defineKey('novame_onboarding_state', 'preauth');
+
+/**
+ * shipping-form.tsx: STORAGE_KEY. Read by order-history.tsx:122.
+ *
+ * 'user', not 'preauth': the address is typed after sign-in, inside the
+ * checkout flow. The old SIGNED_IN handler preserved it on the grounds that it
+ * "doesn't affect any auth-gated UI" -- but it is the previous user's home
+ * address, and it renders straight into the next user's shipping form.
+ */
+export const kShipping = defineKey('novame.shipping', 'user');
+
+/**
+ * LEAKED. cache-refresh-all.ts: LAST_REFRESH_KEY.
+ *
+ * User-scoped on purpose: clearing it means the first foreground tick after a
+ * sign-in refreshes everything for the new account, rather than trusting the
+ * previous user's freshness stamp.
+ */
+export const kLastGlobalRefreshMs = defineKey('novame_last_global_refresh_ms', 'user');
+
+// ===========================================================================
+// DEVICE SCOPE (6) -- survives a user switch, deliberately
+// ===========================================================================
+
+/**
+ * app-config-api.ts: STORAGE_KEY. Pricing and unlock thresholds are app-wide,
+ * not account-wide. The old sign-out handler cleared this; that was a needless
+ * refetch on every sign-out, not a fix.
+ */
+export const kAppConfig = defineKey('novame_app_config', 'device');
+
+/** notification-settings.ts: STORAGE_KEY. The reminder schedule for THIS phone. */
+export const kNotificationSettings = defineKey('novame_notification_settings', 'device');
+
+/**
+ * rating-prompt.ts: KEY_LAST_PROMPT_AT / KEY_USER_EXPRESSED.
+ *
+ * Apple rate-limits `requestReview` per device. Tracking it per account would
+ * let a user switch "reset" a limit they cannot actually reset -- we would
+ * simply call an API that silently does nothing.
+ */
+export const kRatingPromptLastAt = defineKey('novame_rating_prompt_last_at', 'device');
+export const kRatingPromptUserExpressed = defineKey(
+  'novame_rating_prompt_user_expressed',
+  'device',
+);
+
+/** asset-cache.ts: STORAGE_KEY_MANIFEST. Card art and video are user-agnostic. */
+export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
+
+/**
+ * seek-questions-cache.ts: STORAGE_KEY_PREFIX, read as `keyForFilter(filter)`.
+ * The public Seek feed. No userId in the key, no user data in the value.
+ */
+export const kSeekQuestions = definePrefixKey('novame_seek_questions:', 'device');
