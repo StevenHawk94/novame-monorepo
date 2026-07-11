@@ -10,13 +10,9 @@
     "./types": "./src/types/index.ts",
     "./constants/keywords": "./src/constants/keywords.ts",
     "./constants/pricing": "./src/constants/pricing.ts",
-    "./constants/character": "./src/constants/character.ts",
-    "./constants/exp": "./src/constants/exp.ts",
     "./constants/recording": "./src/constants/recording.ts",
     "./constants/categories": "./src/constants/categories.ts",
     "./constants/aspire-pool": "./src/constants/aspire-pool.ts",
-    "./rules/character": "./src/rules/character.ts",
-    "./rules/exp": "./src/rules/exp.ts",
     "./rules/format": "./src/rules/format.ts"
   },
   "devDependencies": {
