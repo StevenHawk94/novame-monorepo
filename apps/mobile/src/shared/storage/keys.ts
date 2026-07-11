@@ -248,6 +248,13 @@ export const kStatusGems = defineKey('novame_status_gems', 'user');
  *  entry an extra time, which the RPC then rejects. */
 export const kQuietWinsState = defineKey('novame_quiet_wins_state', 'user');
 
+/** new-lens.tsx: today's completion flag + the pre-fetched next card per theme.
+ *  Shape: { date, done, nextCards: { [theme]: card } }. The done flag hides the
+ *  Home entry once used (resets next day); nextCards is the "cache the next card
+ *  on completion" so tomorrow's open is instant, falling back to a fetch if a
+ *  card was edited away. A read-only shadow of the server's gate and cursor. */
+export const kNewLensState = defineKey('novame_new_lens_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================

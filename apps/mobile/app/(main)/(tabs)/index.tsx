@@ -7,6 +7,7 @@ import { requireAiConsent } from '@/lib/ai-consent';
 import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
 import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
+import { isNewLensDoneToday } from '@/lib/lens-api';
 
 /**
  * Home -- Phase A placeholder, growing Kit entries in Phase C.
@@ -30,6 +31,7 @@ import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 export default function HomeScreen() {
   const router = useRouter();
   const [quietWinsDone, setQuietWinsDone] = useState(false);
+  const [newLensDone, setNewLensDone] = useState(false);
 
   const onLayout = useCallback(() => {
     hideSplashOnce();
@@ -40,6 +42,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setQuietWinsDone(isQuietWinsDoneToday());
+      setNewLensDone(isNewLensDoneToday());
     }, []),
   );
 
@@ -56,6 +59,10 @@ export default function HomeScreen() {
     void haptics.medium();
     router.push('/(main)/quiet-wins');
   };
+  const onNewLens = () => {
+    void haptics.medium();
+    router.push('/(main)/new-lens');
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']} onLayout={onLayout}>
@@ -71,6 +78,11 @@ export default function HomeScreen() {
           {!quietWinsDone && (
             <Pressable onPress={onQuietWins} style={styles.btn}>
               <Text style={styles.btnText}>Quiet Wins</Text>
+            </Pressable>
+          )}
+          {!newLensDone && (
+            <Pressable onPress={onNewLens} style={styles.btn}>
+              <Text style={styles.btnText}>New Lens</Text>
             </Pressable>
           )}
         </View>

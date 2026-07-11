@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
@@ -51,9 +51,21 @@ export default function ReflectScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
 
+  const params = useLocalSearchParams<{
+    presetPrompt?: string;
+    presetDimension?: string;
+    sourceKit?: string;
+  }>();
+  const presetPrompt = typeof params.presetPrompt === 'string' ? params.presetPrompt : null;
+  const presetDimension =
+    typeof params.presetDimension === 'string' ? params.presetDimension : undefined;
+  const sourceKit = params.sourceKit === 'new_lens' ? 'new_lens' : undefined;
+
   const initial = useMemo(() => getReflectStateToday(), []);
-  const [phase, setPhase] = useState<Phase>('pick');
-  const [promptId, setPromptId] = useState<number | null>(null);
+  // A preset (from New Lens) skips the prompt picker: the user already has a
+  // line to respond to, and the reflect is credited to the theme's dimension.
+  const [phase, setPhase] = useState<Phase>(presetPrompt ? 'write' : 'pick');
+  const [promptId, setPromptId] = useState<number | null>(presetPrompt ? 9 : null);
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ReflectError | null>(null);
@@ -62,7 +74,9 @@ export default function ReflectScreen() {
 
   const atLimit = remaining <= 0;
 
-  const selectedPrompt = REFLECT_PROMPTS.find((p) => p.id === promptId);
+  const selectedPrompt = presetPrompt
+    ? { id: 9, text: presetPrompt, dimension: null }
+    : REFLECT_PROMPTS.find((p) => p.id === promptId);
 
   function choosePrompt(id: number) {
     setPromptId(id);
@@ -74,7 +88,7 @@ export default function ReflectScreen() {
     if (promptId == null || submitting) return;
     setSubmitting(true);
     setError(null);
-    const res = await submitReflect({ promptId, body });
+    const res = await submitReflect({ promptId, body, presetDimension, sourceKit });
     setSubmitting(false);
     if (res.ok) {
       setResult(res.snapshot);

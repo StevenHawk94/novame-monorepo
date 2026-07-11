@@ -77,7 +77,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { userId, promptId, body, localDate } = await request.json()
+    const { userId, promptId, body, localDate, presetDimension, sourceKit } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -108,7 +108,13 @@ export async function POST(request) {
     const isPaid = (profile.subscription_tier || 'free') !== 'free'
     const hasConsent = !!profile.ai_consent_at
 
-    const pDim = promptDimension(promptId)
+    // A reflect routed in from New Lens carries an explicit dimension (the
+    // theme's) via presetDimension, overriding the prompt's own -- the user is
+    // on the free-form prompt (9) but the reflection belongs to that theme.
+    const pDim =
+      presetDimension && DIMENSION_IDS.includes(presetDimension)
+        ? presetDimension
+        : promptDimension(promptId)
     let aiDimensions = []
     if (isPaid && hasConsent) {
       aiDimensions = await analyzeDimensions(body, pDim)
@@ -135,6 +141,7 @@ export async function POST(request) {
       p_iso_week: weekStr,
       p_xp_amount: 30,
       p_dimension_hits: dimensionHits,
+      p_source_kit: sourceKit === 'new_lens' ? 'new_lens' : null,
     })
     if (rpcErr) {
       console.error('[reflect] rpc error:', rpcErr.message)

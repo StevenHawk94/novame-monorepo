@@ -126,6 +126,9 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
 export async function submitReflect(params: {
   promptId: number;
   body: string;
+  /** New Lens routes here with the theme's dimension + a source tag. */
+  presetDimension?: string;
+  sourceKit?: 'new_lens';
 }): Promise<SubmitResult> {
   const body = params.body.trim();
   if (body.length === 0) return { ok: false, error: 'empty' };
@@ -143,6 +146,8 @@ export async function submitReflect(params: {
       promptId: params.promptId,
       body,
       localDate: today,
+      presetDimension: params.presetDimension,
+      sourceKit: params.sourceKit,
     });
 
     if (data.error === 'daily_limit_reached') {
