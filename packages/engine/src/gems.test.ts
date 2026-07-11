@@ -8,39 +8,46 @@ describe('gemStage', () => {
   );
 });
 
-describe('gemsForReflect', () => {
-  it('free user credits one dimension', () => {
-    const r = gemsForReflect({
-      charCount: 100, matchedDimensions: ['expression', 'awareness'],
-      isPaid: false, priorCountsToday: {},
-    });
+describe('gemsForReflect: free tier', () => {
+  it('credits the prompt dimension only (+10)', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: [], isPaid: false, priorCountsToday: {} });
     expect(r).toEqual({ total: 10, credited: ['expression'] });
   });
-  it('paid user credits two', () => {
-    const r = gemsForReflect({
-      charCount: 100, matchedDimensions: ['expression', 'awareness'],
-      isPaid: true, priorCountsToday: {},
-    });
+  it('free-form prompt earns nothing for free users', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: null, aiDimensions: [], isPaid: false, priorCountsToday: {} });
+    expect(r).toEqual({ total: 0, credited: [] });
+  });
+  it('ignores aiDimensions even if passed', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: ['awareness', 'momentum'], isPaid: false, priorCountsToday: {} });
+    expect(r.total).toBe(10);
+  });
+});
+
+describe('gemsForReflect: paid tier', () => {
+  it('prompt + 2 AI = 3 dimensions (+30)', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: ['awareness', 'momentum'], isPaid: true, priorCountsToday: {} });
+    expect(r).toEqual({ total: 30, credited: ['expression', 'awareness', 'momentum'] });
+  });
+  it('dedups AI repeating the prompt dimension', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: ['expression', 'awareness'], isPaid: true, priorCountsToday: {} });
     expect(r.total).toBe(20);
   });
-  it('under 20 chars earns nothing', () => {
-    expect(gemsForReflect({
-      charCount: 19, matchedDimensions: ['expression'],
-      isPaid: true, priorCountsToday: {},
-    }).total).toBe(0);
+  it('caps at 3 even if AI gives more', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: ['awareness', 'momentum', 'direction'], isPaid: true, priorCountsToday: {} });
+    expect(r.credited).toEqual(['expression', 'awareness', 'momentum']);
   });
-  it('a dimension at daily cap earns nothing', () => {
-    const r = gemsForReflect({
-      charCount: 100, matchedDimensions: ['expression'],
-      isPaid: false, priorCountsToday: { expression: 2 },
-    });
-    expect(r.total).toBe(0);
+  it('free-form paid: pure AI, up to 3', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: null, aiDimensions: ['awareness', 'momentum', 'direction'], isPaid: true, priorCountsToday: {} });
+    expect(r.total).toBe(30);
   });
-  it('one capped, one fresh: paid credits only the fresh one', () => {
-    const r = gemsForReflect({
-      charCount: 100, matchedDimensions: ['expression', 'awareness'],
-      isPaid: true, priorCountsToday: { expression: 2 },
-    });
+  it('prompt dimension at daily cap is skipped, AI still counts', () => {
+    const r = gemsForReflect({ charCount: 100, promptDimension: 'expression', aiDimensions: ['awareness'], isPaid: true, priorCountsToday: { expression: 2 } });
     expect(r).toEqual({ total: 10, credited: ['awareness'] });
+  });
+});
+
+describe('gemsForReflect: shared rules', () => {
+  it('under 20 chars earns nothing', () => {
+    expect(gemsForReflect({ charCount: 19, promptDimension: 'expression', aiDimensions: [], isPaid: true, priorCountsToday: {} }).total).toBe(0);
   });
 });
