@@ -230,6 +230,11 @@ export const kLastGlobalRefreshMs = defineKey('novame_last_global_refresh_ms', '
  *  is the real limit. */
 export const kReflectState = defineKey('novame_reflect_state', 'user');
 
+/** status.tsx: the eight-dimension gem totals from /api/status. A read-only
+ *  shadow of user_gems; the Status screen derives stage and totals from these
+ *  with the shared engine, never storing computed values. */
+export const kStatusGems = defineKey('novame_status_gems', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================
