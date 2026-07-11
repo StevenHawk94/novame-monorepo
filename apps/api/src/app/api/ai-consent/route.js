@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
@@ -51,7 +52,7 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
-    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    const _authUser = await verifyToken(token); const _authErr = _authUser ? null : new Error('invalid token')
     if (_authErr || !_authUser) {
       console.warn('[ai-consent GET] rejected: token verify failed', _authErr && _authErr.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -120,7 +121,7 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
-    const { data: { user: _authUser }, error: _authErr } = await _authSupabase.auth.getUser(token)
+    const _authUser = await verifyToken(token); const _authErr = _authUser ? null : new Error('invalid token')
     if (_authErr || !_authUser) {
       console.warn('[ai-consent POST] rejected: token verify failed', _authErr && _authErr.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

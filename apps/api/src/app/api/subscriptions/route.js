@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
@@ -38,7 +39,7 @@ export async function GET(request) {
       console.warn('[subscriptions] GET rejected: no bearer token')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    const authUser = await verifyToken(token); const authErr = authUser ? null : new Error('invalid token')
     if (authErr || !authUser) {
       console.warn('[subscriptions] GET rejected: token verify failed', authErr && authErr.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

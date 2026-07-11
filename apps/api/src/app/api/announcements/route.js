@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
@@ -47,7 +48,7 @@ export async function GET(request) {
       console.warn('[announcements] GET rejected: no bearer token')
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    const authUser = await verifyToken(token); const authErr = authUser ? null : new Error('invalid token')
     if (authErr || !authUser) {
       console.warn('[announcements] GET rejected: token verify failed', authErr && authErr.message)
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -158,7 +159,7 @@ export async function POST(request) {
       console.warn('[announcements] POST rejected: no bearer token')
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser(token)
+    const authUser = await verifyToken(token); const authErr = authUser ? null : new Error('invalid token')
     if (authErr || !authUser) {
       console.warn('[announcements] POST rejected: token verify failed', authErr && authErr.message)
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
@@ -59,7 +60,7 @@ export async function GET(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const _authSupabaseGet = getSupabaseAdmin()
-    const { data: { user: _authUserGet }, error: _authErrGet } = await _authSupabaseGet.auth.getUser(token)
+    const _authUserGet = await verifyToken(token); const _authErrGet = _authUserGet ? null : new Error('invalid token')
     if (_authErrGet || !_authUserGet) {
       console.warn('[user-sync GET] rejected: token verify failed', _authErrGet && _authErrGet.message)
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -399,7 +400,7 @@ export async function POST(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const _authSupabasePost = getSupabaseAdmin()
-    const { data: { user: _authUser }, error: _authErr } = await _authSupabasePost.auth.getUser(_token)
+    const _authUser = await verifyToken(_token); const _authErr = _authUser ? null : new Error('invalid token')
     if (_authErr || !_authUser) {
       console.warn('[user-sync POST] rejected: token verify failed', _authErr && _authErr.message)
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

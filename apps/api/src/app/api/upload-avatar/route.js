@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
@@ -128,7 +129,7 @@ export async function POST(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const authClient = getSupabaseAdmin()
-    const { data: { user: authUser }, error: authErr } = await authClient.auth.getUser(authToken)
+    const authUser = await verifyToken(authToken); const authErr = authUser ? null : new Error('invalid token')
     if (authErr || !authUser || authUser.id !== userId) {
       console.warn('[upload-avatar] rejected: token/user mismatch')
       return Response.json({ error: 'Unauthorized' }, { status: 401 })

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
@@ -18,7 +19,7 @@ async function resolveAuth(request, supabase) {
   if (!token) {
     return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   }
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+  const user = await verifyToken(token); const authErr = user ? null : new Error('invalid token')
   if (authErr || !user) {
     return { user: null, isAdmin: false, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   }
