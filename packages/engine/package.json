@@ -1,0 +1,17 @@
+{
+  "name": "@novame/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure numeric rules for NovaMe, shared verbatim by mobile and api",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@novame/tsconfig": "workspace:*",
+    "typescript": "5.5.4",
+    "vitest": "^2.1.9"
+  }
+}
