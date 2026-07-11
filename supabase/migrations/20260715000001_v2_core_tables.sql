@@ -1,3 +1,10 @@
+-- ⚠ EXECUTION NOTE (Supabase SQL editor): run this file in TWO passes, not one.
+-- The editor mis-splits a file that mixes plain DDL with a `do $$ ... $$` block
+-- on the $$ delimiter, silently skipping the CREATE TABLEs while reporting
+-- success. Pass 1: everything down to the "-- ---- RLS" divider. Pass 2: from
+-- the `alter table ... enable row level security` line to EOF. Verified live:
+-- 6 tables, 12 policies.
+--
 -- v2.0 core tables (schema doc §1.3-1.5). Additive only: five new columns on
 -- profiles, six new tables. No v1 column, table, or type is touched -- the
 -- profiles slimming and all destructive ETL wait for C12.
