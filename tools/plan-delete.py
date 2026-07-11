@@ -33,7 +33,10 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-ROUTES = 'apps/mobile/app/'
+# File-system routers load these by path, never by import, so they have no
+# importers by construction. Treating "nobody imports it" as "it is dead" would
+# condemn every screen and every endpoint in the repo.
+ROUTES = ('apps/mobile/app/', 'apps/api/src/app/')
 
 # Stems too generic to search for as route strings. `index` and `_layout` are
 # structural names, not destinations.
@@ -44,9 +47,16 @@ def lines_of(p: str) -> int:
     return len(Path(p).read_text(encoding='utf-8').splitlines())
 
 
+# Set by main() from --classes, so the protected set and the dangling-import
+# grouping read the SAME classification the seeds came from. Hardcoding the
+# mobile file here is exactly why the api run mis-grouped ai.js and me-stats:
+# it was reading a classification for a different set of files.
+_CLASSES_PATH = 'tools/v2-classification.txt'
+
+
 def read_classes() -> dict:
-    """path -> DELETE | REWRITE | KEEP, from tools/v2-classification.txt."""
-    f = Path('tools/v2-classification.txt')
+    """path -> DELETE | REWRITE | KEEP, from the active classification file."""
+    f = Path(_CLASSES_PATH)
     if not f.exists():
         return {}
     out = {}
@@ -99,10 +109,13 @@ def dangling_imports(doomed, files, imports):
 
 def dangling_routes(doomed, files):
     """String references to a deleted route, in any surviving file."""
+    # Route stems only mean something for expo-router, where a screen file's name
+    # IS its URL segment. Next.js names every endpoint file `route.js` and puts
+    # the URL in the directory, so its stems are all the same word.
     stems = {
         Path(f).stem: f
         for f in doomed
-        if f.startswith(ROUTES) and Path(f).stem not in GENERIC_STEMS
+        if f.startswith('apps/mobile/app/') and Path(f).stem not in GENERIC_STEMS
     }
 
     # Route GROUPS are navigable too. `router.replace('/(onboarding)')` targets
@@ -114,7 +127,7 @@ def dangling_routes(doomed, files):
     # would have caught it before runtime.
     groups = defaultdict(lambda: [set(), set()])
     for f in files:
-        if not f.startswith(ROUTES):
+        if not f.startswith('apps/mobile/app/'):
             continue
         for part in Path(f).parts:
             if part.startswith('(') and part.endswith(')'):
@@ -160,7 +173,9 @@ def dangling_routes(doomed, files):
     return stems, hits
 
 
-def main(seed_file: str) -> int:
+def main(seed_file: str, classes_path: str) -> int:
+    global _CLASSES_PATH
+    _CLASSES_PATH = classes_path
     graph = json.loads(Path('/tmp/novame-graph.json').read_text())
     files = set(graph['files'])
     imports = {k: set(v) for k, v in graph['imports'].items()}
@@ -213,21 +228,27 @@ def main(seed_file: str) -> int:
         # into the deletion set is expected -- its body is being replaced anyway.
         # A KEEP file pointing into it means the classification is wrong: that
         # file is entangled with a v1 concept and cannot survive untouched.
-        keep = {f: h for f, h in dang_imp.items() if classes.get(f) == 'KEEP'}
-        rest = {f: h for f, h in dang_imp.items() if classes.get(f) != 'KEEP'}
+        # A KEEP file, or an unclassified one, importing into the deletion set is
+        # a hard error: KEEP must compile untouched, and "unclassified" means a
+        # file nobody reasoned about is pointing at something about to vanish.
+        # Only REWRITE files are allowed to dangle -- their bodies are being
+        # replaced anyway.
+        hard = {f: h for f, h in dang_imp.items() if classes.get(f) != 'REWRITE'}
+        soft = {f: h for f, h in dang_imp.items() if classes.get(f) == 'REWRITE'}
 
-        if keep:
-            print(f'--- !!! {len(keep)} KEEP file(s) import into the set.')
-            print('    A KEEP file must compile untouched. These do not.')
-            print('    Either the file is misclassified, or the dependency is severable.\n')
-            for f, hits in sorted(keep.items()):
-                print(f'   {f}')
+        if hard:
+            print(f'--- HARD ERROR: {len(hard)} surviving file(s) import into the set.')
+            print('    KEEP files must compile untouched; unclassified files were')
+            print('    never reasoned about. Reclassify, or sever the dependency.\n')
+            for f, hits in sorted(hard.items()):
+                cls_label = classes.get(f, 'UNCLASSIFIED')
+                print(f'   [{cls_label}] {f}')
                 for h in hits:
                     print(f'       -> {h}')
             print()
-        if rest:
-            print(f'--- {len(rest)} REWRITE/route file(s) import into the set (expected):')
-            for f, hits in sorted(rest.items()):
+        if soft:
+            print(f'--- {len(soft)} REWRITE file(s) import into the set (expected):')
+            for f, hits in sorted(soft.items()):
                 print(f'   {f:58} -> {len(hits)} dep(s)')
             print()
     else:
@@ -266,7 +287,9 @@ def main(seed_file: str) -> int:
                 print(f'   {f}:{i}  -> "{stem}"')
         print()
 
-    blocked = bool(dang_imp or dang_route)
+    classes_all = read_classes()
+    hard_dangling = {f for f in dang_imp if classes_all.get(f) != 'REWRITE'}
+    blocked = bool(hard_dangling or dang_route or keep_routes)
     print()
     if blocked:
         print('BLOCKED. Resolve the above, re-run tools/depgraph.py, then re-plan.')
@@ -279,7 +302,10 @@ def main(seed_file: str) -> int:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) not in (2, 3):
         print(__doc__)
+        print('\nusage: plan-delete.py SEEDS [CLASSIFICATION]')
         sys.exit(1)
-    sys.exit(main(sys.argv[1]))
+    seeds = sys.argv[1]
+    classes = sys.argv[2] if len(sys.argv) == 3 else 'tools/v2-classification.txt'
+    sys.exit(main(seeds, classes))

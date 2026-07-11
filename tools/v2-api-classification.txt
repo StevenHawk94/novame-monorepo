@@ -1,0 +1,78 @@
+# apps/api —— v2.0 删除面
+#
+# 依据:mobile 当前调用 14 个端点(三种引号全覆盖的 grep)。
+#       admin 只调 /api/force-update 和 /api/orders;其余 admin/* 是它自己 app 内的路由。
+#
+# 数据库表不在本次删除范围。admin 的 seek-questions / wisdoms / cards 标签页
+# 还在读那些表。表随 Phase C 的 schema migration 一起处理,那时 admin 一并改。
+
+# ── Discover / Seek(PRD 0.1:不做陌生人广场)
+DELETE  apps/api/src/app/api/seek-questions/route.js
+DELETE  apps/api/src/app/api/user-questions/route.js
+DELETE  apps/api/src/app/api/wisdom-card-blocks/route.js
+DELETE  apps/api/src/app/api/wisdom-card-reports/route.js
+DELETE  apps/api/src/app/api/wisdom-center/route.js
+
+# ── aspire / 周报(D3 / D6b)
+DELETE  apps/api/src/app/api/weekly-stats/route.js
+DELETE  apps/api/src/app/api/update-report-viewed/route.js
+
+# ── 48 关键词卡(物件 + 技能卡取代)
+DELETE  apps/api/src/app/api/wisdoms/route.js
+DELETE  apps/api/src/app/api/user-stats/route.js
+DELETE  apps/api/src/app/api/card-saves/route.js
+DELETE  apps/api/src/app/api/generate-abc-cards/route.js
+
+# ── WP / study / streak(D5 整体废弃)
+DELETE  apps/api/src/app/api/character-state/route.js
+DELETE  apps/api/src/app/api/study-claim/route.js
+DELETE  apps/api/src/app/api/streak/route.js
+DELETE  apps/api/src/app/api/daily-tasks/route.js
+
+# ── 语音录制 + 转录(D2)
+DELETE  apps/api/src/app/api/publish-wisdom/route.js
+DELETE  apps/api/src/app/api/transcribe/route.js
+DELETE  apps/api/src/app/api/daily-limit/route.js
+
+# ── lib:随上述路由死亡
+# exp.js 的三个 importer(character-state / daily-tasks / study-claim)全在删除面。
+# 它和 packages/core/src/rules/exp.ts 是同一公式的两份手抄,v2.0 的 levelFromXp
+# 在 packages/engine 里只有一份。
+DELETE  apps/api/src/lib/exp.js
+DELETE  apps/api/src/lib/character.js
+DELETE  apps/api/src/lib/daily-tasks.js
+DELETE  apps/api/src/lib/study-bonus-tasks.js
+DELETE  apps/api/src/lib/generate-card.js
+DELETE  apps/api/src/lib/constants.js
+
+# ── 保留
+# quota.js: me-stats(KEEP)用 getQuotaPeriodStart。配额语义在 Phase C 随订阅重写,
+#           Phase B 不动。
+KEEP    apps/api/src/lib/quota.js
+# ai.js: 两个 importer(publish-wisdom / generate-card)都会死,但 Visit Master
+#        (付费,六模块,3次/周)复用它。图看见现在,分类说意图。
+KEEP    apps/api/src/lib/ai.js
+KEEP    apps/api/src/middleware.ts
+KEEP    apps/api/src/app/layout.tsx
+KEEP    apps/api/src/app/page.tsx
+KEEP    apps/api/src/app/api/ai-consent/route.js
+KEEP    apps/api/src/app/api/announcements/route.js
+KEEP    apps/api/src/app/api/app-config/route.js
+KEEP    apps/api/src/app/api/apple-iap/route.js
+KEEP    apps/api/src/app/api/auth/apple-callback/route.js
+KEEP    apps/api/src/app/api/book-payment/route.js
+KEEP    apps/api/src/app/api/delete-account/route.js
+KEEP    apps/api/src/app/api/force-update/route.js
+KEEP    apps/api/src/app/api/leaderboard/route.js
+KEEP    apps/api/src/app/api/me-stats/route.js
+KEEP    apps/api/src/app/api/orders/route.js
+KEEP    apps/api/src/app/api/payment-checkout/route.js
+KEEP    apps/api/src/app/api/payment-result/route.js
+KEEP    apps/api/src/app/api/subscriptions/route.js
+KEEP    apps/api/src/app/api/support-ticket/route.js
+KEEP    apps/api/src/app/api/update-profile/route.js
+KEEP    apps/api/src/app/api/upload-avatar/route.js
+KEEP    apps/api/src/app/api/user-sync/route.js
+KEEP    apps/api/src/app/api/webhooks/airwallex/route.js
+KEEP    apps/api/src/app/api/webhooks/apple/route.js
+KEEP    apps/api/src/app/api/webhooks/google/route.js

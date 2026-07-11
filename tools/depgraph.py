@@ -14,6 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 
 MOBILE = Path('apps/mobile')
+API = Path('apps/api')
 
 # `from '...'` covers both `import ... from` and `export ... from`; the latter
 # is how packages/core's barrel works, and re-exports are real edges.
@@ -21,15 +22,21 @@ SPEC = re.compile(r"""from\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)""")
 
 
 def source_files():
-    roots = [MOBILE / 'src', MOBILE / 'app']
+    roots = [MOBILE / 'src', MOBILE / 'app', API / 'src']
     return [p for r in roots for p in r.rglob('*')
-            if p.suffix in ('.ts', '.tsx') and p.is_file()]
+            if p.suffix in ('.ts', '.tsx', '.js') and p.is_file()]
 
 
 def resolve(spec: str, origin: Path):
-    """Return the repo-relative path a specifier points at, or None if external."""
+    """Return the repo-relative path a specifier points at, or None if external.
+
+    '@/' is aliased per app: apps/mobile/tsconfig maps it to apps/mobile/src,
+    apps/api/jsconfig maps it to apps/api/src. Resolving it against the wrong
+    root silently drops every server-side edge.
+    """
     if spec.startswith('@/'):
-        base = MOBILE / 'src' / spec[2:]
+        root = API if str(origin).startswith('apps/api') else MOBILE
+        base = root / 'src' / spec[2:]
     elif spec.startswith('.'):
         base = (origin.parent / spec).resolve()
         try:
@@ -39,7 +46,8 @@ def resolve(spec: str, origin: Path):
     else:
         return None  # node_modules or a workspace package
     for cand in (base.with_suffix('.ts'), base.with_suffix('.tsx'),
-                 base / 'index.ts', base / 'index.tsx'):
+                 base.with_suffix('.js'),
+                 base / 'index.ts', base / 'index.tsx', base / 'index.js'):
         if cand.exists():
             return str(cand)
     return None
