@@ -255,6 +255,12 @@ export const kQuietWinsState = defineKey('novame_quiet_wins_state', 'user');
  *  card was edited away. A read-only shadow of the server's gate and cursor. */
 export const kNewLensState = defineKey('novame_new_lens_state', 'user');
 
+/** true-north.tsx: this week's completion + rankings for the reveal and the
+ *  week-over-week comparison. Shape: { weekKey, doneThisWeek, thisWeekRanking,
+ *  lastRanking }. A read-only shadow of kit_completions; the weekly gate stays
+ *  server-side. */
+export const kTrueNorthState = defineKey('novame_true_north_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================

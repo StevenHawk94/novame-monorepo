@@ -64,6 +64,10 @@ export default function HomeScreen() {
     void haptics.medium();
     router.push('/(main)/new-lens');
   };
+  const onTrueNorth = () => {
+    void haptics.medium();
+    router.push('/(main)/true-north');
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']} onLayout={onLayout}>
@@ -86,6 +90,9 @@ export default function HomeScreen() {
               <Text style={styles.btnText}>New Lens</Text>
             </Pressable>
           )}
+          <Pressable onPress={onTrueNorth} style={styles.btn}>
+            <Text style={styles.btnText}>True North</Text>
+          </Pressable>
         </View>
         {__DEV__ && (
           <Pressable
