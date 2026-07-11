@@ -82,6 +82,11 @@ function writeCache(state: CachedState): void {
  * a previous date reads as zero today, so the screen re-opens fresh each day
  * without any server call.
  */
+/** __DEV__ helper: clear the local reflect count so today resets on device. */
+export function clearReflectLocal(): void {
+  storage.remove(kReflectState.name);
+}
+
 export function getReflectStateToday(): {
   reflectsToday: number;
   reflectsRemaining: number;

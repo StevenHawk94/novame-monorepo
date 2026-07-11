@@ -60,6 +60,11 @@ function markDoneToday(): void {
   storage.set(kQuietWinsState.name, JSON.stringify({ date: localDateStr(), done: true }));
 }
 
+/** __DEV__ helper: clear the local completion flag so the Home entry reappears. */
+export function clearQuietWinsLocal(): void {
+  storage.remove(kQuietWinsState.name);
+}
+
 interface WireSnapshot {
   success?: boolean;
   error?: string;

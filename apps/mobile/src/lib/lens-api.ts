@@ -71,6 +71,11 @@ export function isNewLensDoneToday(): boolean {
   return s.date === localDateStr() && s.done === true;
 }
 
+/** __DEV__ helper: clear local New Lens state (done flag + cached next cards). */
+export function clearNewLensLocal(): void {
+  storage.remove(kNewLensState.name);
+}
+
 interface WireCard {
   cardId: string;
   theme: string;

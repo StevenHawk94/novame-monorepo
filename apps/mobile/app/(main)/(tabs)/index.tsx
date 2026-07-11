@@ -6,8 +6,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { requireAiConsent } from '@/lib/ai-consent';
 import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
-import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
-import { isNewLensDoneToday } from '@/lib/lens-api';
+import { isQuietWinsDoneToday, clearQuietWinsLocal } from '@/lib/quiet-wins-api';
+import { clearReflectLocal } from '@/lib/reflect-api';
+import { isNewLensDoneToday, clearNewLensLocal } from '@/lib/lens-api';
 
 /**
  * Home -- Phase A placeholder, growing Kit entries in Phase C.
@@ -86,6 +87,20 @@ export default function HomeScreen() {
             </Pressable>
           )}
         </View>
+        {__DEV__ && (
+          <Pressable
+            onPress={() => {
+              clearQuietWinsLocal();
+              clearNewLensLocal();
+              clearReflectLocal();
+              setQuietWinsDone(false);
+              setNewLensDone(false);
+            }}
+            style={styles.devReset}
+          >
+            <Text style={styles.devResetText}>[DEV] Reset kit entries</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -103,4 +118,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#A855F7',
   },
   btnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
+  devReset: { marginTop: 24, paddingVertical: 8 },
+  devResetText: { color: 'rgba(255,255,255,0.35)', fontSize: 12, fontFamily: 'Inter_500Medium' },
 });
