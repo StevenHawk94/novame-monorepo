@@ -1,44 +1,60 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { requireAiConsent } from '@/lib/ai-consent';
 import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
+import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 
 /**
- * Home -- Phase A placeholder.
+ * Home -- Phase A placeholder, growing Kit entries in Phase C.
  *
  * v1 was 697 lines: a companion video, a willpower bar, a speech bubble on a
- * 60s tick, three MMKV polls at 2s each, and four round header buttons. All of
- * it read from character-state or wisdom-center. Phase C rebuilds it around
- * the companion's sleep/fly state and the day/night scene.
+ * 60s tick, three MMKV polls at 2s each, and four round header buttons. Phase C
+ * rebuilds it around the companion's sleep/fly state and the day/night scene.
  *
- * The two entries survive because they are the product (PRD 12): Focus and
- * Reflect both start here. The AI-consent gate stays on Reflect: it pushes the
- * consent modal and returns false, and the modal replaces to `next` on Agree,
- * so pushing again here would double-navigate.
+ * Focus and Reflect are permanent entries (PRD 12). Quiet Wins is a daily Kit:
+ * it disappears once done for the day and returns tomorrow, so its visibility
+ * is read on focus (not just first mount) -- returning from a completed run
+ * must drop the entry without a manual refresh.
+ *
+ * The AI-consent gate stays on Reflect: it pushes the consent modal and returns
+ * false, and the modal replaces to `next` on Agree, so pushing again here would
+ * double-navigate.
  *
  * hideSplashOnce() must be called by whatever screen renders first, or the
  * native splash never lifts.
  */
 export default function HomeScreen() {
   const router = useRouter();
+  const [quietWinsDone, setQuietWinsDone] = useState(false);
 
   const onLayout = useCallback(() => {
     hideSplashOnce();
   }, []);
+
+  // Re-read the daily flag every time Home regains focus, so completing Quiet
+  // Wins and coming back hides the entry immediately.
+  useFocusEffect(
+    useCallback(() => {
+      setQuietWinsDone(isQuietWinsDoneToday());
+    }, []),
+  );
 
   const onReflect = () => {
     void haptics.medium();
     if (!requireAiConsent('/(main)/reflect')) return;
     router.push('/(main)/reflect');
   };
-
   const onFocus = () => {
     void haptics.medium();
     router.push('/(main)/focus');
+  };
+  const onQuietWins = () => {
+    void haptics.medium();
+    router.push('/(main)/quiet-wins');
   };
 
   return (
@@ -52,6 +68,11 @@ export default function HomeScreen() {
           <Pressable onPress={onReflect} style={styles.btn}>
             <Text style={styles.btnText}>Reflect</Text>
           </Pressable>
+          {!quietWinsDone && (
+            <Pressable onPress={onQuietWins} style={styles.btn}>
+              <Text style={styles.btnText}>Quiet Wins</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -62,7 +83,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F0B2E' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 },
   title: { color: 'rgba(255,255,255,0.35)', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  actions: { flexDirection: 'row', gap: 16 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
   btn: {
     paddingHorizontal: 28,
     paddingVertical: 14,

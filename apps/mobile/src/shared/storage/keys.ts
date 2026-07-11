@@ -242,6 +242,12 @@ export const kReflectState = defineKey('novame_reflect_state', 'user');
  *  with the shared engine, never storing computed values. */
 export const kStatusGems = defineKey('novame_status_gems', 'user');
 
+/** quiet-wins.tsx: whether Quiet Wins was completed today, so the Home entry
+ *  can hide once done and reappear next day. Shape: { date, done }. A read-only
+ *  shadow of the server's once-per-day gate; a stale cache at worst shows the
+ *  entry an extra time, which the RPC then rejects. */
+export const kQuietWinsState = defineKey('novame_quiet_wins_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================
