@@ -35,7 +35,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { COUNTRIES, STATES, type CountryOption, type StateOption } from '@novame/core';
+import { COUNTRIES, STATES, type CountryOption, type StateOption } from '@novame/domain';
 import { storage } from '@/lib/storage';
 import { haptics } from '@/lib/haptics';
 

@@ -1,0 +1,9 @@
+{
+  "extends": "@novame/tsconfig/node-library.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "outDir": null,
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}

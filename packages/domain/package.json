@@ -1,0 +1,17 @@
+{
+  "name": "@novame/domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-dependency domain constants for NovaMe, shared by mobile and api",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@novame/tsconfig": "workspace:*",
+    "typescript": "5.5.4",
+    "vitest": "^2.1.9"
+  }
+}
