@@ -9,6 +9,7 @@ import {
   setCachedSubscription,
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
+import { syncOnboardingCompanion } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { AssetGateError } from '@/components/main/asset-gate-error';
 
@@ -88,6 +89,12 @@ export default function SigningInScreen() {
       if (!getCachedSubscription()) {
         setCachedSubscription({ tier: 'free', lastFetchedAtMs: Date.now() });
       }
+
+      // Onboarding: sync the locally-chosen companion into a companions row on
+      // first sign-in (there was no user_id when the pet was picked). Idempotent
+      // and fire-and-forget -- a failure retries next launch, and Reflect fails
+      // loud if the companion is still missing.
+      void syncOnboardingCompanion(userId);
 
       void fetchSubscriptionTier(userId).catch((e) => {
         console.warn('[signing-in] subscription fetch failed:', (e as Error)?.message || e);

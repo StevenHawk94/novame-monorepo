@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 
 import { AssetGateError } from '@/components/main/asset-gate-error';
 import { getCurrentSession } from '@/lib/auth';
+import { hasSeenIntro } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
 
 /**
@@ -45,5 +46,12 @@ export default function Index() {
 
   if (gate === 'failed') return <AssetGateError onRetry={() => setGate('loading')} />;
   if (gate === 'loading' || hasSession === null) return null;
-  return <Redirect href={hasSession ? '/(main)/(tabs)' : '/(auth)/sign-in'} />;
+  // Three-way routing restored in C4 (Phase A dropped the onboarding branch).
+  // A signed-in user goes home. A session-less launch splits on whether THIS
+  // phone has seen the intro: unseen -> onboarding, seen -> sign-in. hasSeenIntro
+  // is device-scoped, so a signed-out returning user lands on sign-in, never
+  // re-watches the intro.
+  if (hasSession) return <Redirect href="/(main)/(tabs)" />;
+  if (hasSeenIntro()) return <Redirect href="/(auth)/sign-in" />;
+  return <Redirect href="/(onboarding)" />;
 }

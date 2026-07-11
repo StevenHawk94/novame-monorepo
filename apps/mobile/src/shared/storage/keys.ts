@@ -204,6 +204,13 @@ export const kNotifPromptedAfterPurchase = defineKey(
  */
 export const kOnboardingState = defineKey('novame_onboarding_state', 'preauth');
 
+/** Whether the pre-auth onboarding intro has been seen on THIS phone. Device
+ *  scope, not user/preauth: it must survive sign-out so a returning user goes
+ *  straight to sign-in, never re-watches the intro (C4 decision B). Set true
+ *  when onboarding reaches sign-in; read by app/index.tsx to route a
+ *  session-less launch to onboarding (unseen) vs sign-in (seen). */
+export const kOnboardingIntroSeen = defineKey('novame_onboarding_intro_seen', 'device');
+
 /**
  * shipping-form.tsx: STORAGE_KEY. Read by order-history.tsx:122.
  *

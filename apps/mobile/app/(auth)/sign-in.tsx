@@ -327,6 +327,16 @@ export default function AuthScreen() {
             <Text style={styles.boldLinkText}>Log in</Text>
           </Pressable>
         </View>
+        {__DEV__ && (
+          <Pressable
+            onPress={() => router.replace('/(onboarding)')}
+            style={{ alignItems: 'center', paddingVertical: 10 }}
+          >
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+              [DEV] Replay onboarding
+            </Text>
+          </Pressable>
+        )}
         <Footer />
       </SafeAreaView>
     );
