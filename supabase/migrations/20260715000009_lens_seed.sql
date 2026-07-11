@@ -1,0 +1,20 @@
+-- Seed: initial New Lens card library (C5). 16 cards, 2 per theme.
+-- Content is first-draft and edited live afterward; this is just the starting stock.
+insert into public.lens_cards (theme, sort_order, headline, body) values
+  ('expression', 1, 'The unsaid thing gets heavier, not lighter.', 'We hold things in to keep the peace, but silence has a weight of its own. What you don''t say still takes up room -- it just does it quietly, inside you.'),
+  ('expression', 2, 'Being misunderstood is the price of being known.', 'You can be understood a little by saying nothing, or a lot by risking the wrong words. Most closeness starts with someone saying the imperfect thing first.'),
+  ('awareness', 1, 'Thinking about a problem isn''t the same as working on it.', 'The mind mistakes rumination for progress because both feel like effort. But turning a worry over for the tenth time rarely adds information -- it just deepens the groove.'),
+  ('awareness', 2, 'Not every thought is asking to be solved.', 'Some thoughts are signals; most are just weather. You don''t have to chase each one down. Noticing "that''s a thought" is often enough to let it pass.'),
+  ('momentum', 1, 'Motivation usually follows action, not the other way around.', 'We wait to feel ready, but readiness tends to arrive after we start, not before. The smallest possible step is often the whole trick.'),
+  ('momentum', 2, 'Stuck is often just a decision wearing a disguise.', 'What feels like being blocked is sometimes an unmade choice you''re avoiding. Naming the actual decision -- even a small one -- usually loosens it.'),
+  ('direction', 1, 'You don''t have to know the destination to take the next step.', 'Clarity is something you walk into, not something you wait for. Moving in roughly the right direction teaches you more than standing still and thinking.'),
+  ('direction', 2, 'What you keep returning to is a clue.', 'The thing you circle back to -- the one you''re almost embarrassed to want -- is rarely random. Your attention has been trying to tell you something.'),
+  ('steadiness', 1, 'You can feel unsteady and still be standing.', 'Feeling shaky isn''t proof you''re falling. Storms feel enormous from inside them and small from a week away. The feeling is real; the conclusion it whispers usually isn''t.'),
+  ('steadiness', 2, 'One kept promise to yourself steadies more than you''d think.', 'When everything feels out of control, a single small thing you said you''d do -- and did -- becomes ground to stand on. Steadiness is built, not found.'),
+  ('confidence', 1, 'Confidence isn''t the absence of doubt -- it''s acting alongside it.', 'Waiting to feel sure is waiting for something that rarely comes first. The people who seem certain mostly just moved while unsure, and let the doing teach them.'),
+  ('confidence', 2, 'You''ve survived every hard day so far. That''s a track record.', 'Self-doubt has a short memory. It forgets the long list of things you already handled that once looked impossible. That list is evidence, if you let it count.'),
+  ('gratitude', 1, '"Enough" is a skill, not a finish line.', 'The mind adapts to whatever it gets and asks for more -- that''s not a flaw in your life, it''s how attention works. Noticing what''s already here is a practice, not a mood.'),
+  ('gratitude', 2, 'The ordinary day is the one you''ll miss.', 'Most of what we later ache for was, at the time, just a regular Tuesday. The good ones rarely announce themselves. Catching one as it happens is a small kind of wealth.'),
+  ('connection', 1, 'Closeness is rebuilt in small moves, not grand ones.', 'Distance rarely closes with one big conversation. It closes with a text, a question, a moment of showing up. The bar is lower than loneliness tells you.'),
+  ('connection', 2, 'People can''t reach you through a wall you''re guarding.', 'We build walls to stay safe, then wonder why no one gets close. The same wall does both jobs. Letting one brick down is often all an invitation needs.')
+on conflict (theme, sort_order) do nothing;
