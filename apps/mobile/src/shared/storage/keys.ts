@@ -223,6 +223,13 @@ export const kShipping = defineKey('novame.shipping', 'user');
  */
 export const kLastGlobalRefreshMs = defineKey('novame_last_global_refresh_ms', 'user');
 
+/** reflect.tsx: today's reflect count + last submission snapshot (server
+ *  authority -- a read-only shadow of what /api/reflect returned, refreshed
+ *  from the response, never computed locally). Shape: { date, reflectsToday,
+ *  lastSnapshot }. Stale cache only mis-renders briefly; the RPC's daily gate
+ *  is the real limit. */
+export const kReflectState = defineKey('novame_reflect_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================
