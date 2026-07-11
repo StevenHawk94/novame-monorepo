@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@novame/core'],
+  transpilePackages: ['@novame/core', '@novame/engine', '@novame/domain'],
   reactStrictMode: true,
 
   // Avoid bundling pages code — this is API-only
