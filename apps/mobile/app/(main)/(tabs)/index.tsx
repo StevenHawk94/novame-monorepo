@@ -8,6 +8,7 @@ import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
 import { isQuietWinsDoneToday, clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearReflectLocal } from '@/lib/reflect-api';
+import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { isNewLensDoneToday, clearNewLensLocal } from '@/lib/lens-api';
 
 /**
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [quietWinsDone, setQuietWinsDone] = useState(false);
   const [newLensDone, setNewLensDone] = useState(false);
+  const [tier, setTier] = useState(getCachedSubscriptionTier());
 
   const onLayout = useCallback(() => {
     hideSplashOnce();
@@ -44,6 +46,7 @@ export default function HomeScreen() {
     useCallback(() => {
       setQuietWinsDone(isQuietWinsDoneToday());
       setNewLensDone(isNewLensDoneToday());
+      setTier(getCachedSubscriptionTier());
     }, []),
   );
 
@@ -106,6 +109,20 @@ export default function HomeScreen() {
             style={styles.devReset}
           >
             <Text style={styles.devResetText}>[DEV] Reset kit entries</Text>
+          </Pressable>
+        )}
+        {__DEV__ && (
+          <Pressable
+            onPress={async () => {
+              const next = tier === 'free' ? 'pro' : 'free';
+              const ok = await devSetTier(next);
+              if (ok) setTier(next);
+            }}
+            style={styles.devReset}
+          >
+            <Text style={styles.devResetText}>
+              [DEV] Tier: {tier === 'free' ? 'free → tap for paid' : 'paid → tap for free'}
+            </Text>
           </Pressable>
         )}
       </View>

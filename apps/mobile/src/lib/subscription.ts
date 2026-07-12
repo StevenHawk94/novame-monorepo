@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import { apiClient } from './api';
+import { supabase } from './supabase';
 import type { PricingTierKey } from '@novame/core';
 
 /**
@@ -126,4 +127,23 @@ export async function fetchSubscriptionTier(
   };
   setCachedSubscription(next);
   return next;
+}
+
+/**
+ * [TEST ONLY -- remove in C6-later] Flip the current user's tier so paid/free
+ * branches can be exercised before real IAP. Writes profiles server-side and
+ * refreshes the local cache so both the server (reads profiles) and the client
+ * (reads cache) see the change.
+ */
+export async function devSetTier(tier: 'free' | 'pro'): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    await apiClient.post('/api/dev/set-tier', { userId, tier });
+    setCachedSubscription({ tier, lastFetchedAtMs: Date.now() });
+    return true;
+  } catch {
+    return false;
+  }
 }
