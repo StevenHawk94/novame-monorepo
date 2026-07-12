@@ -57,10 +57,8 @@ export default function TameEnemyScreen() {
   );
 
   function startBattle(m: MonsterStatus) {
-    if (m.skillCount === 0) {
-      // 0 skills: guide to Reflect instead of entering battle.
-      return;
-    }
+    // Every monster is playable: Just Breathe is the default when a dimension
+    // has no skills yet (weak but always finishes), so 0 skills never blocks.
     void haptics.medium();
     setActive(m);
     setHp(MONSTER_HP);
@@ -134,13 +132,13 @@ export default function TameEnemyScreen() {
             return (
               <Pressable
                 key={m.id}
-                onPress={() => (ready && !doneToday ? startBattle(m) : router.push('/(main)/reflect'))}
+                onPress={() => (doneToday ? undefined : startBattle(m))}
                 style={[styles.monsterCell, { backgroundColor: c.bgCard, borderColor: c.border, opacity: doneToday ? 0.5 : 1 }]}
               >
                 <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
                 <Text style={[styles.monsterName, { color: c.textPrimary }]}>{m.name}</Text>
                 <Text style={[styles.monsterSkills, { color: ready ? c.brand.primary : c.textMuted }]}>
-                  {ready ? `${m.skillCount} skill${m.skillCount > 1 ? 's' : ''} ready` : 'Not ready yet'}
+                  {ready ? `${m.skillCount} skill${m.skillCount > 1 ? 's' : ''} ready` : 'Just Breathe ready'}
                 </Text>
                 {m.tamedBefore && (
                   <View style={[styles.tamedBadge, { backgroundColor: c.bgCardAlt }]}>
