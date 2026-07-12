@@ -19,6 +19,10 @@ import { getCachedStatus } from '@/lib/true-north-api';
 export type CompanionSheetRef = {
   present: () => void;
   dismiss: () => void;
+  /** Re-read companion + Kit done-states. Call when Home regains focus so a Kit
+   *  finished on a pushed screen drops out of the list the moment we return,
+   *  whether the sheet is open or not. */
+  refresh: () => void;
 };
 
 type MdIcon = keyof typeof MaterialIcons.glyphMap;
@@ -47,16 +51,34 @@ interface KitRow {
  * A, and the sheet shows growth (xp -> level), not currency. Layout follows the
  * design reference; pet art is a placeholder until the videos land.
  */
+interface DoneState {
+  newLens: boolean;
+  quietWins: boolean;
+  trueNorth: boolean;
+}
+
+/** Read all Kit done-states at once, so the sheet's list reflects them. */
+function readDoneState(): DoneState {
+  return {
+    newLens: isNewLensDoneToday(),
+    quietWins: isQuietWinsDoneToday(),
+    trueNorth: getCachedStatus().doneThisWeek,
+  };
+}
+
 export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.colors;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
+  const [doneState, setDoneState] = useState(() => readDoneState());
 
-  // Refresh companion + Kit done-states each time the sheet opens.
+  // Re-read everything that can change while a Kit screen is pushed on top.
+  // Driven by Home's focus effect (return from a Kit) and on present.
   const refresh = useCallback(() => {
     setCompanion(getCachedCompanion());
+    setDoneState(readDoneState());
   }, []);
 
   useImperativeHandle(ref, () => ({
@@ -65,6 +87,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       sheetRef.current?.present();
     },
     dismiss: () => sheetRef.current?.dismiss(),
+    refresh,
   }));
 
   const snapPoints = useMemo(() => ['65%', '90%'], []);
@@ -87,7 +110,6 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   }, []);
 
   const kits: KitRow[] = useMemo(() => {
-    const tnDone = getCachedStatus().doneThisWeek;
     return [
       {
         key: 'new_lens',
@@ -95,7 +117,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         desc: 'See something a different way',
         icon: 'lightbulb-outline',
         route: '/(main)/new-lens',
-        done: isNewLensDoneToday(),
+        done: doneState.newLens,
         daily: true,
       },
       {
@@ -104,7 +126,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         desc: 'Rank what matters most right now',
         icon: 'explore',
         route: '/(main)/true-north',
-        done: tnDone,
+        done: doneState.trueNorth,
         availText: trueNorthAvail,
         // permanent: a done week opens the reveal, so it never vanishes.
       },
@@ -114,7 +136,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         desc: 'Notice the small things you did',
         icon: 'check-circle-outline',
         route: '/(main)/quiet-wins',
-        done: isQuietWinsDoneToday(),
+        done: doneState.quietWins,
         daily: true,
       },
       {
@@ -131,12 +153,14 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         icon: 'auto-awesome',
       },
     ];
-  }, [companion, trueNorthAvail]);
+  }, [doneState, trueNorthAvail]);
 
   function openKit(row: KitRow) {
     if (!row.route) return;
     void haptics.medium();
-    sheetRef.current?.dismiss();
+    // Do NOT dismiss the sheet: the Kit screen pushes on top of Home (and this
+    // sheet), and closing it with router.back() returns here, sheet intact.
+    // Layers stack; each back peels one layer.
     router.push(row.route as never);
   }
 
@@ -211,6 +235,14 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
             );
           })}
         </View>
+
+        <Pressable
+          onPress={() => sheetRef.current?.dismiss()}
+          style={[styles.closeBtn, { backgroundColor: c.bgCard, borderColor: c.border }]}
+          hitSlop={8}
+        >
+          <MaterialIcons name="close" size={24} color={c.textSecondary} />
+        </Pressable>
       </BottomSheetView>
     </BottomSheetModal>
   );
@@ -242,4 +274,10 @@ const styles = StyleSheet.create({
   kitText: { flex: 1 },
   kitLabel: { fontSize: 16, fontFamily: 'Inter_600SemiBold', marginBottom: 2 },
   kitDesc: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+
+  closeBtn: {
+    alignSelf: 'center', marginTop: 20,
+    width: 52, height: 52, borderRadius: 26, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

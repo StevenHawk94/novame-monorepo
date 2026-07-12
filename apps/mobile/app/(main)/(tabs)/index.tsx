@@ -54,6 +54,11 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setTier(getCachedSubscriptionTier());
+      // Returning from a Kit screen refocuses Home; refresh the sheet so a
+      // just-completed daily Kit drops out of its list, even though the sheet
+      // is a mounted component (no focus event of its own) sitting under the
+      // Kit screen that was pushed on top of it.
+      sheetRef.current?.refresh();
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
