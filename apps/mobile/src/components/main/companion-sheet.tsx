@@ -30,6 +30,11 @@ interface KitRow {
   icon: MdIcon;
   route?: string; // undefined = placeholder (not built yet)
   done?: boolean;
+  /** Daily Kits vanish from the list once done and return next day; permanent
+   *  Kits (True North weekly, Visit Master 48h) always show. */
+  daily?: boolean;
+  /** For permanent Kits: text shown in place of desc once done this period. */
+  availText?: string;
 }
 
 /**
@@ -73,6 +78,14 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 
   const level = companion ? companionLevel(companion) : null;
 
+  // Permanent Kits show when they next become available instead of vanishing.
+  // True North resets on the next ISO-week boundary (Monday).
+  const trueNorthAvail = useMemo(() => {
+    const dow = (new Date().getDay() + 6) % 7; // Mon=0..Sun=6
+    const days = 7 - dow;
+    return days === 1 ? 'New ranking tomorrow' : `New ranking in ${days} days`;
+  }, []);
+
   const kits: KitRow[] = useMemo(() => {
     const tnDone = getCachedStatus().doneThisWeek;
     return [
@@ -83,6 +96,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         icon: 'lightbulb-outline',
         route: '/(main)/new-lens',
         done: isNewLensDoneToday(),
+        daily: true,
       },
       {
         key: 'true_north',
@@ -91,6 +105,8 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         icon: 'explore',
         route: '/(main)/true-north',
         done: tnDone,
+        availText: trueNorthAvail,
+        // permanent: a done week opens the reveal, so it never vanishes.
       },
       {
         key: 'quiet_wins',
@@ -99,12 +115,14 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         icon: 'check-circle-outline',
         route: '/(main)/quiet-wins',
         done: isQuietWinsDoneToday(),
+        daily: true,
       },
       {
         key: 'tame_enemy',
         label: 'Tame Enemy',
         desc: 'Coming soon',
         icon: 'pets',
+        daily: true,
       },
       {
         key: 'visit_master',
@@ -113,7 +131,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         icon: 'auto-awesome',
       },
     ];
-  }, [companion]);
+  }, [companion, trueNorthAvail]);
 
   function openKit(row: KitRow) {
     if (!row.route) return;
@@ -157,9 +175,9 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
           )}
         </View>
 
-        {/* Kit list */}
+        {/* Kit list -- daily Kits drop out once done, back tomorrow */}
         <View style={styles.kitList}>
-          {kits.map((row) => {
+          {kits.filter((row) => !(row.daily && row.done)).map((row) => {
             const disabled = !row.route;
             return (
               <Pressable
@@ -181,11 +199,11 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                 <View style={styles.kitText}>
                   <Text style={[styles.kitLabel, { color: c.textPrimary }]}>{row.label}</Text>
                   <Text style={[styles.kitDesc, { color: c.textMuted }]}>
-                    {row.done ? 'Done — back tomorrow' : row.desc}
+                    {row.done && row.availText ? row.availText : row.desc}
                   </Text>
                 </View>
-                {row.done ? (
-                  <MaterialIcons name="check" size={20} color={c.brand.primary} />
+                {row.done && row.availText ? (
+                  <MaterialIcons name="schedule" size={18} color={c.textMuted} />
                 ) : !disabled ? (
                   <MaterialIcons name="chevron-right" size={22} color={c.textMuted} />
                 ) : null}
