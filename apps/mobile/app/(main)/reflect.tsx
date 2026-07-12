@@ -253,7 +253,7 @@ export default function ReflectScreen() {
                       const def = ITEM_DICTIONARY.items[it.itemId];
                       return (
                         <View key={it.itemId} style={styles.itemChip}>
-                          <Text style={styles.itemEmoji}>{def?.emoji ?? '\ud83d\udce6'}</Text>
+                          <Text style={styles.itemEmoji}>{def?.emoji ?? '📦'}</Text>
                           <Text style={[styles.itemLabel, { color: c.textPrimary }]} numberOfLines={1}>
                             {it.label}
                           </Text>
@@ -261,6 +261,16 @@ export default function ReflectScreen() {
                       );
                     })}
                   </View>
+                </View>
+              )}
+
+              {result.generatedSkill && (
+                <View style={[styles.skillCard, { backgroundColor: c.bgCard, borderColor: result.generatedSkill.rarity === 'secret' ? c.brand.purpleLight : c.border, borderWidth: result.generatedSkill.rarity === 'secret' ? 2 : 1 }]}>
+                  <Text style={[styles.skillLabel, { color: c.brand.purpleLight }]}>
+                    {result.generatedSkill.rarity === 'secret' ? '✨ Secret skill learned' : 'New skill learned'}
+                  </Text>
+                  <Text style={[styles.skillTitle, { color: c.textPrimary }]}>{result.generatedSkill.title}</Text>
+                  <Text style={[styles.skillBody, { color: c.textSecondary }]}>{result.generatedSkill.body}</Text>
                 </View>
               )}
 
@@ -320,6 +330,10 @@ const styles = StyleSheet.create({
   itemChip: { alignItems: 'center', maxWidth: 90 },
   itemEmoji: { fontSize: 30, marginBottom: 4 },
   itemLabel: { fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center' },
+  skillCard: { borderRadius: 16, padding: 16, marginTop: 16, width: '100%' },
+  skillLabel: { fontSize: 12, fontFamily: 'Inter_600SemiBold', marginBottom: 8, textAlign: 'center' },
+  skillTitle: { fontSize: 17, fontFamily: 'Inter_700Bold', marginBottom: 6, textAlign: 'center' },
+  skillBody: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21, textAlign: 'center' },
   doneBtn: { marginTop: 32, paddingVertical: 12, paddingHorizontal: 32 },
   doneBtnText: { fontSize: 17, fontFamily: 'Inter_600SemiBold' },
 });

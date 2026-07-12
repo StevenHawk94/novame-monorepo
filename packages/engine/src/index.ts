@@ -10,3 +10,4 @@ export * from './gems';
 export * from './battle';
 export * from './items/item-matcher';
 export { ITEM_DICTIONARY } from './items/dictionary';
+export * from './skills/skill-dedup';

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
-import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY } from '@novame/engine'
+import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, findDuplicateSkill } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
 
 export const runtime = 'edge'
@@ -43,6 +43,66 @@ async function analyzeDimensions(body, excludeDim) {
   } catch (err) {
     console.warn('[reflect] dimension analysis failed, degrading to prompt-only:', err && err.message)
     return []
+  }
+}
+
+// Skill generation: whether this reflection holds a durable lesson worth
+// keeping as a card. This is a FIRST-DRAFT prompt -- the content judgment (what
+// counts as a real lesson, the voice) will be tuned; the JSON contract is what
+// the code depends on. Not every reflect yields a skill: a play-by-play of a
+// day has no lesson, and the model should say so via a low confidence.
+const SKILL_SYSTEM_PROMPT = `You read a personal journal entry and extract a small lesson or insight from it -- something positive or meaningful the writer could carry forward.
+
+[TEST PHASE: be generous. If the entry contains anything positive, any small realization, effort, feeling, or meaningful moment, generate a lesson from it. Only decline for an entry that is purely empty, gibberish, or has no content at all.]
+
+Phrase the lesson as an insight in the writer's own register -- warm, specific to what they wrote, not a generic platitude.
+
+Return ONLY a JSON object, no prose, no markdown:
+{
+  "hasSkill": boolean,        // true whenever there's anything to draw a lesson from
+  "confidence": number,       // 0.0 to 1.0
+  "title": string,            // <= 6 words, the lesson as a memorable handle
+  "body": string,             // one sentence, the lesson
+  "dimension": string         // one of: expression, awareness, momentum, direction, steadiness, confidence, gratitude, connection
+}
+
+Only return hasSkill false for truly empty or meaningless input.`
+
+// Confidence gate. LOW for the test phase so skills generate easily and the
+// flow is visible; tightens (and moves to app_config, tunable without a
+// release) before launch.
+const SKILL_CONFIDENCE_THRESHOLD = 0.3
+const SECRET_SKILL_CHANCE = 0.1
+
+/**
+ * Generate a skill from the reflection, if it holds one. Paid+consented only
+ * (skill count is a paid signal; free users never generate). Returns the skill
+ * object to persist, or null -- on low confidence, no-skill, or any AI failure.
+ * Dedup happens in the caller, against the user's existing skills.
+ */
+async function generateSkill(body, promptDim) {
+  try {
+    const raw = await callAI({
+      systemInstruction: SKILL_SYSTEM_PROMPT,
+      userText: body,
+      generationConfig: { temperature: 0.4, maxOutputTokens: 200, response_mime_type: 'application/json' },
+    })
+    const parsed = parseAIJson(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    if (!parsed.hasSkill || typeof parsed.confidence !== 'number') return null
+    if (parsed.confidence < SKILL_CONFIDENCE_THRESHOLD) return null
+    if (!parsed.title || !parsed.body) return null
+
+    const dim = DIMENSION_IDS.includes(parsed.dimension) ? parsed.dimension : promptDim
+    return {
+      title: String(parsed.title).slice(0, 80),
+      body: String(parsed.body).slice(0, 300),
+      dimension: dim,
+      rarity: Math.random() < SECRET_SKILL_CHANCE ? 'secret' : 'normal',
+    }
+  } catch (err) {
+    console.warn('[reflect] skill generation failed (non-fatal):', err && err.message)
+    return null
   }
 }
 
@@ -178,7 +238,49 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems })
+    // Skill generation (C9): paid + consented only (skill count is a paid
+    // signal; free users never generate). Best-effort -- never blocks the
+    // reflect. Generate a candidate, dedup against existing skills with the
+    // engine's keyword overlap, and persist only if novel.
+    let generatedSkill = null
+    if (reflectId && isPaid && hasConsent) {
+      try {
+        const candidate = await generateSkill(body, pDim)
+        if (candidate) {
+          const { data: existing } = await supabase
+            .from('skills')
+            .select('title, body')
+            .eq('user_id', userId)
+          const existingTexts = (existing || []).map((sk) => ({
+            text: `${sk.title} ${sk.body}`,
+          }))
+          const dup = findDuplicateSkill(`${candidate.title} ${candidate.body}`, existingTexts)
+          if (!dup) {
+            const { data: skillRes } = await supabase.rpc('record_skill', {
+              p_user_id: userId,
+              p_reflect_id: reflectId,
+              p_dimension: candidate.dimension,
+              p_title: candidate.title,
+              p_body: candidate.body,
+              p_rarity: candidate.rarity,
+            })
+            if (skillRes && !skillRes.error) {
+              generatedSkill = {
+                skillId: skillRes.skill_id,
+                title: candidate.title,
+                body: candidate.body,
+                dimension: candidate.dimension,
+                rarity: candidate.rarity,
+              }
+            }
+          }
+        }
+      } catch (skillErr) {
+        console.warn('[reflect] skill flow failed (non-fatal):', skillErr && skillErr.message)
+      }
+    }
+
+    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

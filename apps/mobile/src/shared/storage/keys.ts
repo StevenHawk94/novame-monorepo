@@ -271,6 +271,10 @@ export const kCompanionState = defineKey('novame_companion_state', 'user');
  *  item_id, not stored here. */
 export const kBagsState = defineKey('novame_bags_state', 'user');
 
+/** Skills tab: lessons learned, cached for instant render. source 'self' vs
+ *  'friend' split client-side. */
+export const kSkillsState = defineKey('novame_skills_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================
