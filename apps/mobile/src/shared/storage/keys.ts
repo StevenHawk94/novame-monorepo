@@ -275,6 +275,11 @@ export const kBagsState = defineKey('novame_bags_state', 'user');
  *  'friend' split client-side. */
 export const kSkillsState = defineKey('novame_skills_state', 'user');
 
+/** Tame Enemy daily done flag (local, like New Lens): { date, done }. Server
+ *  kit_completions is authoritative, but the sheet reads this synchronously to
+ *  drop the daily Kit once tamed. */
+export const kTameEnemyState = defineKey('novame_tame_enemy_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================

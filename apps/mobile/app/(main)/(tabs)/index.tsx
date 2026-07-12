@@ -11,6 +11,7 @@ import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/c
 import { clearReflectLocal } from '@/lib/reflect-api';
 import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearNewLensLocal } from '@/lib/lens-api';
+import { clearTameEnemyLocal } from '@/lib/tame-enemy-api';
 import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { CompanionSheet, type CompanionSheetRef } from '@/components/main/companion-sheet';
 
@@ -131,6 +132,7 @@ export default function HomeScreen() {
                 clearQuietWinsLocal();
                 clearNewLensLocal();
                 clearReflectLocal();
+                clearTameEnemyLocal();
                 Alert.alert('Reset done', 'Local kit + reflect flags cleared.');
               }}
               style={styles.devBtn}

@@ -14,6 +14,7 @@ import { haptics } from '@/lib/haptics';
 import { companionLevel, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
+import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
 
 export type CompanionSheetRef = {
@@ -55,6 +56,7 @@ interface DoneState {
   newLens: boolean;
   quietWins: boolean;
   trueNorth: boolean;
+  tameEnemy: boolean;
 }
 
 /** Read all Kit done-states at once, so the sheet's list reflects them. */
@@ -63,6 +65,7 @@ function readDoneState(): DoneState {
     newLens: isNewLensDoneToday(),
     quietWins: isQuietWinsDoneToday(),
     trueNorth: getCachedStatus().doneThisWeek,
+    tameEnemy: isTameEnemyDoneToday(),
   };
 }
 
@@ -142,8 +145,10 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       {
         key: 'tame_enemy',
         label: 'Tame Enemy',
-        desc: 'Coming soon',
+        desc: 'Face what\'s been loud lately',
         icon: 'pets',
+        route: '/(main)/tame-enemy',
+        done: doneState.tameEnemy,
         daily: true,
       },
       {
