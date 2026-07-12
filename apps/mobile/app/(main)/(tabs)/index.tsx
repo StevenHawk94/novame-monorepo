@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -131,18 +131,28 @@ export default function HomeScreen() {
                 clearQuietWinsLocal();
                 clearNewLensLocal();
                 clearReflectLocal();
+                Alert.alert('Reset done', 'Local kit + reflect flags cleared.');
               }}
+              style={styles.devBtn}
             >
-              <Text style={styles.devText}>[DEV] reset kits</Text>
+              <Text style={styles.devText}>[DEV] Reset kits</Text>
             </Pressable>
             <Pressable
               onPress={async () => {
                 const next = tier === 'free' ? 'pro' : 'free';
                 const ok = await devSetTier(next);
-                if (ok) setTier(next);
+                if (ok) {
+                  setTier(next);
+                  Alert.alert('Tier switched', `Now: ${next === 'free' ? 'FREE' : 'PAID'}`);
+                } else {
+                  Alert.alert('Failed', 'Could not switch tier. Check connection.');
+                }
               }}
+              style={styles.devBtn}
             >
-              <Text style={styles.devText}>[DEV] {tier === 'free' ? 'free' : 'paid'}</Text>
+              <Text style={styles.devText}>
+                [DEV] Now: {tier === 'free' ? 'FREE' : 'PAID'} (tap to switch)
+              </Text>
             </Pressable>
           </View>
         )}
@@ -184,5 +194,6 @@ const styles = StyleSheet.create({
   entryText: { fontSize: 16, fontFamily: 'Inter_600SemiBold', color: '#2A2A3A' },
 
   devRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 4 },
-  devText: { fontSize: 11, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.5)' },
+  devBtn: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 8 },
+  devText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.7)' },
 });

@@ -32,12 +32,12 @@ Return ONLY a JSON array of 0 to 2 dimension ids the entry most strongly reflect
  */
 async function analyzeDimensions(body, excludeDim) {
   try {
-    const raw = await callAI({
+    const res = await callAI({
       systemInstruction: DIMENSION_SYSTEM_PROMPT,
       userText: body,
       generationConfig: { temperature: 0.3, maxOutputTokens: 50 },
     })
-    const parsed = parseAIJson(raw)
+    const parsed = parseAIJson(res.text)
     if (!Array.isArray(parsed)) return []
     return [...new Set(parsed.filter((d) => DIMENSION_IDS.includes(d) && d !== excludeDim))].slice(0, 2)
   } catch (err) {
@@ -82,12 +82,12 @@ const SECRET_SKILL_CHANCE = 0.1
  */
 async function generateSkill(body, promptDim) {
   try {
-    const raw = await callAI({
+    const res = await callAI({
       systemInstruction: SKILL_SYSTEM_PROMPT,
       userText: body,
       generationConfig: { temperature: 0.4, maxOutputTokens: 200, response_mime_type: 'application/json' },
     })
-    const parsed = parseAIJson(raw)
+    const parsed = parseAIJson(res.text)
     if (!parsed || typeof parsed !== 'object') return null
     if (!parsed.hasSkill || typeof parsed.confidence !== 'number') return null
     if (parsed.confidence < SKILL_CONFIDENCE_THRESHOLD) return null
