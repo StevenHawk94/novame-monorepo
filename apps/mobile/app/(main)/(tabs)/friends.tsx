@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -32,16 +31,12 @@ export default function FriendsScreen() {
   }, []);
   useFocusEffect(load);
 
-  async function copyCode() {
-    if (!status.inviteCode) return;
-    void haptics.light();
-    await Clipboard.setStringAsync(status.inviteCode);
-    Alert.alert('Copied', 'Your invite code is on the clipboard.');
-  }
-
   async function shareCode() {
     if (!status.inviteCode) return;
     void haptics.light();
+    // Share sheet covers both copy (the sheet's built-in Copy action) and
+    // sending -- avoids a native clipboard module that pnpm+Expo autolinking
+    // doesn't reliably pick up in this monorepo.
     await Share.share({
       message: `Add me on NovaMe! My invite code is ${status.inviteCode}.`,
     });
@@ -88,17 +83,13 @@ export default function FriendsScreen() {
         {/* Invite code card */}
         <View style={[styles.inviteCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
           <Text style={[styles.inviteLabel, { color: c.textSecondary }]}>Your invite code</Text>
-          <Pressable onPress={copyCode} hitSlop={8}>
+          <Pressable onPress={shareCode} hitSlop={8}>
             <Text style={[styles.inviteCode, { color: c.textPrimary }]}>{status.inviteCode ?? '——————'}</Text>
           </Pressable>
           <View style={styles.inviteActions}>
-            <Pressable onPress={copyCode} style={[styles.inviteAction, { borderColor: c.border }]}>
-              <MaterialIcons name="content-copy" size={16} color={c.textSecondary} />
-              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Copy</Text>
-            </Pressable>
             <Pressable onPress={shareCode} style={[styles.inviteAction, { borderColor: c.border }]}>
               <MaterialIcons name="ios-share" size={16} color={c.textSecondary} />
-              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Share</Text>
+              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Share code</Text>
             </Pressable>
           </View>
         </View>
