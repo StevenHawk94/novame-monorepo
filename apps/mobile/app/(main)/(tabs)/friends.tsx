@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -30,6 +31,21 @@ export default function FriendsScreen() {
     void fetchFriends().then(setStatus);
   }, []);
   useFocusEffect(load);
+
+  async function copyCode() {
+    if (!status.inviteCode) return;
+    void haptics.light();
+    await Clipboard.setStringAsync(status.inviteCode);
+    Alert.alert('Copied', 'Your invite code is on the clipboard.');
+  }
+
+  async function shareCode() {
+    if (!status.inviteCode) return;
+    void haptics.light();
+    await Share.share({
+      message: `Add me on NovaMe! My invite code is ${status.inviteCode}.`,
+    });
+  }
 
   async function onAdd() {
     const trimmed = code.trim();
@@ -72,8 +88,19 @@ export default function FriendsScreen() {
         {/* Invite code card */}
         <View style={[styles.inviteCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
           <Text style={[styles.inviteLabel, { color: c.textSecondary }]}>Your invite code</Text>
-          <Text style={[styles.inviteCode, { color: c.textPrimary }]}>{status.inviteCode ?? '——————'}</Text>
-          <Text style={[styles.inviteHint, { color: c.textMuted }]}>Share it so a friend can add you.</Text>
+          <Pressable onPress={copyCode} hitSlop={8}>
+            <Text style={[styles.inviteCode, { color: c.textPrimary }]}>{status.inviteCode ?? '——————'}</Text>
+          </Pressable>
+          <View style={styles.inviteActions}>
+            <Pressable onPress={copyCode} style={[styles.inviteAction, { borderColor: c.border }]}>
+              <MaterialIcons name="content-copy" size={16} color={c.textSecondary} />
+              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Copy</Text>
+            </Pressable>
+            <Pressable onPress={shareCode} style={[styles.inviteAction, { borderColor: c.border }]}>
+              <MaterialIcons name="ios-share" size={16} color={c.textSecondary} />
+              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Share</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Add friend */}
@@ -170,7 +197,9 @@ const styles = StyleSheet.create({
   inviteCard: { borderRadius: 16, borderWidth: 1, padding: 16, alignItems: 'center', marginBottom: 12 },
   inviteLabel: { fontSize: 12, fontFamily: 'Inter_500Medium' },
   inviteCode: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', letterSpacing: 6, marginVertical: 6 },
-  inviteHint: { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  inviteActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  inviteAction: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8 },
+  inviteActionText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
 
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, paddingVertical: 15, marginBottom: 16 },
   addBtnText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
