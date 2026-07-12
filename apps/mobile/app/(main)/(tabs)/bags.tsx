@@ -45,6 +45,7 @@ export default function BagsScreen() {
       </View>
 
       {/* Category chips */}
+      <View style={styles.chipBar}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -68,6 +69,7 @@ export default function BagsScreen() {
           );
         })}
       </ScrollView>
+      </View>
 
       {shown.length === 0 ? (
         <View style={styles.empty}>
@@ -104,8 +106,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold' },
   subtitle: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 4 },
 
-  chips: { gap: 8, paddingVertical: 8, paddingHorizontal: 4 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18, borderWidth: 1 },
+  chipBar: { height: 44 },
+  chips: { gap: 8, paddingHorizontal: 4, alignItems: 'center' },
+  chip: { height: 34, paddingHorizontal: 16, borderRadius: 17, borderWidth: 1, justifyContent: 'center' },
   chipText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
 
   gridScroll: { paddingVertical: 12 },

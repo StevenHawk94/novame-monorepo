@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,9 +11,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
+import { ITEM_DICTIONARY } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
 import {
   getReflectStateToday,
@@ -71,6 +72,20 @@ export default function ReflectScreen() {
   const [error, setError] = useState<ReflectError | null>(null);
   const [result, setResult] = useState<ReflectSnapshot | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
+
+  // Re-read today's count each time the screen gains focus, so a __DEV__ reset
+  // (or a new day) updates the limit without a full remount. Uses a functional
+  // setState reading the cache fresh; done-phase is guarded via a ref so the
+  // callback identity stays stable (empty deps) and always fires on focus.
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  useFocusEffect(
+    useCallback(() => {
+      if (phaseRef.current !== 'done') {
+        setRemaining(getReflectStateToday().reflectsRemaining);
+      }
+    }, []),
+  );
 
   const atLimit = remaining <= 0;
 
@@ -227,6 +242,28 @@ export default function ReflectScreen() {
                   </Text>
                 )}
               </View>
+
+              {result.matchedItems.length > 0 && (
+                <View style={[styles.itemsCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+                  <Text style={[styles.itemsTitle, { color: c.textSecondary }]}>
+                    Collected {result.matchedItems.length === 1 ? 'a moment' : `${result.matchedItems.length} moments`}
+                  </Text>
+                  <View style={styles.itemsRow}>
+                    {result.matchedItems.map((it) => {
+                      const def = ITEM_DICTIONARY.items[it.itemId];
+                      return (
+                        <View key={it.itemId} style={styles.itemChip}>
+                          <Text style={styles.itemEmoji}>{def?.emoji ?? '\ud83d\udce6'}</Text>
+                          <Text style={[styles.itemLabel, { color: c.textPrimary }]} numberOfLines={1}>
+                            {it.label}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
               <Text style={[styles.remainingDone, { color: c.textSecondary }]}>
                 {result.reflectsRemaining > 0
                   ? `${result.reflectsRemaining} more today if you want it.`
@@ -277,6 +314,12 @@ const styles = StyleSheet.create({
   hitText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
   noHits: { fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center' },
   remainingDone: { fontSize: 15, fontFamily: 'Inter_400Regular', marginTop: 24 },
+  itemsCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginTop: 16, width: '100%' },
+  itemsTitle: { fontSize: 13, fontFamily: 'Inter_600SemiBold', textAlign: 'center', marginBottom: 12 },
+  itemsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  itemChip: { alignItems: 'center', maxWidth: 90 },
+  itemEmoji: { fontSize: 30, marginBottom: 4 },
+  itemLabel: { fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center' },
   doneBtn: { marginTop: 32, paddingVertical: 12, paddingHorizontal: 32 },
   doneBtnText: { fontSize: 17, fontFamily: 'Inter_600SemiBold' },
 });

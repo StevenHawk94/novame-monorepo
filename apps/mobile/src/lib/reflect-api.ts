@@ -28,6 +28,13 @@ export interface DimensionHit {
 }
 
 /** The snapshot /api/reflect returns; the client renders it directly. */
+export interface MatchedItem {
+  itemId: string;
+  displayName: string;
+  rarity: string;
+  label: string;
+}
+
 export interface ReflectSnapshot {
   reflectId: string;
   xpAwarded: number;
@@ -35,6 +42,7 @@ export interface ReflectSnapshot {
   companionXp: number;
   reflectsToday: number;
   reflectsRemaining: number;
+  matchedItems: MatchedItem[];
 }
 
 export type ReflectError =
@@ -110,6 +118,7 @@ interface WireSnapshot {
   companion_xp?: number;
   reflects_today?: number;
   reflects_remaining?: number;
+  matchedItems?: MatchedItem[];
 }
 
 function toSnapshot(w: WireSnapshot): ReflectSnapshot {
@@ -120,6 +129,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     companionXp: w.companion_xp ?? 0,
     reflectsToday: w.reflects_today ?? 0,
     reflectsRemaining: w.reflects_remaining ?? 0,
+    matchedItems: w.matchedItems ?? [],
   };
 }
 
