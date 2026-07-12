@@ -35,7 +35,7 @@ async function analyzeDimensions(body, excludeDim) {
     const res = await callAI({
       systemInstruction: DIMENSION_SYSTEM_PROMPT,
       userText: body,
-      generationConfig: { temperature: 0.3, maxOutputTokens: 50 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 500 },
     })
     const parsed = parseAIJson(res.text)
     if (!Array.isArray(parsed)) return []
@@ -85,7 +85,11 @@ async function generateSkill(body, promptDim) {
     const res = await callAI({
       systemInstruction: SKILL_SYSTEM_PROMPT,
       userText: body,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 200, response_mime_type: 'application/json' },
+      // Gemini 2.5-flash spends tokens on internal reasoning before output, so
+      // a small cap yields an empty response; 2000 leaves room for the JSON.
+      // response_mime_type is stripped by callGemini (2.5 + system_instruction
+      // 400s), so the prompt itself must demand pure JSON.
+      generationConfig: { temperature: 0.4, maxOutputTokens: 2000 },
     })
     const parsed = parseAIJson(res.text)
     if (!parsed || typeof parsed !== 'object') return null
