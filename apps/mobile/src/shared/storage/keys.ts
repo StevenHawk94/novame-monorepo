@@ -261,6 +261,11 @@ export const kNewLensState = defineKey('novame_new_lens_state', 'user');
  *  server-side. */
 export const kTrueNorthState = defineKey('novame_true_north_state', 'user');
 
+/** Home + interaction sheet: the companion's authoritative state (xp, stage,
+ *  skin, name). Level/progress are derived from xp with the shared engine, not
+ *  stored. A read-only shadow refreshed from /api/companion. */
+export const kCompanionState = defineKey('novame_companion_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================
