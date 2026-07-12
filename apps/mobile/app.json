@@ -18,7 +18,10 @@
       "bundleIdentifier": "com.novame.app",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "usesAppleSignIn": true
     },
