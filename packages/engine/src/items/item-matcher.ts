@@ -67,10 +67,14 @@ interface Token {
 }
 
 function tokenize(text: string): Token[] {
+  // Normalize smart/curly apostrophes to ASCII first: iOS keyboards produce
+  // U+2019 by default, which the tokenizer's [a-z0-9'] class wouldn't keep, so
+  // "didn't" would split into "didn" + "t" and the negation guard would miss it.
+  const normalized = text.replace(/[’‘`´]/g, "'");
   const tokens: Token[] = [];
   const re = /[a-z0-9']+/gi;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(normalized)) !== null) {
     tokens.push({ word: m[0].toLowerCase(), start: m.index, end: m.index + m[0].length });
   }
   return tokens;

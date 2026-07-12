@@ -72,6 +72,11 @@ describe('matchItems: negation guard (rule 3)', () => {
     expect(ids('skipped breakfast but had tea')).toEqual(['food.tea']);
     expect(ids('tea without sugar')).toEqual(['food.tea']);
   });
+  it('handles iOS smart apostrophes in negators', () => {
+    // U+2019 curly apostrophe, as iOS keyboards produce.
+    expect(ids('I didn’t drink coffee')).toEqual([]);
+    expect(ids('couldn’t find the book')).toEqual([]);
+  });
 });
 
 describe('matchItems: dedupe and cap (rules 4, 5)', () => {
