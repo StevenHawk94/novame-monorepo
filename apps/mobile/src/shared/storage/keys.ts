@@ -266,6 +266,11 @@ export const kTrueNorthState = defineKey('novame_true_north_state', 'user');
  *  stored. A read-only shadow refreshed from /api/companion. */
 export const kCompanionState = defineKey('novame_companion_state', 'user');
 
+/** Bags tab: collected items + their memories, cached for instant render.
+ *  Display info (name, emoji, rarity) is derived from the shared dictionary by
+ *  item_id, not stored here. */
+export const kBagsState = defineKey('novame_bags_state', 'user');
+
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately
 // ===========================================================================

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
-import { gemsForReflect, GEMS_PER_DIMENSION } from '@novame/engine'
+import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
 
 export const runtime = 'edge'
@@ -151,7 +151,34 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
 
-    return NextResponse.json({ success: true, ...result })
+    // Item matching (C8): scan the reflection for known items and record them.
+    // Additive and best-effort -- a failure here never affects the reflect,
+    // which already succeeded above. Runs only on a real reflect (has an id).
+    let matchedItems = []
+    const reflectId = result?.reflect_id
+    if (reflectId) {
+      try {
+        const matches = matchItems(body, ITEM_DICTIONARY)
+        if (matches.length > 0) {
+          await supabase.rpc('record_item_matches', {
+            p_user_id: userId,
+            p_reflect_id: reflectId,
+            p_matches: matches.map((m) => ({ item_id: m.itemId, label: m.label })),
+            p_local_date: dateStr,
+          })
+          matchedItems = matches.map((m) => ({
+            itemId: m.itemId,
+            displayName: m.displayName,
+            rarity: m.rarity,
+            label: m.label,
+          }))
+        }
+      } catch (itemErr) {
+        console.warn('[reflect] item matching failed (non-fatal):', itemErr && itemErr.message)
+      }
+    }
+
+    return NextResponse.json({ success: true, ...result, matchedItems })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

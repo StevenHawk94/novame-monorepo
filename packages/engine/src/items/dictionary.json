@@ -1,0 +1,179 @@
+{
+  "items": {
+    "food.apple": {
+      "displayName": "Apple",
+      "rarity": "common",
+      "category": "food",
+      "sheetId": "food",
+      "row": 0,
+      "col": 0,
+      "emoji": "🍎"
+    },
+    "food.coffee": {
+      "displayName": "Coffee",
+      "rarity": "common",
+      "category": "drink",
+      "sheetId": "food",
+      "row": 0,
+      "col": 1,
+      "emoji": "☕"
+    },
+    "food.pizza": {
+      "displayName": "Pizza",
+      "rarity": "uncommon",
+      "category": "food",
+      "sheetId": "food",
+      "row": 0,
+      "col": 2,
+      "emoji": "🍕"
+    },
+    "food.apple_pie": {
+      "displayName": "Apple Pie",
+      "rarity": "rare",
+      "category": "food",
+      "sheetId": "food",
+      "row": 0,
+      "col": 3,
+      "emoji": "🥧"
+    },
+    "food.tea": {
+      "displayName": "Tea",
+      "rarity": "common",
+      "category": "drink",
+      "sheetId": "food",
+      "row": 0,
+      "col": 4,
+      "emoji": "🍵"
+    },
+    "nature.rain": {
+      "displayName": "Rain",
+      "rarity": "common",
+      "category": "nature",
+      "sheetId": "nature",
+      "row": 0,
+      "col": 0,
+      "emoji": "🌧️"
+    },
+    "nature.sun": {
+      "displayName": "Sun",
+      "rarity": "common",
+      "category": "nature",
+      "sheetId": "nature",
+      "row": 0,
+      "col": 1,
+      "emoji": "☀️"
+    },
+    "nature.moon": {
+      "displayName": "Moon",
+      "rarity": "uncommon",
+      "category": "nature",
+      "sheetId": "nature",
+      "row": 0,
+      "col": 2,
+      "emoji": "🌙"
+    },
+    "nature.flower": {
+      "displayName": "Flower",
+      "rarity": "common",
+      "category": "nature",
+      "sheetId": "nature",
+      "row": 0,
+      "col": 3,
+      "emoji": "🌸"
+    },
+    "nature.ocean": {
+      "displayName": "Ocean",
+      "rarity": "rare",
+      "category": "nature",
+      "sheetId": "nature",
+      "row": 0,
+      "col": 4,
+      "emoji": "🌊"
+    },
+    "object.book": {
+      "displayName": "Book",
+      "rarity": "common",
+      "category": "object",
+      "sheetId": "object",
+      "row": 0,
+      "col": 0,
+      "emoji": "📖"
+    },
+    "object.guitar": {
+      "displayName": "Guitar",
+      "rarity": "uncommon",
+      "category": "object",
+      "sheetId": "object",
+      "row": 0,
+      "col": 1,
+      "emoji": "🎸"
+    },
+    "object.candle": {
+      "displayName": "Candle",
+      "rarity": "common",
+      "category": "object",
+      "sheetId": "object",
+      "row": 0,
+      "col": 2,
+      "emoji": "🕯️"
+    },
+    "animal.dog": {
+      "displayName": "Dog",
+      "rarity": "common",
+      "category": "animal",
+      "sheetId": "animal",
+      "row": 0,
+      "col": 0,
+      "emoji": "🐶"
+    },
+    "animal.cat": {
+      "displayName": "Cat",
+      "rarity": "common",
+      "category": "animal",
+      "sheetId": "animal",
+      "row": 0,
+      "col": 1,
+      "emoji": "🐱"
+    }
+  },
+  "synonyms": {
+    "apple": "food.apple",
+    "apples": "food.apple",
+    "an apple": "food.apple",
+    "coffee": "food.coffee",
+    "coffees": "food.coffee",
+    "espresso": "food.coffee",
+    "latte": "food.coffee",
+    "pizza": "food.pizza",
+    "pizzas": "food.pizza",
+    "apple pie": "food.apple_pie",
+    "apple pies": "food.apple_pie",
+    "tea": "food.tea",
+    "teas": "food.tea",
+    "rain": "nature.rain",
+    "raining": "nature.rain",
+    "rainy": "nature.rain",
+    "sun": "nature.sun",
+    "sunny": "nature.sun",
+    "sunshine": "nature.sun",
+    "moon": "nature.moon",
+    "moonlight": "nature.moon",
+    "flower": "nature.flower",
+    "flowers": "nature.flower",
+    "ocean": "nature.ocean",
+    "oceans": "nature.ocean",
+    "sea": "nature.ocean",
+    "book": "object.book",
+    "books": "object.book",
+    "guitar": "object.guitar",
+    "guitars": "object.guitar",
+    "candle": "object.candle",
+    "candles": "object.candle",
+    "dog": "animal.dog",
+    "dogs": "animal.dog",
+    "puppy": "animal.dog",
+    "cat": "animal.cat",
+    "cats": "animal.cat",
+    "kitten": "animal.cat"
+  }
+}

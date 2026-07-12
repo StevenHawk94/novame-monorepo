@@ -8,3 +8,5 @@ export {
 export * from './xp';
 export * from './gems';
 export * from './battle';
+export * from './items/item-matcher';
+export { ITEM_DICTIONARY } from './items/dictionary';
