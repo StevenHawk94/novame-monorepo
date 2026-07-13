@@ -154,8 +154,9 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       {
         key: 'visit_master',
         label: 'Visit Master',
-        desc: 'Coming soon',
+        desc: 'Consult the Master — Plus',
         icon: 'auto-awesome',
+        route: '/(main)/visit-master',
       },
     ];
   }, [doneState, trueNorthAvail]);
