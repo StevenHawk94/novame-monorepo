@@ -52,6 +52,7 @@ export interface ReflectSnapshot {
   reflectsRemaining: number;
   matchedItems: MatchedItem[];
   generatedSkill: GeneratedSkill | null;
+  bubble: string | null;
 }
 
 export type ReflectError =
@@ -129,6 +130,7 @@ interface WireSnapshot {
   reflects_remaining?: number;
   matchedItems?: MatchedItem[];
   generatedSkill?: GeneratedSkill | null;
+  bubble?: string | null;
 }
 
 function toSnapshot(w: WireSnapshot): ReflectSnapshot {
@@ -141,6 +143,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     reflectsRemaining: w.reflects_remaining ?? 0,
     matchedItems: w.matchedItems ?? [],
     generatedSkill: w.generatedSkill ?? null,
+    bubble: w.bubble ?? null,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -10,6 +10,8 @@ import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { HOME_SCENE_BY_ID, DEFAULT_SCENE_ID } from '@novame/domain';
 import { getSelectedScene, getSelectedSkin } from '@/lib/cosmetics-store';
+import { getFreshBubble } from '@/lib/bubble-store';
+import { bubbleLineFor } from '@novame/domain';
 import { SCENE_IMAGES, SKIN_IMAGES } from '@/lib/cosmetic-images';
 import { clearReflectLocal } from '@/lib/reflect-api';
 import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
@@ -36,12 +38,11 @@ function isDaytime(): boolean {
   return h >= 6 && h < 18;
 }
 
-function speechFor(day: boolean, companion: CompanionState | null): string {
-  const name = companion?.name || 'me';
-  void name;
-  return day
-    ? "I'm flowing through your shared moments."
-    : "It's quiet now. A good time to look inward.";
+function speechFor(day: boolean, rotation: number): string {
+  // A fresh AI line from the last reflection wins; otherwise a rotating default.
+  const ai = getFreshBubble();
+  if (ai) return ai;
+  return bubbleLineFor(day, rotation);
 }
 
 export default function HomeScreen() {
@@ -51,7 +52,13 @@ export default function HomeScreen() {
   const [tier, setTier] = useState(getCachedSubscriptionTier());
   const [panelOpen, setPanelOpen] = useState(false);
   const [, setCosmeticTick] = useState(0);
+  const [bubbleRotation, setBubbleRotation] = useState(0);
   const day = isDaytime();
+
+  useEffect(() => {
+    const interval = setInterval(() => setBubbleRotation((r) => r + 1), 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   const onLayout = useCallback(() => {
     hideSplashOnce();
@@ -124,7 +131,7 @@ export default function HomeScreen() {
       {/* Scene: speech bubble + pet placeholder */}
       <View style={styles.scene}>
         <View style={styles.bubble}>
-          <Text style={styles.bubbleText}>{speechFor(day, companion)}</Text>
+          <Text style={styles.bubbleText}>{speechFor(day, bubbleRotation)}</Text>
         </View>
         <Pressable onPress={onPetTap} style={styles.petTap} hitSlop={20}>
           {skinImg ? (

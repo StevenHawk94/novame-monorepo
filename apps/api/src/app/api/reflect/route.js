@@ -46,11 +46,31 @@ async function analyzeDimensions(body, excludeDim) {
   }
 }
 
+// Companion bubble: a short, warm one-liner the pet "says" on Home after a
+// reflection. First-draft placeholder prompt. Plain text (not JSON) -- one line.
+async function generateBubble(body) {
+  try {
+    const res = await callAI({
+      systemInstruction: BUBBLE_SYSTEM_PROMPT,
+      userText: body,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 200 },
+    })
+    const line = (res.text || '').trim().replace(/^["']|["']$/g, '')
+    if (!line || line.length > 200) return null
+    return line
+  } catch (err) {
+    console.warn('[reflect] bubble generation failed (non-fatal):', err && err.message)
+    return null
+  }
+}
+
 // Skill generation: whether this reflection holds a durable lesson worth
 // keeping as a card. This is a FIRST-DRAFT prompt -- the content judgment (what
 // counts as a real lesson, the voice) will be tuned; the JSON contract is what
 // the code depends on. Not every reflect yields a skill: a play-by-play of a
 // day has no lesson, and the model should say so via a low confidence.
+const BUBBLE_SYSTEM_PROMPT = `You are the user's companion pet in a personal-growth app. They just finished writing a reflection. Respond with ONE warm, short line, under 25 words, the way their companion would -- caring and specific to what they wrote, like a friend checking in. No preamble. Return ONLY the line: no quotes, no JSON, no markdown.`
+
 const SKILL_SYSTEM_PROMPT = `You read a personal journal entry and extract a small lesson or insight from it -- something positive or meaningful the writer could carry forward.
 
 [TEST PHASE: be generous. If the entry contains anything positive, any small realization, effort, feeling, or meaningful moment, generate a lesson from it. Only decline for an entry that is purely empty, gibberish, or has no content at all.]
@@ -284,7 +304,14 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill })
+    // Companion bubble (best-effort, paid + consented -- same gate as skills;
+    // free users get the rotating default lines on Home instead).
+    let bubble = null
+    if (reflectId && isPaid && hasConsent) {
+      bubble = await generateBubble(body)
+    }
+
+    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill, bubble })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

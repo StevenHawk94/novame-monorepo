@@ -64,6 +64,9 @@ export const kMasterState = defineKey('novame_master_state', 'user');
 /** Selected Home scene + companion skin (personalization panel). */
 export const kCosmetics = defineKey('novame_cosmetics', 'user');
 
+/** Latest companion bubble line from a reflection (shown on Home, then fades). */
+export const kBubble = defineKey('novame_bubble', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

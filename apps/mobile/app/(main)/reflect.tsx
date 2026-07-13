@@ -22,6 +22,7 @@ import {
   type ReflectError,
   type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
+import { setReflectBubble } from '../../src/lib/bubble-store';
 
 const MAX_CHARS = 5000;
 
@@ -108,6 +109,7 @@ export default function ReflectScreen() {
     if (res.ok) {
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
+      if (res.snapshot.bubble) setReflectBubble(res.snapshot.bubble);
       setPhase('done');
     } else {
       setError(res.error);
