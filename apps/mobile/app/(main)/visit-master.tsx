@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme/use-theme';
 import { haptics } from '../../src/lib/haptics';
 import {
-  fetchMasterStatus, askMaster, fetchMasterVisit, cooldownLabel,
+  fetchMasterStatus, getCachedMasterStatus, askMaster, fetchMasterVisit, cooldownLabel,
   type MasterStatus, type MasterResponse, type MasterVisit,
 } from '../../src/lib/master-api';
 
@@ -27,7 +27,7 @@ export default function VisitMasterScreen() {
   const c = theme.colors;
 
   const [phase, setPhase] = useState<Phase>('entry');
-  const [status, setStatus] = useState<MasterStatus>({ isPaid: false, available: false, nextAvailableAt: null, history: [] });
+  const [status, setStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
   const [question, setQuestion] = useState('');
   const [reply, setReply] = useState<MasterResponse | null>(null);
   const [detail, setDetail] = useState<{ question: string; response: MasterResponse } | null>(null);

@@ -58,6 +58,9 @@ export const kSubscription = defineKey('novame_subscription', 'user');
 /** me-stats.ts: STORAGE_KEY */
 export const kMeStats = defineKey('novame_me_stats', 'user');
 
+/** Visit Master status cache (cache-first render, avoids the entry flash). */
+export const kMasterState = defineKey('novame_master_state', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

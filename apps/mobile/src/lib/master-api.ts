@@ -2,7 +2,9 @@
  * Visit Master (Kit 5). Paid-only consultation with a 48h cooldown. Produces no
  * skill / xp / items -- it's a sage's counsel, isolated from the Skills system.
  */
+import { kMasterState } from '../shared/storage/keys';
 import { apiClient } from './api';
+import { storage } from './storage';
 import { supabase } from './supabase';
 
 export interface MasterResponse {
@@ -31,6 +33,20 @@ async function uid(): Promise<string | null> {
   return sess.session?.user?.id ?? null;
 }
 
+export function getCachedMasterStatus(): MasterStatus {
+  const raw = storage.getString(kMasterState.name);
+  if (!raw) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
+  try {
+    return JSON.parse(raw) as MasterStatus;
+  } catch {
+    return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
+  }
+}
+
+function setCachedMasterStatus(s: MasterStatus): void {
+  storage.set(kMasterState.name, JSON.stringify(s));
+}
+
 export async function fetchMasterStatus(): Promise<MasterStatus> {
   const userId = await uid();
   if (!userId) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
@@ -40,12 +56,14 @@ export async function fetchMasterStatus(): Promise<MasterStatus> {
       nextAvailableAt?: string | null; history?: MasterVisit[];
     }>(`/api/master/status?userId=${encodeURIComponent(userId)}`);
     if (!data.success) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
-    return {
+    const fresh: MasterStatus = {
       isPaid: !!data.isPaid,
       available: !!data.available,
       nextAvailableAt: data.nextAvailableAt ?? null,
       history: data.history || [],
     };
+    setCachedMasterStatus(fresh);
+    return fresh;
   } catch {
     return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
   }
