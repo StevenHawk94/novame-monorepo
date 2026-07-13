@@ -100,7 +100,10 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
     [],
   );
 
-  const tierInfo = PRICING_TIERS[tier];
+  // Defensive: a stale cache may hold an old tier key (pro/basic/ultra) no
+  // longer in PRICING_TIERS. Any non-free unknown maps to plus.
+  const safeTier = PRICING_TIERS[tier] ? tier : tier === 'free' ? 'free' : 'plus';
+  const tierInfo = PRICING_TIERS[safeTier];
   const isFree = tier === 'free';
 
   const handleClose = () => {
@@ -163,15 +166,13 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
               color="rgba(192,132,252,0.5)"
             />
           </View>
-          <View style={styles.planCardStats}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statLabel}>Monthly Insights</Text>
-              <Text style={styles.statValue}>{tierInfo.monthlyAnalyses}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statLabel}>Status</Text>
-              <Text style={styles.statValue}>Active</Text>
-            </View>
+          <View style={styles.planFeatures}>
+            {tierInfo.features.map((f, i) => (
+              <View key={i} style={styles.planFeatureRow}>
+                <MaterialIcons name="check-circle" size={16} color="rgba(192,132,252,0.9)" />
+                <Text style={styles.planFeatureText}>{f}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -275,10 +276,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
   },
-  planCardStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
+  planFeatures: { gap: 10 },
+  planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  planFeatureText: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500' },
   statLabel: {
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
