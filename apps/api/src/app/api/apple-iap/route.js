@@ -250,9 +250,11 @@ export async function POST(request) {
       ? existingSub.current_period_start
       : new Date().toISOString()
 
+    const planType = PRODUCT_TO_PLAN_TYPE[productId] || 'solo'
     const subRow = {
       user_id: userId,
       plan: tier,
+      plan_type: planType,
       status: 'active',
       billing_cycle: billingCycle,
       current_period_start: periodStart,
@@ -281,6 +283,33 @@ export async function POST(request) {
         { success: false, error: 'Failed to save subscription: ' + subErr.message },
         { status: 500 }
       )
+    }
+
+    // Duo: ensure the owner has a duo_membership row with a one-time invite
+    // code. Idempotent on owner_id -- a repeat purchase or renewal keeps the
+    // same code (and any claimed member). Only created for duo plans; solo
+    // owners never get a membership row.
+    if (planType === 'duo') {
+      const { data: existingDuo } = await supabase
+        .from('duo_memberships')
+        .select('id')
+        .eq('owner_id', userId)
+        .maybeSingle()
+      if (!existingDuo) {
+        // 8-char code, unambiguous alphabet.
+        const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+        let code = ''
+        for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
+        const { error: duoErr } = await supabase
+          .from('duo_memberships')
+          .insert({ owner_id: userId, invite_code: code, status: 'pending' })
+        if (duoErr) {
+          // Non-fatal: the subscription is already active. The owner can
+          // retry surfacing the code from /api/duo/status, which lazily
+          // creates the row if missing.
+          console.warn('[apple-iap] duo membership create failed (non-fatal):', duoErr.message)
+        }
+      }
     }
 
     console.log(`[apple-iap] Activated ${tier} (${billingCycle}) for user ${userId} — txn=${transactionId}`)
