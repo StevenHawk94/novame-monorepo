@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -52,6 +52,11 @@ export default function GuessScreen() {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: c.bgPrimary }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
       <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
         <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
@@ -92,6 +97,8 @@ export default function GuessScreen() {
         <Text style={styles.sendText}>{sending ? 'Sending...' : 'Send guess'}</Text>
       </Pressable>
     </View>
+    </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
