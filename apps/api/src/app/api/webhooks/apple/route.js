@@ -426,6 +426,25 @@ async function handleExpired(supabase, txn) {
     .eq('user_id', userId)
 
   console.log(`[Apple webhook] Expired — user ${userId} downgraded to free`)
+
+  // Duo: if this owner shared Plus with a member, the member's Plus follows the
+  // owner. When the owner's subscription expires, the member lapses too (a
+  // member can't hold their own Plus while seated, so no conflict check needed).
+  const { data: duo } = await supabase
+    .from('duo_memberships')
+    .select('id, member_id')
+    .eq('owner_id', userId)
+    .eq('status', 'claimed')
+    .maybeSingle()
+  if (duo && duo.member_id) {
+    await supabase.from('profiles')
+      .update({ subscription_tier: 'free', updated_at: new Date().toISOString() })
+      .eq('id', duo.member_id)
+    await supabase.from('duo_memberships')
+      .update({ status: 'revoked' })
+      .eq('id', duo.id)
+    console.log(`[Apple webhook] Duo member ${duo.member_id} lapsed with owner ${userId}`)
+  }
 }
 
 /**
