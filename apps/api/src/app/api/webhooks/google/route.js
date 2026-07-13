@@ -30,9 +30,14 @@ function getSupabase() {
 }
 
 const SUB_TO_TIER = {
-  novame_basic: 'basic',
-  novame_pro:   'pro',
-  novame_ultra: 'ultra',
+  novame_plus:    'plus',
+  novame_plusduo: 'plus',
+}
+
+// Google subscription ID → seat model (duo grants one extra seat)
+const SUB_TO_PLAN_TYPE = {
+  novame_plus:    'solo',
+  novame_plusduo: 'duo',
 }
 
 const BASEPLAN_TO_CYCLE = {

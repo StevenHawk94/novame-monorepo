@@ -14,7 +14,7 @@ export const runtime = 'edge'
  * because there are no real users yet and paid unlocks nothing that costs money
  * at this stage. Delete this route when the seat-model IAP ships (C6-later).
  *
- * 'pro' stands in for "paid" (the isPaid test is tier !== 'free'); the tier
+ * 'plus' stands in for "paid" (the isPaid test is tier !== 'free'); the tier
  * vocabulary regularizes to free/paid with the seat model later.
  */
 export async function POST(request) {
@@ -30,7 +30,7 @@ export async function POST(request) {
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (tier !== 'free' && tier !== 'pro') {
+    if (tier !== 'free' && tier !== 'plus') {
       return NextResponse.json({ error: 'tier must be free or pro' }, { status: 400 })
     }
 

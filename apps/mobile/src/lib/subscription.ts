@@ -135,7 +135,7 @@ export async function fetchSubscriptionTier(
  * refreshes the local cache so both the server (reads profiles) and the client
  * (reads cache) see the change.
  */
-export async function devSetTier(tier: 'free' | 'pro'): Promise<boolean> {
+export async function devSetTier(tier: 'free' | 'plus'): Promise<boolean> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return false;

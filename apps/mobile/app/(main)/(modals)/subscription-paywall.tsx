@@ -15,6 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import {
   PRICING_TIERS,
+  PLUS_PRICING,
   type PricingTierKey,
 } from '@novame/core';
 
@@ -26,8 +27,9 @@ import {
   restoreSubscriptions,
   onPurchaseComplete,
   onPurchaseError,
-  classifySubscriptionChange,
+  classifyPlanChange,
   type SubscriptionChange,
+  type PlanSeat,
 } from '@/lib/iap';
 import { getCachedSubscription } from '@/lib/subscription';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
@@ -75,16 +77,24 @@ const PRIVACY_URL = 'https://novameapp.com/privacy';
 
 type Cycle = 'monthly' | 'yearly';
 
-type TierDisplay = {
-  key: Exclude<PricingTierKey, 'free'>;
+type SeatDisplay = {
+  key: PlanSeat; // 'plus' (solo) | 'plusduo' (duo)
+  name: string;
+  seats: string;
   icon: keyof typeof MaterialIcons.glyphMap;
 };
 
-const PAID_TIERS: TierDisplay[] = [
-  { key: 'basic', icon: 'auto-awesome' },
-  { key: 'pro', icon: 'diamond' },
-  { key: 'ultra', icon: 'workspace-premium' },
+// Two seat options, one Plus tier. Prices from PLUS_PRICING; shared features
+// from PRICING_TIERS.plus (both seats grant the same tier).
+const SEAT_OPTIONS: SeatDisplay[] = [
+  { key: 'plus', name: 'Plus', seats: 'Just you', icon: 'auto-awesome' },
+  { key: 'plusduo', name: 'Plus Duo', seats: 'You + 1 friend', icon: 'group' },
 ];
+
+function seatPrice(seat: PlanSeat, cycle: Cycle): number {
+  const pr = seat === 'plusduo' ? PLUS_PRICING.duo : PLUS_PRICING.solo;
+  return cycle === 'monthly' ? pr.monthly : pr.yearly;
+}
 
 function calcSaving(monthly: number, yearly: number): number {
   if (monthly <= 0) return 0;
@@ -107,27 +117,18 @@ export default function SubscriptionPaywallModal() {
   // is unknown, we err on the side of treating cycle as 'monthly' --
   // this means a basic-yearly user selecting basic-monthly will be
   // classified as 'crossgrade' which is the safe (deferred) handling.
-  const currentCycle: Cycle =
-    (cachedSub as { cycle?: Cycle } | null)?.cycle === 'yearly'
-      ? 'yearly'
-      : 'monthly';
+  const isPaid = currentTier !== 'free';
+  const cachedExtra = cachedSub as { seat?: PlanSeat; cycle?: Cycle } | null;
+  const currentSeat: PlanSeat | null = isPaid ? cachedExtra?.seat ?? null : null;
+  const currentCycle: Cycle = cachedExtra?.cycle === 'yearly' ? 'yearly' : 'monthly';
 
-  // UX: when the user already subscribes, default the paywall selection to
-  // their CURRENT plan + cycle so the "Manage Subscription" affordance
-  // (rendered only when the selected card == current plan) is visible
-  // immediately on open. New / free users keep the recommended 'pro'.
-  const [cycle, setCycle] = useState<Cycle>(
-    currentTier !== 'free' ? currentCycle : 'monthly',
-  );
-  const [selected, setSelected] = useState<TierDisplay['key']>(
-    currentTier !== 'free' ? currentTier : 'pro',
-  );
+  const [cycle, setCycle] = useState<Cycle>(isPaid ? currentCycle : 'monthly');
+  const [selected, setSelected] = useState<PlanSeat>(currentSeat ?? 'plus');
 
-  // Pending change classification (recomputed on every cycle/selected
-  // change). Drives the CTA label, hint banner, and disabled state.
-  const pendingChange: SubscriptionChange = classifySubscriptionChange(
-    { tier: currentTier, cycle: currentCycle },
-    { tier: selected, cycle },
+  // Change classification on the seat model (solo/duo x monthly/yearly).
+  const pendingChange: SubscriptionChange = classifyPlanChange(
+    currentSeat ? { seat: currentSeat, cycle: currentCycle } : null,
+    { seat: selected, cycle },
   );
   // Stage 5.IAP.5: in-flight indicator (disable repeat taps).
   const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>(
@@ -258,11 +259,11 @@ export default function SubscriptionPaywallModal() {
         // (no charge, no immediate tier change). This is the one alert
         // we MUST keep -- the timing info has no other surface.
         setBusy('idle');
-        const tierName = PRICING_TIERS[selected].name;
+        const seatName = SEAT_OPTIONS.find((o) => o.key === selected)?.name ?? 'Plus';
         const cycleLabel = cycle === 'yearly' ? 'Annual' : 'Monthly';
         Alert.alert(
           'Change Scheduled',
-          `Your plan will switch to ${tierName} (${cycleLabel}) at the end of your current billing period. Until then, your current plan stays active.`,
+          `Your plan will switch to ${seatName} (${cycleLabel}) at the end of your current billing period. Until then, your current plan stays active.`,
           [
             {
               text: 'OK',
@@ -327,7 +328,7 @@ export default function SubscriptionPaywallModal() {
     if (pendingChange === 'same') return 'Manage Subscription';
     if (pendingChange === 'new') return 'Subscribe';
     if (pendingChange === 'upgrade') {
-      return `Upgrade to ${PRICING_TIERS[selected].name}`;
+      return `Upgrade to ${SEAT_OPTIONS.find((o) => o.key === selected)?.name ?? 'Plus'}`;
     }
     if (pendingChange === 'downgrade') return 'Schedule Downgrade';
     if (pendingChange === 'crossgrade') {
@@ -422,17 +423,11 @@ export default function SubscriptionPaywallModal() {
 
         {/* Tier cards */}
         <View style={styles.tierList}>
-          {PAID_TIERS.map(({ key, icon }) => {
-            const t = PRICING_TIERS[key];
+          {SEAT_OPTIONS.map(({ key, icon, name, seats }) => {
             const isSelected = selected === key;
-            const price = cycle === 'monthly' ? t.monthlyPrice : t.yearlyPrice;
-            const saving = calcSaving(t.monthlyPrice, t.yearlyPrice);
-            // Stage 5.IAP.5: this card == user's CURRENT active sub if
-            // both tier AND cycle match. A basic-monthly user looking
-            // at the basic-yearly card is NOT current -- they're
-            // considering a crossgrade (which is deferred per Apple).
-            const isCurrent =
-              currentTier === key && currentCycle === cycle;
+            const price = seatPrice(key, cycle);
+            const saving = calcSaving(seatPrice(key, 'monthly'), seatPrice(key, 'yearly'));
+            const isCurrent = currentSeat === key && currentCycle === cycle;
             return (
               <Pressable
                 key={key}
@@ -463,7 +458,7 @@ export default function SubscriptionPaywallModal() {
                 </View>
                 <View style={styles.tierMid}>
                   <View style={styles.tierNameRow}>
-                    <Text style={styles.tierName}>{t.name}</Text>
+                    <Text style={styles.tierName}>{name}</Text>
                     {isCurrent ? (
                       <View style={styles.currentBadge}>
                         <Text style={styles.currentBadgeText}>CURRENT</Text>
@@ -475,9 +470,7 @@ export default function SubscriptionPaywallModal() {
                       </View>
                     ) : null}
                   </View>
-                  <Text style={styles.tierInsights}>
-                    {t.monthlyAnalyses} insights/month
-                  </Text>
+                  <Text style={styles.tierInsights}>{seats}</Text>
                 </View>
                 <View style={styles.tierPriceWrap}>
                   <Text style={styles.tierPrice}>${price.toFixed(2)}</Text>

@@ -91,33 +91,35 @@ export type PurchaseOutcome =
 // ---- Product IDs (must match Apple App Store Connect setup) ----
 
 export const IOS_SUBSCRIPTION_PRODUCT_IDS = [
-  'novame.basic.monthly',
-  'novame.basic.yearly',
-  'novame.pro.monthly',
-  'novame.pro.yearly',
-  'novame.ultra.monthly',
-  'novame.ultra.yearly',
+  'novame.plus.monthly',
+  'novame.plus.yearly',
+  'novame.plusduo.monthly',
+  'novame.plusduo.yearly',
 ] as const;
 
 export type IOSSubscriptionProductId =
   (typeof IOS_SUBSCRIPTION_PRODUCT_IDS)[number];
 
 const PRODUCT_TO_TIER: Record<IOSSubscriptionProductId, PricingTierKey> = {
-  'novame.basic.monthly': 'basic',
-  'novame.basic.yearly': 'basic',
-  'novame.pro.monthly': 'pro',
-  'novame.pro.yearly': 'pro',
-  'novame.ultra.monthly': 'ultra',
-  'novame.ultra.yearly': 'ultra',
+  'novame.plus.monthly': 'plus',
+  'novame.plus.yearly': 'plus',
+  'novame.plusduo.monthly': 'plus',
+  'novame.plusduo.yearly': 'plus',
+};
+
+/** Seat model per product: plusduo grants an extra seat to invite one member. */
+export const PRODUCT_TO_PLAN_TYPE: Record<IOSSubscriptionProductId, 'solo' | 'duo'> = {
+  'novame.plus.monthly': 'solo',
+  'novame.plus.yearly': 'solo',
+  'novame.plusduo.monthly': 'duo',
+  'novame.plusduo.yearly': 'duo',
 };
 
 const PRODUCT_TO_CYCLE: Record<IOSSubscriptionProductId, 'monthly' | 'yearly'> = {
-  'novame.basic.monthly': 'monthly',
-  'novame.basic.yearly': 'yearly',
-  'novame.pro.monthly': 'monthly',
-  'novame.pro.yearly': 'yearly',
-  'novame.ultra.monthly': 'monthly',
-  'novame.ultra.yearly': 'yearly',
+  'novame.plus.monthly': 'monthly',
+  'novame.plus.yearly': 'yearly',
+  'novame.plusduo.monthly': 'monthly',
+  'novame.plusduo.yearly': 'yearly',
 };
 
 function isKnownProductId(
@@ -704,15 +706,13 @@ async function refreshSubscriptionCache(): Promise<void> {
 
 const TIER_RANK: Record<PricingTierKey, number> = {
   free: 0,
-  basic: 1,
-  pro: 2,
-  ultra: 3,
+  plus: 1,
 };
 
 /**
  * Classify a subscription change. Mirrors the App Store Connect
- * subscription-group level ranking we configured: ultra (level 1) >
- * pro (level 2) > basic (level 3). Same tier + same cycle = same.
+ * subscription-group ranking: plus (level 1) > free. Same tier + same cycle =
+ * same; solo<->duo or monthly<->yearly within plus is a crossgrade.
  * Same tier + different cycle = crossgrade (deferred per Apple).
  *
  * Used by the paywall CTA to choose the right label and post-action
@@ -775,6 +775,41 @@ export function classifySubscriptionChange(
   }
   if (TIER_RANK[target.tier] > TIER_RANK[current.tier]) return 'upgrade';
   return 'downgrade';
+}
+
+/**
+ * Seat model for the v2 Plus plan. Both plus (solo) and plusduo (duo) grant the
+ * same tier; the seat count is the only difference, so change classification
+ * runs on the seat rank, not the tier.
+ */
+export type PlanSeat = 'plus' | 'plusduo';
+
+const SEAT_RANK: Record<PlanSeat, number> = {
+  plus: 1,
+  plusduo: 2,
+};
+
+/**
+ * Classify a plan change within Plus (Apple StoreKit 2 semantics, option A):
+ *   - from free               -> 'new'      (immediate)
+ *   - more seats (solo->duo)  -> 'upgrade'  (immediate; Apple prorates)
+ *   - fewer seats (duo->solo) -> 'downgrade'(scheduled, end of period)
+ *   - same seat, diff cycle   -> 'crossgrade'(scheduled; monthly<->yearly)
+ *   - identical               -> 'same'
+ *
+ * Cycle changes are always crossgrade (never upgrade), so a monthly<->yearly
+ * switch defers to period end -- no proration edge cases. Only a seat increase
+ * is immediate.
+ */
+export function classifyPlanChange(
+  current: { seat: PlanSeat; cycle: 'monthly' | 'yearly' } | null,
+  target: { seat: PlanSeat; cycle: 'monthly' | 'yearly' },
+): SubscriptionChange {
+  if (!current) return 'new';
+  if (current.seat === target.seat) {
+    return current.cycle === target.cycle ? 'same' : 'crossgrade';
+  }
+  return SEAT_RANK[target.seat] > SEAT_RANK[current.seat] ? 'upgrade' : 'downgrade';
 }
 
 function pickHigherTier(

@@ -5,7 +5,7 @@
  * Source of truth for create-payment / book-payment / mobile paywall.
  */
 
-export type PricingTierKey = 'free' | 'basic' | 'pro' | 'ultra'
+export type PricingTierKey = 'free' | 'plus'
 
 export type PricingTier = {
   name: string
@@ -18,46 +18,45 @@ export type PricingTier = {
   features: string[]
 }
 
+/** Seat model: solo = just the owner, duo = owner + one invited member. */
+export type PlanType = 'solo' | 'duo'
+
+/**
+ * The v2 subscription is a single paid tier ("Plus"). The seat model (solo vs
+ * duo) is a separate dimension: duo lets the owner share Plus with one other
+ * account. Both solo and duo grant the same tier ('plus'); only the seat count
+ * differs. Prices (USD): Plus 6.99/mo, 49.99/yr; Plus Duo 9.99/mo, 79.99/yr.
+ */
+export const PLUS_PRICING = {
+  solo: { monthly: 6.99, yearly: 49.99 },
+  duo: { monthly: 9.99, yearly: 79.99 },
+} as const
+
 export const PRICING_TIERS: Record<PricingTierKey, PricingTier> = {
   free: {
     name: 'Free',
     monthlyPrice: 0,
     yearlyPrice: 0,
-    monthlyAnalyses: 1,
+    monthlyAnalyses: 0,
     maxSecondsPerRecord: 300,
     dailyRecordSeconds: 300,
     dailyTypeChars: 2000,
-    features: ['1 wisdom insight / month', 'Basic character'],
+    features: ['Rule-based reflections', 'Collect items', 'Your companion'],
   },
-  basic: {
-    name: 'Basic',
-    monthlyPrice: 4.99,
-    yearlyPrice: 39.99,
-    monthlyAnalyses: 15,
-    maxSecondsPerRecord: 300,
-    dailyRecordSeconds: 300,
-    dailyTypeChars: 3000,
-    features: ['15 insights / month', '5 min recording / day', '3000 chars / day'],
-  },
-  pro: {
-    name: 'Pro',
-    monthlyPrice: 9.99,
-    yearlyPrice: 79.99,
-    monthlyAnalyses: 30,
+  plus: {
+    name: 'Plus',
+    monthlyPrice: 6.99,
+    yearlyPrice: 49.99,
+    monthlyAnalyses: 90,
     maxSecondsPerRecord: 600,
     dailyRecordSeconds: 600,
     dailyTypeChars: 5000,
-    features: ['30 insights / month', '10 min recording / day', '5000 chars / day'],
-  },
-  ultra: {
-    name: 'Ultra',
-    monthlyPrice: 16.99,
-    yearlyPrice: 129.99,
-    monthlyAnalyses: 60,
-    maxSecondsPerRecord: 600,
-    dailyRecordSeconds: 600,
-    dailyTypeChars: 5000,
-    features: ['60 insights / month', '10 min recording / day', '5000 chars / day'],
+    features: [
+      'Full AI reflections',
+      'Skills from your own words',
+      'Visit the Master',
+      'All focus scenes',
+    ],
   },
 }
 

@@ -145,7 +145,7 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               onPress={async () => {
-                const next = tier === 'free' ? 'pro' : 'free';
+                const next = tier === 'free' ? 'plus' : 'free';
                 const ok = await devSetTier(next);
                 if (ok) {
                   setTier(next);

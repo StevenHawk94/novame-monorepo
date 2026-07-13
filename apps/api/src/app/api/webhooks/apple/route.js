@@ -43,18 +43,23 @@ function getSupabase() {
 
 // Apple product ID → internal tier
 const PRODUCT_TO_TIER = {
-  'novame.basic.monthly': 'basic',
-  'novame.basic.yearly':  'basic',
-  'novame.pro.monthly':   'pro',
-  'novame.pro.yearly':    'pro',
-  'novame.ultra.monthly': 'ultra',
-  'novame.ultra.yearly':  'ultra',
+  'novame.plus.monthly':    'plus',
+  'novame.plus.yearly':     'plus',
+  'novame.plusduo.monthly': 'plus',
+  'novame.plusduo.yearly':  'plus',
+}
+
+// Apple product ID → seat model
+const PRODUCT_TO_PLAN_TYPE = {
+  'novame.plus.monthly':    'solo',
+  'novame.plus.yearly':     'solo',
+  'novame.plusduo.monthly': 'duo',
+  'novame.plusduo.yearly':  'duo',
 }
 
 const PRODUCT_TO_CYCLE = {
-  'novame.basic.monthly': 'monthly', 'novame.basic.yearly': 'yearly',
-  'novame.pro.monthly':   'monthly', 'novame.pro.yearly':   'yearly',
-  'novame.ultra.monthly': 'monthly', 'novame.ultra.yearly': 'yearly',
+  'novame.plus.monthly':    'monthly', 'novame.plus.yearly':     'yearly',
+  'novame.plusduo.monthly': 'monthly', 'novame.plusduo.yearly':  'yearly',
 }
 
 /**

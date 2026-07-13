@@ -61,10 +61,8 @@ const TIER_TO_NAME = {
 // historically reads pricing inline rather than importing from packages
 // (see apps/api/src/app/api/daily-limit/route.js for the same pattern).
 const TIER_TO_MONTHLY_ANALYSES = {
-  free: 1,
-  basic: 15,
-  pro: 30,
-  ultra: 60,
+  free: 0,
+  plus: 90,
 }
 
 function countWords(text) {
