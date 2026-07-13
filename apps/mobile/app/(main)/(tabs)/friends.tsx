@@ -75,7 +75,7 @@ export default function FriendsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: c.textPrimary }]}>Friends</Text>
-          <Pressable onPress={() => {}} hitSlop={8} style={[styles.iconBtn, { backgroundColor: c.bgCard }]}>
+          <Pressable onPress={() => router.push('/(main)/guesses')} hitSlop={8} style={[styles.iconBtn, { backgroundColor: c.bgCard }]}>
             <MaterialIcons name="favorite-border" size={20} color={c.brand.primary} />
           </Pressable>
         </View>

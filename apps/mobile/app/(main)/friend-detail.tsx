@@ -58,7 +58,7 @@ export default function FriendDetailScreen() {
 
       {/* Guess Their Day (C11c) */}
       <Pressable
-        onPress={() => {}}
+        onPress={() => router.push({ pathname: '/(main)/guess', params: { userId, name } })}
         style={[styles.guessBtn, { backgroundColor: c.brand.primary, marginBottom: insets.bottom + 12 }]}
       >
         <MaterialIcons name="lightbulb-outline" size={20} color="#FFFFFF" />
