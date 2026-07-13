@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 /**
  * Root layout for the API server.
@@ -11,7 +11,7 @@ export const metadata = {
   description: 'NovaMe backend services',
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }): ReactElement {
   return (
     <html lang="en">
       <body>{children}</body>

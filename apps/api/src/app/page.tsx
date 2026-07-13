@@ -1,7 +1,7 @@
 /**
  * NovaMe API -- root health check.
  */
-import type { CSSProperties } from 'react'
+import type { ReactElement, CSSProperties } from 'react'
 
 const containerStyle: CSSProperties = {
   fontFamily: 'ui-sans-serif, system-ui, sans-serif',
@@ -22,7 +22,7 @@ const statusBoxStyle: CSSProperties = {
   fontFamily: 'ui-monospace, monospace',
 }
 
-export default function HomePage() {
+export default function HomePage(): ReactElement {
   const sha = process.env.VERCEL_GIT_COMMIT_SHA
   const buildId = sha ? sha.slice(0, 7) : 'local'
 
