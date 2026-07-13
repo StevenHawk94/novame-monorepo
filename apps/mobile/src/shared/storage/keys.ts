@@ -61,6 +61,9 @@ export const kMeStats = defineKey('novame_me_stats', 'user');
 /** Visit Master status cache (cache-first render, avoids the entry flash). */
 export const kMasterState = defineKey('novame_master_state', 'user');
 
+/** Selected Home scene + companion skin (personalization panel). */
+export const kCosmetics = defineKey('novame_cosmetics', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

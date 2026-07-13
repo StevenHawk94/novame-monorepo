@@ -6,4 +6,5 @@ export * from './quiet-wins';
 export * from './lens-themes';
 export * from './true-north';
 export * from './focus-scenes';
+export * from './home-scenes';
 export * from './guess-replies';

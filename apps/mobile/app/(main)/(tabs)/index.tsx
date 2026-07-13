@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,6 +8,9 @@ import { requireAiConsent } from '@/lib/ai-consent';
 import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
+import { HOME_SCENE_BY_ID, DEFAULT_SCENE_ID } from '@novame/domain';
+import { getSelectedScene, getSelectedSkin } from '@/lib/cosmetics-store';
+import { SCENE_IMAGES, SKIN_IMAGES } from '@/lib/cosmetic-images';
 import { clearReflectLocal } from '@/lib/reflect-api';
 import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearNewLensLocal } from '@/lib/lens-api';
@@ -46,6 +49,8 @@ export default function HomeScreen() {
   const sheetRef = useRef<CompanionSheetRef>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [tier, setTier] = useState(getCachedSubscriptionTier());
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [, setCosmeticTick] = useState(0);
   const day = isDaytime();
 
   const onLayout = useCallback(() => {
@@ -55,6 +60,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setTier(getCachedSubscriptionTier());
+      // Re-read the selected scene/skin after returning from the panel screens.
+      setCosmeticTick((t) => t + 1);
       // Returning from a Kit screen refocuses Home; refresh the sheet so a
       // just-completed daily Kit drops out of its list, even though the sheet
       // is a mounted component (no focus event of its own) sitting under the
@@ -80,11 +87,20 @@ export default function HomeScreen() {
     sheetRef.current?.present();
   };
 
-  const sceneBg = day ? '#BFE3F5' : '#241C4A';
-  const groundBg = day ? '#A8D89A' : '#2A2450';
+  const scene = HOME_SCENE_BY_ID[getSelectedScene()] ?? HOME_SCENE_BY_ID[DEFAULT_SCENE_ID];
+  const sceneBg = day ? scene.dayBg : scene.nightBg;
+  const groundBg = day ? scene.dayGround : scene.nightGround;
+  const sceneArt = SCENE_IMAGES[scene.id];
+  const sceneImg = sceneArt ? (day ? sceneArt.day : sceneArt.night) : undefined;
+  const petId = companion?.companionId ?? 'pet1';
+  const skinIndex = getSelectedSkin(petId) - 1;
+  const skinImg = SKIN_IMAGES[petId]?.[skinIndex];
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: sceneBg }]} edges={['top']} onLayout={onLayout}>
+      {sceneImg && (
+        <Image source={sceneImg} style={styles.sceneBgImg} resizeMode="cover" />
+      )}
       {/* Top bar: menu + right buttons (placeholder) */}
       <View style={styles.topBar}>
         <Pressable
@@ -95,11 +111,13 @@ export default function HomeScreen() {
           <MaterialIcons name="menu" size={22} color="#FFFFFF" />
         </Pressable>
         <View style={styles.topRight}>
-          {[0, 1, 2].map((i) => (
-            <Pressable key={i} style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]} hitSlop={8}>
-              <MaterialIcons name="palette" size={18} color="#FFFFFF" />
-            </Pressable>
-          ))}
+          <Pressable
+            onPress={() => { void haptics.light(); setPanelOpen(true); }}
+            style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}
+            hitSlop={8}
+          >
+            <MaterialIcons name="palette" size={18} color="#FFFFFF" />
+          </Pressable>
         </View>
       </View>
 
@@ -109,9 +127,13 @@ export default function HomeScreen() {
           <Text style={styles.bubbleText}>{speechFor(day, companion)}</Text>
         </View>
         <Pressable onPress={onPetTap} style={styles.petTap} hitSlop={20}>
-          <View style={[styles.petPlaceholder, { backgroundColor: day ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)' }]}>
-            <MaterialIcons name="pets" size={64} color={day ? '#5B8FB0' : '#C0B4F0'} />
-          </View>
+          {skinImg ? (
+            <Image source={skinImg} style={styles.petImg} resizeMode="contain" />
+          ) : (
+            <View style={[styles.petPlaceholder, { backgroundColor: day ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)' }]}>
+              <MaterialIcons name="pets" size={64} color={day ? '#5B8FB0' : '#C0B4F0'} />
+            </View>
+          )}
           <Text style={styles.tapHint}>Tap to interact</Text>
         </Pressable>
       </View>
@@ -165,7 +187,43 @@ export default function HomeScreen() {
       </View>
 
       <CompanionSheet ref={sheetRef} />
+
+      {/* Personalization panel */}
+      <Modal visible={panelOpen} transparent animationType="fade" onRequestClose={() => setPanelOpen(false)}>
+        <Pressable style={styles.panelBackdrop} onPress={() => setPanelOpen(false)}>
+          <Pressable style={styles.panelCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.panelHandle} />
+            <Text style={styles.panelTitle}>Personalize</Text>
+            <PanelRow icon="pets" label="Skins" desc="Change your companion's look"
+              onPress={() => { setPanelOpen(false); router.push('/(main)/(modals)/skin-select'); }} />
+            <PanelRow icon="wallpaper" label="Scenes" desc="Change the backdrop"
+              onPress={() => { setPanelOpen(false); router.push('/(main)/(modals)/scene-select'); }} />
+            <PanelRow icon="leaderboard" label="Leaderboard" desc="See where you stand"
+              onPress={() => { setPanelOpen(false); router.push('/(main)/(modals)/ranking'); }} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function PanelRow({ icon, label, desc, onPress }: {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+  desc: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.panelRow, { opacity: pressed ? 0.6 : 1 }]}>
+      <View style={styles.panelRowIcon}>
+        <MaterialIcons name={icon} size={22} color="#C084FC" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.panelRowLabel}>{label}</Text>
+        <Text style={styles.panelRowDesc}>{desc}</Text>
+      </View>
+      <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.3)" />
+    </Pressable>
   );
 }
 
@@ -177,6 +235,8 @@ const styles = StyleSheet.create({
   },
   topRight: { flexDirection: 'row', gap: 10 },
   roundBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  sceneBgImg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', pointerEvents: 'none' },
+  petImg: { width: 140, height: 140 },
 
   scene: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   bubble: {
@@ -201,5 +261,13 @@ const styles = StyleSheet.create({
 
   devRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 4 },
   devBtn: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 8 },
+  panelBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  panelCard: { backgroundColor: '#1A1445', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  panelHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center', marginBottom: 16 },
+  panelTitle: { color: '#F0E8FF', fontSize: 20, fontFamily: 'Inter_700Bold', marginBottom: 16 },
+  panelRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14 },
+  panelRowIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(168,85,247,0.15)', alignItems: 'center', justifyContent: 'center' },
+  panelRowLabel: { color: '#F0E8FF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  panelRowDesc: { color: '#9B8FBF', fontSize: 13, fontFamily: 'Inter_400Regular', marginTop: 2 },
   devText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.7)' },
 });
