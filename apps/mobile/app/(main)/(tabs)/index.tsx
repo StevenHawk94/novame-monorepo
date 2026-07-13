@@ -87,7 +87,11 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: sceneBg }]} edges={['top']} onLayout={onLayout}>
       {/* Top bar: menu + right buttons (placeholder) */}
       <View style={styles.topBar}>
-        <Pressable style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]} hitSlop={8}>
+        <Pressable
+          onPress={() => router.push('/(main)/(modals)/me')}
+          style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}
+          hitSlop={8}
+        >
           <MaterialIcons name="menu" size={22} color="#FFFFFF" />
         </Pressable>
         <View style={styles.topRight}>
