@@ -122,7 +122,10 @@ export default function MeScreen() {
     ], { cancelable: true });
   };
 
-  const tierInfo = PRICING_TIERS[tier];
+  // Defensive: a stale cache may still hold an old tier key (pro/basic/ultra)
+  // that no longer exists in PRICING_TIERS. Any non-free unknown maps to plus.
+  const safeTier = PRICING_TIERS[tier] ? tier : tier === 'free' ? 'free' : 'plus';
+  const tierInfo = PRICING_TIERS[safeTier];
   const appVersion = Constants.expoConfig?.version ?? '';
 
   return (
