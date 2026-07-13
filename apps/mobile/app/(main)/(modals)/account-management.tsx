@@ -350,6 +350,7 @@ export default function AccountManagementModal() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
