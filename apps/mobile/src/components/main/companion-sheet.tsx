@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -63,6 +63,8 @@ function readDoneState(): DoneState {
 export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: screenH } = useWindowDimensions();
+  const sheetH = screenH * 0.9;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
@@ -129,7 +131,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       enableHandlePanningGesture={false}
       enableOverDrag={false}
     >
-      <BottomSheetView style={styles.outer}>
+      <BottomSheetView style={[styles.outer, { height: sheetH }]}>
         <WaveBackground palette={WAVE_PALETTES.orange} />
         {/* Inner framed content -- the double-border layer over the wave card. */}
         <View style={styles.inner}>
@@ -185,7 +187,7 @@ CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
   sheetBg: { backgroundColor: 'transparent', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  outer: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 10 },
+  outer: { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 10 },
   // Inner framed layer: a rounded panel inset from the wave card, giving the
   // double-border depth from the design. Slightly translucent so the wave shows.
   inner: {

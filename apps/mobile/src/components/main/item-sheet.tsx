@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -36,6 +36,8 @@ function formatDate(iso: string): string {
 export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: screenH } = useWindowDimensions();
+  const sheetH = screenH * 0.75;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [itemId, setItemId] = useState<string | null>(null);
   const snapPoints = useMemo(() => ['75%'], []);
@@ -77,7 +79,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
       enableHandlePanningGesture={false}
       enableOverDrag={false}
     >
-      <BottomSheetView style={styles.content}>
+      <BottomSheetView style={[styles.content, { height: sheetH }]}>
         {item && (
           <>
             {/* Header: portrait + name + memory count */}
@@ -129,7 +131,7 @@ ItemSheet.displayName = 'ItemSheet';
 
 const styles = StyleSheet.create({
   sheetBg: { backgroundColor: '#FBF3E8', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  content: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 30 },
+  content: { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 30 },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 18 },
   portrait: {
