@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
@@ -8,246 +8,172 @@ import {
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import type { ImageSourcePropType } from 'react-native';
 
-import { useTheme } from '@/theme/use-theme';
 import { haptics } from '@/lib/haptics';
 import { companionLevel, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
 import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
+import { ICONS } from '@/lib/icons';
+import { WaveBackground, WAVE_PALETTES } from './wave-background';
 
 export type CompanionSheetRef = {
   present: () => void;
   dismiss: () => void;
-  /** Re-read companion + Kit done-states. Call when Home regains focus so a Kit
-   *  finished on a pushed screen drops out of the list the moment we return,
-   *  whether the sheet is open or not. */
   refresh: () => void;
 };
-
-type MdIcon = keyof typeof MaterialIcons.glyphMap;
 
 interface KitRow {
   key: string;
   label: string;
   desc: string;
-  icon: MdIcon;
-  route?: string; // undefined = placeholder (not built yet)
+  icon: ImageSourcePropType;
+  route?: string;
   done?: boolean;
-  /** Daily Kits vanish from the list once done and return next day; permanent
-   *  Kits (True North weekly, Visit Master 48h) always show. */
   daily?: boolean;
-  /** For permanent Kits: text shown in place of desc once done this period. */
   availText?: string;
 }
 
-/**
- * Companion interaction sheet (C7). Tapping the pet on Home pulls this up: the
- * companion's name and level, an EXP bar, and the list of every Kit. Built Kits
- * (New Lens, True North, Quiet Wins) route to their screens and show a done
- * state; not-yet-built ones (Tame Enemy, Visit Master) are shown disabled.
- *
- * Willpower and gems are intentionally absent -- willpower was removed in Phase
- * A, and the sheet shows growth (xp -> level), not currency. Layout follows the
- * design reference; pet art is a placeholder until the videos land.
- */
 interface DoneState {
-  newLens: boolean;
   quietWins: boolean;
+  newLens: boolean;
   trueNorth: boolean;
   tameEnemy: boolean;
 }
 
-/** Read all Kit done-states at once, so the sheet's list reflects them. */
 function readDoneState(): DoneState {
   return {
-    newLens: isNewLensDoneToday(),
     quietWins: isQuietWinsDoneToday(),
-    trueNorth: getCachedStatus().doneThisWeek,
+    newLens: isNewLensDoneToday(),
+    trueNorth: !!getCachedStatus()?.doneThisWeek,
     tameEnemy: isTameEnemyDoneToday(),
   };
 }
 
+/**
+ * Companion interaction sheet (Home). A warm orange gradient-wave card that
+ * slides up: the companion's portrait, name, level + EXP bar, and the list of
+ * Kits. Daily Kits drop out once done and return next day; permanent Kits (True
+ * North weekly, Visit Master 48h) always show. Follows the design 1:1.
+ */
 export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
-  const [doneState, setDoneState] = useState(() => readDoneState());
-
-  // Re-read everything that can change while a Kit screen is pushed on top.
-  // Driven by Home's focus effect (return from a Kit) and on present.
-  const refresh = useCallback(() => {
-    setCompanion(getCachedCompanion());
-    setDoneState(readDoneState());
-  }, []);
+  const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
+  const snapPoints = useMemo(() => ['88%'], []);
 
   useImperativeHandle(ref, () => ({
     present: () => {
-      refresh();
+      setCompanion(getCachedCompanion());
+      setDoneState(readDoneState());
       sheetRef.current?.present();
     },
     dismiss: () => sheetRef.current?.dismiss(),
-    refresh,
+    refresh: () => {
+      setCompanion(getCachedCompanion());
+      setDoneState(readDoneState());
+    },
   }));
-
-  const snapPoints = useMemo(() => ['65%', '90%'], []);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.6} />
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} />
     ),
     [],
   );
 
   const level = companion ? companionLevel(companion) : null;
 
-  // Permanent Kits show when they next become available instead of vanishing.
-  // True North resets on the next ISO-week boundary (Monday).
   const trueNorthAvail = useMemo(() => {
-    const dow = (new Date().getDay() + 6) % 7; // Mon=0..Sun=6
+    const dow = (new Date().getDay() + 6) % 7;
     const days = 7 - dow;
     return days === 1 ? 'New ranking tomorrow' : `New ranking in ${days} days`;
   }, []);
 
   const kits: KitRow[] = useMemo(() => {
     return [
-      {
-        key: 'new_lens',
-        label: 'New Lens',
-        desc: 'See something a different way',
-        icon: 'lightbulb-outline',
-        route: '/(main)/new-lens',
-        done: doneState.newLens,
-        daily: true,
-      },
-      {
-        key: 'true_north',
-        label: 'True North',
-        desc: 'Rank what matters most right now',
-        icon: 'explore',
-        route: '/(main)/true-north',
-        done: doneState.trueNorth,
-        availText: trueNorthAvail,
-        // permanent: a done week opens the reveal, so it never vanishes.
-      },
-      {
-        key: 'quiet_wins',
-        label: 'Quiet Wins',
-        desc: 'Notice the small things you did',
-        icon: 'check-circle-outline',
-        route: '/(main)/quiet-wins',
-        done: doneState.quietWins,
-        daily: true,
-      },
-      {
-        key: 'tame_enemy',
-        label: 'Tame Enemy',
-        desc: 'Face what\'s been loud lately',
-        icon: 'pets',
-        route: '/(main)/tame-enemy',
-        done: doneState.tameEnemy,
-        daily: true,
-      },
-      {
-        key: 'visit_master',
-        label: 'Visit Master',
-        desc: 'Consult the Master — Plus',
-        icon: 'auto-awesome',
-        route: '/(main)/visit-master',
-      },
+      { key: 'new_lens', label: 'New Lens', desc: 'See something a different way', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
+      { key: 'true_north', label: 'True North', desc: 'Rank what matters most right now', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
+      { key: 'quiet_wins', label: 'Small Wins', desc: 'Notice the small things you did', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
+      { key: 'tame_enemy', label: 'Tame Enemy', desc: "Face what's been loud lately", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
+      { key: 'visit_master', label: 'Visit Master', desc: 'Consult the Master \u2014 Plus', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
     ];
   }, [doneState, trueNorthAvail]);
+
+  // Daily Kits vanish once done; permanent Kits always show.
+  const visibleKits = kits.filter((k) => !(k.daily && k.done));
 
   function openKit(row: KitRow) {
     if (!row.route) return;
     void haptics.medium();
-    // Do NOT dismiss the sheet: the Kit screen pushes on top of Home (and this
-    // sheet), and closing it with router.back() returns here, sheet intact.
-    // Layers stack; each back peels one layer.
     router.push(row.route as never);
   }
+
+  const pct = level ? Math.round(level.progress * 100) : 0;
 
   return (
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: c.textMuted }}
-      backgroundStyle={{ backgroundColor: c.bgSecondary, borderRadius: 28 }}
+      handleComponent={null}
+      backgroundStyle={styles.sheetBg}
     >
-      <BottomSheetView style={[styles.content, { backgroundColor: c.bgSecondary }]}>
-        {/* Pet header: art placeholder + name + level */}
+      <BottomSheetView style={styles.content}>
+        <WaveBackground palette={WAVE_PALETTES.orange} />
+
+        {/* Header: name + portrait + heart */}
         <View style={styles.header}>
-          <View style={[styles.petArt, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-            <MaterialIcons name="pets" size={44} color={c.brand.primary} />
-          </View>
-          <Text style={[styles.name, { color: c.textPrimary }]}>
-            {companion?.name || 'Your companion'}
-          </Text>
-          {level && (
-            <Text style={[styles.levelLabel, { color: c.textSecondary }]}>
-              Level {level.level}
-              {level.xpForLevel > 0 ? `  ·  ${level.xpIntoLevel}/${level.xpForLevel} XP` : '  ·  MAX'}
-            </Text>
-          )}
-          {level && (
-            <View style={[styles.track, { backgroundColor: c.progressTrack }]}>
-              <View
-                style={[
-                  styles.fill,
-                  { backgroundColor: c.brand.primary, width: `${Math.round(level.progress * 100)}%` },
-                ]}
-              />
+          <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
+          <Pressable hitSlop={8}>
+            <MaterialIcons name="favorite" size={26} color="#3A2A1A" />
+          </Pressable>
+        </View>
+
+        <View style={styles.portraitWrap}>
+          <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
+        </View>
+
+        {/* Level + XP bar */}
+        {level && (
+          <View style={styles.xpRow}>
+            <View style={styles.levelCircle}>
+              <Text style={styles.levelNum}>{level.level}</Text>
             </View>
-          )}
-        </View>
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${pct}%` }]} />
+              <Text style={styles.xpText}>
+                {level.xpForLevel > 0 ? `${level.xpIntoLevel} / ${level.xpForLevel} xp` : 'MAX'}
+              </Text>
+            </View>
+          </View>
+        )}
 
-        {/* Kit list -- daily Kits drop out once done, back tomorrow */}
-        <View style={styles.kitList}>
-          {kits.filter((row) => !(row.daily && row.done)).map((row) => {
-            const disabled = !row.route;
-            return (
-              <Pressable
-                key={row.key}
-                onPress={() => openKit(row)}
-                disabled={disabled}
-                style={({ pressed }) => [
-                  styles.kitRow,
-                  {
-                    backgroundColor: c.bgCard,
-                    borderColor: c.border,
-                    opacity: disabled ? 0.45 : pressed ? 0.85 : 1,
-                  },
-                ]}
-              >
-                <View style={[styles.kitIcon, { backgroundColor: c.bgCardAlt }]}>
-                  <MaterialIcons name={row.icon} size={22} color={c.brand.primary} />
-                </View>
-                <View style={styles.kitText}>
-                  <Text style={[styles.kitLabel, { color: c.textPrimary }]}>{row.label}</Text>
-                  <Text style={[styles.kitDesc, { color: c.textMuted }]}>
-                    {row.done && row.availText ? row.availText : row.desc}
-                  </Text>
-                </View>
-                {row.done && row.availText ? (
-                  <MaterialIcons name="schedule" size={18} color={c.textMuted} />
-                ) : !disabled ? (
-                  <MaterialIcons name="chevron-right" size={22} color={c.textMuted} />
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
+        <Text style={styles.hangout}>Hey, Let{'\u2019'}s hang out, You want to.....</Text>
 
-        <Pressable
-          onPress={() => sheetRef.current?.dismiss()}
-          style={[styles.closeBtn, { backgroundColor: c.bgCard, borderColor: c.border }]}
-          hitSlop={8}
-        >
-          <MaterialIcons name="close" size={24} color={c.textSecondary} />
+        {/* Kit list */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.kitList}>
+          {visibleKits.map((kit) => (
+            <Pressable
+              key={kit.key}
+              onPress={() => openKit(kit)}
+              style={({ pressed }) => [styles.kitCard, { opacity: pressed ? 0.85 : 1 }]}
+            >
+              <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.kitLabel}>{kit.label}</Text>
+                <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Close */}
+        <Pressable onPress={() => sheetRef.current?.dismiss()} style={styles.closeBtn} hitSlop={8}>
+          <MaterialIcons name="close" size={26} color="#FFFFFF" />
         </Pressable>
       </BottomSheetView>
     </BottomSheetModal>
@@ -257,33 +183,24 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
-  header: { alignItems: 'center', marginBottom: 24 },
-  petArt: {
-    width: 96, height: 96, borderRadius: 48, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 14,
-  },
-  name: { fontSize: 20, fontFamily: 'Inter_700Bold', marginBottom: 4 },
-  levelLabel: { fontSize: 13, fontFamily: 'Inter_500Medium', marginBottom: 12 },
-  track: { width: '80%', height: 8, borderRadius: 4, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 4 },
-
-  kitList: { gap: 10 },
-  kitRow: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: 14, borderWidth: 1, padding: 14,
-  },
-  kitIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center', marginRight: 14,
-  },
-  kitText: { flex: 1 },
-  kitLabel: { fontSize: 16, fontFamily: 'Inter_600SemiBold', marginBottom: 2 },
-  kitDesc: { fontSize: 13, fontFamily: 'Inter_400Regular' },
-
-  closeBtn: {
-    alignSelf: 'center', marginTop: 20,
-    width: 52, height: 52, borderRadius: 26, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  sheetBg: { backgroundColor: 'transparent', borderRadius: 28 },
+  content: { flex: 1, borderRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', flex: 1 },
+  portraitWrap: { alignItems: 'center', marginTop: 4 },
+  portrait: { width: 120, height: 120 },
+  portraitPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
+  xpRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
+  levelCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E8823E', borderWidth: 3, borderColor: '#3A2A1A', alignItems: 'center', justifyContent: 'center' },
+  levelNum: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold' },
+  track: { flex: 1, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#3A2A1A', overflow: 'hidden', justifyContent: 'center' },
+  fill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#E8823E' },
+  xpText: { alignSelf: 'center', color: '#3A2A1A', fontSize: 13, fontFamily: 'Inter_700Bold' },
+  hangout: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3A2A1A', textAlign: 'center', marginTop: 18, marginBottom: 12 },
+  kitList: { gap: 12, paddingBottom: 8 },
+  kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, shadowColor: '#8A5A2B', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
+  kitIcon: { width: 44, height: 44 },
+  kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
+  kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
+  closeBtn: { alignSelf: 'center', width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
 });

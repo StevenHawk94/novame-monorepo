@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 
 import { QUIET_WINS, quietWinsFeedback } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { submitQuietWins } from '../../src/lib/quiet-wins-api';
 
 type Phase = 'pick' | 'done';
@@ -30,6 +31,17 @@ export default function QuietWinsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
+  // Kit screens use a light warm gradient-wave backdrop, so override the dark
+  // theme colors with a light-on-dark-text palette for this screen.
+  const kit = {
+    text: '#3A2E1A',
+    textSub: '#6B5A45',
+    textMuted: '#9A8770',
+    card: '#FFFFFF',
+    border: 'rgba(58,46,26,0.12)',
+    accent: '#7BB86A',
+    danger: '#D9694E',
+  };
   const c = theme.colors;
 
   const items = useMemo(() => shuffled(QUIET_WINS), []);
@@ -73,18 +85,19 @@ export default function QuietWinsScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+      <WaveBackground palette={WAVE_PALETTES.quietWins} />
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
-        <Text style={[styles.closeText, { color: c.textSecondary }]}>Close</Text>
+        <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
       {phase === 'pick' ? (
         <>
           <View style={styles.head}>
-            <Text style={[styles.title, { color: c.textPrimary }]}>
+            <Text style={[styles.title, { color: kit.text }]}>
               What did you get right today?
             </Text>
-            <Text style={[styles.sub, { color: c.textSecondary }]}>
+            <Text style={[styles.sub, { color: kit.textSub }]}>
               No pressure — just check what’s true.
             </Text>
           </View>
@@ -97,29 +110,29 @@ export default function QuietWinsScreen() {
                   onPress={() => toggle(w.id)}
                   style={[
                     styles.item,
-                    { backgroundColor: c.bgCard, borderColor: on ? c.brand.primary : c.border, borderWidth: on ? 2 : 1 },
+                    { backgroundColor: kit.card, borderColor: on ? kit.accent : kit.border, borderWidth: on ? 2 : 1 },
                   ]}
                 >
                   <View
                     style={[
                       styles.checkbox,
-                      { borderColor: on ? c.brand.primary : c.textMuted, backgroundColor: on ? c.brand.primary : 'transparent' },
+                      { borderColor: on ? kit.accent : kit.textMuted, backgroundColor: on ? kit.accent : 'transparent' },
                     ]}
                   >
                     {on && <Text style={styles.checkmark}>✓</Text>}
                   </View>
-                  <Text style={[styles.itemText, { color: c.textPrimary }]}>{w.text}</Text>
+                  <Text style={[styles.itemText, { color: kit.text }]}>{w.text}</Text>
                 </Pressable>
               );
             })}
           </ScrollView>
-          {error && <Text style={[styles.error, { color: c.brand.danger }]}>{error}</Text>}
+          {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
           <Pressable
             onPress={onDone}
             disabled={submitting}
             style={({ pressed }) => [
               styles.doneBtn,
-              { backgroundColor: c.brand.primary, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
+              { backgroundColor: kit.accent, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
             ]}
           >
             {submitting ? (
@@ -133,17 +146,17 @@ export default function QuietWinsScreen() {
         <View style={styles.feedbackWrap}>
           <ScrollView contentContainerStyle={styles.feedbackScroll} showsVerticalScrollIndicator={false}>
             {xpAwarded > 0 && (
-              <Text style={[styles.xp, { color: c.brand.primary }]}>+{xpAwarded} XP</Text>
+              <Text style={[styles.xp, { color: kit.accent }]}>+{xpAwarded} XP</Text>
             )}
             {feedback?.lines.map((line, i) => (
-              <Text key={i} style={[styles.feedbackLine, { color: c.textPrimary }]}>
+              <Text key={i} style={[styles.feedbackLine, { color: kit.text }]}>
                 {line}
               </Text>
             ))}
           </ScrollView>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.doneBtn, { backgroundColor: c.brand.primary, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </Pressable>
@@ -158,33 +171,38 @@ const styles = StyleSheet.create({
   close: { alignSelf: 'flex-start', paddingVertical: 8 },
   closeText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
 
-  head: { marginTop: 8, marginBottom: 16 },
-  title: { fontSize: 24, fontFamily: 'Inter_700Bold', lineHeight: 31, marginBottom: 6 },
-  sub: { fontSize: 15, fontFamily: 'Inter_400Regular' },
+  head: { marginTop: 8, marginBottom: 22 },
+  title: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', lineHeight: 34, marginBottom: 8 },
+  sub: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21 },
 
   list: { paddingBottom: 20 },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#5A4A2B',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   checkmark: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_700Bold' },
-  itemText: { flex: 1, fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21 },
+  itemText: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold', lineHeight: 22 },
 
   error: { fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', marginBottom: 8 },
-  doneBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
-  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  doneBtn: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', marginBottom: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  doneBtnText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold' },
 
   feedbackWrap: { flex: 1 },
   feedbackScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 40 },
