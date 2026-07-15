@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
 import {
   fetchMasterStatus, getCachedMasterStatus, askMaster, fetchMasterVisit, cooldownLabel,
@@ -12,6 +13,12 @@ import {
 } from '../../src/lib/master-api';
 
 type Phase = 'entry' | 'forest' | 'waiting' | 'reply' | 'history' | 'detail';
+
+const KIT = {
+  text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
+  card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
+  accent: '#D9A441', inputBg: 'rgba(255,255,255,0.7)',
+};
 
 /**
  * Visit Master (Kit 5, paid-only). A deliberate consultation: the user asks,
@@ -25,6 +32,8 @@ export default function VisitMasterScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.colors;
+  const kit = KIT;
+  void c;
 
   const [phase, setPhase] = useState<Phase>('entry');
   const [status, setStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
@@ -81,44 +90,45 @@ export default function VisitMasterScreen() {
   // ── ENTRY ──
   if (phase === 'entry') {
     return (
-      <View style={[styles.root, styles.center, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, styles.center, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <Pressable onPress={() => router.back()} style={[styles.back, styles.backAbs]} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
         <Text style={styles.masterEmoji}>{'\u{1F9D9}'}</Text>
-        <Text style={[styles.title, { color: c.textPrimary }]}>Visit the Master</Text>
+        <Text style={[styles.title, { color: kit.text }]}>Visit the Master</Text>
         {status.isPaid ? (
           !status.available ? (
             <>
-              <Text style={[styles.body, { color: c.textSecondary }]}>{cooldownLabel(status.nextAvailableAt)}</Text>
-              <Text style={[styles.bodyMuted, { color: c.textMuted }]}>The Master is away travelling. Come back when he returns.</Text>
+              <Text style={[styles.body, { color: kit.textSub }]}>{cooldownLabel(status.nextAvailableAt)}</Text>
+              <Text style={[styles.bodyMuted, { color: kit.textMuted }]}>The Master is away travelling. Come back when he returns.</Text>
               {status.history.length > 0 && (
                 <Pressable onPress={() => setPhase('history')} style={styles.linkBtn}>
-                  <Text style={[styles.linkText, { color: c.brand.primary }]}>Past visits</Text>
+                  <Text style={[styles.linkText, { color: kit.accent }]}>Past visits</Text>
                 </Pressable>
               )}
             </>
           ) : (
             <>
-              <Text style={[styles.body, { color: c.textSecondary }]}>
+              <Text style={[styles.body, { color: kit.textSub }]}>
                 Bring what's been weighing on you. The Master offers a deeper reading -- once every couple of days.
               </Text>
-              <Pressable onPress={enterForest} style={[styles.primaryBtn, { backgroundColor: c.brand.primary }]}>
+              <Pressable onPress={enterForest} style={[styles.primaryBtn, { backgroundColor: kit.accent }]}>
                 <Text style={styles.primaryText}>Enter the forest</Text>
               </Pressable>
               {status.history.length > 0 && (
                 <Pressable onPress={() => setPhase('history')} style={styles.linkBtn}>
-                  <Text style={[styles.linkText, { color: c.brand.primary }]}>Past visits</Text>
+                  <Text style={[styles.linkText, { color: kit.accent }]}>Past visits</Text>
                 </Pressable>
               )}
             </>
           )
         ) : (
           <>
-            <Text style={[styles.body, { color: c.textSecondary }]}>
+            <Text style={[styles.body, { color: kit.textSub }]}>
               The Master offers a deep, considered reading of whatever's on your mind -- a kind of counsel you can't get from a quick note. It's part of Plus.
             </Text>
-            <Pressable onPress={() => router.push('/(main)/(modals)/subscription-paywall')} style={[styles.primaryBtn, { backgroundColor: c.brand.primary }]}>
+            <Pressable onPress={() => router.push('/(main)/(modals)/subscription-paywall')} style={[styles.primaryBtn, { backgroundColor: kit.accent }]}>
               <Text style={styles.primaryText}>Unlock with Plus</Text>
             </Pressable>
           </>
@@ -130,32 +140,33 @@ export default function VisitMasterScreen() {
   // ── FOREST (ask) ──
   if (phase === 'forest') {
     return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bgPrimary }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
             <View style={styles.forestHeader}>
               <Pressable onPress={() => setPhase('entry')} style={styles.back} hitSlop={12}>
-                <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+                <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
               </Pressable>
               <Pressable onPress={() => setPhase('history')} hitSlop={12}>
-                <MaterialIcons name="history-edu" size={24} color={c.textSecondary} />
+                <MaterialIcons name="history-edu" size={24} color={kit.textSub} />
               </Pressable>
             </View>
             <Text style={styles.masterEmojiSmall}>{'\u{1F9D9}'}</Text>
-            <Text style={[styles.forestPrompt, { color: c.textPrimary }]}>What's been on your mind?</Text>
+            <Text style={[styles.forestPrompt, { color: kit.text }]}>What's been on your mind?</Text>
             <TextInput
               value={question}
               onChangeText={setQuestion}
               placeholder="Tell the Master..."
-              placeholderTextColor={c.textMuted}
+              placeholderTextColor={kit.textMuted}
               multiline
               maxLength={1000}
-              style={[styles.input, { backgroundColor: c.inputBg, color: c.textPrimary, borderColor: c.border }]}
+              style={[styles.input, { backgroundColor: kit.inputBg, color: kit.text, borderColor: kit.border }]}
             />
             <Pressable
               onPress={onAsk}
               disabled={question.trim().length === 0}
-              style={[styles.primaryBtn, { backgroundColor: c.brand.primary, opacity: question.trim().length === 0 ? 0.5 : 1, marginBottom: insets.bottom + 12 }]}
+              style={[styles.primaryBtn, { backgroundColor: kit.accent, opacity: question.trim().length === 0 ? 0.5 : 1, marginBottom: insets.bottom + 12 }]}
             >
               <Text style={styles.primaryText}>Ask the Master</Text>
             </Pressable>
@@ -168,10 +179,11 @@ export default function VisitMasterScreen() {
   // ── WAITING ──
   if (phase === 'waiting') {
     return (
-      <View style={[styles.root, styles.center, { backgroundColor: c.bgPrimary }]}>
+      <View style={[styles.root, styles.center, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <Text style={styles.masterEmoji}>{'\u{1F9D9}'}</Text>
-        <ActivityIndicator color={c.brand.primary} style={{ marginVertical: 16 }} />
-        <Text style={[styles.body, { color: c.textSecondary, textAlign: 'center' }]}>
+        <ActivityIndicator color={kit.accent} style={{ marginVertical: 16 }} />
+        <Text style={[styles.body, { color: kit.textSub, textAlign: 'center' }]}>
           The Master is looking at this from a few angles.
         </Text>
       </View>
@@ -181,13 +193,14 @@ export default function VisitMasterScreen() {
   // ── REPLY ──
   if (phase === 'reply' && reply) {
     return (
-      <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <Pressable onPress={() => { setReply(null); setQuestion(''); router.back(); }} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="close" size={24} color={c.textSecondary} />
+          <MaterialIcons name="close" size={24} color={kit.textSub} />
         </Pressable>
         <ScrollView contentContainerStyle={styles.replyScroll} showsVerticalScrollIndicator={false}>
-          <ReplyBody reply={reply} c={c} />
-          <Pressable onPress={() => { setReply(null); setQuestion(''); router.back(); }} style={[styles.primaryBtn, { backgroundColor: c.brand.primary, marginTop: 24 }]}>
+          <ReplyBody reply={reply} c={KIT} />
+          <Pressable onPress={() => { setReply(null); setQuestion(''); router.back(); }} style={[styles.primaryBtn, { backgroundColor: kit.accent, marginTop: 24 }]}>
             <Text style={styles.primaryText}>Save & Close</Text>
           </Pressable>
         </ScrollView>
@@ -198,21 +211,22 @@ export default function VisitMasterScreen() {
   // ── HISTORY ──
   if (phase === 'history') {
     return (
-      <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <Pressable onPress={() => setPhase('entry')} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
-        <Text style={[styles.title, { color: c.textPrimary, marginBottom: 16 }]}>Past visits</Text>
+        <Text style={[styles.title, { color: kit.text, marginBottom: 16 }]}>Past visits</Text>
         {status.history.length === 0 ? (
-          <Text style={[styles.bodyMuted, { color: c.textMuted }]}>
+          <Text style={[styles.bodyMuted, { color: kit.textMuted }]}>
             Nothing here yet -- your first conversation with the Master will show up here.
           </Text>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32, gap: 10 }}>
             {status.history.map((v) => (
-              <Pressable key={v.id} onPress={() => openDetail(v)} style={[styles.historyRow, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                <Text style={[styles.historyDate, { color: c.textMuted }]}>{formatDate(v.createdAt)}</Text>
-                <Text style={[styles.historyQ, { color: c.textPrimary }]} numberOfLines={2}>{v.question}</Text>
+              <Pressable key={v.id} onPress={() => openDetail(v)} style={[styles.historyRow, { backgroundColor: kit.card, borderColor: kit.border }]}>
+                <Text style={[styles.historyDate, { color: kit.textMuted }]}>{formatDate(v.createdAt)}</Text>
+                <Text style={[styles.historyQ, { color: kit.text }]} numberOfLines={2}>{v.question}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -224,13 +238,14 @@ export default function VisitMasterScreen() {
   // ── DETAIL ──
   if (phase === 'detail' && detail) {
     return (
-      <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.visitMaster} />
         <Pressable onPress={() => setPhase('history')} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
         <ScrollView contentContainerStyle={styles.replyScroll} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.detailQ, { color: c.textSecondary }]}>"{detail.question}"</Text>
-          <ReplyBody reply={detail.response} c={c} />
+          <Text style={[styles.detailQ, { color: kit.textSub }]}>"{detail.question}"</Text>
+          <ReplyBody reply={detail.response} c={KIT} />
         </ScrollView>
       </View>
     );
@@ -242,21 +257,21 @@ export default function VisitMasterScreen() {
 function ReplyBody({ reply, c }: { reply: MasterResponse; c: any }) {
   return (
     <View style={{ gap: 20 }}>
-      {!!reply.quote_short && <Text style={[styles.quote, { color: c.brand.primary }]}>{reply.quote_short}</Text>}
-      {!!reply.insight_full && <Text style={[styles.insight, { color: c.textPrimary }]}>{reply.insight_full}</Text>}
+      {!!reply.quote_short && <Text style={[styles.quote, { color: c.accent }]}>{reply.quote_short}</Text>}
+      {!!reply.insight_full && <Text style={[styles.insight, { color: c.text }]}>{reply.insight_full}</Text>}
       {!!reply.flipped_lens && (
-        <View style={[styles.moduleCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <View style={[styles.moduleCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.moduleLabel, { color: c.textMuted }]}>Another angle</Text>
-          <Text style={[styles.moduleText, { color: c.textSecondary }]}>{reply.flipped_lens}</Text>
+          <Text style={[styles.moduleText, { color: c.textSub }]}>{reply.flipped_lens}</Text>
         </View>
       )}
       {!!reply.micro_task && (
-        <View style={[styles.moduleCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
+        <View style={[styles.moduleCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.moduleLabel, { color: c.textMuted }]}>One small step</Text>
-          <Text style={[styles.moduleText, { color: c.textSecondary }]}>{reply.micro_task}</Text>
+          <Text style={[styles.moduleText, { color: c.textSub }]}>{reply.micro_task}</Text>
         </View>
       )}
-      {!!reply.reflective_question && <Text style={[styles.reflectQ, { color: c.textPrimary }]}>{reply.reflective_question}</Text>}
+      {!!reply.reflective_question && <Text style={[styles.reflectQ, { color: c.text }]}>{reply.reflective_question}</Text>}
     </View>
   );
 }
@@ -274,27 +289,27 @@ const styles = StyleSheet.create({
   backAbs: { position: 'absolute', top: 8, left: 20 },
   masterEmoji: { fontSize: 88 },
   masterEmojiSmall: { fontSize: 56, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  title: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
   body: { fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 22, paddingHorizontal: 12 },
   bodyMuted: { fontSize: 13, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 19 },
-  primaryBtn: { paddingHorizontal: 40, paddingVertical: 15, borderRadius: 16, alignItems: 'center', alignSelf: 'stretch', marginHorizontal: 12 },
+  primaryBtn: { paddingHorizontal: 40, paddingVertical: 17, borderRadius: 18, alignItems: 'center', alignSelf: 'stretch', marginHorizontal: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   primaryText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   linkBtn: { paddingVertical: 8 },
   linkText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
 
   forestHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  forestPrompt: { fontSize: 22, fontFamily: 'Inter_700Bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderRadius: 14, padding: 16, fontSize: 16, fontFamily: 'Inter_400Regular', minHeight: 140, textAlignVertical: 'top', marginBottom: 16 },
+  forestPrompt: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', marginBottom: 20 },
+  input: { borderWidth: 0, borderRadius: 18, padding: 18, fontSize: 16, fontFamily: 'Inter_400Regular', minHeight: 140, textAlignVertical: 'top', marginBottom: 16, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
 
   replyScroll: { paddingBottom: 40, paddingTop: 8 },
   quote: { fontSize: 20, fontFamily: 'Inter_700Bold', lineHeight: 28 },
   insight: { fontSize: 16, fontFamily: 'Inter_400Regular', lineHeight: 25 },
-  moduleCard: { borderRadius: 14, borderWidth: 1, padding: 16 },
+  moduleCard: { borderRadius: 18, padding: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   moduleLabel: { fontSize: 12, fontFamily: 'Inter_600SemiBold', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 },
   moduleText: { fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 22 },
   reflectQ: { fontSize: 17, fontFamily: 'Inter_600SemiBold', lineHeight: 25, fontStyle: 'italic' },
 
-  historyRow: { borderRadius: 14, borderWidth: 1, padding: 14 },
+  historyRow: { borderRadius: 18, padding: 16, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   historyDate: { fontSize: 12, fontFamily: 'Inter_500Medium', marginBottom: 4 },
   historyQ: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21 },
   detailQ: { fontSize: 16, fontFamily: 'Inter_500Medium', fontStyle: 'italic', lineHeight: 23, marginBottom: 20 },

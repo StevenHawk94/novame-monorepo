@@ -11,6 +11,7 @@ import {
   type DimensionId,
 } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import {
   fetchStatus,
   getCachedStatus,
@@ -20,11 +21,19 @@ import {
 
 type Phase = 'loading' | 'intro' | 'rank' | 'reveal';
 
+// Light warm palette for the Kit screen over the wave backdrop (coral/red tone).
+const KIT_PALETTE = {
+  text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
+  card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
+  accent: '#D9694E', danger: '#D9694E',
+};
+
 export default function TrueNorthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.colors;
+  const kit = KIT_PALETTE;
 
   const [status, setStatus] = useState<TrueNorthStatus>(() => getCachedStatus());
   const [phase, setPhase] = useState<Phase>('loading');
@@ -86,25 +95,26 @@ export default function TrueNorthScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+      <WaveBackground palette={WAVE_PALETTES.trueNorth} />
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
-        <Text style={[styles.closeText, { color: c.textSecondary }]}>Close</Text>
+        <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
       {phase === 'loading' && (
         <View style={styles.center}>
-          <ActivityIndicator color={c.brand.primary} />
+          <ActivityIndicator color={kit.accent} />
         </View>
       )}
 
       {phase === 'intro' && (
         <View style={styles.center}>
-          <Text style={[styles.introTitle, { color: c.textPrimary }]}>
+          <Text style={[styles.introTitle, { color: kit.text }]}>
             Let’s find out what’s really on top right now.
           </Text>
           <Pressable
             onPress={() => setPhase('rank')}
-            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: c.brand.primary, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
           >
             <Text style={styles.primaryBtnText}>Start</Text>
           </Pressable>
@@ -113,10 +123,10 @@ export default function TrueNorthScreen() {
 
       {phase === 'rank' && (
         <View style={styles.rankWrap}>
-          <Text style={[styles.rankTitle, { color: c.textPrimary }]}>
+          <Text style={[styles.rankTitle, { color: kit.text }]}>
             Tap to rank what matters most right now.
           </Text>
-          <Text style={[styles.rankSub, { color: c.textMuted }]}>
+          <Text style={[styles.rankSub, { color: kit.textMuted }]}>
             {picked.length} of {DIMENSION_IDS.length} ranked
           </Text>
           <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
@@ -130,8 +140,8 @@ export default function TrueNorthScreen() {
                   style={[
                     styles.rankCard,
                     {
-                      backgroundColor: c.bgCard,
-                      borderColor: isPicked ? c.brand.primary : c.border,
+                      backgroundColor: kit.card,
+                      borderColor: isPicked ? kit.accent : kit.border,
                       borderWidth: isPicked ? 2 : 1,
                     },
                   ]}
@@ -139,28 +149,28 @@ export default function TrueNorthScreen() {
                   <View
                     style={[
                       styles.rankBadge,
-                      { backgroundColor: isPicked ? c.brand.primary : c.progressTrack },
+                      { backgroundColor: isPicked ? kit.accent : '#EADFD0' },
                     ]}
                   >
-                    <Text style={[styles.rankBadgeText, { color: isPicked ? '#FFFFFF' : c.textMuted }]}>
+                    <Text style={[styles.rankBadgeText, { color: isPicked ? '#FFFFFF' : kit.textMuted }]}>
                       {isPicked ? rank + 1 : ''}
                     </Text>
                   </View>
-                  <Text style={[styles.rankPhrase, { color: c.textPrimary }]}>
+                  <Text style={[styles.rankPhrase, { color: kit.text }]}>
                     {TRUE_NORTH_PHRASES[d]}
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
-          {error && <Text style={[styles.error, { color: c.brand.danger }]}>{error}</Text>}
+          {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
           <Pressable
             onPress={confirm}
             disabled={picked.length !== DIMENSION_IDS.length || submitting}
             style={({ pressed }) => [
               styles.primaryBtn,
               {
-                backgroundColor: c.brand.primary,
+                backgroundColor: kit.accent,
                 opacity: picked.length !== DIMENSION_IDS.length || submitting ? 0.4 : pressed ? 0.85 : 1,
               },
             ]}
@@ -175,7 +185,7 @@ export default function TrueNorthScreen() {
       )}
 
       {phase === 'reveal' && revealRanking && (
-        <Reveal ranking={revealRanking} lastRanking={status.lastRanking} colors={c} onDone={() => router.back()} />
+        <Reveal ranking={revealRanking} lastRanking={status.lastRanking} colors={KIT_PALETTE} onDone={() => router.back()} />
       )}
     </View>
   );
@@ -189,7 +199,7 @@ function Reveal({
 }: {
   ranking: DimensionId[];
   lastRanking: DimensionId[] | null;
-  colors: ReturnType<typeof useTheme>['theme']['colors'];
+  colors: typeof KIT_PALETTE;
   onDone: () => void;
 }) {
   const top = ranking[0];
@@ -223,28 +233,28 @@ function Reveal({
             style={[
               styles.revealRow,
               {
-                backgroundColor: i < 3 ? c.bgCard : 'transparent',
+                backgroundColor: i < 3 ? c.card : 'transparent',
                 borderColor: i < 3 ? c.border : 'transparent',
                 opacity: 1 - i * 0.07,
               },
             ]}
           >
             <View style={[styles.revealDot, { backgroundColor: DIMENSIONS[d].color }]} />
-            <Text style={[styles.revealPhrase, { color: c.textPrimary }]}>{TRUE_NORTH_PHRASES[d]}</Text>
-            {gems > 0 && <Text style={[styles.revealGems, { color: c.brand.primary }]}>+{gems}</Text>}
+            <Text style={[styles.revealPhrase, { color: c.text }]}>{TRUE_NORTH_PHRASES[d]}</Text>
+            {gems > 0 && <Text style={[styles.revealGems, { color: c.accent }]}>+{gems}</Text>}
           </View>
         );
       })}
 
       <View style={styles.interpret}>
-        <Text style={[styles.interpretLine, { color: c.textPrimary }]}>
+        <Text style={[styles.interpretLine, { color: c.text }]}>
           Right now, {TRUE_NORTH_PHRASES[top].toLowerCase()} is what’s pulling most of your attention.
         </Text>
-        <Text style={[styles.interpretLine, { color: c.textSecondary }]}>
+        <Text style={[styles.interpretLine, { color: c.textSub }]}>
           {TRUE_NORTH_PHRASES[bottom]} is sitting quietly in the background — not gone, just waiting.
         </Text>
         {mover && (
-          <Text style={[styles.interpretLine, { color: c.textSecondary }]}>
+          <Text style={[styles.interpretLine, { color: c.textSub }]}>
             {TRUE_NORTH_PHRASES[mover.dim]}{' '}
             {mover.delta > 0
               ? `climbed from #${mover.from} to #${mover.to} — seems like it’s been on your mind more.`
@@ -258,7 +268,7 @@ function Reveal({
 
       <Pressable
         onPress={onDone}
-        style={({ pressed }) => [styles.primaryBtn, { backgroundColor: c.brand.primary, opacity: pressed ? 0.85 : 1 }]}
+        style={({ pressed }) => [styles.primaryBtn, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}
       >
         <Text style={styles.primaryBtnText}>Done</Text>
       </Pressable>
@@ -272,19 +282,19 @@ const styles = StyleSheet.create({
   closeText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32, paddingHorizontal: 12 },
 
-  introTitle: { fontSize: 26, fontFamily: 'Inter_700Bold', lineHeight: 34, textAlign: 'center' },
+  introTitle: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', lineHeight: 35, textAlign: 'center' },
 
   rankWrap: { flex: 1, paddingTop: 12 },
-  rankTitle: { fontSize: 22, fontFamily: 'Inter_700Bold', marginBottom: 4 },
+  rankTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', lineHeight: 32, marginBottom: 6 },
   rankSub: { fontSize: 13, fontFamily: 'Inter_500Medium', marginBottom: 16 },
   cards: { paddingBottom: 16 },
-  rankCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 14, marginBottom: 10 },
+  rankCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 18, marginBottom: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   rankBadge: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   rankBadgeText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
-  rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_500Medium' },
+  rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 
   revealScroll: { paddingVertical: 20, paddingBottom: 40 },
-  revealRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8 },
+  revealRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 10, shadowColor: '#5A4A2B', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   revealDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   revealPhrase: { flex: 1, fontSize: 15, fontFamily: 'Inter_600SemiBold' },
   revealGems: { fontSize: 15, fontFamily: 'Inter_700Bold' },
@@ -293,7 +303,7 @@ const styles = StyleSheet.create({
   interpretLine: { fontSize: 16, fontFamily: 'Inter_500Medium', lineHeight: 24, marginBottom: 14 },
   interpretFooter: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21, marginTop: 6 },
 
-  primaryBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  primaryBtn: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold' },
   error: { fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', marginVertical: 8 },
 });

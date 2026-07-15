@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { MONSTER_HP, applyHit, monsterTier, isTamed, type SkillKind } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
 import {
   fetchTameStatus, submitTame, markTameEnemyDoneToday, MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
@@ -27,6 +28,12 @@ export default function TameEnemyScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.colors;
+  const kit = {
+    text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
+    card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
+    accent: '#E0912F', danger: '#D9694E', secret: '#B57BC9',
+  };
+  void c;
 
   const [phase, setPhase] = useState<Phase>('select');
   const [monsters, setMonsters] = useState<MonsterStatus[]>([]);
@@ -102,25 +109,26 @@ export default function TameEnemyScreen() {
   // ---- SELECT ----
   if (phase === 'select') {
     return (
-      <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
-        <Text style={[styles.h1, { color: c.textPrimary }]}>What's been loud lately?</Text>
-        <Text style={[styles.sub, { color: c.textSecondary }]}>
+        <Text style={[styles.h1, { color: kit.text }]}>What's been loud lately?</Text>
+        <Text style={[styles.sub, { color: kit.textSub }]}>
           Pick what's closest — we'll figure out the rest together.
         </Text>
 
         {firstTime && (
-          <View style={[styles.hintBar, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-            <Text style={[styles.hintText, { color: c.textSecondary }]}>
+          <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.border }]}>
+            <Text style={[styles.hintText, { color: kit.textSub }]}>
               Your skills come from your own reflections — the more you write, the more ways you'll have to respond.
             </Text>
           </View>
         )}
         {doneToday && (
-          <View style={[styles.hintBar, { backgroundColor: c.bgCard, borderColor: c.brand.primary }]}>
-            <Text style={[styles.hintText, { color: c.brand.primary }]}>
+          <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.accent }]}>
+            <Text style={[styles.hintText, { color: kit.accent }]}>
               You've tamed one today. Come back tomorrow for another.
             </Text>
           </View>
@@ -133,16 +141,16 @@ export default function TameEnemyScreen() {
               <Pressable
                 key={m.id}
                 onPress={() => (doneToday ? undefined : startBattle(m))}
-                style={[styles.monsterCell, { backgroundColor: c.bgCard, borderColor: c.border, opacity: doneToday ? 0.5 : 1 }]}
+                style={[styles.monsterCell, { backgroundColor: kit.card, borderColor: kit.border, opacity: doneToday ? 0.5 : 1 }]}
               >
                 <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
-                <Text style={[styles.monsterName, { color: c.textPrimary }]}>{m.name}</Text>
-                <Text style={[styles.monsterSkills, { color: ready ? c.brand.primary : c.textMuted }]}>
+                <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
+                <Text style={[styles.monsterSkills, { color: ready ? kit.accent : kit.textMuted }]}>
                   {ready ? `${m.skillCount} skill${m.skillCount > 1 ? 's' : ''} ready` : 'Just Breathe ready'}
                 </Text>
                 {m.tamedBefore && (
-                  <View style={[styles.tamedBadge, { backgroundColor: c.bgCardAlt }]}>
-                    <Text style={[styles.tamedBadgeText, { color: c.textSecondary }]}>Tamed once</Text>
+                  <View style={[styles.tamedBadge, { backgroundColor: 'rgba(58,46,26,0.08)' }]}>
+                    <Text style={[styles.tamedBadgeText, { color: kit.textSub }]}>Tamed once</Text>
                   </View>
                 )}
               </Pressable>
@@ -156,14 +164,15 @@ export default function TameEnemyScreen() {
   // ---- PREP ----
   if (phase === 'prep' && active) {
     return (
-      <View style={[styles.root, styles.centerRoot, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
-        <Text style={[styles.prepText, { color: c.textPrimary }]}>{active.prep}</Text>
-        <Pressable onPress={() => { void haptics.medium(); setPhase('battle'); }} style={[styles.beginBtn, { backgroundColor: c.brand.primary }]}>
+        <Text style={[styles.prepText, { color: kit.text }]}>{active.prep}</Text>
+        <Pressable onPress={() => { void haptics.medium(); setPhase('battle'); }} style={[styles.beginBtn, { backgroundColor: kit.accent }]}>
           <Text style={styles.beginText}>Begin</Text>
         </Pressable>
         <Pressable onPress={exit} style={styles.exitLink}>
-          <Text style={[styles.exitText, { color: c.textMuted }]}>Not now</Text>
+          <Text style={[styles.exitText, { color: kit.textMuted }]}>Not now</Text>
         </Pressable>
       </View>
     );
@@ -173,9 +182,10 @@ export default function TameEnemyScreen() {
   if (phase === 'battle' && active) {
     const visible = showDrawer ? pool : pool.slice(0, 6);
     return (
-      <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Pressable onPress={exit} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="close" size={24} color={c.textSecondary} />
+          <MaterialIcons name="close" size={24} color={kit.textSub} />
         </Pressable>
 
         {/* Monster */}
@@ -183,34 +193,34 @@ export default function TameEnemyScreen() {
           <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.8 : 1 }]}>
             {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
           </Text>
-          <View style={[styles.hpTrack, { backgroundColor: c.progressTrack }]}>
-            <View style={[styles.hpFill, { width: `${(hp / MONSTER_HP) * 100}%`, backgroundColor: c.brand.danger }]} />
+          <View style={[styles.hpTrack, { backgroundColor: 'rgba(58,46,26,0.15)' }]}>
+            <View style={[styles.hpFill, { width: `${(hp / MONSTER_HP) * 100}%`, backgroundColor: kit.danger }]} />
           </View>
-          <Text style={[styles.monsterName, { color: c.textSecondary }]}>{active.name}</Text>
+          <Text style={[styles.monsterName, { color: kit.textSub }]}>{active.name}</Text>
         </View>
 
         {/* Skill cards */}
         <ScrollView style={styles.cardScroll} contentContainerStyle={styles.cardList} showsVerticalScrollIndicator={false}>
           {pool.length === 0 ? (
-            <Pressable onPress={() => hit('default')} style={[styles.skillCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-              <Text style={[styles.skillName, { color: c.textPrimary }]}>Just Breathe</Text>
-              <Text style={[styles.skillDesc, { color: c.textMuted }]}>Something everyone already knows how to do.</Text>
+            <Pressable onPress={() => hit('default')} style={[styles.skillCard, { backgroundColor: kit.card, borderColor: kit.border }]}>
+              <Text style={[styles.skillName, { color: kit.text }]}>Just Breathe</Text>
+              <Text style={[styles.skillDesc, { color: kit.textMuted }]}>Something everyone already knows how to do.</Text>
             </Pressable>
           ) : (
             visible.map((sk) => (
               <Pressable
                 key={sk.skillId}
                 onPress={() => hit(sk.rarity === 'secret' ? 'hidden' : 'learned', sk.skillId)}
-                style={[styles.skillCard, { backgroundColor: c.bgCard, borderColor: sk.rarity === 'secret' ? c.brand.purpleLight : c.border }]}
+                style={[styles.skillCard, { backgroundColor: kit.card, borderColor: sk.rarity === 'secret' ? kit.secret : kit.border }]}
               >
-                <Text style={[styles.skillName, { color: c.textPrimary }]}>{sk.title}</Text>
-                <Text style={[styles.skillDesc, { color: c.textSecondary }]} numberOfLines={2}>{sk.body}</Text>
+                <Text style={[styles.skillName, { color: kit.text }]}>{sk.title}</Text>
+                <Text style={[styles.skillDesc, { color: kit.textSub }]} numberOfLines={2}>{sk.body}</Text>
               </Pressable>
             ))
           )}
           {pool.length > 6 && !showDrawer && (
             <Pressable onPress={() => setShowDrawer(true)} style={styles.moreBtn}>
-              <Text style={[styles.moreText, { color: c.brand.primary }]}>Show all {pool.length} skills</Text>
+              <Text style={[styles.moreText, { color: kit.accent }]}>Show all {pool.length} skills</Text>
             </Pressable>
           )}
         </ScrollView>
@@ -221,10 +231,11 @@ export default function TameEnemyScreen() {
   // ---- DONE ----
   if (phase === 'done' && active) {
     return (
-      <View style={[styles.root, styles.centerRoot, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
+        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
-        <Text style={[styles.doneText, { color: c.textPrimary }]}>{active.tamed}</Text>
-        <Pressable onPress={() => router.back()} style={[styles.beginBtn, { backgroundColor: c.brand.primary }]}>
+        <Text style={[styles.doneText, { color: kit.text }]}>{active.tamed}</Text>
+        <Pressable onPress={() => router.back()} style={[styles.beginBtn, { backgroundColor: kit.accent }]}>
           <Text style={styles.beginText}>Done</Text>
         </Pressable>
       </View>
@@ -238,14 +249,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 20 },
   centerRoot: { alignItems: 'center', justifyContent: 'center', gap: 24 },
   back: { alignSelf: 'flex-start', paddingVertical: 8 },
-  h1: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', marginTop: 4 },
+  h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 4 },
   sub: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 6, marginBottom: 16 },
 
-  hintBar: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 12 },
+  hintBar: { borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   hintText: { fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 32 },
-  monsterCell: { width: '48%', borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, alignItems: 'center' },
+  monsterCell: { width: '48%', borderRadius: 20, padding: 18, marginBottom: 14, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   monsterEmoji: { fontSize: 40, marginBottom: 8 },
   monsterName: { fontSize: 15, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   monsterSkills: { fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 4 },
@@ -253,8 +264,8 @@ const styles = StyleSheet.create({
   tamedBadgeText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
 
   prepEmoji: { fontSize: 88 },
-  prepText: { fontSize: 20, fontFamily: 'Inter_600SemiBold', textAlign: 'center', lineHeight: 28, paddingHorizontal: 20 },
-  beginBtn: { paddingHorizontal: 48, paddingVertical: 16, borderRadius: 16 },
+  prepText: { fontSize: 22, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 30, paddingHorizontal: 20 },
+  beginBtn: { paddingHorizontal: 48, paddingVertical: 18, borderRadius: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   beginText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   exitLink: { paddingVertical: 8 },
   exitText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
@@ -266,7 +277,7 @@ const styles = StyleSheet.create({
 
   cardScroll: { flex: 1 },
   cardList: { gap: 10, paddingBottom: 24 },
-  skillCard: { borderRadius: 14, borderWidth: 1, padding: 14 },
+  skillCard: { borderRadius: 18, borderWidth: 0, padding: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   skillName: { fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 4 },
   skillDesc: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 19 },
   moreBtn: { alignItems: 'center', paddingVertical: 12 },

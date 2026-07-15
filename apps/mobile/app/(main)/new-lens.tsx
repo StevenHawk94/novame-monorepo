@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 
 import { LENS_THEMES, NEW_LENS_PROMPT } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
 
 type Phase = 'theme' | 'card' | 'loading' | 'done';
@@ -13,6 +14,11 @@ export default function NewLensScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
+  const kit = {
+    text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
+    card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
+    accent: '#D98E3C', danger: '#D9694E',
+  };
   const c = theme.colors;
 
   const [phase, setPhase] = useState<Phase>('theme');
@@ -64,15 +70,16 @@ export default function NewLensScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+      <WaveBackground palette={WAVE_PALETTES.newLens} />
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
-        <Text style={[styles.closeText, { color: c.textSecondary }]}>Close</Text>
+        <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
       {phase === 'theme' && (
         <ScrollView contentContainerStyle={styles.themeScroll} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.title, { color: c.textPrimary }]}>What’s on your mind lately?</Text>
-          <Text style={[styles.sub, { color: c.textSecondary }]}>
+          <Text style={[styles.title, { color: kit.text }]}>What’s on your mind lately?</Text>
+          <Text style={[styles.sub, { color: kit.textSub }]}>
             Not sure? Just pick whatever feels closest.
           </Text>
           <View style={styles.capsules}>
@@ -82,30 +89,30 @@ export default function NewLensScreen() {
                 onPress={() => pickTheme(t.dimension)}
                 style={({ pressed }) => [
                   styles.capsule,
-                  { backgroundColor: c.bgCard, borderColor: c.border, opacity: pressed ? 0.8 : 1 },
+                  { backgroundColor: kit.card, borderColor: kit.border, opacity: pressed ? 0.8 : 1 },
                 ]}
               >
-                <Text style={[styles.capsuleText, { color: c.textPrimary }]}>{t.capsule}</Text>
+                <Text style={[styles.capsuleText, { color: kit.text }]}>{t.capsule}</Text>
               </Pressable>
             ))}
           </View>
-          {error && <Text style={[styles.error, { color: c.brand.danger }]}>{error}</Text>}
+          {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
         </ScrollView>
       )}
 
       {phase === 'loading' && (
         <View style={styles.center}>
-          <ActivityIndicator color={c.brand.primary} />
+          <ActivityIndicator color={kit.accent} />
         </View>
       )}
 
       {phase === 'card' && card && (
         <View style={styles.cardWrap}>
           <ScrollView contentContainerStyle={styles.cardScroll} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.cardHeadline, { color: c.textPrimary }]}>{card.headline}</Text>
-            <Text style={[styles.cardBody, { color: c.textSecondary }]}>{card.body}</Text>
+            <Text style={[styles.cardHeadline, { color: kit.text }]}>{card.headline}</Text>
+            <Text style={[styles.cardBody, { color: kit.textSub }]}>{card.body}</Text>
           </ScrollView>
-          {error && <Text style={[styles.error, { color: c.brand.danger }]}>{error}</Text>}
+          {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
           <View style={styles.responseRow}>
             <Pressable
               onPress={() => respond('different')}
@@ -113,10 +120,10 @@ export default function NewLensScreen() {
               style={({ pressed }) => [
                 styles.responseBtn,
                 styles.responseGhost,
-                { borderColor: c.border, opacity: submitting ? 0.5 : pressed ? 0.8 : 1 },
+                { borderColor: kit.border, opacity: submitting ? 0.5 : pressed ? 0.8 : 1 },
               ]}
             >
-              <Text style={[styles.responseGhostText, { color: c.textSecondary }]}>
+              <Text style={[styles.responseGhostText, { color: kit.textSub }]}>
                 I see it differently
               </Text>
             </Pressable>
@@ -125,7 +132,7 @@ export default function NewLensScreen() {
               disabled={submitting}
               style={({ pressed }) => [
                 styles.responseBtn,
-                { backgroundColor: c.brand.primary, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
+                { backgroundColor: kit.accent, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
               ]}
             >
               {submitting ? (
@@ -140,10 +147,10 @@ export default function NewLensScreen() {
 
       {phase === 'done' && (
         <View style={styles.center}>
-          <Text style={[styles.doneText, { color: c.textPrimary }]}>Good to notice.</Text>
+          <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.doneBtn, { backgroundColor: c.brand.primary, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
           >
             <Text style={styles.responseText}>Done</Text>
           </Pressable>
@@ -160,10 +167,10 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 28 },
 
   themeScroll: { paddingBottom: 40, paddingTop: 8 },
-  title: { fontSize: 24, fontFamily: 'Inter_700Bold', lineHeight: 31, marginBottom: 6 },
-  sub: { fontSize: 15, fontFamily: 'Inter_400Regular', marginBottom: 24 },
+  title: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', lineHeight: 34, marginBottom: 8 },
+  sub: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21, marginBottom: 26 },
   capsules: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  capsule: { borderWidth: 1, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 12 },
+  capsule: { borderWidth: 0, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 18, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   capsuleText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
 
   cardWrap: { flex: 1, paddingTop: 20 },
@@ -177,7 +184,7 @@ const styles = StyleSheet.create({
   responseText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
 
   doneText: { fontSize: 24, fontFamily: 'Inter_700Bold' },
-  doneBtn: { borderRadius: 16, paddingVertical: 16, paddingHorizontal: 40, alignItems: 'center' },
+  doneBtn: { borderRadius: 18, paddingVertical: 18, paddingHorizontal: 40, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
 
   error: { fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', marginVertical: 10 },
 });

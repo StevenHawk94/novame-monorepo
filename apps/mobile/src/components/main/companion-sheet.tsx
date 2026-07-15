@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
@@ -61,6 +62,7 @@ function readDoneState(): DoneState {
  */
 export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
@@ -170,7 +172,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
             ))}
           </BottomSheetScrollView>
         </View>
-        <Pressable onPress={() => sheetRef.current?.dismiss()} style={styles.closeBtn} hitSlop={8}>
+        <Pressable onPress={() => sheetRef.current?.dismiss()} style={[styles.closeBtn, { bottom: insets.bottom + 12 }]} hitSlop={8}>
           <MaterialIcons name="close" size={26} color="#3A2A1A" />
         </Pressable>
       </BottomSheetView>
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
     overflow: 'hidden',
   },
-  scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 80 },
+  scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 110 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', flex: 1 },
   portraitWrap: { alignItems: 'center', marginTop: 4 },
@@ -209,5 +211,5 @@ const styles = StyleSheet.create({
   kitIcon: { width: 44, height: 44 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
   kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
-  closeBtn: { position: 'absolute', bottom: 18, alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  closeBtn: { position: 'absolute', alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
 });
