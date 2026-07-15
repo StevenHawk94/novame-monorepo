@@ -121,6 +121,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={snapPoints}
+      enableDynamicSizing={false}
       backdropComponent={renderBackdrop}
       handleComponent={null}
       backgroundStyle={styles.sheetBg}

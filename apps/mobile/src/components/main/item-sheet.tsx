@@ -36,7 +36,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
   const router = useRouter();
   const sheetRef = useRef<BottomSheetModal>(null);
   const [itemId, setItemId] = useState<string | null>(null);
-  const snapPoints = useMemo(() => ['90%'], []);
+  const snapPoints = useMemo(() => ['75%'], []);
 
   useImperativeHandle(ref, () => ({
     present: (id: string) => {
@@ -67,6 +67,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={snapPoints}
+      enableDynamicSizing={false}
       backdropComponent={renderBackdrop}
       handleComponent={null}
       backgroundStyle={styles.sheetBg}
@@ -91,7 +92,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
             </View>
 
             {/* Memories */}
-            <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            <BottomSheetScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
               {item.memories.map((m, i) => (
                 <View key={i} style={styles.memCard}>
                   <View style={styles.memThumb}>
