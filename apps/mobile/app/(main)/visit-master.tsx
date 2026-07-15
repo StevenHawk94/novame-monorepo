@@ -92,7 +92,7 @@ export default function VisitMasterScreen() {
     return (
       <View style={[styles.root, styles.center, { paddingTop: insets.top + 8 }]}>
         <WaveBackground palette={WAVE_PALETTES.visitMaster} />
-        <Pressable onPress={() => router.back()} style={[styles.back, styles.backAbs]} hitSlop={12}>
+        <Pressable onPress={() => router.back()} style={[styles.back, styles.backAbs, { top: insets.top + 8 }]} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
         <Text style={styles.masterEmoji}>{'\u{1F9D9}'}</Text>

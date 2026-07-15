@@ -161,7 +161,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
               <Pressable
                 key={kit.key}
                 onPress={() => openKit(kit)}
-                style={({ pressed }) => [styles.kitCard, { opacity: pressed ? 0.85 : 1 }]}
+                style={({ pressed }) => [styles.kitCard, pressed && styles.kitCardPressed]}
               >
                 <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
                 <View style={{ flex: 1 }}>
@@ -207,7 +207,8 @@ const styles = StyleSheet.create({
   xpText: { alignSelf: 'center', color: '#3A2A1A', fontSize: 13, fontFamily: 'Inter_700Bold' },
   hangout: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3A2A1A', textAlign: 'center', marginTop: 18, marginBottom: 12 },
   kitList: { gap: 12, paddingBottom: 8 },
-  kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 18, marginBottom: 14, shadowColor: '#8A5A2B', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 } },
+  kitCardPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
   kitIcon: { width: 44, height: 44 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
   kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
