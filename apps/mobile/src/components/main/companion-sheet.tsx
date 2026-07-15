@@ -184,8 +184,8 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
-  sheetBg: { backgroundColor: 'transparent', borderRadius: 28 },
-  outer: { flex: 1, borderRadius: 28, overflow: 'hidden', padding: 10 },
+  sheetBg: { backgroundColor: 'transparent', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  outer: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 10 },
   // Inner framed layer: a rounded panel inset from the wave card, giving the
   // double-border depth from the design. Slightly translucent so the wave shows.
   inner: {

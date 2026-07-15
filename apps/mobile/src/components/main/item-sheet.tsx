@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
@@ -34,6 +35,7 @@ function formatDate(iso: string): string {
  */
 export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const sheetRef = useRef<BottomSheetModal>(null);
   const [itemId, setItemId] = useState<string | null>(null);
   const snapPoints = useMemo(() => ['75%'], []);
@@ -115,8 +117,8 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
         )}
 
         {/* Close */}
-        <Pressable onPress={() => sheetRef.current?.dismiss()} style={styles.closeBtn} hitSlop={8}>
-          <MaterialIcons name="close" size={26} color="#FFFFFF" />
+        <Pressable onPress={() => sheetRef.current?.dismiss()} style={[styles.closeBtn, { bottom: insets.bottom + 12 }]} hitSlop={8}>
+          <MaterialIcons name="close" size={26} color="#3A2A1A" />
         </Pressable>
       </BottomSheetView>
     </BottomSheetModal>
@@ -126,8 +128,8 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
 ItemSheet.displayName = 'ItemSheet';
 
 const styles = StyleSheet.create({
-  sheetBg: { backgroundColor: '#FBF3E8', borderRadius: 28 },
-  content: { flex: 1, borderRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 30 },
+  sheetBg: { backgroundColor: '#FBF3E8', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  content: { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 30 },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 18 },
   portrait: {
@@ -160,9 +162,9 @@ const styles = StyleSheet.create({
   detailsText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
 
   closeBtn: {
-    position: 'absolute', bottom: 24, alignSelf: 'center',
-    width: 56, height: 56, borderRadius: 28, backgroundColor: '#2A2A2A',
+    position: 'absolute', alignSelf: 'center',
+    width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
 });
