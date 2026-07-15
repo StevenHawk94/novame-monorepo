@@ -16,6 +16,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { REFLECT_PROMPTS } from '@novame/domain';
 import { ITEM_DICTIONARY } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
+import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import {
   getReflectStateToday,
   submitReflect,
@@ -52,6 +53,13 @@ export default function ReflectScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.colors;
+  const kit = {
+    text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
+    card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
+    accent: '#E0912F', danger: '#D9694E', secret: '#B57BC9',
+    inputBg: 'rgba(255,255,255,0.7)', tagBg: 'rgba(224,145,47,0.15)',
+  };
+  void c;
 
   const params = useLocalSearchParams<{
     presetPrompt?: string;
@@ -119,16 +127,17 @@ export default function ReflectScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: c.bgPrimary }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <WaveBackground palette={WAVE_PALETTES.reflect} />
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
-            <Text style={[styles.closeText, { color: c.textSecondary }]}>Close</Text>
+            <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
           </Pressable>
           {phase !== 'done' && (
-            <Text style={[styles.remaining, { color: c.textMuted }]}>
+            <Text style={[styles.remaining, { color: kit.textMuted }]}>
               {remaining} of 3 left today
             </Text>
           )}
@@ -137,10 +146,10 @@ export default function ReflectScreen() {
         {/* ---- limit reached: block before writing ---- */}
         {atLimit && phase !== 'done' ? (
           <View style={styles.center}>
-            <Text style={[styles.restTitle, { color: c.textPrimary }]}>
+            <Text style={[styles.restTitle, { color: kit.text }]}>
               That’s three for today
             </Text>
-            <Text style={[styles.restBody, { color: c.textSecondary }]}>
+            <Text style={[styles.restBody, { color: kit.textSub }]}>
               {ERROR_MESSAGE.daily_limit}
             </Text>
           </View>
@@ -150,10 +159,10 @@ export default function ReflectScreen() {
             contentContainerStyle={styles.pickScroll}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.lead, { color: c.textPrimary }]}>
+            <Text style={[styles.lead, { color: kit.text }]}>
               What do you want to sit with?
             </Text>
-            <Text style={[styles.leadSub, { color: c.textSecondary }]}>
+            <Text style={[styles.leadSub, { color: kit.textSub }]}>
               Pick a starting point, or just write.
             </Text>
             {REFLECT_PROMPTS.map((p) => (
@@ -163,13 +172,13 @@ export default function ReflectScreen() {
                 style={({ pressed }) => [
                   styles.promptCard,
                   {
-                    backgroundColor: c.bgCard,
-                    borderColor: c.border,
+                    backgroundColor: kit.card,
+                    borderColor: kit.border,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}
               >
-                <Text style={[styles.promptText, { color: c.textPrimary }]}>{p.text}</Text>
+                <Text style={[styles.promptText, { color: kit.text }]}>{p.text}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -177,14 +186,14 @@ export default function ReflectScreen() {
           /* ---- phase 2: write ---- */
           <View style={styles.writeWrap}>
             {selectedPrompt && (
-              <Text style={[styles.chosenPrompt, { color: c.textSecondary }]}>
+              <Text style={[styles.chosenPrompt, { color: kit.textSub }]}>
                 {selectedPrompt.text}
               </Text>
             )}
             <TextInput
-              style={[styles.input, { color: c.textPrimary, backgroundColor: c.inputBg }]}
+              style={[styles.input, { color: kit.text, backgroundColor: kit.inputBg }]}
               placeholder="Start here…"
-              placeholderTextColor={c.textMuted}
+              placeholderTextColor={kit.textMuted}
               value={body}
               onChangeText={(t) => setBody(t.slice(0, MAX_CHARS))}
               multiline
@@ -192,11 +201,11 @@ export default function ReflectScreen() {
               textAlignVertical="top"
             />
             <View style={styles.writeFooter}>
-              <Text style={[styles.count, { color: c.textMuted }]}>
+              <Text style={[styles.count, { color: kit.textMuted }]}>
                 {body.length} / {MAX_CHARS}
               </Text>
               {error && (
-                <Text style={[styles.errorText, { color: c.brand.danger }]}>
+                <Text style={[styles.errorText, { color: kit.danger }]}>
                   {ERROR_MESSAGE[error]}
                 </Text>
               )}
@@ -207,7 +216,7 @@ export default function ReflectScreen() {
               style={({ pressed }) => [
                 styles.submit,
                 {
-                  backgroundColor: c.brand.primary,
+                  backgroundColor: kit.accent,
                   opacity: submitting || body.trim().length === 0 ? 0.5 : pressed ? 0.85 : 1,
                 },
               ]}
@@ -223,31 +232,31 @@ export default function ReflectScreen() {
           /* ---- phase 3: result ---- */
           result && (
             <View style={styles.center}>
-              <Text style={[styles.doneTitle, { color: c.textPrimary }]}>Saved</Text>
-              <View style={[styles.rewardCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                <Text style={[styles.rewardXp, { color: c.brand.primary }]}>
+              <Text style={[styles.doneTitle, { color: kit.text }]}>Saved</Text>
+              <View style={[styles.rewardCard, { backgroundColor: kit.card, borderColor: kit.border }]}>
+                <Text style={[styles.rewardXp, { color: kit.accent }]}>
                   +{result.xpAwarded} XP
                 </Text>
                 {result.dimensionHits.length > 0 ? (
                   <View style={styles.hits}>
                     {result.dimensionHits.map((h) => (
-                      <View key={h.dimension} style={[styles.hitPill, { backgroundColor: c.tagBg }]}>
-                        <Text style={[styles.hitText, { color: c.textPrimary }]}>
+                      <View key={h.dimension} style={[styles.hitPill, { backgroundColor: kit.tagBg }]}>
+                        <Text style={[styles.hitText, { color: kit.text }]}>
                           {DIMENSION_LABEL[h.dimension] ?? h.dimension} +{h.gems}
                         </Text>
                       </View>
                     ))}
                   </View>
                 ) : (
-                  <Text style={[styles.noHits, { color: c.textMuted }]}>
+                  <Text style={[styles.noHits, { color: kit.textMuted }]}>
                     A quiet one. No gems this time — that’s okay.
                   </Text>
                 )}
               </View>
 
               {result.matchedItems.length > 0 && (
-                <View style={[styles.itemsCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                  <Text style={[styles.itemsTitle, { color: c.textSecondary }]}>
+                <View style={[styles.itemsCard, { backgroundColor: kit.card, borderColor: kit.border }]}>
+                  <Text style={[styles.itemsTitle, { color: kit.textSub }]}>
                     Collected {result.matchedItems.length === 1 ? 'a moment' : `${result.matchedItems.length} moments`}
                   </Text>
                   <View style={styles.itemsRow}>
@@ -256,7 +265,7 @@ export default function ReflectScreen() {
                       return (
                         <View key={it.itemId} style={styles.itemChip}>
                           <Text style={styles.itemEmoji}>{def?.emoji ?? '📦'}</Text>
-                          <Text style={[styles.itemLabel, { color: c.textPrimary }]} numberOfLines={1}>
+                          <Text style={[styles.itemLabel, { color: kit.text }]} numberOfLines={1}>
                             {it.label}
                           </Text>
                         </View>
@@ -267,22 +276,22 @@ export default function ReflectScreen() {
               )}
 
               {result.generatedSkill && (
-                <View style={[styles.skillCard, { backgroundColor: c.bgCard, borderColor: result.generatedSkill.rarity === 'secret' ? c.brand.purpleLight : c.border, borderWidth: result.generatedSkill.rarity === 'secret' ? 2 : 1 }]}>
-                  <Text style={[styles.skillLabel, { color: c.brand.purpleLight }]}>
+                <View style={[styles.skillCard, { backgroundColor: kit.card, borderColor: result.generatedSkill.rarity === 'secret' ? kit.secret : kit.border, borderWidth: result.generatedSkill.rarity === 'secret' ? 2 : 1 }]}>
+                  <Text style={[styles.skillLabel, { color: kit.secret }]}>
                     {result.generatedSkill.rarity === 'secret' ? '✨ Secret skill learned' : 'New skill learned'}
                   </Text>
-                  <Text style={[styles.skillTitle, { color: c.textPrimary }]}>{result.generatedSkill.title}</Text>
-                  <Text style={[styles.skillBody, { color: c.textSecondary }]}>{result.generatedSkill.body}</Text>
+                  <Text style={[styles.skillTitle, { color: kit.text }]}>{result.generatedSkill.title}</Text>
+                  <Text style={[styles.skillBody, { color: kit.textSub }]}>{result.generatedSkill.body}</Text>
                 </View>
               )}
 
-              <Text style={[styles.remainingDone, { color: c.textSecondary }]}>
+              <Text style={[styles.remainingDone, { color: kit.textSub }]}>
                 {result.reflectsRemaining > 0
                   ? `${result.reflectsRemaining} more today if you want it.`
                   : 'That’s all three for today.'}
               </Text>
               <Pressable onPress={() => router.back()} style={styles.doneBtn}>
-                <Text style={[styles.doneBtnText, { color: c.brand.primary }]}>Done</Text>
+                <Text style={[styles.doneBtnText, { color: kit.accent }]}>Done</Text>
               </Pressable>
             </View>
           )
@@ -300,11 +309,11 @@ const styles = StyleSheet.create({
   remaining: { fontSize: 13, fontFamily: 'Inter_500Medium' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
 
-  lead: { fontSize: 24, fontFamily: 'Inter_700Bold', marginTop: 12, marginBottom: 4 },
-  leadSub: { fontSize: 15, fontFamily: 'Inter_400Regular', marginBottom: 20 },
+  lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 12, marginBottom: 6 },
+  leadSub: { fontSize: 15, fontFamily: 'Inter_500Medium', marginBottom: 22 },
   pickScroll: { paddingBottom: 40 },
-  promptCard: { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 12 },
-  promptText: { fontSize: 16, fontFamily: 'Inter_500Medium', lineHeight: 23 },
+  promptCard: { borderWidth: 0, borderRadius: 20, padding: 20, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  promptText: { fontSize: 16, fontFamily: 'Inter_600SemiBold', lineHeight: 23 },
 
   writeWrap: { flex: 1, paddingTop: 12 },
   chosenPrompt: { fontSize: 15, fontFamily: 'Inter_500Medium', marginBottom: 12, lineHeight: 22 },
@@ -312,7 +321,7 @@ const styles = StyleSheet.create({
   writeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, minHeight: 20 },
   count: { fontSize: 13, fontFamily: 'Inter_400Regular' },
   errorText: { fontSize: 13, fontFamily: 'Inter_500Medium', flexShrink: 1, textAlign: 'right', marginLeft: 12 },
-  submit: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 16, marginBottom: 8 },
+  submit: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', marginTop: 16, marginBottom: 8, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   submitText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 
   restTitle: { fontSize: 22, fontFamily: 'Inter_700Bold', marginBottom: 10 },

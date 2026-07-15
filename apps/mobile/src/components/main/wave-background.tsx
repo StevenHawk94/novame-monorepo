@@ -25,6 +25,10 @@ export const WAVE_PALETTES: Record<string, WavePalette> = {
   quietWins:  { top: '#A8D69A', bottom: '#DCEFCE', wave1: '#93C88388', wave2: '#C4E5B088' }, // green
   tameEnemy:  { top: '#F0B87E', bottom: '#F7E3C4', wave1: '#EAA96788', wave2: '#F4D29A88' }, // warm gold
   visitMaster:{ top: '#EFC98A', bottom: '#F6E8C6', wave1: '#E9BB7388', wave2: '#F4DBA388' }, // pale gold
+  // Focus -- calm blue/green
+  focus:      { top: '#9ED0D6', bottom: '#D6EBE4', wave1: '#84C1C888', wave2: '#B4DFD588' },
+  // Reflect -- warm yellow/orange
+  reflect:    { top: '#F5C88A', bottom: '#F8E6C4', wave1: '#EFB57388', wave2: '#F6D89E88' },
 };
 
 export function WaveBackground({ palette }: { palette: WavePalette }) {
