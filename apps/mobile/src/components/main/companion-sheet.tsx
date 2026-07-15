@@ -1,10 +1,11 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
+  BottomSheetScrollView,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
@@ -122,56 +123,50 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       handleComponent={null}
       backgroundStyle={styles.sheetBg}
     >
-      <BottomSheetView style={styles.content}>
+      <BottomSheetView style={styles.outer}>
         <WaveBackground palette={WAVE_PALETTES.orange} />
-
-        {/* Header: name + portrait + heart */}
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
-          <Pressable hitSlop={8}>
-            <MaterialIcons name="favorite" size={26} color="#3A2A1A" />
-          </Pressable>
-        </View>
-
-        <View style={styles.portraitWrap}>
-          <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
-        </View>
-
-        {/* Level + XP bar */}
-        {level && (
-          <View style={styles.xpRow}>
-            <View style={styles.levelCircle}>
-              <Text style={styles.levelNum}>{level.level}</Text>
+        {/* Inner framed content -- the double-border layer over the wave card. */}
+        <View style={styles.inner}>
+          <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            {/* Header: name + heart */}
+            <View style={styles.header}>
+              <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
+              <Pressable hitSlop={8}>
+                <MaterialIcons name="favorite" size={26} color="#3A2A1A" />
+              </Pressable>
             </View>
-            <View style={styles.track}>
-              <View style={[styles.fill, { width: `${pct}%` }]} />
-              <Text style={styles.xpText}>
-                {level.xpForLevel > 0 ? `${level.xpIntoLevel} / ${level.xpForLevel} xp` : 'MAX'}
-              </Text>
+            <View style={styles.portraitWrap}>
+              <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
             </View>
-          </View>
-        )}
-
-        <Text style={styles.hangout}>Hey, Let{'\u2019'}s hang out, You want to.....</Text>
-
-        {/* Kit list */}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.kitList}>
-          {visibleKits.map((kit) => (
-            <Pressable
-              key={kit.key}
-              onPress={() => openKit(kit)}
-              style={({ pressed }) => [styles.kitCard, { opacity: pressed ? 0.85 : 1 }]}
-            >
-              <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.kitLabel}>{kit.label}</Text>
-                <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+            {level && (
+              <View style={styles.xpRow}>
+                <View style={styles.levelCircle}>
+                  <Text style={styles.levelNum}>{level.level}</Text>
+                </View>
+                <View style={styles.track}>
+                  <View style={[styles.fill, { width: `${pct}%` }]} />
+                  <Text style={styles.xpText}>
+                    {level.xpForLevel > 0 ? `${level.xpIntoLevel} / ${level.xpForLevel} xp` : 'MAX'}
+                  </Text>
+                </View>
               </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Close */}
+            )}
+            <Text style={styles.hangout}>Hey, Let{'\u2019'}s hang out, You want to.....</Text>
+            {visibleKits.map((kit) => (
+              <Pressable
+                key={kit.key}
+                onPress={() => openKit(kit)}
+                style={({ pressed }) => [styles.kitCard, { opacity: pressed ? 0.85 : 1 }]}
+              >
+                <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.kitLabel}>{kit.label}</Text>
+                  <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </BottomSheetScrollView>
+        </View>
         <Pressable onPress={() => sheetRef.current?.dismiss()} style={styles.closeBtn} hitSlop={8}>
           <MaterialIcons name="close" size={26} color="#FFFFFF" />
         </Pressable>
@@ -184,7 +179,16 @@ CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
   sheetBg: { backgroundColor: 'transparent', borderRadius: 28 },
-  content: { flex: 1, borderRadius: 28, overflow: 'hidden', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 },
+  outer: { flex: 1, borderRadius: 28, overflow: 'hidden', padding: 10 },
+  // Inner framed layer: a rounded panel inset from the wave card, giving the
+  // double-border depth from the design. Slightly translucent so the wave shows.
+  inner: {
+    flex: 1, borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
+    overflow: 'hidden',
+  },
+  scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 80 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', flex: 1 },
   portraitWrap: { alignItems: 'center', marginTop: 4 },
@@ -202,5 +206,5 @@ const styles = StyleSheet.create({
   kitIcon: { width: 44, height: 44 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
   kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
-  closeBtn: { alignSelf: 'center', width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  closeBtn: { position: 'absolute', bottom: 18, alignSelf: 'center', width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' },
 });
