@@ -76,8 +76,10 @@ type TabButtonProps = {
 function TabButton({ icon, label, isFocused, onPress }: TabButtonProps): ReactNode {
   return (
     <Pressable onPress={onPress} style={styles.tabBtn}>
-      <Image source={icon} style={[styles.tabIcon, { opacity: isFocused ? 1 : 0.55 }]} resizeMode="contain" />
-      <Text style={[styles.tabLabel, { opacity: isFocused ? 1 : 0.55 }]}>{label}</Text>
+      <View style={[styles.iconWrap, isFocused && styles.iconWrapActive]}>
+        <Image source={icon} style={styles.tabIcon} resizeMode="contain" />
+      </View>
+      <Text style={styles.tabLabel}>{label}</Text>
     </Pressable>
   );
 }
@@ -86,12 +88,16 @@ const styles = StyleSheet.create({
   container: { backgroundColor: '#E8D5B0' },
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     justifyContent: 'space-around',
-    height: 64,
-    paddingTop: 6,
+    height: 68,
   },
-  tabBtn: { width: 64, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  tabIcon: { width: 30, height: 30 },
+  tabBtn: { width: 66, alignItems: 'center', justifyContent: 'flex-start', gap: 2, paddingTop: 2 },
+  iconWrap: {
+    width: 52, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconWrapActive: { backgroundColor: 'rgba(255,255,255,0.45)' },
+  tabIcon: { width: 40, height: 40 },
   tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold', color: '#5A4A32' },
 });

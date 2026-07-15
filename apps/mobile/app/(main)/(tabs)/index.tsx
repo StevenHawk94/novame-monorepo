@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
   topRight: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   topIcon: { width: 40, height: 40 },
-  scene: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scene: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 140 },
   bubble: {
     backgroundColor: '#F4E4C1', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
     marginHorizontal: 24, maxWidth: '82%', marginBottom: 8,
@@ -207,8 +207,9 @@ const styles = StyleSheet.create({
   entries: { flexDirection: 'row', gap: 16 },
   entryBtn: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FFFCF5', borderRadius: 18, paddingVertical: 20,
-    shadowColor: '#8A6D3B', shadowOpacity: 0.4, shadowRadius: 0, shadowOffset: { width: 3, height: 4 },
+    backgroundColor: 'rgba(244, 228, 193, 0.9)', borderRadius: 18, paddingVertical: 20,
+    borderWidth: 2, borderColor: '#2A2A2A',
+    shadowColor: '#2A2A2A', shadowOpacity: 0.5, shadowRadius: 0, shadowOffset: { width: 3, height: 4 },
     elevation: 4,
   },
   entryBtnPressed: {
