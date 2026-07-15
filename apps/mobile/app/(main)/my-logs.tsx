@@ -5,7 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ICONS } from '@/lib/icons';
-import { fetchReflectFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
+import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
+import { fetchBags, getCachedBags } from '@/lib/bags-api';
 
 /**
  * My Logs -- the Reflect Feed. Every reflection the user has written, most
@@ -15,22 +16,35 @@ import { fetchReflectFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-fe
  */
 export default function MyLogsScreen() {
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedDay[]>([]);
+  const [feed, setFeed] = useState<FeedDay[]>(() => getCachedFeed());
 
   useFocusEffect(
     useCallback(() => {
       void fetchReflectFeed().then(setFeed);
+      void fetchBags();
     }, []),
   );
 
   // Flatten day-grouped feed into individual reflect cards (each keeps its
   // day label + the day's gathered emoji).
+  // Each reflection shows only the items IT gathered -- resolved precisely by
+  // walking cached bags for memories whose reflectId matches this reflection,
+  // not the day's aggregate (which would repeat every item on every card).
+  const bags = getCachedBags();
+  function emojiForReflect(reflectId: string): string[] {
+    const out: string[] = [];
+    for (const item of bags) {
+      const n = item.memories.filter((m) => m.reflectId === reflectId).length;
+      for (let i = 0; i < n; i++) out.push(item.emoji);
+    }
+    return out;
+  }
   const entries = feed.flatMap((day) =>
     day.reflects.map((r) => ({
       id: r.id,
       body: r.body,
       dateLabel: formatDayLabel(day.date),
-      emoji: day.itemEmoji,
+      emoji: emojiForReflect(r.id),
     })),
   );
 

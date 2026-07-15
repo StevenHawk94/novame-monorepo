@@ -24,6 +24,8 @@ import {
   type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
 import { setReflectBubble } from '../../src/lib/bubble-store';
+import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
+import { fetchBags } from '../../src/lib/bags-api';
 
 const MAX_CHARS = 5000;
 
@@ -118,6 +120,9 @@ export default function ReflectScreen() {
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
       if (res.snapshot.bubble) setReflectBubble(res.snapshot.bubble);
+      // Reflect changed feed + collected items -- refresh those caches now.
+      void fetchReflectFeed();
+      void fetchBags();
       setPhase('done');
     } else {
       setError(res.error);

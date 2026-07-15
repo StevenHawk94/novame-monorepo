@@ -67,6 +67,9 @@ export const kCosmetics = defineKey('novame_cosmetics', 'user');
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 
+/** Cached Reflect Feed (My Logs), cache-first render. */
+export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

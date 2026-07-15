@@ -6,6 +6,8 @@
 import { ITEM_DICTIONARY } from '@novame/engine';
 
 import { apiClient } from './api';
+import { storage } from './storage';
+import { kReflectFeed } from '../shared/storage/keys';
 import { supabase } from './supabase';
 
 export interface FeedDay {
@@ -19,20 +21,33 @@ function emojiFor(itemId: string): string {
   return ITEM_DICTIONARY.items[itemId]?.emoji ?? '✨';
 }
 
+/** Cached feed for cache-first render (returns [] if none). */
+export function getCachedFeed(): FeedDay[] {
+  const raw = storage.getString(kReflectFeed.name);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as FeedDay[];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchReflectFeed(): Promise<FeedDay[]> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return [];
+  if (!userId) return getCachedFeed();
 
   try {
     const data = await apiClient.get<{
       success?: boolean;
       days?: { date: string; reflects: { id: string; body: string }[]; itemIds: string[] }[];
     }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
-    if (!data.success || !data.days) return [];
-    return data.days.map((d) => ({ ...d, itemEmoji: d.itemIds.map(emojiFor) }));
+    if (!data.success || !data.days) return getCachedFeed();
+    const days = data.days.map((d) => ({ ...d, itemEmoji: d.itemIds.map(emojiFor) }));
+    storage.set(kReflectFeed.name, JSON.stringify(days));
+    return days;
   } catch {
-    return [];
+    return getCachedFeed();
   }
 }
 
