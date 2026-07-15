@@ -113,7 +113,7 @@ export default function VisitMasterScreen() {
               <Text style={[styles.body, { color: kit.textSub }]}>
                 Bring what's been weighing on you. The Master offers a deeper reading -- once every couple of days.
               </Text>
-              <Pressable onPress={enterForest} style={[styles.primaryBtn, { backgroundColor: kit.accent }]}>
+              <Pressable onPress={enterForest} style={[styles.primaryBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
                 <Text style={styles.primaryText}>Enter the forest</Text>
               </Pressable>
               {status.history.length > 0 && (
@@ -128,7 +128,7 @@ export default function VisitMasterScreen() {
             <Text style={[styles.body, { color: kit.textSub }]}>
               The Master offers a deep, considered reading of whatever's on your mind -- a kind of counsel you can't get from a quick note. It's part of Plus.
             </Text>
-            <Pressable onPress={() => router.push('/(main)/(modals)/subscription-paywall')} style={[styles.primaryBtn, { backgroundColor: kit.accent }]}>
+            <Pressable onPress={() => router.push('/(main)/(modals)/subscription-paywall')} style={[styles.primaryBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
               <Text style={styles.primaryText}>Unlock with Plus</Text>
             </Pressable>
           </>
@@ -200,7 +200,7 @@ export default function VisitMasterScreen() {
         </Pressable>
         <ScrollView contentContainerStyle={styles.replyScroll} showsVerticalScrollIndicator={false}>
           <ReplyBody reply={reply} c={KIT} />
-          <Pressable onPress={() => { setReply(null); setQuestion(''); router.back(); }} style={[styles.primaryBtn, { backgroundColor: kit.accent, marginTop: 24 }]}>
+          <Pressable onPress={() => { setReply(null); setQuestion(''); router.back(); }} style={[styles.primaryBtn, { backgroundColor: kit.accent, marginTop: 24, marginBottom: insets.bottom + 12 }]}>
             <Text style={styles.primaryText}>Save & Close</Text>
           </Pressable>
         </ScrollView>

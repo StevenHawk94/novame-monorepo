@@ -132,7 +132,7 @@ export default function QuietWinsScreen() {
             disabled={submitting}
             style={({ pressed }) => [
               styles.doneBtn,
-              { backgroundColor: kit.accent, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
+              { backgroundColor: kit.accent, opacity: submitting ? 0.5 : pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 },
             ]}
           >
             {submitting ? (
@@ -156,7 +156,7 @@ export default function QuietWinsScreen() {
           </ScrollView>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 }]}
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </Pressable>

@@ -114,7 +114,7 @@ export default function TrueNorthScreen() {
           </Text>
           <Pressable
             onPress={() => setPhase('rank')}
-            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.startBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }, pressed && styles.btnPressed]}
           >
             <Text style={styles.primaryBtnText}>Start</Text>
           </Pressable>
@@ -172,6 +172,7 @@ export default function TrueNorthScreen() {
               {
                 backgroundColor: kit.accent,
                 opacity: picked.length !== DIMENSION_IDS.length || submitting ? 0.4 : pressed ? 0.85 : 1,
+                marginBottom: insets.bottom + 12,
               },
             ]}
           >
@@ -304,6 +305,8 @@ const styles = StyleSheet.create({
   interpretFooter: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21, marginTop: 6 },
 
   primaryBtn: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  startBtn: { borderRadius: 18, paddingVertical: 18, paddingHorizontal: 64, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 3, height: 4 } },
+  btnPressed: { transform: [{ translateX: 2 }, { translateY: 3 }] },
   primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold' },
   error: { fontSize: 13, fontFamily: 'Inter_500Medium', textAlign: 'center', marginVertical: 8 },
 });

@@ -113,7 +113,7 @@ export default function NewLensScreen() {
             <Text style={[styles.cardBody, { color: kit.textSub }]}>{card.body}</Text>
           </ScrollView>
           {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
-          <View style={styles.responseRow}>
+          <View style={[styles.responseRow, { marginBottom: insets.bottom + 12 }]}>
             <Pressable
               onPress={() => respond('different')}
               disabled={submitting}
@@ -150,7 +150,7 @@ export default function NewLensScreen() {
           <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }]}
+            style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 }]}
           >
             <Text style={styles.responseText}>Done</Text>
           </Pressable>
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
   cardHeadline: { fontSize: 26, fontFamily: 'Inter_700Bold', lineHeight: 34, marginBottom: 20, textAlign: 'center' },
   cardBody: { fontSize: 17, fontFamily: 'Inter_400Regular', lineHeight: 27, textAlign: 'center' },
   responseRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  responseRowSafe: {},
   responseBtn: { flex: 1, borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
   responseGhost: { borderWidth: 1 },
   responseGhostText: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },

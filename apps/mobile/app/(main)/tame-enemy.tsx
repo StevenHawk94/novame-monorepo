@@ -168,7 +168,7 @@ export default function TameEnemyScreen() {
         <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
         <Text style={[styles.prepText, { color: kit.text }]}>{active.prep}</Text>
-        <Pressable onPress={() => { void haptics.medium(); setPhase('battle'); }} style={[styles.beginBtn, { backgroundColor: kit.accent }]}>
+        <Pressable onPress={() => { void haptics.medium(); setPhase('battle'); }} style={[styles.beginBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
           <Text style={styles.beginText}>Begin</Text>
         </Pressable>
         <Pressable onPress={exit} style={styles.exitLink}>
@@ -235,7 +235,7 @@ export default function TameEnemyScreen() {
         <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
         <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
         <Text style={[styles.doneText, { color: kit.text }]}>{active.tamed}</Text>
-        <Pressable onPress={() => router.back()} style={[styles.beginBtn, { backgroundColor: kit.accent }]}>
+        <Pressable onPress={() => router.back()} style={[styles.beginBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
           <Text style={styles.beginText}>Done</Text>
         </Pressable>
       </View>
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   hpFill: { height: '100%', borderRadius: 4 },
 
   cardScroll: { flex: 1 },
-  cardList: { gap: 10, paddingBottom: 24 },
+  cardList: { gap: 10, paddingBottom: 40 },
   skillCard: { borderRadius: 18, borderWidth: 0, padding: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   skillName: { fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 4 },
   skillDesc: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 19 },
