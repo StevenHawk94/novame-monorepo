@@ -8,4 +8,5 @@ export * from './true-north';
 export * from './focus-scenes';
 export * from './home-scenes';
 export * from './bubble-lines';
+export * from './quests';
 export * from './guess-replies';
