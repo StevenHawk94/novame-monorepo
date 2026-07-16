@@ -8,7 +8,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   // Tab bar
   Home: require('../../assets/Icons/Home.png'),
   Bags: require('../../assets/Icons/Bags.png'),
-  Skills: require('../../assets/Icons/Skills.png'),
+  Quests: require('../../assets/Icons/Quests.png'),
   Friends: require('../../assets/Icons/Friends.png'),
   Me: require('../../assets/Icons/Me.png'),
   // Home top bar
@@ -22,6 +22,16 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   SmallWins: require('../../assets/Icons/SmallWins.png'),
   TameEnemy: require('../../assets/Icons/TameEnemy.png'),
   VisitMaster: require('../../assets/Icons/VisitMaster.png'),
+  // Quest themes
+  ThemeCustom: require('../../assets/Icons/ai-robot.png'),
+  ThemeFitness: require('../../assets/Icons/fitness.png'),
+  ThemeWeightLoss: require('../../assets/Icons/weightloss.png'),
+  ThemeStudy: require('../../assets/Icons/study.png'),
+  ThemeWork: require('../../assets/Icons/work.png'),
+  ThemeParenting: require('../../assets/Icons/parenting.png'),
+  ThemeWater: require('../../assets/Icons/water.png'),
+  ThemeMindfulness: require('../../assets/Icons/mindfulness.png'),
+  ThemeWriteOwn: require('../../assets/Icons/custom.png'),
   // Misc
   interact: require('../../assets/Icons/interact.png'),
 };

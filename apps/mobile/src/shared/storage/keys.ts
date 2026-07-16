@@ -73,6 +73,9 @@ export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
 /** Clovers balance + unlocked cosmetics (cache-first). */
 export const kCosmeticUnlocks = defineKey('novame_cosmetic_unlocks', 'user');
 
+/** Active quest plan status (cache-first). */
+export const kQuestStatus = defineKey('novame_quest_status', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

@@ -11,7 +11,7 @@ import {
 import { subscribeRatingPromptRequest } from '@/lib/rating-prompt';
 
 /**
- * Five tabs: Home / Bags / Skills / Friends / Status.
+ * Five tabs: Home / Bags / Quests / Friends / Status.
  *
  * SkinUnlockModal and StudyClaimModal are no longer mounted. The first read
  * its unlocked set from character-state and statically require()'d six char-1
@@ -38,7 +38,7 @@ export default function TabsLayout() {
       >
         <Tabs.Screen name="index" options={{ title: 'Home' }} />
         <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
-        <Tabs.Screen name="skills" options={{ title: 'Skills' }} />
+        <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
         <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
         <Tabs.Screen name="status" options={{ title: 'Status' }} />
       </Tabs>
