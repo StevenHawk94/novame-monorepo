@@ -13,13 +13,14 @@ import {
 import type { ImageSourcePropType } from 'react-native';
 
 import { haptics } from '@/lib/haptics';
-import { companionLevel, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
+import { getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
 import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
 import { ICONS } from '@/lib/icons';
 import { WaveBackground, WAVE_PALETTES } from './wave-background';
+import { getCachedCosmetics, fetchCosmetics } from '@/lib/cosmetics-api';
 
 export type CompanionSheetRef = {
   present: () => void;
@@ -74,6 +75,8 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
     present: () => {
       setCompanion(getCachedCompanion());
       setDoneState(readDoneState());
+      setBalance(getCachedCosmetics().balance);
+      void fetchCosmetics().then((c) => setBalance(c.balance));
       sheetRef.current?.present();
     },
     dismiss: () => sheetRef.current?.dismiss(),
@@ -90,7 +93,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
     [],
   );
 
-  const level = companion ? companionLevel(companion) : null;
+  const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
 
   const trueNorthAvail = useMemo(() => {
     const dow = (new Date().getDay() + 6) % 7;
@@ -117,7 +120,6 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
     router.push(row.route as never);
   }
 
-  const pct = level ? Math.round(level.progress * 100) : 0;
 
   return (
     <BottomSheetModal
@@ -136,29 +138,24 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         {/* Inner framed content -- the double-border layer over the wave card. */}
         <View style={styles.inner}>
           <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {/* Header: name + heart */}
+            {/* Header: clovers balance (left) + Skills entry (right) */}
             <View style={styles.header}>
-              <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
-              <Pressable hitSlop={8}>
-                <MaterialIcons name="favorite" size={26} color="#3A2A1A" />
+              <View style={styles.cloverPill}>
+                <Text style={styles.cloverEmoji}>{'\u{1F340}'}</Text>
+                <Text style={styles.cloverBalance}>{balance}</Text>
+              </View>
+              <Pressable
+                onPress={() => { void haptics.light(); router.push('/(main)/skills'); }}
+                style={styles.skillsBtn}
+                hitSlop={8}
+              >
+                <Image source={ICONS.Skills} style={styles.skillsIcon} resizeMode="contain" />
               </Pressable>
             </View>
+            <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
             <View style={styles.portraitWrap}>
               <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
             </View>
-            {level && (
-              <View style={styles.xpRow}>
-                <View style={styles.levelCircle}>
-                  <Text style={styles.levelNum}>{level.level}</Text>
-                </View>
-                <View style={styles.track}>
-                  <View style={[styles.fill, { width: `${pct}%` }]} />
-                  <Text style={styles.xpText}>
-                    {level.xpForLevel > 0 ? `${level.xpIntoLevel} / ${level.xpForLevel} xp` : 'MAX'}
-                  </Text>
-                </View>
-              </View>
-            )}
             <Text style={styles.hangout}>Hey, Let{'\u2019'}s hang out, You want to.....</Text>
             {visibleKits.map((kit) => (
               <Pressable
@@ -198,16 +195,15 @@ const styles = StyleSheet.create({
   },
   scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 110 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', flex: 1 },
+  cloverPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 7 },
+  cloverEmoji: { fontSize: 17 },
+  cloverBalance: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
+  skillsBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' },
+  skillsIcon: { width: 30, height: 30 },
+  name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', textAlign: 'center', marginTop: 6 },
   portraitWrap: { alignItems: 'center', marginTop: 4 },
   portrait: { width: 120, height: 120 },
   portraitPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
-  xpRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
-  levelCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E8823E', borderWidth: 3, borderColor: '#3A2A1A', alignItems: 'center', justifyContent: 'center' },
-  levelNum: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold' },
-  track: { flex: 1, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#3A2A1A', overflow: 'hidden', justifyContent: 'center' },
-  fill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#E8823E' },
-  xpText: { alignSelf: 'center', color: '#3A2A1A', fontSize: 13, fontFamily: 'Inter_700Bold' },
   hangout: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3A2A1A', textAlign: 'center', marginTop: 18, marginBottom: 12 },
   kitList: { gap: 12, paddingBottom: 8 },
   kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 } },
