@@ -145,7 +145,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                 <Text style={styles.cloverBalance}>{balance}</Text>
               </View>
               <Pressable
-                onPress={() => { void haptics.light(); router.push('/(main)/skills'); }}
+                onPress={() => { void haptics.light(); router.push('/(main)/(modals)/skills-list'); }}
                 style={styles.skillsBtn}
                 hitSlop={8}
               >
