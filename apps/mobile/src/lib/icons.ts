@@ -15,7 +15,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   Menu: require('../../assets/Icons/Menu.png'),
   Outfits: require('../../assets/Icons/Outfits.png'),
   Maps: require('../../assets/Icons/Maps.png'),
-  Trophy: require('../../assets/Icons/Trophy.png'),
   // Kits (companion sheet)
   NewLens: require('../../assets/Icons/NewLens.png'),
   TrueNorth: require('../../assets/Icons/TrueNorth.png'),
@@ -34,4 +33,5 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   ThemeWriteOwn: require('../../assets/Icons/custom.png'),
   // Misc
   interact: require('../../assets/Icons/interact.png'),
+  Clover: require('../../assets/Icons/clover.png'),
 };

@@ -1,6 +1,5 @@
 import { storage } from './storage';
 import { refreshMeStats } from './me-stats';
-import { refreshLeaderboard } from './leaderboard-api';
 
 /**
  * Foreground refresh after a long background.
@@ -36,6 +35,8 @@ export function markRefreshedNow(): void {
 
 /** Fire-and-forget safe: never throws. */
 export async function refreshAllCaches(userId: string): Promise<void> {
-  await Promise.allSettled([refreshMeStats(userId), refreshLeaderboard()]);
+  // Leaderboard removed in v2.0 (design drops the Home trophy entry); only
+  // me-stats remains until Phase B's createResource() replaces this module.
+  await Promise.allSettled([refreshMeStats(userId)]);
   markRefreshedNow();
 }
