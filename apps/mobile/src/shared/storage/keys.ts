@@ -47,7 +47,7 @@ import { defineKey, definePrefixKey } from './registry';
  */
 
 // ===========================================================================
-// USER SCOPE (24) -- cleared on SIGNED_IN and on SIGNED_OUT
+// USER SCOPE (25) -- cleared on SIGNED_IN and on SIGNED_OUT
 // ===========================================================================
 
 // --- Authenticated API caches ---------------------------------------------
@@ -111,10 +111,10 @@ export const kKeywordDetail = definePrefixKey('novame_kwdetail:', 'user');
 export const kWeeklyReport = definePrefixKey('novame_weekly_report:', 'user');
 
 /**
- * LEAKED. leaderboard-api.ts: LEADERBOARD_STORAGE_KEY.
- *
- * Public data, so 'device' would technically hold -- but it embeds the
- * viewer's own rank, and one refetch after sign-in is free. When in doubt.
+ * Clear-only since v2.0: the leaderboard feature was removed (design drops
+ * the Home trophy entry; leaderboard-api.ts deleted). Installs that used it
+ * still carry the cache on disk, so the key stays registered for clearScope,
+ * per the Retirement policy above.
  */
 export const kLeaderboard = defineKey('novame_leaderboard_v2', 'user');
 
@@ -297,6 +297,14 @@ export const kSkillsState = defineKey('novame_skills_state', 'user');
  *  kit_completions is authoritative, but the sheet reads this synchronously to
  *  drop the daily Kit once tamed. */
 export const kTameEnemyState = defineKey('novame_tame_enemy_state', 'user');
+
+/** Home memory bubbles: { date, popped: string[] } — which of today's friend
+ *  item bubbles were already popped, so they stay gone across app restarts.
+ *  Selection itself is recomputed deterministically (see home-bubbles.ts);
+ *  only the popped set needs persistence. Currency for popping arrives with
+ *  the P1 economy rework — until then popping is purely visual, so a lost
+ *  flag costs nothing but a replayed animation. */
+export const kHomeBubblesState = defineKey('novame_home_bubbles_state', 'user');
 
 // ===========================================================================
 // DEVICE SCOPE (6) -- survives a user switch, deliberately

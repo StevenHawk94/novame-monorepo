@@ -19,6 +19,8 @@ import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearNewLensLocal } from '@/lib/lens-api';
 import { clearTameEnemyLocal } from '@/lib/tame-enemy-api';
 import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
+import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
+import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { CompanionSheet, type CompanionSheetRef } from '@/components/main/companion-sheet';
 
 /**
@@ -50,6 +52,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const sheetRef = useRef<CompanionSheetRef>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
+  const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
   const [tier, setTier] = useState(getCachedSubscriptionTier());
   const [, setCosmeticTick] = useState(0);
   const [bubbleRotation, setBubbleRotation] = useState(0);
@@ -73,8 +76,13 @@ export default function HomeScreen() {
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
+      void loadTodayBubbles().then(setBubbles);
     }, []),
   );
+
+  const onBubblePopped = useCallback((bubbleId: string) => {
+    setBubbles((prev) => prev.filter((b) => b.id !== bubbleId));
+  }, []);
 
   const onReflect = () => {
     void haptics.medium();
@@ -112,9 +120,7 @@ export default function HomeScreen() {
             <Pressable onPress={() => { void haptics.light(); router.push('/(main)/(modals)/scene-select'); }} hitSlop={8}>
               <Image source={ICONS.Maps} style={styles.topIcon} resizeMode="contain" />
             </Pressable>
-            <Pressable onPress={() => { void haptics.light(); router.push('/(main)/(modals)/ranking'); }} hitSlop={8}>
-              <Image source={ICONS.Trophy} style={styles.topIcon} resizeMode="contain" />
-            </Pressable>
+            {/* Leaderboard removed per v2.0 design (Home top bar = outfits + scenes only). */}
           </View>
         </View>
 
@@ -172,6 +178,10 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+
+        {/* Friend memory bubbles float over the scene; box-none so the pet,
+            top bar, and Focus/Reflect stay tappable through the layer. */}
+        <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
 
         <CompanionSheet ref={sheetRef} />
       </SafeAreaView>
