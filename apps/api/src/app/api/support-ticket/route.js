@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
@@ -9,6 +10,30 @@ function getSupabase() {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
+}
+
+// SECURITY: GET/PATCH expose every ticket (user emails + message bodies) and
+// allow status tampering, so they must be admin-only. Same pattern as
+// force-update: Bearer token verified locally, then checked against the
+// ADMIN_USER_IDS allowlist (comma-separated UUIDs). Fail-closed: no token,
+// bad token, or empty allowlist all reject. Returns null on success or a
+// NextResponse 401/403 to short-circuit with.
+async function checkAdminAuth(request) {
+  const authHeader = request.headers.get('authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const user = await verifyToken(token)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (!adminIds.includes(user.id)) {
+    console.warn('[support-ticket] rejected: user', user.id, 'not in ADMIN_USER_IDS allowlist')
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return null // success
 }
 
 /**
@@ -101,10 +126,13 @@ export async function POST(req) {
 
 /**
  * GET /api/support-ticket?status=open
- * Admin: list support tickets
+ * Admin only (ADMIN_USER_IDS): list support tickets
  */
 export async function GET(req) {
   try {
+    const authError = await checkAdminAuth(req)
+    if (authError) return authError
+
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status') || 'open'
 
@@ -127,10 +155,13 @@ export async function GET(req) {
 
 /**
  * PATCH /api/support-ticket
- * Admin: update ticket status or add notes
+ * Admin only (ADMIN_USER_IDS): update ticket status or add notes
  */
 export async function PATCH(req) {
   try {
+    const authError = await checkAdminAuth(req)
+    if (authError) return authError
+
     const { id, status, adminNotes } = await req.json()
     if (!id) return NextResponse.json({ error: 'Missing ticket id' }, { status: 400 })
 
