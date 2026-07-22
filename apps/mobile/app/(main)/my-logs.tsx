@@ -72,7 +72,7 @@ export default function MyLogsScreen() {
           {entries.map((e) => (
             <View key={e.id} style={styles.card}>
               <View style={styles.cardTop}>
-                <MaterialIcons name="calendar-today" size={15} color="#B57BC9" />
+                <MaterialIcons name="calendar-today" size={15} color="#8A6240" />
                 <Text style={styles.cardDate}>{e.dateLabel}</Text>
               </View>
               <Text style={styles.cardBody} numberOfLines={3}>{e.body}</Text>
@@ -94,7 +94,7 @@ export default function MyLogsScreen() {
                   style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.7 }]}
                 >
                   <Text style={styles.detailText}>View Detail</Text>
-                  <MaterialIcons name="chevron-right" size={16} color="#8B5CC7" />
+                  <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
                 </Pressable>
               </View>
             </View>
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     shadowColor: '#8A6D3B', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  cardDate: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
+  cardDate: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
   cardBody: { fontSize: 15, fontFamily: 'Inter_400Regular', color: '#5A4A3A', lineHeight: 22, marginBottom: 14 },
   cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   emojiRow: { flexDirection: 'row', gap: 6, flex: 1, flexWrap: 'wrap' },
@@ -128,13 +128,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   emojiText: { fontSize: 22 },
-  moreText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
+  moreText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#4A3423' },
+  // Design: solid dark-brown View Detail pill, white label.
   detailBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
-    borderRadius: 14, borderWidth: 1.5, borderColor: '#E0D0F0',
-    paddingHorizontal: 14, paddingVertical: 10, marginLeft: 8,
+    borderRadius: 18, backgroundColor: '#4A3423',
+    paddingHorizontal: 16, paddingVertical: 11, marginLeft: 8,
   },
-  detailText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
+  detailText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
   emptyEmoji: { fontSize: 44 },

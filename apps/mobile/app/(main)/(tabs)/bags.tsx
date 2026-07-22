@@ -48,8 +48,7 @@ export default function BagsScreen() {
       <View style={styles.header}>
         <Image source={ICONS.interact} style={styles.petAvatar} resizeMode="contain" />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Collection</Text>
-          <Text style={styles.subtitle}>Everyday Collection</Text>
+          <Text style={styles.title}>Memories Collection</Text>
         </View>
         <Pressable
           onPress={() => router.push('/(main)/my-logs')}
@@ -61,7 +60,7 @@ export default function BagsScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.availNote}>The items below are always available!</Text>
+      <Text style={styles.availNote}>All items are sharable with your friends</Text>
 
       {/* Category strip */}
       <View style={styles.catStrip}>
@@ -96,6 +95,13 @@ export default function BagsScreen() {
               <Pressable key={item.itemId} onPress={() => openItem(item)} style={styles.cell}>
                 <View style={styles.itemCard}>
                   <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                  {item.count > 1 && (
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>
+                        x{item.count > 99 ? '99+' : item.count}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </Pressable>
             ))}
@@ -137,11 +143,18 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: '16.66%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 3 },
   itemCard: {
-    width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#FFFFFF',
+    width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F4F1F8',
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#8A6D3B', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   itemEmoji: { fontSize: 28 },
+  // Duplicate count, PRD 4.2: corner badge, capped at 99+.
+  countBadge: {
+    position: 'absolute', right: -2, bottom: -2,
+    backgroundColor: '#4A3423', borderRadius: 10,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  countBadgeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'Inter_800ExtraBold' },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
   emptyEmoji: { fontSize: 44 },

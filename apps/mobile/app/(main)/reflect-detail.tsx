@@ -53,7 +53,7 @@ export default function ReflectDetailScreen() {
         <View style={styles.card}>
           {entry && (
             <View style={styles.dateRow}>
-              <MaterialIcons name="calendar-today" size={15} color="#B57BC9" />
+              <MaterialIcons name="calendar-today" size={15} color="#8A6240" />
               <Text style={styles.date}>{entry.dateLabel}</Text>
             </View>
           )}
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     shadowColor: '#8A6D3B', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  date: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
+  date: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
   body: { fontSize: 15, fontFamily: 'Inter_400Regular', color: '#3A2E1A', lineHeight: 24 },
 
   memCard: {

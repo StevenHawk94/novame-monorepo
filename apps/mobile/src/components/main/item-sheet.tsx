@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   portraitEmoji: { fontSize: 34 },
   name: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
-  memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#B57BC9', marginTop: 2 },
+  memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8A6240', marginTop: 2 },
 
   scroll: { gap: 14, paddingBottom: 90 },
   memCard: {
@@ -157,11 +157,12 @@ const styles = StyleSheet.create({
   memBody: { flex: 1 },
   memExcerpt: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 20 },
   memDate: { fontSize: 12, fontFamily: 'Inter_500Medium', color: '#9A8770', marginTop: 4 },
+  // Design: solid dark-brown Details pill with white text.
   detailsBtn: {
-    borderRadius: 14, borderWidth: 1.5, borderColor: '#E0D0F0',
-    paddingHorizontal: 12, paddingVertical: 10,
+    borderRadius: 16, backgroundColor: '#4A3423',
+    paddingHorizontal: 14, paddingVertical: 10,
   },
-  detailsText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8B5CC7' },
+  detailsText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   closeBtn: {
     position: 'absolute', alignSelf: 'center',
