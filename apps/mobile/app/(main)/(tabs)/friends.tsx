@@ -1,42 +1,64 @@
 import { useCallback, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import {
+  Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { useTheme } from '@/theme/use-theme';
 import { haptics } from '@/lib/haptics';
 import {
-  fetchFriends, addFriend, respondFriend,
-  type FriendsStatus, type FriendCard, type PendingRequest,
+  fetchFriends, fetchFriendFeed, markFriendRead,
+  fetchSharePrivacy, setSharePrivacy,
+  addFriend, respondFriend,
+  type FriendsStatus, type FeedEntry, type PendingRequest,
 } from '@/lib/friends-api';
 
 /**
- * Friends (C11a). The "keep your distance" social tab: each friend's card shows
- * the emoji of what they collected today -- a glimpse of their day without the
- * words behind it. Add friends by a stable invite code; incoming requests wait
- * at the top to accept or decline. Reflections stay private; only item emoji
- * cross between friends.
+ * Friends Cave (design: Friends-Added.png / friends.png).
+ *
+ * Hero: meadow art (color-block placeholder until the illustration lands),
+ * "Friends Cave" title, the Add Friends pill, a mail chip with the pending-
+ * request badge, and the privacy gear (the ONE switch controlling whether MY
+ * memory details are visible to friends — default private).
+ *
+ * Panel: the Messages feed — one row per friend reflect (avatar, name, item
+ * emoji peek, time-ago, unread dot), unread first. Tapping marks it read and
+ * expands details when that friend opted in; otherwise the row answers
+ * "This Reflect is Private." A Friends List chip flips to the roster view:
+ * each friend with their shared-memories box entry.
  */
+type PanelView = 'feed' | 'list';
+
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export default function FriendsScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
   const [status, setStatus] = useState<FriendsStatus>({ inviteCode: null, friends: [], pending: [] });
+  const [feed, setFeed] = useState<FeedEntry[]>([]);
+  const [view, setView] = useState<PanelView>('feed');
+  const [showPending, setShowPending] = useState(false);
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState('');
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
+    void fetchFriendFeed().then(setFeed);
   }, []);
   useFocusEffect(load);
 
   async function shareCode() {
     if (!status.inviteCode) return;
     void haptics.light();
-    // Share sheet covers both copy (the sheet's built-in Copy action) and
-    // sending -- avoids a native clipboard module that pnpm+Expo autolinking
-    // doesn't reliably pick up in this monorepo.
     await Share.share({
       message: `Add me on NovaMe! My invite code is ${status.inviteCode}.`,
     });
@@ -58,6 +80,8 @@ export default function FriendsScreen() {
         : res.error === 'already_friends' ? "You're already friends."
         : res.error === 'already_pending' ? 'A request is already pending with them.'
         : res.error === 'cannot_add_self' ? "That's your own code!"
+        : res.error === 'friend_limit_reached' ? 'Your friend slots are full. NovaMe Plus holds 99.'
+        : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
         : 'Something went wrong. Try again.';
       Alert.alert('Hmm', msg);
     }
@@ -67,157 +91,299 @@ export default function FriendsScreen() {
     void haptics.medium();
     const res = await respondFriend(req.friendshipId, action);
     if (res.ok) load();
+    else if (res.error === 'friend_limit_reached') {
+      Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
+    }
   }
 
+  function onPrivacyGear() {
+    void haptics.light();
+    void fetchSharePrivacy().then((share) => {
+      Alert.alert(
+        'Memory details',
+        share
+          ? 'Friends can currently read the details behind your memory items.'
+          : 'Your memory details are private — friends only see item icons.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: share ? 'Make private' : 'Share with friends',
+            onPress: () => {
+              void setSharePrivacy(!share).then((ok) => {
+                if (ok) void haptics.success();
+              });
+            },
+          },
+        ],
+      );
+    });
+  }
+
+  function onFeedRow(e: FeedEntry) {
+    void haptics.light();
+    if (e.unread) {
+      void markFriendRead(e.friendUserId);
+      setFeed((cur) => cur.map((x) => (x.friendUserId === e.friendUserId ? { ...x, unread: false } : x)));
+    }
+    const key = `${e.friendUserId}:${e.reflectId}`;
+    if (e.details && e.details.length > 0) {
+      setExpandedKey((cur) => (cur === key ? null : key));
+    } else {
+      Alert.alert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
+    }
+  }
+
+  const pendingCount = status.pending.length;
+
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: c.bgPrimary }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: c.textPrimary }]}>Friends</Text>
-          <Pressable onPress={() => router.push('/(main)/guesses')} hitSlop={8} style={[styles.iconBtn, { backgroundColor: c.bgCard }]}>
-            <MaterialIcons name="favorite-border" size={20} color={c.brand.primary} />
-          </Pressable>
-        </View>
-
-        {/* Invite code card */}
-        <View style={[styles.inviteCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-          <Text style={[styles.inviteLabel, { color: c.textSecondary }]}>Your invite code</Text>
-          <Pressable onPress={shareCode} hitSlop={8}>
-            <Text style={[styles.inviteCode, { color: c.textPrimary }]}>{status.inviteCode ?? '——————'}</Text>
-          </Pressable>
-          <View style={styles.inviteActions}>
-            <Pressable onPress={shareCode} style={[styles.inviteAction, { borderColor: c.border }]}>
-              <MaterialIcons name="ios-share" size={16} color={c.textSecondary} />
-              <Text style={[styles.inviteActionText, { color: c.textSecondary }]}>Share code</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Add friend */}
-        {adding ? (
-          <View style={[styles.addBox, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-            <TextInput
-              value={code}
-              onChangeText={(t) => setCode(t.toUpperCase())}
-              placeholder="Enter a friend's code"
-              placeholderTextColor={c.textMuted}
-              autoCapitalize="characters"
-              maxLength={6}
-              style={[styles.input, { color: c.textPrimary, borderColor: c.border }]}
-            />
-            <View style={styles.addRow}>
-              <Pressable onPress={() => { setAdding(false); setCode(''); }} style={styles.addCancel}>
-                <Text style={[styles.addCancelText, { color: c.textMuted }]}>Cancel</Text>
+    <View style={styles.root}>
+      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+        {/* ---- hero (meadow placeholder until art lands) ---- */}
+        <View style={styles.hero}>
+          <View style={styles.heroTopRow}>
+            <Text style={styles.heroTitle}>Friends Cave</Text>
+            <View style={styles.heroIcons}>
+              <Pressable onPress={() => { void haptics.light(); setShowPending((v) => !v); }} style={styles.heroIconBtn} hitSlop={6}>
+                <Text style={styles.heroIconEmoji}>{'💌'}</Text>
+                {pendingCount > 0 && (
+                  <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>
+                )}
               </Pressable>
-              <Pressable onPress={onAdd} style={[styles.addConfirm, { backgroundColor: c.brand.primary }]}>
-                <Text style={styles.addConfirmText}>Send request</Text>
+              <Pressable onPress={onPrivacyGear} style={styles.heroIconBtn} hitSlop={6}>
+                <MaterialIcons name="settings" size={20} color="#5A4A32" />
               </Pressable>
             </View>
           </View>
-        ) : (
-          <Pressable onPress={() => setAdding(true)} style={[styles.addBtn, { backgroundColor: c.brand.primary }]}>
-            <MaterialIcons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addBtnText}>Add Friend</Text>
+          <Pressable onPress={() => { void haptics.medium(); setAdding((v) => !v); }} style={styles.addPill}>
+            <View style={styles.addPlus}><MaterialIcons name="add" size={18} color="#FFFFFF" /></View>
+            <Text style={styles.addPillText}>Add Friends</Text>
           </Pressable>
-        )}
+          <Text style={styles.heroArt}>{'🐰🌷📬🌼🐰'}</Text>
+        </View>
 
-        {/* Pending requests */}
-        {status.pending.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Requests</Text>
-            {status.pending.map((req) => (
-              <View key={req.friendshipId} style={[styles.reqCard, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-                <Text style={[styles.reqName, { color: c.textPrimary }]}>{req.displayName}</Text>
-                <View style={styles.reqBtns}>
-                  <Pressable onPress={() => onRespond(req, 'decline')} style={styles.reqDecline}>
-                    <MaterialIcons name="close" size={20} color={c.textMuted} />
+        {/* ---- brown panel ---- */}
+        <View style={styles.panel}>
+          <View style={styles.card}>
+            {/* add flow */}
+            {adding && (
+              <View style={styles.addBox}>
+                <TextInput
+                  value={code}
+                  onChangeText={(t) => setCode(t.toUpperCase())}
+                  placeholder="Enter a friend's code"
+                  placeholderTextColor="#B8A588"
+                  autoCapitalize="characters"
+                  maxLength={6}
+                  style={styles.input}
+                />
+                <View style={styles.addRow}>
+                  <Pressable onPress={shareCode} style={styles.shareBtn}>
+                    <MaterialIcons name="ios-share" size={15} color="#7A5A36" />
+                    <Text style={styles.shareBtnText}>My code: {status.inviteCode ?? '——'}</Text>
                   </Pressable>
-                  <Pressable onPress={() => onRespond(req, 'accept')} style={[styles.reqAccept, { backgroundColor: c.brand.primary }]}>
-                    <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                  <Pressable onPress={onAdd} style={styles.sendBtn}>
+                    <Text style={styles.sendBtnText}>Send</Text>
                   </Pressable>
                 </View>
               </View>
-            ))}
-          </View>
-        )}
+            )}
 
-        {/* Emoji Messages (friends' day at a glance) */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Emoji Messages</Text>
-          {status.friends.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                Add a friend to see a glimpse of their day — the little things they gathered, no words attached.
+            {/* pending requests */}
+            {showPending && (
+              <View style={styles.pendingBox}>
+                {pendingCount === 0 ? (
+                  <Text style={styles.pendingEmpty}>No requests waiting.</Text>
+                ) : (
+                  status.pending.map((req) => (
+                    <View key={req.friendshipId} style={styles.reqRow}>
+                      <Text style={styles.reqName}>{req.displayName}</Text>
+                      <View style={styles.reqBtns}>
+                        <Pressable onPress={() => onRespond(req, 'decline')} style={styles.reqDecline} hitSlop={6}>
+                          <MaterialIcons name="close" size={18} color="#9A8770" />
+                        </Pressable>
+                        <Pressable onPress={() => onRespond(req, 'accept')} style={styles.reqAccept} hitSlop={6}>
+                          <MaterialIcons name="check" size={18} color="#FFFFFF" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+
+            {/* header row */}
+            <View style={styles.panelHeader}>
+              <Text style={styles.panelTitle}>
+                {view === 'feed' ? 'Latest memories of your friends' : 'Your friends'}
               </Text>
-            </View>
-          ) : (
-            status.friends.map((f) => (
               <Pressable
-                key={f.userId}
-                onPress={() => router.push({ pathname: '/(main)/friend-detail', params: { userId: f.userId, name: f.displayName } })}
-                style={[styles.friendRow, { backgroundColor: c.bgCard, borderColor: c.border }]}
+                onPress={() => { void haptics.light(); setView((v) => (v === 'feed' ? 'list' : 'feed')); }}
+                style={styles.listChip}
               >
-                <View style={[styles.avatar, { backgroundColor: c.bgCardAlt }]}>
-                  <MaterialIcons name="pets" size={20} color={c.brand.primary} />
-                </View>
-                <Text style={[styles.friendName, { color: c.textPrimary }]}>{f.displayName}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
-                  {f.todayEmoji.length === 0 ? (
-                    <Text style={[styles.noUpdate, { color: c.textMuted }]}>No update yet today</Text>
-                  ) : (
-                    f.todayEmoji.map((e, i) => <Text key={i} style={styles.emoji}>{e}</Text>)
-                  )}
-                </ScrollView>
+                <Text style={styles.listChipEmoji}>{'🐶'}</Text>
+                <Text style={styles.listChipText}>{view === 'feed' ? 'Friends List' : 'Messages'}</Text>
               </Pressable>
-            ))
-          )}
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listScroll}>
+              {view === 'feed' ? (
+                feed.length === 0 ? (
+                  <Text style={styles.emptyText}>
+                    {status.friends.length === 0
+                      ? 'Invite your friends to share memory items together!'
+                      : 'Nothing new from your friends yet — check back later.'}
+                  </Text>
+                ) : (
+                  feed.map((e) => {
+                    const key = `${e.friendUserId}:${e.reflectId}`;
+                    const expanded = expandedKey === key;
+                    return (
+                      <Pressable key={key} onPress={() => onFeedRow(e)} style={styles.feedRow}>
+                        <View style={styles.feedMain}>
+                          <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                          <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
+                          <View style={styles.emojiRow}>
+                            {e.emoji.slice(0, 4).map((em, i) => (
+                              <View key={i} style={styles.emojiChip}><Text style={styles.emojiText}>{em}</Text></View>
+                            ))}
+                            {e.emoji.length > 4 && (
+                              <View style={styles.emojiChip}><Text style={styles.moreText}>+{e.emoji.length - 4}</Text></View>
+                            )}
+                          </View>
+                          <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
+                          {e.unread && <View style={styles.unreadDot} />}
+                        </View>
+                        {expanded && e.details && (
+                          <View style={styles.detailBox}>
+                            {e.details.map((d, i) => (
+                              <Text key={i} style={styles.detailText}>
+                                {e.emoji[e.itemIds.indexOf(d.itemId)] ?? '✨'}  {d.text}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })
+                )
+              ) : status.friends.length === 0 ? (
+                <Text style={styles.emptyText}>No friends yet — share your code to get started!</Text>
+              ) : (
+                status.friends.map((f) => (
+                  <View key={f.userId} style={styles.friendRow}>
+                    <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                    <Text style={styles.feedName} numberOfLines={1}>{f.displayName}</Text>
+                    <View style={{ flex: 1 }} />
+                    <Pressable
+                      onPress={() => {
+                        void haptics.light();
+                        router.push({
+                          // typedRoutes learns new files on next dev run
+                          pathname: '/(main)/friend-memories' as never,
+                          params: { friendUserId: f.userId, friendName: f.displayName },
+                        } as never);
+                      }}
+                      style={styles.memBtn}
+                    >
+                      <Text style={styles.memBtnText}>Memories</Text>
+                    </Pressable>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 16 },
-  scroll: { paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, paddingBottom: 12, paddingHorizontal: 4 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold' },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#6B4226' },
 
-  inviteCard: { borderRadius: 16, borderWidth: 1, padding: 16, alignItems: 'center', marginBottom: 12 },
-  inviteLabel: { fontSize: 12, fontFamily: 'Inter_500Medium' },
-  inviteCode: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', letterSpacing: 6, marginVertical: 6 },
-  inviteActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  inviteAction: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8 },
-  inviteActionText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  // Hero — sky-to-grass placeholder until the meadow illustration lands.
+  hero: { height: 210, backgroundColor: '#BDE3E0', paddingHorizontal: 16, paddingTop: 6 },
+  heroTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heroTitle: { fontSize: 28, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', flex: 1, textAlign: 'center', marginLeft: 84 },
+  heroIcons: { flexDirection: 'row', gap: 8 },
+  heroIconBtn: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  heroIconEmoji: { fontSize: 20 },
+  badge: {
+    position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#E5483C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
+  },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontFamily: 'Inter_800ExtraBold' },
+  addPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 26, paddingHorizontal: 22, paddingVertical: 12,
+    marginTop: 14,
+    shadowColor: '#2B2B2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  addPlus: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#2E8B57', alignItems: 'center', justifyContent: 'center' },
+  addPillText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  heroArt: { fontSize: 34, textAlign: 'center', marginTop: 18, letterSpacing: 6 },
 
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, paddingVertical: 15, marginBottom: 16 },
-  addBtnText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-  addBox: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 16, gap: 12 },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 18, fontFamily: 'Inter_700Bold', letterSpacing: 4, textAlign: 'center' },
-  addRow: { flexDirection: 'row', gap: 12 },
-  addCancel: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12 },
-  addCancelText: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  addConfirm: { flex: 2, alignItems: 'center', borderRadius: 12, paddingVertical: 12 },
-  addConfirmText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  panel: { flex: 1, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 },
+  card: { flex: 1, backgroundColor: '#F5EBDD', borderRadius: 24, padding: 14 },
 
-  section: { marginTop: 8, marginBottom: 4 },
-  sectionLabel: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 10, marginLeft: 4 },
+  addBox: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12, marginBottom: 12 },
+  input: {
+    borderWidth: 1.5, borderColor: '#E8D5B0', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 3, textAlign: 'center', color: '#4A3423',
+  },
+  addRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, gap: 10 },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  shareBtnText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#7A5A36' },
+  sendBtn: { backgroundColor: '#8A6240', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 },
+  sendBtnText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
 
-  reqCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 10 },
-  reqName: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
+  pendingBox: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12, marginBottom: 12, gap: 8 },
+  pendingEmpty: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#9A8770', textAlign: 'center' },
+  reqRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  reqName: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2B2B2B' },
   reqBtns: { flexDirection: 'row', gap: 10 },
-  reqDecline: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  reqAccept: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  reqDecline: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F0EAE0', alignItems: 'center', justifyContent: 'center' },
+  reqAccept: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#2E8B57', alignItems: 'center', justifyContent: 'center' },
 
-  friendRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 10, height: 64 },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  friendName: { fontSize: 15, fontFamily: 'Inter_700Bold', width: 80 },
-  emojiScroll: { flex: 1 },
-  emoji: { fontSize: 24, marginRight: 6 },
-  noUpdate: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  panelTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', flexShrink: 1 },
+  listChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#4A3220', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  listChipEmoji: { fontSize: 15 },
+  listChipText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
 
-  empty: { paddingHorizontal: 20, paddingVertical: 24, alignItems: 'center' },
-  emptyText: { fontSize: 14, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 21 },
+  listScroll: { paddingBottom: 12, gap: 10 },
+  emptyText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63', textAlign: 'center', lineHeight: 21, paddingVertical: 30, paddingHorizontal: 16 },
+
+  feedRow: {
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 12,
+    shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  feedMain: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
+  avatarEmoji: { fontSize: 22 },
+  feedName: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', maxWidth: 86 },
+  emojiRow: { flexDirection: 'row', gap: 4, flex: 1, justifyContent: 'center' },
+  emojiChip: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
+  emojiText: { fontSize: 19 },
+  moreText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8B7FD9' },
+  timeText: { fontSize: 11, fontFamily: 'Inter_500Medium', color: '#9A8770' },
+  unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#E5483C' },
+
+  detailBox: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F0EAE0', paddingTop: 10, gap: 6 },
+  detailText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#4A3B2A', lineHeight: 20 },
+
+  friendRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 12,
+  },
+  memBtn: { backgroundColor: '#F0885C', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
+  memBtnText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
 });

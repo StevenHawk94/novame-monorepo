@@ -98,3 +98,135 @@ export async function respondFriend(
     return { ok: false, error: 'network' };
   }
 }
+
+// ---- v2: Messages feed, privacy, shared memory boxes (PRD §6) -------------
+
+export interface FeedDetail {
+  itemId: string;
+  text: string;
+}
+
+export interface FeedEntry {
+  friendUserId: string;
+  friendName: string;
+  reflectId: string;
+  createdAt: string;
+  itemIds: string[];
+  emoji: string[]; // decorated from the shared dictionary
+  /** Present ONLY when that friend opted into sharing details (server-enforced). */
+  details: FeedDetail[] | null;
+  sharesDetails: boolean;
+  unread: boolean;
+}
+
+/** The Messages list: friends' recent memories, unread first. */
+export async function fetchFriendFeed(): Promise<FeedEntry[]> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return [];
+  try {
+    const data = await apiClient.get<{ success?: boolean; feed?: Omit<FeedEntry, 'emoji'>[] }>(
+      `/api/friends/feed?userId=${encodeURIComponent(userId)}`,
+    );
+    if (!data.success || !data.feed) return [];
+    return data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
+  } catch {
+    return [];
+  }
+}
+
+/** Move the unread cursor for one friend (fire-and-forget safe). */
+export async function markFriendRead(friendUserId: string): Promise<void> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return;
+  try {
+    await apiClient.post('/api/friends/read', { userId, friendUserId });
+  } catch {
+    // cursor is cosmetic; next fetch just shows unread again
+  }
+}
+
+/** My detail-sharing switch (default false — private). */
+export async function fetchSharePrivacy(): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    const data = await apiClient.get<{ success?: boolean; share?: boolean }>(
+      `/api/friends/privacy?userId=${encodeURIComponent(userId)}`,
+    );
+    return !!data.share;
+  } catch {
+    return false;
+  }
+}
+
+export async function setSharePrivacy(share: boolean): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    const data = await apiClient.post<{ success?: boolean }>('/api/friends/privacy', {
+      userId,
+      share,
+    });
+    return !!data.success;
+  } catch {
+    return false;
+  }
+}
+
+export interface SharedBoxItem {
+  id: string;
+  authorUserId: string;
+  itemId: string;
+  emoji: string;
+  description: string;
+  source: 'manual' | 'reflect';
+  createdAt: string;
+}
+
+/** The shared memory box with one friend. */
+export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxItem[]> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return [];
+  try {
+    const data = await apiClient.get<{
+      success?: boolean;
+      items?: { id: string; author_user_id: string; item_id: string; description: string; source: 'manual' | 'reflect'; created_at: string }[];
+    }>(`/api/friends/box?userId=${encodeURIComponent(userId)}&friendUserId=${encodeURIComponent(friendUserId)}`);
+    if (!data.success || !data.items) return [];
+    return data.items.map((r) => ({
+      id: r.id,
+      authorUserId: r.author_user_id,
+      itemId: r.item_id,
+      emoji: emojiFor(r.item_id),
+      description: r.description,
+      source: r.source,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Create-flow: free text → rule-matched items land in the pair's box. */
+export async function createSharedMemories(
+  friendUserId: string,
+  text: string,
+): Promise<{ ok: boolean; createdCount: number }> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, createdCount: 0 };
+  try {
+    const data = await apiClient.post<{ success?: boolean; created?: unknown[] }>(
+      '/api/friends/box',
+      { userId, friendUserId, text },
+    );
+    return { ok: !!data.success, createdCount: data.created?.length ?? 0 };
+  } catch {
+    return { ok: false, createdCount: 0 };
+  }
+}
