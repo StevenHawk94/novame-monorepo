@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { MONSTER_HP, applyHit, monsterTier, isTamed, type SkillKind } from '@novame/engine';
+import { MONSTER_HP, SKILL_DAMAGE, applyHit, monsterTier, isTamed, type SkillKind } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -76,11 +76,23 @@ export default function TameEnemyScreen() {
     }, []),
   );
 
-  // Skills for the active monster's dimension = its battle pool.
+  // Battle pool = the monster's dimension skills PLUS mega cards (dimension
+  // null — the 9th library group, usable against every monster per Q13).
   const pool = useMemo(
-    () => (active ? allSkills.filter((s) => s.dimension === active.dimension) : []),
+    () =>
+      active
+        ? allSkills.filter((s) => s.dimension === active.dimension || s.dimension == null)
+        : [],
     [active, allSkills],
   );
+
+  /** Damage class: library tier wins; legacy rows fall back to rarity. */
+  function kindFor(sk: Skill): SkillKind {
+    if (sk.tier === 'advanced') return 'hidden';
+    if (sk.tier === 'intermediate') return 'intermediate';
+    if (sk.tier === 'normal') return 'learned';
+    return sk.rarity === 'secret' ? 'hidden' : 'learned';
+  }
 
   function startBattle(m: MonsterStatus) {
     // Every monster is playable: Just Breathe is the default when a dimension
@@ -203,7 +215,7 @@ export default function TameEnemyScreen() {
   if (phase === 'battle' && active) {
     const visible = showDrawer ? pool : pool.slice(0, 9);
     const powerFor = (sk: Skill | 'default') =>
-      sk === 'default' ? 10 : sk.rarity === 'secret' ? 50 : 20;
+      sk === 'default' ? 10 : SKILL_DAMAGE[kindFor(sk)];
     return (
       <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={exit} style={styles.back} hitSlop={12}>
@@ -244,14 +256,14 @@ export default function TameEnemyScreen() {
                   onPress={() =>
                     onCardTap(
                       sk.skillId,
-                      () => hit(sk.rarity === 'secret' ? 'hidden' : 'learned', sk.skillId),
+                      () => hit(kindFor(sk), sk.skillId),
                       () => setZoomSkill(sk),
                     )
                   }
                   style={[styles.skillChip, sk.rarity === 'secret' && styles.skillChipSecret]}
                 >
                   <View style={styles.lvBadge}>
-                    <Text style={styles.lvBadgeText}>{sk.rarity === 'secret' ? 'Lv.5' : 'Lv.2'}</Text>
+                    <Text style={styles.lvBadgeText}>{sk.tier === 'advanced' || sk.rarity === 'secret' ? 'Lv.5' : sk.tier === 'intermediate' ? 'Lv.3' : 'Lv.2'}</Text>
                   </View>
                   <Text style={styles.skillChipText} numberOfLines={2}>{sk.title}</Text>
                 </Pressable>

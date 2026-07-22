@@ -13,14 +13,19 @@ import { supabase } from './supabase';
 
 export type SkillRarity = 'normal' | 'secret';
 export type SkillSource = 'self' | 'friend';
+/** Damage class from the fixed 81-card library (P1). Absent on legacy rows. */
+export type SkillTier = 'normal' | 'intermediate' | 'advanced';
 
 export interface Skill {
   skillId: string;
-  dimension: string;
+  /** null for mega (universal) cards — they sit outside the 8 dimensions. */
+  dimension: string | null;
   title: string;
   body: string;
   rarity: SkillRarity;
   source: SkillSource;
+  tier?: SkillTier | null;
+  cardId?: string | null;
   createdAt: string;
 }
 

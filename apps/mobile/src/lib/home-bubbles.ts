@@ -19,8 +19,10 @@
  */
 import { ITEM_DICTIONARY } from '@novame/engine';
 
+import { apiClient } from './api';
 import { fetchFriends } from './friends-api';
 import { storage } from './storage';
+import { supabase } from './supabase';
 import { kHomeBubblesState } from '../shared/storage/keys';
 
 export const MAX_BUBBLES = 5;
@@ -78,6 +80,32 @@ export function markPopped(bubbleId: string): void {
   const state = readPopped();
   if (!state.popped.includes(bubbleId)) state.popped.push(bubbleId);
   storage.set(kHomeBubblesState.name, JSON.stringify(state));
+}
+
+/**
+ * Claim the +5 pop reward server-side (pop_bubble RPC: friendship check,
+ * per-bubble idempotency, 5-a-day cap all live there). Fire-and-forget from
+ * the pop animation — a failed claim costs the reward, never the visual.
+ * Returns the awarded amount (0 on any rejection) so the caller may toast it.
+ */
+export async function submitBubblePop(bubble: MemoryBubble): Promise<number> {
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return 0;
+    const data = await apiClient.post<{ success?: boolean; xp_awarded?: number }>(
+      '/api/bubbles/pop',
+      {
+        userId,
+        friendUserId: bubble.friendUserId,
+        itemId: bubble.itemId,
+        localDate: localDateStr(),
+      },
+    );
+    return data.success ? data.xp_awarded ?? 0 : 0;
+  } catch {
+    return 0; // already_popped / cap / offline — all fine, purely cosmetic
+  }
 }
 
 /**

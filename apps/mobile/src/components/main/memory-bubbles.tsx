@@ -28,7 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { haptics } from '@/lib/haptics';
-import { markPopped, type MemoryBubble } from '@/lib/home-bubbles';
+import { markPopped, submitBubblePop, type MemoryBubble } from '@/lib/home-bubbles';
 
 const BUBBLE_SIZE = 84;
 
@@ -59,6 +59,9 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
   const handlePopFinished = useCallback(
     (bubble: MemoryBubble) => {
       markPopped(bubble.id);
+      // Server-authoritative +5 (idempotent, capped). Fire-and-forget: the
+      // pop already happened visually; the balance shows it on next refresh.
+      void submitBubblePop(bubble);
       onPopped(bubble.id);
       if (bubble.isPublic) setCard(bubble);
     },
