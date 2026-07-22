@@ -20,8 +20,9 @@ export const TRUE_NORTH_PHRASES: Record<DimensionId, string> = {
   connection: 'Showing up for people I love',
 };
 
-/** Gems for a rank (1-based). Top three only: +50 / +30 / +10, else 0. */
-export const TRUE_NORTH_GEMS_BY_RANK: readonly number[] = [50, 30, 10];
+/** Gems for a rank (1-based). Top three only: +30 / +20 / +10, else 0.
+ *  (PRD §1.2 — was 50/30/10 before the v2.0 economy pass.) */
+export const TRUE_NORTH_GEMS_BY_RANK: readonly number[] = [30, 20, 10];
 
 /**
  * The gem hits for a ranking (array of dimension ids, best first). Returns the

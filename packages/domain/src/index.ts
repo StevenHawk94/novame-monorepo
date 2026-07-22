@@ -10,3 +10,4 @@ export * from './home-scenes';
 export * from './bubble-lines';
 export * from './quests';
 export * from './guess-replies';
+export * from './skill-library';

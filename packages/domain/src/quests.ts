@@ -8,8 +8,11 @@
  * Task copy is first-draft and meant to be tuned; the numbers (rewards, days)
  * live here so they can be balanced in one place.
  */
-export const CLOVERS_PER_TASK = 5;
-export const COMPLETION_BONUS = 120;
+// PRD §8.1 (2026-07 ruling Q16): each daily check-off pays 30 — and because
+// only one task can be checked per calendar day, the effective daily cap is
+// also 30. Finishing all seven inside the week pays 200 on top.
+export const CLOVERS_PER_TASK = 30;
+export const COMPLETION_BONUS = 200;
 export const PLAN_DAYS = 7;
 export const TASKS_TO_PICK = 7;
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gemStage, gemsForReflect } from './gems';
 
 describe('gemStage', () => {
-  it.each([[0, 1], [599, 1], [600, 2], [2000, 3], [4500, 4], [9000, 5], [50000, 5]])(
+  it.each([[0, 1], [500, 1], [501, 2], [2000, 2], [2001, 3], [4000, 3], [4001, 4], [6000, 4], [6001, 5], [9999, 5], [10000, 6], [50000, 6]])(
     '%i gems -> stage %i',
     (g, s) => expect(gemStage(g)).toBe(s),
   );

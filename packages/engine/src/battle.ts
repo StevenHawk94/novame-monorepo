@@ -8,34 +8,53 @@
  * tier from remaining HP. Pure and deterministic.
  */
 
-export const MONSTER_HP = 60;
+// PRD §2.4 (v2.0 economy pass): base HP 50, and each cleared stage adds 100.
+// "Stage" = how many times THIS monster was tamed before (the natural reading
+// of "每过一个阶段" — pending explicit product confirmation, tracked as plan
+// doc Q15; the function keeps the policy in one place either way).
+export const MONSTER_HP = 50;
 
-export type SkillKind = 'default' | 'learned' | 'hidden';
+export function monsterHpForStage(timesTamedBefore: number): number {
+  return MONSTER_HP + 100 * Math.max(0, timesTamedBefore);
+}
 
-// Line 129: default 10 (x6 to clear), learned 20 (x3), hidden 50 (x2).
+// Four tiers per PRD §2.4: 默认 10 / 普通 20 / 中级 30 / 高级 50. The fixed
+// 81-card library assigns each card a tier; 'learned'/'hidden' remain as the
+// legacy names for normal/advanced so existing rows keep working.
+export type SkillKind = 'default' | 'learned' | 'intermediate' | 'hidden';
+
 export const SKILL_DAMAGE: Record<SkillKind, number> = {
   default: 10,
   learned: 20,
+  intermediate: 30,
   hidden: 50,
 };
 
 export type MonsterTier = 'healthy' | 'wounded' | 'defeated';
 
 /**
- * Visual tier from remaining HP. Line 129 gives the bands as ">66% / 33-66% /
- * <=0", but a 60-HP scale has no integer at 66% (39.6) or 33% (19.8), so
- * fractions invite off-by-one arguments about 40 HP (66.7%) vs 39 (65%). The
- * bands are defined on integer HP instead:
+ * Visual tier from remaining HP, defined on integer HP (fractions of the
+ * 50-HP scale invite off-by-one arguments):
  *
- *   >= 40 HP        healthy    (40 = ceil(60 * 2/3): "at least two thirds")
- *    1..39 HP       wounded    (the middle band runs to 1, not to 33%)
+ *   >= 34 HP        healthy    (34 = ceil(50 * 2/3): "at least two thirds")
+ *    1..33 HP       wounded    (the middle band runs to 1, not to 33%)
  *   <= 0 HP         defeated   (the tamed terminal state, not a visual band)
+ *
+ * Staged monsters (HP > 50) reuse the same fraction of their own max via
+ * monsterTierFor.
  */
-export const HEALTHY_MIN_HP = 40;
+export const HEALTHY_MIN_HP = 34;
 
 export function monsterTier(remainingHp: number): MonsterTier {
   if (remainingHp <= 0) return 'defeated';
   if (remainingHp >= HEALTHY_MIN_HP) return 'healthy';
+  return 'wounded';
+}
+
+/** Tier against an arbitrary max HP (staged monsters). */
+export function monsterTierFor(remainingHp: number, maxHp: number): MonsterTier {
+  if (remainingHp <= 0) return 'defeated';
+  if (remainingHp >= Math.ceil((maxHp * 2) / 3)) return 'healthy';
   return 'wounded';
 }
 
