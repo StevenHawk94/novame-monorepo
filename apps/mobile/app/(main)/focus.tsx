@@ -127,22 +127,24 @@ export default function FocusScreen() {
                 <OffsetCard
                   key={s.id}
                   color={TEAL_OFFSET}
+                  offset={4}
                   radius={26}
                   onPress={() => startScene(s)}
                   disabled={locked || noTrack}
-                  cardStyle={[styles.sceneCard, (locked || noTrack) && { opacity: 0.6 }]}
+                  cardStyle={styles.sceneCard}
                 >
                   <View style={styles.sceneText}>
-                    <Text style={styles.sceneTitle}>{s.title}</Text>
+                    <View style={styles.sceneTitleRow}>
+                      <Text style={styles.sceneTitle}>{s.title}</Text>
+                      {locked && (
+                        <View style={styles.plusBadge}>
+                          <Text style={styles.plusBadgeText}>Plus</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.sceneSub}>{s.subtitle}</Text>
                   </View>
-                  {locked ? (
-                    <MaterialIcons name="lock" size={26} color="#9BB8B4" />
-                  ) : noTrack ? (
-                    <Text style={styles.soon}>Soon</Text>
-                  ) : (
-                    <Image source={FOCUS_SCENE_ICONS[s.id]} style={styles.sceneIcon} resizeMode="contain" />
-                  )}
+                  <Image source={FOCUS_SCENE_ICONS[s.id]} style={styles.sceneIcon} resizeMode="contain" />
                 </OffsetCard>
               );
             })}
@@ -156,6 +158,8 @@ export default function FocusScreen() {
   const progress = status.duration > 0 ? status.currentTime / status.duration : 0;
   return (
     <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
+      {/* 50% black scrim so white text/controls read over the art. */}
+      <View style={styles.scrim} pointerEvents="none" />
       <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
         <Pressable onPress={exit} style={styles.backLight} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={22} color={GREEN} />
@@ -220,13 +224,17 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 32 },
   sceneCard: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 20, paddingHorizontal: 20, gap: 12,
+    paddingVertical: 16, paddingHorizontal: 20, gap: 12,
   },
   sceneText: { flex: 1 },
+  sceneTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sceneTitle: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: GREEN },
-  sceneSub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 4, lineHeight: 20 },
-  sceneIcon: { width: 64, height: 64 },
-  soon: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#9BB8B4' },
+  // Locked = a quiet Plus tag beside the title, no dimming (design note).
+  plusBadge: { backgroundColor: '#F0C24B', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  plusBadgeText: { fontSize: 11, fontFamily: 'Inter_800ExtraBold', color: '#5A3A1B' },
+  sceneSub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 3, lineHeight: 19 },
+  sceneIcon: { width: 58, height: 58 },
+  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
 
   playBottom: { flex: 1, justifyContent: 'flex-end' },
   playTitle: { fontSize: 34, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },

@@ -199,7 +199,8 @@ export default function ReflectScreen() {
                 <OffsetCard
                   key={p.id}
                   color={TAN_OFFSET}
-                  radius={26}
+                  offset={4}
+                  radius={30}
                   onPress={() => choosePrompt(p.id)}
                   cardStyle={styles.promptCard}
                 >
@@ -237,6 +238,7 @@ export default function ReflectScreen() {
               </View>
               <OffsetCard
                 color={YELLOW_DROP}
+                offset={4}
                 radius={22}
                 onPress={() => void onSubmit()}
                 disabled={submitting || body.trim().length === 0}
@@ -338,6 +340,7 @@ export default function ReflectScreen() {
                     <SpringPop>
                       <OffsetCard
                         color={YELLOW_DROP}
+                        offset={4}
                         radius={22}
                         onPress={() => void onSaveEdits()}
                         cardStyle={styles.yellowBtn}
@@ -354,6 +357,7 @@ export default function ReflectScreen() {
                       <SpringPop delay={320}>
                         <OffsetCard
                           color={YELLOW_DROP}
+                          offset={4}
                           radius={22}
                           onPress={() => { void haptics.light(); setEditing(true); }}
                           cardStyle={styles.yellowBtn}
@@ -364,6 +368,7 @@ export default function ReflectScreen() {
                       <SpringPop delay={420}>
                         <OffsetCard
                           color={ORANGE_DROP}
+                          offset={4}
                           radius={22}
                           onPress={onClaimItems}
                           cardStyle={styles.orangeBtn}
@@ -376,6 +381,7 @@ export default function ReflectScreen() {
                     <SpringPop delay={320}>
                       <OffsetCard
                         color={YELLOW_DROP}
+                        offset={4}
                         radius={22}
                         onPress={onClaimItems}
                         cardStyle={styles.yellowBtn}
@@ -391,6 +397,7 @@ export default function ReflectScreen() {
             /* ---- phase 4: skill reveal (fireworks + spring pop) ---- */
             result?.generatedSkill && (
               <View style={styles.claimWrap}>
+                <View style={styles.scrim} pointerEvents="none" />
                 <FireworksBurst />
                 <View style={styles.skillWrap}>
                   <Text style={styles.skillStar}>{'⭐'}</Text>
@@ -414,6 +421,7 @@ export default function ReflectScreen() {
                   <SpringPop delay={300}>
                     <OffsetCard
                       color={YELLOW_DROP}
+                      offset={4}
                       radius={22}
                       onPress={() => router.back()}
                       cardStyle={styles.yellowBtn}
@@ -444,14 +452,15 @@ const styles = StyleSheet.create({
   lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginTop: 6, marginBottom: 4 },
   leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginBottom: 18 },
   pickScroll: { paddingBottom: 40 },
+  // Mock 1:1: white face, tan drop, generous radius, compact height.
   promptCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 18, paddingHorizontal: 20,
+    paddingVertical: 14, paddingHorizontal: 22,
   },
   promptTextWrap: { flex: 1 },
-  promptTitle: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: INK },
-  promptText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#4A3B2A', marginTop: 4, lineHeight: 20 },
-  promptIcon: { width: 58, height: 58 },
+  promptTitle: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: INK },
+  promptText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#3E3229', marginTop: 3, lineHeight: 19 },
+  promptIcon: { width: 54, height: 54 },
 
   writeWrap: { flex: 1, paddingTop: 6 },
   chosenPrompt: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 12, lineHeight: 24 },
@@ -508,6 +517,7 @@ const styles = StyleSheet.create({
   editHint: { fontSize: 12, fontFamily: 'Inter_500Medium', color: '#8A7A63', textAlign: 'center', marginTop: 2 },
 
   claimBtns: { gap: 6, paddingTop: 6 },
+  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', marginHorizontal: -20 },
   yellowBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: YELLOW },
   yellowBtnText: { color: INK, fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
   orangeBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: ORANGE },
