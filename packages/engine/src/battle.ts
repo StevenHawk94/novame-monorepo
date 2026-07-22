@@ -31,13 +31,24 @@ export function monsterHpForStage(timesTamedBefore: number): number {
 // constant, nothing else. The threshold rule is mirrored in the
 // record_tame_points RPC (closed form) so the pay stays atomic server-side.
 export const BATTLE_MILESTONE_BASE = 1000;
-export const BATTLE_MILESTONE_REWARD = 50; // placeholder — tune freely
+export const BATTLE_MILESTONE_REWARD = 200; // per the prep-screen mock (🍀 x200)
 
 /** How many milestones a running points total has fully crossed. */
 export function battleMilestoneCount(totalPoints: number): number {
   if (totalPoints <= 0) return 0;
   // Largest n with base * n(n+1)/2 <= points.
   return Math.floor((Math.sqrt(1 + (8 * totalPoints) / BATTLE_MILESTONE_BASE) - 1) / 2);
+}
+
+/** The n-th milestone's cumulative threshold (1-based): base * n(n+1)/2. */
+export function battleMilestoneThreshold(n: number): number {
+  return (BATTLE_MILESTONE_BASE * n * (n + 1)) / 2;
+}
+
+/** The next `count` un-crossed thresholds, for the prep screen's track. */
+export function nextMilestoneThresholds(totalPoints: number, count: number): number[] {
+  const crossed = battleMilestoneCount(totalPoints);
+  return Array.from({ length: count }, (_, i) => battleMilestoneThreshold(crossed + i + 1));
 }
 
 // Four tiers per PRD §2.4: 默认 10 / 普通 20 / 中级 30 / 高级 50. The fixed

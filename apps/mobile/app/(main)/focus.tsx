@@ -11,6 +11,8 @@ import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-ba
 import { haptics } from '../../src/lib/haptics';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { submitFocus } from '../../src/lib/focus-api';
+import { CloverBurst } from '../../src/components/main/clover-burst';
+import { XP_RULES } from '@novame/engine';
 
 // Test-phase bundled audio: the first track of the free scenes. Remote R2
 // tracks replace these later; a scene with no local track yet just shows a
@@ -158,6 +160,7 @@ export default function FocusScreen() {
 
         {completed ? (
           <View style={styles.doneBlock}>
+            <CloverBurst amount={XP_RULES.focus.award} />
             <MaterialIcons name="check-circle" size={64} color={kit.accent} />
             <Text style={[styles.doneText, { color: kit.text }]}>Done. Carry that with you.</Text>
             <Pressable onPress={() => router.back()} style={[styles.doneBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>

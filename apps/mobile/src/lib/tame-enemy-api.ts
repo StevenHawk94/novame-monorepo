@@ -57,19 +57,19 @@ export function clearTameEnemyLocal(): void {
   storage.remove(kTameEnemyState.name);
 }
 
-export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; doneToday: boolean; perEnemyDaily: boolean }> {
+export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; doneToday: boolean; perEnemyDaily: boolean; battlePoints: number }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return { monsters: [], doneToday: false, perEnemyDaily: false };
+  if (!userId) return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
 
   try {
-    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean }>(
+    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean; battlePoints?: number }>(
       `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
     );
-    if (!data.success || !data.monsters) return { monsters: [], doneToday: false, perEnemyDaily: false };
-    return { monsters: data.monsters, doneToday: !!data.doneToday, perEnemyDaily: !!data.perEnemyDaily };
+    if (!data.success || !data.monsters) return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
+    return { monsters: data.monsters, doneToday: !!data.doneToday, perEnemyDaily: !!data.perEnemyDaily, battlePoints: data.battlePoints ?? 0 };
   } catch {
-    return { monsters: [], doneToday: false, perEnemyDaily: false };
+    return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
   }
 }
 

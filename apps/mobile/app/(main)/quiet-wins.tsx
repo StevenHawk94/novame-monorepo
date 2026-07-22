@@ -14,6 +14,7 @@ import { QUIET_WINS, quietWinsFeedback } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { submitQuietWins } from '../../src/lib/quiet-wins-api';
+import { CloverBurst } from '../../src/components/main/clover-burst';
 
 type Phase = 'pick' | 'done';
 
@@ -146,9 +147,7 @@ export default function QuietWinsScreen() {
       ) : (
         <View style={styles.feedbackWrap}>
           <ScrollView contentContainerStyle={styles.feedbackScroll} showsVerticalScrollIndicator={false}>
-            {xpAwarded > 0 && (
-              <Text style={[styles.xp, { color: kit.accent }]}>+{xpAwarded} XP</Text>
-            )}
+            {xpAwarded > 0 && <CloverBurst amount={xpAwarded} />}
             {feedback?.lines.map((line, i) => (
               <Text key={i} style={[styles.feedbackLine, { color: kit.text }]}>
                 {line}
@@ -220,7 +219,6 @@ const styles = StyleSheet.create({
 
   feedbackWrap: { flex: 1 },
   feedbackScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 40 },
-  xp: { fontSize: 32, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', marginBottom: 28 },
   feedbackLine: {
     fontSize: 18,
     fontFamily: 'Inter_500Medium',

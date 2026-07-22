@@ -1,10 +1,14 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { MONSTER_HP, SKILL_DAMAGE, applyHit, monsterHpForStage, monsterTierFor, isTamed, type SkillKind } from '@novame/engine';
+import {
+  MONSTER_HP, SKILL_DAMAGE, applyHit, monsterHpForStage, monsterTierFor, isTamed,
+  nextMilestoneThresholds, BATTLE_MILESTONE_REWARD, type SkillKind,
+} from '@novame/engine';
+import { SKILL_LIBRARY_SIZE } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -39,6 +43,7 @@ export default function TameEnemyScreen() {
   const [monsters, setMonsters] = useState<MonsterStatus[]>([]);
   const [doneToday, setDoneToday] = useState(false);
   const [perEnemyDaily, setPerEnemyDaily] = useState(false);
+  const [battlePoints, setBattlePoints] = useState(0);
   const [firstTime, setFirstTime] = useState(false);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [allSkills, setAllSkills] = useState<Skill[]>(() => getCachedSkills());
@@ -55,16 +60,30 @@ export default function TameEnemyScreen() {
   const [reward, setReward] = useState<number | null>(null);
   const [milestoneBonus, setMilestoneBonus] = useState(0);
 
+  // BUG FIX: opening the zoom on the FIRST tap covered the hand with the
+  // overlay, so the second tap always hit the backdrop and the double tap
+  // never reached the card. The zoom now waits out the double-tap window
+  // (pending timer); a second tap inside the window cancels it and applies.
+  // The zoomed card is also directly tappable to apply (belt and braces).
   const DOUBLE_TAP_MS = 280;
+  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function onCardTap(id: string, apply: () => void, zoom: () => void) {
     const now = Date.now();
     if (lastTap.id === id && now - lastTap.at < DOUBLE_TAP_MS) {
+      if (zoomTimer.current) {
+        clearTimeout(zoomTimer.current);
+        zoomTimer.current = null;
+      }
       setLastTap({ id: '', at: 0 });
       setZoomSkill(null);
       apply();
     } else {
       setLastTap({ id, at: now });
-      zoom();
+      if (zoomTimer.current) clearTimeout(zoomTimer.current);
+      zoomTimer.current = setTimeout(() => {
+        zoomTimer.current = null;
+        zoom();
+      }, DOUBLE_TAP_MS + 20);
     }
   }
 
@@ -74,6 +93,7 @@ export default function TameEnemyScreen() {
         setMonsters(r.monsters);
         setDoneToday(r.doneToday);
         setPerEnemyDaily(r.perEnemyDaily);
+        setBattlePoints(r.battlePoints);
         setFirstTime(r.monsters.every((m) => !m.tamedBefore));
       });
       void fetchSkills().then(setAllSkills);
@@ -206,18 +226,66 @@ export default function TameEnemyScreen() {
     );
   }
 
-  // ---- PREP ----
+  // ---- PREP (design: Enemy selected — data + progress before the fight) ----
   if (phase === 'prep' && active) {
+    const nextThresholds = nextMilestoneThresholds(battlePoints, 3);
+    const skillsOwned = Math.min(allSkills.length, SKILL_LIBRARY_SIZE);
     return (
-      <View style={[styles.root, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
-        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
+      <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
+        {/* name bubble */}
+        <View style={styles.prepNameBubble}>
+          <Text style={styles.prepNameText}>{active.name}</Text>
+        </View>
+
         <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
-        <Text style={[styles.prepText, { color: kit.text }]}>{active.prep}</Text>
-        <Pressable onPress={() => { void haptics.medium(); setPhase('battle'); }} style={[styles.beginBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
-          <Text style={styles.beginText}>Begin</Text>
+        <Text style={[styles.prepQuote, { color: kit.text }]}>“{active.prep}”</Text>
+
+        {/* milestone track: next three 🍀 rewards */}
+        <View style={styles.milestoneTrack}>
+          {nextThresholds.map((t, i) => (
+            <View key={t} style={styles.milestoneNodeWrap}>
+              {i > 0 && <View style={styles.milestoneLink} />}
+              <View style={styles.milestoneNode}>
+                <Text style={styles.milestoneClover}>{'🍀'}</Text>
+                <Text style={styles.milestoneReward}>x{BATTLE_MILESTONE_REWARD}</Text>
+              </View>
+              <Text style={styles.milestoneThreshold}>{t.toLocaleString()}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* history + skills chips */}
+        <View style={styles.prepStatsBar}>
+          <View style={styles.prepStatLeft}>
+            <Text style={styles.prepStatEmoji}>{'🦖'}</Text>
+            <View>
+              <Text style={styles.prepStatTitle}>Tame History</Text>
+              <View style={styles.ptsChip}>
+                <Text style={styles.ptsChipText}>{battlePoints.toLocaleString()} pts</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.prepStatRight}>
+            <Text style={styles.prepStatEmoji}>{'🃏'}</Text>
+            <View>
+              <Text style={styles.prepStatTitle}>Skills</Text>
+              <Text style={styles.prepStatValue}>{skillsOwned}/{SKILL_LIBRARY_SIZE}</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={[styles.prepHint, { color: kit.textSub }]}>
+          Tame the monster to quiet {active.name.toLowerCase()}.
+        </Text>
+
+        <Pressable
+          onPress={() => { void haptics.medium(); setPhase('battle'); }}
+          style={({ pressed }) => [styles.startTamingBtn, pressed && { transform: [{ translateY: 2 }] }]}
+        >
+          <Text style={styles.startTamingText}>Start Taming</Text>
         </Pressable>
-        <Pressable onPress={exit} style={styles.exitLink}>
-          <Text style={[styles.exitText, { color: kit.textMuted }]}>Not now</Text>
+        <Pressable onPress={exit} style={[styles.prepClose, { marginBottom: insets.bottom + 8 }]} hitSlop={10}>
+          <Text style={styles.prepCloseX}>✕</Text>
         </Pressable>
       </View>
     );
@@ -294,7 +362,15 @@ export default function TameEnemyScreen() {
         {/* Card zoom overlay (design: card details) */}
         {zoomSkill !== null && (
           <Pressable style={styles.zoomBackdrop} onPress={() => setZoomSkill(null)}>
-            <View style={styles.zoomCard}>
+            <Pressable
+              style={styles.zoomCard}
+              onPress={() => {
+                const z = zoomSkill;
+                setZoomSkill(null);
+                if (z === 'default') hit('default');
+                else if (z) hit(kindFor(z), z.skillId);
+              }}
+            >
               <Text style={styles.zoomTitle}>
                 {zoomSkill === 'default' ? 'Just Breathe' : zoomSkill.title}
               </Text>
@@ -306,8 +382,8 @@ export default function TameEnemyScreen() {
               <View style={styles.powerPill}>
                 <Text style={styles.powerPillText}>{'⚔️'} {powerFor(zoomSkill)} Power</Text>
               </View>
-            </View>
-            <Text style={styles.zoomHint}>Double tap the card in your hand to apply it.</Text>
+            </Pressable>
+            <Text style={styles.zoomHint}>Tap the card to apply it — or tap outside to go back.</Text>
           </Pressable>
         )}
       </View>
@@ -365,8 +441,48 @@ const styles = StyleSheet.create({
   tamedBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
   tamedBadgeText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
 
-  prepEmoji: { fontSize: 88 },
-  prepText: { fontSize: 22, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 30, paddingHorizontal: 20 },
+  prepRoot: { flex: 1, backgroundColor: '#F6E7C8', paddingHorizontal: 20, alignItems: 'center' },
+  prepNameBubble: {
+    backgroundColor: '#EFD9A8', borderRadius: 18, paddingHorizontal: 24, paddingVertical: 12,
+    marginBottom: 14,
+  },
+  prepNameText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  prepEmoji: { fontSize: 96 },
+  prepQuote: { fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 24, paddingHorizontal: 16, marginTop: 10 },
+  milestoneTrack: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 22, paddingHorizontal: 8 },
+  milestoneNodeWrap: { alignItems: 'center', flex: 1 },
+  milestoneLink: { position: 'absolute', top: 22, right: '58%', left: '-42%', height: 3, backgroundColor: '#E0CBA0' },
+  milestoneNode: { alignItems: 'center' },
+  milestoneClover: { fontSize: 32 },
+  milestoneReward: { position: 'absolute', top: -6, right: -26, fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  milestoneThreshold: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 6 },
+  prepStatsBar: {
+    flexDirection: 'row', width: '100%', marginTop: 18,
+    backgroundColor: '#FBF2DE', borderRadius: 16, borderWidth: 1.5, borderColor: '#E0CBA0',
+    padding: 12, justifyContent: 'space-between',
+  },
+  prepStatLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1.4 },
+  prepStatRight: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' },
+  prepStatEmoji: { fontSize: 26 },
+  prepStatTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  prepStatValue: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 2 },
+  ptsChip: { backgroundColor: '#4A3220', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginTop: 3, alignSelf: 'flex-start' },
+  ptsChipText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
+  prepHint: { fontSize: 15, fontFamily: 'Inter_700Bold', textAlign: 'center', marginTop: 18 },
+  startTamingBtn: {
+    marginTop: 14, backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16,
+    alignItems: 'center', alignSelf: 'stretch',
+    borderWidth: 2, borderColor: '#2B2B2B',
+    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 3,
+  },
+  startTamingText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  prepClose: {
+    marginTop: 14, width: 52, height: 52, borderRadius: 26,
+    backgroundColor: '#FFFFFF', borderWidth: 2.5, borderColor: '#2B2B2B',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  prepCloseX: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   beginBtn: { paddingHorizontal: 48, paddingVertical: 18, borderRadius: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   beginText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   exitLink: { paddingVertical: 8 },

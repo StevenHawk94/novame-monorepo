@@ -7,6 +7,8 @@ import { LENS_THEMES, NEW_LENS_PROMPT } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
+import { CloverBurst } from '../../src/components/main/clover-burst';
+import { XP_RULES } from '@novame/engine';
 
 type Phase = 'theme' | 'card' | 'loading' | 'done';
 
@@ -175,6 +177,7 @@ export default function NewLensScreen() {
 
       {phase === 'done' && (
         <View style={styles.center}>
+          <CloverBurst amount={XP_RULES.newLens.award} />
           <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           <Pressable
             onPress={() => router.back()}

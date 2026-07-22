@@ -79,6 +79,11 @@ export async function GET(request) {
       ? tamedTodayIds.size >= MONSTERS.length
       : tamesToday >= 1
 
+    // Battle points total for the prep screen's milestone track.
+    const { data: bp } = await supabase
+      .from('battle_progress').select('points').eq('user_id', userId).maybeSingle()
+    const battlePoints = Number(bp?.points ?? 0)
+
     const monsters = MONSTERS.map((m) => ({
       id: m.id,
       name: m.name,
@@ -91,7 +96,7 @@ export async function GET(request) {
       tamedToday: tamedTodayIds.has(m.id),
     }))
 
-    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily })
+    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily, battlePoints })
   } catch (err) {
     console.error('[tame-enemy/status] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

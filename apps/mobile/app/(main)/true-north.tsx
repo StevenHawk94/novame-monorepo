@@ -7,11 +7,15 @@ import {
   DIMENSION_IDS,
   DIMENSIONS,
   TRUE_NORTH_PHRASES,
+  TRUE_NORTH_FOCUS_POINTS,
+  TRUE_NORTH_RELEASE_POINTS,
   TRUE_NORTH_GEMS_BY_RANK,
   type DimensionId,
 } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
+import { CloverBurst } from '../../src/components/main/clover-burst';
+import { XP_RULES } from '@novame/engine';
 import {
   fetchStatus,
   getCachedStatus,
@@ -203,75 +207,62 @@ function Reveal({
   colors: typeof KIT_PALETTE;
   onDone: () => void;
 }) {
+  void lastRanking; // the mock drops the week-over-week comparison
+  void c;
   const top = ranking[0];
   const bottom = ranking[ranking.length - 1];
+  const medals = ['🏆', '🥈', '🥉'];
 
-  // Biggest mover vs last week, if there is a last week.
-  const mover = useMemo((): {
-    dim: DimensionId;
-    from: number;
-    to: number;
-    delta: number;
-  } | null => {
-    if (!lastRanking) return null;
-    const moves = ranking
-      .map((d, to) => {
-        const fromIdx = lastRanking.indexOf(d);
-        return { dim: d, from: fromIdx + 1, to: to + 1, delta: fromIdx - to };
-      })
-      .filter((m) => m.from > 0 && m.delta !== 0);
-    if (moves.length === 0) return null;
-    return moves.reduce((a, b) => (Math.abs(b.delta) > Math.abs(a.delta) ? b : a));
-  }, [ranking, lastRanking]);
+  // Podium card, extracted so the 2-1-3 layout below stays readable.
+  const podium = (rank: number) => (
+    <View style={[styles.podiumCard, rank === 0 && styles.podiumCardFirst]}>
+      <Text style={styles.podiumMedal}>{medals[rank]}</Text>
+      <Text style={styles.podiumPhrase}>{TRUE_NORTH_PHRASES[ranking[rank]]}</Text>
+    </View>
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
-      {ranking.map((d, i) => {
-        const gems = i < TRUE_NORTH_GEMS_BY_RANK.length ? TRUE_NORTH_GEMS_BY_RANK[i] : 0;
-        return (
-          <View
-            key={d}
-            style={[
-              styles.revealRow,
-              {
-                backgroundColor: i < 3 ? c.card : 'transparent',
-                borderColor: i < 3 ? c.border : 'transparent',
-                opacity: 1 - i * 0.07,
-              },
-            ]}
-          >
-            <View style={[styles.revealDot, { backgroundColor: DIMENSIONS[d].color }]} />
-            <Text style={[styles.revealPhrase, { color: c.text }]}>{TRUE_NORTH_PHRASES[d]}</Text>
-            {gems > 0 && <Text style={[styles.revealGems, { color: c.accent }]}>+{gems}</Text>}
-          </View>
-        );
-      })}
-
-      <View style={styles.interpret}>
-        <Text style={[styles.interpretLine, { color: c.text }]}>
-          Right now, {TRUE_NORTH_PHRASES[top].toLowerCase()} is what’s pulling most of your attention.
-        </Text>
-        <Text style={[styles.interpretLine, { color: c.textSub }]}>
-          {TRUE_NORTH_PHRASES[bottom]} is sitting quietly in the background — not gone, just waiting.
-        </Text>
-        {mover && (
-          <Text style={[styles.interpretLine, { color: c.textSub }]}>
-            {TRUE_NORTH_PHRASES[mover.dim]}{' '}
-            {mover.delta > 0
-              ? `climbed from #${mover.from} to #${mover.to} — seems like it’s been on your mind more.`
-              : `slipped from #${mover.from} to #${mover.to}.`}
-          </Text>
-        )}
-        <Text style={[styles.interpretFooter, { color: c.textMuted }]}>
-          If anything here feels unclear, Reflect is always here to help you find your own answer.
+      {/* Design: brown banner headline */}
+      <View style={styles.revealBanner}>
+        <Text style={styles.revealBannerText}>
+          The True North direction of your life at the moment
         </Text>
       </View>
 
-      <Pressable
-        onPress={onDone}
-        style={({ pressed }) => [styles.primaryBtn, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}
-      >
-        <Text style={styles.primaryBtnText}>Done</Text>
+      <CloverBurst amount={XP_RULES.trueNorth.award} />
+
+      {/* Podium: #1 raised center, #2 left, #3 right */}
+      <View style={styles.podiumFirstRow}>{podium(0)}</View>
+      <View style={styles.podiumRow}>
+        {podium(1)}
+        {podium(2)}
+      </View>
+
+      {/* What matters most — the #1 dimension's focus list */}
+      <View style={styles.revealCard}>
+        <View style={styles.revealCardHeader}>
+          <Text style={styles.revealCardEmoji}>{'🎯'}</Text>
+          <Text style={styles.revealCardTitle}>What matters to you most:</Text>
+        </View>
+        {TRUE_NORTH_FOCUS_POINTS[top].map((line) => (
+          <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
+        ))}
+      </View>
+
+      {/* What to release — the last-ranked dimension */}
+      <View style={styles.revealCard}>
+        <View style={styles.revealCardHeader}>
+          <Text style={styles.revealCardEmoji}>{'🍃'}</Text>
+          <Text style={styles.revealCardTitle}>What you should forgive and forget</Text>
+        </View>
+        {TRUE_NORTH_RELEASE_POINTS[bottom].map((line) => (
+          <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
+        ))}
+      </View>
+
+      <Pressable onPress={onDone} style={styles.revealClose} hitSlop={10}>
+        <Text style={styles.revealCloseX}>✕</Text>
       </Pressable>
     </ScrollView>
   );
@@ -294,15 +285,33 @@ const styles = StyleSheet.create({
   rankBadgeText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
   rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 
-  revealScroll: { paddingVertical: 20, paddingBottom: 40 },
-  revealRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 10, shadowColor: '#5A4A2B', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  revealDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
-  revealPhrase: { flex: 1, fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  revealGems: { fontSize: 15, fontFamily: 'Inter_700Bold' },
-
-  interpret: { marginTop: 20, marginBottom: 28 },
-  interpretLine: { fontSize: 16, fontFamily: 'Inter_500Medium', lineHeight: 24, marginBottom: 14 },
-  interpretFooter: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21, marginTop: 6 },
+  revealScroll: { paddingVertical: 16, paddingBottom: 40, gap: 14 },
+  revealBanner: { backgroundColor: '#4A3220', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18 },
+  revealBannerText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', lineHeight: 22 },
+  podiumFirstRow: { alignItems: 'center' },
+  podiumRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  podiumCard: {
+    flex: 1, backgroundColor: '#FDF6E9', borderRadius: 18, borderWidth: 2, borderColor: '#2B2B2B',
+    paddingVertical: 18, paddingHorizontal: 12, alignItems: 'center',
+    shadowColor: '#2B2B2B', shadowOpacity: 0.9, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 2,
+  },
+  podiumCardFirst: { minWidth: '60%', flex: 0 },
+  podiumMedal: { fontSize: 30, marginTop: -32, marginBottom: 4 },
+  podiumPhrase: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center', lineHeight: 22 },
+  revealCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 2, borderColor: '#2B2B2B',
+    padding: 18,
+  },
+  revealCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  revealCardEmoji: { fontSize: 20 },
+  revealCardTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  bullet: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 26, marginLeft: 8 },
+  revealClose: {
+    alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: '#1B1B1B',
+    alignItems: 'center', justifyContent: 'center', marginTop: 4,
+  },
+  revealCloseX: { color: '#F6D68A', fontSize: 20, fontFamily: 'Inter_800ExtraBold' },
 
   primaryBtn: { borderRadius: 16, paddingVertical: 17, alignItems: 'center', borderWidth: 2, borderColor: '#2B2B2B', shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },
   startBtn: { borderRadius: 18, paddingVertical: 18, paddingHorizontal: 64, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 3, height: 4 } },
