@@ -27,11 +27,18 @@ export default function NewLensScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function pickTheme(dimension: string) {
-    setActiveTheme(dimension);
+  // Design: two-step — tap a capsule to select it, then "Spark Me" fetches
+  // the card (was a one-tap instant fetch before the mock landed).
+  function pickTheme(dimension: string) {
+    setActiveTheme((cur) => (cur === dimension ? null : dimension));
+    setError(null);
+  }
+
+  async function sparkMe() {
+    if (!activeTheme) return;
     setPhase('loading');
     setError(null);
-    const next = await getNextCard(dimension);
+    const next = await getNextCard(activeTheme);
     if (next) {
       setCard(next);
       setPhase('card');
@@ -83,21 +90,39 @@ export default function NewLensScreen() {
             Not sure? Just pick whatever feels closest.
           </Text>
           <View style={styles.capsules}>
-            {LENS_THEMES.map((t) => (
-              <Pressable
-                key={t.dimension}
-                onPress={() => pickTheme(t.dimension)}
-                style={({ pressed }) => [
-                  styles.capsule,
-                  { backgroundColor: kit.card, borderColor: kit.border, opacity: pressed ? 0.8 : 1 },
-                ]}
-              >
-                <Text style={[styles.capsuleText, { color: kit.text }]}>{t.capsule}</Text>
-              </Pressable>
-            ))}
+            {LENS_THEMES.map((t) => {
+              const on = activeTheme === t.dimension;
+              return (
+                <Pressable
+                  key={t.dimension}
+                  onPress={() => pickTheme(t.dimension)}
+                  style={({ pressed }) => [
+                    styles.capsule,
+                    { backgroundColor: kit.card, opacity: pressed ? 0.8 : 1 },
+                    on && styles.capsuleOn,
+                  ]}
+                >
+                  <Text style={[styles.capsuleText, { color: kit.text }, on && styles.capsuleTextOn]}>
+                    {t.capsule}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
           {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
         </ScrollView>
+      )}
+      {phase === 'theme' && (
+        <Pressable
+          onPress={sparkMe}
+          disabled={!activeTheme}
+          style={({ pressed }) => [
+            styles.sparkBtn,
+            { opacity: !activeTheme ? 0.45 : pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 },
+          ]}
+        >
+          <Text style={styles.sparkText}>Spark Me</Text>
+        </Pressable>
       )}
 
       {phase === 'loading' && (
@@ -109,8 +134,12 @@ export default function NewLensScreen() {
       {phase === 'card' && card && (
         <View style={styles.cardWrap}>
           <ScrollView contentContainerStyle={styles.cardScroll} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.cardHeadline, { color: kit.text }]}>{card.headline}</Text>
-            <Text style={[styles.cardBody, { color: kit.textSub }]}>{card.body}</Text>
+            {/* Design: telescope perched on a cream sticker card. */}
+            <Text style={styles.cardArt}>{'🔭'}</Text>
+            <View style={styles.knowledgeCard}>
+              <Text style={[styles.cardHeadline, { color: kit.text }]}>{card.headline}</Text>
+              <Text style={[styles.cardBody, { color: kit.textSub }]}>{card.body}</Text>
+            </View>
           </ScrollView>
           {error && <Text style={[styles.error, { color: kit.danger }]}>{error}</Text>}
           <View style={[styles.responseRow, { marginBottom: insets.bottom + 12 }]}>
@@ -119,26 +148,25 @@ export default function NewLensScreen() {
               disabled={submitting}
               style={({ pressed }) => [
                 styles.responseBtn,
-                styles.responseGhost,
-                { borderColor: kit.border, opacity: submitting ? 0.5 : pressed ? 0.8 : 1 },
+                styles.responseDifferent,
+                { opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
               ]}
             >
-              <Text style={[styles.responseGhostText, { color: kit.textSub }]}>
-                I see it differently
-              </Text>
+              <Text style={styles.responseText}>I see it differently</Text>
             </Pressable>
             <Pressable
               onPress={() => respond('resonates')}
               disabled={submitting}
               style={({ pressed }) => [
                 styles.responseBtn,
-                { backgroundColor: kit.accent, opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
+                styles.responseResonates,
+                { opacity: submitting ? 0.5 : pressed ? 0.85 : 1 },
               ]}
             >
               {submitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#2B2B2B" />
               ) : (
-                <Text style={styles.responseText}>That resonates</Text>
+                <Text style={styles.responseResonatesText}>This resonates</Text>
               )}
             </Pressable>
           </View>
@@ -170,19 +198,42 @@ const styles = StyleSheet.create({
   title: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', lineHeight: 34, marginBottom: 8 },
   sub: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21, marginBottom: 26 },
   capsules: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  capsule: { borderWidth: 0, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 18, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  capsule: { borderWidth: 2, borderColor: 'transparent', borderRadius: 22, paddingHorizontal: 20, paddingVertical: 18, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  capsuleOn: { borderColor: '#2B2B2B', shadowOpacity: 0.9, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, shadowColor: '#2B2B2B' },
   capsuleText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
+  capsuleTextOn: { fontFamily: 'Inter_700Bold' },
+  // Design: orange "Spark Me" sticker button pinned at the bottom.
+  sparkBtn: {
+    backgroundColor: '#F0885C', borderRadius: 16, paddingVertical: 17,
+    alignItems: 'center', alignSelf: 'center', minWidth: 220,
+    borderWidth: 2, borderColor: '#2B2B2B',
+    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 3,
+  },
+  sparkText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
 
-  cardWrap: { flex: 1, paddingTop: 20 },
-  cardScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20 },
+  cardWrap: { flex: 1, paddingTop: 8 },
+  cardScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 12 },
+  cardArt: { fontSize: 44, textAlign: 'center', marginBottom: -14, zIndex: 1 },
+  // Design: cream knowledge card with a dark outline.
+  knowledgeCard: {
+    backgroundColor: '#FDF6E5', borderRadius: 24, borderWidth: 2, borderColor: '#2B2B2B',
+    paddingVertical: 40, paddingHorizontal: 22,
+  },
   cardHeadline: { fontSize: 26, fontFamily: 'Inter_700Bold', lineHeight: 34, marginBottom: 20, textAlign: 'center' },
   cardBody: { fontSize: 17, fontFamily: 'Inter_400Regular', lineHeight: 27, textAlign: 'center' },
   responseRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   responseRowSafe: {},
-  responseBtn: { flex: 1, borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
-  responseGhost: { borderWidth: 1 },
-  responseGhostText: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  responseText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
+  responseBtn: {
+    flex: 1, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#2B2B2B',
+    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 3,
+  },
+  responseDifferent: { backgroundColor: '#F0885C' },
+  responseResonates: { backgroundColor: '#F7CE46' },
+  responseText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
+  responseResonatesText: { color: '#2B2B2B', fontSize: 15, fontFamily: 'Inter_700Bold' },
 
   doneText: { fontSize: 24, fontFamily: 'Inter_700Bold' },
   doneBtn: { borderRadius: 18, paddingVertical: 18, paddingHorizontal: 40, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
