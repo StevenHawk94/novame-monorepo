@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert, Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View,
+  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -101,7 +102,15 @@ export default function FriendsScreen() {
   );
 
   return (
-    <ImageBackground source={BACKGROUNDS.friends} style={styles.root} resizeMode="cover">
+    <View style={styles.root}>
+      {/* Top-anchored art: the meadow/mailbox top stays fully visible; any
+          overflow crops from the BOTTOM (design note). */}
+      <ExpoImage
+        source={BACKGROUNDS.friends}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition="top"
+      />
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* header: centered title, mail + gear at right */}
         <View style={styles.headerRow}>
@@ -185,12 +194,12 @@ export default function FriendsScreen() {
           </View>
         )}
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#6B4226' },
 
   headerRow: { height: 52, justifyContent: 'center' },
   title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center' },

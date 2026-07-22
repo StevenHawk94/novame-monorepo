@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert, Image, ImageBackground, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View,
+  Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -76,7 +77,13 @@ export default function FriendAddScreen() {
   }
 
   return (
-    <ImageBackground source={BACKGROUNDS.friends} style={styles.root} resizeMode="cover">
+    <View style={styles.root}>
+      <ExpoImage
+        source={BACKGROUNDS.friends}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition="top"
+      />
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <View style={styles.headerRow}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
@@ -158,12 +165,12 @@ export default function FriendAddScreen() {
           ))}
         </ScrollView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#6B4226' },
   headerRow: { height: 52, justifyContent: 'center' },
   backBtn: {
     position: 'absolute', left: 14, top: 4,

@@ -61,10 +61,10 @@ export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
 
 /** Friends Cave art set (design: friends mocks). */
 export const FRIEND_ICONS = {
-  friendList: require('../../assets/Icons/friend list.png'),
-  sharedMemories: require('../../assets/Icons/shared memories.png'),
+  friendList: require('../../assets/Icons/friend-list.png'),
+  sharedMemories: require('../../assets/Icons/shared-memories.png'),
   memory: require('../../assets/Icons/memory.png'),
-  calendar: require('../../assets/Icons/calender.png'),
+  calendar: require('../../assets/Icons/calendar.png'),
   setting: require('../../assets/Icons/setting.png'),
 } as const;
 
