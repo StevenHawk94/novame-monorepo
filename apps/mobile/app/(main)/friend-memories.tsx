@@ -1,24 +1,27 @@
 import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable,
+  ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable,
   ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
+import { FRIEND_ICONS } from '@/lib/icons';
 import {
   createSharedMemories, fetchSharedBox, type SharedBoxItem,
 } from '@/lib/friends-api';
 
 /**
- * The shared memory box with one friend (design: Shared memeories.png /
- * Create shared memories.png). Same visual grammar as Bags — a grid of the
- * pair's items — plus the Create New flow: paste/write a memory, the rule
- * matcher turns it into items for BOTH of you (PRD 6.3). AI-refined
- * descriptions are the later Plus pass; the matched excerpt is the baseline.
+ * Shared memories (mocks 1:1). Grid view: memory-book header ("Your memories
+ * with {name}"), avatar, the orange Create New button, the category filter
+ * bar, then a 6-across grid of item tiles (blank until the item art lands —
+ * tapping one still shows its memory text). Create view: the brown room with
+ * a white paper card — type the memory, we match the items for both of you.
  */
+type Mode = 'grid' | 'create';
+
 export default function FriendMemoriesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -28,8 +31,8 @@ export default function FriendMemoriesScreen() {
   }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'your friend';
 
+  const [mode, setMode] = useState<Mode>('grid');
   const [items, setItems] = useState<SharedBoxItem[]>([]);
-  const [creating, setCreating] = useState(false);
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,7 +56,7 @@ export default function FriendMemoriesScreen() {
       return;
     }
     setText('');
-    setCreating(false);
+    setMode('grid');
     if (res.createdCount === 0) {
       Alert.alert(
         'No items matched',
@@ -65,117 +68,180 @@ export default function FriendMemoriesScreen() {
     }
   }
 
-  return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        {/* header */}
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-            <MaterialIcons name="arrow-back" size={24} color="#6B5A45" />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={2}>
-              {'📔'} Your memories with {name}
-            </Text>
+  // ---- CREATE (mock: brown room, white paper, Create button, X) ----
+  if (mode === 'create') {
+    return (
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={[styles.createRoot, { paddingTop: insets.top + 26 }]}>
+          <View style={styles.paperWrap}>
+            <Image source={FRIEND_ICONS.memory} style={styles.paperBook} resizeMode="contain" />
+            <View style={styles.paper}>
+              <TextInput
+                style={styles.paperInput}
+                placeholder="Simply type anything you remember with your friend, and we will do the rest to create a bunch of memories items for you two."
+                placeholderTextColor="#9A9A9A"
+                value={text}
+                onChangeText={(t) => setText(t.slice(0, 3000))}
+                multiline
+                autoFocus
+                textAlignVertical="top"
+              />
+            </View>
           </View>
+
           <Pressable
-            onPress={() => { void haptics.light(); setCreating((v) => !v); }}
-            style={styles.createBtn}
+            onPress={() => void onCreate()}
+            disabled={text.trim().length < 4 || submitting}
+            style={({ pressed }) => [
+              styles.createBtn,
+              { opacity: text.trim().length < 4 ? 0.6 : 1 },
+              pressed && { transform: [{ translateY: 2 }] },
+            ]}
           >
-            <Text style={styles.createBtnText}>{creating ? 'Close' : 'Create New'}</Text>
+            {submitting ? (
+              <ActivityIndicator color="#1B1B1B" />
+            ) : (
+              <Text style={styles.createBtnText}>Create</Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            onPress={() => { void haptics.light(); setMode('grid'); }}
+            style={[styles.createClose, { marginBottom: insets.bottom + 14 }]}
+            hitSlop={10}
+          >
+            <MaterialIcons name="close" size={26} color="#4A3220" />
           </Pressable>
         </View>
+      </KeyboardAvoidingView>
+    );
+  }
 
-        {/* create flow */}
-        {creating && (
-          <View style={styles.createBox}>
-            <TextInput
-              style={styles.input}
-              placeholder={`Write the memory — the dinner, the trip, the little things you shared with ${name}…`}
-              placeholderTextColor="#B8A588"
-              value={text}
-              onChangeText={(t) => setText(t.slice(0, 3000))}
-              multiline
-              autoFocus
-              textAlignVertical="top"
-            />
-            <Pressable
-              onPress={onCreate}
-              disabled={text.trim().length < 4 || submitting}
-              style={[styles.saveBtn, { opacity: text.trim().length < 4 ? 0.5 : 1 }]}
-            >
-              {submitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveBtnText}>Turn it into items</Text>
-              )}
-            </Pressable>
-          </View>
-        )}
-
-        {/* grid */}
-        {items.length === 0 && !creating ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>{'🎁'}</Text>
-            <Text style={styles.emptyText}>
-              Nothing here yet — create a shared memory, or pick "{'I have done something with my friend'}" when you reflect.
-            </Text>
-          </View>
-        ) : (
-          <ScrollView contentContainerStyle={styles.gridScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.grid}>
-              {items.map((it) => (
-                <Pressable
-                  key={it.id}
-                  onPress={() => Alert.alert(it.description || 'A shared memory', undefined)}
-                  style={styles.cell}
-                >
-                  <View style={styles.tile}>
-                    <Text style={styles.tileEmoji}>{it.emoji}</Text>
-                  </View>
-                  <Text style={styles.tileDesc} numberOfLines={2}>{it.description}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-        )}
+  // ---- GRID (mock: header + filter bar + 6-across blank tiles) ----
+  return (
+    <SafeAreaView edges={['top']} style={styles.root}>
+      <View style={styles.header}>
+        <Image source={FRIEND_ICONS.memory} style={styles.headerBook} resizeMode="contain" />
+        <Text style={styles.headerTitle} numberOfLines={2}>
+          Your memories{'\n'}with {name}
+        </Text>
+        <View style={styles.headerAvatar}><Text style={styles.headerAvatarEmoji}>{'🐰'}</Text></View>
+        <Pressable
+          onPress={() => { void haptics.light(); setMode('create'); }}
+          style={({ pressed }) => [styles.newBtn, pressed && { transform: [{ translateY: 2 }] }]}
+        >
+          <Text style={styles.newBtnText}>Create New</Text>
+        </Pressable>
       </View>
-    </KeyboardAvoidingView>
+
+      {/* category filter bar — the "all" pill; categories light up with the item art */}
+      <View style={styles.filterBar}>
+        <View style={styles.filterAll}>
+          <MaterialIcons name="apps" size={22} color="#FFFFFF" />
+        </View>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <View key={i} style={styles.filterSlot}>
+            <MaterialIcons name="circle" size={10} color="#E3CBA4" />
+          </View>
+        ))}
+      </View>
+
+      {items.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyEmoji}>{'🎁'}</Text>
+          <Text style={styles.emptyText}>
+            Nothing here yet — create a shared memory, or pick "{'I have done something with my friend'}" when you reflect.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.gridScroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.grid}>
+            {items.map((it) => (
+              <Pressable
+                key={it.id}
+                onPress={() => Alert.alert(it.description || 'A shared memory', undefined)}
+                style={styles.cell}
+              >
+                {/* blank until the item art lands */}
+                <View style={styles.tile} />
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+
+      <Pressable
+        onPress={() => { void haptics.light(); router.back(); }}
+        style={[styles.gridBack, { bottom: insets.bottom + 14 }]}
+        hitSlop={10}
+      >
+        <MaterialIcons name="close" size={24} color="#FFFFFF" />
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FBEFF0', paddingHorizontal: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  back: { paddingVertical: 6 },
-  title: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', lineHeight: 24 },
-  createBtn: {
-    backgroundColor: '#F0885C', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 11,
-    shadowColor: '#2B2B2B', shadowOpacity: 0.3, shadowRadius: 0, shadowOffset: { width: 1, height: 2 },
-    elevation: 2,
-  },
-  createBtnText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
+  root: { flex: 1, backgroundColor: '#FDEDEE', paddingHorizontal: 16 },
 
-  createBox: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, marginBottom: 14 },
-  input: {
-    minHeight: 110, fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 22, color: '#2B2B2B',
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 14 },
+  headerBook: { width: 52, height: 52 },
+  headerTitle: { flex: 1, fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', lineHeight: 26 },
+  headerAvatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
+  headerAvatarEmoji: { fontSize: 24 },
+  newBtn: {
+    backgroundColor: '#F0885C', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 13,
+    shadowColor: '#C9552F', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  saveBtn: {
-    backgroundColor: '#8A6240', borderRadius: 14, paddingVertical: 13, alignItems: 'center', marginTop: 8,
-  },
-  saveBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  newBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold' },
 
-  gridScroll: { paddingBottom: 28 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  cell: { width: '31%', marginBottom: 16, alignItems: 'center' },
-  tile: {
-    width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F4F1F8',
+  filterBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FBF3D8', borderRadius: 22, borderWidth: 2, borderColor: '#3A2E1A',
+    paddingHorizontal: 10, paddingVertical: 8, marginBottom: 16,
+  },
+  filterAll: {
+    width: 62, height: 40, borderRadius: 20, backgroundColor: '#4A3423',
     alignItems: 'center', justifyContent: 'center',
   },
-  tileEmoji: { fontSize: 34 },
-  tileDesc: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#6B5A45', marginTop: 6, textAlign: 'center' },
+  filterSlot: { flex: 1, alignItems: 'center' },
+
+  gridScroll: { paddingBottom: 90 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  cell: { width: '15.5%', aspectRatio: 0.85, marginBottom: 10 },
+  tile: { flex: 1, borderRadius: 14, backgroundColor: '#EFEDF6' },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 32, paddingBottom: 80 },
   emptyEmoji: { fontSize: 44 },
   emptyText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63', textAlign: 'center', lineHeight: 21 },
+
+  gridBack: {
+    position: 'absolute', alignSelf: 'center',
+    width: 52, height: 52, borderRadius: 26, backgroundColor: '#4A3220',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  // ---- create ----
+  createRoot: { flex: 1, backgroundColor: '#4A3220', paddingHorizontal: 22 },
+  paperWrap: { flex: 1, marginBottom: 18 },
+  paperBook: { width: 56, height: 56, alignSelf: 'center', marginBottom: -26, zIndex: 2 },
+  paper: {
+    flex: 1, backgroundColor: '#FBF7EE', borderRadius: 28, paddingTop: 40, paddingHorizontal: 20, paddingBottom: 20,
+    shadowColor: '#2B1A0E', shadowOpacity: 0.4, shadowRadius: 0, shadowOffset: { width: 0, height: 5 },
+  },
+  paperInput: { flex: 1, fontSize: 17, fontFamily: 'Inter_600SemiBold', lineHeight: 27, color: '#2B2B2B' },
+  createBtn: {
+    alignSelf: 'center', minWidth: 220, backgroundColor: '#FBCFA6',
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+    borderWidth: 2.5, borderColor: '#1B1B1B',
+    shadowColor: '#1B1B1B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 4,
+  },
+  createBtnText: { color: '#1B1B1B', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
+  createClose: {
+    alignSelf: 'center', marginTop: 16,
+    width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

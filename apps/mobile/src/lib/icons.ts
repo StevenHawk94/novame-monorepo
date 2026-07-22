@@ -59,8 +59,18 @@ export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
   9: require('../../assets/Icons/reflect-open-reflection.png'),
 };
 
+/** Friends Cave art set (design: friends mocks). */
+export const FRIEND_ICONS = {
+  friendList: require('../../assets/Icons/friend list.png'),
+  sharedMemories: require('../../assets/Icons/shared memories.png'),
+  memory: require('../../assets/Icons/memory.png'),
+  calendar: require('../../assets/Icons/calender.png'),
+  setting: require('../../assets/Icons/setting.png'),
+} as const;
+
 /** Full-bleed screen backgrounds (assets/Background). */
 export const BACKGROUNDS = {
   focus: require('../../assets/Background/focus.webp'),
   reflect: require('../../assets/Background/reflection.webp'),
+  friends: require('../../assets/Background/friends.webp'),
 } as const;

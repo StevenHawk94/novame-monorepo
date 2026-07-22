@@ -76,11 +76,14 @@ export async function GET(request) {
 
     const acceptedIds = []
     const pending = [] // requests waiting for ME to accept
+    const sentRaw = [] // requests I sent, still unanswered (Add Friends page)
     for (const r of rows || []) {
       const other = r.user_a === userId ? r.user_b : r.user_a
       if (r.status === 'accepted') acceptedIds.push(other)
       else if (r.status === 'pending' && r.requested_by !== userId) {
         pending.push({ friendshipId: r.id, userId: other })
+      } else if (r.status === 'pending' && r.requested_by === userId) {
+        sentRaw.push({ friendshipId: r.id, userId: other, createdAt: r.created_at })
       }
     }
 
@@ -118,7 +121,23 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ success: true, inviteCode, friends, pending: pendingOut })
+    // Outgoing requests' names (the mock's "Sent 2h ago / Pending" rows).
+    const sent = []
+    if (sentRaw.length > 0) {
+      const ids = sentRaw.map((p) => p.userId)
+      const { data: profs } = await supabase.from('profiles').select('id, display_name').in('id', ids)
+      const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
+      for (const p of sentRaw) {
+        sent.push({
+          friendshipId: p.friendshipId,
+          userId: p.userId,
+          displayName: nameById[p.userId] || 'Someone',
+          createdAt: p.createdAt,
+        })
+      }
+    }
+
+    return NextResponse.json({ success: true, inviteCode, friends, pending: pendingOut, sent })
   } catch (err) {
     console.error('[friends/status] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

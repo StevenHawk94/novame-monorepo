@@ -22,10 +22,19 @@ export interface PendingRequest {
   displayName: string;
 }
 
+export interface SentRequest {
+  friendshipId: string;
+  userId: string;
+  displayName: string;
+  createdAt: string;
+}
+
 export interface FriendsStatus {
   inviteCode: string | null;
   friends: FriendCard[];
   pending: PendingRequest[];
+  /** Requests I sent, still unanswered (Add Friends page's Pending rows). */
+  sent: SentRequest[];
 }
 
 function localDateStr(): string {
@@ -43,7 +52,7 @@ function emojiFor(itemId: string): string {
 export async function fetchFriends(): Promise<FriendsStatus> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return { inviteCode: null, friends: [], pending: [] };
+  if (!userId) return { inviteCode: null, friends: [], pending: [], sent: [] };
 
   try {
     const data = await apiClient.get<{
@@ -51,8 +60,9 @@ export async function fetchFriends(): Promise<FriendsStatus> {
       inviteCode?: string | null;
       friends?: { userId: string; displayName: string; todayItemIds: string[] }[];
       pending?: PendingRequest[];
+      sent?: SentRequest[];
     }>(`/api/friends/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`);
-    if (!data.success) return { inviteCode: null, friends: [], pending: [] };
+    if (!data.success) return { inviteCode: null, friends: [], pending: [], sent: [] };
     return {
       inviteCode: data.inviteCode ?? null,
       friends: (data.friends || []).map((f) => ({
@@ -60,9 +70,10 @@ export async function fetchFriends(): Promise<FriendsStatus> {
         todayEmoji: f.todayItemIds.map(emojiFor),
       })),
       pending: data.pending || [],
+      sent: data.sent || [],
     };
   } catch {
-    return { inviteCode: null, friends: [], pending: [] };
+    return { inviteCode: null, friends: [], pending: [], sent: [] };
   }
 }
 
