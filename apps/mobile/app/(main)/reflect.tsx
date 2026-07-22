@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
 
   lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginTop: 6, marginBottom: 4 },
   leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginBottom: 18 },
-  pickScroll: { paddingBottom: 40, gap: 12 },
+  pickScroll: { paddingBottom: 40, gap: 6 },
   // Mock 1:1: white face, tan drop, generous radius, compact height.
   promptCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
