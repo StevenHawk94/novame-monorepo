@@ -9,22 +9,28 @@
  *
  * scene copy is first-draft, to be tuned.
  */
+import type { DimensionId } from './dimensions';
+
 export interface FocusScene {
   id: string;
   title: string;
   subtitle: string;
   free: boolean;
+  /** PRD §1.2: a completed Focus credits its scene's dimension +10. The 1:1
+   *  mapping below is a first pass (2026-07, Q9) — product will retune; only
+   *  'anxious' → steadiness is anchored by the PRD's Anxiety↔Steadiness row. */
+  dimension: DimensionId;
 }
 
 export const FOCUS_SCENES: FocusScene[] = [
-  { id: 'work', title: 'Before a meeting', subtitle: 'Steady yourself before you walk in', free: true },
-  { id: 'focus', title: 'Before deep work', subtitle: 'Settle in and find your focus', free: true },
-  { id: 'calm', title: 'A hard conversation', subtitle: 'Ground yourself before you speak', free: true },
-  { id: 'reset', title: 'A midday reset', subtitle: 'Step out of the rush for a minute', free: false },
-  { id: 'anxious', title: 'When anxiety rises', subtitle: 'Come back to your breath', free: false },
-  { id: 'sleep', title: 'Winding down', subtitle: 'Let the day go', free: false },
-  { id: 'morning', title: 'Starting the day', subtitle: 'Set your intention', free: false },
-  { id: 'overwhelm', title: "When it's too much", subtitle: 'One thing at a time', free: false },
+  { id: 'work', title: 'Before a meeting', subtitle: 'Steady yourself before you walk in', free: true, dimension: 'confidence' },
+  { id: 'focus', title: 'Before deep work', subtitle: 'Settle in and find your focus', free: true, dimension: 'momentum' },
+  { id: 'calm', title: 'A hard conversation', subtitle: 'Ground yourself before you speak', free: true, dimension: 'connection' },
+  { id: 'reset', title: 'A midday reset', subtitle: 'Step out of the rush for a minute', free: false, dimension: 'awareness' },
+  { id: 'anxious', title: 'When anxiety rises', subtitle: 'Come back to your breath', free: false, dimension: 'steadiness' },
+  { id: 'sleep', title: 'Winding down', subtitle: 'Let the day go', free: false, dimension: 'gratitude' },
+  { id: 'morning', title: 'Starting the day', subtitle: 'Set your intention', free: false, dimension: 'direction' },
+  { id: 'overwhelm', title: "When it's too much", subtitle: 'One thing at a time', free: false, dimension: 'expression' },
 ];
 
 export const FOCUS_SCENE_BY_ID: Record<string, FocusScene> =

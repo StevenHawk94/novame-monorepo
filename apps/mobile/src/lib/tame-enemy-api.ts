@@ -21,6 +21,10 @@ export interface MonsterStatus {
   tamed: string;
   skillCount: number;
   tamedBefore: boolean;
+  /** How many times this monster was tamed — drives staged HP (50→300). */
+  tamedCount: number;
+  /** Paid users tame each enemy once a day; this flags today's use. */
+  tamedToday: boolean;
 }
 
 function localDateStr(): string {
@@ -53,19 +57,19 @@ export function clearTameEnemyLocal(): void {
   storage.remove(kTameEnemyState.name);
 }
 
-export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; doneToday: boolean }> {
+export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; doneToday: boolean; perEnemyDaily: boolean }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return { monsters: [], doneToday: false };
+  if (!userId) return { monsters: [], doneToday: false, perEnemyDaily: false };
 
   try {
-    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean }>(
+    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean }>(
       `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
     );
-    if (!data.success || !data.monsters) return { monsters: [], doneToday: false };
-    return { monsters: data.monsters, doneToday: !!data.doneToday };
+    if (!data.success || !data.monsters) return { monsters: [], doneToday: false, perEnemyDaily: false };
+    return { monsters: data.monsters, doneToday: !!data.doneToday, perEnemyDaily: !!data.perEnemyDaily };
   } catch {
-    return { monsters: [], doneToday: false };
+    return { monsters: [], doneToday: false, perEnemyDaily: false };
   }
 }
 
@@ -73,7 +77,7 @@ export async function submitTame(params: {
   monsterId: string;
   skillsUsed: string[];
   hits: number;
-}): Promise<{ ok: boolean; error?: string; xpAwarded?: number; companionXp?: number }> {
+}): Promise<{ ok: boolean; error?: string; xpAwarded?: number; companionXp?: number; milestoneBonus?: number }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
@@ -84,6 +88,7 @@ export async function submitTame(params: {
       error?: string;
       xp_awarded?: number;
       companion_xp?: number;
+      milestoneBonus?: number;
     }>('/api/tame-enemy', {
       userId,
       monsterId: params.monsterId,
@@ -92,7 +97,7 @@ export async function submitTame(params: {
       localDate: localDateStr(),
     });
     if (data.error) return { ok: false, error: data.error };
-    return { ok: true, xpAwarded: data.xp_awarded, companionXp: data.companion_xp };
+    return { ok: true, xpAwarded: data.xp_awarded, companionXp: data.companion_xp, milestoneBonus: data.milestoneBonus ?? 0 };
   } catch {
     return { ok: false, error: 'network' };
   }

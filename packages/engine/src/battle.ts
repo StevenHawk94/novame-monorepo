@@ -14,8 +14,30 @@
 // doc Q15; the function keeps the policy in one place either way).
 export const MONSTER_HP = 50;
 
+/** 2026-07 ruling (Q15 follow-up): staged HP is capped at 300. */
+export const MONSTER_HP_CAP = 300;
+
 export function monsterHpForStage(timesTamedBefore: number): number {
-  return MONSTER_HP + 100 * Math.max(0, timesTamedBefore);
+  return Math.min(MONSTER_HP_CAP, MONSTER_HP + 100 * Math.max(0, timesTamedBefore));
+}
+
+// ---- Battle points & milestone rewards (PRD §2.4 + 2026-07 ruling) --------
+// Each tame banks the defeated monster's max HP as battle points. Milestones
+// sit at GROWING intervals: the n-th gap is n × 1000, so the cumulative
+// thresholds run 1000, 3000, 6000, 10000, … (base × n(n+1)/2). Every crossed
+// milestone pays BATTLE_MILESTONE_REWARD currency.
+//
+// The reward amount is a PLACEHOLDER (product hasn't priced it); change the
+// constant, nothing else. The threshold rule is mirrored in the
+// record_tame_points RPC (closed form) so the pay stays atomic server-side.
+export const BATTLE_MILESTONE_BASE = 1000;
+export const BATTLE_MILESTONE_REWARD = 50; // placeholder — tune freely
+
+/** How many milestones a running points total has fully crossed. */
+export function battleMilestoneCount(totalPoints: number): number {
+  if (totalPoints <= 0) return 0;
+  // Largest n with base * n(n+1)/2 <= points.
+  return Math.floor((Math.sqrt(1 + (8 * totalPoints) / BATTLE_MILESTONE_BASE) - 1) / 2);
 }
 
 // Four tiers per PRD §2.4: 默认 10 / 普通 20 / 中级 30 / 高级 50. The fixed

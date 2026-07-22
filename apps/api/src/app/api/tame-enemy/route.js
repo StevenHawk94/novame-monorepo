@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { XP_RULES, GEMS_PER_DIMENSION, MONSTERS } from '@novame/engine'
+import {
+  XP_RULES, GEMS_PER_DIMENSION, MONSTERS,
+  monsterHpForStage, BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD,
+} from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -62,6 +65,19 @@ export async function POST(request) {
     const isPaid = (profile?.subscription_tier ?? 'free') !== 'free'
     const periodKey = isPaid ? `${dateStr}:${monsterId}` : dateStr
 
+    // Staged HP (Q15): this battle's max HP grows with prior tames of THIS
+    // monster (50 → 150 → 250 → 300 cap) and is what the tame banks as
+    // battle points. Counted before this tame is recorded.
+    const { data: priorRows } = await supabase
+      .from('kit_completions')
+      .select('payload')
+      .eq('user_id', userId)
+      .eq('kit', 'tame_enemy')
+    const timesTamedBefore = (priorRows || []).filter(
+      (r) => r.payload?.monster_id === monsterId,
+    ).length
+    const battlePoints = monsterHpForStage(timesTamedBefore)
+
     // PRD 1.2: taming credits the monster's dimension +10.
     const monster = MONSTERS.find((m) => m.id === monsterId)
     const gemHits = monster?.dimension
@@ -86,7 +102,32 @@ export async function POST(request) {
     if (result?.error) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
-    return NextResponse.json({ success: true, ...result })
+
+    // Bank battle points + pay any crossed milestones (best-effort — the tame
+    // itself already stands; RPC applies thresholds atomically).
+    let milestone = null
+    try {
+      const { data: mp, error: mpErr } = await supabase.rpc('record_tame_points', {
+        p_user_id: userId,
+        p_points: battlePoints,
+        p_local_date: dateStr,
+        p_iso_week: weekStr,
+        p_base: BATTLE_MILESTONE_BASE,
+        p_reward: BATTLE_MILESTONE_REWARD,
+      })
+      if (mpErr) console.warn('[tame-enemy] points skipped:', mpErr.message)
+      else if (!mp?.error) milestone = mp
+    } catch (e) {
+      console.warn('[tame-enemy] points skipped:', e && e.message)
+    }
+
+    return NextResponse.json({
+      success: true,
+      ...result,
+      battlePoints,
+      milestoneBonus: milestone?.bonus_awarded ?? 0,
+      battleTotalPoints: milestone?.points ?? null,
+    })
   } catch (err) {
     console.error('[tame-enemy] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

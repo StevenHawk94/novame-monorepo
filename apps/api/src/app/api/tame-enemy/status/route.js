@@ -49,31 +49,35 @@ export async function GET(request) {
       countByDim[s.dimension] = (countByDim[s.dimension] || 0) + 1
     }
 
-    // Which monsters have been tamed before (distinct monster_id in past
-    // tame_enemy completions' payloads).
+    // Per-monster tame history: counts drive the staged HP (50/150/250/300),
+    // today's set drives paid per-enemy availability.
     const { data: past } = await supabase
       .from('kit_completions')
-      .select('payload')
+      .select('payload, local_date')
       .eq('user_id', userId)
       .eq('kit', 'tame_enemy')
-    const tamedIds = new Set()
+    const tamedCounts = new Map()
+    const tamedTodayIds = new Set()
+    let tamesToday = 0
     for (const row of past || []) {
       const mid = row.payload?.monster_id
-      if (mid) tamedIds.add(mid)
+      if (!mid) continue
+      tamedCounts.set(mid, (tamedCounts.get(mid) || 0) + 1)
+      if (localDate && row.local_date === localDate) {
+        tamedTodayIds.add(mid)
+        tamesToday++
+      }
     }
+    // (The old .maybeSingle() here errored once paid users had >1 row a day.)
 
-    // Today's single tame spent?
-    let doneToday = false
-    if (localDate) {
-      const { data: today } = await supabase
-        .from('kit_completions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('kit', 'tame_enemy')
-        .eq('local_date', localDate)
-        .maybeSingle()
-      doneToday = !!today
-    }
+    // Tier decides the daily shape: free = one tame across all monsters,
+    // paid = one per monster (PRD benefits matrix).
+    const { data: profile } = await supabase
+      .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
+    const perEnemyDaily = (profile?.subscription_tier ?? 'free') !== 'free'
+    const doneToday = perEnemyDaily
+      ? tamedTodayIds.size >= MONSTERS.length
+      : tamesToday >= 1
 
     const monsters = MONSTERS.map((m) => ({
       id: m.id,
@@ -82,10 +86,12 @@ export async function GET(request) {
       prep: m.prep,
       tamed: m.tamed,
       skillCount: countByDim[m.dimension] || 0,
-      tamedBefore: tamedIds.has(m.id),
+      tamedBefore: (tamedCounts.get(m.id) || 0) > 0,
+      tamedCount: tamedCounts.get(m.id) || 0,
+      tamedToday: tamedTodayIds.has(m.id),
     }))
 
-    return NextResponse.json({ success: true, monsters, doneToday })
+    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily })
   } catch (err) {
     console.error('[tame-enemy/status] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

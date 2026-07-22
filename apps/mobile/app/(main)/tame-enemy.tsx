@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { MONSTER_HP, SKILL_DAMAGE, applyHit, monsterTier, isTamed, type SkillKind } from '@novame/engine';
+import { MONSTER_HP, SKILL_DAMAGE, applyHit, monsterHpForStage, monsterTierFor, isTamed, type SkillKind } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -38,10 +38,12 @@ export default function TameEnemyScreen() {
   const [phase, setPhase] = useState<Phase>('select');
   const [monsters, setMonsters] = useState<MonsterStatus[]>([]);
   const [doneToday, setDoneToday] = useState(false);
+  const [perEnemyDaily, setPerEnemyDaily] = useState(false);
   const [firstTime, setFirstTime] = useState(false);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [allSkills, setAllSkills] = useState<Skill[]>(() => getCachedSkills());
   const [hp, setHp] = useState(MONSTER_HP);
+  const [maxHp, setMaxHp] = useState(MONSTER_HP);
   const [hits, setHits] = useState(0);
   const [usedSkillIds, setUsedSkillIds] = useState<string[]>([]);
   const [showDrawer, setShowDrawer] = useState(false);
@@ -51,6 +53,7 @@ export default function TameEnemyScreen() {
   const [zoomSkill, setZoomSkill] = useState<Skill | 'default' | null>(null);
   const [lastTap, setLastTap] = useState<{ id: string; at: number }>({ id: '', at: 0 });
   const [reward, setReward] = useState<number | null>(null);
+  const [milestoneBonus, setMilestoneBonus] = useState(0);
 
   const DOUBLE_TAP_MS = 280;
   function onCardTap(id: string, apply: () => void, zoom: () => void) {
@@ -70,6 +73,7 @@ export default function TameEnemyScreen() {
       void fetchTameStatus().then((r) => {
         setMonsters(r.monsters);
         setDoneToday(r.doneToday);
+        setPerEnemyDaily(r.perEnemyDaily);
         setFirstTime(r.monsters.every((m) => !m.tamedBefore));
       });
       void fetchSkills().then(setAllSkills);
@@ -99,7 +103,10 @@ export default function TameEnemyScreen() {
     // has no skills yet (weak but always finishes), so 0 skills never blocks.
     void haptics.medium();
     setActive(m);
-    setHp(MONSTER_HP);
+    // Staged HP (Q15): grows with prior tames of this monster, capped at 300.
+    const cap = monsterHpForStage(m.tamedCount ?? 0);
+    setMaxHp(cap);
+    setHp(cap);
     setHits(0);
     setUsedSkillIds([]);
     setPhase('prep');
@@ -111,7 +118,7 @@ export default function TameEnemyScreen() {
     setHits((h) => h + 1);
     if (skillId) setUsedSkillIds((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
 
-    const tier = monsterTier(next);
+    const tier = monsterTierFor(next, maxHp);
     if (tier === 'defeated') void haptics.heavy();
     else if (tier === 'wounded') void haptics.medium();
     else void haptics.light();
@@ -126,6 +133,7 @@ export default function TameEnemyScreen() {
     // Record the completion (best-effort; the tame is already visually done).
     const res = await submitTame({ monsterId: active.id, skillsUsed: usedSkillIds, hits: hits + 1 });
     setReward(res.ok ? (res.xpAwarded ?? null) : null);
+    setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
     markTameEnemyDoneToday();
     setPhase('done');
   }
@@ -135,7 +143,7 @@ export default function TameEnemyScreen() {
     setActive(null);
   }
 
-  const tier = monsterTier(hp);
+  const tier = monsterTierFor(hp, maxHp);
   const monsterScale = tier === 'healthy' ? 1 : tier === 'wounded' ? 0.8 : 0.6;
 
   // ---- SELECT ----
@@ -162,7 +170,9 @@ export default function TameEnemyScreen() {
         {doneToday && (
           <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.accent }]}>
             <Text style={[styles.hintText, { color: kit.accent }]}>
-              You've tamed one today. Come back tomorrow for another.
+              {perEnemyDaily
+                ? "All eight tamed today — that's the full sweep. Back tomorrow!"
+                : "You've tamed one today. Come back tomorrow for another."}
             </Text>
           </View>
         )}
@@ -170,11 +180,13 @@ export default function TameEnemyScreen() {
         <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
           {monsters.map((m) => {
             const ready = m.skillCount > 0;
+            // Free: one tame across all monsters. Paid: one per monster.
+            const locked = perEnemyDaily ? m.tamedToday : doneToday;
             return (
               <Pressable
                 key={m.id}
-                onPress={() => (doneToday ? undefined : startBattle(m))}
-                style={[styles.monsterCell, { backgroundColor: kit.card, borderColor: kit.border, opacity: doneToday ? 0.5 : 1 }]}
+                onPress={() => (locked ? undefined : startBattle(m))}
+                style={[styles.monsterCell, { backgroundColor: kit.card, borderColor: kit.border, opacity: locked ? 0.5 : 1 }]}
               >
                 <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
                 <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
@@ -233,7 +245,7 @@ export default function TameEnemyScreen() {
           </Text>
           {/* Pixel-flavored HP bar, labeled per the mock */}
           <View style={styles.hpTrack}>
-            <View style={[styles.hpFill, { width: `${(hp / MONSTER_HP) * 100}%` }]} />
+            <View style={[styles.hpFill, { width: `${(hp / maxHp) * 100}%` }]} />
           </View>
           <Text style={styles.hpLabel}>Negative Power</Text>
         </View>
@@ -317,6 +329,9 @@ export default function TameEnemyScreen() {
             </View>
             <Text style={styles.rewardClover}>{'🍀'}</Text>
             <Text style={styles.rewardCount}>x{reward}</Text>
+            {milestoneBonus > 0 && (
+              <Text style={styles.milestoneText}>Milestone bonus +{milestoneBonus} 🍀</Text>
+            )}
           </View>
         )}
         <Pressable
@@ -430,6 +445,7 @@ const styles = StyleSheet.create({
   rewardRibbonText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   rewardClover: { fontSize: 42, marginTop: 4 },
   rewardCount: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  milestoneText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#F7CE46', marginTop: 4 },
   confirmBtn: {
     backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 64,
     borderWidth: 2, borderColor: '#2B2B2B',
