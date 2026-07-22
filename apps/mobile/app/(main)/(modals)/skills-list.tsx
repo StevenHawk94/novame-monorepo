@@ -4,21 +4,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { useTheme } from '@/theme/use-theme';
+import { DIMENSIONS, DIMENSION_IDS, type DimensionId } from '@novame/domain';
 import { fetchSkills, getCachedSkills, DIMENSION_COLOR, type Skill } from '@/lib/skills-api';
 
 /**
- * Skills -- the lessons the user has collected (C9).
+ * Skills — the collected skill-card library (design: Skill List).
  *
- * Cards grouped: own lessons ("learned") and, if any, ones taught by friends.
- * Secret-rarity cards glow (a brighter border + a spark). Skills are paid-only
- * to generate, so a free user sees an explainer rather than an empty void.
+ * Mock layout: brown banner title, a cream panel with a 3×3 grid — the 8
+ * dimensions plus the 9th "Mega" group (universal cards usable on every
+ * monster, arriving with the P1 fixed 81-card library, 9 per group). Each
+ * cell shows a representative tile and its collected count. Tapping a group
+ * lists that group's learned cards below the grid.
+ *
+ * Card art is a colored placeholder tile until the 81-card art lands.
  */
+const CARDS_PER_GROUP = 9; // 9 groups × 9 cards = 81 (product ruling)
+
+type GroupKey = DimensionId | 'mega';
+
+const GROUP_EMOJI: Record<string, string> = {
+  expression: '📣', awareness: '🪞', momentum: '🏃', direction: '🧭',
+  steadiness: '🌊', confidence: '🔥', gratitude: '🌸', connection: '🤝',
+  mega: '🌟',
+};
+
 export default function SkillsPage() {
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
   const [skills, setSkills] = useState<Skill[]>(() => getCachedSkills());
+  const [selected, setSelected] = useState<GroupKey | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -26,101 +39,146 @@ export default function SkillsPage() {
     }, []),
   );
 
-  const own = useMemo(() => skills.filter((s) => s.source === 'self'), [skills]);
-  const taught = useMemo(() => skills.filter((s) => s.source === 'friend'), [skills]);
+  const groups = useMemo(() => {
+    const byDim = new Map<GroupKey, Skill[]>();
+    for (const id of DIMENSION_IDS) byDim.set(id, []);
+    byDim.set('mega', []); // universal cards land with the P1 81-card library
+    for (const sk of skills) {
+      const key = (byDim.has(sk.dimension as GroupKey) ? sk.dimension : 'mega') as GroupKey;
+      byDim.get(key)!.push(sk);
+    }
+    return byDim;
+  }, [skills]);
 
-  function renderCard(sk: Skill) {
-    const dimColor = DIMENSION_COLOR[sk.dimension] ?? c.brand.primary;
-    const isSecret = sk.rarity === 'secret';
-    return (
-      <View
-        key={sk.skillId}
-        style={[
-          styles.card,
-          {
-            backgroundColor: c.bgCard,
-            borderColor: isSecret ? c.brand.purpleLight : c.border,
-            borderWidth: isSecret ? 2 : 1,
-          },
-        ]}
-      >
-        <View style={styles.cardTop}>
-          <View style={[styles.dimDot, { backgroundColor: dimColor }]} />
-          <Text style={[styles.cardDim, { color: c.textMuted }]}>
-            {sk.dimension[0].toUpperCase() + sk.dimension.slice(1)}
-          </Text>
-          {isSecret && (
-            <View style={styles.secretTag}>
-              <MaterialIcons name="auto-awesome" size={12} color={c.brand.purpleLight} />
-              <Text style={[styles.secretText, { color: c.brand.purpleLight }]}>Secret</Text>
-            </View>
-          )}
-        </View>
-        <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{sk.title}</Text>
-        <Text style={[styles.cardBody, { color: c.textSecondary }]}>{sk.body}</Text>
-      </View>
-    );
-  }
+  const selectedSkills = selected ? groups.get(selected) ?? [] : [];
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: c.bgPrimary }]} edges={['top']}>
-      <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-        <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
-      </Pressable>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: c.textPrimary }]}>Skills</Text>
-        <Text style={[styles.subtitle, { color: c.textSecondary }]}>
-          Lessons you've drawn from your reflections
-        </Text>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <View style={styles.headerRow}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <MaterialIcons name="arrow-back" size={24} color="#6B5A45" />
+        </Pressable>
       </View>
 
-      {skills.length === 0 ? (
-        <View style={styles.empty}>
-          <MaterialIcons name="school" size={44} color={c.textMuted} />
-          <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            As you reflect, the lessons you arrive at are saved here as skills you can carry forward.
-          </Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.sectionLabel, { color: c.textMuted }]}>
-            Learned · {own.length}
-          </Text>
-          {own.map(renderCard)}
+      {/* Design: brown banner title */}
+      <View style={styles.banner}>
+        <Text style={styles.bannerEmoji}>{'💪'}</Text>
+        <Text style={styles.bannerText}>Skills to Tame Your Enemy</Text>
+      </View>
 
-          {taught.length > 0 && (
-            <>
-              <Text style={[styles.sectionLabel, { color: c.textMuted, marginTop: 20 }]}>
-                Taught by friends · {taught.length}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.panel}>
+          <View style={styles.grid}>
+            {([...DIMENSION_IDS, 'mega'] as GroupKey[]).map((key) => {
+              const list = groups.get(key) ?? [];
+              const name = key === 'mega' ? 'Mega' : DIMENSIONS[key as DimensionId].nameEn;
+              const color = key === 'mega' ? '#8B7FD9' : DIMENSION_COLOR[key] ?? '#C9BCA5';
+              const on = selected === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setSelected((cur) => (cur === key ? null : key))}
+                  style={styles.cell}
+                >
+                  <View
+                    style={[
+                      styles.cardTile,
+                      { backgroundColor: color },
+                      on && styles.cardTileOn,
+                      list.length === 0 && styles.cardTileEmpty,
+                    ]}
+                  >
+                    <Text style={styles.cardTileEmoji}>{GROUP_EMOJI[key]}</Text>
+                  </View>
+                  <Text style={styles.cellName}>{name}</Text>
+                  <Text style={styles.cellCount}>
+                    {Math.min(list.length, CARDS_PER_GROUP)}/{CARDS_PER_GROUP}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Selected group's learned cards */}
+        {selected && (
+          <View style={styles.detail}>
+            {selectedSkills.length === 0 ? (
+              <Text style={styles.detailEmpty}>
+                {selected === 'mega'
+                  ? 'Mega cards work on every monster — they arrive with the full card library.'
+                  : 'Nothing learned here yet — keep reflecting and this group will fill up.'}
               </Text>
-              {taught.map(renderCard)}
-            </>
-          )}
-        </ScrollView>
-      )}
+            ) : (
+              selectedSkills.map((sk) => (
+                <View
+                  key={sk.skillId}
+                  style={[styles.skillCard, sk.rarity === 'secret' && styles.skillCardSecret]}
+                >
+                  {sk.rarity === 'secret' && <Text style={styles.secretTag}>✨ Secret</Text>}
+                  <Text style={styles.skillTitle}>{sk.title}</Text>
+                  <Text style={styles.skillBody}>{sk.body}</Text>
+                  {sk.source === 'friend' && (
+                    <Text style={styles.taughtTag}>Taught by a friend</Text>
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
+        {skills.length === 0 && !selected && (
+          <Text style={styles.emptyText}>
+            As you reflect, the lessons you arrive at are saved here as skill cards you can
+            carry into Tame Enemy.
+          </Text>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  backBtn: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
-  root: { flex: 1, paddingHorizontal: 16 },
-  header: { paddingTop: 8, paddingBottom: 12, paddingHorizontal: 4 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold' },
-  subtitle: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 4 },
+  root: { flex: 1, backgroundColor: '#F6B79B', paddingHorizontal: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { paddingTop: 8, paddingBottom: 4, paddingHorizontal: 4 },
 
-  scroll: { paddingVertical: 8, paddingBottom: 32 },
-  sectionLabel: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 10, marginLeft: 4 },
+  banner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: '#4A3220', borderRadius: 18, paddingVertical: 14, marginBottom: 14,
+  },
+  bannerEmoji: { fontSize: 20 },
+  bannerText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
-  card: { borderRadius: 16, padding: 16, marginBottom: 12 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  dimDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
-  cardDim: { fontSize: 12, fontFamily: 'Inter_500Medium', flex: 1 },
-  secretTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  secretText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
-  cardTitle: { fontSize: 17, fontFamily: 'Inter_700Bold', marginBottom: 6 },
-  cardBody: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21 },
+  scroll: { paddingBottom: 32 },
+  panel: { backgroundColor: '#FDF3E1', borderRadius: 26, padding: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  cell: { width: '31%', alignItems: 'center', marginBottom: 18 },
+  cardTile: {
+    width: '100%', aspectRatio: 0.72, borderRadius: 12, borderWidth: 3, borderColor: '#3B4A8F',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardTileOn: { borderColor: '#2B2B2B', transform: [{ scale: 1.04 }] },
+  cardTileEmpty: { opacity: 0.45 },
+  cardTileEmoji: { fontSize: 34 },
+  cellName: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 8 },
+  cellCount: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#4A3B2A', marginTop: 1 },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 16 },
-  emptyText: { fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 22 },
+  detail: { marginTop: 14, gap: 12 },
+  detailEmpty: {
+    fontSize: 14, fontFamily: 'Inter_500Medium', color: '#6B5A45',
+    textAlign: 'center', lineHeight: 21, backgroundColor: '#FDF3E1',
+    borderRadius: 16, padding: 18,
+  },
+  skillCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16 },
+  skillCardSecret: { borderWidth: 2, borderColor: '#B57BC9' },
+  secretTag: { fontSize: 12, fontFamily: 'Inter_700Bold', color: '#B57BC9', marginBottom: 6 },
+  skillTitle: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#2B2B2B', marginBottom: 6 },
+  skillBody: { fontSize: 14, fontFamily: 'Inter_400Regular', color: '#6B5A45', lineHeight: 21 },
+  taughtTag: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: '#8A6240', marginTop: 8 },
+
+  emptyText: {
+    fontSize: 15, fontFamily: 'Inter_500Medium', color: '#6B4A35',
+    textAlign: 'center', lineHeight: 22, marginTop: 24, paddingHorizontal: 24,
+  },
 });

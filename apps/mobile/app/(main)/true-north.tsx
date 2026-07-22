@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   rankTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', lineHeight: 32, marginBottom: 6 },
   rankSub: { fontSize: 13, fontFamily: 'Inter_500Medium', marginBottom: 16 },
   cards: { paddingBottom: 16 },
-  rankCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 18, marginBottom: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  rankCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 18, marginBottom: 12, borderWidth: 2, borderColor: '#2B2B2B', shadowColor: '#2B2B2B', shadowOpacity: 0.9, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 2 },
   rankBadge: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   rankBadgeText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
   rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold' },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   interpretLine: { fontSize: 16, fontFamily: 'Inter_500Medium', lineHeight: 24, marginBottom: 14 },
   interpretFooter: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 21, marginTop: 6 },
 
-  primaryBtn: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  primaryBtn: { borderRadius: 16, paddingVertical: 17, alignItems: 'center', borderWidth: 2, borderColor: '#2B2B2B', shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },
   startBtn: { borderRadius: 18, paddingVertical: 18, paddingHorizontal: 64, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 3, height: 4 } },
   btnPressed: { transform: [{ translateX: 2 }, { translateY: 3 }] },
   primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold' },
