@@ -133,7 +133,7 @@ export default function FocusScreen() {
                 ) : noTrack ? (
                   <Text style={[styles.soon, { color: kit.textMuted }]}>Soon</Text>
                 ) : (
-                  <MaterialIcons name="play-circle-outline" size={26} color={kit.accent} />
+                  <Text style={styles.sceneEmoji}>{SCENE_EMOJI[s.id] ?? '🍃'}</Text>
                 )}
               </Pressable>
             );
@@ -189,6 +189,13 @@ export default function FocusScreen() {
   );
 }
 
+// Design shows a colorful illustration per row; emoji stand in until the
+// icon set covers the scenes.
+const SCENE_EMOJI: Record<string, string> = {
+  work: '📋', focus: '💻', calm: '💬', reset: '🧠',
+  anxious: '🌧️', sleep: '🌙', morning: '🌅', overwhelm: '🫧',
+};
+
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 20 },
   back: { alignSelf: 'flex-start', paddingVertical: 8 },
@@ -201,6 +208,7 @@ const styles = StyleSheet.create({
   sceneTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
   sceneSub: { fontSize: 13, fontFamily: 'Inter_400Regular', marginTop: 3 },
   soon: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  sceneEmoji: { fontSize: 26 },
 
   playRoot: {},
   playCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },

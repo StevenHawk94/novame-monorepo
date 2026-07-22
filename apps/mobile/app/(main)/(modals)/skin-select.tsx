@@ -102,85 +102,118 @@ export default function SkinSelectScreen() {
     }
   }
 
-  return (
-    <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
-      <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
-        <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
-      </Pressable>
+  void c;
+  const previewArt = skinArt?.[selected - 1];
 
-      <View style={styles.titleRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: c.textPrimary }]}>Skins</Text>
-          <Text style={[styles.sub, { color: c.textSecondary }]}>Unlock new looks with clovers.</Text>
-        </View>
+  return (
+    <View style={styles.root}>
+      {/* ---- preview: wardrobe scene (tan placeholder until art lands) ---- */}
+      <View style={[styles.preview, { paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={12}>
+          <MaterialIcons name="close" size={22} color="#FFFFFF" />
+        </Pressable>
         <View style={styles.balancePill}>
-          <Text style={styles.balanceText}>{cosmetics.balance}</Text>
           <Text style={styles.clover}>{'\u{1F340}'}</Text>
+          <Text style={styles.balanceText}>{cosmetics.balance}</Text>
+        </View>
+        <View style={styles.previewCenter}>
+          {previewArt ? (
+            <Image source={previewArt} style={styles.previewImg} resizeMode="contain" />
+          ) : (
+            <MaterialIcons name="pets" size={96} color="#C9A87A" />
+          )}
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
-        {Array.from({ length: SKIN_COUNT }).map((_, index) => {
-          const skinNumber = index + 1;
-          const owned = ownedFor(skinNumber);
-          const isActive = selected === skinNumber;
-          const plusOnly = PLUS_SKINS.has(skinNumber);
-          const art = skinArt?.[index];
-          return (
-            <Pressable
-              key={index}
-              onPress={() => onTap(skinNumber)}
-              style={[styles.card, isActive && { borderColor: c.brand.primary, borderWidth: 3 }]}
-            >
-              <View style={[styles.thumb, { backgroundColor: c.bgCard }]}>
-                {art ? (
-                  <Image source={art} style={styles.thumbImg} resizeMode="contain" />
+      {/* ---- brown shop panel (design: Get Your Outfit) ---- */}
+      <View style={styles.panel}>
+        <View style={styles.panelHeader}>
+          <Text style={styles.panelHeaderEmoji}>{'👕'}</Text>
+          <Text style={styles.panelHeaderText}>Get Your Outfit</Text>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
+          {Array.from({ length: SKIN_COUNT }).map((_, index) => {
+            const skinNumber = index + 1;
+            const owned = ownedFor(skinNumber);
+            const isActive = selected === skinNumber;
+            const plusOnly = PLUS_SKINS.has(skinNumber);
+            const art = skinArt?.[index];
+            return (
+              <Pressable
+                key={index}
+                onPress={() => onTap(skinNumber)}
+                style={[styles.card, isActive && styles.cardActive]}
+              >
+                <View style={styles.thumb}>
+                  {art ? (
+                    <Image source={art} style={styles.thumbImg} resizeMode="contain" />
+                  ) : (
+                    <MaterialIcons name="checkroom" size={40} color="#B07A46" />
+                  )}
+                </View>
+                {isActive ? (
+                  <View style={styles.inUseBadge}>
+                    <Text style={styles.inUseText}>In Use</Text>
+                  </View>
+                ) : owned ? (
+                  <Text style={styles.ownedText}>Owned</Text>
                 ) : (
-                  <MaterialIcons name="pets" size={40} color={c.textMuted} />
-                )}
-                {!owned && (
-                  <View style={styles.priceOverlay}>
-                    {plusOnly && <Text style={styles.plusTag}>PLUS</Text>}
-                    <View style={styles.priceRow}>
-                      <Text style={styles.priceText}>{COSMETIC_PRICE}</Text>
-                      <Text style={styles.priceClover}>{'\u{1F340}'}</Text>
-                    </View>
+                  <View style={styles.priceRow}>
+                    {plusOnly && <Text style={styles.plusTag}>PLUS </Text>}
+                    <Text style={styles.priceClover}>{'\u{1F340}'}</Text>
+                    <Text style={styles.priceText}>{COSMETIC_PRICE}</Text>
                   </View>
                 )}
-                {isActive && (
-                  <View style={[styles.activeBadge, { backgroundColor: c.brand.primary }]}>
-                    <MaterialIcons name="check" size={14} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
+// Design palette (outfits change.png): tan wardrobe preview over a rich
+// brown shop panel with light-orange item tiles.
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 20 },
-  back: { alignSelf: 'flex-start', paddingVertical: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 20 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold' },
-  sub: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 4 },
-  balancePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#E8F5D8', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8,
+  root: { flex: 1, backgroundColor: '#7B4B22' },
+
+  preview: { height: '42%', backgroundColor: '#EFD9B8', paddingHorizontal: 16 },
+  closeBtn: {
+    position: 'absolute', left: 16, top: 54,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#4A3220',
+    alignItems: 'center', justifyContent: 'center', zIndex: 2,
   },
-  balanceText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#4E7A3A' },
+  balancePill: {
+    position: 'absolute', left: 72, top: 58,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8,
+    zIndex: 2,
+  },
+  balanceText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
   clover: { fontSize: 16 },
+  previewCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  previewImg: { width: '70%', height: '85%' },
+
+  panel: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 },
+  panelHeaderEmoji: { fontSize: 22 },
+  panelHeaderText: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 32 },
-  card: { width: '31%', marginBottom: 14 },
-  thumb: { width: '100%', aspectRatio: 1, borderRadius: 16, overflow: 'hidden', position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  card: {
+    width: '31%', marginBottom: 16, alignItems: 'center',
+    backgroundColor: '#D9964F', borderRadius: 18, borderWidth: 3, borderColor: '#E8B088',
+    paddingVertical: 12, paddingHorizontal: 8, gap: 8,
+  },
+  cardActive: { borderColor: '#FFFFFF' },
+  thumb: { width: '86%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   thumbImg: { width: '100%', height: '100%' },
-  priceOverlay: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', gap: 4 },
-  plusTag: { color: '#FFD98A', fontSize: 11, fontFamily: 'Inter_800ExtraBold', letterSpacing: 1 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  priceText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
-  priceClover: { fontSize: 13 },
-  activeBadge: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  inUseBadge: { backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5 },
+  inUseText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
+  ownedText: { color: '#5A3A1B', fontSize: 13, fontFamily: 'Inter_700Bold' },
+  plusTag: { color: '#FFE9B8', fontSize: 11, fontFamily: 'Inter_800ExtraBold', letterSpacing: 1 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  priceText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  priceClover: { fontSize: 14 },
 });

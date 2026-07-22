@@ -99,15 +99,15 @@ export default function SceneSelectScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
       <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
-        <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
+        <MaterialIcons name="arrow-back" size={24} color="#6B5A45" />
       </Pressable>
 
       <View style={styles.titleRow}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: c.textPrimary }]}>Scenes</Text>
-          <Text style={[styles.sub, { color: c.textSecondary }]}>Choose the world your companion lives in.</Text>
+          <Text style={styles.titleWarm}>Scenes</Text>
+          <Text style={styles.subWarm}>Choose the world your companion lives in.</Text>
         </View>
         <View style={styles.balancePill}>
           <Text style={styles.balanceText}>{cosmetics.balance}</Text>
@@ -126,7 +126,7 @@ export default function SceneSelectScreen() {
             <Pressable
               key={scene.id}
               onPress={() => onTap(scene)}
-              style={[styles.card, isActive && { borderColor: c.brand.primary, borderWidth: 3 }]}
+              style={styles.card}
             >
               <View style={styles.thumb}>
                 {art ? (
@@ -144,12 +144,12 @@ export default function SceneSelectScreen() {
                   </View>
                 )}
                 {isActive && (
-                  <View style={[styles.activeBadge, { backgroundColor: c.brand.primary }]}>
-                    <MaterialIcons name="check" size={14} color="#FFFFFF" />
+                  <View style={styles.inUseBadge}>
+                    <Text style={styles.inUseText}>In Use</Text>
                   </View>
                 )}
               </View>
-              <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{scene.title}</Text>
+              <Text style={styles.cardTitleWarm}>{scene.title}</Text>
             </Pressable>
           );
         })}
@@ -159,7 +159,12 @@ export default function SceneSelectScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 20 },
+  titleWarm: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  subWarm: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63', marginTop: 4 },
+  cardTitleWarm: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#4A3220', marginTop: 8 },
+  inUseBadge: { position: 'absolute', top: 8, right: 8, backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  inUseText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' },
+  root: { flex: 1, paddingHorizontal: 20, backgroundColor: '#F2E6CB' },
   back: { alignSelf: 'flex-start', paddingVertical: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 20 },
   title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold' },

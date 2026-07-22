@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { DIMENSION_IDS, DIMENSIONS, type DimensionId } from '@novame/domain';
-import { gemStage, GEM_STAGE_COUNT } from '@novame/engine';
-import { useTheme } from '../../../src/theme/use-theme';
+import { DIMENSION_IDS, DIMENSIONS } from '@novame/domain';
+import { gemStage, GEM_STAGE_BOUNDS, GEM_STAGE_COUNT } from '@novame/engine';
+import { haptics } from '../../../src/lib/haptics';
 import {
   fetchGems,
   getCachedGems,
@@ -12,13 +14,25 @@ import {
   type GemsByDimension,
 } from '../../../src/lib/status-api';
 
-const STAGE_NAMES = ['Exploring', 'Growing', 'Maturing', 'Confident', 'Complete'];
+/**
+ * Me — the growth page (design: Me.png). Top: the current stage's portrait
+ * art (color-block placeholder until the six stage illustrations land) under
+ * a "Growth Journey" banner; a gear opens the settings center. Middle: the
+ * six-stage milestone timeline with check nodes (bounds from the engine).
+ * Bottom: the 8 dimension tiles (dark cards, ⚡score each). Pure display;
+ * data comes entirely from the gems system (PRD 7.2).
+ */
+const STAGE_NAMES = ['Exploring', 'Growing', 'Maturing', 'Confident', 'Transcendent', 'Complete'];
+// Stage-art placeholder tones, one per stage, until the illustrations land.
+const STAGE_TONES = ['#3A3A44', '#41455A', '#3E5A50', '#5A4E3E', '#54405A', '#5A3E46'];
+
+const DIMENSION_EMOJI: Record<string, string> = {
+  expression: '🎨', awareness: '🌱', momentum: '⚔️', direction: '🧭',
+  steadiness: '🗡️', confidence: '✨', gratitude: '🌸', connection: '🐿️',
+};
 
 export default function StatusScreen() {
-  const { theme } = useTheme();
-  const c = theme.colors;
-
-  // Cache-first: render immediately from cache, then refresh from server.
+  const router = useRouter();
   const [gems, setGems] = useState<GemsByDimension>(() => getCachedGems());
 
   useEffect(() => {
@@ -34,137 +48,137 @@ export default function StatusScreen() {
   const total = totalGems(gems);
   const stage = gemStage(total);
 
-  return (
-    <SafeAreaView style={[styles.root, { backgroundColor: c.bgPrimary }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.header, { color: c.textPrimary }]}>Growth</Text>
+  // Node label = the score that completes that stage; the final stage never
+  // exits, so it reads MAX.
+  const milestones = [...GEM_STAGE_BOUNDS.map(String), 'MAX'];
 
-        {/* ---- portrait (placeholder until art lands) ---- */}
-        <View style={[styles.portrait, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-          <Text style={[styles.portraitStage, { color: c.textMuted }]}>Stage {stage}</Text>
-          <Text style={[styles.portraitName, { color: c.textSecondary }]}>
-            {STAGE_NAMES[stage - 1]}
-          </Text>
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* ---- stage portrait (placeholder until the six illustrations land) ---- */}
+        <View style={[styles.hero, { backgroundColor: STAGE_TONES[stage - 1] }]}>
+          <View style={styles.heroBanner}>
+            <Text style={styles.heroBannerEmoji}>{'🐾'}</Text>
+            <Text style={styles.heroBannerText}>Growth Journey</Text>
+          </View>
+          <Pressable
+            onPress={() => { void haptics.light(); router.push('/(main)/(modals)/me'); }}
+            style={styles.heroGear}
+            hitSlop={8}
+          >
+            <MaterialIcons name="settings" size={22} color="#FFFFFF" />
+          </Pressable>
+          <View style={styles.heroCenter}>
+            <Text style={styles.heroStageNum}>Stage {stage} of {GEM_STAGE_COUNT}</Text>
+            <Text style={styles.heroStageName}>{STAGE_NAMES[stage - 1]}</Text>
+            <Text style={styles.heroTotal}>{total} gems</Text>
+          </View>
         </View>
 
-        {/* ---- total + stage progress ---- */}
-        <View style={[styles.card, { backgroundColor: c.bgCard, borderColor: c.border }]}>
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: c.textSecondary }]}>Total gems</Text>
-            <Text style={[styles.totalValue, { color: c.textPrimary }]}>{total}</Text>
-          </View>
-          <View style={styles.stageRow}>
-            {Array.from({ length: GEM_STAGE_COUNT }, (_, i) => i + 1).map((s) => (
-              <View key={s} style={styles.stageNode}>
+        {/* ---- six-stage milestone timeline ---- */}
+        <View style={styles.timeline}>
+          {milestones.map((label, i) => {
+            const stageNo = i + 1;
+            const passed = stage > stageNo || (stageNo === GEM_STAGE_COUNT && stage === GEM_STAGE_COUNT);
+            const current = stage === stageNo && !passed;
+            return (
+              <View key={label} style={styles.timelineNodeWrap}>
+                {i > 0 && (
+                  <View style={[styles.timelineLink, (passed || current) && styles.timelineLinkOn]} />
+                )}
                 <View
                   style={[
-                    styles.stageDot,
-                    {
-                      backgroundColor: s <= stage ? c.brand.primary : c.progressTrack,
-                      borderColor: s === stage ? c.brand.primary : 'transparent',
-                    },
+                    styles.timelineNode,
+                    passed && styles.timelineNodeDone,
+                    current && styles.timelineNodeCurrent,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.stageDotText,
-                      { color: s <= stage ? '#FFFFFF' : c.textMuted },
-                    ]}
-                  >
-                    {s}
-                  </Text>
+                  {passed ? (
+                    <MaterialIcons name="check" size={14} color="#FFFFFF" />
+                  ) : (
+                    <View style={styles.timelineNodeDot} />
+                  )}
                 </View>
-              </View>
-            ))}
-          </View>
-          <Text style={[styles.stageCaption, { color: c.textMuted }]}>
-            Stage {stage} of {GEM_STAGE_COUNT}
-          </Text>
-        </View>
-
-        {/* ---- eight-dimension gems ---- */}
-        <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Growth gems</Text>
-        <View style={styles.grid}>
-          {DIMENSION_IDS.map((id: DimensionId) => {
-            const dim = DIMENSIONS[id];
-            return (
-              <View
-                key={id}
-                style={[styles.gemCard, { backgroundColor: c.bgCard, borderColor: c.border }]}
-              >
-                <View style={[styles.gemDot, { backgroundColor: dim.color }]} />
-                <View style={styles.gemInfo}>
-                  <Text style={[styles.gemName, { color: c.textPrimary }]}>{dim.nameEn}</Text>
-                  <Text style={[styles.gemValue, { color: c.textSecondary }]}>
-                    {gems[id]} gems
-                  </Text>
-                </View>
+                <Text style={[styles.timelineLabel, current && styles.timelineLabelCurrent]}>
+                  {label}
+                </Text>
               </View>
             );
           })}
         </View>
 
-        <Text style={[styles.footer, { color: c.textMuted }]}>
-          Every reflection adds a little. Keep going.
-        </Text>
+        {/* ---- 8 dimension tiles ---- */}
+        <View style={styles.grid}>
+          {DIMENSION_IDS.map((d) => (
+            <View key={d} style={styles.cell}>
+              <View style={styles.dimTile}>
+                <Text style={styles.dimEmoji}>{DIMENSION_EMOJI[d] ?? '💠'}</Text>
+              </View>
+              <Text style={styles.dimName}>{DIMENSIONS[d].nameEn}</Text>
+              <Text style={styles.dimScore}>{'⚡'} {gems[d] ?? 0}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
-  header: { fontSize: 28, fontFamily: 'Inter_700Bold', marginTop: 8, marginBottom: 16 },
+  root: { flex: 1, backgroundColor: '#F6EBD3' },
+  scroll: { paddingBottom: 24 },
 
-  portrait: {
-    height: 220,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+  hero: {
+    height: 300, marginBottom: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
-  portraitStage: { fontSize: 13, fontFamily: 'Inter_500Medium', marginBottom: 4 },
-  portraitName: { fontSize: 20, fontFamily: 'Inter_600SemiBold' },
+  heroBanner: {
+    position: 'absolute', top: 12, left: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#4A3220', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 9,
+  },
+  heroBannerEmoji: { fontSize: 16 },
+  heroBannerText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  heroGear: {
+    position: 'absolute', top: 12, right: 16,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center',
+  },
+  heroCenter: { alignItems: 'center', gap: 4 },
+  heroStageNum: { fontSize: 15, fontFamily: 'Inter_700Bold', color: 'rgba(255,255,255,0.75)' },
+  heroStageName: { fontSize: 32, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  heroTotal: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
-  card: { borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 24 },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+  timeline: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingHorizontal: 18, marginBottom: 18,
   },
-  totalLabel: { fontSize: 15, fontFamily: 'Inter_500Medium' },
-  totalValue: { fontSize: 28, fontFamily: 'Inter_700Bold' },
-  stageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stageNode: { alignItems: 'center' },
-  stageDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  timelineNodeWrap: { alignItems: 'center', flex: 1 },
+  timelineLink: {
+    position: 'absolute', top: 12, right: '50%', left: '-50%',
+    height: 3, backgroundColor: '#E4D2B0',
   },
-  stageDotText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
-  stageCaption: { fontSize: 13, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 14 },
+  timelineLinkOn: { backgroundColor: '#E58A7E' },
+  timelineNode: {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: '#E4D2B0', alignItems: 'center', justifyContent: 'center',
+  },
+  timelineNodeDone: { backgroundColor: '#E58A7E' },
+  timelineNodeCurrent: { backgroundColor: '#E58A7E', borderWidth: 3, borderColor: '#4A3220' },
+  timelineNodeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  timelineLabel: { fontSize: 12, fontFamily: 'Inter_700Bold', color: '#6B5A45', marginTop: 6 },
+  timelineLabelCurrent: { color: '#4A3220', fontSize: 13 },
 
-  sectionTitle: { fontSize: 18, fontFamily: 'Inter_600SemiBold', marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gemCard: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 12,
+  grid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 12, justifyContent: 'space-between',
   },
-  gemDot: { width: 32, height: 32, borderRadius: 16, marginRight: 12 },
-  gemInfo: { flex: 1 },
-  gemName: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  gemValue: { fontSize: 13, fontFamily: 'Inter_400Regular', marginTop: 2 },
-
-  footer: { fontSize: 14, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 16 },
+  cell: { width: '23%', alignItems: 'center', marginBottom: 18 },
+  dimTile: {
+    width: '100%', aspectRatio: 0.9, borderRadius: 14, backgroundColor: '#4A4A52',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dimEmoji: { fontSize: 30 },
+  dimName: { fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 7, textAlign: 'center' },
+  dimScore: { fontSize: 12, fontFamily: 'Inter_700Bold', color: '#6B5A45', marginTop: 2 },
 });
