@@ -1,6 +1,7 @@
 /**
- * Focus scenes (C10). Eight mindfulness scenes; free users get the first three,
- * paid all eight. The locked five stay visible as a conversion point.
+ * Focus scenes (C10). Six preparation scenes (v2.0 design: 'What are you preparing for?');
+ * free users get the first three, paid all six. Locked ones stay visible
+ * as a conversion point.
  *
  * Audio lives at focus/{sceneId}/{sceneId}{n}.mp3 on R2 (a manifest declares
  * each scene's track count). For the test phase, the first track of the free
@@ -23,14 +24,12 @@ export interface FocusScene {
 }
 
 export const FOCUS_SCENES: FocusScene[] = [
-  { id: 'work', title: 'Before a meeting', subtitle: 'Steady yourself before you walk in', free: true, dimension: 'confidence' },
-  { id: 'focus', title: 'Before deep work', subtitle: 'Settle in and find your focus', free: true, dimension: 'momentum' },
-  { id: 'calm', title: 'A hard conversation', subtitle: 'Ground yourself before you speak', free: true, dimension: 'connection' },
-  { id: 'reset', title: 'A midday reset', subtitle: 'Step out of the rush for a minute', free: false, dimension: 'awareness' },
-  { id: 'anxious', title: 'When anxiety rises', subtitle: 'Come back to your breath', free: false, dimension: 'steadiness' },
-  { id: 'sleep', title: 'Winding down', subtitle: 'Let the day go', free: false, dimension: 'gratitude' },
-  { id: 'morning', title: 'Starting the day', subtitle: 'Set your intention', free: false, dimension: 'direction' },
-  { id: 'overwhelm', title: "When it's too much", subtitle: 'One thing at a time', free: false, dimension: 'expression' },
+  { id: 'work', title: 'Work', subtitle: 'Do your best work with a clear mind.', free: true, dimension: 'momentum' },
+  { id: 'learn', title: 'Learn', subtitle: 'Stay curious and absorb deeply.', free: true, dimension: 'awareness' },
+  { id: 'connect', title: 'Connect', subtitle: 'Show up openly and connect with others.', free: true, dimension: 'connection' },
+  { id: 'daily', title: 'Daily Tasks', subtitle: 'Get started and move forward.', free: false, dimension: 'direction' },
+  { id: 'family', title: 'Family', subtitle: 'Be fully there for the people who matter.', free: false, dimension: 'gratitude' },
+  { id: 'challenge', title: 'Challenge', subtitle: 'Stay calm and perform when it matters.', free: false, dimension: 'steadiness' },
 ];
 
 export const FOCUS_SCENE_BY_ID: Record<string, FocusScene> =

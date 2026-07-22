@@ -1,6 +1,8 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
+  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,12 +14,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
 import { ITEM_DICTIONARY } from '@novame/engine';
-import { useTheme } from '../../src/theme/use-theme';
-import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import {
+  editReflectMemories,
   getReflectStateToday,
   submitReflect,
   type ReflectError,
@@ -26,15 +28,25 @@ import {
 import { setReflectBubble } from '../../src/lib/bubble-store';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { fetchBags } from '../../src/lib/bags-api';
+import { getCachedSubscriptionTier } from '../../src/lib/subscription';
+import { haptics } from '../../src/lib/haptics';
+import { BACKGROUNDS, ICONS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
+import { OffsetCard } from '../../src/components/ui/offset-card';
+import { SpringPop } from '../../src/components/ui/spring-pop';
+import { FireworksBurst } from '../../src/components/ui/fireworks-burst';
 
 const MAX_CHARS = 5000;
 
 /**
- * 'claim' and 'skill' replace the old single 'done' phase, following the
- * design (reflect items claim → skill learn claim) and PRD §3.7-D: the skill
- * reveal only appears after the user closes the items claim. Dimension pills
- * are gone on purpose — the 8-dimension framework is backstage scoring and is
- * never surfaced to the user (PRD §2.4 note).
+ * Reflect (v2.0 design pass). Four phases over the full-bleed sunset art:
+ *   pick  — "What would you like to reflect on?", 9 prompt cards with icons
+ *           and the tan offset drop
+ *   write — prompt line + white input card + yellow Save Reflection
+ *   claim — fireworks + spring-pop cards: the Reflection Finished banner
+ *           (🍀 xN), Memory Items Created, then the free tier's
+ *           "Add Memories Manually" editor or a straight Claim
+ *   skill — fireworks + the spring-popped new card (after claim, PRD 3.7-D)
+ * Dimension pills stay gone — the 8-dimension frame is backstage scoring.
  */
 type Phase = 'pick' | 'write' | 'claim' | 'skill';
 
@@ -46,18 +58,17 @@ const ERROR_MESSAGE: Record<ReflectError, string> = {
   network: 'Couldn’t save that. Check your connection and try again.',
 };
 
+// Design palette (reflect mocks): sunset art, tan offset, yellow/orange CTAs.
+const TAN_OFFSET = '#E5B57E';
+const YELLOW = '#F9C939';
+const YELLOW_DROP = '#E8A33C';
+const ORANGE = '#F0885C';
+const ORANGE_DROP = '#D96B3F';
+const INK = '#2B2B2B';
+
 export default function ReflectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
-  const kit = {
-    text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
-    card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
-    accent: '#E0912F', danger: '#D9694E', secret: '#B57BC9',
-    inputBg: 'rgba(255,255,255,0.7)', tagBg: 'rgba(224,145,47,0.15)',
-  };
-  void c;
 
   const params = useLocalSearchParams<{
     presetPrompt?: string;
@@ -79,11 +90,12 @@ export default function ReflectScreen() {
   const [error, setError] = useState<ReflectError | null>(null);
   const [result, setResult] = useState<ReflectSnapshot | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
+  // Free tier's manual memory editor on the claim screen (PRD: 可自行添加描述).
+  const [editing, setEditing] = useState(false);
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [savingEdits, setSavingEdits] = useState(false);
+  const isPaid = getCachedSubscriptionTier() !== 'free';
 
-  // Re-read today's count each time the screen gains focus, so a __DEV__ reset
-  // (or a new day) updates the limit without a full remount. Uses a functional
-  // setState reading the cache fresh; done-phase is guarded via a ref so the
-  // callback identity stays stable (empty deps) and always fires on focus.
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
   useFocusEffect(
@@ -96,6 +108,7 @@ export default function ReflectScreen() {
 
   /** Items claim → skill reveal (if any) → leave. */
   function onClaimItems() {
+    void haptics.medium();
     if (result?.generatedSkill) {
       setPhase('skill');
     } else {
@@ -103,13 +116,29 @@ export default function ReflectScreen() {
     }
   }
 
+  async function onSaveEdits() {
+    if (!result || savingEdits) return;
+    const list = Object.entries(edits)
+      .map(([itemId, text]) => ({ itemId, text: text.trim() }))
+      .filter((e) => e.text.length > 0);
+    setSavingEdits(true);
+    if (list.length > 0 && result.reflectId) {
+      await editReflectMemories(result.reflectId, list);
+      void fetchBags(); // memories changed
+    }
+    setSavingEdits(false);
+    setEditing(false);
+    onClaimItems();
+  }
+
   const atLimit = remaining <= 0;
 
   const selectedPrompt = presetPrompt
-    ? { id: 9, text: presetPrompt, dimension: null }
+    ? { id: 9, title: 'New Lens', text: presetPrompt, dimension: null }
     : REFLECT_PROMPTS.find((p) => p.id === promptId);
 
   function choosePrompt(id: number) {
+    void haptics.light();
     setPromptId(id);
     setPhase('write');
     setError(null);
@@ -128,6 +157,7 @@ export default function ReflectScreen() {
       // Reflect changed feed + collected items -- refresh those caches now.
       void fetchReflectFeed();
       void fetchBags();
+      void haptics.success();
       setPhase('claim');
     } else {
       setError(res.error);
@@ -136,241 +166,328 @@ export default function ReflectScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <WaveBackground palette={WAVE_PALETTES.reflect} />
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        {(phase === 'pick' || phase === 'write') && (
-          <View style={styles.header}>
-            <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
-              <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
-            </Pressable>
-            <Text style={[styles.remaining, { color: kit.textMuted }]}>
-              {remaining} of 3 left today
-            </Text>
-          </View>
-        )}
+    <ImageBackground source={BACKGROUNDS.reflect} style={{ flex: 1 }} resizeMode="cover">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
+          {(phase === 'pick' || phase === 'write') && (
+            <View style={styles.header}>
+              <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+                <MaterialIcons name="arrow-back" size={22} color="#E5606B" />
+              </Pressable>
+              <Text style={styles.remaining}>{remaining} of 3 left today</Text>
+            </View>
+          )}
 
-        {/* ---- limit reached: block before writing ---- */}
-        {atLimit && (phase === 'pick' || phase === 'write') ? (
-          <View style={styles.center}>
-            <Text style={[styles.restTitle, { color: kit.text }]}>
-              That’s three for today
-            </Text>
-            <Text style={[styles.restBody, { color: kit.textSub }]}>
-              {ERROR_MESSAGE.daily_limit}
-            </Text>
-          </View>
-        ) : phase === 'pick' ? (
-          /* ---- phase 1: choose a prompt ---- */
-          <ScrollView
-            contentContainerStyle={styles.pickScroll}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={[styles.lead, { color: kit.text }]}>
-              What do you want to sit with?
-            </Text>
-            <Text style={[styles.leadSub, { color: kit.textSub }]}>
-              Pick a starting point, or just write.
-            </Text>
-            {REFLECT_PROMPTS.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => choosePrompt(p.id)}
-                style={({ pressed }) => [
-                  styles.promptCard,
-                  {
-                    backgroundColor: kit.card,
-                    borderColor: kit.border,
-                    opacity: pressed ? 0.8 : 1,
-                  },
+          {/* ---- limit reached: block before writing ---- */}
+          {atLimit && (phase === 'pick' || phase === 'write') ? (
+            <View style={styles.center}>
+              <Text style={styles.restTitle}>That’s three for today</Text>
+              <Text style={styles.restBody}>{ERROR_MESSAGE.daily_limit}</Text>
+            </View>
+          ) : phase === 'pick' ? (
+            /* ---- phase 1: choose a prompt (design: Pick a moment) ---- */
+            <ScrollView
+              contentContainerStyle={styles.pickScroll}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.lead}>What would you like to reflect on?</Text>
+              <Text style={styles.leadSub}>Pick a moment.</Text>
+              {REFLECT_PROMPTS.map((p) => (
+                <OffsetCard
+                  key={p.id}
+                  color={TAN_OFFSET}
+                  radius={26}
+                  onPress={() => choosePrompt(p.id)}
+                  cardStyle={styles.promptCard}
+                >
+                  <View style={styles.promptTextWrap}>
+                    <Text style={styles.promptTitle}>{p.title}</Text>
+                    <Text style={styles.promptText}>{p.text}</Text>
+                  </View>
+                  <Image
+                    source={REFLECT_PROMPT_ICONS[p.id]}
+                    style={styles.promptIcon}
+                    resizeMode="contain"
+                  />
+                </OffsetCard>
+              ))}
+            </ScrollView>
+          ) : phase === 'write' ? (
+            /* ---- phase 2: write ---- */
+            <View style={styles.writeWrap}>
+              {selectedPrompt && (
+                <Text style={styles.chosenPrompt}>{selectedPrompt.text}</Text>
+              )}
+              <TextInput
+                style={styles.input}
+                placeholder="Start here…"
+                placeholderTextColor="#B7AEA6"
+                value={body}
+                onChangeText={(t) => setBody(t.slice(0, MAX_CHARS))}
+                multiline
+                autoFocus
+                textAlignVertical="top"
+              />
+              <View style={styles.writeFooter}>
+                <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
+                {error && <Text style={styles.errorText}>{ERROR_MESSAGE[error]}</Text>}
+              </View>
+              <OffsetCard
+                color={YELLOW_DROP}
+                radius={22}
+                onPress={() => void onSubmit()}
+                disabled={submitting || body.trim().length === 0}
+                style={{ marginTop: 14 }}
+                cardStyle={[
+                  styles.saveBtn,
+                  { opacity: submitting || body.trim().length === 0 ? 0.6 : 1 },
                 ]}
               >
-                <Text style={[styles.promptText, { color: kit.text }]}>{p.text}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        ) : phase === 'write' ? (
-          /* ---- phase 2: write ---- */
-          <View style={styles.writeWrap}>
-            {selectedPrompt && (
-              <Text style={[styles.chosenPrompt, { color: kit.textSub }]}>
-                {selectedPrompt.text}
-              </Text>
-            )}
-            <TextInput
-              style={[styles.input, { color: kit.text, backgroundColor: kit.inputBg }]}
-              placeholder="Start here…"
-              placeholderTextColor={kit.textMuted}
-              value={body}
-              onChangeText={(t) => setBody(t.slice(0, MAX_CHARS))}
-              multiline
-              autoFocus
-              textAlignVertical="top"
-            />
-            <View style={styles.writeFooter}>
-              <Text style={[styles.count, { color: kit.textMuted }]}>
-                {body.length} / {MAX_CHARS}
-              </Text>
-              {error && (
-                <Text style={[styles.errorText, { color: kit.danger }]}>
-                  {ERROR_MESSAGE[error]}
-                </Text>
-              )}
+                {submitting ? (
+                  <ActivityIndicator color={INK} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Reflection</Text>
+                )}
+              </OffsetCard>
             </View>
-            <Pressable
-              onPress={onSubmit}
-              disabled={submitting || body.trim().length === 0}
-              style={({ pressed }) => [
-                styles.submit,
-                {
-                  backgroundColor: kit.accent,
-                  opacity: submitting || body.trim().length === 0 ? 0.5 : pressed ? 0.85 : 1,
-                },
-              ]}
-            >
-              {submitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.submitText}>Save reflection</Text>
-              )}
-            </Pressable>
-          </View>
-        ) : phase === 'claim' ? (
-          /* ---- phase 3: items claim (design: reflect items claim) ---- */
-          result && (
-            <View style={styles.claimWrap}>
-              <View style={styles.claimBody}>
-                <Text style={[styles.claimTitle, { color: kit.text }]}>
-                  Your reflection has created:
-                </Text>
-                <View style={styles.cloverRow}>
-                  <Text style={styles.cloverGlyph}>{'🍀'}</Text>
-                  <Text style={[styles.cloverAmount, { color: kit.text }]}>
-                    +{result.xpAwarded}
-                  </Text>
-                </View>
-
-                <View style={styles.claimCard}>
-                  <View style={styles.claimCardHeader}>
-                    <Text style={styles.claimCardHeaderEmoji}>{'🖼️'}</Text>
-                    <Text style={[styles.claimCardHeaderText, { color: kit.text }]}>
-                      Memory Items Created
-                    </Text>
-                  </View>
-                  {result.matchedItems.length > 0 ? (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.claimItemsRow}
-                    >
-                      {result.matchedItems.map((it) => {
-                        const def = ITEM_DICTIONARY.items[it.itemId];
-                        return (
-                          <View key={it.itemId} style={styles.claimItem}>
-                            <View style={styles.claimItemTile}>
-                              <Text style={styles.claimItemEmoji}>{def?.emoji ?? '📦'}</Text>
-                            </View>
-                            <Text style={[styles.claimItemCount, { color: kit.text }]}>x1</Text>
-                          </View>
-                        );
-                      })}
-                    </ScrollView>
-                  ) : (
-                    <Text style={[styles.claimEmpty, { color: kit.textMuted }]}>
-                      A quiet one — no items this time, and that's okay.
-                    </Text>
-                  )}
-                </View>
-              </View>
-
-              <Pressable
-                onPress={onClaimItems}
-                style={({ pressed }) => [styles.claimBtn, pressed && styles.claimBtnPressed]}
-              >
-                <Text style={styles.claimBtnText}>Claim</Text>
-              </Pressable>
-            </View>
-          )
-        ) : (
-          /* ---- phase 4: skill reveal (design: skill learn claim) ---- */
-          result?.generatedSkill && (
-            <View style={styles.claimWrap}>
-              <View style={styles.claimBody}>
-                <Text style={[styles.claimTitle, { color: kit.text }]}>
-                  Your Pet Learned a New Skill
-                </Text>
-                <View
-                  style={[
-                    styles.skillBigCard,
-                    result.generatedSkill.rarity === 'secret' && styles.skillBigCardSecret,
-                  ]}
+          ) : phase === 'claim' ? (
+            /* ---- phase 3: items claim (fireworks + spring pops) ---- */
+            result && (
+              <View style={styles.claimWrap}>
+                <FireworksBurst />
+                <ScrollView
+                  contentContainerStyle={styles.claimScroll}
+                  showsVerticalScrollIndicator={false}
                 >
-                  {result.generatedSkill.rarity === 'secret' && (
-                    <Text style={styles.skillSecretBadge}>✨ Secret</Text>
+                  <SpringPop>
+                    <View style={styles.finishBanner}>
+                      <Text style={styles.finishTitle}>Reflection Finished</Text>
+                      <View style={styles.finishCloverRow}>
+                        <Image source={ICONS.Clover} style={styles.finishClover} resizeMode="contain" />
+                        <Text style={styles.finishAmount}>x{result.xpAwarded}</Text>
+                      </View>
+                    </View>
+                  </SpringPop>
+
+                  <SpringPop delay={160}>
+                    <View style={styles.claimCard}>
+                      <View style={styles.claimCardHeader}>
+                        <Text style={styles.claimCardHeaderEmoji}>{'🖼️'}</Text>
+                        <Text style={styles.claimCardHeaderText}>Memory Items Created</Text>
+                      </View>
+                      {result.matchedItems.length > 0 ? (
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={styles.claimItemsRow}
+                        >
+                          {result.matchedItems.map((it) => {
+                            const def = ITEM_DICTIONARY.items[it.itemId];
+                            return (
+                              <View key={it.itemId} style={styles.claimItem}>
+                                <View style={styles.claimItemTile}>
+                                  <Text style={styles.claimItemEmoji}>{def?.emoji ?? '📦'}</Text>
+                                </View>
+                                <Text style={styles.claimItemCount}>x1</Text>
+                              </View>
+                            );
+                          })}
+                        </ScrollView>
+                      ) : (
+                        <Text style={styles.claimEmpty}>
+                          A quiet one — no items this time, and that's okay.
+                        </Text>
+                      )}
+                    </View>
+                  </SpringPop>
+
+                  {/* Free tier's manual memory editor (PRD: 可自行添加描述). */}
+                  {editing && (
+                    <SpringPop>
+                      <View style={styles.editCard}>
+                        {result.matchedItems.map((it) => {
+                          const def = ITEM_DICTIONARY.items[it.itemId];
+                          return (
+                            <View key={it.itemId} style={styles.editRow}>
+                              <Text style={styles.editEmoji}>{def?.emoji ?? '📦'}</Text>
+                              <TextInput
+                                style={styles.editInput}
+                                placeholder={it.label}
+                                placeholderTextColor="#B7AEA6"
+                                value={edits[it.itemId] ?? ''}
+                                onChangeText={(t) =>
+                                  setEdits((cur) => ({ ...cur, [it.itemId]: t.slice(0, 200) }))
+                                }
+                              />
+                            </View>
+                          );
+                        })}
+                        <Text style={styles.editHint}>
+                          Describe the moment behind each item — your words become the memory.
+                        </Text>
+                      </View>
+                    </SpringPop>
                   )}
-                  <Text style={styles.skillBigTitle}>{result.generatedSkill.title}</Text>
-                  <Text style={styles.skillBigBody}>{result.generatedSkill.body}</Text>
+                </ScrollView>
+
+                <View style={[styles.claimBtns, { paddingBottom: insets.bottom + 14 }]}>
+                  {editing ? (
+                    <SpringPop>
+                      <OffsetCard
+                        color={YELLOW_DROP}
+                        radius={22}
+                        onPress={() => void onSaveEdits()}
+                        cardStyle={styles.yellowBtn}
+                      >
+                        {savingEdits ? (
+                          <ActivityIndicator color={INK} />
+                        ) : (
+                          <Text style={styles.yellowBtnText}>Save & Claim</Text>
+                        )}
+                      </OffsetCard>
+                    </SpringPop>
+                  ) : !isPaid && result.matchedItems.length > 0 ? (
+                    <>
+                      <SpringPop delay={320}>
+                        <OffsetCard
+                          color={YELLOW_DROP}
+                          radius={22}
+                          onPress={() => { void haptics.light(); setEditing(true); }}
+                          cardStyle={styles.yellowBtn}
+                        >
+                          <Text style={styles.yellowBtnText}>Add Memories Manually</Text>
+                        </OffsetCard>
+                      </SpringPop>
+                      <SpringPop delay={420}>
+                        <OffsetCard
+                          color={ORANGE_DROP}
+                          radius={22}
+                          onPress={onClaimItems}
+                          cardStyle={styles.orangeBtn}
+                        >
+                          <Text style={styles.orangeBtnText}>Claim Directly</Text>
+                        </OffsetCard>
+                      </SpringPop>
+                    </>
+                  ) : (
+                    <SpringPop delay={320}>
+                      <OffsetCard
+                        color={YELLOW_DROP}
+                        radius={22}
+                        onPress={onClaimItems}
+                        cardStyle={styles.yellowBtn}
+                      >
+                        <Text style={styles.yellowBtnText}>Claim</Text>
+                      </OffsetCard>
+                    </SpringPop>
+                  )}
                 </View>
               </View>
-
-              <Pressable
-                onPress={() => router.back()}
-                style={({ pressed }) => [styles.claimBtn, styles.skillClaimBtn, pressed && styles.claimBtnPressed]}
-              >
-                <Text style={styles.claimBtnText}>Claim</Text>
-              </Pressable>
-            </View>
-          )
-        )}
-      </View>
-    </KeyboardAvoidingView>
+            )
+          ) : (
+            /* ---- phase 4: skill reveal (fireworks + spring pop) ---- */
+            result?.generatedSkill && (
+              <View style={styles.claimWrap}>
+                <FireworksBurst />
+                <View style={styles.skillWrap}>
+                  <Text style={styles.skillStar}>{'⭐'}</Text>
+                  <Text style={styles.skillTitleLine}>Your Pet Learned a New Skill!</Text>
+                  <SpringPop delay={120}>
+                    <View
+                      style={[
+                        styles.skillBigCard,
+                        result.generatedSkill.rarity === 'secret' && styles.skillBigCardSecret,
+                      ]}
+                    >
+                      {result.generatedSkill.rarity === 'secret' && (
+                        <Text style={styles.skillSecretBadge}>✨ Secret</Text>
+                      )}
+                      <Text style={styles.skillBigTitle}>{result.generatedSkill.title}</Text>
+                      <Text style={styles.skillBigBody}>{result.generatedSkill.body}</Text>
+                    </View>
+                  </SpringPop>
+                </View>
+                <View style={[styles.claimBtns, { paddingBottom: insets.bottom + 14 }]}>
+                  <SpringPop delay={300}>
+                    <OffsetCard
+                      color={YELLOW_DROP}
+                      radius={22}
+                      onPress={() => router.back()}
+                      cardStyle={styles.yellowBtn}
+                    >
+                      <Text style={styles.yellowBtnText}>Claim</Text>
+                    </OffsetCard>
+                  </SpringPop>
+                </View>
+              </View>
+            )
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  close: { paddingVertical: 8 },
-  closeText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
-  remaining: { fontSize: 13, fontFamily: 'Inter_500Medium' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  backBtn: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  remaining: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
 
-  lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 12, marginBottom: 6 },
-  leadSub: { fontSize: 15, fontFamily: 'Inter_500Medium', marginBottom: 22 },
+  lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginTop: 6, marginBottom: 4 },
+  leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginBottom: 18 },
   pickScroll: { paddingBottom: 40 },
-  promptCard: { borderWidth: 0, borderRadius: 20, padding: 20, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
-  promptText: { fontSize: 16, fontFamily: 'Inter_600SemiBold', lineHeight: 23 },
+  promptCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 18, paddingHorizontal: 20,
+  },
+  promptTextWrap: { flex: 1 },
+  promptTitle: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: INK },
+  promptText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#4A3B2A', marginTop: 4, lineHeight: 20 },
+  promptIcon: { width: 58, height: 58 },
 
-  writeWrap: { flex: 1, paddingTop: 12 },
-  chosenPrompt: { fontSize: 15, fontFamily: 'Inter_500Medium', marginBottom: 12, lineHeight: 22 },
-  input: { flex: 1, borderRadius: 16, padding: 16, fontSize: 17, fontFamily: 'Inter_400Regular', lineHeight: 25 },
+  writeWrap: { flex: 1, paddingTop: 6 },
+  chosenPrompt: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 12, lineHeight: 24 },
+  input: {
+    flex: 1, borderRadius: 24, padding: 18, fontSize: 17, fontFamily: 'Inter_400Regular',
+    lineHeight: 25, color: INK, backgroundColor: '#FFFFFF',
+  },
   writeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, minHeight: 20 },
-  count: { fontSize: 13, fontFamily: 'Inter_400Regular' },
-  errorText: { fontSize: 13, fontFamily: 'Inter_500Medium', flexShrink: 1, textAlign: 'right', marginLeft: 12 },
-  submit: { borderRadius: 18, paddingVertical: 18, alignItems: 'center', marginTop: 16, marginBottom: 8, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-  submitText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  count: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  errorText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFE1D6', flexShrink: 1, textAlign: 'right', marginLeft: 12 },
+  saveBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: YELLOW },
+  saveBtnText: { color: INK, fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
 
-  restTitle: { fontSize: 22, fontFamily: 'Inter_700Bold', marginBottom: 10 },
-  restBody: { fontSize: 16, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
+  restTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 10 },
+  restBody: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
 
-  // ---- claim screens (items claim + skill reveal) ----
-  claimWrap: { flex: 1, paddingBottom: 24 },
-  claimBody: { flex: 1, justifyContent: 'center' },
-  claimTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', marginBottom: 18 },
-  cloverRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 26 },
-  cloverGlyph: { fontSize: 30 },
-  cloverAmount: { fontSize: 30, fontFamily: 'Inter_800ExtraBold' },
+  // ---- claim ----
+  claimWrap: { flex: 1 },
+  claimScroll: { paddingTop: 40, paddingBottom: 16, gap: 18 },
+  finishBanner: {
+    backgroundColor: '#A9565C', borderRadius: 24, paddingVertical: 20, paddingHorizontal: 18,
+    alignItems: 'center', gap: 8,
+  },
+  finishTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  finishCloverRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  finishClover: { width: 34, height: 34 },
+  finishAmount: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+
   claimCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, width: '100%',
-    shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 10,
+    backgroundColor: '#FFF9F0', borderRadius: 24, padding: 20,
+    shadowColor: '#8A4A2B', shadowOpacity: 0.15, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
   claimCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
   claimCardHeaderEmoji: { fontSize: 20 },
-  claimCardHeaderText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
+  claimCardHeaderText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: INK },
   claimItemsRow: { gap: 14, paddingHorizontal: 4 },
   claimItem: { alignItems: 'center', gap: 6 },
   claimItemTile: {
@@ -378,18 +495,28 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   claimItemEmoji: { fontSize: 40 },
-  claimItemCount: { fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
-  claimEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', textAlign: 'center', paddingVertical: 8 },
-  claimBtn: {
-    alignSelf: 'center', minWidth: 220, backgroundColor: '#FFC94A',
-    borderRadius: 16, paddingVertical: 15, alignItems: 'center',
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0,
-    shadowOffset: { width: 2, height: 3 }, elevation: 4,
+  claimItemCount: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: INK },
+  claimEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63', textAlign: 'center', paddingVertical: 8 },
+
+  editCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, gap: 10 },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  editEmoji: { fontSize: 26 },
+  editInput: {
+    flex: 1, borderWidth: 1.5, borderColor: '#EADFD0', borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, fontFamily: 'Inter_500Medium', color: INK,
   },
-  claimBtnPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
-  claimBtnText: { color: '#2B2B2B', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
-  skillClaimBtn: { backgroundColor: '#F0885C' },
+  editHint: { fontSize: 12, fontFamily: 'Inter_500Medium', color: '#8A7A63', textAlign: 'center', marginTop: 2 },
+
+  claimBtns: { gap: 6, paddingTop: 6 },
+  yellowBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: YELLOW },
+  yellowBtnText: { color: INK, fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
+  orangeBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: ORANGE },
+  orangeBtnText: { color: '#FFFFFF', fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
+
+  // ---- skill ----
+  skillWrap: { flex: 1, justifyContent: 'center', gap: 14 },
+  skillStar: { fontSize: 44, textAlign: 'center' },
+  skillTitleLine: { fontSize: 23, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 6 },
   skillBigCard: {
     backgroundColor: '#F5A445', borderRadius: 24, borderWidth: 4, borderColor: '#3B4A8F',
     paddingVertical: 40, paddingHorizontal: 24, width: '88%', alignSelf: 'center',

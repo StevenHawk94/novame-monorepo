@@ -22,6 +22,7 @@ import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { CompanionSheet, type CompanionSheetRef } from '@/components/main/companion-sheet';
+import { OffsetCard } from '@/components/ui/offset-card';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -136,12 +137,13 @@ export default function HomeScreen() {
         {/* Permanent entries */}
         <View style={styles.ground}>
           <View style={styles.entries}>
-            <Pressable onPress={onFocus} style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}>
+            {/* Design: 8%-offset colored drops — teal for Focus, tan for Reflect. */}
+            <OffsetCard color="#7BC5C0" radius={18} onPress={onFocus} style={{ flex: 1 }} cardStyle={styles.entryBtn}>
               <Text style={styles.entryText}>Focus</Text>
-            </Pressable>
-            <Pressable onPress={onReflect} style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}>
+            </OffsetCard>
+            <OffsetCard color="#E5B57E" radius={18} onPress={onReflect} style={{ flex: 1 }} cardStyle={styles.entryBtn}>
               <Text style={styles.entryText}>Reflect</Text>
-            </Pressable>
+            </OffsetCard>
           </View>
 
           {__DEV__ && (

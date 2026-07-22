@@ -19,8 +19,8 @@ describe('REFLECT_PROMPTS', () => {
 
 describe('promptDimension', () => {
   it('resolves a prompt id to its dimension', () => {
-    expect(promptDimension(1)).toBe('expression');
-    expect(promptDimension(8)).toBe('connection');
+    expect(promptDimension(1)).toBe('momentum');
+    expect(promptDimension(8)).toBe('gratitude');
   });
   it('returns null for the free-form prompt and unknown ids', () => {
     expect(promptDimension(9)).toBeNull();

@@ -206,3 +206,27 @@ export async function submitReflect(params: {
     return { ok: false, error: 'network' };
   }
 }
+
+/**
+ * "Add Memories Manually" (claim screen): overwrite this reflect's matched
+ * memory excerpts with the user's own words. Fire-and-check; failures are
+ * non-fatal (the rule-matched label stays).
+ */
+export async function editReflectMemories(
+  reflectId: string,
+  edits: { itemId: string; text: string }[],
+): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId || edits.length === 0) return false;
+  try {
+    const data = await apiClient.post<{ success?: boolean }>('/api/reflect/edit-memories', {
+      userId,
+      reflectId,
+      edits,
+    });
+    return !!data.success;
+  } catch {
+    return false;
+  }
+}

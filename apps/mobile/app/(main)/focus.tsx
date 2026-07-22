@@ -1,47 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 
 import { FOCUS_SCENES, type FocusScene } from '@novame/domain';
-import { useTheme } from '../../src/theme/use-theme';
-import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { submitFocus } from '../../src/lib/focus-api';
+import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
 import { CloverBurst } from '../../src/components/main/clover-burst';
+import { OffsetCard } from '../../src/components/ui/offset-card';
 import { XP_RULES } from '@novame/engine';
 
-// Test-phase bundled audio: the first track of the free scenes. Remote R2
-// tracks replace these later; a scene with no local track yet just shows a
-// "coming soon" note. Only work1 is provided for now; the map is where new
-// bundled tracks are wired in.
+// Test-phase bundled audio. Every free scene falls back to the one bundled
+// track until its own recording lands (the R2 manifest replaces these);
+// locked/paid scenes with no track show "Soon".
+const WORK1 = require('../../assets/audio/focus/work1.mp3');
 const LOCAL_TRACKS: Record<string, number> = {
-  work: require('../../assets/audio/focus/work1.mp3'),
+  work: WORK1,
+  learn: WORK1, // placeholder until learn1.mp3 lands
+  connect: WORK1, // placeholder until connect1.mp3 lands
 };
 
 type Phase = 'select' | 'play';
 
+// Design palette (focus mocks): sky backdrop, deep-green text, teal offset.
+const GREEN = '#1E4D3B';
+const TEAL_OFFSET = '#7BC5C0';
+
+/** "02.55" style time per the play mock. */
+function fmtTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}.${String(s % 60).padStart(2, '0')}`;
+}
+
 /**
- * Focus (C10). Pick a scene, play a mindfulness track, and it completes when
- * playback reaches the end (>= duration - 2s). No seek bar -- only pause/resume
- * (PRD). Audio keeps playing when the screen locks or backgrounds
- * (shouldPlayInBackground + the UIBackgroundModes audio entitlement). Completing
- * credits +30 xp once a day; quitting before the end credits nothing.
+ * Focus (C10, v2.0 design). Pick what you're preparing for, play the guided
+ * track over the full-bleed sky art, and it completes when playback finishes.
+ * Pause/resume only, no seeking (the progress bar is display-only — PRD).
+ * Audio keeps playing when the screen locks or backgrounds. Completing
+ * credits +30 clovers (twice a day); quitting before the end credits nothing.
  */
 export default function FocusScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
-  const kit = {
-    text: '#1E4A48', textSub: '#3E6B67', textMuted: '#7A9B97',
-    card: '#FFFFFF', border: 'rgba(30,74,72,0.12)',
-    accent: '#3B9B9B', track: 'rgba(30,74,72,0.15)',
-  };
-  void c;
 
   const [phase, setPhase] = useState<Phase>('select');
   const [scene, setScene] = useState<FocusScene | null>(null);
@@ -103,127 +108,149 @@ export default function FocusScreen() {
     setScene(null);
   }, [player]);
 
-  // ---- SELECT ----
+  // ---- SELECT (design: "What are you preparing for?") ----
   if (phase === 'select') {
     return (
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <WaveBackground palette={WAVE_PALETTES.focus} />
-        <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
-        </Pressable>
-        <Text style={[styles.h1, { color: kit.text }]}>Take a moment</Text>
-        <Text style={[styles.sub, { color: kit.textSub }]}>
-          A short guided pause for wherever you are.
-        </Text>
+      <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
+        <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
+          <Pressable onPress={() => router.back()} style={styles.backDark} hitSlop={12}>
+            <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.h1}>What are you preparing for?</Text>
+          <Text style={styles.sub}>Get your mind clear, focused, and ready in just 3 minutes.</Text>
 
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          {FOCUS_SCENES.map((s) => {
-            const locked = !s.free && !isPaid;
-            const noTrack = !LOCAL_TRACKS[s.id];
-            return (
-              <Pressable
-                key={s.id}
-                onPress={() => startScene(s)}
-                style={[styles.sceneCard, { backgroundColor: kit.card, borderColor: kit.border, opacity: locked ? 0.55 : 1 }]}
-              >
-                <View style={styles.sceneText}>
-                  <Text style={[styles.sceneTitle, { color: kit.text }]}>{s.title}</Text>
-                  <Text style={[styles.sceneSub, { color: kit.textSub }]}>{s.subtitle}</Text>
-                </View>
-                {locked ? (
-                  <MaterialIcons name="lock" size={20} color={kit.textMuted} />
-                ) : noTrack ? (
-                  <Text style={[styles.soon, { color: kit.textMuted }]}>Soon</Text>
-                ) : (
-                  <Text style={styles.sceneEmoji}>{SCENE_EMOJI[s.id] ?? '🍃'}</Text>
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+            {FOCUS_SCENES.map((s) => {
+              const locked = !s.free && !isPaid;
+              const noTrack = !LOCAL_TRACKS[s.id];
+              return (
+                <OffsetCard
+                  key={s.id}
+                  color={TEAL_OFFSET}
+                  radius={26}
+                  onPress={() => startScene(s)}
+                  disabled={locked || noTrack}
+                  cardStyle={[styles.sceneCard, (locked || noTrack) && { opacity: 0.6 }]}
+                >
+                  <View style={styles.sceneText}>
+                    <Text style={styles.sceneTitle}>{s.title}</Text>
+                    <Text style={styles.sceneSub}>{s.subtitle}</Text>
+                  </View>
+                  {locked ? (
+                    <MaterialIcons name="lock" size={26} color="#9BB8B4" />
+                  ) : noTrack ? (
+                    <Text style={styles.soon}>Soon</Text>
+                  ) : (
+                    <Image source={FOCUS_SCENE_ICONS[s.id]} style={styles.sceneIcon} resizeMode="contain" />
+                  )}
+                </OffsetCard>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </ImageBackground>
     );
   }
 
-  // ---- PLAY ----
+  // ---- PLAY (design: full sky, bottom-anchored info + round pause) ----
   const progress = status.duration > 0 ? status.currentTime / status.duration : 0;
   return (
-    <View style={[styles.root, styles.playRoot, { paddingTop: insets.top + 8 }]}>
-      <WaveBackground palette={WAVE_PALETTES.focus} />
-      <Pressable onPress={exit} style={styles.back} hitSlop={12}>
-        <MaterialIcons name="close" size={24} color={kit.textSub} />
-      </Pressable>
+    <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
+      <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
+        <Pressable onPress={exit} style={styles.backLight} hitSlop={12}>
+          <MaterialIcons name="arrow-back" size={22} color={GREEN} />
+        </Pressable>
 
-      <View style={styles.playCenter}>
-        <Text style={[styles.playTitle, { color: kit.text }]}>{scene?.title}</Text>
-        <Text style={[styles.playSub, { color: kit.textSub }]}>{scene?.subtitle}</Text>
-
-        {completed ? (
-          <View style={styles.doneBlock}>
-            <CloverBurst amount={XP_RULES.focus.award} />
-            <MaterialIcons name="check-circle" size={64} color={kit.accent} />
-            <Text style={[styles.doneText, { color: kit.text }]}>Done. Carry that with you.</Text>
-            <Pressable onPress={() => router.back()} style={[styles.doneBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
-              <Text style={styles.doneBtnText}>Finish</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            {/* Breathing circle placeholder */}
-            <View style={[styles.orb, { backgroundColor: kit.card, borderColor: kit.accent }]}>
-              <MaterialIcons name={status.playing ? 'graphic-eq' : 'spa'} size={56} color={kit.accent} />
+        <View style={[styles.playBottom, { paddingBottom: insets.bottom + 24 }]}>
+          {completed ? (
+            <View style={styles.doneBlock}>
+              <CloverBurst amount={XP_RULES.focus.award} />
+              <MaterialIcons name="check-circle" size={64} color="#FFFFFF" />
+              <Text style={styles.doneText}>Done. Carry that with you.</Text>
+              <Pressable onPress={() => router.back()} style={styles.doneBtn}>
+                <Text style={styles.doneBtnText}>Finish</Text>
+              </Pressable>
             </View>
+          ) : (
+            <>
+              <Text style={styles.playTitle}>{scene?.title} #1</Text>
+              <Text style={styles.playSub}>{scene?.subtitle}</Text>
 
-            {/* Progress (display only, no seek) */}
-            <View style={[styles.progTrack, { backgroundColor: kit.track }]}>
-              <View style={[styles.progFill, { width: `${progress * 100}%`, backgroundColor: kit.accent }]} />
-            </View>
+              {/* Display-only progress with times, per the mock. */}
+              <View style={styles.progRow}>
+                <Text style={styles.progTime}>{fmtTime(status.currentTime)}</Text>
+                <View style={styles.progTrack}>
+                  <View style={[styles.progFill, { width: `${progress * 100}%` }]} />
+                  <View style={[styles.progDot, { left: `${progress * 100}%` }]} />
+                </View>
+                <Text style={styles.progTime}>{fmtTime(status.duration)}</Text>
+              </View>
 
-            <Pressable
-              onPress={() => (status.playing ? player.pause() : player.play())}
-              style={[styles.playBtn, { backgroundColor: kit.accent }]}
-            >
-              <MaterialIcons name={status.playing ? 'pause' : 'play-arrow'} size={32} color="#FFFFFF" />
-            </Pressable>
-          </>
-        )}
+              <Pressable
+                onPress={() => (status.playing ? player.pause() : player.play())}
+                style={styles.playBtn}
+                hitSlop={8}
+              >
+                <MaterialIcons name={status.playing ? 'pause' : 'play-arrow'} size={34} color={GREEN} />
+              </Pressable>
+            </>
+          )}
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
-// Design shows a colorful illustration per row; emoji stand in until the
-// icon set covers the scenes.
-const SCENE_EMOJI: Record<string, string> = {
-  work: '📋', focus: '💻', calm: '💬', reset: '🧠',
-  anxious: '🌧️', sleep: '🌙', morning: '🌅', overwhelm: '🫧',
-};
-
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingHorizontal: 20 },
-  back: { alignSelf: 'flex-start', paddingVertical: 8 },
-  h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 4 },
-  sub: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 6, marginBottom: 16 },
+  root: { flex: 1 },
+  inner: { flex: 1, paddingHorizontal: 20 },
 
-  list: { gap: 12, paddingBottom: 32 },
-  sceneCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 20, shadowColor: '#2B5A58', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  backDark: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#1B1B1B',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  backLight: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: GREEN },
+  sub: { fontSize: 15, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 8, marginBottom: 18, lineHeight: 21 },
+
+  list: { paddingBottom: 32 },
+  sceneCard: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 20, paddingHorizontal: 20, gap: 12,
+  },
   sceneText: { flex: 1 },
-  sceneTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
-  sceneSub: { fontSize: 13, fontFamily: 'Inter_400Regular', marginTop: 3 },
-  soon: { fontSize: 12, fontFamily: 'Inter_500Medium' },
-  sceneEmoji: { fontSize: 26 },
+  sceneTitle: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: GREEN },
+  sceneSub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 4, lineHeight: 20 },
+  sceneIcon: { width: 64, height: 64 },
+  soon: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#9BB8B4' },
 
-  playRoot: {},
-  playCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
-  playTitle: { fontSize: 24, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  playSub: { fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 8 },
-  orb: { width: 180, height: 180, borderRadius: 90, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  progTrack: { width: '80%', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 12 },
-  progFill: { height: '100%', borderRadius: 3 },
-  playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#2B5A58', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  playBottom: { flex: 1, justifyContent: 'flex-end' },
+  playTitle: { fontSize: 34, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  playSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.92)', marginTop: 6 },
+  progRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20 },
+  progTime: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', width: 42 },
+  progTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.55)' },
+  progFill: { height: '100%', borderRadius: 2, backgroundColor: '#FFFFFF' },
+  progDot: {
+    position: 'absolute', top: -4, width: 12, height: 12, borderRadius: 6,
+    marginLeft: -6, backgroundColor: '#F0885C',
+  },
+  playBtn: {
+    alignSelf: 'center', marginTop: 22,
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#1B3B38', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
 
-  doneBlock: { alignItems: 'center', gap: 16, marginTop: 20 },
-  doneText: { fontSize: 18, fontFamily: 'Inter_600SemiBold' },
-  doneBtn: { paddingHorizontal: 44, paddingVertical: 16, borderRadius: 18, marginTop: 8, shadowColor: '#2B5A58', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-  doneBtnText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  doneBlock: { alignItems: 'center', gap: 16 },
+  doneText: { fontSize: 18, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  doneBtn: {
+    paddingHorizontal: 44, paddingVertical: 15, borderRadius: 18, backgroundColor: '#FFFFFF',
+  },
+  doneBtnText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: GREEN },
 });

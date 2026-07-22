@@ -35,3 +35,32 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   interact: require('../../assets/Icons/interact.png'),
   Clover: require('../../assets/Icons/clover.png'),
 };
+
+/** Focus scene illustrations (design: focus picker rows), keyed by scene id. */
+export const FOCUS_SCENE_ICONS: Record<string, ImageSourcePropType> = {
+  work: require('../../assets/Icons/focus-work.png'),
+  learn: require('../../assets/Icons/focus-learning.png'),
+  connect: require('../../assets/Icons/focus-connect.png'),
+  daily: require('../../assets/Icons/focus-daily tasks.png'),
+  family: require('../../assets/Icons/focus-family.png'),
+  challenge: require('../../assets/Icons/focus-challenge.png'),
+};
+
+/** Reflect prompt illustrations, keyed by prompt id (domain REFLECT_PROMPTS). */
+export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
+  1: require('../../assets/Icons/reflect-journalling.png'),
+  2: require('../../assets/Icons/reflect-someone.png'),
+  3: require('../../assets/Icons/reflect-feeling.png'),
+  4: require('../../assets/Icons/reflect-learning.png'),
+  5: require('../../assets/Icons/reflect-proud.png'),
+  6: require('../../assets/Icons/reflect-realization.png'),
+  7: require('../../assets/Icons/reflect-challenge.png'),
+  8: require('../../assets/Icons/reflect-appreciation.png'),
+  9: require('../../assets/Icons/reflect-open reflection.png'),
+};
+
+/** Full-bleed screen backgrounds (assets/Background). */
+export const BACKGROUNDS = {
+  focus: require('../../assets/Background/focus.webp'),
+  reflect: require('../../assets/Background/reflection.webp'),
+} as const;
