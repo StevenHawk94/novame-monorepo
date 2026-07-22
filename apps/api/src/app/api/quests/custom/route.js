@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 // Simple first-pass prompt (tune later, like the Master prompt). Asks for a flat
 // JSON object with a `tasks` array so parseAIJson stays robust.
-const CUSTOM_PLAN_PROMPT = `You help someone build a personal 7-day self-improvement plan. Given their goal, generate exactly 10 short, concrete, doable daily tasks -- each a single action they could finish in one day. Keep each under 12 words, imperative voice (e.g. "Do 20 push-ups", "Read 10 pages"). No numbering, no duplicates, no vague tasks.
+const CUSTOM_PLAN_PROMPT = `You help someone build a personal 7-day self-improvement plan. Given their goal, generate exactly 20 short, concrete, doable daily tasks -- each a single action they could finish in one day. Keep each under 12 words, imperative voice (e.g. "Do 20 push-ups", "Read 10 pages"). No numbering, no duplicates, no vague tasks.
 
 Return ONLY a JSON object, no markdown, no prose outside it:
 { "tasks": ["task one", "task two"] }`
@@ -17,7 +17,7 @@ Return ONLY a JSON object, no markdown, no prose outside it:
  *
  * Body: { userId, goal }
  *
- * Plus-only. Turns a free-text goal into ~10 candidate daily tasks via the AI
+ * Plus-only. Turns a free-text goal into ~20 candidate daily tasks via the AI
  * layer (Gemini -> DeepSeek fallback). Generation only -- it does NOT create a
  * plan; the client lets the user pick 7 and then calls /api/quests/start with
  * themeKey 'custom'. Plus gate mirrors master/ask (profiles.subscription_tier).
@@ -54,7 +54,7 @@ export async function POST(request) {
       const res = await callAI({
         systemInstruction: CUSTOM_PLAN_PROMPT,
         userText: `My goal: ${goal.trim().slice(0, 500)}`,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 3000 },
       })
       const parsed = parseAIJson(res.text)
       const arr = Array.isArray(parsed) ? parsed : parsed?.tasks
@@ -62,7 +62,7 @@ export async function POST(request) {
         tasks = arr
           .filter((t) => typeof t === 'string' && t.trim().length > 0)
           .map((t) => t.trim().slice(0, 120))
-          .slice(0, 10)
+          .slice(0, 20)
       }
     } catch (e) {
       console.warn('[quests/custom] AI failed:', e && e.message)
