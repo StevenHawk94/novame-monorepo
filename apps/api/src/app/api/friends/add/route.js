@@ -4,6 +4,25 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
+// PRD benefits matrix: free users hold 1 accepted friend, paid 99. Counted
+// server-side at request time (add) AND accept time (respond) — the pair
+// could fill either side's quota between the two moments.
+async function acceptedCount(supabase, uid) {
+  const { count } = await supabase
+    .from('friendships')
+    .select('id', { count: 'exact', head: true })
+    .or(`user_a.eq.${uid},user_b.eq.${uid}`)
+    .eq('status', 'accepted')
+  return count ?? 0
+}
+
+async function friendLimitOf(supabase, uid) {
+  const { data } = await supabase
+    .from('profiles').select('subscription_tier').eq('id', uid).maybeSingle()
+  return (data?.subscription_tier ?? 'free') === 'free' ? 1 : 99
+}
+
+
 /**
  * POST /api/friends/add
  *
@@ -48,6 +67,15 @@ export async function POST(request) {
     }
     if (target.id === userId) {
       return NextResponse.json({ error: 'cannot_add_self' }, { status: 400 })
+    }
+
+    // Friend quota (both sides — a request that could never be accepted is
+    // clearer rejected now than pending forever).
+    if ((await acceptedCount(supabase, userId)) >= (await friendLimitOf(supabase, userId))) {
+      return NextResponse.json({ error: 'friend_limit_reached' }, { status: 403 })
+    }
+    if ((await acceptedCount(supabase, target.id)) >= (await friendLimitOf(supabase, target.id))) {
+      return NextResponse.json({ error: 'target_friend_limit_reached' }, { status: 403 })
     }
 
     // Canonical order.
