@@ -4,6 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
@@ -17,6 +18,7 @@ import {
 } from '@/lib/subscription';
 import { signOut } from '@/lib/auth';
 import { fetchDuoStatus, joinDuo, type DuoStatus } from '@/lib/duo-api';
+import { fetchFriends } from '@/lib/friends-api';
 import { supabase } from '@/lib/supabase';
 import { useRef } from 'react';
 
@@ -24,14 +26,15 @@ const PRIVACY_URL = 'https://novameapp.com/privacy';
 const TERMS_URL = 'https://novameapp.com/terms';
 
 /**
- * Me -- the settings center, reached from Home's top-left hamburger. Rebuilt for
- * v2 from the v1 me page, minus the self-match gauge and journey stats (those
- * belonged to systems v2 replaced). What remains is the account + settings hub:
- * the current plan (with the Plan & Billing sheet and the IAP paywall behind
- * it), account management, notifications, support, sign out, and legal links.
+ * Settings center (design: menu.png), reached from Home's top-left hamburger.
+ * Warm cream page: X close, avatar + name, an Enable Notifications card, the
+ * NovaMe Plus banner, then a white list card of settings rows. All v2 logic
+ * (Plan & Billing sheet, Duo seats, sign out, legal) is unchanged from the
+ * previous night-theme build — this is a reskin plus the design's new rows
+ * (Invite Friends, Rate Us, Report Bugs / Help Centers → support).
  *
- * The 8-dimension scores live on the Status tab, a separate page -- this one is
- * settings only.
+ * Row icons are emoji placeholders until the sticker icon set covers them —
+ * same convention as the Skills pill on the companion sheet.
  */
 export default function MeScreen() {
   const insets = useSafeAreaInsets();
@@ -106,6 +109,35 @@ export default function MeScreen() {
     }
   };
 
+  /** Design row "Invite Friends": share your friend code via the system sheet. */
+  const onInviteFriends = async () => {
+    void haptics.light();
+    try {
+      const status = await fetchFriends();
+      if (status.inviteCode) {
+        await Share.share({
+          message: `Add me on NovaMe! My friend code is ${status.inviteCode} — let's share memory items together.`,
+        });
+        return;
+      }
+    } catch {
+      // fall through to the Friends tab, where the full add flow lives
+    }
+    router.push('/(main)/(tabs)/friends' as never);
+  };
+
+  /** Design row "Rate Us on App Store": native in-app review when available. */
+  const onRateUs = async () => {
+    void haptics.light();
+    try {
+      if (await StoreReview.hasAction()) {
+        await StoreReview.requestReview();
+      }
+    } catch (e) {
+      console.warn('[me] store review failed:', e);
+    }
+  };
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -125,72 +157,92 @@ export default function MeScreen() {
   // Defensive: a stale cache may still hold an old tier key (pro/basic/ultra)
   // that no longer exists in PRICING_TIERS. Any non-free unknown maps to plus.
   const safeTier = PRICING_TIERS[tier] ? tier : tier === 'free' ? 'free' : 'plus';
-  const tierInfo = PRICING_TIERS[safeTier];
+  const isPlus = safeTier !== 'free';
   const appVersion = Constants.expoConfig?.version ?? '';
 
   return (
     <BottomSheetModalProvider>
       <View style={styles.root}>
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
-          {/* Header */}
+          {/* Header: brown X + avatar + name */}
           <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
             <Pressable onPress={() => { void haptics.light(); router.back(); }} style={styles.closeBtn} hitSlop={8}>
-              <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
+              <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
             <View style={styles.userRow}>
               <View style={styles.avatarWrap}>
-                <MaterialIcons name="person" size={32} color="#FFFFFF" />
+                <MaterialIcons name="person" size={34} color="#B49B7A" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.userName} numberOfLines={1}>{displayName || 'You'}</Text>
-                <Text style={styles.userEmail} numberOfLines={1}>{email || 'Signed in'}</Text>
+                {email ? <Text style={styles.userEmail} numberOfLines={1}>{email}</Text> : null}
               </View>
             </View>
           </View>
 
-          {/* Current Plan */}
-          <View style={styles.planCard}>
-            <View style={styles.planLeft}>
-              <View style={styles.planIcon}>
-                <MaterialIcons name="workspace-premium" size={22} color="#FBBF24" />
-              </View>
-              <View>
-                <Text style={styles.planName}>{tierInfo.name} Plan</Text>
-                <Text style={styles.planUsage}>{tierInfo.monthlyAnalyses} insights / month</Text>
-              </View>
+          {/* Enable Notifications card (design) */}
+          <View style={styles.notifCard}>
+            <Text style={styles.rowEmoji}>{'🔔'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.notifTitle}>Enable Notifications</Text>
+              <Text style={styles.notifSub}>Get reminder to collect your memories.</Text>
             </View>
             <Pressable
-              onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }}
-              style={({ pressed }) => [styles.planViewBtn, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => goTo('/(main)/(modals)/notification-settings')}
+              style={({ pressed }) => [styles.notifBtn, pressed && styles.pressedBtn]}
             >
-              <Text style={styles.planViewText}>View</Text>
+              <Text style={styles.notifBtnText}>Enable</Text>
             </Pressable>
           </View>
 
-          {/* Menu */}
-          <View style={styles.menuCard}>
-            <MenuRow icon="manage-accounts" label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
-            <MenuRow icon="credit-card" label="Plan and Billing" onPress={() => planBillingSheetRef.current?.present()} divider />
-            <MenuRow icon="notifications" label="Notification Settings" onPress={() => goTo('/(main)/(modals)/notification-settings')} divider />
-            <MenuRow icon="help" label="Support" onPress={() => goTo('/(main)/(modals)/support')} />
+          {/* NovaMe Plus banner (design: brown, white View button) */}
+          <View style={styles.plusBanner}>
+            <Text style={styles.rowEmoji}>{'🪪'}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.plusTitleRow}>
+                <Text style={styles.plusTitle}>NovaMe</Text>
+                <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
+              </View>
+              <Text style={styles.plusSub}>
+                {isPlus
+                  ? "You're on Plus. Every premium feature is yours."
+                  : 'Get Plus to unlock all premium features to you and your bff'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }}
+              style={({ pressed }) => [styles.plusViewBtn, pressed && styles.pressedBtn]}
+            >
+              <Text style={styles.plusViewText}>View</Text>
+            </Pressable>
           </View>
 
-          {/* Duo seat */}
+          {/* Settings list (design rows) */}
+          <View style={styles.menuCard}>
+            <MenuRow emoji={'🙂'} label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
+            <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }} divider />
+            <MenuRow emoji={'🐰'} label="Invite Friends" onPress={() => void onInviteFriends()} divider />
+            <MenuRow emoji={'⭐'} label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
+            <MenuRow emoji={'🐞'} label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
+            <MenuRow emoji={'💝'} label="Help Centers" onPress={() => goTo('/(main)/(modals)/support')} />
+          </View>
+
+          {/* Duo seat (kept from v2 build — not in the mock, but load-bearing) */}
           {duo.asOwner ? (
             <View style={styles.duoCard}>
               <Text style={styles.duoTitle}>Your Duo plan</Text>
               {duo.asOwner.claimed ? (
-                <Text style={styles.duoClaimed}>
+                <Text style={styles.duoBody}>
                   {duo.asOwner.memberName} has joined your Plus. Both of you are covered.
                 </Text>
               ) : (
                 <>
-                  <Text style={styles.duoHint}>Share this one-time code with a friend to give them Plus:</Text>
+                  <Text style={styles.duoBody}>Share this one-time code with a friend to give them Plus:</Text>
                   <Pressable onPress={shareDuoCode}>
                     <Text style={styles.duoCode}>{duo.asOwner.inviteCode}</Text>
                   </Pressable>
                   <Pressable onPress={shareDuoCode} style={styles.duoShareBtn}>
-                    <MaterialIcons name="ios-share" size={16} color="#C084FC" />
+                    <MaterialIcons name="ios-share" size={16} color="#7A5A36" />
                     <Text style={styles.duoShareText}>Share code</Text>
                   </Pressable>
                 </>
@@ -199,19 +251,19 @@ export default function MeScreen() {
           ) : duo.asMember ? (
             <View style={styles.duoCard}>
               <Text style={styles.duoTitle}>Plus via Duo</Text>
-              <Text style={styles.duoClaimed}>
+              <Text style={styles.duoBody}>
                 You're on Plus through {duo.asMember.ownerName}'s Duo plan.
               </Text>
             </View>
-          ) : tier === 'free' ? (
+          ) : safeTier === 'free' ? (
             <View style={styles.duoCard}>
               <Text style={styles.duoTitle}>Join Plus by Duo Plan</Text>
-              <Text style={styles.duoHint}>Got a Duo code from a friend? Enter it to unlock Plus.</Text>
+              <Text style={styles.duoBody}>Got a Duo code from a friend? Enter it to unlock Plus.</Text>
               <TextInput
                 value={joinCode}
                 onChangeText={(t) => setJoinCode(t.toUpperCase())}
                 placeholder="Enter Duo code"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="#B8A588"
                 autoCapitalize="characters"
                 maxLength={8}
                 style={styles.duoInput}
@@ -228,7 +280,7 @@ export default function MeScreen() {
 
           {/* Sign Out */}
           <Pressable onPress={handleSignOut} style={({ pressed }) => [styles.signOutBtn, { opacity: pressed ? 0.85 : 1 }]}>
-            <MaterialIcons name="logout" size={20} color="#F87171" />
+            <MaterialIcons name="logout" size={20} color="#C25B4E" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
 
@@ -251,59 +303,85 @@ export default function MeScreen() {
   );
 }
 
-function MenuRow({ icon, label, onPress, divider }: {
-  icon: keyof typeof MaterialIcons.glyphMap;
+function MenuRow({ emoji, label, onPress, divider }: {
+  emoji: string;
   label: string;
   onPress: () => void;
   divider?: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, divider && styles.menuDivider, { opacity: pressed ? 0.7 : 1 }]}>
-      <MaterialIcons name={icon} size={22} color="rgba(255,255,255,0.7)" />
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, divider && styles.menuDivider, { opacity: pressed ? 0.6 : 1 }]}>
+      <Text style={styles.rowEmoji}>{emoji}</Text>
       <Text style={styles.menuLabel}>{label}</Text>
-      <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.3)" />
+      <MaterialIcons name="chevron-right" size={22} color="#C9BCA5" />
     </Pressable>
   );
 }
 
+// Warm cream palette from menu.png: page #F2E6CB, cards #FFFFFF, brown accents
+// #4A3423, banner #4A3220, body text #2B2B2B, muted #8A7A63.
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F0B2E' },
+  root: { flex: 1, backgroundColor: '#F2E6CB' },
   scroll: { paddingHorizontal: 20 },
-  header: { marginBottom: 20 },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  header: { marginBottom: 18 },
+  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#4A3423', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatarWrap: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  userName: { color: '#FFFFFF', fontSize: 20, fontFamily: 'Inter_700Bold' },
-  userEmail: { color: 'rgba(255,255,255,0.5)', fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 2 },
+  avatarWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  userName: { color: '#4A3423', fontSize: 24, fontFamily: 'Inter_800ExtraBold' },
+  userEmail: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
 
-  planCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: 16, marginBottom: 16 },
-  planLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  planIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(251,191,36,0.15)', alignItems: 'center', justifyContent: 'center' },
-  planName: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold' },
-  planUsage: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 2 },
-  planViewBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(168,85,247,0.2)' },
-  planViewText: { color: '#C084FC', fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+  rowEmoji: { fontSize: 24 },
+  pressedBtn: { transform: [{ translateY: 1 }], opacity: 0.85 },
 
-  menuCard: { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, marginBottom: 16, paddingHorizontal: 16 },
+  notifCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14,
+  },
+  notifTitle: { color: '#2B2B2B', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
+  notifSub: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
+  notifBtn: { backgroundColor: '#8A6240', borderRadius: 22, paddingHorizontal: 18, paddingVertical: 11 },
+  notifBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+
+  plusBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#4A3220', borderRadius: 20, padding: 16, marginBottom: 14,
+  },
+  plusTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  plusTitle: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
+  plusChip: { backgroundColor: '#FFFFFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  plusChipText: { color: '#4A3220', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
+  plusSub: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 3, lineHeight: 18 },
+  plusViewBtn: { backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 20, paddingVertical: 11 },
+  plusViewText: { color: '#2B2B2B', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+
+  menuCard: { backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 14, paddingHorizontal: 16 },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
-  menuLabel: { flex: 1, color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_500Medium' },
+  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#F0EAE0' },
+  menuLabel: { flex: 1, color: '#2B2B2B', fontSize: 16, fontFamily: 'Inter_700Bold' },
 
-  duoCard: { backgroundColor: 'rgba(168,85,247,0.1)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(168,85,247,0.25)', padding: 16, marginBottom: 16 },
-  duoTitle: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold', marginBottom: 8 },
-  duoHint: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 19, marginBottom: 10 },
-  duoClaimed: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Inter_500Medium', lineHeight: 20 },
-  duoCode: { color: '#C084FC', fontSize: 26, fontFamily: 'Inter_800ExtraBold', letterSpacing: 4, textAlign: 'center', marginVertical: 6 },
+  duoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E8D5B0' },
+  duoTitle: { color: '#4A3423', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginBottom: 8 },
+  duoBody: { color: '#6B5B44', fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19, marginBottom: 6 },
+  duoCode: { color: '#8A6240', fontSize: 26, fontFamily: 'Inter_800ExtraBold', letterSpacing: 4, textAlign: 'center', marginVertical: 6 },
   duoShareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 },
-  duoShareText: { color: '#C084FC', fontSize: 13, fontFamily: 'Inter_600SemiBold' },
-  duoInput: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 3, textAlign: 'center', color: '#FFFFFF', marginBottom: 10 },
-  duoJoinBtn: { backgroundColor: '#A855F7', borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  duoJoinText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
-  signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: 16, backgroundColor: 'rgba(248,113,113,0.12)', marginBottom: 20 },
-  signOutText: { color: '#F87171', fontSize: 15, fontFamily: 'Inter_700Bold' },
+  duoShareText: { color: '#7A5A36', fontSize: 13, fontFamily: 'Inter_700Bold' },
+  duoInput: {
+    borderWidth: 1.5, borderColor: '#E8D5B0', borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 3,
+    textAlign: 'center', color: '#4A3423', marginBottom: 10, backgroundColor: '#FBF6EA',
+  },
+  duoJoinBtn: { backgroundColor: '#8A6240', borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
+  duoJoinText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+
+  signOutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 15, borderRadius: 20, backgroundColor: '#FFFFFF', marginBottom: 20,
+  },
+  signOutText: { color: '#C25B4E', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  legalLink: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontFamily: 'Inter_500Medium' },
-  legalDot: { color: 'rgba(255,255,255,0.3)' },
-  versionText: { color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 12, letterSpacing: 1 },
+  legalLink: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium' },
+  legalDot: { color: '#C9BCA5' },
+  versionText: { color: '#B8A588', fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 12, letterSpacing: 1 },
 });
