@@ -144,12 +144,17 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                 <Text style={styles.cloverEmoji}>{'\u{1F340}'}</Text>
                 <Text style={styles.cloverBalance}>{balance}</Text>
               </View>
+              {/* Design: brown pill with crossed-swords + "Skills". No dedicated
+                  asset yet, so the glyph is an emoji placeholder (swap when the
+                  sticker icon lands). ICONS.Skills never existed — an Image with
+                  an undefined source rendered nothing. */}
               <Pressable
                 onPress={() => { void haptics.light(); router.push('/(main)/(modals)/skills-list'); }}
                 style={styles.skillsBtn}
                 hitSlop={8}
               >
-                <Image source={ICONS.Skills} style={styles.skillsIcon} resizeMode="contain" />
+                <Text style={styles.skillsGlyph}>{'⚔️'}</Text>
+                <Text style={styles.skillsLabel}>Skills</Text>
               </Pressable>
             </View>
             <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
@@ -198,8 +203,14 @@ const styles = StyleSheet.create({
   cloverPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 7 },
   cloverEmoji: { fontSize: 17 },
   cloverBalance: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
-  skillsBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' },
-  skillsIcon: { width: 30, height: 30 },
+  skillsBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#4A3423', borderRadius: 18,
+    paddingHorizontal: 14, paddingVertical: 8,
+    minHeight: 44, // touch target
+  },
+  skillsGlyph: { fontSize: 16 },
+  skillsLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', textAlign: 'center', marginTop: 6 },
   portraitWrap: { alignItems: 'center', marginTop: 4 },
   portrait: { width: 120, height: 120 },
