@@ -41,7 +41,7 @@ export const FOCUS_SCENE_ICONS: Record<string, ImageSourcePropType> = {
   work: require('../../assets/Icons/focus-work.png'),
   learn: require('../../assets/Icons/focus-learning.png'),
   connect: require('../../assets/Icons/focus-connect.png'),
-  daily: require('../../assets/Icons/focus-daily tasks.png'),
+  daily: require('../../assets/Icons/focus-daily-tasks.png'),
   family: require('../../assets/Icons/focus-family.png'),
   challenge: require('../../assets/Icons/focus-challenge.png'),
 };
@@ -56,7 +56,7 @@ export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
   6: require('../../assets/Icons/reflect-realization.png'),
   7: require('../../assets/Icons/reflect-challenge.png'),
   8: require('../../assets/Icons/reflect-appreciation.png'),
-  9: require('../../assets/Icons/reflect-open reflection.png'),
+  9: require('../../assets/Icons/reflect-open-reflection.png'),
 };
 
 /** Full-bleed screen backgrounds (assets/Background). */

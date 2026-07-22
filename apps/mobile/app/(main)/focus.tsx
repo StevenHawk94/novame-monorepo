@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: GREEN },
   sub: { fontSize: 15, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 8, marginBottom: 18, lineHeight: 21 },
 
-  list: { paddingBottom: 32 },
+  list: { paddingBottom: 32, gap: 12 },
   sceneCard: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 16, paddingHorizontal: 20, gap: 12,

@@ -236,22 +236,23 @@ export default function ReflectScreen() {
                 <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
                 {error && <Text style={styles.errorText}>{ERROR_MESSAGE[error]}</Text>}
               </View>
+              {/* Same recipe as the claim buttons. Disabled dim goes on the
+                  OUTER style so face AND drop fade together — dimming only the
+                  face let the orange drop bleed through and read as swapped
+                  colors. */}
               <OffsetCard
                 color={YELLOW_DROP}
                 offset={4}
                 radius={22}
                 onPress={() => void onSubmit()}
                 disabled={submitting || body.trim().length === 0}
-                style={{ marginTop: 14 }}
-                cardStyle={[
-                  styles.saveBtn,
-                  { opacity: submitting || body.trim().length === 0 ? 0.6 : 1 },
-                ]}
+                style={{ marginTop: 14, opacity: submitting || body.trim().length === 0 ? 0.55 : 1 }}
+                cardStyle={styles.yellowBtn}
               >
                 {submitting ? (
                   <ActivityIndicator color={INK} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Reflection</Text>
+                  <Text style={styles.yellowBtnText}>Save Reflection</Text>
                 )}
               </OffsetCard>
             </View>
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
 
   lead: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginTop: 6, marginBottom: 4 },
   leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginBottom: 18 },
-  pickScroll: { paddingBottom: 40 },
+  pickScroll: { paddingBottom: 40, gap: 12 },
   // Mock 1:1: white face, tan drop, generous radius, compact height.
   promptCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -471,8 +472,6 @@ const styles = StyleSheet.create({
   writeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, minHeight: 20 },
   count: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   errorText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFE1D6', flexShrink: 1, textAlign: 'right', marginLeft: 12 },
-  saveBtn: { paddingVertical: 17, alignItems: 'center', backgroundColor: YELLOW },
-  saveBtnText: { color: INK, fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
 
   restTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 10 },
   restBody: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
