@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { DIMENSION_IDS, trueNorthGemHits } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
 
 export const runtime = 'edge'
@@ -18,15 +17,15 @@ function isoWeek(dateStr) {
 }
 
 /**
- * POST /api/kit/true-north
+ * POST /api/bubbles/pop
  *
- * Body: { userId, ranking: DimensionId[8], localDate }
+ * Body: { userId, friendUserId, itemId, localDate }
  *
- * Completes this week's True North: the engine turns the ranking into gem hits
- * (top three get +30/+20/+10, via trueNorthGemHits) and submit_kit writes them
- * atomically -- +50 xp, the gems, the completion with the ranking in its
- * payload, once per week. True North is the only Kit besides Reflect that bears
- * gems, which is exactly what submit_kit's gem path is for.
+ * Pays the +5 bubble reward (PRD 3.5) through the pop_bubble RPC, which owns
+ * every rule server-side: the popper and friend must be accepted friends, one
+ * pay per (friend, item, day), and at most XP_RULES.bubble.cap pops a day.
+ * The client's popped-state is a display shadow — replaying a pop just
+ * returns already_popped and pays nothing.
  */
 export async function POST(request) {
   try {
@@ -36,19 +35,12 @@ export async function POST(request) {
     if (!verified) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { userId, ranking, localDate } = await request.json()
+    const { userId, friendUserId, itemId, localDate } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    // Ranking must be a permutation of all eight dimensions.
-    if (
-      !Array.isArray(ranking) ||
-      ranking.length !== DIMENSION_IDS.length ||
-      new Set(ranking).size !== DIMENSION_IDS.length ||
-      !ranking.every((d) => DIMENSION_IDS.includes(d))
-    ) {
-      return NextResponse.json({ error: 'Invalid ranking' }, { status: 400 })
+    if (!friendUserId || !itemId) {
+      return NextResponse.json({ error: 'Missing friendUserId or itemId' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -58,31 +50,26 @@ export async function POST(request) {
     )
 
     const dateStr = localDate || new Date().toISOString().slice(0, 10)
-    const weekStr = isoWeek(dateStr)
-    const gemHits = trueNorthGemHits(ranking)
-
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
+    const { data: result, error: rpcErr } = await supabase.rpc('pop_bubble', {
       p_user_id: userId,
-      p_kit: 'true_north',
-      p_source: 'true_north',
-      p_period_key: weekStr, // weekly kit: period is the ISO week
+      p_friend_user_id: friendUserId,
+      p_item_id: String(itemId).slice(0, 120),
       p_local_date: dateStr,
-      p_iso_week: weekStr,
-      p_xp_amount: XP_RULES.trueNorth.award,
-      p_gem_hits: gemHits,
-      p_payload: { ranking },
+      p_iso_week: isoWeek(dateStr),
+      p_amount: XP_RULES.bubble.award,
+      p_daily_cap: XP_RULES.bubble.cap,
     })
     if (rpcErr) {
-      console.error('[true-north] rpc error:', rpcErr.message)
+      console.error('[bubbles/pop] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })
     }
     if (result?.error) {
-      return NextResponse.json({ error: result.error, ...result }, { status: 409 })
+      // Idempotent replays and cap hits are expected, not failures worth 500s.
+      return NextResponse.json({ error: result.error }, { status: 409 })
     }
-
     return NextResponse.json({ success: true, ...result })
   } catch (err) {
-    console.error('[true-north] unexpected:', err && err.message)
+    console.error('[bubbles/pop] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

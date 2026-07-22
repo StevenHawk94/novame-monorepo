@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { DIMENSION_IDS } from '@novame/domain'
+import { XP_RULES } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -66,7 +67,7 @@ export async function POST(request) {
       p_response: response,
       p_local_date: dateStr,
       p_iso_week: weekStr,
-      p_xp_amount: 20,
+      p_xp_amount: XP_RULES.newLens.award,
     })
     if (rpcErr) {
       console.error('[lens/complete] rpc error:', rpcErr.message)

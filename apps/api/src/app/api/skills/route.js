@@ -35,7 +35,7 @@ export async function GET(request) {
 
     const { data, error } = await supabase
       .from('skills')
-      .select('id, dimension, title, body, rarity, source, created_at')
+      .select('id, dimension, title, body, rarity, source, tier, card_id, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (error) {
@@ -50,6 +50,8 @@ export async function GET(request) {
       body: s.body,
       rarity: s.rarity,
       source: s.source,
+      tier: s.tier ?? null,
+      cardId: s.card_id ?? null,
       createdAt: s.created_at,
     }))
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
-import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, findDuplicateSkill } from '@novame/engine'
+import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, matchSkillCards, XP_RULES } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
 
 export const runtime = 'edge'
@@ -223,7 +223,7 @@ export async function POST(request) {
       p_body: body,
       p_local_date: dateStr,
       p_iso_week: weekStr,
-      p_xp_amount: 30,
+      p_xp_amount: XP_RULES.reflect.award,
       p_dimension_hits: dimensionHits,
       p_source_kit: sourceKit === 'new_lens' ? 'new_lens' : null,
     })
@@ -262,39 +262,54 @@ export async function POST(request) {
       }
     }
 
-    // Skill generation (C9): paid + consented only (skill count is a paid
-    // signal; free users never generate). Best-effort -- never blocks the
-    // reflect. Generate a candidate, dedup against existing skills with the
-    // engine's keyword overlap, and persist only if novel.
+    // Skill acquisition (2026-07 ruling Q13): the FIXED 81-card library,
+    // keyword-matched by the engine — a rule engine like item matching, never
+    // AI, so every tier earns cards (free users included: no AI cost). A card
+    // acquires exactly once (owned set filter + the (user_id, card_id) unique
+    // index behind it). Best-effort — never blocks the reflect.
     let generatedSkill = null
-    if (reflectId && isPaid && hasConsent) {
+    if (reflectId) {
       try {
-        const candidate = await generateSkill(body, pDim)
-        if (candidate) {
-          const { data: existing } = await supabase
-            .from('skills')
-            .select('title, body')
-            .eq('user_id', userId)
-          const existingTexts = (existing || []).map((sk) => ({
-            text: `${sk.title} ${sk.body}`,
+        const { data: ownedRows } = await supabase
+          .from('skills')
+          .select('card_id')
+          .eq('user_id', userId)
+          .not('card_id', 'is', null)
+        const owned = new Set((ownedRows || []).map((r) => r.card_id))
+        const newCards = matchSkillCards(body, owned)
+        if (newCards.length > 0) {
+          const rows = newCards.map((c) => ({
+            user_id: userId,
+            reflect_id: reflectId,
+            dimension: c.group === 'mega' ? null : c.group, // mega sits outside dimension_t
+            title: c.title,
+            body: c.body,
+            rarity: c.tier === 'advanced' ? 'secret' : 'normal',
+            source: 'self',
+            card_id: c.id,
+            tier: c.tier,
           }))
-          const dup = findDuplicateSkill(`${candidate.title} ${candidate.body}`, existingTexts)
-          if (!dup) {
-            const { data: skillRes } = await supabase.rpc('record_skill', {
-              p_user_id: userId,
-              p_reflect_id: reflectId,
-              p_dimension: candidate.dimension,
-              p_title: candidate.title,
-              p_body: candidate.body,
-              p_rarity: candidate.rarity,
-            })
-            if (skillRes && !skillRes.error) {
+          const { data: inserted, error: insErr } = await supabase
+            .from('skills')
+            .insert(rows)
+            .select('id, card_id')
+          if (insErr) {
+            // A race on the unique index rejects the batch; the next reflect
+            // simply re-filters against the then-owned set. Non-fatal.
+            console.warn('[reflect] skill insert skipped:', insErr.message)
+          } else {
+            // Surface the highest-tier new card on the claim screen.
+            const order = { advanced: 3, intermediate: 2, normal: 1 }
+            const best = [...newCards].sort((a, b) => order[b.tier] - order[a.tier])[0]
+            const bestRow = (inserted || []).find((r) => r.card_id === best.id)
+            if (bestRow) {
               generatedSkill = {
-                skillId: skillRes.skill_id,
-                title: candidate.title,
-                body: candidate.body,
-                dimension: candidate.dimension,
-                rarity: candidate.rarity,
+                skillId: bestRow.id,
+                title: best.title,
+                body: best.body,
+                dimension: best.group,
+                rarity: best.tier === 'advanced' ? 'secret' : 'normal',
+                tier: best.tier,
               }
             }
           }

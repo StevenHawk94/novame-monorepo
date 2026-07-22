@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
+import { XP_RULES } from '@novame/engine'
+
+/** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
+function isoWeek(dateStr) {
+  const parts = dateStr.split('-').map(Number)
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
 
 export const runtime = 'nodejs'
 
@@ -111,7 +123,32 @@ export async function POST(request) {
       return NextResponse.json({ error: 'save_failed' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, visitId: saved?.id, response })
+    // PRD 8.1: a completed visit pays +50 currency. Best-effort: the visit
+    // (and its cooldown) already stands, so a pay failure only logs — the 48h
+    // cooldown means the period key (visit id) is always fresh. Requires the
+    // p1_economy migration ('visit_master' in kit/xp enums); until applied
+    // this warns and skips.
+    let xpAwarded = 0
+    try {
+      const dateStr = new Date().toISOString().slice(0, 10)
+      const { data: pay, error: payErr } = await supabase.rpc('submit_kit', {
+        p_user_id: userId,
+        p_kit: 'visit_master',
+        p_source: 'visit_master',
+        p_period_key: `visit:${saved?.id ?? dateStr}`,
+        p_local_date: dateStr,
+        p_iso_week: isoWeek(dateStr),
+        p_xp_amount: XP_RULES.visitMaster.award,
+        p_gem_hits: [],
+        p_payload: { visit_id: saved?.id ?? null },
+      })
+      if (payErr) console.warn('[master/ask] pay skipped:', payErr.message)
+      else if (!pay?.error) xpAwarded = pay?.xp_awarded ?? 0
+    } catch (e) {
+      console.warn('[master/ask] pay skipped:', e && e.message)
+    }
+
+    return NextResponse.json({ success: true, visitId: saved?.id, response, xpAwarded })
   } catch (err) {
     console.error('[master/ask] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

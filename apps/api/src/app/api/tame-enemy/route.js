@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { XP_RULES, GEMS_PER_DIMENSION, MONSTERS } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -20,12 +21,14 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, monsterId, skillsUsed: string[], hits: number, localDate }
  *
- * Records one tame: a flat +20 xp, no gems, once a day across all monsters.
- * submit_kit's once-per-day gate (period = local date) enforces the single
- * daily tame -- a second attempt returns already_done_this_period. The payload
- * keeps which monster and which skills were used (Skills-tab "Used in N battles"
- * reads this later). The battle resolves entirely client-side against the shared
- * engine; this endpoint only credits the completion.
+ * Records one tame. PRD v2.0 economy:
+ *   - pays XP_RULES.tameEnemy.award (+30) and credits the monster's dimension
+ *     +10 (PRD 1.2)
+ *   - FREE: once a day across all monsters (period = local date)
+ *   - PAID: once per monster per day, up to all 8 (period = date:monsterId)
+ * The tier fork only widens the period key -- submit_kit's unique row stays
+ * the single gate either way. The battle resolves entirely client-side
+ * against the shared engine; this endpoint only credits the completion.
  */
 export async function POST(request) {
   try {
@@ -53,15 +56,27 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const usedIds = Array.isArray(skillsUsed) ? skillsUsed : []
 
+    // Tier fork (PRD benefits matrix): paid tames each enemy once a day.
+    const { data: profile } = await supabase
+      .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
+    const isPaid = (profile?.subscription_tier ?? 'free') !== 'free'
+    const periodKey = isPaid ? `${dateStr}:${monsterId}` : dateStr
+
+    // PRD 1.2: taming credits the monster's dimension +10.
+    const monster = MONSTERS.find((m) => m.id === monsterId)
+    const gemHits = monster?.dimension
+      ? [{ dimension: monster.dimension, gems: GEMS_PER_DIMENSION }]
+      : []
+
     const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
       p_user_id: userId,
       p_kit: 'tame_enemy',
       p_source: 'tame_enemy',
-      p_period_key: dateStr, // daily kit: period is the local date
+      p_period_key: periodKey,
       p_local_date: dateStr,
       p_iso_week: weekStr,
-      p_xp_amount: 20,
-      p_gem_hits: [],
+      p_xp_amount: XP_RULES.tameEnemy.award,
+      p_gem_hits: gemHits,
       p_payload: { monster_id: monsterId, skills_used: usedIds, hits: hits ?? 0 },
     })
     if (rpcErr) {

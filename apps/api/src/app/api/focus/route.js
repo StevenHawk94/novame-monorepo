@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { XP_RULES } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -52,14 +53,31 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const idx = Number.isFinite(trackIndex) ? trackIndex : 1
 
+    // PRD 8.1: focus pays twice a day now. submit_kit's unique(user, kit,
+    // period_key) row is the gate, so the second run gets its own slot key.
+    // Count today's completions to pick the slot; at the cap → already_done.
+    // A concurrent double-submit collides on the same slot key inside the RPC
+    // and reports already_done — no double pay.
+    const { data: todays } = await supabase
+      .from('kit_completions')
+      .select('period_key')
+      .eq('user_id', userId)
+      .eq('kit', 'focus')
+      .in('period_key', [dateStr, `${dateStr}#2`])
+    const doneCount = todays?.length ?? 0
+    if (doneCount >= XP_RULES.focus.cap) {
+      return NextResponse.json({ error: 'already_done_this_period' }, { status: 409 })
+    }
+    const periodKey = doneCount === 0 ? dateStr : `${dateStr}#2`
+
     const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
       p_user_id: userId,
       p_kit: 'focus',
       p_source: 'focus',
-      p_period_key: dateStr, // daily kit: period is the local date
+      p_period_key: periodKey,
       p_local_date: dateStr,
       p_iso_week: weekStr,
-      p_xp_amount: 30,
+      p_xp_amount: XP_RULES.focus.award,
       p_gem_hits: [],
       p_payload: { scene_id: sceneId, track_index: idx },
     })
