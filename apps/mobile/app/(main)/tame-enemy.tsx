@@ -45,6 +45,25 @@ export default function TameEnemyScreen() {
   const [hits, setHits] = useState(0);
   const [usedSkillIds, setUsedSkillIds] = useState<string[]>([]);
   const [showDrawer, setShowDrawer] = useState(false);
+  // Battle interactions per mock/PRD: single tap (or long-press) zooms a card,
+  // double tap applies it. Tracked with a per-card timestamp — RN has no
+  // built-in double-tap.
+  const [zoomSkill, setZoomSkill] = useState<Skill | 'default' | null>(null);
+  const [lastTap, setLastTap] = useState<{ id: string; at: number }>({ id: '', at: 0 });
+  const [reward, setReward] = useState<number | null>(null);
+
+  const DOUBLE_TAP_MS = 280;
+  function onCardTap(id: string, apply: () => void, zoom: () => void) {
+    const now = Date.now();
+    if (lastTap.id === id && now - lastTap.at < DOUBLE_TAP_MS) {
+      setLastTap({ id: '', at: 0 });
+      setZoomSkill(null);
+      apply();
+    } else {
+      setLastTap({ id, at: now });
+      zoom();
+    }
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -93,7 +112,8 @@ export default function TameEnemyScreen() {
   async function finishTame() {
     if (!active) return;
     // Record the completion (best-effort; the tame is already visually done).
-    await submitTame({ monsterId: active.id, skillsUsed: usedSkillIds, hits: hits + 1 });
+    const res = await submitTame({ monsterId: active.id, skillsUsed: usedSkillIds, hits: hits + 1 });
+    setReward(res.ok ? (res.xpAwarded ?? null) : null);
     markTameEnemyDoneToday();
     setPhase('done');
   }
@@ -114,10 +134,11 @@ export default function TameEnemyScreen() {
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
-        <Text style={[styles.h1, { color: kit.text }]}>What's been loud lately?</Text>
-        <Text style={[styles.sub, { color: kit.textSub }]}>
-          Pick what's closest — we'll figure out the rest together.
-        </Text>
+        {/* Design: brown banner title card. PRD copy kept inside it. */}
+        <View style={styles.titleBanner}>
+          <Text style={styles.titleBannerText}>What's been loud lately?</Text>
+          <Text style={styles.titleBannerSub}>Pick what's closest — we'll figure out the rest together.</Text>
+        </View>
 
         {firstTime && (
           <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.border }]}>
@@ -178,65 +199,119 @@ export default function TameEnemyScreen() {
     );
   }
 
-  // ---- BATTLE ----
+  // ---- BATTLE (design: dark dungeon scene) ----
   if (phase === 'battle' && active) {
-    const visible = showDrawer ? pool : pool.slice(0, 6);
+    const visible = showDrawer ? pool : pool.slice(0, 9);
+    const powerFor = (sk: Skill | 'default') =>
+      sk === 'default' ? 10 : sk.rarity === 'secret' ? 50 : 20;
     return (
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
+      <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={exit} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="close" size={24} color={kit.textSub} />
+          <MaterialIcons name="close" size={24} color="rgba(255,255,255,0.7)" />
         </Pressable>
 
-        {/* Monster */}
-        <View style={styles.battleMonster}>
-          <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.8 : 1 }]}>
+        {/* Monster speech bubble (prep line as its complaint) + monster */}
+        <View style={styles.battleScene}>
+          <View style={styles.monsterBubble}>
+            <Text style={styles.monsterBubbleText}>{active.prep}</Text>
+            <View style={styles.monsterBubbleTail} />
+          </View>
+          <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.85 : 1 }]}>
             {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
           </Text>
-          <View style={[styles.hpTrack, { backgroundColor: 'rgba(58,46,26,0.15)' }]}>
-            <View style={[styles.hpFill, { width: `${(hp / MONSTER_HP) * 100}%`, backgroundColor: kit.danger }]} />
+          {/* Pixel-flavored HP bar, labeled per the mock */}
+          <View style={styles.hpTrack}>
+            <View style={[styles.hpFill, { width: `${(hp / MONSTER_HP) * 100}%` }]} />
           </View>
-          <Text style={[styles.monsterName, { color: kit.textSub }]}>{active.name}</Text>
+          <Text style={styles.hpLabel}>Negative Power</Text>
         </View>
 
-        {/* Skill cards */}
-        <ScrollView style={styles.cardScroll} contentContainerStyle={styles.cardList} showsVerticalScrollIndicator={false}>
-          {pool.length === 0 ? (
-            <Pressable onPress={() => hit('default')} style={[styles.skillCard, { backgroundColor: kit.card, borderColor: kit.border }]}>
-              <Text style={[styles.skillName, { color: kit.text }]}>Just Breathe</Text>
-              <Text style={[styles.skillDesc, { color: kit.textMuted }]}>Something everyone already knows how to do.</Text>
-            </Pressable>
-          ) : (
-            visible.map((sk) => (
+        {/* Bottom skill panel — tap to view, double tap to apply */}
+        <View style={[styles.skillPanel, { paddingBottom: insets.bottom + 10 }]}>
+          <ScrollView contentContainerStyle={styles.skillWrap} showsVerticalScrollIndicator={false}>
+            {pool.length === 0 ? (
               <Pressable
-                key={sk.skillId}
-                onPress={() => hit(sk.rarity === 'secret' ? 'hidden' : 'learned', sk.skillId)}
-                style={[styles.skillCard, { backgroundColor: kit.card, borderColor: sk.rarity === 'secret' ? kit.secret : kit.border }]}
+                onPress={() => onCardTap('default', () => hit('default'), () => setZoomSkill('default'))}
+                style={styles.skillChip}
               >
-                <Text style={[styles.skillName, { color: kit.text }]}>{sk.title}</Text>
-                <Text style={[styles.skillDesc, { color: kit.textSub }]} numberOfLines={2}>{sk.body}</Text>
+                <View style={styles.lvBadge}><Text style={styles.lvBadgeText}>Lv.1</Text></View>
+                <Text style={styles.skillChipText} numberOfLines={2}>Just Breathe</Text>
               </Pressable>
-            ))
-          )}
-          {pool.length > 6 && !showDrawer && (
-            <Pressable onPress={() => setShowDrawer(true)} style={styles.moreBtn}>
-              <Text style={[styles.moreText, { color: kit.accent }]}>Show all {pool.length} skills</Text>
-            </Pressable>
-          )}
-        </ScrollView>
+            ) : (
+              visible.map((sk) => (
+                <Pressable
+                  key={sk.skillId}
+                  onPress={() =>
+                    onCardTap(
+                      sk.skillId,
+                      () => hit(sk.rarity === 'secret' ? 'hidden' : 'learned', sk.skillId),
+                      () => setZoomSkill(sk),
+                    )
+                  }
+                  style={[styles.skillChip, sk.rarity === 'secret' && styles.skillChipSecret]}
+                >
+                  <View style={styles.lvBadge}>
+                    <Text style={styles.lvBadgeText}>{sk.rarity === 'secret' ? 'Lv.5' : 'Lv.2'}</Text>
+                  </View>
+                  <Text style={styles.skillChipText} numberOfLines={2}>{sk.title}</Text>
+                </Pressable>
+              ))
+            )}
+            {pool.length > 9 && !showDrawer && (
+              <Pressable onPress={() => setShowDrawer(true)} style={styles.moreBtn}>
+                <Text style={styles.moreText}>Show all {pool.length} skills</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+          <Text style={styles.panelHint}>Tap to view, double tap to apply.</Text>
+          <Text style={styles.panelHintSub}>Different cards land differently — tame the monster!</Text>
+        </View>
+
+        {/* Card zoom overlay (design: card details) */}
+        {zoomSkill !== null && (
+          <Pressable style={styles.zoomBackdrop} onPress={() => setZoomSkill(null)}>
+            <View style={styles.zoomCard}>
+              <Text style={styles.zoomTitle}>
+                {zoomSkill === 'default' ? 'Just Breathe' : zoomSkill.title}
+              </Text>
+              <Text style={styles.zoomBody}>
+                {zoomSkill === 'default'
+                  ? 'Something everyone already knows how to do.'
+                  : zoomSkill.body}
+              </Text>
+              <View style={styles.powerPill}>
+                <Text style={styles.powerPillText}>{'⚔️'} {powerFor(zoomSkill)} Power</Text>
+              </View>
+            </View>
+            <Text style={styles.zoomHint}>Double tap the card in your hand to apply it.</Text>
+          </Pressable>
+        )}
       </View>
     );
   }
 
-  // ---- DONE ----
+  // ---- DONE (design: victory overlay) ----
   if (phase === 'done' && active) {
     return (
-      <View style={[styles.root, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
-        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
+      <View style={[styles.battleRoot, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
+        <Text style={styles.victoryTitle}>VICTORY!</Text>
         <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
-        <Text style={[styles.doneText, { color: kit.text }]}>{active.tamed}</Text>
-        <Pressable onPress={() => router.back()} style={[styles.beginBtn, { backgroundColor: kit.accent, marginBottom: insets.bottom }]}>
-          <Text style={styles.beginText}>Done</Text>
+        <Text style={styles.victoryText}>{active.tamed}</Text>
+        {reward != null && reward > 0 && (
+          <View style={styles.rewardBlock}>
+            <View style={styles.rewardRibbon}>
+              <Text style={styles.rewardRibbonText}>Rewards</Text>
+            </View>
+            <Text style={styles.rewardClover}>{'🍀'}</Text>
+            <Text style={styles.rewardCount}>x{reward}</Text>
+          </View>
+        )}
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.confirmBtn, pressed && { transform: [{ translateY: 2 }] }, { marginBottom: insets.bottom }]}
+        >
+          <Text style={styles.confirmText}>Confirm</Text>
         </Pressable>
       </View>
     );
@@ -270,19 +345,86 @@ const styles = StyleSheet.create({
   exitLink: { paddingVertical: 8 },
   exitText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
 
-  battleMonster: { alignItems: 'center', paddingVertical: 24, gap: 12 },
-  battleEmoji: { fontSize: 96 },
-  hpTrack: { width: '70%', height: 8, borderRadius: 4, overflow: 'hidden' },
-  hpFill: { height: '100%', borderRadius: 4 },
+  // ---- battle (dark dungeon per mock; art asset lands later, solid tones now) ----
+  battleRoot: { flex: 1, backgroundColor: '#2A2140', paddingHorizontal: 20 },
+  battleScene: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  monsterBubble: {
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18,
+    maxWidth: '90%', marginBottom: 10,
+  },
+  monsterBubbleText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2B2B2B', textAlign: 'center', lineHeight: 22 },
+  monsterBubbleTail: {
+    position: 'absolute', bottom: -8, alignSelf: 'center', width: 0, height: 0,
+    borderLeftWidth: 9, borderRightWidth: 9, borderTopWidth: 9,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#FFFFFF',
+  },
+  battleEmoji: { fontSize: 110 },
+  // Pixel-flavored HP bar: hard corners, chunky dark border, red fill.
+  hpTrack: {
+    width: '72%', height: 22, borderRadius: 3, backgroundColor: '#FFFFFF',
+    borderWidth: 3, borderColor: '#17121F', overflow: 'hidden',
+  },
+  hpFill: { height: '100%', backgroundColor: '#E4593C' },
+  hpLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
-  cardScroll: { flex: 1 },
-  cardList: { gap: 10, paddingBottom: 40 },
-  skillCard: { borderRadius: 18, borderWidth: 0, padding: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
-  skillName: { fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 4 },
-  skillDesc: { fontSize: 13, fontFamily: 'Inter_400Regular', lineHeight: 19 },
-  moreBtn: { alignItems: 'center', paddingVertical: 12 },
-  moreText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+  skillPanel: {
+    backgroundColor: '#1B1626', borderTopLeftRadius: 22, borderTopRightRadius: 22,
+    marginHorizontal: -20, paddingHorizontal: 16, paddingTop: 14, maxHeight: 300,
+  },
+  skillWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingBottom: 8 },
+  skillChip: {
+    width: 92, borderRadius: 12, backgroundColor: '#3A2C55', borderWidth: 2, borderColor: '#6C4FA3',
+    padding: 8, alignItems: 'center', gap: 6,
+  },
+  skillChipSecret: { borderColor: '#F0C24B', backgroundColor: '#4A3B20' },
+  lvBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  lvBadgeText: { fontSize: 10, fontFamily: 'Inter_800ExtraBold', color: '#F0C24B' },
+  skillChipText: { fontSize: 12, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', lineHeight: 16 },
+  moreBtn: { alignItems: 'center', paddingVertical: 10, width: '100%' },
+  moreText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#B9A6E8' },
+  panelHint: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 4 },
+  panelHintSub: { fontSize: 12, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 2 },
+
+  zoomBackdrop: {
+    ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,18,0.82)',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 18,
+  },
+  zoomCard: {
+    width: '100%', backgroundColor: '#F5A445', borderRadius: 22, borderWidth: 4, borderColor: '#3B4A8F',
+    paddingVertical: 36, paddingHorizontal: 22, alignItems: 'center', gap: 14, minHeight: 300, justifyContent: 'center',
+  },
+  zoomTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  zoomBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', lineHeight: 22, textAlign: 'center' },
+  powerPill: {
+    backgroundColor: '#F7CE46', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 10,
+    borderWidth: 2, borderColor: '#2B2B2B',
+  },
+  powerPillText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  zoomHint: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
+
+  titleBanner: {
+    backgroundColor: '#4A3220', borderRadius: 20, paddingVertical: 16, paddingHorizontal: 20,
+    marginTop: 4, marginBottom: 16,
+  },
+  titleBannerText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  titleBannerSub: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4 },
+
+  // ---- victory ----
+  victoryLaurel: { fontSize: 34 },
+  victoryTitle: { fontSize: 40, fontFamily: 'Inter_800ExtraBold', color: '#F7CE46', letterSpacing: 2 },
+  victoryText: { fontSize: 18, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', textAlign: 'center', lineHeight: 26, paddingHorizontal: 24 },
+  rewardBlock: { alignItems: 'center', gap: 6 },
+  rewardRibbon: { backgroundColor: '#F7CE46', borderRadius: 10, paddingHorizontal: 22, paddingVertical: 6 },
+  rewardRibbonText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  rewardClover: { fontSize: 42, marginTop: 4 },
+  rewardCount: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  confirmBtn: {
+    backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 64,
+    borderWidth: 2, borderColor: '#2B2B2B',
+    shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
+    elevation: 4,
+  },
+  confirmText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
 
   doneEmoji: { fontSize: 96 },
-  doneText: { fontSize: 20, fontFamily: 'Inter_600SemiBold', textAlign: 'center', lineHeight: 28, paddingHorizontal: 24 },
 });
