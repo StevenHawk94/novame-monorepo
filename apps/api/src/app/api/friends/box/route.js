@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { matchItems } from '@novame/engine'
+import { matchItems, ITEM_DICTIONARY } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -91,7 +91,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'not_friends' }, { status: 403 })
     }
 
-    const matches = matchItems(text.trim().slice(0, MAX_TEXT))
+    const matches = matchItems(text.trim().slice(0, MAX_TEXT), ITEM_DICTIONARY)
     if (matches.length === 0) {
       return NextResponse.json({ success: true, created: [] })
     }
