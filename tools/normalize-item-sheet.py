@@ -72,15 +72,28 @@ def main() -> None:
     ap.add_argument("input")
     ap.add_argument("--cols", type=int, default=8)
     ap.add_argument("--rows", type=int, default=8)
+    ap.add_argument("--grid", action="store_true",
+                    help="uniform-grid sheets (2026-07-23 batch): assign every "
+                         "component to its cell by center instead of clustering "
+                         "-- immune to thin-stroke items dissolving into "
+                         "fragments of their neighbours")
     args = ap.parse_args()
     want = args.cols * args.rows
 
-    src = Image.open(args.input).convert("RGB")
-    rgb = np.asarray(src)
+    src = Image.open(args.input).convert("RGBA")
+    arr = np.asarray(src)
+    rgb, alpha = arr[..., :3], arr[..., 3]
     h, w, _ = rgb.shape
     print(f"input {w}x{h}, target {args.cols}x{args.rows}")
 
-    bg = flood_background(rgb)
+    # Transparent sheets (the 2026-07-23 batch) carry the mask in alpha; color
+    # flooding would eat the near-black outlines. Opaque montages keep the
+    # original flood path.
+    if bool((alpha < 128).any()):
+        bg = alpha <= 8
+        print("background from alpha channel")
+    else:
+        bg = flood_background(rgb)
     content = ~bg
 
     # Components. 8-connectivity so thin diagonal strokes stay whole.
@@ -91,6 +104,36 @@ def main() -> None:
         area = int((lab[sl] == i).sum())
         bbox = (sl[0].start, sl[1].start, sl[0].stop, sl[1].stop)
         comps.append({"id": i, "area": area, "bbox": bbox})
+
+    if args.grid:
+        # Uniform grid: pitch from the content extent, every component (any
+        # size) goes to the cell its center falls in. Cells then ARE the items.
+        ys, xs = np.where(content)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        pitch_y = (y1 - y0) / args.rows
+        pitch_x = (x1 - x0) / args.cols
+        cells = {}
+        for c in comps:
+            cy = (c["bbox"][0] + c["bbox"][2]) / 2
+            cx = (c["bbox"][1] + c["bbox"][3]) / 2
+            r = min(args.rows - 1, max(0, int((cy - y0) / pitch_y)))
+            col = min(args.cols - 1, max(0, int((cx - x0) / pitch_x)))
+            cell = cells.setdefault((r, col), {"id": [], "area": 0,
+                                               "bbox": c["bbox"]})
+            cell["id"].append(c["id"])
+            cell["area"] += c["area"]
+            b, f = cell["bbox"], c["bbox"]
+            cell["bbox"] = (min(b[0], f[0]), min(b[1], f[1]),
+                            max(b[2], f[2]), max(b[3], f[3]))
+        empty = [(r, c) for r in range(args.rows) for c in range(args.cols)
+                 if (r, c) not in cells]
+        if empty:
+            print(f"WARN empty cells: {empty}")
+        ordered = [cells[(r, c)] for r in range(args.rows)
+                   for c in range(args.cols) if (r, c) in cells]
+        print(f"components: {n} -> {len(ordered)} grid cells")
+        compose(args, rgb, alpha, bg, lab, ordered, want)
+        return
 
     bodies = [c for c in comps if c["area"] >= MIN_BODY_AREA]
     frags = [c for c in comps if c["area"] < MIN_BODY_AREA]
@@ -142,8 +185,13 @@ def main() -> None:
     for grp in row_groups:
         ordered.extend(sorted(grp, key=lambda b: (b["bbox"][1] + b["bbox"][3]) / 2))
 
+    compose(args, rgb, alpha, bg, lab, ordered, want)
+
+
+def compose(args, rgb, alpha, bg, lab, ordered, want) -> None:
     # Compose the standard sheet, masking each crop to its own components.
-    rgba = np.dstack([rgb, np.where(bg, 0, 255).astype(np.uint8)])
+    # Keep the source's anti-aliased edges where it has real alpha.
+    rgba = np.dstack([rgb, np.where(bg, 0, alpha).astype(np.uint8)])
     out = Image.new("RGBA", (CELL * args.cols, CELL * args.rows), (0, 0, 0, 0))
     for idx, body in enumerate(ordered[:want]):
         ids = body["id"] if isinstance(body["id"], list) else [body["id"]]
@@ -186,16 +234,20 @@ def main() -> None:
     prev_path = os.path.join(out_dir, f"{base}-numbered.png")
     prev_img.save(prev_path)
 
-    csv_path = os.path.join(out_dir, f"{base}-mapping.csv")
-    with open(csv_path, "w", newline="") as f:
-        wcsv = csv.writer(f)
-        wcsv.writerow(["n", "row", "col", "itemId", "displayName", "keywords"])
-        for r in range(args.rows):
-            for c in range(args.cols):
-                wcsv.writerow([r * args.cols + c + 1, r, c, "", "", ""])
+    # The skeleton mapping CSV belongs to the hand-fill workflow only; grid
+    # sheets get their mapping from the master icon_keyword_mapping.csv.
+    csv_path = None
+    if not args.grid:
+        csv_path = os.path.join(out_dir, f"{base}-mapping.csv")
+        with open(csv_path, "w", newline="") as f:
+            wcsv = csv.writer(f)
+            wcsv.writerow(["n", "row", "col", "itemId", "displayName", "keywords"])
+            for r in range(args.rows):
+                for c in range(args.cols):
+                    wcsv.writerow([r * args.cols + c + 1, r, c, "", "", ""])
 
     print(f"placed {min(len(ordered), want)}/{want}")
-    print(f"-> {std_path}\n-> {prev_path}\n-> {csv_path}")
+    print(f"-> {std_path}\n-> {prev_path}" + (f"\n-> {csv_path}" if csv_path else ""))
 
 
 if __name__ == "__main__":
