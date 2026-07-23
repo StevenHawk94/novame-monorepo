@@ -17,14 +17,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { PLAN_DAYS } from '@novame/domain';
 
 import { haptics } from '@/lib/haptics';
+import { OffsetCard } from '@/components/ui/offset-card';
 import { fetchQuestStatus, startPlan } from '@/lib/quests-api';
 
-const CREAM = '#FBF3E6';
+// Quests family theme (2026-07-23): dark-brown ground, white offset cards.
+const BG = '#4C331B';
+const OFFSET = '#33220F';
 const CARD = '#FFFFFF';
 const TEXT = '#4A3B2A';
 const MUTED = '#9A8A76';
+const CREAM = '#FFF6E8';
+const CREAM_MUTED = 'rgba(255,246,232,0.75)';
 const ORANGE = '#F2A03D';
-const GREEN = '#5AA469';
+const GREEN = '#7BB661';
 
 const MAX_TASK = 120;
 
@@ -73,7 +78,7 @@ export default function QuestWriteOwnScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Write Your Own</Text>
           <Text style={styles.sub}>One task per day — all {PLAN_DAYS} are yours to write.</Text>
-          <Text style={[styles.counter, { color: filled === PLAN_DAYS ? GREEN : MUTED }]}>
+          <Text style={[styles.counter, { color: filled === PLAN_DAYS ? GREEN : CREAM_MUTED }]}>
             {filled} / {PLAN_DAYS} written
           </Text>
         </View>
@@ -84,7 +89,7 @@ export default function QuestWriteOwnScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {tasks.map((t, i) => (
-            <View key={i} style={styles.row}>
+            <OffsetCard key={i} color={OFFSET} offset={4} radius={16} cardStyle={styles.row} style={styles.rowGap}>
               <View style={styles.dayChip}>
                 <Text style={styles.dayChipText}>Day {i + 1}</Text>
               </View>
@@ -95,19 +100,19 @@ export default function QuestWriteOwnScreen() {
                 value={t}
                 onChangeText={(text) => setTask(i, text)}
               />
-            </View>
+            </OffsetCard>
           ))}
           <View style={{ height: 12 }} />
         </ScrollView>
 
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable onPress={() => router.back()} style={styles.closeX} hitSlop={10}>
-            <MaterialIcons name="close" size={24} color={MUTED} />
+            <MaterialIcons name="close" size={24} color={TEXT} />
           </Pressable>
           <Pressable
             onPress={onStart}
             disabled={!ready}
-            style={[styles.startBtn, { backgroundColor: ready ? ORANGE : '#E4D7C2' }]}
+            style={[styles.startBtn, { backgroundColor: ready ? ORANGE : 'rgba(255,246,232,0.25)' }]}
           >
             {submitting ? (
               <ActivityIndicator color="#FFFFFF" />
@@ -124,17 +129,17 @@ export default function QuestWriteOwnScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: CREAM, paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
   header: { paddingHorizontal: 4, paddingBottom: 8 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: TEXT },
-  sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: MUTED, marginTop: 4 },
+  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: CREAM },
+  sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 4 },
   counter: { fontSize: 13, fontFamily: 'Inter_700Bold', marginTop: 8 },
 
   list: { paddingTop: 8, paddingBottom: 8 },
+  rowGap: { marginBottom: 8 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: CARD, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12,
-    marginBottom: 10,
+    backgroundColor: CARD, paddingVertical: 10, paddingHorizontal: 12,
   },
   dayChip: { backgroundColor: '#F6E7D0', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
   dayChipText: { fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#8A5A2B' },
@@ -143,7 +148,7 @@ const styles = StyleSheet.create({
   bottomBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10 },
   closeX: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: CARD,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E4D7C2',
+    alignItems: 'center', justifyContent: 'center',
   },
   startBtn: { flex: 1, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   startText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },

@@ -5,14 +5,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { QUEST_THEME_BY_KEY, TASKS_TO_PICK } from '@novame/domain';
 
+import { OffsetCard } from '@/components/ui/offset-card';
 import { fetchQuestStatus, startPlan } from '@/lib/quests-api';
 
-const CREAM = '#FBF3E6';
+// Quests family theme (2026-07-23): dark-brown ground, white offset cards.
+const BG = '#4C331B';
+const OFFSET = '#33220F';
 const CARD = '#FFFFFF';
 const TEXT = '#4A3B2A';
 const MUTED = '#9A8A76';
+const CREAM = '#FFF6E8';
+const CREAM_MUTED = 'rgba(255,246,232,0.75)';
 const ORANGE = '#F2A03D';
-const GREEN = '#5AA469';
+const GREEN = '#7BB661';
 
 /**
  * Quest task picker -- full-screen. Shows ~20 candidate tasks; the user
@@ -100,7 +105,7 @@ export default function QuestPickScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>{planTitle}</Text>
         <Text style={styles.sub}>Pick {TASKS_TO_PICK} for the next {TASKS_TO_PICK} days</Text>
-        <Text style={[styles.counter, { color: ready ? GREEN : MUTED }]}>{count} / {TASKS_TO_PICK} selected</Text>
+        <Text style={[styles.counter, { color: ready ? GREEN : CREAM_MUTED }]}>{count} / {TASKS_TO_PICK} selected</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
@@ -108,12 +113,20 @@ export default function QuestPickScreen() {
           const on = selected.includes(i);
           const full = !on && count >= TASKS_TO_PICK;
           return (
-            <Pressable key={i} onPress={() => toggle(i)} style={[styles.taskRow, on && styles.taskRowOn, full && styles.taskRowDim]}>
+            <OffsetCard
+              key={i}
+              color={OFFSET}
+              offset={4}
+              radius={16}
+              onPress={() => toggle(i)}
+              cardStyle={[styles.taskRow, on && styles.taskRowOn]}
+              style={[styles.rowGap, full && styles.taskRowDim]}
+            >
               <View style={[styles.checkbox, on && styles.checkboxOn]}>
                 {on && <MaterialIcons name="check" size={16} color="#FFFFFF" />}
               </View>
               <Text style={[styles.taskText, on && styles.taskTextOn]}>{task}</Text>
-            </Pressable>
+            </OffsetCard>
           );
         })}
         <View style={{ height: 12 }} />
@@ -121,9 +134,9 @@ export default function QuestPickScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
         <Pressable onPress={() => router.back()} style={styles.closeX} hitSlop={10}>
-          <MaterialIcons name="close" size={24} color={MUTED} />
+          <MaterialIcons name="close" size={24} color={TEXT} />
         </Pressable>
-        <Pressable onPress={onStart} disabled={!ready || submitting} style={[styles.startBtn, { backgroundColor: ready ? ORANGE : '#E4D7C2' }]}>
+        <Pressable onPress={onStart} disabled={!ready || submitting} style={[styles.startBtn, { backgroundColor: ready ? ORANGE : 'rgba(255,246,232,0.25)' }]}>
           {submitting ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
@@ -136,18 +149,20 @@ export default function QuestPickScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: CREAM, paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
   header: { paddingHorizontal: 4, paddingBottom: 8 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: TEXT },
-  sub: { fontSize: 14, fontFamily: 'Inter_400Regular', color: MUTED, marginTop: 4 },
+  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: CREAM },
+  sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 4 },
   counter: { fontSize: 13, fontFamily: 'Inter_700Bold', marginTop: 8 },
 
   list: { paddingTop: 8, paddingBottom: 8 },
+  rowGap: { marginBottom: 8 },
   taskRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: CARD, borderRadius: 14,
-    paddingVertical: 14, paddingHorizontal: 14, marginBottom: 10, borderWidth: 1.5, borderColor: 'transparent',
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: CARD,
+    paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1.5, borderColor: 'transparent',
   },
   taskRowOn: { borderColor: ORANGE },
+  // Dim face + drop together (OffsetCard rule: opacity lives on the wrapper).
   taskRowDim: { opacity: 0.45 },
   checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, borderColor: '#D8C9B2', alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { backgroundColor: ORANGE, borderColor: ORANGE },
@@ -155,7 +170,7 @@ const styles = StyleSheet.create({
   taskTextOn: { fontFamily: 'Inter_700Bold' },
 
   bottomBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10 },
-  closeX: { width: 48, height: 48, borderRadius: 24, backgroundColor: CARD, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E4D7C2' },
+  closeX: { width: 48, height: 48, borderRadius: 24, backgroundColor: CARD, alignItems: 'center', justifyContent: 'center' },
   startBtn: { flex: 1, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   startText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 

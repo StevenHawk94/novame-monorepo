@@ -15,12 +15,17 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
+import { OffsetCard } from '@/components/ui/offset-card';
 import { generateCustomTasks } from '@/lib/quests-api';
 
-const CREAM = '#FBF3E6';
+// Quests family theme (2026-07-23): dark-brown ground, white offset cards.
+const BG = '#4C331B';
+const OFFSET = '#33220F';
 const CARD = '#FFFFFF';
 const TEXT = '#4A3B2A';
 const MUTED = '#9A8A76';
+const CREAM = '#FFF6E8';
+const CREAM_MUTED = 'rgba(255,246,232,0.75)';
 const ORANGE = '#F2A03D';
 
 const MAX_GOAL = 500;
@@ -89,26 +94,28 @@ export default function QuestCustomScreen() {
           </Text>
         </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Run my first 5k in a month, sleep before midnight, finish my thesis chapter…"
-          placeholderTextColor={MUTED}
-          value={goal}
-          onChangeText={(t) => setGoal(t.slice(0, MAX_GOAL))}
-          multiline
-          autoFocus
-          textAlignVertical="top"
-        />
+        <OffsetCard color={OFFSET} offset={4} radius={16} style={{ flex: 1 }} cardStyle={{ flex: 1 }}>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Run my first 5k in a month, sleep before midnight, finish my thesis chapter…"
+            placeholderTextColor={MUTED}
+            value={goal}
+            onChangeText={(t) => setGoal(t.slice(0, MAX_GOAL))}
+            multiline
+            autoFocus
+            textAlignVertical="top"
+          />
+        </OffsetCard>
         <Text style={styles.counter}>{goal.length} / {MAX_GOAL}</Text>
 
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable onPress={() => router.back()} style={styles.closeX} hitSlop={10}>
-            <MaterialIcons name="close" size={24} color={MUTED} />
+            <MaterialIcons name="close" size={24} color={TEXT} />
           </Pressable>
           <Pressable
             onPress={onGenerate}
             disabled={!canGenerate}
-            style={[styles.genBtn, { backgroundColor: canGenerate ? ORANGE : '#E4D7C2' }]}
+            style={[styles.genBtn, { backgroundColor: canGenerate ? ORANGE : 'rgba(255,246,232,0.25)' }]}
           >
             {generating ? (
               <ActivityIndicator color="#FFFFFF" />
@@ -123,21 +130,21 @@ export default function QuestCustomScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: CREAM, paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
   header: { paddingHorizontal: 4, paddingBottom: 12 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: TEXT },
-  sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: MUTED, marginTop: 6, lineHeight: 20 },
+  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: CREAM },
+  sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6, lineHeight: 20 },
 
   input: {
-    flex: 1, backgroundColor: CARD, borderRadius: 16, padding: 16,
+    flex: 1, padding: 16,
     fontSize: 16, fontFamily: 'Inter_400Regular', lineHeight: 24, color: TEXT,
   },
-  counter: { fontSize: 13, fontFamily: 'Inter_400Regular', color: MUTED, marginTop: 8, paddingHorizontal: 4 },
+  counter: { fontSize: 13, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 8, paddingHorizontal: 4 },
 
   bottomBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12 },
   closeX: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: CARD,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E4D7C2',
+    alignItems: 'center', justifyContent: 'center',
   },
   genBtn: { flex: 1, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   genText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
