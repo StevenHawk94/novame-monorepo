@@ -4,15 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { ICONS } from '@/lib/icons';
+import { ItemSprite } from '@/components/ui/item-sprite';
 import { fetchReflectFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
 import { getCachedBags } from '@/lib/bags-api';
 
 /**
- * Reflect detail (from My Logs / an item's memories). The full reflection text
- * plus the "Memories Created" -- the items that reflection gathered, shown as a
- * grid of emoji with counts. Read from the cached feed by reflectId; the items
- * are resolved from the cached bags by walking each item's memories for a
- * matching reflectId.
+ * Reflect detail (design 2026-07-22, 1:1): dark-brown full screen, a white
+ * card with the dated full reflection, then a "Memory Items Created" card --
+ * the items that reflection gathered as sprite tiles with xN counts -- and a
+ * round white close button. Read from the cached feed by reflectId; items
+ * resolved from cached bags by matching each memory's reflectId.
  */
 export default function ReflectDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -35,52 +37,54 @@ export default function ReflectDetailScreen() {
     return null;
   }, [feed, reflectId]);
 
-  // Items this reflection gathered: walk cached bags, collect items whose
-  // memories include this reflectId (precise per-reflect attribution).
+  // Items this reflection gathered, aggregated to (item, count) so a double
+  // mention shows one tile with x2 rather than two x1 tiles.
   const gathered = useMemo(() => {
-    const out: { emoji: string; name: string }[] = [];
+    const out: { itemId: string; count: number }[] = [];
     for (const item of getCachedBags()) {
       const times = item.memories.filter((m) => m.reflectId === reflectId).length;
-      for (let i = 0; i < times; i++) out.push({ emoji: item.emoji, name: item.displayName });
+      if (times > 0) out.push({ itemId: item.itemId, count: times });
     }
     return out;
   }, [reflectId]);
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Reflection card */}
         <View style={styles.card}>
           {entry && (
             <View style={styles.dateRow}>
-              <MaterialIcons name="calendar-today" size={15} color="#8A6240" />
+              <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
               <Text style={styles.date}>{entry.dateLabel}</Text>
             </View>
           )}
           <Text style={styles.body}>{entry?.body ?? 'This reflection is no longer available.'}</Text>
         </View>
 
-        {/* Memories Created */}
+        {/* Memory Items Created */}
         {gathered.length > 0 && (
           <View style={styles.memCard}>
-            <Text style={styles.memTitle}>Memories Created</Text>
-            <View style={styles.memGrid}>
-              {gathered.map((g, i) => (
-                <View key={i} style={styles.memItem}>
-                  <Text style={styles.memEmoji}>{g.emoji}</Text>
-                  <Text style={styles.memCount}>x1</Text>
+            <View style={styles.memTitleRow}>
+              <Image source={ICONS.memory} style={styles.memTitleIcon} resizeMode="contain" />
+              <Text style={styles.memTitle}>Memory Items Created</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.memRow}>
+              {gathered.map((g) => (
+                <View key={g.itemId} style={styles.memItem}>
+                  <ItemSprite itemId={g.itemId} size={72} radius={16} />
+                  <Text style={styles.memCount}>x{g.count}</Text>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
       </ScrollView>
 
-      {/* Done */}
-      <View style={[styles.doneWrap, { paddingBottom: insets.bottom + 16 }]}>
-        <Text style={styles.doneLabel}>Done</Text>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.8 }]}>
-          <MaterialIcons name="check" size={26} color="#C77D3A" />
+      {/* Close: white circle, dark X (mock) */}
+      <View style={[styles.closeWrap, { paddingBottom: insets.bottom + 16 }]}>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.85 }]}>
+          <MaterialIcons name="close" size={28} color="#43301F" />
         </Pressable>
       </View>
     </View>
@@ -88,32 +92,26 @@ export default function ReflectDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F7E4D5', paddingHorizontal: 16 },
-  scroll: { paddingBottom: 24, gap: 16, paddingTop: 8 },
+  root: { flex: 1, backgroundColor: '#43301F', paddingHorizontal: 18 },
+  scroll: { paddingBottom: 24, gap: 20, paddingTop: 8 },
 
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22,
-    shadowColor: '#8A6D3B', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
-  },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  date: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
-  body: { fontSize: 15, fontFamily: 'Inter_400Regular', color: '#3A2E1A', lineHeight: 24 },
+  card: { backgroundColor: '#FDF9F1', borderRadius: 26, padding: 24 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  calendarIcon: { width: 28, height: 28 },
+  date: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E2418' },
+  body: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 26 },
 
-  memCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20,
-    shadowColor: '#8A6D3B', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
-  },
-  memTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A', textAlign: 'center', marginBottom: 16 },
-  memGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  memItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  memEmoji: { fontSize: 26 },
-  memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#6B5A45' },
+  memCard: { backgroundColor: '#FDF9F1', borderRadius: 26, padding: 20 },
+  memTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  memTitleIcon: { width: 30, height: 30 },
+  memTitle: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
+  memRow: { gap: 14, paddingHorizontal: 4 },
+  memItem: { alignItems: 'center', gap: 6 },
+  memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
 
-  doneWrap: { alignItems: 'center', gap: 8 },
-  doneLabel: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#C77D3A' },
-  doneBtn: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#FFFFFF',
+  closeWrap: { alignItems: 'center' },
+  closeBtn: {
+    width: 58, height: 58, borderRadius: 29, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#8A6D3B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
   },
 });

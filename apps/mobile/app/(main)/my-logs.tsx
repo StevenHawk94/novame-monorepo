@@ -10,10 +10,14 @@ import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@
 import { fetchBags, getCachedBags } from '@/lib/bags-api';
 
 /**
- * My Logs -- the Reflect Feed. Every reflection the user has written, most
- * recent first, each card showing the day, the entry, and the emoji of what it
- * gathered. Tapping "View Detail" opens the full reflection. Private to the
+ * My Logs -- the Reflect Feed (design 2026-07-22, 1:1): journal icon +
+ * "Reflect Feed" title, a "By Date" pill top right, then one cream card per
+ * reflection -- calendar date, the entry, the gathered items on bordered
+ * tiles (+N overflow in green), and a dark View Detail pill. Private to the
  * user (friends only ever see the emoji glimpse elsewhere).
+ *
+ * The back arrow is not in the mock but the route is pushed -- kept small so
+ * the screen stays navigable.
  */
 export default function MyLogsScreen() {
   const router = useRouter();
@@ -45,21 +49,23 @@ export default function MyLogsScreen() {
       id: r.id,
       body: r.body,
       dateLabel: formatDayLabel(day.date),
-      emoji: itemsForReflect(r.id),
+      items: itemsForReflect(r.id),
     })),
   );
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      {/* Header */}
+      {/* Header: journal + title + By Date */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
           <MaterialIcons name="arrow-back" size={24} color="#3A2A1A" />
         </Pressable>
-        <Image source={ICONS.interact} style={styles.petAvatar} resizeMode="contain" />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Reflect Feed</Text>
-          <Text style={styles.subtitle}>Your memories, one day at a time.</Text>
+        <Image source={ICONS.sharedMemories} style={styles.headerIcon} resizeMode="contain" />
+        <Text style={styles.title}>Reflect Feed</Text>
+        <View style={{ flex: 1 }} />
+        <View style={styles.byDatePill}>
+          <Text style={styles.byDateText}>By Date</Text>
+          <MaterialIcons name="keyboard-arrow-down" size={20} color="#4A3423" />
         </View>
       </View>
 
@@ -73,29 +79,29 @@ export default function MyLogsScreen() {
           {entries.map((e) => (
             <View key={e.id} style={styles.card}>
               <View style={styles.cardTop}>
-                <MaterialIcons name="calendar-today" size={15} color="#8A6240" />
+                <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
                 <Text style={styles.cardDate}>{e.dateLabel}</Text>
               </View>
-              <Text style={styles.cardBody} numberOfLines={3}>{e.body}</Text>
-              <View style={styles.cardBottom}>
-                <View style={styles.emojiRow}>
-                  {e.emoji.slice(0, 5).map((em, i) => (
-                    <ItemSprite key={i} itemId={em} size={34} radius={9} />
-                  ))}
-                  {e.emoji.length > 5 && (
-                    <View style={styles.emojiChip}>
-                      <Text style={styles.moreText}>+{e.emoji.length - 5}</Text>
-                    </View>
-                  )}
-                </View>
-                <Pressable
-                  onPress={() => router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } })}
-                  style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.7 }]}
-                >
-                  <Text style={styles.detailText}>View Detail</Text>
-                  <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
-                </Pressable>
+              <Text style={styles.cardBody} numberOfLines={4}>{e.body}</Text>
+              <View style={styles.itemRow}>
+                {e.items.slice(0, 5).map((id, i) => (
+                  <View key={i} style={styles.itemTile}>
+                    <ItemSprite itemId={id} size={44} radius={12} tileColor="#FFFDF4" />
+                  </View>
+                ))}
+                {e.items.length > 5 && (
+                  <View style={[styles.itemTile, styles.moreTile]}>
+                    <Text style={styles.moreText}>+{e.items.length - 5}</Text>
+                  </View>
+                )}
               </View>
+              <Pressable
+                onPress={() => router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } })}
+                style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={styles.detailText}>View Detail</Text>
+                <MaterialIcons name="chevron-right" size={18} color="#FFFFFF" />
+              </Pressable>
             </View>
           ))}
         </ScrollView>
@@ -105,36 +111,40 @@ export default function MyLogsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FBF3E8', paddingHorizontal: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, paddingBottom: 14 },
+  root: { flex: 1, backgroundColor: '#FAF1E6', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, paddingBottom: 16 },
   back: { paddingRight: 2 },
-  petAvatar: { width: 48, height: 48 },
-  title: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
-  subtitle: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#9A8770', marginTop: 1 },
-
-  scroll: { paddingBottom: 24, gap: 14 },
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18,
-    shadowColor: '#8A6D3B', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
-  },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  cardDate: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
-  cardBody: { fontSize: 15, fontFamily: 'Inter_400Regular', color: '#5A4A3A', lineHeight: 22, marginBottom: 14 },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  emojiRow: { flexDirection: 'row', gap: 6, flex: 1, flexWrap: 'wrap' },
-  emojiChip: {
-    width: 40, height: 40, borderRadius: 12, backgroundColor: '#FBF3E8',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  emojiText: { fontSize: 22 },
-  moreText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#4A3423' },
-  // Design: solid dark-brown View Detail pill, white label.
-  detailBtn: {
+  headerIcon: { width: 46, height: 46 },
+  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
+  byDatePill: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
-    borderRadius: 18, backgroundColor: '#4A3423',
-    paddingHorizontal: 16, paddingVertical: 11, marginLeft: 8,
+    backgroundColor: '#FFF9F2', borderRadius: 20, borderWidth: 1.5, borderColor: '#C9AE94',
+    paddingLeft: 16, paddingRight: 10, paddingVertical: 10,
   },
-  detailText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  byDateText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#4A3423' },
+
+  scroll: { paddingBottom: 24, gap: 16 },
+  card: { backgroundColor: '#FDF3D9', borderRadius: 24, padding: 20 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  calendarIcon: { width: 26, height: 26 },
+  cardDate: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E2418' },
+  cardBody: { fontSize: 15.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 23, marginBottom: 14 },
+
+  itemRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 },
+  itemTile: {
+    borderRadius: 14, borderWidth: 1.5, borderColor: '#E4CFA7',
+    backgroundColor: '#FFFDF4', padding: 2,
+  },
+  moreTile: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', padding: 0 },
+  moreText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3E7A3E' },
+
+  // Design: solid dark-brown View Detail pill, white label, right-aligned.
+  detailBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-end',
+    borderRadius: 24, backgroundColor: '#4A3423',
+    paddingHorizontal: 20, paddingVertical: 13,
+  },
+  detailText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
   emptyEmoji: { fontSize: 44 },
