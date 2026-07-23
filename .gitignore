@@ -69,3 +69,4 @@ AuthKey_*.p8
 
 # UI design reference images (local only, 48MB)
 design-refs/
+__pycache__/
