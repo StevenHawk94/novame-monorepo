@@ -161,7 +161,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { userId, promptId, body, localDate, presetDimension, sourceKit } = await request.json()
+    const { userId, promptId, body, localDate, presetDimension, sourceKit, friendUserId } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -256,6 +256,33 @@ export async function POST(request) {
             rarity: m.rarity,
             label: m.label,
           }))
+
+          // Co-creation (PRD §3.7 prompt #9): a reflect written "with" a friend
+          // drops its matched items into the pair's shared memory box too,
+          // source 'reflect'. Only the rule-matched labels cross over -- never
+          // the journal text (default-private posture). The friendship is
+          // re-checked here because friendUserId is client-supplied.
+          if (friendUserId && typeof friendUserId === 'string' && friendUserId !== userId) {
+            const [a, b] = userId < friendUserId ? [userId, friendUserId] : [friendUserId, userId]
+            const { data: friendship } = await supabase
+              .from('friendships')
+              .select('id')
+              .eq('user_a', a).eq('user_b', b).eq('status', 'accepted')
+              .maybeSingle()
+            if (friendship) {
+              const boxRows = matches.map((m) => ({
+                user_a: a,
+                user_b: b,
+                author_user_id: userId,
+                item_id: m.itemId,
+                description: m.label,
+                source: 'reflect',
+                reflect_id: reflectId,
+              }))
+              const { error: boxErr } = await supabase.from('shared_memory_items').insert(boxRows)
+              if (boxErr) console.warn('[reflect] co-create box insert failed (non-fatal):', boxErr.message)
+            }
+          }
         }
       } catch (itemErr) {
         console.warn('[reflect] item matching failed (non-fatal):', itemErr && itemErr.message)

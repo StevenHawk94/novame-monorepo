@@ -158,6 +158,12 @@ export async function submitReflect(params: {
   /** New Lens routes here with the theme's dimension + a source tag. */
   presetDimension?: string;
   sourceKit?: 'new_lens';
+  /**
+   * Co-creation (prompt #9): matched items also land in the shared memory box
+   * with this friend. Server re-verifies the friendship; a bad id just skips
+   * the box write, never fails the reflect.
+   */
+  friendUserId?: string;
 }): Promise<SubmitResult> {
   const body = params.body.trim();
   if (body.length === 0) return { ok: false, error: 'empty' };
@@ -177,6 +183,7 @@ export async function submitReflect(params: {
       localDate: today,
       presetDimension: params.presetDimension,
       sourceKit: params.sourceKit,
+      friendUserId: params.friendUserId,
     });
 
     if (data.error === 'daily_limit_reached') {
