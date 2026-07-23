@@ -54,17 +54,27 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
 **venv 在会话临时目录已失效，新会话需重建**：
 `python3 -m venv /tmp/nv && /tmp/nv/bin/pip install pillow numpy scipy`
 
-## 5. 物品系统（刚上线）
+## 5. 物品系统（2026-07-23 全量上线：23 类目 1072 物品）
 
-- 词典：`packages/engine/src/items/dictionary.json` = food-01 的 64 物品 +
-  191 同义词组（id 形如 `food.pancakes`；多词词组优先且消费 token）
-- 图集：`apps/mobile/assets/items/food-01.webp`（2048×2048、8×8×256px、透明底）
-- 注册表：`item-sprite.tsx` 里的 `ITEM_SHEETS`——新 sheet 跑脚本后放
-  `assets/items/` 并加一行 require
-- 已替换真图的 9 处：Bags 网格/物品详情、Reflect claim+手动补录、Home 泡泡
-  +弹卡、My Logs 图标、Friends 动态/Profile/回忆详情/共创盒
-- 用户流程：新图 → 跑脚本 → 对照 `-numbered.png` 报 64 个名字 → 生成词典条目
-- ⚠️ 源图 17/18 都是芝士汉堡（已分别命名 Burger/Cheeseburger，等换图）
+- 词典：`packages/engine/src/items/dictionary.json` = **1072 物品 + 2123 同义
+  词**，由 `tools/build-item-dictionary.py` 从
+  `assets/memory items/icon_keyword_mapping.csv`（用户维护）+
+  `keyword-conflicts-resolution.csv`（85 组关键词冲突的裁决表，胜者保留、
+  败者弃词）生成。改词 → 改 CSV → 重跑脚本即可
+- id 形如 `music.electric_guitar`（类目前缀 + 名称 slug）；多词词组优先且
+  消费 token（"electric guitar" 不会再命中 "guitar"）
+- 图集：`assets/items/` 23 张 webp（8 列 × 4-8 行 × 256px，kebab 命名如
+  `food-drinks-01`）；`item-sprite.tsx` 的 `ITEM_SHEETS` 带 rows 元数据
+  （**非正方形 sheet**，渲染窗口按行数算）
+- 标准化管线 `tools/normalize-item-sheet.py` 新增：透明底直接用 alpha 抠图；
+  `--grid` 均匀网格模式（这批规则网格图必用——自由聚类会把细线条图标
+  吸附给邻居导致整表错位，Nature 表踩过）
+- 引擎测试含 `real-dictionary.test.ts`：真词典完整性 + 词组优先 + 冲突裁决
+  回归（重新生成词典后必跑）
+- 旧 food-01 词典/图集已整体替换（2026-07-23 裁决）；旧测试数据的失效 id
+  （food.egg 等）显示空白瓷砖，属预期
+- 顺带修复：`/api/friends/box` POST 调 `matchItems` 少传词典参数，手动共创
+  写盒此前必 500
 - ⚠️ 旧词典 id（wine 等测试数据）会显示空白瓷砖，属预期
 
 ## 6. 踩过的坑（新会话别再踩）
@@ -81,9 +91,13 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
 
 ## 7. 遗留工作（下一步）
 
-**任务 13（已建）**：iOS/Android 桌面 Widget（原生）、Reflect prompt#9 好友
-共创写入共创盒（`shared_memory_items` source='reflect' 已建好等接）、陌生人
-搜索（需产品定反骚扰策略）、共创内容举报/拉黑（上架合规）、Plus AI 回忆精炼。
+**任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定
+反骚扰策略）、共创内容举报/拉黑（上架合规）、Plus AI 回忆精炼。
+Reflect 共创**服务端已接通**：`/api/reflect` 接受可选 `friendUserId`（服务端
+复核 accepted 好友关系），物品匹配命中会同时写入 `shared_memory_items`
+（source='reflect'、带 reflect_id，只写 label 不写日记原文）；
+`reflect-api.ts` 的 `submitReflect` 已透传该参数。**剩 UI**：prompt#9 的选
+好友交互无设计稿（且 Q3「9 还是 10 条 prompt」未裁决），等图再做。
 
 **素材缺口（等用户提供，代码已留位）**：宠物双状态视频（幼年/成年×睡/醒）、
 Home 场景 2-6、怪物 8 只+温顺态、Master 森林图、6 张人物形象阶段图、81 张
@@ -105,7 +119,7 @@ Untitled design (34/56/57/60).png` 未使用待认领。
 # 类型检查（分别在 apps/mobile、apps/api 下）
 npx tsc --noEmit
 # 引擎/领域测试
-cd packages/engine && npx vitest run   # 73 tests
+cd packages/engine && npx vitest run   # 81 tests（含真词典回归）
 cd packages/domain && npx vitest run   # 10 tests
 # 物品图标准化
 <venv>/bin/python tools/normalize-item-sheet.py "图.png"
