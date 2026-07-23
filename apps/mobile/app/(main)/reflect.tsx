@@ -34,6 +34,7 @@ import { BACKGROUNDS, ICONS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 import { FireworksBurst } from '../../src/components/ui/fireworks-burst';
+import { ItemSprite } from '../../src/components/ui/item-sprite';
 
 const MAX_CHARS = 5000;
 
@@ -287,17 +288,12 @@ export default function ReflectScreen() {
                           showsHorizontalScrollIndicator={false}
                           contentContainerStyle={styles.claimItemsRow}
                         >
-                          {result.matchedItems.map((it) => {
-                            const def = ITEM_DICTIONARY.items[it.itemId];
-                            return (
-                              <View key={it.itemId} style={styles.claimItem}>
-                                <View style={styles.claimItemTile}>
-                                  <Text style={styles.claimItemEmoji}>{def?.emoji ?? '📦'}</Text>
-                                </View>
-                                <Text style={styles.claimItemCount}>x1</Text>
-                              </View>
-                            );
-                          })}
+                          {result.matchedItems.map((it) => (
+                            <View key={it.itemId} style={styles.claimItem}>
+                              <ItemSprite itemId={it.itemId} size={76} radius={16} />
+                              <Text style={styles.claimItemCount}>x1</Text>
+                            </View>
+                          ))}
                         </ScrollView>
                       ) : (
                         <Text style={styles.claimEmpty}>
@@ -315,7 +311,7 @@ export default function ReflectScreen() {
                           const def = ITEM_DICTIONARY.items[it.itemId];
                           return (
                             <View key={it.itemId} style={styles.editRow}>
-                              <Text style={styles.editEmoji}>{def?.emoji ?? '📦'}</Text>
+                              <ItemSprite itemId={it.itemId} size={40} radius={10} />
                               <TextInput
                                 style={styles.editInput}
                                 placeholder={it.label}

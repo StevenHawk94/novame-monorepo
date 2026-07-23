@@ -29,6 +29,7 @@ import Animated, {
 
 import { haptics } from '@/lib/haptics';
 import { markPopped, submitBubblePop, type MemoryBubble } from '@/lib/home-bubbles';
+import { ItemSprite } from '@/components/ui/item-sprite';
 
 const BUBBLE_SIZE = 84;
 
@@ -83,9 +84,7 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
         <Pressable style={styles.cardBackdrop} onPress={() => setCard(null)}>
           <View style={styles.card}>
             <View style={styles.cardRow}>
-              <View style={styles.cardItemTile}>
-                <Text style={styles.cardItemEmoji}>{card.emoji}</Text>
-              </View>
+              <ItemSprite itemId={card.itemId} size={72} radius={12} />
               <View style={styles.cardBody}>
                 <Text style={styles.cardText}>{card.itemName}</Text>
                 <Text style={styles.cardFriend}>{card.friendName}</Text>
@@ -156,7 +155,7 @@ function FloatingBubble({
       <Pressable onPress={onPress} hitSlop={6} style={styles.bubble}>
         <View style={styles.shineLarge} />
         <View style={styles.shineSmall} />
-        <Text style={styles.bubbleEmoji}>{bubble.emoji}</Text>
+        <ItemSprite itemId={bubble.itemId} size={48} radius={12} tileColor="transparent" />
       </Pressable>
     </Animated.View>
   );

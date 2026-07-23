@@ -8,6 +8,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
+import { ItemSprite } from '@/components/ui/item-sprite';
+import { useWindowDimensions } from 'react-native';
 import { FRIEND_ICONS } from '@/lib/icons';
 import {
   createSharedMemories, fetchSharedBox, type SharedBoxItem,
@@ -31,6 +33,8 @@ export default function FriendMemoriesScreen() {
   }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'your friend';
 
+  const { width } = useWindowDimensions();
+  const memTile = Math.floor((width - 32) / 6) - 6;
   const [mode, setMode] = useState<Mode>('grid');
   const [items, setItems] = useState<SharedBoxItem[]>([]);
   const [text, setText] = useState('');
@@ -162,8 +166,7 @@ export default function FriendMemoriesScreen() {
                 onPress={() => Alert.alert(it.description || 'A shared memory', undefined)}
                 style={styles.cell}
               >
-                {/* blank until the item art lands */}
-                <View style={styles.tile} />
+                <ItemSprite itemId={it.itemId} size={memTile} radius={14} tileColor="#EFEDF6" />
               </Pressable>
             ))}
           </View>

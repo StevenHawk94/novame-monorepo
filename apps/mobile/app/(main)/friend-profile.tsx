@@ -7,6 +7,7 @@ import { haptics } from '@/lib/haptics';
 import { CaveShell } from '@/components/main/cave-shell';
 import { FRIEND_ICONS } from '@/lib/icons';
 import { fetchFriendFeed, markFriendRead, type FeedEntry } from '@/lib/friends-api';
+import { ItemSprite } from '@/components/ui/item-sprite';
 
 /**
  * Friend Profile (mock 1:1): the friend's history inside the cave shell —
@@ -83,7 +84,7 @@ export default function FriendProfileScreen() {
               </View>
               <View style={styles.tilesRow}>
                 {e.itemIds.slice(0, 4).map((id, i) => (
-                  <View key={`${id}:${i}`} style={styles.blankTile} />
+                  <ItemSprite key={`${id}:${i}`} itemId={id} size={56} radius={12} />
                 ))}
                 {e.itemIds.length > 4 && (
                   <View style={styles.moreChip}>

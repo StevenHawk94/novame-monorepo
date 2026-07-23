@@ -9,6 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
 import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
+import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
   fetchSharePrivacy, setSharePrivacy,
@@ -168,7 +169,7 @@ export default function FriendsScreen() {
                       <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
                       <View style={styles.tileRow}>
                         {e.itemIds.slice(0, 4).map((id, i) => (
-                          <View key={`${id}:${i}`} style={styles.blankTile} />
+                          <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
                         ))}
                         {e.itemIds.length > 4 && (
                           <View style={styles.blankTile}>

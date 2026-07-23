@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ICONS } from '@/lib/icons';
+import { ItemSprite } from '@/components/ui/item-sprite';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
 import { fetchBags, getCachedBags } from '@/lib/bags-api';
 
@@ -31,11 +32,11 @@ export default function MyLogsScreen() {
   // walking cached bags for memories whose reflectId matches this reflection,
   // not the day's aggregate (which would repeat every item on every card).
   const bags = getCachedBags();
-  function emojiForReflect(reflectId: string): string[] {
+  function itemsForReflect(reflectId: string): string[] {
     const out: string[] = [];
     for (const item of bags) {
       const n = item.memories.filter((m) => m.reflectId === reflectId).length;
-      for (let i = 0; i < n; i++) out.push(item.emoji);
+      for (let i = 0; i < n; i++) out.push(item.itemId);
     }
     return out;
   }
@@ -44,7 +45,7 @@ export default function MyLogsScreen() {
       id: r.id,
       body: r.body,
       dateLabel: formatDayLabel(day.date),
-      emoji: emojiForReflect(r.id),
+      emoji: itemsForReflect(r.id),
     })),
   );
 
@@ -79,9 +80,7 @@ export default function MyLogsScreen() {
               <View style={styles.cardBottom}>
                 <View style={styles.emojiRow}>
                   {e.emoji.slice(0, 5).map((em, i) => (
-                    <View key={i} style={styles.emojiChip}>
-                      <Text style={styles.emojiText}>{em}</Text>
-                    </View>
+                    <ItemSprite key={i} itemId={em} size={34} radius={9} />
                   ))}
                   {e.emoji.length > 5 && (
                     <View style={styles.emojiChip}>

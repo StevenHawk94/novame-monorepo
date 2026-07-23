@@ -13,6 +13,7 @@ import {
 
 import { haptics } from '@/lib/haptics';
 import { getCachedBags, type CollectedItem } from '@/lib/bags-api';
+import { ItemSprite } from '@/components/ui/item-sprite';
 
 export type ItemSheetRef = {
   present: (itemId: string) => void;
@@ -84,9 +85,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
           <>
             {/* Header: portrait + name + memory count */}
             <View style={styles.header}>
-              <View style={styles.portrait}>
-                <Text style={styles.portraitEmoji}>{item.emoji}</Text>
-              </View>
+              <ItemSprite itemId={item.itemId} size={64} radius={20} tileColor="#FFFFFF" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{item.displayName}</Text>
                 <Text style={styles.memCount}>
@@ -99,9 +98,7 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
             <BottomSheetScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
               {item.memories.map((m, i) => (
                 <View key={i} style={styles.memCard}>
-                  <View style={styles.memThumb}>
-                    <Text style={styles.memThumbEmoji}>{item.emoji}</Text>
-                  </View>
+                  <ItemSprite itemId={item.itemId} size={60} radius={14} tileColor="#FBF3E8" />
                   <View style={styles.memBody}>
                     <Text style={styles.memExcerpt} numberOfLines={3}>{m.excerpt}</Text>
                     <Text style={styles.memDate}>{formatDate(m.createdAt)}</Text>

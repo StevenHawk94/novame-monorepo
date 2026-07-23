@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import { CaveShell } from '@/components/main/cave-shell';
+import { ItemSprite } from '@/components/ui/item-sprite';
 
 /**
  * Friend reflect detail (mock 1:1): one reflect's memories inside the cave
@@ -52,7 +53,7 @@ export default function FriendReflectDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {details.map((d, i) => (
           <View key={`${d.itemId}:${i}`} style={styles.memCard}>
-            <View style={styles.blankTile} />
+            <ItemSprite itemId={d.itemId} size={72} radius={14} />
             <Text style={styles.memText}>{d.text}</Text>
           </View>
         ))}

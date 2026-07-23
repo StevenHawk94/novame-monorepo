@@ -7,6 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ICONS } from '@/lib/icons';
 import { fetchBags, getCachedBags, type CollectedItem } from '@/lib/bags-api';
 import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
+import { ItemSprite } from '@/components/ui/item-sprite';
+import { useWindowDimensions } from 'react-native';
 
 // Six category slots. Icons are placeholders until the real category art + the
 // final item taxonomy land; the first slot ("all") shows everything.
@@ -26,6 +28,9 @@ const CATEGORIES: { key: string; icon: keyof typeof MaterialIcons.glyphMap }[] =
  */
 export default function BagsScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  // 6-across grid: cell = (screen - page padding) / 6, minus cell padding.
+  const tileSize = Math.floor((width - 32) / 6) - 6;
   const [items, setItems] = useState<CollectedItem[]>(() => getCachedBags());
   const [category, setCategory] = useState<string>('all');
   const itemSheetRef = useRef<ItemSheetRef>(null);
@@ -94,7 +99,7 @@ export default function BagsScreen() {
             {shown.map((item) => (
               <Pressable key={item.itemId} onPress={() => openItem(item)} style={styles.cell}>
                 <View style={styles.itemCard}>
-                  <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                  <ItemSprite itemId={item.itemId} size={tileSize} radius={16} />
                   {item.count > 1 && (
                     <View style={styles.countBadge}>
                       <Text style={styles.countBadgeText}>
