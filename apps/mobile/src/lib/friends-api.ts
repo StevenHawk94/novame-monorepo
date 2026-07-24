@@ -241,3 +241,89 @@ export async function createSharedMemories(
     return { ok: false, createdCount: 0 };
   }
 }
+
+// ---- 1:1 pairing (2026-07-23 需求: 那个愿意共享生活点滴的人) ----------------
+
+export interface PairingStatus {
+  paired: boolean;
+  partner: { userId: string; displayName: string } | null;
+}
+
+export async function fetchPairing(): Promise<PairingStatus> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { paired: false, partner: null };
+  try {
+    const data = await apiClient.get<{ success?: boolean } & PairingStatus>(
+      `/api/friends/pair?userId=${encodeURIComponent(userId)}`,
+    );
+    if (!data.success) return { paired: false, partner: null };
+    return { paired: !!data.paired, partner: data.partner ?? null };
+  } catch {
+    return { paired: false, partner: null };
+  }
+}
+
+/** Pair with an accepted friend. Errors map to a short reason for the UI. */
+export async function setPairing(
+  friendUserId: string,
+): Promise<{ ok: boolean; error?: 'not_friends' | 'already_paired' | 'partner_already_paired' | 'network' }> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  try {
+    const data = await apiClient.post<{ success?: boolean; error?: string }>(
+      '/api/friends/pair',
+      { userId, friendUserId },
+    );
+    if (data.success) return { ok: true };
+    const e = data.error;
+    if (e === 'not_friends' || e === 'already_paired' || e === 'partner_already_paired') {
+      return { ok: false, error: e };
+    }
+    return { ok: false, error: 'network' };
+  } catch (err) {
+    const e = (err as { body?: { error?: string } })?.body?.error;
+    if (e === 'not_friends' || e === 'already_paired' || e === 'partner_already_paired') {
+      return { ok: false, error: e };
+    }
+    return { ok: false, error: 'network' };
+  }
+}
+
+export async function unsetPairing(): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    const data = await apiClient.delete<{ success?: boolean }>('/api/friends/pair', { userId });
+    return !!data.success;
+  } catch {
+    return false;
+  }
+}
+
+/** The partner's icon stream for one day (widget + paired view). */
+export interface PairedFeed {
+  paired: boolean;
+  partner: { userId: string; displayName: string } | null;
+  date: string;
+  items: { itemId: string; reflectId: string; createdAt: string }[];
+}
+
+export async function fetchPairedFeed(date?: string): Promise<PairedFeed> {
+  const empty: PairedFeed = { paired: false, partner: null, date: date ?? localDateStr(), items: [] };
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return empty;
+  try {
+    const d = date ?? localDateStr();
+    const data = await apiClient.get<{ success?: boolean } & PairedFeed>(
+      `/api/friends/paired-feed?userId=${encodeURIComponent(userId)}&date=${d}`,
+    );
+    if (!data.success) return empty;
+    return { paired: !!data.paired, partner: data.partner ?? null, date: data.date ?? d, items: data.items ?? [] };
+  } catch {
+    return empty;
+  }
+}

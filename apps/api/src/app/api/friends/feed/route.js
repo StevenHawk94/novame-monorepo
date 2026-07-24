@@ -55,13 +55,27 @@ export async function GET(request) {
 
     // Recent memories across all friends.
     const since = new Date(Date.now() - FEED_DAYS * 86400000).toISOString()
-    const { data: memories } = await supabase
+    const { data: memoriesRaw } = await supabase
       .from('item_memories')
       .select('user_id, item_id, reflect_id, raw_excerpt, refined_desc, created_at')
       .in('user_id', friendIds)
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(MAX_ROWS)
+
+    // Per-reflect visibility (2026-07-23 top-right toggle): a reflect the
+    // owner marked not-visible never reaches any friend surface. Server-side,
+    // same principle as the details opt-in below.
+    let memories = memoriesRaw || []
+    const reflectIds = [...new Set(memories.map((m) => m.reflect_id))]
+    if (reflectIds.length > 0) {
+      const { data: vis } = await supabase
+        .from('reflects')
+        .select('id, shared_to_friends')
+        .in('id', reflectIds)
+      const hidden = new Set((vis || []).filter((r) => r.shared_to_friends === false).map((r) => r.id))
+      memories = memories.filter((m) => !hidden.has(m.reflect_id))
+    }
 
     // Read cursors.
     const { data: reads } = await supabase

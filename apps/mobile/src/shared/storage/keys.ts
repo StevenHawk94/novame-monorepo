@@ -255,6 +255,10 @@ export const kLastGlobalRefreshMs = defineKey('novame_last_global_refresh_ms', '
  *  is the real limit. */
 export const kReflectState = defineKey('novame_reflect_state', 'user');
 
+// Reflect 右上角双开关的"记住上次选择"（2026-07-23 需求）：
+// { visibleToFriend: boolean, shareToBox: boolean }
+export const kReflectShareDefaults = defineKey('novame_reflect_share_defaults', 'user');
+
 /** status.tsx: the eight-dimension gem totals from /api/status. A read-only
  *  shadow of user_gems; the Status screen derives stage and totals from these
  *  with the shared engine, never storing computed values. */

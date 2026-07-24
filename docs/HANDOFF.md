@@ -96,6 +96,33 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
 5. `.maybeSingle()` 在可能多行的查询上会炸（tame status 曾因此有 bug）
 6. 双击交互：先开遮罩会吃掉第二击（tame 战斗卡曾因此无反应，现延迟开缩放）
 
+## 6.5 Reflect v3（2026-07-23 需求：1对1 陪伴定位）——进行中
+
+产品重定位：为「最亲密但不在身边的人」做双向日常互通；1对1 绑定（建在
+好友系统上）、三种 reflect 入口、per-reflect 可见性、Widget 图标串。
+裁决已定：次数仍 3/天全模式共享；typing 有二级 prompt 选项；右上角**两个**
+开关（共享回忆盒 / 对好友可见，均记住上次选择）；Widget 30 分钟刷新+打开即刷。
+
+**服务端+数据层已完成（迁移 027 待用户执行）**：
+- `pairings` 表（镜像双行、PK=user_id 天然限一人；未来多频道只改 PK）+
+  `set_pairing`/`unset_pairing` RPC（校验 accepted 好友、双方未绑定）
+- `reflects.mode`（typing/prompt/items）+ `submit_reflect` v3
+  （p_shared_to_friends/p_mode；3/天门控不变，全模式共用）
+- `/api/reflect` 三模式：typing=引擎匹配−客户端删除清单（只能删不能加）；
+  prompt/items=手选 picks（词典校验、note≤200 作为回忆摘要）；
+  <10 字或非 typing 跳过 AI/技能/气泡
+- `/api/friends/pair`（GET/POST/DELETE）、`/api/friends/paired-feed`
+  （对方某天的图标串，按 local_date、服务端过滤不可见 reflect，只出图标）
+- feed/status 均已按 `shared_to_friends` 服务端过滤（status 顺带修正了
+  原来按 UTC created_at 切天的问题，改按 local_date）
+- 移动端 lib：`submitReflect` 支持 mode/selectedItems/removedItemIds/
+  visibleToFriend；`kReflectShareDefaults` 记忆双开关；friends-api 增
+  fetchPairing/setPairing/unsetPairing/fetchPairedFeed
+
+**待素材/待做**：三入口+双开关+实时匹配条 UI（等设计稿）；流程2 prompt 集
+（等产品提供）；词典 26 类 1216 项升级（等新 CSV+3 张图，管线现成）；
+Plus 归纳/小故事 AI（等文案口径）；iOS WidgetKit（原生，30min 刷新）。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

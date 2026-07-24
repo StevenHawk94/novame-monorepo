@@ -95,17 +95,36 @@ export async function GET(request) {
         .from('profiles').select('id, display_name').in('id', acceptedIds)
       const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
 
+      // Today = the friend's reflect local_date, and only reflects they left
+      // visible (per-reflect toggle, 2026-07-23) — one query for all friends.
+      const { data: todaysReflects } = await supabase
+        .from('reflects')
+        .select('id, user_id')
+        .in('user_id', acceptedIds)
+        .eq('local_date', dateStr)
+        .eq('shared_to_friends', true)
+      const reflectIdsByFriend = new Map()
+      for (const r of todaysReflects || []) {
+        if (!reflectIdsByFriend.has(r.user_id)) reflectIdsByFriend.set(r.user_id, [])
+        reflectIdsByFriend.get(r.user_id).push(r.id)
+      }
+
       for (const fid of acceptedIds) {
-        const { data: items } = await supabase
-          .from('item_memories')
-          .select('item_id, created_at')
-          .eq('user_id', fid)
-          .gte('created_at', `${dateStr}T00:00:00`)
-          .order('created_at', { ascending: true })
+        const rids = reflectIdsByFriend.get(fid) || []
+        let items = []
+        if (rids.length > 0) {
+          const { data } = await supabase
+            .from('item_memories')
+            .select('item_id, created_at')
+            .eq('user_id', fid)
+            .in('reflect_id', rids)
+            .order('created_at', { ascending: true })
+          items = data || []
+        }
         friends.push({
           userId: fid,
           displayName: nameById[fid] || 'Friend',
-          todayItemIds: (items || []).map((i) => i.item_id),
+          todayItemIds: items.map((i) => i.item_id),
         })
       }
     }

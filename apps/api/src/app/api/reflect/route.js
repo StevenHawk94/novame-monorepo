@@ -161,18 +161,47 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { userId, promptId, body, localDate, presetDimension, sourceKit, friendUserId } = await request.json()
+    const {
+      userId, promptId, body: rawBody, localDate, presetDimension, sourceKit, friendUserId,
+      mode: rawMode, selectedItems, removedItemIds, visibleToFriend,
+    } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     if (!Number.isInteger(promptId) || promptId < 1 || promptId > 9) {
       return NextResponse.json({ error: 'Invalid promptId' }, { status: 400 })
     }
-    if (typeof body !== 'string' || body.length === 0) {
+    // Three entries (2026-07-23 需求): 'typing' (流程1, live-matched text),
+    // 'prompt' (流程2, my-days guided taps), 'items' (流程3, manual picks).
+    // typing requires text; the tap flows require picks and may carry no text.
+    const mode = rawMode === 'prompt' || rawMode === 'items' ? rawMode : 'typing'
+    const body = typeof rawBody === 'string' ? rawBody : ''
+    if (mode === 'typing' && body.length === 0) {
       return NextResponse.json({ error: 'Empty body' }, { status: 400 })
     }
     if (body.length > MAX_BODY_CHARS) {
       return NextResponse.json({ error: 'Body too long' }, { status: 400 })
+    }
+    // Manual picks: [{ itemId, note? }], every id must exist in the dictionary.
+    // The note (≤200 chars) becomes the memory excerpt, else the display name.
+    let picks = []
+    if (mode !== 'typing') {
+      if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
+        return NextResponse.json({ error: 'No items selected' }, { status: 400 })
+      }
+      const seen = new Set()
+      for (const s of selectedItems.slice(0, 100)) {
+        const id = typeof s?.itemId === 'string' ? s.itemId : null
+        if (!id || seen.has(id)) continue
+        const def = ITEM_DICTIONARY.items[id]
+        if (!def) return NextResponse.json({ error: 'Unknown item', itemId: id }, { status: 400 })
+        seen.add(id)
+        const note = typeof s.note === 'string' ? s.note.trim().slice(0, 200) : ''
+        picks.push({ itemId: id, displayName: def.displayName, rarity: def.rarity, label: note || def.displayName })
+      }
+      if (picks.length === 0) {
+        return NextResponse.json({ error: 'No items selected' }, { status: 400 })
+      }
     }
 
     const supabase = createClient(
@@ -200,7 +229,9 @@ export async function POST(request) {
         ? presetDimension
         : promptDimension(promptId)
     let aiDimensions = []
-    if (isPaid && hasConsent) {
+    // AI reads text, so only the typing flow feeds it; <10 chars skips the
+    // call entirely (PRD: <10 字跳过 AI).
+    if (isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
       aiDimensions = await analyzeDimensions(body, pDim)
     }
 
@@ -226,6 +257,9 @@ export async function POST(request) {
       p_xp_amount: XP_RULES.reflect.award,
       p_dimension_hits: dimensionHits,
       p_source_kit: sourceKit === 'new_lens' ? 'new_lens' : null,
+      // Per-reflect top-right toggle (default visible); which entry made it.
+      p_shared_to_friends: visibleToFriend !== false,
+      p_mode: mode,
     })
     if (rpcErr) {
       console.error('[reflect] rpc error:', rpcErr.message)
@@ -242,7 +276,16 @@ export async function POST(request) {
     const reflectId = result?.reflect_id
     if (reflectId) {
       try {
-        const matches = matchItems(body, ITEM_DICTIONARY)
+        // typing: engine match minus the chips the user dismissed in the live
+        // bar (remove-only — the client can never ADD an unmatched item here).
+        // prompt/items: exactly the validated picks.
+        let matches
+        if (mode === 'typing') {
+          const removed = new Set(Array.isArray(removedItemIds) ? removedItemIds.filter((x) => typeof x === 'string') : [])
+          matches = matchItems(body, ITEM_DICTIONARY).filter((m) => !removed.has(m.itemId))
+        } else {
+          matches = picks
+        }
         if (matches.length > 0) {
           await supabase.rpc('record_item_matches', {
             p_user_id: userId,
@@ -295,7 +338,7 @@ export async function POST(request) {
     // acquires exactly once (owned set filter + the (user_id, card_id) unique
     // index behind it). Best-effort — never blocks the reflect.
     let generatedSkill = null
-    if (reflectId) {
+    if (reflectId && body.length > 0) {
       try {
         const { data: ownedRows } = await supabase
           .from('skills')
@@ -349,7 +392,7 @@ export async function POST(request) {
     // Companion bubble (best-effort, paid + consented -- same gate as skills;
     // free users get the rotating default lines on Home instead).
     let bubble = null
-    if (reflectId && isPaid && hasConsent) {
+    if (reflectId && isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
       bubble = await generateBubble(body)
     }
 

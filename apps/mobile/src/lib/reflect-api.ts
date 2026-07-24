@@ -16,7 +16,7 @@ import { ApiError } from '@novame/api-client';
 
 import { apiClient } from './api';
 
-import { kReflectState } from '../shared/storage/keys';
+import { kReflectShareDefaults, kReflectState } from '../shared/storage/keys';
 import { storage } from './storage';
 import { supabase } from './supabase';
 
@@ -159,14 +159,29 @@ export async function submitReflect(params: {
   presetDimension?: string;
   sourceKit?: 'new_lens';
   /**
-   * Co-creation (prompt #9): matched items also land in the shared memory box
-   * with this friend. Server re-verifies the friendship; a bad id just skips
-   * the box write, never fails the reflect.
+   * Co-creation / 共享回忆开关: matched items also land in the shared memory
+   * box with this friend. Server re-verifies the friendship; a bad id just
+   * skips the box write, never fails the reflect.
    */
   friendUserId?: string;
+  /**
+   * Which entry made this reflect (2026-07-23 三流程). 'typing' (default)
+   * matches the body server-side; 'prompt' / 'items' submit explicit picks.
+   */
+  mode?: 'typing' | 'prompt' | 'items';
+  /** prompt/items modes: the user's picks; note becomes the memory excerpt. */
+  selectedItems?: { itemId: string; note?: string }[];
+  /** typing mode: chips dismissed in the live-match bar (remove-only). */
+  removedItemIds?: string[];
+  /** 右上角"对好友可见"开关 (default true). */
+  visibleToFriend?: boolean;
 }): Promise<SubmitResult> {
+  const mode = params.mode ?? 'typing';
   const body = params.body.trim();
-  if (body.length === 0) return { ok: false, error: 'empty' };
+  if (mode === 'typing' && body.length === 0) return { ok: false, error: 'empty' };
+  if (mode !== 'typing' && (params.selectedItems?.length ?? 0) === 0) {
+    return { ok: false, error: 'empty' };
+  }
   if (body.length > 5000) return { ok: false, error: 'too_long' };
 
   const { data: sess } = await supabase.auth.getSession();
@@ -184,6 +199,10 @@ export async function submitReflect(params: {
       presetDimension: params.presetDimension,
       sourceKit: params.sourceKit,
       friendUserId: params.friendUserId,
+      mode,
+      selectedItems: params.selectedItems,
+      removedItemIds: params.removedItemIds,
+      visibleToFriend: params.visibleToFriend,
     });
 
     if (data.error === 'daily_limit_reached') {
@@ -236,4 +255,31 @@ export async function editReflectMemories(
   } catch {
     return false;
   }
+}
+
+/**
+ * 右上角双开关的记忆（2026-07-23 需求: 记住上次选择）:
+ * visibleToFriend — 此回忆对好友可见; shareToBox — 此回忆进共享回忆盒子.
+ * Defaults: visible, not shared to box.
+ */
+export interface ReflectShareDefaults {
+  visibleToFriend: boolean;
+  shareToBox: boolean;
+}
+
+export function getReflectShareDefaults(): ReflectShareDefaults {
+  try {
+    const raw = storage.getString(kReflectShareDefaults.name);
+    if (raw) {
+      const p = JSON.parse(raw) as Partial<ReflectShareDefaults>;
+      return { visibleToFriend: p.visibleToFriend !== false, shareToBox: p.shareToBox === true };
+    }
+  } catch {
+    // fall through to defaults
+  }
+  return { visibleToFriend: true, shareToBox: false };
+}
+
+export function setReflectShareDefaults(d: ReflectShareDefaults): void {
+  storage.set(kReflectShareDefaults.name, JSON.stringify(d));
 }
