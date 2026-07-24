@@ -95,14 +95,14 @@ export async function GET(request) {
         .from('profiles').select('id, display_name').in('id', acceptedIds)
       const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
 
-      // Today = the friend's reflect local_date, and only reflects they left
-      // visible (per-reflect toggle, 2026-07-23) — one query for all friends.
+      // Today = the friend's reflect local_date. Item icons are ALWAYS
+      // visible to friends (2026-07-24: the per-reflect toggle only gates
+      // details, which this endpoint never carries) — one query, all friends.
       const { data: todaysReflects } = await supabase
         .from('reflects')
         .select('id, user_id')
         .in('user_id', acceptedIds)
         .eq('local_date', dateStr)
-        .eq('shared_to_friends', true)
       const reflectIdsByFriend = new Map()
       for (const r of todaysReflects || []) {
         if (!reflectIdsByFriend.has(r.user_id)) reflectIdsByFriend.set(r.user_id, [])

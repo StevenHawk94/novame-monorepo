@@ -8,6 +8,8 @@ import { ITEM_DICTIONARY } from '@novame/engine';
 
 import { apiClient } from './api';
 import { supabase } from './supabase';
+import { storage } from './storage';
+import { kFriendsFeed, kFriendsStatus } from '../shared/storage/keys';
 
 export interface FriendCard {
   userId: string;
@@ -37,6 +39,26 @@ export interface FriendsStatus {
   sent: SentRequest[];
 }
 
+const EMPTY_STATUS: FriendsStatus = { inviteCode: null, friends: [], pending: [], sent: [] };
+
+/** Last good status — the tab paints this instantly, then revalidates. */
+export function getCachedFriends(): FriendsStatus {
+  try {
+    const raw = storage.getString(kFriendsStatus.name);
+    if (raw) return JSON.parse(raw) as FriendsStatus;
+  } catch { /* fall through */ }
+  return EMPTY_STATUS;
+}
+
+/** Last good Messages feed. */
+export function getCachedFriendFeed(): FeedEntry[] {
+  try {
+    const raw = storage.getString(kFriendsFeed.name);
+    if (raw) return JSON.parse(raw) as FeedEntry[];
+  } catch { /* fall through */ }
+  return [];
+}
+
 function localDateStr(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -52,7 +74,7 @@ function emojiFor(itemId: string): string {
 export async function fetchFriends(): Promise<FriendsStatus> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return { inviteCode: null, friends: [], pending: [], sent: [] };
+  if (!userId) return EMPTY_STATUS;
 
   try {
     const data = await apiClient.get<{
@@ -62,8 +84,10 @@ export async function fetchFriends(): Promise<FriendsStatus> {
       pending?: PendingRequest[];
       sent?: SentRequest[];
     }>(`/api/friends/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`);
-    if (!data.success) return { inviteCode: null, friends: [], pending: [], sent: [] };
-    return {
+    // A failed refresh must never clobber a good cache — return the stale
+    // copy instead (the screen already painted it anyway).
+    if (!data.success) return getCachedFriends();
+    const status: FriendsStatus = {
       inviteCode: data.inviteCode ?? null,
       friends: (data.friends || []).map((f) => ({
         ...f,
@@ -72,8 +96,10 @@ export async function fetchFriends(): Promise<FriendsStatus> {
       pending: data.pending || [],
       sent: data.sent || [],
     };
+    storage.set(kFriendsStatus.name, JSON.stringify(status));
+    return status;
   } catch {
-    return { inviteCode: null, friends: [], pending: [], sent: [] };
+    return getCachedFriends();
   }
 }
 
@@ -139,10 +165,12 @@ export async function fetchFriendFeed(): Promise<FeedEntry[]> {
     const data = await apiClient.get<{ success?: boolean; feed?: Omit<FeedEntry, 'emoji'>[] }>(
       `/api/friends/feed?userId=${encodeURIComponent(userId)}`,
     );
-    if (!data.success || !data.feed) return [];
-    return data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
+    if (!data.success || !data.feed) return getCachedFriendFeed();
+    const feed = data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
+    storage.set(kFriendsFeed.name, JSON.stringify(feed));
+    return feed;
   } catch {
-    return [];
+    return getCachedFriendFeed();
   }
 }
 

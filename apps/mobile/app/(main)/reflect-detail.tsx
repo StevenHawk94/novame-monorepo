@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
-import { fetchReflectFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
+import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
 import { getCachedBags } from '@/lib/bags-api';
 
 /**
@@ -20,7 +20,8 @@ export default function ReflectDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { reflectId } = useLocalSearchParams<{ reflectId: string }>();
-  const [feed, setFeed] = useState<FeedDay[]>([]);
+  // Cache-first: the pushed-from screen already had this feed cached.
+  const [feed, setFeed] = useState<FeedDay[]>(() => getCachedFeed());
 
   useFocusEffect(
     useCallback(() => {

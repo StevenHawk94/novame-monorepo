@@ -63,18 +63,21 @@ export async function GET(request) {
       .order('created_at', { ascending: false })
       .limit(MAX_ROWS)
 
-    // Per-reflect visibility (2026-07-23 top-right toggle): a reflect the
-    // owner marked not-visible never reaches any friend surface. Server-side,
-    // same principle as the details opt-in below.
-    let memories = memoriesRaw || []
+    // Per-reflect visibility (2026-07-24 result-page toggle): item ICONS are
+    // always visible to friends; the toggle only gates the memory DETAILS.
+    // A detail therefore requires BOTH the owner's global opt-in AND this
+    // reflect's toggle — enforced here, server-side.
+    const memories = memoriesRaw || []
     const reflectIds = [...new Set(memories.map((m) => m.reflect_id))]
+    const detailsHidden = new Set()
     if (reflectIds.length > 0) {
       const { data: vis } = await supabase
         .from('reflects')
         .select('id, shared_to_friends')
         .in('id', reflectIds)
-      const hidden = new Set((vis || []).filter((r) => r.shared_to_friends === false).map((r) => r.id))
-      memories = memories.filter((m) => !hidden.has(m.reflect_id))
+      for (const r of vis || []) {
+        if (r.shared_to_friends === false) detailsHidden.add(r.id)
+      }
     }
 
     // Read cursors.
@@ -86,8 +89,8 @@ export async function GET(request) {
 
     // Group per (friend, reflect): one Messages entry per reflect.
     const entryByKey = new Map()
-    for (const m of memories || []) {
-      const share = !!profileById.get(m.user_id)?.share_memory_details
+    for (const m of memories) {
+      const share = !!profileById.get(m.user_id)?.share_memory_details && !detailsHidden.has(m.reflect_id)
       const key = `${m.user_id}:${m.reflect_id}`
       let e = entryByKey.get(key)
       if (!e) {

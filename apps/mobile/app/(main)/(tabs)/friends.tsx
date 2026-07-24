@@ -12,6 +12,7 @@ import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
+  getCachedFriends, getCachedFriendFeed,
   fetchSharePrivacy, setSharePrivacy,
   type FriendsStatus, type FeedEntry,
 } from '@/lib/friends-api';
@@ -37,8 +38,9 @@ function timeAgo(iso: string): string {
 
 export default function FriendsScreen() {
   const router = useRouter();
-  const [status, setStatus] = useState<FriendsStatus>({ inviteCode: null, friends: [], pending: [], sent: [] });
-  const [feed, setFeed] = useState<FeedEntry[]>([]);
+  // Cache-first: paint the last visit instantly, refresh in the background.
+  const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
+  const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);

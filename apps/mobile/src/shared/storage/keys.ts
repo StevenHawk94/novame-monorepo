@@ -259,6 +259,11 @@ export const kReflectState = defineKey('novame_reflect_state', 'user');
 // { visibleToFriend: boolean, shareToBox: boolean }
 export const kReflectShareDefaults = defineKey('novame_reflect_share_defaults', 'user');
 
+// Friends tab caches (2026-07-24 全局缓存优先): status + Messages feed, so
+// the tab renders instantly from the last visit while revalidating.
+export const kFriendsStatus = defineKey('novame_friends_status', 'user');
+export const kFriendsFeed = defineKey('novame_friends_feed', 'user');
+
 /** status.tsx: the eight-dimension gem totals from /api/status. A read-only
  *  shadow of user_gems; the Status screen derives stage and totals from these
  *  with the shared engine, never storing computed values. */

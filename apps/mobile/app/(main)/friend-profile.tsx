@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import { CaveShell } from '@/components/main/cave-shell';
 import { FRIEND_ICONS } from '@/lib/icons';
-import { fetchFriendFeed, markFriendRead, type FeedEntry } from '@/lib/friends-api';
+import { fetchFriendFeed, getCachedFriendFeed, markFriendRead, type FeedEntry } from '@/lib/friends-api';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
 /**
@@ -27,7 +27,12 @@ export default function FriendProfileScreen() {
   const router = useRouter();
   const { friendUserId, friendName } = useLocalSearchParams<{ friendUserId: string; friendName?: string }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'Friend';
-  const [entries, setEntries] = useState<FeedEntry[]>([]);
+  // Cache-first: this friend's slice of the cached feed paints instantly.
+  const [entries, setEntries] = useState<FeedEntry[]>(() =>
+    typeof friendUserId === 'string'
+      ? getCachedFriendFeed().filter((e) => e.friendUserId === friendUserId)
+      : [],
+  );
 
   useFocusEffect(
     useCallback(() => {

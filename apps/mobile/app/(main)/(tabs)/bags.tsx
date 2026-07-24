@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -39,12 +39,18 @@ export default function BagsScreen() {
   // 6-across grid: cell = (screen - page padding) / 6, minus cell padding.
   const tileSize = Math.floor((width - 32) / 6) - 6;
   const [items, setItems] = useState<CollectedItem[]>(() => getCachedBags());
+  // Wait-state gate: with no cache yet, show a quiet spinner instead of the
+  // empty-state copy while the first fetch is in flight.
+  const [loaded, setLoaded] = useState(() => getCachedBags().length > 0);
   const [category, setCategory] = useState<string>('all');
   const itemSheetRef = useRef<ItemSheetRef>(null);
 
   useFocusEffect(
     useCallback(() => {
-      void fetchBags().then(setItems);
+      void fetchBags().then((it) => {
+        setItems(it);
+        setLoaded(true);
+      });
     }, []),
   );
 
@@ -98,7 +104,11 @@ export default function BagsScreen() {
       </View>
 
       {/* Grid */}
-      {shown.length === 0 ? (
+      {shown.length === 0 && !loaded ? (
+        <View style={styles.empty}>
+          <ActivityIndicator color="#8A6240" />
+        </View>
+      ) : shown.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>{'\u{1F392}'}</Text>
           <Text style={styles.emptyText}>

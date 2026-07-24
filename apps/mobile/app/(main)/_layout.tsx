@@ -29,6 +29,9 @@ export default function MainLayout() {
         options={{ presentation: 'transparentModal', animation: 'fade' }}
       />
       <Stack.Screen name="reflect" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="reflect-items" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="focus" options={{ presentation: 'fullScreenModal' }} />
     </Stack>
   );

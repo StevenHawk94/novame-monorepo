@@ -64,6 +64,9 @@ export const FRIEND_ICONS = {
   friendList: require('../../assets/Icons/friend-list.png'),
   sharedMemories: require('../../assets/Icons/shared-memories.png'),
   memory: require('../../assets/Icons/memory.png'),
+  reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
+  reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
+  reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
   calendar: require('../../assets/Icons/calendar.png'),
   setting: require('../../assets/Icons/setting.png'),
 } as const;

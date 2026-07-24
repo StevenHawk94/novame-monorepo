@@ -12,10 +12,9 @@ export const runtime = 'edge'
  * message" line and the in-app paired view both read this.
  *
  * Day boundary is the PARTNER's reflect local_date (not a UTC created_at
- * window), and reflects with shared_to_friends=false are excluded here on the
- * server — the widget can only ever receive what the partner chose to show.
- * Icons only: no reflect text ever rides on this endpoint (widget principle:
- * 图标可上锁屏，文字永不).
+ * window). Icons only: no reflect text ever rides on this endpoint (widget
+ * principle: 图标可上锁屏，文字永不) — and since the per-reflect toggle only
+ * gates DETAILS (2026-07-24), every item icon is included here.
  */
 export async function GET(request) {
   try {
@@ -53,8 +52,7 @@ export async function GET(request) {
         .from('reflects')
         .select('id')
         .eq('user_id', partnerId)
-        .eq('local_date', date)
-        .eq('shared_to_friends', true),
+        .eq('local_date', date),
     ])
 
     let items = []

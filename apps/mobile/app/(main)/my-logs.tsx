@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -22,10 +22,14 @@ import { fetchBags, getCachedBags } from '@/lib/bags-api';
 export default function MyLogsScreen() {
   const router = useRouter();
   const [feed, setFeed] = useState<FeedDay[]>(() => getCachedFeed());
+  const [loaded, setLoaded] = useState(() => getCachedFeed().length > 0);
 
   useFocusEffect(
     useCallback(() => {
-      void fetchReflectFeed().then(setFeed);
+      void fetchReflectFeed().then((f) => {
+        setFeed(f);
+        setLoaded(true);
+      });
       void fetchBags();
     }, []),
   );
@@ -69,7 +73,11 @@ export default function MyLogsScreen() {
         </View>
       </View>
 
-      {entries.length === 0 ? (
+      {entries.length === 0 && !loaded ? (
+        <View style={styles.empty}>
+          <ActivityIndicator color="#8A6240" />
+        </View>
+      ) : entries.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>{'\u{1F4D6}'}</Text>
           <Text style={styles.emptyText}>Your reflections will gather here, one day at a time.</Text>

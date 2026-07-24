@@ -19,6 +19,7 @@ import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearNewLensLocal } from '@/lib/lens-api';
 import { clearTameEnemyLocal } from '@/lib/tame-enemy-api';
 import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
+import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { CompanionSheet, type CompanionSheetRef } from '@/components/main/companion-sheet';
@@ -77,6 +78,9 @@ export default function HomeScreen() {
         if (c) setCompanion(c);
       });
       void loadTodayBubbles().then(setBubbles);
+      // Warm every tab's cache in the background (throttled) so switching
+      // tabs paints instantly instead of cold-loading.
+      prefetchAppData();
     }, []),
   );
 

@@ -119,9 +119,33 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
   visibleToFriend；`kReflectShareDefaults` 记忆双开关；friends-api 增
   fetchPairing/setPairing/unsetPairing/fetchPairedFeed
 
-**待素材/待做**：三入口+双开关+实时匹配条 UI（等设计稿）；流程2 prompt 集
-（等产品提供）；词典 26 类 1216 项升级（等新 CSV+3 张图，管线现成）；
-Plus 归纳/小故事 AI（等文案口径）；iOS WidgetKit（原生，30min 刷新）。
+**UI 已按设计稿完成（2026-07-24）**：入口三选
+（reflect.tsx，New Lens 预设自动转发 typing）→ `reflect-typing`
+（9 prompt 二级 + **客户端实时匹配条**，共享引擎 250ms debounce，铅笔开
+编辑弹层可删可注）/ `reflect-guided`（3 步：Emotions→Food→Do 三类 chips；
+note 选填；Plus 小故事按钮）/ `reflect-items`（全库选品+搜索+类目条，正文
+必填）。共享件在 `components/main/reflect-shared.tsx`（编辑弹层/结果页/
+可选网格）。**结果页 toggle 语义（重要）**：控制 paired 对**细节**的可见性
+（`/api/reflect/visibility` 提交后可改），**物品图标对好友永远可见**——
+feed/status/paired-feed 已按此语义过滤（细节需全局 opt-in AND per-reflect
+开关同时为真）。Plus AI：回忆精炼 + 小故事已接（占位 prompt，等正式文案）；
+AI 不覆盖用户手写的物品描述。输入页统一 50% 黑遮罩。
+
+**待素材/待做**：词典 26 类 1216 项升级（等新 CSV+3 张图，管线现成）；
+入口/编辑弹层等文案为占位可调；类目条图标仍空缺；
+iOS WidgetKit（原生，30min 刷新 + 打开即刷）。
+
+## 6.6 全局加载/流畅度（2026-07-24 优化 pass）
+
+- **缓存优先原则**：所有页面 `useState(() => getCachedX())` 起步 + focus 时
+  静默 revalidate；**刷新失败回退旧缓存，绝不清空**（friends-api 是此模式
+  的参考实现）。新增 kFriendsStatus/kFriendsFeed 缓存键
+- **预取**：Home focus 时 `prefetchAppData()`（60s 节流）预热全部 tab 数据
+- **等待门控**：无缓存首载显示小 spinner，不闪空态文案（bags/my-logs）
+- **性能**：ItemSprite 已 memo；选品网格 = 虚拟化 FlatList + memo 单元格
+  （object 流全库 1000+ 瓷砖，**别再套 ScrollView**）；点选只重渲染两个格
+- **动画**：`ui/confetti-burst.tsx`（纯 reanimated 纸屑，UI 线程）+
+  FireworksBurst 叠加在 reflect 结果页
 
 ## 7. 遗留工作（下一步）
 

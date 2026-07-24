@@ -14,6 +14,7 @@
  * Unknown item or missing sheet → the item's emoji if the dictionary has
  * one, else a blank tile — screens never break while art catches up.
  */
+import { memo } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
@@ -59,7 +60,9 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
+// Memoized: sprite tiles appear by the dozen in grids and feeds; props are
+// value-stable, so memo turns tab re-renders into no-ops for every tile.
+export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
   const item = ITEM_DICTIONARY.items[itemId];
   const sheet = item ? ITEM_SHEETS[item.sheetId] : undefined;
 
@@ -100,7 +103,7 @@ export function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), til
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   box: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },

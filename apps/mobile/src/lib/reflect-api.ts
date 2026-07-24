@@ -53,6 +53,8 @@ export interface ReflectSnapshot {
   matchedItems: MatchedItem[];
   generatedSkill: GeneratedSkill | null;
   bubble: string | null;
+  /** Plus 流程2 cute story, when requested. */
+  story: string | null;
 }
 
 export type ReflectError =
@@ -131,6 +133,7 @@ interface WireSnapshot {
   matchedItems?: MatchedItem[];
   generatedSkill?: GeneratedSkill | null;
   bubble?: string | null;
+  story?: string | null;
 }
 
 function toSnapshot(w: WireSnapshot): ReflectSnapshot {
@@ -144,6 +147,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     matchedItems: w.matchedItems ?? [],
     generatedSkill: w.generatedSkill ?? null,
     bubble: w.bubble ?? null,
+    story: w.story ?? null,
   };
 }
 
@@ -173,7 +177,11 @@ export async function submitReflect(params: {
   selectedItems?: { itemId: string; note?: string }[];
   /** typing mode: chips dismissed in the live-match bar (remove-only). */
   removedItemIds?: string[];
-  /** 右上角"对好友可见"开关 (default true). */
+  /** typing mode: per-item notes from the edit sheet (override the label). */
+  itemNotes?: Record<string, string>;
+  /** 流程2 Plus button: generate the cute story. */
+  wantStory?: boolean;
+  /** "对好友可见"（细节可见性，结果页 toggle 提交后还可改）. */
   visibleToFriend?: boolean;
 }): Promise<SubmitResult> {
   const mode = params.mode ?? 'typing';
@@ -202,6 +210,8 @@ export async function submitReflect(params: {
       mode,
       selectedItems: params.selectedItems,
       removedItemIds: params.removedItemIds,
+      itemNotes: params.itemNotes,
+      wantStory: params.wantStory,
       visibleToFriend: params.visibleToFriend,
     });
 
@@ -282,4 +292,24 @@ export function getReflectShareDefaults(): ReflectShareDefaults {
 
 export function setReflectShareDefaults(d: ReflectShareDefaults): void {
   storage.set(kReflectShareDefaults.name, JSON.stringify(d));
+}
+
+/**
+ * Result-page toggle: whether the paired partner can see this reflect's
+ * memory DETAILS (icons always show). Fire-and-forget from the claim screen.
+ */
+export async function setReflectVisibility(reflectId: string, visible: boolean): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    const data = await apiClient.post<{ success?: boolean }>('/api/reflect/visibility', {
+      userId,
+      reflectId,
+      visible,
+    });
+    return !!data.success;
+  } catch {
+    return false;
+  }
 }

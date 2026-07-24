@@ -94,6 +94,23 @@ Only return hasSkill false for truly empty or meaningless input.`
 const SKILL_CONFIDENCE_THRESHOLD = 0.3
 const SECRET_SKILL_CHANCE = 0.1
 
+// Plus 回忆精炼 (2026-07-24, PLACEHOLDER copy -- final tone pending product).
+// One call refines every un-edited item at once; user-edited items are never
+// in the list. JSON only, keyed by item id.
+const REFINE_SYSTEM_PROMPT = `You turn a journal entry into short, warm memory captions for the items it mentions.
+
+You get a list of items (id: name) and the journal text. For each item, write one specific, warm caption (max 15 words) rooted in what the journal actually says -- like "The iced latte from that new corner cafe". If the journal says nothing about an item, use a gentle generic line for it.
+
+Return ONLY JSON: { "items": { "<itemId>": "<caption>", ... } }. No prose, no markdown.`
+
+// Plus cute story (流程2, PLACEHOLDER copy): a tiny warm story of the day
+// woven from the picked items, to share with the paired person.
+const STORY_SYSTEM_PROMPT = `You write a tiny, cute story (3-5 sentences, max 90 words) about someone's day, woven from the items they picked and any note they left. Warm, playful, second person ("you"), no emoji spam (one or two is fine).
+
+Also write one short caption per item (max 12 words) that matches the story.
+
+Return ONLY JSON: { "story": "<the story>", "items": { "<itemId>": "<caption>", ... } }. No prose, no markdown.`
+
 /**
  * Generate a skill from the reflection, if it holds one. Paid+consented only
  * (skill count is a paid signal; free users never generate). Returns the skill
@@ -163,7 +180,7 @@ export async function POST(request) {
 
     const {
       userId, promptId, body: rawBody, localDate, presetDimension, sourceKit, friendUserId,
-      mode: rawMode, selectedItems, removedItemIds, visibleToFriend,
+      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, wantStory,
     } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -283,6 +300,13 @@ export async function POST(request) {
         if (mode === 'typing') {
           const removed = new Set(Array.isArray(removedItemIds) ? removedItemIds.filter((x) => typeof x === 'string') : [])
           matches = matchItems(body, ITEM_DICTIONARY).filter((m) => !removed.has(m.itemId))
+          // Pre-submit edit sheet: a user-typed note replaces the engine label.
+          if (itemNotes && typeof itemNotes === 'object') {
+            matches = matches.map((m) => {
+              const note = typeof itemNotes[m.itemId] === 'string' ? itemNotes[m.itemId].trim().slice(0, 200) : ''
+              return note ? { ...m, label: note } : m
+            })
+          }
         } else {
           matches = picks
         }
@@ -329,6 +353,54 @@ export async function POST(request) {
         }
       } catch (itemErr) {
         console.warn('[reflect] item matching failed (non-fatal):', itemErr && itemErr.message)
+      }
+    }
+
+    // Plus 回忆精炼 / cute story (2026-07-24). One AI call covers every item
+    // the user did NOT describe themselves -- AI never touches an edited
+    // item. Story only on the guided flow's Plus button. Best-effort.
+    let story = null
+    if (reflectId && isPaid && hasConsent && matchedItems.length > 0) {
+      try {
+        const noted = new Set()
+        if (mode === 'typing' && itemNotes && typeof itemNotes === 'object') {
+          for (const [k, v] of Object.entries(itemNotes)) {
+            if (typeof v === 'string' && v.trim()) noted.add(k)
+          }
+        } else if (mode !== 'typing' && Array.isArray(selectedItems)) {
+          for (const s of selectedItems) {
+            if (s && typeof s.note === 'string' && s.note.trim()) noted.add(s.itemId)
+          }
+        }
+        const targets = matchedItems.filter((m) => !noted.has(m.itemId))
+        const makeStory = wantStory === true && mode === 'prompt'
+        if (makeStory || (targets.length > 0 && body.length >= 10)) {
+          const names = matchedItems.map((m) => `${m.itemId}: ${m.displayName}`).join('\n')
+          const res = await callAI({
+            systemInstruction: makeStory ? STORY_SYSTEM_PROMPT : REFINE_SYSTEM_PROMPT,
+            userText: `Items:\n${names}\n\nJournal:\n${body || '(none)'}`,
+            generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
+          })
+          const parsed = parseAIJson(res.text)
+          if (parsed && typeof parsed === 'object') {
+            if (makeStory && typeof parsed.story === 'string' && parsed.story.trim()) {
+              story = parsed.story.trim().slice(0, 600)
+            }
+            const descs = parsed.items && typeof parsed.items === 'object' ? parsed.items : {}
+            for (const t of targets) {
+              const d = typeof descs[t.itemId] === 'string' ? descs[t.itemId].trim().slice(0, 200) : ''
+              if (!d) continue
+              await supabase
+                .from('item_memories')
+                .update({ refined_desc: d })
+                .eq('user_id', userId)
+                .eq('reflect_id', reflectId)
+                .eq('item_id', t.itemId)
+            }
+          }
+        }
+      } catch (refineErr) {
+        console.warn('[reflect] refine/story failed (non-fatal):', refineErr && refineErr.message)
       }
     }
 
@@ -396,7 +468,7 @@ export async function POST(request) {
       bubble = await generateBubble(body)
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill, bubble })
+    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill, bubble, story })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
