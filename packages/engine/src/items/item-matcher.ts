@@ -8,7 +8,8 @@
  *   3. negation guard: a negator (didn't / no / without / skipped / never /
  *      avoided) within 3 tokens before the noun drops the hit
  *   4. dedupe: the same item counts once per reflect
- *   5. cap at 5, ranked rare > uncommon > common, then by appearance
+ *   5. no count cap (2026-07-23 ruling: every hit lands in Bags); ranked
+ *      rare > uncommon > common, then by appearance, for display order
  *   6. multi-word entries (apple pie) matched before single tokens
  *
  * The label is the noun plus any adjectives immediately before it. Adjectives
@@ -58,7 +59,6 @@ const STOPWORDS = new Set([
 ]);
 
 const RARITY_RANK: Record<ItemRarity, number> = { rare: 3, uncommon: 2, common: 1 };
-const MAX_ITEMS = 5;
 
 interface Token {
   word: string;
@@ -145,7 +145,7 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
     return a.tokenIndex - b.tokenIndex;
   });
 
-  return ranked.slice(0, MAX_ITEMS).map((h) => ({
+  return ranked.map((h) => ({
     itemId: h.itemId,
     displayName: items[h.itemId].displayName,
     rarity: items[h.itemId].rarity,

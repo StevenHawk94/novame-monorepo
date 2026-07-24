@@ -75,6 +75,13 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
   （food.egg 等）显示空白瓷砖，属预期
 - 顺带修复：`/api/friends/box` POST 调 `matchItems` 少传词典参数，手动共创
   写盒此前必 500
+- **DB 目录必须与词典同步**：`public.items` 是 `user_items`/`item_memories`
+  的外键目标，`record_item_matches` 会静默丢弃不在表里的 id（踩过：表里只有
+  16 行 C8 样本，Bags 一直为空）。`build-item-dictionary.py` 现在同时生成
+  `supabase/migrations/*_items_full_catalog.sql`（upsert，可重跑），**改 CSV
+  重新生成后必须在 Supabase SQL 编辑器执行它**
+- 匹配数量无上限（2026-07-23 裁决）：引擎不再截 5 个，claim 页全量展示；
+  `edit-memories` 批量上限相应提到 100
 - ⚠️ 旧词典 id（wine 等测试数据）会显示空白瓷砖，属预期
 
 ## 6. 踩过的坑（新会话别再踩）

@@ -38,7 +38,9 @@ export async function POST(request) {
     )
 
     let updated = 0
-    for (const e of edits.slice(0, 10)) {
+    // Match count is uncapped (2026-07-23), so the edit batch can't stay at
+    // 10 -- 100 is far above any real reflect while still bounding the loop.
+    for (const e of edits.slice(0, 100)) {
       const text = typeof e?.text === 'string' ? e.text.trim().slice(0, MAX_TEXT) : ''
       if (!e?.itemId || !text) continue
       const { error, count } = await supabase

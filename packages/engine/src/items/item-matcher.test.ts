@@ -79,19 +79,18 @@ describe('matchItems: negation guard (rule 3)', () => {
   });
 });
 
-describe('matchItems: dedupe and cap (rules 4, 5)', () => {
+describe('matchItems: dedupe and ranking (rules 4, 5)', () => {
   it('counts the same item once', () => {
     expect(ids('apple apple apple')).toEqual(['food.apple']);
   });
-  it('caps at 5, ranked by rarity', () => {
+  it('returns every hit (no cap, 2026-07-23 ruling), rarest first', () => {
     // ocean(rare) apple_pie(rare) moon(uncommon) pizza(uncommon) then commons
     const got = matchItems('ocean apple pie moon pizza rain sun coffee book', DICT).map((m) => m.itemId);
-    expect(got.length).toBe(5);
-    // the two rares and two uncommons must be in the top 5
-    expect(got).toContain('nature.ocean');
-    expect(got).toContain('food.apple_pie');
-    expect(got).toContain('nature.moon');
-    expect(got).toContain('food.pizza');
+    expect(got.length).toBe(8);
+    // rares lead, then uncommons, then commons in appearance order
+    expect(got.slice(0, 2)).toEqual(['nature.ocean', 'food.apple_pie']);
+    expect(got.slice(2, 4)).toEqual(['nature.moon', 'food.pizza']);
+    expect(got.slice(4)).toEqual(['nature.rain', 'nature.sun', 'food.coffee', 'object.book']);
   });
 });
 
