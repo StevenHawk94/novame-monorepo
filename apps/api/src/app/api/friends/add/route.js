@@ -26,13 +26,17 @@ async function friendLimitOf(supabase, uid) {
 /**
  * POST /api/friends/add
  *
- * Body: { userId, code }
+ * Body: { userId, code, preview?, relationship?, relationshipSince? }
  *
- * Adds a friend by their invite code. Finds the owner of the code, creates a
- * pending friendship (canonical order user_a < user_b, requested_by = me). The
- * other side accepts via /respond. Rejects self-add, an unknown code, or a pair
- * that already has a row (friends or pending).
+ * preview: true resolves the code to { targetName } WITHOUT creating anything
+ * (the Add Friends search-result card, 2026-07-24 mock). A real add carries
+ * the proposed relationship (Lover / Best Friend / ... / Others) and its
+ * start date; both ride on the friendship row and are copied onto the
+ * pairing at accept time. Rejects self-add, an unknown code, or a pair that
+ * already has a row (friends or pending).
  */
+const RELATIONSHIPS = ['Lover', 'Best Friend', 'Mom and Daughter', 'Siblings', 'Someone Special', 'Others']
+
 export async function POST(request) {
   try {
     const authHeader = request.headers.get('authorization') || ''
@@ -41,7 +45,7 @@ export async function POST(request) {
     if (!verified) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { userId, code } = await request.json()
+    const { userId, code, preview, relationship, relationshipSince } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -69,6 +73,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'cannot_add_self' }, { status: 400 })
     }
 
+    // Search-result preview: name only, nothing written, nothing enumerable
+    // (still exact-code matching — no fuzzy lookup surface).
+    if (preview === true) {
+      return NextResponse.json({ success: true, preview: true, targetName: target.display_name || 'Friend' })
+    }
+
+    const rel = RELATIONSHIPS.includes(relationship) ? relationship : null
+    const since = typeof relationshipSince === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(relationshipSince)
+      ? relationshipSince
+      : null
+
     // Friend quota (both sides — a request that could never be accepted is
     // clearer rejected now than pending forever).
     if ((await acceptedCount(supabase, userId)) >= (await friendLimitOf(supabase, userId))) {
@@ -94,6 +109,7 @@ export async function POST(request) {
 
     const { error: insErr } = await supabase.from('friendships').insert({
       user_a: ua, user_b: ub, status: 'pending', requested_by: userId,
+      relationship: rel, relationship_since: since,
     })
     if (insErr) {
       console.error('[friends/add] insert error:', insErr.message)

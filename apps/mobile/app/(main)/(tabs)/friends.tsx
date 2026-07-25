@@ -12,9 +12,9 @@ import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
-  getCachedFriends, getCachedFriendFeed,
+  getCachedFriends, getCachedFriendFeed, fetchPairing,
   fetchSharePrivacy, setSharePrivacy,
-  type FriendsStatus, type FeedEntry,
+  type FriendsStatus, type FeedEntry, type PairingStatus,
 } from '@/lib/friends-api';
 
 /**
@@ -41,10 +41,12 @@ export default function FriendsScreen() {
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
+  const [pairing, setPairing] = useState<PairingStatus | null>(null);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
     void fetchFriendFeed().then(setFeed);
+    void fetchPairing().then(setPairing);
   }, []);
   useFocusEffect(load);
 
@@ -92,7 +94,12 @@ export default function FriendsScreen() {
   }
 
   const pendingCount = status.pending.length;
-  const hasFriends = status.friends.length > 0;
+  const paired = !!pairing?.paired && !!pairing.partner;
+  // 2026-07-24 pairing-first: the cave centers on the ONE paired person; the
+  // feed shows only their rows once paired.
+  const shownFeed = paired
+    ? feed.filter((e) => e.friendUserId === pairing?.partner?.userId)
+    : feed;
 
   const addPill = (
     <Pressable
@@ -100,7 +107,7 @@ export default function FriendsScreen() {
       style={({ pressed }) => [styles.addPill, pressed && { transform: [{ translateY: 2 }] }]}
     >
       <View style={styles.addPlus}><MaterialIcons name="add" size={19} color="#FFFFFF" /></View>
-      <Text style={styles.addPillText}>Add Friends</Text>
+      <Text style={styles.addPillText}>Pair Friend</Text>
     </Pressable>
   );
 
@@ -117,7 +124,7 @@ export default function FriendsScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* header: centered title, mail + gear at right */}
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Friends Cave</Text>
+          <Text style={styles.title}>Memories Cave</Text>
           <View style={styles.headerIcons}>
             <Pressable
               onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}
@@ -135,33 +142,24 @@ export default function FriendsScreen() {
           </View>
         </View>
 
-        {hasFriends ? (
+        {paired ? (
           <>
-            <View style={styles.pillUnderTitle}>{addPill}</View>
-
-            {/* cream messages panel */}
+            {/* cream messages panel — the paired person's stream (mock 4) */}
             <View style={styles.panel}>
               <View style={styles.panelHeader}>
                 <View style={styles.listDot}>
                   <MaterialIcons name="menu" size={13} color="#FFFFFF" />
                 </View>
-                <Text style={styles.panelTitle}>Latest memories of your friends</Text>
-                <Pressable
-                  onPress={() => { void haptics.light(); router.push('/(main)/friends-list' as never); }}
-                  style={({ pressed }) => [styles.listChip, pressed && { transform: [{ translateY: 1 }] }]}
-                >
-                  <Image source={FRIEND_ICONS.friendList} style={styles.listChipIcon} resizeMode="contain" />
-                  <Text style={styles.listChipText}>Friends List</Text>
-                </Pressable>
+                <Text style={styles.panelTitle}>Latest memories of your paired</Text>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.feedScroll}>
-                {feed.length === 0 ? (
+                {shownFeed.length === 0 ? (
                   <Text style={styles.emptyFeedText}>
-                    Nothing new from your friends yet — check back later.
+                    Nothing yet today — their memories will land here.
                   </Text>
                 ) : (
-                  feed.map((e) => (
+                  shownFeed.map((e) => (
                     <Pressable
                       key={`${e.friendUserId}:${e.reflectId}`}
                       onPress={() => onFeedRow(e)}
@@ -188,12 +186,44 @@ export default function FriendsScreen() {
             </View>
           </>
         ) : (
-          /* empty state: pill + invite line centered over the soil */
-          <View style={styles.emptyWrap}>
-            {addPill}
-            <Text style={styles.emptyInvite}>
-              Invite your friends to share{'\n'}memory items together!
-            </Text>
+          /* unpaired (mock 1): Pair Friend + the line, any friend rows below */
+          <View style={{ flex: 1 }}>
+            <View style={styles.emptyWrap}>
+              {addPill}
+              <Text style={styles.emptyInvite}>
+                Pair with some you care and love,{'\n'}then create memories together!
+              </Text>
+            </View>
+            {shownFeed.length > 0 && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[styles.feedScroll, { paddingHorizontal: 14, paddingBottom: 16 }]}
+                style={{ maxHeight: 220 }}
+              >
+                {shownFeed.map((e) => (
+                  <Pressable
+                    key={`${e.friendUserId}:${e.reflectId}`}
+                    onPress={() => onFeedRow(e)}
+                    style={styles.feedRow}
+                  >
+                    <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                    <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
+                    <View style={styles.tileRow}>
+                      {e.itemIds.slice(0, 4).map((id, i) => (
+                        <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
+                      ))}
+                      {e.itemIds.length > 4 && (
+                        <View style={styles.blankTile}>
+                          <Text style={styles.moreText}>+{e.itemIds.length - 4}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
+                    {e.unread && <View style={styles.unreadDot} />}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
           </View>
         )}
       </SafeAreaView>

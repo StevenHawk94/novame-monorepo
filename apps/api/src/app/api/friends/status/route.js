@@ -71,7 +71,7 @@ export async function GET(request) {
     // Friendships involving me.
     const { data: rows } = await supabase
       .from('friendships')
-      .select('id, user_a, user_b, status, requested_by, created_at')
+      .select('id, user_a, user_b, status, requested_by, created_at, relationship')
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
 
     const acceptedIds = []
@@ -81,9 +81,9 @@ export async function GET(request) {
       const other = r.user_a === userId ? r.user_b : r.user_a
       if (r.status === 'accepted') acceptedIds.push(other)
       else if (r.status === 'pending' && r.requested_by !== userId) {
-        pending.push({ friendshipId: r.id, userId: other })
+        pending.push({ friendshipId: r.id, userId: other, relationship: r.relationship ?? null })
       } else if (r.status === 'pending' && r.requested_by === userId) {
-        sentRaw.push({ friendshipId: r.id, userId: other, createdAt: r.created_at })
+        sentRaw.push({ friendshipId: r.id, userId: other, createdAt: r.created_at, relationship: r.relationship ?? null })
       }
     }
 
@@ -136,7 +136,7 @@ export async function GET(request) {
       const { data: profs } = await supabase.from('profiles').select('id, display_name').in('id', ids)
       const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
       for (const p of pending) {
-        pendingOut.push({ friendshipId: p.friendshipId, userId: p.userId, displayName: nameById[p.userId] || 'Someone' })
+        pendingOut.push({ friendshipId: p.friendshipId, userId: p.userId, displayName: nameById[p.userId] || 'Someone', relationship: p.relationship ?? null })
       }
     }
 

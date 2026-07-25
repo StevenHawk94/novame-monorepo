@@ -145,6 +145,26 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
 **待素材/待做**：14 张新类目图；Flutter 迁移已评估并再次否决（2026-07-24
 用户确认留 RN）；类目条图标仍空缺；iOS WidgetKit（原生，30min 刷新 + 打开即刷）。
 
+## 6.55 Connection Dashboard + pairing-first Friends（2026-07-24 需求）
+
+- **Me 页旧功能全删**（成长阶段/维度磁贴），替换为 Connection Dashboard
+  （(tabs)/status.tsx，tab 标签已改 'Me'）：Memories Hub 入口 → 共创盒页；
+  关系卡（双方名/关系/For N days）；**共同物品 8 个**（/api/friends/
+  common-items，双方 60 天内都收集过的物品，点开看双方各自的最新描述，
+  对方文案按隐私门控）；**Plus 每日 AI 洞察**（/api/friends/insights：
+  Emotion/Topic/Care Tips/Boundaries/Hangout Ideas，占位 prompt，
+  connection_insights 表按 pair+日缓存一次，Copy and Send 走系统分享）
+- **绑定带关系**（迁移 028，✅需在 Supabase 执行后再部署）：邀请时选
+  关系（Lover/Best Friend/Mom and Daughter/Siblings/Someone Special/
+  Others）+ 起始日期；`friendships.relationship(+_since)` 承载邀请，
+  **accept 时自动 set_pairing**（v2 RPC 带关系；任一方已绑定则仅成为普通
+  好友，非致命）。friend-add：搜索先 preview（不落库）→ 关系弹窗（自制
+  三列日期滚轮，无新依赖）→ Send Invitation；请求行显示关系；
+  "My Pair ID"
+- Friends tab → **Memories Cave**：绑定后面板只显示 paired 对象的流
+  （"Latest memories of your paired"）；未绑定显示 Pair Friend + 文案
+  （mock 1:1）。friends-list/friend-profile 路由保留但入口收敛
+
 ## 6.6 全局加载/流畅度（2026-07-24 优化 pass）
 
 - **缓存优先原则**：所有页面 `useState(() => getCachedX())` 起步 + focus 时

@@ -22,6 +22,8 @@ export interface PendingRequest {
   friendshipId: string;
   userId: string;
   displayName: string;
+  /** The relationship proposed on the invitation (2026-07-24 pairing flow). */
+  relationship?: string | null;
 }
 
 export interface SentRequest {
@@ -103,18 +105,43 @@ export async function fetchFriends(): Promise<FriendsStatus> {
   }
 }
 
-export async function addFriend(code: string): Promise<{ ok: boolean; error?: string; requestedTo?: string }> {
+export async function addFriend(
+  code: string,
+  opts?: { relationship?: string; relationshipSince?: string },
+): Promise<{ ok: boolean; error?: string; requestedTo?: string }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
   try {
     const data = await apiClient.post<{ success?: boolean; error?: string; requestedTo?: string }>(
-      '/api/friends/add', { userId, code },
+      '/api/friends/add',
+      { userId, code, relationship: opts?.relationship, relationshipSince: opts?.relationshipSince },
     );
     if (data.error) return { ok: false, error: data.error };
     return { ok: true, requestedTo: data.requestedTo };
-  } catch {
-    return { ok: false, error: 'network' };
+  } catch (err) {
+    const e = (err as { body?: { error?: string } })?.body?.error;
+    return { ok: false, error: e || 'network' };
+  }
+}
+
+/** Resolve a Pair ID to a name WITHOUT sending anything (search-result card). */
+export async function previewFriend(
+  code: string,
+): Promise<{ ok: boolean; targetName?: string; error?: string }> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, error: 'no_session' };
+  try {
+    const data = await apiClient.post<{ success?: boolean; error?: string; targetName?: string }>(
+      '/api/friends/add',
+      { userId, code, preview: true },
+    );
+    if (data.error) return { ok: false, error: data.error };
+    return { ok: true, targetName: data.targetName };
+  } catch (err) {
+    const e = (err as { body?: { error?: string } })?.body?.error;
+    return { ok: false, error: e || 'network' };
   }
 }
 
@@ -275,6 +302,9 @@ export async function createSharedMemories(
 export interface PairingStatus {
   paired: boolean;
   partner: { userId: string; displayName: string } | null;
+  relationship?: string | null;
+  relationshipSince?: string | null;
+  pairedDays?: number;
 }
 
 export async function fetchPairing(): Promise<PairingStatus> {
@@ -286,7 +316,13 @@ export async function fetchPairing(): Promise<PairingStatus> {
       `/api/friends/pair?userId=${encodeURIComponent(userId)}`,
     );
     if (!data.success) return { paired: false, partner: null };
-    return { paired: !!data.paired, partner: data.partner ?? null };
+    return {
+      paired: !!data.paired,
+      partner: data.partner ?? null,
+      relationship: data.relationship ?? null,
+      relationshipSince: data.relationshipSince ?? null,
+      pairedDays: data.pairedDays ?? 0,
+    };
   } catch {
     return { paired: false, partner: null };
   }
@@ -353,5 +389,61 @@ export async function fetchPairedFeed(date?: string): Promise<PairedFeed> {
     return { paired: !!data.paired, partner: data.partner ?? null, date: data.date ?? d, items: data.items ?? [] };
   } catch {
     return empty;
+  }
+}
+
+// ---- Connection Dashboard (2026-07-24) --------------------------------------
+
+export interface CommonItem {
+  itemId: string;
+  mine: { text: string; reflectId: string; createdAt: string };
+  partner: { text: string | null; createdAt: string };
+}
+
+/** 板块3: up to 8 items both members reflected recently. */
+export async function fetchCommonItems(): Promise<CommonItem[]> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return [];
+  try {
+    const data = await apiClient.get<{ success?: boolean; items?: CommonItem[] }>(
+      `/api/friends/common-items?userId=${encodeURIComponent(userId)}`,
+    );
+    return data.success ? data.items ?? [] : [];
+  } catch {
+    return [];
+  }
+}
+
+export interface ConnectionInsights {
+  emotion: string | null;
+  topic: string | null;
+  careTips: string | null;
+  boundaries: string | null;
+  hangoutIdeas: string | null;
+}
+
+/** 板块4 (Plus): daily AI guidance about the partner. */
+export async function fetchInsights(): Promise<
+  { ok: true; insights: ConnectionInsights | null } | { ok: false; error: 'plus_required' | 'consent_required' | 'network' }
+> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  const d = new Date();
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  try {
+    const data = await apiClient.get<{ success?: boolean; error?: string; insights?: ConnectionInsights | null }>(
+      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}`,
+    );
+    if (data.success) return { ok: true, insights: data.insights ?? null };
+    if (data.error === 'plus_required' || data.error === 'consent_required') {
+      return { ok: false, error: data.error };
+    }
+    return { ok: false, error: 'network' };
+  } catch (err) {
+    const e = (err as { body?: { error?: string } })?.body?.error;
+    if (e === 'plus_required' || e === 'consent_required') return { ok: false, error: e };
+    return { ok: false, error: 'network' };
   }
 }

@@ -39,7 +39,7 @@ export async function GET(request) {
     const supabase = serviceClient()
     const { data: row } = await supabase
       .from('pairings')
-      .select('partner_user_id')
+      .select('partner_user_id, relationship, relationship_since, created_at')
       .eq('user_id', userId)
       .maybeSingle()
     if (!row) return NextResponse.json({ success: true, paired: false, partner: null })
@@ -49,10 +49,19 @@ export async function GET(request) {
       .select('id, display_name')
       .eq('id', row.partner_user_id)
       .maybeSingle()
+    // Duration: since the relationship's stated start when given, else since
+    // the pairing itself.
+    const sinceIso = row.relationship_since || (row.created_at ? row.created_at.slice(0, 10) : null)
+    const days = sinceIso
+      ? Math.max(0, Math.floor((Date.now() - new Date(`${sinceIso}T00:00:00Z`).getTime()) / 86400000))
+      : 0
     return NextResponse.json({
       success: true,
       paired: true,
       partner: { userId: row.partner_user_id, displayName: prof?.display_name || 'Partner' },
+      relationship: row.relationship || null,
+      relationshipSince: row.relationship_since || null,
+      pairedDays: days,
     })
   } catch (err) {
     console.error('[friends/pair] unexpected:', err && err.message)

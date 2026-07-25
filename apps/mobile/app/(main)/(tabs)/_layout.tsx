@@ -40,7 +40,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
         <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
         <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-        <Tabs.Screen name="status" options={{ title: 'Status' }} />
+        <Tabs.Screen name="status" options={{ title: 'Me' }} />
       </Tabs>
       <RatingPromptSheet ref={ratingSheetRef} />
     </BottomSheetModalProvider>

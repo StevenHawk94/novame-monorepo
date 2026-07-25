@@ -57,7 +57,7 @@ export async function POST(request) {
 
     const { data: fr } = await supabase
       .from('friendships')
-      .select('id, user_a, user_b, status, requested_by')
+      .select('id, user_a, user_b, status, requested_by, relationship, relationship_since')
       .eq('id', friendshipId)
       .maybeSingle()
     if (!fr) {
@@ -88,6 +88,24 @@ export async function POST(request) {
         console.error('[friends/respond] accept error:', error.message)
         return NextResponse.json({ error: 'Failed' }, { status: 500 })
       }
+
+      // 2026-07-24 pairing-first model: accepting an invitation also forms
+      // the 1:1 pairing (with the invitation's relationship), when both sides
+      // are still unpaired. Best-effort — if either is already paired the
+      // friendship simply stands as a normal friend.
+      let paired = false
+      const { data: pairRes, error: pairErr } = await supabase.rpc('set_pairing', {
+        p_user_id: userId,
+        p_partner_id: other,
+        p_relationship: fr.relationship ?? null,
+        p_since: fr.relationship_since ?? null,
+      })
+      if (pairErr) {
+        console.warn('[friends/respond] set_pairing failed (non-fatal):', pairErr.message)
+      } else if (!pairRes?.error) {
+        paired = true
+      }
+      return NextResponse.json({ success: true, action, paired })
     } else {
       const { error } = await supabase.from('friendships').delete().eq('id', friendshipId)
       if (error) {
