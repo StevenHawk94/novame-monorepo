@@ -29,6 +29,14 @@ import { fetchBags } from '../../src/lib/bags-api';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS } from '../../src/lib/icons';
+import {
+  GUIDED_MAX,
+  GUIDED_MIN,
+  availableGuidedCategories,
+  getGuidedSelection,
+  guidedCategoryFor,
+  setGuidedSelection,
+} from '../../src/lib/guided-prompts';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import {
@@ -43,39 +51,28 @@ import {
 const MAX_CHARS = 5000;
 
 /**
- * 流程2 — Guided Prompts (my days): tap through the prompt pages, pick what
- * fits, no typing needed. The optional note page follows; Plus can turn the
- * picks into a cute story for the paired person. Every pick becomes a memory
- * item (server: mode 'prompt', notes ride per item).
- *
- * Prompt set + order (2026-07-24 产品口径):
- *   1. How do you feel?                 Emotions & Mental States
- *   2. What did you eat and drink today? Food & Drinks
- *   3. What did you do today?           Entertainment / Sports / Beauty (三选)
+ * 流程2 — Guided Prompts (2026-07-24 v2): the FIRST run opens the category
+ * chooser ("What do you want to reflect on?", pick 3-20 of the taxonomy);
+ * afterwards the flow jumps straight into one prompt page PER chosen
+ * category (each skippable), then the optional note page. The prompt pages'
+ * Edit button reopens the chooser any time. Selection persists per user;
+ * questions live in lib/guided-prompts.ts (data-driven — the list follows
+ * whatever taxonomy the dictionary currently holds).
  */
-const STEPS: { title: string; categories: string[]; chips?: { key: string; label: string }[] }[] = [
-  { title: 'How do you feel?', categories: ['emotions'] },
-  { title: 'What did you eat and drink today?', categories: ['food'] },
-  {
-    title: 'What did you do today?',
-    categories: ['entertainment', 'sports', 'beauty'],
-    chips: [
-      { key: 'entertainment', label: 'Fun' },
-      { key: 'sports', label: 'Active' },
-      { key: 'beauty', label: 'Self-care' },
-    ],
-  },
-];
-
-type Phase = 'steps' | 'note' | 'result';
+type Phase = 'choose' | 'steps' | 'note' | 'result';
 
 export default function ReflectGuidedScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const initial = useMemo(() => getReflectStateToday(), []);
-  const [phase, setPhase] = useState<Phase>('steps');
+  const all = useMemo(() => availableGuidedCategories(), []);
+  const stored = useMemo(() => getGuidedSelection(), []);
+
+  const [phase, setPhase] = useState<Phase>(stored.length >= GUIDED_MIN ? 'steps' : 'choose');
+  const [chosen, setChosen] = useState<string[]>(stored);
+  // Chooser working copy (so Edit can cancel without touching the real picks).
+  const [draft, setDraft] = useState<Set<string>>(new Set(stored));
   const [step, setStep] = useState(0);
-  const [chip, setChip] = useState<string>('entertainment');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
@@ -94,10 +91,10 @@ export default function ReflectGuidedScreen() {
     }, []),
   );
 
-  const stepDef = STEPS[step];
+  const stepDef = guidedCategoryFor(chosen[step] ?? '');
   const gridIds = useMemo(
-    () => itemIdsForCategories(stepDef.chips ? [chip] : stepDef.categories),
-    [stepDef, chip],
+    () => (chosen[step] ? itemIdsForCategories([chosen[step]]) : []),
+    [chosen, step],
   );
   const selectedList = useMemo(
     () =>
@@ -117,9 +114,42 @@ export default function ReflectGuidedScreen() {
     });
   }, []);
 
+  function toggleDraft(key: string) {
+    void haptics.light();
+    setDraft((cur) => {
+      const next = new Set(cur);
+      if (next.has(key)) {
+        next.delete(key);
+      } else if (next.size >= GUIDED_MAX) {
+        Alert.alert('Up to 20', `You can pick at most ${GUIDED_MAX} categories.`);
+        return cur;
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  function onConfirmChoose() {
+    if (draft.size < GUIDED_MIN) return;
+    void haptics.medium();
+    // Persist in the chooser's canonical order so prompt pages are stable.
+    const ordered = all.filter((c) => draft.has(c.key)).map((c) => c.key);
+    setGuidedSelection(ordered);
+    setChosen(ordered);
+    setStep(0);
+    setPhase('steps');
+  }
+
+  function openEdit() {
+    void haptics.light();
+    setDraft(new Set(chosen));
+    setPhase('choose');
+  }
+
   function onNext() {
     void haptics.light();
-    if (step < STEPS.length - 1) {
+    if (step < chosen.length - 1) {
       setStep(step + 1);
     } else {
       setPhase('note');
@@ -161,22 +191,38 @@ export default function ReflectGuidedScreen() {
     }
   }
 
+  function onBack() {
+    if (phase === 'choose') {
+      // Editing an existing selection cancels back to the pages; the first
+      // run has nothing to fall back to and leaves the flow.
+      if (chosen.length >= GUIDED_MIN) setPhase('steps');
+      else router.back();
+    } else if (phase === 'note') {
+      setPhase('steps');
+    } else if (phase === 'steps' && step > 0) {
+      setStep(step - 1);
+    } else {
+      router.back();
+    }
+  }
+
   const atLimit = remaining <= 0;
 
   return (
     <ImageBackground source={BACKGROUNDS.reflect} style={{ flex: 1 }} resizeMode="cover">
-      <View style={styles.scrim} />
+      {phase !== 'choose' && <View style={styles.scrim} />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
-            <ReflectTopBar
-              remaining={remaining}
-              onBack={() => {
-                if (phase === 'note') setPhase('steps');
-                else if (step > 0) setStep(step - 1);
-                else router.back();
-              }}
-            />
+            <View style={styles.topRow}>
+              <ReflectTopBar remaining={phase === 'steps' ? undefined : remaining} onBack={onBack} />
+              {phase === 'steps' && (
+                <Pressable onPress={openEdit} style={styles.editPill} hitSlop={8}>
+                  <MaterialIcons name="edit" size={18} color="#FFFFFF" />
+                  <Text style={styles.editPillText}>Edit</Text>
+                </Pressable>
+              )}
+            </View>
           )}
 
           {atLimit && phase !== 'result' ? (
@@ -186,32 +232,61 @@ export default function ReflectGuidedScreen() {
                 You&apos;ve reflected 3 times today. Rest up — come back tomorrow.
               </Text>
             </View>
+          ) : phase === 'choose' ? (
+            <View style={{ flex: 1 }}>
+              <Text style={styles.chooseTitle}>What do you want to reflect on?</Text>
+              <Text style={styles.chooseSub}>Select the activities you engage in.</Text>
+              <View style={styles.choosePanel}>
+                <Text style={styles.chooseHint}>Select at least {GUIDED_MIN}</Text>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+                  <View style={styles.pillGrid}>
+                    {all.map((c) => {
+                      const on = draft.has(c.key);
+                      return (
+                        <Pressable
+                          key={c.key}
+                          onPress={() => toggleDraft(c.key)}
+                          style={[styles.pill, on && styles.pillOn]}
+                        >
+                          <Text style={styles.pillEmoji}>{c.emoji}</Text>
+                          <Text style={[styles.pillText, on && styles.pillTextOn]} numberOfLines={1}>
+                            {c.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              </View>
+              <OffsetCard
+                color={RC.yellowDrop}
+                offset={4}
+                radius={24}
+                onPress={onConfirmChoose}
+                disabled={draft.size < GUIDED_MIN}
+                style={{ marginTop: 14, opacity: draft.size < GUIDED_MIN ? 0.55 : 1 }}
+                cardStyle={styles.yellowBtn}
+              >
+                <Text style={styles.yellowBtnText}>Confirm</Text>
+              </OffsetCard>
+              <Text style={[styles.chooseFootnote, { marginBottom: insets.bottom + 10 }]}>
+                You can edit anytime by clicking “edit” on page
+              </Text>
+            </View>
           ) : phase === 'steps' ? (
             <View style={{ flex: 1 }}>
-              <Text style={styles.stepTitle}>{stepDef.title}</Text>
-              {stepDef.chips && (
-                <View style={styles.chipRow}>
-                  {stepDef.chips.map((c) => (
-                    <Pressable
-                      key={c.key}
-                      onPress={() => { void haptics.light(); setChip(c.key); }}
-                      style={[styles.chip, chip === c.key && styles.chipOn]}
-                    >
-                      <Text style={[styles.chipText, chip === c.key && styles.chipTextOn]}>{c.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
+              <Text style={styles.stepTitle}>{stepDef.question}</Text>
               <View style={styles.gridCard}>
                 <SelectableItemGrid itemIds={gridIds} selected={selected} onToggle={toggle} />
               </View>
+              <Text style={styles.passHint}>You can pass if nothing you want to select here</Text>
               <OffsetCard
                 color={RC.yellowDrop}
                 offset={4}
                 radius={24}
                 onPress={onNext}
                 cardStyle={styles.yellowBtn}
-                style={{ marginTop: 14, marginBottom: insets.bottom + 12 }}
+                style={{ marginBottom: insets.bottom + 12 }}
               >
                 <Text style={styles.yellowBtnText}>Next</Text>
               </OffsetCard>
@@ -305,15 +380,38 @@ export default function ReflectGuidedScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 18 },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: RC.scrim },
+  topRow: { position: 'relative' },
+  editPill: {
+    position: 'absolute', right: 0, top: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  editPillText: { fontSize: 17, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF' },
+
+  chooseTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  chooseSub: { fontSize: 15, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', textAlign: 'center', marginTop: 4, marginBottom: 14 },
+  choosePanel: { flex: 1, backgroundColor: '#FFF8E3', borderRadius: 26, padding: 14 },
+  chooseHint: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2A2118', marginBottom: 10, paddingHorizontal: 2 },
+  pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
+  pill: {
+    width: '48%', flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FFFFFF', borderRadius: 26, paddingVertical: 14, paddingHorizontal: 14,
+  },
+  pillOn: { backgroundColor: '#8A5F3F' },
+  pillEmoji: { fontSize: 20 },
+  pillText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#161311', flexShrink: 1 },
+  pillTextOn: { color: '#FFFFFF' },
+  chooseFootnote: {
+    fontSize: 13.5, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)',
+    textAlign: 'center', marginTop: 10,
+  },
 
   stepTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 14 },
   stepTitleLeft: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 12 },
-  chipRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 12 },
-  chip: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 8 },
-  chipOn: { backgroundColor: RC.orange },
-  chipText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#5A4419' },
-  chipTextOn: { color: '#FFFFFF' },
   gridCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 26 },
+  passHint: {
+    fontSize: 14, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)',
+    textAlign: 'center', marginTop: 12, marginBottom: 10,
+  },
 
   input: {
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,

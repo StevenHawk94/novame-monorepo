@@ -264,6 +264,11 @@ export const kReflectShareDefaults = defineKey('novame_reflect_share_defaults', 
 export const kFriendsStatus = defineKey('novame_friends_status', 'user');
 export const kFriendsFeed = defineKey('novame_friends_feed', 'user');
 
+// Guided Prompts (流程2) — the user's chosen reflect categories (3-20 keys).
+// First run shows the chooser; afterwards the flow jumps straight to the
+// prompt pages, editable via the pages' Edit button.
+export const kGuidedCategories = defineKey('novame_guided_categories', 'user');
+
 /** status.tsx: the eight-dimension gem totals from /api/status. A read-only
  *  shadow of user_gems; the Status screen derives stage and totals from these
  *  with the shared engine, never storing computed values. */

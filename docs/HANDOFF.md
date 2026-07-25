@@ -131,9 +131,19 @@ feed/status/paired-feed 已按此语义过滤（细节需全局 opt-in AND per-r
 开关同时为真）。Plus AI：回忆精炼 + 小故事已接（占位 prompt，等正式文案）；
 AI 不覆盖用户手写的物品描述。输入页统一 50% 黑遮罩。
 
-**待素材/待做**：词典 26 类 1216 项升级（等新 CSV+3 张图，管线现成）；
-入口/编辑弹层等文案为占位可调；类目条图标仍空缺；
-iOS WidgetKit（原生，30min 刷新 + 打开即刷）。
+**流程2 v2（2026-07-24）**：首次进入 = 类目选择页（选 3-20 个，持久化
+`kGuidedCategories`；prompt 页右上角 Edit 可改），之后每个所选类目一页
+prompt（可跳过）→ note 页。配置在 `lib/guided-prompts.ts`——数据驱动，
+新旧两套类目 key 都有条目 + 兜底生成器，**词典重新生成后自动变成 14 类，
+零代码改动**。
+
+**词典换代（图未到，勿跑）**：CSV 已更新为 14 类 460 项；
+`build-item-dictionary.py` 的映射已切到新类目（emotions 换 sheet id 为
+emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的注释里
+（normalize --grid → build → webp → ITEM_SHEETS → 新迁移文件 → Supabase）。
+
+**待素材/待做**：14 张新类目图；Flutter 迁移已评估并再次否决（2026-07-24
+用户确认留 RN）；类目条图标仍空缺；iOS WidgetKit（原生，30min 刷新 + 打开即刷）。
 
 ## 6.6 全局加载/流畅度（2026-07-24 优化 pass）
 

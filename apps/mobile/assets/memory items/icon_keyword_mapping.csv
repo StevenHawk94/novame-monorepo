@@ -1,1073 +1,461 @@
 category,n,row,col,itemId,displayName,keywords
-Food & Drinks,1,0,0,Nachos,Nachos,nachos
-Food & Drinks,2,0,1,Ramen,Ramen,ramen/cup noodles/top ramen
-Food & Drinks,3,0,2,Coffee,Coffee,coffee/latte/espresso/cappuccino/starbucks
-Food & Drinks,4,0,3,Tea,Tea,tea
-Food & Drinks,5,0,4,Water,Water,water
-Food & Drinks,6,0,5,Milk,Milk,milk
-Food & Drinks,7,0,6,Juice,Juice,juice/oj/capri sun
-Food & Drinks,8,0,7,Soda,Soda,soda/pop/cola/coke/sprite/soft drink/fizzy drink/pepsi
-Food & Drinks,9,1,0,Lemonade,Lemonade,lemonade
-Food & Drinks,10,1,1,Smoothie,Smoothie,smoothie/jamba juice/smoothie king
-Food & Drinks,11,1,2,Milkshake,Milkshake,milkshake/shake
-Food & Drinks,12,1,3,Hot Chocolate,Hot Chocolate,hot chocolate/cocoa
-Food & Drinks,13,1,4,Energy Drink,Energy Drink,energy drink/monster/red bull/celsius
-Food & Drinks,14,1,5,Sports Drink,Sports Drink,sports drink/gatorade/powerade
-Food & Drinks,15,1,6,Iced Coffee,Iced Coffee,iced coffee/frappe/cold brew/starbucks/frappuccino
-Food & Drinks,16,1,7,Sparkling Water,Sparkling Water,sparkling water/seltzer/la croix/fizzy water/carbonated water/bubly/perrier
-Food & Drinks,17,2,0,Burger,Burger,burger/mcdonalds/burger king/wendys/in-n-out/five guys
-Food & Drinks,18,2,1,Pizza,Pizza,pizza/dominos/pizza hut/papa johns/little caesars
-Food & Drinks,19,2,2,Fries,Fries,fries/chips
-Food & Drinks,20,2,3,Hot Dog,Hot Dog,hot dog/frankfurter/nathans
-Food & Drinks,21,2,4,Taco,Taco,taco/taco bell
-Food & Drinks,22,2,5,Burrito,Burrito,burrito/wrap/chipotle/qdoba
-Food & Drinks,23,2,6,Sandwich,Sandwich,sandwich/sub/subway/jimmy johns/jersey mikes
-Food & Drinks,24,2,7,Salad,Salad,salad/greens/sweetgreen/chopt
-Food & Drinks,25,3,0,Soup,Soup,soup/panera
-Food & Drinks,26,3,1,Pasta,Pasta,pasta/noodles/spaghetti/olive garden
-Food & Drinks,27,3,2,Steak,Steak,steak/outback/texas roadhouse
-Food & Drinks,28,3,3,Chicken,Chicken,chicken/kfc/chick-fil-a/popeyes
-Food & Drinks,29,3,4,Bacon,Bacon,bacon
-Food & Drinks,30,3,5,Eggs,Eggs,eggs/fried egg
-Food & Drinks,31,3,6,Pancakes,Pancakes,pancakes/ihop/dennys
-Food & Drinks,32,3,7,Waffle,Waffle,waffle/waffle house
-Food & Drinks,33,4,0,Cereal,Cereal,cereal/cheerios/frosted flakes
-Food & Drinks,34,4,1,Oatmeal,Oatmeal,oatmeal/porridge/quaker
-Food & Drinks,35,4,2,Bagel,Bagel,bagel
-Food & Drinks,36,4,3,Toast,Toast,toast
-Food & Drinks,37,4,4,Muffin,Muffin,muffin
-Food & Drinks,38,4,5,Donut,Donut,donut/doughnut/dunkin/krispy kreme
-Food & Drinks,39,4,6,Cookie,Cookie,cookie/oreo
-Food & Drinks,40,4,7,Brownie,Brownie,brownie
-Food & Drinks,41,5,0,Cupcake,Cupcake,cupcake
-Food & Drinks,42,5,1,Cake,Cake,cake
-Food & Drinks,43,5,2,Pie,Pie,pie
-Food & Drinks,44,5,3,Ice Cream,Ice Cream,ice cream/scoop/dairy queen/baskin robbins/ben and jerrys
-Food & Drinks,45,5,4,Chocolate,Chocolate,chocolate/candy bar/hersheys/kit kat/snickers/reeses
-Food & Drinks,46,5,5,Candy,Candy,candy/sweets
-Food & Drinks,47,5,6,Popcorn,Popcorn,popcorn
-Food & Drinks,48,5,7,Chips,Chips,chips/lays/doritos/pringles
-Food & Drinks,49,6,0,Pretzel,Pretzel,pretzel/auntie annes
-Food & Drinks,50,6,1,Yogurt,Yogurt,yogurt/chobani/yoplait
-Food & Drinks,51,6,2,Granola,Granola,granola/nature valley
-Food & Drinks,52,6,3,Avocado,Avocado,avocado
-Food & Drinks,53,6,4,Apple,Apple,apple
-Food & Drinks,54,6,5,Banana,Banana,banana
-Food & Drinks,55,6,6,Strawberry,Strawberry,strawberry/strawberries
-Food & Drinks,56,6,7,Grapes,Grapes,grapes
-Food & Drinks,57,7,0,Watermelon,Watermelon,watermelon
-Food & Drinks,58,7,1,Carrot,Carrot,carrot
-Food & Drinks,59,7,2,Broccoli,Broccoli,broccoli
-Food & Drinks,60,7,3,Corn,Corn,corn
-Food & Drinks,61,7,4,Rice,Rice,rice
-Food & Drinks,62,7,5,Sushi,Sushi,sushi
-Food & Drinks,63,7,6,Mac and Cheese,Mac and Cheese,mac and cheese/macaroni/kraft
-Food & Drinks,64,7,7,BBQ,BBQ,bbq/barbecue/cookout/grilling
-Sports & Fitness,1,0,0,Running,Running,running/marathon/strava/nike run club
-Sports & Fitness,2,0,1,Jogging,Jogging,jogging/jog
-Sports & Fitness,3,0,2,Walking,Walking,walking/stroll
-Sports & Fitness,4,0,3,Hiking,Hiking,hiking/hike/alltrails
-Sports & Fitness,5,0,4,Basketball,Basketball,basketball/nba/hoop
-Sports & Fitness,6,0,5,Football,Football,football/gridiron/NFL
-Sports & Fitness,7,0,6,Baseball,Baseball,baseball/ballgame/MLB
-Sports & Fitness,8,0,7,Soccer,Soccer,soccer/futbol/MLS/FIFA
-Sports & Fitness,9,1,0,Tennis,Tennis,tennis
-Sports & Fitness,10,1,1,Golf,Golf,golf/PGA
-Sports & Fitness,11,1,2,Volleyball,Volleyball,volleyball
-Sports & Fitness,12,1,3,Swimming,Swimming,swimming
-Sports & Fitness,13,1,4,Cycling,Cycling,cycling/biking/peloton
-Sports & Fitness,14,1,5,Boxing,Boxing,boxing
-Sports & Fitness,15,1,6,Wrestling,Wrestling,wrestling/grappling/WWE
-Sports & Fitness,16,1,7,Hockey,Hockey,hockey/NHL
-Sports & Fitness,17,2,0,Skating,Skating,skating
-Sports & Fitness,18,2,1,Skateboarding,Skateboarding,skateboarding/skateboard
-Sports & Fitness,19,2,2,Surfing,Surfing,surfing
-Sports & Fitness,20,2,3,Skiing,Skiing,skiing
-Sports & Fitness,21,2,4,Snowboarding,Snowboarding,snowboarding/snowboard
-Sports & Fitness,22,2,5,Bowling,Bowling,bowling
-Sports & Fitness,23,2,6,Pickleball,Pickleball,pickleball
-Sports & Fitness,24,2,7,Badminton,Badminton,badminton
-Sports & Fitness,25,3,0,Table Tennis,Table Tennis,table tennis/ping pong
-Sports & Fitness,26,3,1,Racquetball,Racquetball,racquetball
-Sports & Fitness,27,3,2,Softball,Softball,softball
-Sports & Fitness,28,3,3,Lacrosse,Lacrosse,lacrosse/lax
-Sports & Fitness,29,3,4,Rugby,Rugby,rugby
-Sports & Fitness,30,3,5,Cheerleading,Cheerleading,cheerleading/cheerleader
-Sports & Fitness,31,3,6,Gymnastics,Gymnastics,gymnastics/tumbling
-Sports & Fitness,32,3,7,Track and Field,Track and Field,track and field/sprinting
-Sports & Fitness,33,4,0,Cross Country,Cross Country,cross country/xc/distance running
-Sports & Fitness,34,4,1,Rowing,Rowing,rowing
-Sports & Fitness,35,4,2,Kayaking,Kayaking,kayaking/kayak
-Sports & Fitness,36,4,3,Canoeing,Canoeing,canoeing/canoe
-Sports & Fitness,37,4,4,Climbing,Climbing,climbing/bouldering
-Sports & Fitness,38,4,5,Weightlifting,Weightlifting,weightlifting/lifting weights
-Sports & Fitness,39,4,6,Powerlifting,Powerlifting,powerlifting
-Sports & Fitness,40,4,7,Bodybuilding,Bodybuilding,bodybuilding/muscle building
-Sports & Fitness,41,5,0,Stretching,Stretching,stretching
-Sports & Fitness,42,5,1,Yoga,Yoga,yoga
-Sports & Fitness,43,5,2,Pilates,Pilates,pilates
-Sports & Fitness,44,5,3,Zumba,Zumba,zumba/dance fitness
-Sports & Fitness,45,5,4,Aerobics,Aerobics,aerobics
-Sports & Fitness,46,5,5,Jump Rope,Jump Rope,jump rope/jumping rope/skipping rope
-Sports & Fitness,47,5,6,Personal Training,Personal Training,personal training/1 on 1 workout
-Sports & Fitness,48,5,7,Team Practice,Team Practice,team practice/practice/team drills
-Entertainment & Games,1,0,0,Movie,Movie,movie/film/cinema/AMC
-Entertainment & Games,2,0,1,TV,TV,tv/television
-Entertainment & Games,3,0,2,Binge-watching,Binge-watching,Binge-watching/netflix
-Entertainment & Games,4,0,3,Video,Video,video/youtube/vimeo
-Entertainment & Games,5,0,4,Short Videos,Short Videos,short videos/reels/tiktok/short clips/youtube shorts/snap
-Entertainment & Games,6,0,5,Movie Night,Movie Night,movie night/film night/popcorn night/netflix
-Entertainment & Games,7,0,6,Game,Game,game
-Entertainment & Games,8,0,7,Gaming,Gaming,gaming/twitch/steam
-Entertainment & Games,9,1,0,Video Game,Video Game,video game/ps5/xbox/nintendo/playstation
-Entertainment & Games,10,1,1,Game Console,Game Console,game console/xbox/playstation/nintendo switch
-Entertainment & Games,11,1,2,Controller,Controller,controller/gamepad/joystick
-Entertainment & Games,12,1,3,Arcade,Arcade,arcade
-Entertainment & Games,13,1,4,Puzzle,Puzzle,puzzle/brain game/brain teaser
-Entertainment & Games,14,1,5,Jigsaw,Jigsaw,jigsaw
-Entertainment & Games,15,1,6,Crossword,Crossword,crossword/NYT crossword
-Entertainment & Games,16,1,7,Sudoku,Sudoku,sudoku/number puzzle/number grid puzzle
-Entertainment & Games,17,2,0,Board Game,Board Game,board game/monopoly/catan
-Entertainment & Games,18,2,1,Card Game,Card Game,card game/playing cards/uno
-Entertainment & Games,19,2,2,Chess,Chess,chess/chess.com
-Entertainment & Games,20,2,3,Checkers,Checkers,checkers
-Entertainment & Games,21,2,4,Poker,Poker,poker/texas holdem
-Entertainment & Games,22,2,5,Trivia,Trivia,trivia/quiz night/jeopardy
-Entertainment & Games,23,2,6,Bingo,Bingo,bingo
-Entertainment & Games,24,2,7,Darts,Darts,darts
-Entertainment & Games,25,3,0,Billiards,Billiards,billiards
-Entertainment & Games,26,3,1,Foosball,Foosball,foosball/table soccer
-Entertainment & Games,27,3,2,Pinball,Pinball,pinball
-Entertainment & Games,28,3,3,Escape Room,Escape Room,escape room/puzzle room
-Entertainment & Games,29,3,4,Laser Tag,Laser Tag,laser tag
-Entertainment & Games,30,3,5,Mini Golf,Mini Golf,mini golf/putt putt
-Entertainment & Games,31,3,6,Virtual Reality,Virtual Reality,virtual reality/vr/oculus/meta quest
-Entertainment & Games,32,3,7,Mobile Game,Mobile Game,mobile game/app game/phone game/candy crush/roblox
-Entertainment & Games,33,4,0,Computer Game,Computer Game,computer game/pc game/desktop game/steam
-Entertainment & Games,34,4,1,Online Game,Online Game,online game/multiplayer game/fortnite/minecraft/roblox
-Entertainment & Games,35,4,2,Party Game,Party Game,party game/group game/icebreaker game
-Entertainment & Games,36,4,3,Role-playing Game,Role-playing Game,Role-playing Game/rpg/dungeons and dragons
-Entertainment & Games,37,4,4,Strategy Game,Strategy Game,strategy game/tactics game
-Entertainment & Games,38,4,5,Adventure Game,Adventure Game,adventure game/quest game/exploration game
-Entertainment & Games,39,4,6,Drawing Game,Drawing Game,drawing game/sketch game/pictionary
-Entertainment & Games,40,4,7,Guessing Game,Guessing Game,guessing game
-Entertainment & Games,41,5,0,Hide-and-Seek,Hide-and-Seek,Hide-and-Seek/hiding game
-Entertainment & Games,42,5,1,Playing Tag,Playing Tag,playing tag/chasing game
-Entertainment & Games,43,5,2,Charades,Charades,charades
-Entertainment & Games,44,5,3,Scavenger Hunt,Scavenger Hunt,scavenger hunt/hunt game/treasure hunt
-Entertainment & Games,45,5,4,Magic Trick,Magic Trick,magic trick/card trick
-Entertainment & Games,46,5,5,Stand-up Comedy,Stand-up Comedy,Stand-up Comedy/comedy show
-Entertainment & Games,47,5,6,Improv,Improv,improv
-Entertainment & Games,48,5,7,Talent Show,Talent Show,talent show/variety show/americas got talent
-Entertainment & Games,49,6,0,Game Show,Game Show,game show/quiz show/wheel of fortune/jeopardy
-Entertainment & Games,50,6,1,Reality Show,Reality Show,reality show/reality tv/reality series/the bachelor/survivor
-Entertainment & Games,51,6,2,Talk Show,Talk Show,talk show/late night show
-Entertainment & Games,52,6,3,Awards Show,Awards Show,awards show/award ceremony/oscars/grammys
-Entertainment & Games,53,6,4,Movie Marathon,Movie Marathon,movie marathon/all day movies/binge marathon
-Entertainment & Games,54,6,5,Watch Party,Watch Party,watch party/group watch/viewing party
-Entertainment & Games,55,6,6,Karaoke,Karaoke,karaoke
-Entertainment & Games,56,6,7,Dance Party,Dance Party,dance party
-Relaxation & Leisure,1,0,0,Reading,Reading,reading/kindle/goodreads
-Relaxation & Leisure,2,0,1,Napping,Napping,napping/nap
-Relaxation & Leisure,3,0,2,Relaxing,Relaxing,relaxing/chill/unwind/downtime
-Relaxation & Leisure,4,0,3,Meditation,Meditation,meditation/meditating/calm/headspace
-Relaxation & Leisure,5,0,4,Mindfulness,Mindfulness,mindfulness/being present/headspace
-Relaxation & Leisure,6,0,5,Deep Breathing,Deep Breathing,deep breathing/breathing exercise
-Relaxation & Leisure,7,0,6,Journaling,Journaling,journaling/diary/journal
-Relaxation & Leisure,8,0,7,Coloring,Coloring,coloring
-Relaxation & Leisure,9,1,0,Knitting,Knitting,knitting
-Relaxation & Leisure,10,1,1,Crocheting,Crocheting,crocheting/crochet
-Relaxation & Leisure,11,1,2,Sewing,Sewing,sewing
-Relaxation & Leisure,12,1,3,Quilting,Quilting,quilting/quilt/patchwork
-Relaxation & Leisure,13,1,4,Origami,Origami,origami/paper folding
-Relaxation & Leisure,14,1,5,Scrapbooking,Scrapbooking,scrapbooking/scrapbook/memory book
-Relaxation & Leisure,15,1,6,Birdwatching,Birdwatching,birdwatching
-Relaxation & Leisure,16,1,7,Stargazing,Stargazing,stargazing/watching stars
-Relaxation & Leisure,17,2,0,Sunbathing,Sunbathing,sunbathing/tanning/sunbathe
-Relaxation & Leisure,18,2,1,Lounging,Lounging,lounging
-Relaxation & Leisure,19,2,2,Daydreaming,Daydreaming,daydreaming/zoning out/lost in thought
-Relaxation & Leisure,20,2,3,Bubble Bath,Bubble Bath,bubble bath
-Relaxation & Leisure,21,2,4,Sauna,Sauna,sauna/steam room
-Relaxation & Leisure,22,2,5,Spa Day,Spa Day,spa day/spa/pampering day
-Relaxation & Leisure,23,2,6,Massage,Massage,massage/back rub
-Relaxation & Leisure,24,2,7,Picnic,Picnic,picnic
-Relaxation & Leisure,25,3,0,Camping,Camping,camping
-Relaxation & Leisure,26,3,1,Bonfire,Bonfire,bonfire/campfire
-Relaxation & Leisure,27,3,2,Hammock,Hammock,hammock
-Relaxation & Leisure,28,3,3,Porch Sitting,Porch Sitting,porch sitting
-Relaxation & Leisure,29,3,4,Park Day,Park Day,park day/park
-Relaxation & Leisure,30,3,5,Beach Day,Beach Day,beach day/beach
-Relaxation & Leisure,31,3,6,Lake Day,Lake Day,lake day/lake
-Relaxation & Leisure,32,3,7,Pool Day,Pool Day,pool day/pool/swim day
-Relaxation & Leisure,33,4,0,Book Club,Book Club,book club/reading group/book discussion
-Relaxation & Leisure,34,4,1,Audiobook,Audiobook,audiobook/audible
-Relaxation & Leisure,35,4,2,Coloring Book,Coloring Book,coloring book/coloring pages
-Relaxation & Leisure,36,4,3,Comic Book,Comic Book,comic book/comics/graphic novel
-Relaxation & Leisure,37,4,4,Magazine,Magazine,magazine
-Relaxation & Leisure,38,4,5,Newspaper,Newspaper,newspaper
-Relaxation & Leisure,39,4,6,Library Visit,Library Visit,library visit/library
-Relaxation & Leisure,40,4,7,Museum Visit,Museum Visit,museum visit/museum
-Relaxation & Leisure,41,5,0,Zoo Trip,Zoo Trip,zoo trip/zoo
-Relaxation & Leisure,42,5,1,Aquarium Trip,Aquarium Trip,aquarium trip/aquarium
-Relaxation & Leisure,43,5,2,Sightseeing,Sightseeing,sightseeing/exploring the city
-Relaxation & Leisure,44,5,3,Scenic Drive,Scenic Drive,scenic drive/sunday drive/countryside drive
-Relaxation & Leisure,45,5,4,Road Trip,Road Trip,road trip/car trip/highway trip/cross country drive
-Relaxation & Leisure,46,5,5,Staycation,Staycation,staycation/home vacation
-Relaxation & Leisure,47,5,6,Weekend Getaway,Weekend Getaway,weekend getaway/weekend trip/airbnb
-Relaxation & Leisure,48,5,7,Cabin Trip,Cabin Trip,cabin trip/cabin/airbnb
-Relaxation & Leisure,49,6,0,Beach Vacation,Beach Vacation,beach vacation/beach
-Relaxation & Leisure,50,6,1,Mountain Trip,Mountain Trip,mountain trip/mountain
-Relaxation & Leisure,51,6,2,Nature Walk,Nature Walk,nature walk/forest walk/walk in the woods/alltrails
-Relaxation & Leisure,52,6,3,Window Shopping,Window Shopping,window shopping/mall stroll/browsing stores
-Relaxation & Leisure,53,6,4,Thrifting,Thrifting,thrifting/secondhand shopping/depop/poshmark
-Relaxation & Leisure,54,6,5,Antiquing,Antiquing,antiquing/vintage hunting
-Relaxation & Leisure,55,6,6,Flea Market,Flea Market,flea market/weekend market
-Relaxation & Leisure,56,6,7,Farmers Market,Farmers Market,farmers market
-Relaxation & Leisure,57,7,0,Pottery,Pottery,pottery
-Relaxation & Leisure,58,7,1,Ceramics,Ceramics,ceramics/ceramic art
-Relaxation & Leisure,59,7,2,Woodworking,Woodworking,woodworking/carpentry hobby
-Relaxation & Leisure,60,7,3,Model Building,Model Building,model building/lego
-Relaxation & Leisure,61,7,4,Collecting,Collecting,collecting
-Relaxation & Leisure,62,7,5,Quiet Time,Quiet Time,quiet time
-Relaxation & Leisure,63,7,6,Me Time,Me Time,me time
-Relaxation & Leisure,64,7,7,Quiet Evening,Quiet Evening,quiet evening
-Personal Belongings,1,0,0,Wallet,Wallet,wallet/billfold/cardholder
-Personal Belongings,2,0,1,Keys,Keys,keys/keyring
-Personal Belongings,3,0,2,Purse,Purse,purse/handbag/pocketbook
-Personal Belongings,4,0,3,Backpack,Backpack,backpack/bookbag/rucksack/jansport/the north face
-Personal Belongings,5,0,4,Tote Bag,Tote Bag,tote bag/tote
-Personal Belongings,6,0,5,Suitcase,Suitcase,suitcase/luggage/samsonite
-Personal Belongings,7,0,6,Luggage Tag,Luggage Tag,luggage tag/travel tag
-Personal Belongings,8,0,7,Umbrella,Umbrella,umbrella
-Personal Belongings,9,1,0,Water Bottle,Water Bottle,water bottle/hydro flask/reusable bottle/stanley/yeti
-Personal Belongings,10,1,1,Lunchbox,Lunchbox,lunchbox/school lunch/packed lunch
-Personal Belongings,11,1,2,Notebook,Notebook,notebook/journal/notepad
-Personal Belongings,12,1,3,Planner,Planner,planner/agenda
-Personal Belongings,13,1,4,Pen,Pen,pen
-Personal Belongings,14,1,5,Pencil Case,Pencil Case,pencil case/pencil pouch/school supplies
-Personal Belongings,15,1,6,ID Card,ID Card,id card/id badge/identification
-Personal Belongings,16,1,7,Driver's License,Driver's License,Driver's License/dmv/license
-Personal Belongings,17,2,0,Passport,Passport,passport/travel document
-Personal Belongings,18,2,1,Credit Card,Credit Card,credit card/bank card/visa/mastercard/amex
-Personal Belongings,19,2,2,Cash,Cash,cash/money/bills
-Personal Belongings,20,2,3,Coins,Coins,coins/piggy bank/loose change/pocket change
-Personal Belongings,21,2,4,Keychain,Keychain,keychain/key fob/key ring
-Personal Belongings,22,2,5,Phone Case,Phone Case,phone case/cell phone cover/otterbox
-Personal Belongings,23,2,6,Headphones,Headphones,headphones/beats/bose
-Personal Belongings,24,2,7,Earbuds,Earbuds,earbuds/airpods/beats
-Personal Belongings,25,3,0,Camera,Camera,camera/dslr/gopro/canon
-Personal Belongings,26,3,1,Photo Album,Photo Album,photo album/scrapbook/photobook/family album
-Personal Belongings,27,3,2,Book,Book,book/paperback/kindle
-Personal Belongings,28,3,3,Bookmark,Bookmark,bookmark/page marker
-Personal Belongings,29,3,4,Gym Bag,Gym Bag,gym bag
-Personal Belongings,30,3,5,Duffel Bag,Duffel Bag,duffel bag/travel duffel
-Personal Belongings,31,3,6,Messenger Bag,Messenger Bag,messenger bag
-Personal Belongings,32,3,7,Briefcase,Briefcase,briefcase
-Personal Belongings,33,4,0,Flashlight,Flashlight,flashlight/torch/camping light
-Personal Belongings,34,4,1,Travel Pillow,Travel Pillow,travel pillow/neck pillow/airplane pillow
-Personal Belongings,35,4,2,Blanket,Blanket,blanket
-Personal Belongings,36,4,3,Stuffed Animal,Stuffed Animal,stuffed animal/plush toy/teddy bear/childhood toy
-Personal Belongings,37,4,4,Souvenir,Souvenir,souvenir
-Personal Belongings,38,4,5,Keepsake,Keepsake,keepsake/memento
-Personal Belongings,39,4,6,Gift Card,Gift Card,gift card
-Personal Belongings,40,4,7,Coupon,Coupon,coupon
-Personal Belongings,41,5,0,Ticket,Ticket,ticket/ticketmaster
-Personal Belongings,42,5,1,Receipt,Receipt,receipt/proof of purchase
-Personal Belongings,43,5,2,Map,Map,map/google maps
-Personal Belongings,44,5,3,Calendar,Calendar,calendar/google calendar
-Personal Belongings,45,5,4,Business Card,Business Card,business card/contact card/networking card
-Personal Belongings,46,5,5,Alarm Clock,Alarm Clock,alarm clock/bedside clock/wake up alarm
-Personal Belongings,47,5,6,Makeup Bag,Makeup Bag,makeup bag/vanity pouch
-Personal Belongings,48,5,7,Toiletry Bag,Toiletry Bag,toiletry bag
-Music,1,0,0,Music,Music,music
-Music,2,0,1,Music Note,Music Note,music note/note symbol/musical note
-Music,3,0,2,Drumstick,Drumstick,drumstick
-Music,4,0,3,Song,Song,song/tune/spotify
-Music,5,0,4,Album,Album,album/discography/spotify/apple music
-Music,6,0,5,Playlist,Playlist,playlist/mixtape/spotify/apple music
-Music,7,0,6,Singer,Singer,singer/vocalist
-Music,8,0,7,Musician,Musician,musician
-Music,9,1,0,DJ,DJ,dj/deejay
-Music,10,1,1,Concert,Concert,concert/gig/ticketmaster
-Music,11,1,2,Festival,Festival,festival/coachella
-Music,12,1,3,Live Music,Live Music,live music/live band/live show
-Music,13,1,4,Guitar,Guitar,guitar
-Music,14,1,5,Acoustic Guitar,Acoustic Guitar,acoustic guitar/acoustic/campfire guitar
-Music,15,1,6,Electric Guitar,Electric Guitar,electric guitar/rock guitar/band guitar
-Music,16,1,7,Bass Guitar,Bass Guitar,bass guitar/bassist/bass line
-Music,17,2,0,Piano,Piano,piano
-Music,18,2,1,Drums,Drums,drums/drummer/drumming
-Music,19,2,2,Violin,Violin,violin/fiddle
-Music,20,2,3,Cello,Cello,cello/orchestra strings
-Music,21,2,4,Flute,Flute,flute
-Music,22,2,5,Clarinet,Clarinet,clarinet/woodwind/school band
-Music,23,2,6,Saxophone,Saxophone,saxophone/sax
-Music,24,2,7,Trumpet,Trumpet,trumpet/brass/marching band
-Music,25,3,0,Trombone,Trombone,trombone/marching band/brass instrument
-Music,26,3,1,Harmonica,Harmonica,harmonica/blues harp/mouth organ
-Music,27,3,2,Ukulele,Ukulele,ukulele/uke
-Music,28,3,3,Banjo,Banjo,banjo/bluegrass/folk instrument
-Music,29,3,4,Mandolin,Mandolin,mandolin/bluegrass/folk instrument
-Music,30,3,5,Harp,Harp,harp/angelic instrument
-Music,31,3,6,Accordion,Accordion,accordion/squeezebox/folk music
-Music,32,3,7,Tambourine,Tambourine,tambourine/sing along/hand percussion
-Music,33,4,0,Maracas,Maracas,maracas/shakers/latin percussion
-Music,34,4,1,Cymbals,Cymbals,cymbals/drum crash/band percussion
-Music,35,4,2,Microphone,Microphone,microphone/mic
-Music,36,4,3,Speaker,Speaker,speaker/boombox/bose/sonos
-Music,37,4,4,Record Player,Record Player,record player/turntable
-Music,38,4,5,Vinyl Record,Vinyl Record,vinyl record/lp/vinyl/record collection
-Music,39,4,6,CD,CD,cd/compact disc
-Music,40,4,7,Cassette Tape,Cassette Tape,cassette tape/mixtape/old cassette
-Music,41,5,0,Lyrics,Lyrics,lyrics/words to a song/genius
-Music,42,5,1,Singing,Singing,singing/sing/karaoke
-Music,43,5,2,Humming,Humming,humming
-Music,44,5,3,Whistling,Whistling,whistling/whistle a tune
-Music,45,5,4,Choir,Choir,choir
-Music,46,5,5,Orchestra,Orchestra,orchestra/symphony
-Music,47,5,6,Rehearsal,Rehearsal,rehearsal/band practice/practice session
-Music,48,5,7,Jam Session,Jam Session,jam session/jamming/garage jam
-Music,49,6,0,Music Lesson,Music Lesson,music lesson
-Music,50,6,1,Piano Lesson,Piano Lesson,piano lesson/piano recital
-Music,51,6,2,Guitar Lesson,Guitar Lesson,guitar lesson/learning guitar
-Music,52,6,3,Recording Studio,Recording Studio,recording studio/making a record
-Music,53,6,4,Music Video,Music Video,music video/mv/filming a video
-Music,54,6,5,Radio,Radio,radio/pandora/iheartradio/siriusxm
-Music,55,6,6,Soundtrack,Soundtrack,soundtrack
-Music,56,6,7,Duet,Duet,duet/singing together
-Plants & Gardening,1,0,0,Greenhouse,Greenhouse,greenhouse
-Plants & Gardening,2,0,1,Houseplant,Houseplant,houseplant/indoor plant/potted plant
-Plants & Gardening,3,0,2,Flower,Flower,flower/blooms/bouquet
-Plants & Gardening,4,0,3,Tree,Tree,tree
-Plants & Gardening,5,0,4,Garden,Garden,garden
-Plants & Gardening,6,0,5,Yard,Yard,yard
-Plants & Gardening,7,0,6,Seed,Seed,seed
-Plants & Gardening,8,0,7,Seedling,Seedling,seedling/young plant/sprouted seed
-Plants & Gardening,9,1,0,Sprout,Sprout,sprout/new growth
-Plants & Gardening,10,1,1,Leaf,Leaf,leaf/leaves
-Plants & Gardening,11,1,2,Vine,Vine,vine
-Plants & Gardening,12,1,3,Cactus,Cactus,cactus/desert plant/succulent plant
-Plants & Gardening,13,1,4,Succulent,Succulent,succulent
-Plants & Gardening,14,1,5,Fern,Fern,fern
-Plants & Gardening,15,1,6,Herb,Herb,herb
-Plants & Gardening,16,1,7,Basil,Basil,basil/pesto herb/pizza herb
-Plants & Gardening,17,2,0,Rosemary,Rosemary,rosemary/roast seasoning
-Plants & Gardening,18,2,1,Lavender,Lavender,lavender
-Plants & Gardening,19,2,2,Rose,Rose,rose
-Plants & Gardening,20,2,3,Tulip,Tulip,tulip/spring flowers
-Plants & Gardening,21,2,4,Daisy,Daisy,daisy/daisies/wildflower
-Plants & Gardening,22,2,5,Sunflower,Sunflower,sunflower
-Plants & Gardening,23,2,6,Orchid,Orchid,orchid
-Plants & Gardening,24,2,7,Lily,Lily,lily/lilies
-Plants & Gardening,25,3,0,Daffodil,Daffodil,daffodil/narcissus/easter flower
-Plants & Gardening,26,3,1,Marigold,Marigold,marigold/dia de los muertos flower
-Plants & Gardening,27,3,2,Hydrangea,Hydrangea,hydrangea/garden bush
-Plants & Gardening,28,3,3,Peony,Peony,peony/peonies/spring bouquet
-Plants & Gardening,29,3,4,Ivy,Ivy,ivy
-Plants & Gardening,30,3,5,Aloe,Aloe,aloe
-Plants & Gardening,31,3,6,Bonsai,Bonsai,bonsai/mini tree
-Plants & Gardening,32,3,7,Vegetable Garden,Vegetable Garden,vegetable garden/veggie patch/growing vegetables
-Plants & Gardening,33,4,0,Watering Can,Watering Can,watering can/plant care/garden watering
-Plants & Gardening,34,4,1,Garden Hose,Garden Hose,garden hose/hose/watering the yard
-Plants & Gardening,35,4,2,Shovel,Shovel,shovel/digging
-Plants & Gardening,36,4,3,Trowel,Trowel,trowel/hand shovel
-Plants & Gardening,37,4,4,Rake,Rake,rake/raking leaves
-Plants & Gardening,38,4,5,Pruning Shears,Pruning Shears,pruning shears/clippers/garden shears
-Plants & Gardening,39,4,6,Gardening Gloves,Gardening Gloves,gardening gloves
-Plants & Gardening,40,4,7,Plant Pot,Plant Pot,plant pot/flower pot/potted plant container
-Professions,1,0,0,Teacher,Teacher,teacher
-Professions,2,0,1,Doctor,Doctor,doctor/physician
-Professions,3,0,2,Nurse,Nurse,nurse
-Professions,4,0,3,Dentist,Dentist,dentist/dental checkup
-Professions,5,0,4,Veterinarian,Veterinarian,veterinarian/vet/animal doctor
-Professions,6,0,5,Chef,Chef,chef
-Professions,7,0,6,Baker,Baker,baker
-Professions,8,0,7,Barista,Barista,barista/starbucks
-Professions,9,1,0,Firefighter,Firefighter,firefighter/fireman
-Professions,10,1,1,Police Officer,Police Officer,police officer/cop/police/law enforcement
-Professions,11,1,2,Paramedic,Paramedic,paramedic/emt
-Professions,12,1,3,Pilot,Pilot,pilot/flying a plane
-Professions,13,1,4,Flight Attendant,Flight Attendant,flight attendant
-Professions,14,1,5,Farmer,Farmer,farmer/farm work/family farm
-Professions,15,1,6,Artist,Artist,artist/painter
-Professions,16,1,7,Writer,Writer,writer/author/novelist
-Professions,17,2,0,Photographer,Photographer,photographer/photo shoot
-Professions,18,2,1,Hair Stylist,Hair Stylist,hair stylist/hairdresser/salon stylist
-Professions,19,2,2,Barber,Barber,barber/haircut
-Professions,20,2,3,Makeup Artist,Makeup Artist,makeup artist/mua/wedding makeup
-Professions,21,2,4,Personal Trainer,Personal Trainer,personal trainer/fitness coach
-Professions,22,2,5,Sports Coach,Sports Coach,sports coach/little league coach
-Professions,23,2,6,Athlete,Athlete,athlete
-Professions,24,2,7,Actor,Actor,actor/actress
-Professions,25,3,0,Mechanic,Mechanic,mechanic/car repair
-Professions,26,3,1,Electrician,Electrician,electrician/electrical work
-Professions,27,3,2,Carpenter,Carpenter,carpenter/woodworker
-Professions,28,3,3,Bartender,Bartender,bartender/mixologist
-Professions,29,3,4,Restaurant Server,Restaurant Server,restaurant server/waiter/waitress
-Professions,30,3,5,Truck Driver,Truck Driver,truck driver/trucker/long haul driver/fedex/ups
-Professions,31,3,6,Professor,Professor,professor/university teacher
-Professions,32,3,7,Scientist,Scientist,scientist/researcher
-Work Activities,1,0,0,Meeting,Meeting,meeting/zoom/teams/slack
-Work Activities,2,0,1,Presentation,Presentation,presentation/slide deck/presenting/powerpoint/google slides
-Work Activities,3,0,2,Deadline,Deadline,deadline/due date
-Work Activities,4,0,3,Project,Project,project
-Work Activities,5,0,4,Brainstorming,Brainstorming,brainstorming
-Work Activities,6,0,5,Writing,Writing,writing/drafting
-Work Activities,7,0,6,Coding,Coding,coding/programming/writing code/github
-Work Activities,8,0,7,Interview,Interview,interview
-Work Activities,9,1,0,Networking,Networking,networking/making connections
-Work Activities,10,1,1,Training,Training,training/onboarding
-Work Activities,11,1,2,Hiring,Hiring,hiring/new hire/recruiting
-Work Activities,12,1,3,Negotiating,Negotiating,negotiating/negotiation/deal making
-Work Activities,13,1,4,Work Break,Work Break,work break/quick break/coffee break
-Work Activities,14,1,5,Lunch Break,Lunch Break,lunch break/lunch
-Work Activities,15,1,6,Work From Home,Work From Home,work from home/wfh/remote work/zoom/slack
-Work Activities,16,1,7,Office Day,Office Day,office day/office
-Work Activities,17,2,0,Work Shift,Work Shift,work shift/late shift
-Work Activities,18,2,1,Overtime,Overtime,overtime/extra hours
-Work Activities,19,2,2,Clocking In,Clocking In,clocking in/starting shift
-Work Activities,20,2,3,Clocking Out,Clocking Out,clocking out/ending shift
-Work Activities,21,2,4,Customer Service,Customer Service,customer service/front desk/helping customers
-Work Activities,22,2,5,Teamwork,Teamwork,teamwork/working together
-Work Activities,23,2,6,Collaboration,Collaboration,collaboration/working with others
-Work Activities,24,2,7,Feedback,Feedback,feedback/performance review
-Work Activities,25,3,0,Goal Setting,Goal Setting,goal setting
-Work Activities,26,3,1,Problem Solving,Problem Solving,problem solving/troubleshooting/figuring it out
-Work Activities,27,3,2,Research,Research,research
-Work Activities,28,3,3,Designing,Designing,designing/design work/creating designs
-Work Activities,29,3,4,Testing,Testing,testing
-Work Activities,30,3,5,Selling,Selling,selling/sales pitch/making a sale
-Work Activities,31,3,6,Booking,Booking,booking/scheduling/making a reservation/calendly
-Work Activities,32,3,7,Call,Call,calling
-Places & Buildings,1,0,0,House,House,house
-Places & Buildings,2,0,1,Apartment,Apartment,apartment/flat
-Places & Buildings,3,0,2,Condo,Condo,condo
-Places & Buildings,4,0,3,Office,Office,office/workplace
-Places & Buildings,5,0,4,School,School,school
-Places & Buildings,6,0,5,College,College,college
-Places & Buildings,7,0,6,University,University,university/uni campus/college town
-Places & Buildings,8,0,7,Library,Library,library
-Places & Buildings,9,1,0,Hospital,Hospital,hospital/er
-Places & Buildings,10,1,1,Clinic,Clinic,clinic
-Places & Buildings,11,1,2,Pharmacy,Pharmacy,pharmacy/drugstore/prescription pickup/cvs/walgreens
-Places & Buildings,12,1,3,Bank,Bank,bank/chase/wells fargo/bank of america
-Places & Buildings,13,1,4,Post Office,Post Office,post office/postal office/mailing letters/usps
-Places & Buildings,14,1,5,Grocery Store,Grocery Store,grocery store/supermarket run/grocery shopping/whole foods/trader joes/kroger
-Places & Buildings,15,1,6,Supermarket,Supermarket,supermarket/walmart/target
-Places & Buildings,16,1,7,Mall,Mall,mall
-Places & Buildings,17,2,0,Restaurant,Restaurant,restaurant
-Places & Buildings,18,2,1,Cafe,Cafe,cafe/starbucks
-Places & Buildings,19,2,2,Bakery,Bakery,bakery
-Places & Buildings,20,2,3,Local Bar,Local Bar,local bar/neighborhood pub
-Places & Buildings,21,2,4,Fitness Center,Fitness Center,fitness center/planet fitness/la fitness/equinox
-Places & Buildings,22,2,5,Park,Park,park
-Places & Buildings,23,2,6,Playground,Playground,playground
-Places & Buildings,24,2,7,Beach,Beach,beach/ocean shore
-Places & Buildings,25,3,0,Museum,Museum,museum
-Places & Buildings,26,3,1,Zoo,Zoo,zoo
-Places & Buildings,27,3,2,Aquarium,Aquarium,aquarium/marine museum/fish tank exhibit
-Places & Buildings,28,3,3,Movie Theater,Movie Theater,movie theater/cinema/amc/regal
-Places & Buildings,29,3,4,Stadium,Stadium,stadium
-Places & Buildings,30,3,5,Arena,Arena,arena
-Places & Buildings,31,3,6,Church,Church,church
-Places & Buildings,32,3,7,Temple,Temple,temple
-Places & Buildings,33,4,0,Mosque,Mosque,mosque
-Places & Buildings,34,4,1,Hotel,Hotel,hotel/marriott/hilton
-Places & Buildings,35,4,2,Motel,Motel,motel
-Places & Buildings,36,4,3,Airport,Airport,airport/departure gate
-Places & Buildings,37,4,4,Train Station,Train Station,train station/platform
-Places & Buildings,38,4,5,Bus Stop,Bus Stop,bus stop/waiting for the bus
-Places & Buildings,39,4,6,Gas Station,Gas Station,gas station/filling up
-Places & Buildings,40,4,7,Farm,Farm,farm
-Places & Buildings,41,5,0,Ranch,Ranch,ranch
-Places & Buildings,42,5,1,Cabin,Cabin,cabin
-Places & Buildings,43,5,2,Cottage,Cottage,cottage
-Places & Buildings,44,5,3,Campground,Campground,campground/campsite
-Places & Buildings,45,5,4,Police Station,Police Station,police station/local precinct
-Places & Buildings,46,5,5,Fire Station,Fire Station,fire station/firehouse
-Places & Buildings,47,5,6,Community Center,Community Center,community center
-Places & Buildings,48,5,7,Daycare,Daycare,daycare/preschool
-Places & Buildings,49,6,0,Salon,Salon,salon
-Places & Buildings,50,6,1,Barbershop,Barbershop,barbershop
-Places & Buildings,51,6,2,Car Wash,Car Wash,car wash/washing the car
-Places & Buildings,52,6,3,Bookstore,Bookstore,bookstore/barnes and noble
-Places & Buildings,53,6,4,Convenience Store,Convenience Store,convenience store/quick stop/7-eleven
-Places & Buildings,54,6,5,Department Store,Department Store,department store/macys/target
-Places & Buildings,55,6,6,Thrift Store,Thrift Store,thrift store/goodwill
-Places & Buildings,56,6,7,Market,Market,market
-Transportation,1,0,0,Car,Car,car/automobile
-Transportation,2,0,1,Truck,Truck,truck/pickup
-Transportation,3,0,2,SUV,SUV,suv
-Transportation,4,0,3,Van,Van,van
-Transportation,5,0,4,Bus,Bus,bus
-Transportation,6,0,5,School Bus,School Bus,school bus/yellow bus/riding to school
-Transportation,7,0,6,City Bus,City Bus,city bus/bus route/public bus
-Transportation,8,0,7,Shuttle,Shuttle,shuttle
-Transportation,9,1,0,Taxi,Taxi,taxi/cab
-Transportation,10,1,1,Rideshare,Rideshare,rideshare/uber/lyft/ride app
-Transportation,11,1,2,Train,Train,train/amtrak
-Transportation,12,1,3,Subway,Subway,subway/metro/underground train
-Transportation,13,1,4,Bicycle,Bicycle,bicycle/bike
-Transportation,14,1,5,Motorcycle,Motorcycle,motorcycle/motorbike
-Transportation,15,1,6,Scooter,Scooter,scooter
-Transportation,16,1,7,Electric Scooter,Electric Scooter,electric scooter/e scooter/rental scooter/bird/lime
-Transportation,17,2,0,Skateboard,Skateboard,skateboard/skating/skate trick
-Transportation,18,2,1,Roller Skates,Roller Skates,roller skates/rollerblading
-Transportation,19,2,2,Airplane,Airplane,airplane/plane/flight/delta/southwest/american airlines
-Transportation,20,2,3,Helicopter,Helicopter,helicopter/chopper
-Transportation,21,2,4,Boat,Boat,boat
-Transportation,22,2,5,Sailboat,Sailboat,sailboat/sailing
-Transportation,23,2,6,Ferry,Ferry,ferry
-Transportation,24,2,7,Cruise Ship,Cruise Ship,cruise ship
-Transportation,25,3,0,Canoe,Canoe,canoe
-Transportation,26,3,1,Kayak,Kayak,kayak
-Transportation,27,3,2,Jet Ski,Jet Ski,jet ski
-Transportation,28,3,3,RV,RV,rv/motorhome
-Transportation,29,3,4,Camper,Camper,camper/camping trailer
-Transportation,30,3,5,Trailer,Trailer,trailer
-Transportation,31,3,6,Pickup Truck,Pickup Truck,pickup truck/truck bed/farm truck
-Transportation,32,3,7,Moving Truck,Moving Truck,moving truck/u-haul
-Transportation,33,4,0,Delivery Van,Delivery Van,delivery van/mail van/package delivery
-Transportation,34,4,1,Fire Truck,Fire Truck,fire truck/fire engine
-Transportation,35,4,2,Ambulance,Ambulance,ambulance/emergency vehicle
-Transportation,36,4,3,Police Car,Police Car,police car/cop car/patrol car
-Transportation,37,4,4,Tractor,Tractor,tractor
-Transportation,38,4,5,Golf Cart,Golf Cart,golf cart
-Transportation,39,4,6,Wheelchair,Wheelchair,wheelchair/mobility chair
-Transportation,40,4,7,Stroller,Stroller,stroller
-Transportation,41,5,0,Wagon,Wagon,wagon
-Transportation,42,5,1,Shopping Cart,Shopping Cart,shopping cart/grocery cart/riding the cart
-Transportation,43,5,2,Road,Road,road/highway drive
-Transportation,44,5,3,Highway,Highway,highway/freeway/interstate drive
-Transportation,45,5,4,Bridge,Bridge,bridge
-Transportation,46,5,5,Tunnel,Tunnel,tunnel
-Transportation,47,5,6,Seat Belt,Seat Belt,seat belt/car safety/buckling up
-Transportation,48,5,7,Steering Wheel,Steering Wheel,steering wheel/driving
-Animals & Pets,1,0,0,Crab,Crab,crab
-Animals & Pets,2,0,1,Dog,Dog,dog/puppy
-Animals & Pets,3,0,2,Cat,Cat,cat/kitty
-Animals & Pets,4,0,3,Puppy,Puppy,puppy/baby dog
-Animals & Pets,5,0,4,Kitten,Kitten,kitten/baby cat
-Animals & Pets,6,0,5,Rabbit,Rabbit,rabbit/bunny
-Animals & Pets,7,0,6,Hamster,Hamster,hamster
-Animals & Pets,8,0,7,Guinea Pig,Guinea Pig,guinea pig
-Animals & Pets,9,1,0,Ferret,Ferret,ferret
-Animals & Pets,10,1,1,Bird,Bird,bird
-Animals & Pets,11,1,2,Parrot,Parrot,parrot/talking bird
-Animals & Pets,12,1,3,Canary,Canary,canary/songbird
-Animals & Pets,13,1,4,Hen,Hen,hen
-Animals & Pets,14,1,5,Rooster,Rooster,rooster/crowing
-Animals & Pets,15,1,6,Duck,Duck,duck
-Animals & Pets,16,1,7,Goose,Goose,goose/geese
-Animals & Pets,17,2,0,Cow,Cow,cow
-Animals & Pets,18,2,1,Pig,Pig,pig
-Animals & Pets,19,2,2,Horse,Horse,horse/pony/stable
-Animals & Pets,20,2,3,Goat,Goat,goat
-Animals & Pets,21,2,4,Sheep,Sheep,sheep/lamb
-Animals & Pets,22,2,5,Donkey,Donkey,donkey/mule
-Animals & Pets,23,2,6,Llama,Llama,llama
-Animals & Pets,24,2,7,Alpaca,Alpaca,alpaca
-Animals & Pets,25,3,0,Deer,Deer,deer
-Animals & Pets,26,3,1,Squirrel,Squirrel,squirrel
-Animals & Pets,27,3,2,Raccoon,Raccoon,raccoon
-Animals & Pets,28,3,3,Fox,Fox,fox
-Animals & Pets,29,3,4,Bear,Bear,bear
-Animals & Pets,30,3,5,Lion,Lion,lion/king of jungle
-Animals & Pets,31,3,6,Tiger,Tiger,tiger/big cat
-Animals & Pets,32,3,7,Elephant,Elephant,elephant
-Animals & Pets,33,4,0,Giraffe,Giraffe,giraffe
-Animals & Pets,34,4,1,Zebra,Zebra,zebra
-Animals & Pets,35,4,2,Monkey,Monkey,monkey
-Animals & Pets,36,4,3,Gorilla,Gorilla,gorilla
-Animals & Pets,37,4,4,Panda,Panda,panda
-Animals & Pets,38,4,5,Koala,Koala,koala
-Animals & Pets,39,4,6,Kangaroo,Kangaroo,kangaroo/australia animal
-Animals & Pets,40,4,7,Dolphin,Dolphin,dolphin
-Animals & Pets,41,5,0,Whale,Whale,whale
-Animals & Pets,42,5,1,Shark,Shark,shark
-Animals & Pets,43,5,2,Otter,Otter,otter
-Animals & Pets,44,5,3,Turtle,Turtle,turtle
-Animals & Pets,45,5,4,Frog,Frog,frog
-Animals & Pets,46,5,5,Snake,Snake,snake
-Animals & Pets,47,5,6,Lizard,Lizard,lizard
-Animals & Pets,48,5,7,Gecko,Gecko,gecko
-Animals & Pets,49,6,0,Fish,Fish,fish
-Animals & Pets,50,6,1,Goldfish,Goldfish,goldfish
-Animals & Pets,51,6,2,Betta Fish,Betta Fish,betta fish/pet betta
-Animals & Pets,52,6,3,Butterfly,Butterfly,butterfly
-Animals & Pets,53,6,4,Bee,Bee,bee
-Animals & Pets,54,6,5,Ladybug,Ladybug,ladybug/lucky bug
-Animals & Pets,55,6,6,Spider,Spider,spider
-Animals & Pets,56,6,7,Octopus,Octopus,octopus
-Clothing & Accessories,1,0,0,T-shirt,T-shirt,t-shirt/tee
-Clothing & Accessories,2,0,1,Sweater,Sweater,sweater
-Clothing & Accessories,3,0,2,Hoodie,Hoodie,hoodie/hooded sweatshirt
-Clothing & Accessories,4,0,3,Jacket,Jacket,jacket/coat
-Clothing & Accessories,5,0,4,Coat,Coat,coat
-Clothing & Accessories,6,0,5,Dress,Dress,dress
-Clothing & Accessories,7,0,6,Jeans,Jeans,jeans/denim/levis
-Clothing & Accessories,8,0,7,Business Suit,Business Suit,business suit/dress suit/wedding suit
-Clothing & Accessories,9,1,0,Uniform,Uniform,uniform
-Clothing & Accessories,10,1,1,Pajamas,Pajamas,pajamas/pjs
-Clothing & Accessories,11,1,2,Sneakers,Sneakers,sneakers/nike/adidas/jordans
-Clothing & Accessories,12,1,3,Boots,Boots,boots
-Clothing & Accessories,13,1,4,Sandals,Sandals,sandals/flip flops
-Clothing & Accessories,14,1,5,Heels,Heels,heels
-Clothing & Accessories,15,1,6,Hat,Hat,hat
-Clothing & Accessories,16,1,7,Baseball Cap,Baseball Cap,baseball cap
-Clothing & Accessories,17,2,0,Beanie,Beanie,beanie
-Clothing & Accessories,18,2,1,Scarf,Scarf,scarf
-Clothing & Accessories,19,2,2,Gloves,Gloves,gloves/mittens
-Clothing & Accessories,20,2,3,Leather Belt,Leather Belt,leather belt/dress belt/waist belt
-Clothing & Accessories,21,2,4,Necktie,Necktie,necktie/dad's tie/dress tie
-Clothing & Accessories,22,2,5,Wristwatch,Wristwatch,wristwatch/dad's watch/grandpa's watch
-Clothing & Accessories,23,2,6,Necklace,Necklace,necklace/pendant
-Clothing & Accessories,24,2,7,Bracelet,Bracelet,bracelet
-Clothing & Accessories,25,3,0,Wedding Ring,Wedding Ring,wedding ring/wedding band/engagement ring
-Clothing & Accessories,26,3,1,Earrings,Earrings,earrings
-Clothing & Accessories,27,3,2,Sunglasses,Sunglasses,sunglasses/shades/ray ban/oakley
-Clothing & Accessories,28,3,3,Glasses,Glasses,glasses
-Clothing & Accessories,29,3,4,Raincoat,Raincoat,raincoat/rain jacket
-Clothing & Accessories,30,3,5,Swimsuit,Swimsuit,swimsuit/bathing suit
-Clothing & Accessories,31,3,6,Bikini,Bikini,bikini/two piece
-Clothing & Accessories,32,3,7,Overalls,Overalls,overalls/dungarees
-Clothing & Accessories,33,4,0,Cardigan,Cardigan,cardigan/button sweater
-Clothing & Accessories,34,4,1,Tank Top,Tank Top,tank top/summer tank/sleeveless top
-Clothing & Accessories,35,4,2,Flannel,Flannel,flannel/plaid shirt
-Clothing & Accessories,36,4,3,Slippers,Slippers,slippers
-Clothing & Accessories,37,4,4,Bow Tie,Bow Tie,bow tie
-Clothing & Accessories,38,4,5,Vest,Vest,vest
-Clothing & Accessories,39,4,6,Blazer,Blazer,blazer/sport coat
-Clothing & Accessories,40,4,7,Robe,Robe,robe
-Beauty & Personal Care,1,0,0,Toothbrush,Toothbrush,toothbrush/brushing teeth
-Beauty & Personal Care,2,0,1,Soap,Soap,soap
-Beauty & Personal Care,3,0,2,Shampoo,Shampoo,shampoo/hair wash
-Beauty & Personal Care,4,0,3,Hairbrush,Hairbrush,hairbrush/brush
-Beauty & Personal Care,5,0,4,Hair Dryer,Hair Dryer,hair dryer/blow dryer/drying hair
-Beauty & Personal Care,6,0,5,Curling Iron,Curling Iron,curling iron/hair curler/curling hair
-Beauty & Personal Care,7,0,6,Razor,Razor,razor/gillette
-Beauty & Personal Care,8,0,7,Shaving Cream,Shaving Cream,shaving cream/shave gel/shaving foam
-Beauty & Personal Care,9,1,0,Deodorant,Deodorant,deodorant/antiperspirant
-Beauty & Personal Care,10,1,1,Perfume,Perfume,perfume/fragrance/signature scent
-Beauty & Personal Care,11,1,2,Cologne,Cologne,cologne/aftershave
-Beauty & Personal Care,12,1,3,Lotion,Lotion,lotion
-Beauty & Personal Care,13,1,4,Sunscreen,Sunscreen,sunscreen/sunblock
-Beauty & Personal Care,14,1,5,Face Mask,Face Mask,face mask/skincare mask
-Beauty & Personal Care,15,1,6,Lip Balm,Lip Balm,lip balm/lip care/chapstick
-Beauty & Personal Care,16,1,7,Lipstick,Lipstick,lipstick/lip color
-Beauty & Personal Care,17,2,0,Mascara,Mascara,mascara/eyelash makeup
-Beauty & Personal Care,18,2,1,Foundation,Foundation,foundation/makeup base/face makeup
-Beauty & Personal Care,19,2,2,Blush,Blush,blush/cheek color
-Beauty & Personal Care,20,2,3,Makeup Brush,Makeup Brush,makeup brush/beauty brush
-Beauty & Personal Care,21,2,4,Nail Polish,Nail Polish,nail polish/nail color/manicure polish/opi
-Beauty & Personal Care,22,2,5,Tweezers,Tweezers,tweezers
-Beauty & Personal Care,23,2,6,Hand Cream,Hand Cream,hand cream/hand lotion/dry hands care
-Beauty & Personal Care,24,2,7,Bath Bomb,Bath Bomb,bath bomb/spa bath/fizzy bath
-Beauty & Personal Care,25,3,0,Towel,Towel,towel
-Beauty & Personal Care,26,3,1,Hair Spray,Hair Spray,hair spray/hold spray
-Beauty & Personal Care,27,3,2,Beard Oil,Beard Oil,beard oil/beard care
-Beauty & Personal Care,28,3,3,Mirror,Mirror,mirror
-Beauty & Personal Care,29,3,4,Nail Salon,Nail Salon,nail salon/nail appointment
-Beauty & Personal Care,30,3,5,Haircut,Haircut,haircut/salon visit
-Beauty & Personal Care,31,3,6,Manicure,Manicure,manicure/mani/nail appointment
-Beauty & Personal Care,32,3,7,Pedicure,Pedicure,pedicure/pedi/spa foot treatment
-Home Appliances,1,0,0,Refrigerator,Refrigerator,refrigerator/fridge
-Home Appliances,2,0,1,Oven,Oven,oven
-Home Appliances,3,0,2,Stove,Stove,stove/cooktop
-Home Appliances,4,0,3,Microwave,Microwave,microwave/microwaving
-Home Appliances,5,0,4,Dishwasher,Dishwasher,dishwasher/washing dishes
-Home Appliances,6,0,5,Washer,Washer,washer
-Home Appliances,7,0,6,Dryer,Dryer,dryer
-Home Appliances,8,0,7,Vacuum,Vacuum,vacuum/roomba/dyson
-Home Appliances,9,1,0,Air Conditioner,Air Conditioner,air conditioner/ac unit/summer cooling
-Home Appliances,10,1,1,Fan,Fan,fan
-Home Appliances,11,1,2,Coffee Maker,Coffee Maker,coffee maker/keurig/nespresso
-Home Appliances,12,1,3,Toaster,Toaster,toaster/toasting bread
-Home Appliances,13,1,4,Blender,Blender,blender/vitamix/ninja
-Home Appliances,14,1,5,Mixer,Mixer,mixer
-Home Appliances,15,1,6,Slow Cooker,Slow Cooker,slow cooker/crockpot/crock pot
-Home Appliances,16,1,7,Rice Cooker,Rice Cooker,rice cooker/steamed rice maker
-Home Appliances,17,2,0,Air Fryer,Air Fryer,air fryer/ninja
-Home Appliances,18,2,1,Electric Kettle,Electric Kettle,electric kettle/tea kettle/hot water kettle
-Home Appliances,19,2,2,Grill,Grill,grill
-Home Appliances,20,2,3,Ice Maker,Ice Maker,ice maker/kitchen ice
-Home Appliances,21,2,4,Iron,Iron,iron
-Home Appliances,22,2,5,Sewing Machine,Sewing Machine,sewing machine
-Home Appliances,23,2,6,Projector,Projector,projector
-Home Appliances,24,2,7,Smart TV,Smart TV,smart tv/television/roku/apple tv/firestick/chromecast
-Home Appliances,25,3,0,Desk Lamp,Desk Lamp,desk lamp/study lamp/reading lamp
-Home Appliances,26,3,1,Floor Lamp,Floor Lamp,floor lamp
-Home Appliances,27,3,2,Doorbell,Doorbell,doorbell/ring
-Home Appliances,28,3,3,Security Camera,Security Camera,security camera/doorbell camera/ring/nest
-Home Appliances,29,3,4,Thermostat,Thermostat,thermostat/heating control
-Home Appliances,30,3,5,Light Bulb,Light Bulb,light bulb/lamp bulb
-Home Appliances,31,3,6,Electric Blanket,Electric Blanket,electric blanket/warm blanket/heated blanket
-Home Appliances,32,3,7,Heating Pad,Heating Pad,heating pad/warm pad/sore muscle relief
-Kitchen & Cooking,1,0,0,Knife,Knife,knife
-Kitchen & Cooking,2,0,1,Fork,Fork,fork
-Kitchen & Cooking,3,0,2,Spoon,Spoon,spoon
-Kitchen & Cooking,4,0,3,Plate,Plate,plate
-Kitchen & Cooking,5,0,4,Bowl,Bowl,bowl
-Kitchen & Cooking,6,0,5,Cup,Cup,cup
-Kitchen & Cooking,7,0,6,Mug,Mug,mug/yeti/stanley
-Kitchen & Cooking,8,0,7,Glass,Glass,glass
-Kitchen & Cooking,9,1,0,Pan,Pan,pan
-Kitchen & Cooking,10,1,1,Pot,Pot,pot
-Kitchen & Cooking,11,1,2,Skillet,Skillet,skillet
-Kitchen & Cooking,12,1,3,Cutting Board,Cutting Board,cutting board
-Kitchen & Cooking,13,1,4,Whisk,Whisk,whisk
-Kitchen & Cooking,14,1,5,Rolling Pin,Rolling Pin,rolling pin/pie dough roller
-Kitchen & Cooking,15,1,6,Mixing Bowl,Mixing Bowl,mixing bowl/baking bowl/batter bowl
-Kitchen & Cooking,16,1,7,Oven Mitt,Oven Mitt,oven mitt/pot holder
-Kitchen & Cooking,17,2,0,Kitchen Towel,Kitchen Towel,kitchen towel/tea towel
-Kitchen & Cooking,18,2,1,Recipe Book,Recipe Book,recipe book/family recipes/handwritten recipes
-Kitchen & Cooking,19,2,2,Cookbook,Cookbook,cookbook
-Kitchen & Cooking,20,2,3,Chopsticks,Chopsticks,chopsticks
-Kitchen & Cooking,21,2,4,Serving Platter,Serving Platter,serving platter/dinner platter
-Kitchen & Cooking,22,2,5,Casserole Dish,Casserole Dish,casserole dish/family casserole
-Kitchen & Cooking,23,2,6,Dutch Oven,Dutch Oven,dutch oven/braising pot/enameled pot
-Kitchen & Cooking,24,2,7,Wok,Wok,wok/stir fry pan/asian cooking
-Kitchen & Cooking,25,3,0,Mortar and Pestle,Mortar and Pestle,mortar and pestle/homemade sauce/grinding spices
-Kitchen & Cooking,26,3,1,Cookie Cutter,Cookie Cutter,cookie cutter/baking with kids
-Kitchen & Cooking,27,3,2,Kitchen Sink,Kitchen Sink,kitchen sink/washing dishes/family kitchen
-Kitchen & Cooking,28,3,3,Thermos,Thermos,thermos/travel mug
-Kitchen & Cooking,29,3,4,Pitcher,Pitcher,pitcher
-Kitchen & Cooking,30,3,5,Butter Dish,Butter Dish,butter dish/butter tray/breakfast table
-Kitchen & Cooking,31,3,6,Sugar Bowl,Sugar Bowl,sugar bowl
-Kitchen & Cooking,32,3,7,Salt Shaker,Salt Shaker,salt shaker
-Kitchen & Cooking,33,4,0,Pepper Grinder,Pepper Grinder,pepper grinder/pepper mill
-Kitchen & Cooking,34,4,1,Spice Rack,Spice Rack,spice rack/kitchen spices/family spice cabinet
-Kitchen & Cooking,35,4,2,Baking Sheet,Baking Sheet,baking sheet/cookie sheet
-Kitchen & Cooking,36,4,3,Ladle,Ladle,ladle/serving soup
-Kitchen & Cooking,37,4,4,Tongs,Tongs,tongs
-Kitchen & Cooking,38,4,5,Grater,Grater,grater
-Kitchen & Cooking,39,4,6,Timer,Timer,timer
-Kitchen & Cooking,40,4,7,Tray,Tray,tray
-Emotions & Mental States,1,0,0,Happy,Happy,happy/joy/glad
-Emotions & Mental States,2,0,1,Sad,Sad,sad/down/blue
-Emotions & Mental States,3,0,2,Angry,Angry,angry/mad/anger/upset
-Emotions & Mental States,4,0,3,Anxious,Anxious,anxious/uneasy/anxiety
-Emotions & Mental States,5,0,4,Calm,Calm,calm/serene/at ease
-Emotions & Mental States,6,0,5,Excited,Excited,excited/thrilled/excitement
-Emotions & Mental States,7,0,6,Tired,Tired,tired/worn out/exhausted
-Emotions & Mental States,8,0,7,Bored,Bored,bored/nothing to do
-Emotions & Mental States,9,1,0,Stressed,Stressed,stressed/stress/overloaded
-Emotions & Mental States,10,1,1,Relaxed,Relaxed,relaxed/chill/at ease
-Emotions & Mental States,11,1,2,Worried,Worried,worried/worry/concerned
-Emotions & Mental States,12,1,3,Scared,Scared,scared/fear/afraid/frightened
-Emotions & Mental States,13,1,4,Proud,Proud,proud/pride
-Emotions & Mental States,14,1,5,Grateful,Grateful,grateful/thankful/gratitude
-Emotions & Mental States,15,1,6,Hopeful,Hopeful,hopeful/hope
-Emotions & Mental States,16,1,7,Confident,Confident,confident/confidence/self assured
-Emotions & Mental States,17,2,0,Lonely,Lonely,lonely/loneliness
-Emotions & Mental States,18,2,1,Confused,Confused,confused/puzzled/confusion
-Emotions & Mental States,19,2,2,Overwhelmed,Overwhelmed,overwhelmed/swamped/too much
-Emotions & Mental States,20,2,3,Frustrated,Frustrated,frustrated/annoyed/frustration
-Emotions & Mental States,21,2,4,Annoyed,Annoyed,annoyed/bothered/irritated
-Emotions & Mental States,22,2,5,Embarrassed,Embarrassed,embarrassed/embarrassment
-Emotions & Mental States,23,2,6,Guilty,Guilty,guilty/guilt
-Emotions & Mental States,24,2,7,Jealous,Jealous,jealous/envious
-Emotions & Mental States,25,3,0,Curious,Curious,curious/curiosity/wondering
-Emotions & Mental States,26,3,1,Surprised,Surprised,surprised/surprise/shocked reaction
-Emotions & Mental States,27,3,2,Shocked,Shocked,shocked/shock/stunned
-Emotions & Mental States,28,3,3,Disappointed,Disappointed,disappointed/letdown/disappointment
-Emotions & Mental States,29,3,4,Contentment,Contentment,contentment
-Emotions & Mental States,30,3,5,Peaceful,Peaceful,peaceful/peace/tranquil
-Emotions & Mental States,31,3,6,Motivated,Motivated,motivated/driven/motivation
-Emotions & Mental States,32,3,7,Inspired,Inspired,inspired/inspiration/creative spark
-Emotions & Mental States,33,4,0,Creative,Creative,creative/creativity/inspired mind
-Emotions & Mental States,34,4,1,Energetic,Energetic,energetic/energy/lively
-Emotions & Mental States,35,4,2,Sleepy,Sleepy,sleepy/drowsy/tired eyes
-Emotions & Mental States,36,4,3,Shy,Shy,shy/timid
-Emotions & Mental States,37,4,4,Nervous,Nervous,nervous/jittery
-Emotions & Mental States,38,4,5,Brave,Brave,brave/courageous
-Emotions & Mental States,39,4,6,Determined,Determined,determined/determination/focused drive
-Emotions & Mental States,40,4,7,Optimistic,Optimistic,optimistic/optimism/hopeful outlook
-Emotions & Mental States,41,5,0,Homesick,Homesick,homesick/missing home
-Emotions & Mental States,42,5,1,Nostalgic,Nostalgic,nostalgic/nostalgia/reminiscing
-Emotions & Mental States,43,5,2,Loved,Loved,loved/cherished
-Emotions & Mental States,44,5,3,Caring,Caring,caring/kindness/compassion
-Emotions & Mental States,45,5,4,Trusting,Trusting,trusting/trust/faith in someone
-Emotions & Mental States,46,5,5,Relieved,Relieved,relieved/relief/weight lifted
-Emotions & Mental States,47,5,6,Satisfied,Satisfied,satisfied/fulfilled/satisfaction
-Emotions & Mental States,48,5,7,Burned Out,Burned Out,burned out/burnout/exhausted from work
-Health & Medical,1,0,0,Prescription,Prescription,prescription/cvs/walgreens
-Health & Medical,2,0,1,Doctor's Visit,Doctor's Visit,doctor's visit/doctor/checkup
-Health & Medical,3,0,2,Surgery,Surgery,surgery/operation
-Health & Medical,4,0,3,Vaccine,Vaccine,vaccine/vaccination/cvs
-Health & Medical,5,0,4,X-ray,X-ray,x-ray/radiology scan
-Health & Medical,6,0,5,Crutches,Crutches,crutches/injury recovery
-Health & Medical,7,0,6,Broken Bone,Broken Bone,broken bone/fracture/broken arm
-Health & Medical,8,0,7,Hospital Stay,Hospital Stay,hospital stay/hospital
-Health & Medical,9,1,0,Emergency Room,Emergency Room,emergency room/er visit/urgent hospital visit
-Health & Medical,10,1,1,Recovery,Recovery,recovery/recovering/getting better
-Health & Medical,11,1,2,First Aid,First Aid,first aid/basic treatment
-Health & Medical,12,1,3,Bandage,Bandage,bandage/band aid/wound care
-Health & Medical,13,1,4,Physical Exam,Physical Exam,physical exam/annual checkup
-Health & Medical,14,1,5,Dentist Visit,Dentist Visit,dentist visit/dentist/teeth cleaning
-Health & Medical,15,1,6,Eye Exam,Eye Exam,eye exam/vision test/eye doctor visit
-Health & Medical,16,1,7,Cold,Cold,cold/sniffles
-Health & Medical,17,2,0,Flu,Flu,flu
-Health & Medical,18,2,1,Headache,Headache,headache/head pain
-Health & Medical,19,2,2,Migraine,Migraine,migraine/severe headache
-Health & Medical,20,2,3,Sick Day,Sick Day,sick day/sick
-Health & Medical,21,2,4,Fever,Fever,fever/high temperature
-Health & Medical,22,2,5,Injury,Injury,injury/getting hurt
-Health & Medical,23,2,6,Cut,Cut,cut/scrape/small wound
-Health & Medical,24,2,7,Bruise,Bruise,bruise/bump/black and blue mark
-Health & Medical,25,3,0,Burn,Burn,burn
-Health & Medical,26,3,1,Sprain,Sprain,sprain/twisted ankle
-Health & Medical,27,3,2,Rash,Rash,rash/itchy skin
-Health & Medical,28,3,3,Allergy,Allergy,allergy/allergic reaction/seasonal allergies
-Health & Medical,29,3,4,Wellness,Wellness,wellness
-Health & Medical,30,3,5,Sleep,Sleep,sleep/resting
-Health & Medical,31,3,6,Therapy,Therapy,therapy/betterhelp/talkspace
-Health & Medical,32,3,7,Counseling,Counseling,counseling/talking it out
-Daily Routines & Chores,1,0,0,Wake Up,Wake Up,wake up/waking up
-Daily Routines & Chores,2,0,1,Get Dressed,Get Dressed,get dressed/getting ready/putting on clothes
-Daily Routines & Chores,3,0,2,Brush Teeth,Brush Teeth,brush teeth/brushing teeth
-Daily Routines & Chores,4,0,3,Take a Shower,Take a Shower,take a shower/showering
-Daily Routines & Chores,5,0,4,Make the Bed,Make the Bed,make the bed/making bed
-Daily Routines & Chores,6,0,5,Eat Breakfast,Eat Breakfast,eat breakfast
-Daily Routines & Chores,7,0,6,Pack Lunch,Pack Lunch,pack lunch/making lunch/packing lunch
-Daily Routines & Chores,8,0,7,Leave Home,Leave Home,leave home/heading out
-Daily Routines & Chores,9,1,0,Eat Lunch,Eat Lunch,eat lunch
-Daily Routines & Chores,10,1,1,Come Home,Come Home,come home
-Daily Routines & Chores,11,1,2,Make Dinner,Make Dinner,make dinner/cooking dinner
-Daily Routines & Chores,12,1,3,Wash Dishes,Wash Dishes,wash dishes/doing dishes
-Daily Routines & Chores,13,1,4,Do Laundry,Do Laundry,do laundry/washing clothes
-Daily Routines & Chores,14,1,5,Fold Clothes,Fold Clothes,fold clothes/folding laundry
-Daily Routines & Chores,15,1,6,Water Plants,Water Plants,water plants/plant care/watering plants
-Daily Routines & Chores,16,1,7,Feed Pet,Feed Pet,feed pet/feeding the dog/feeding the cat
-Daily Routines & Chores,17,2,0,Walk Dog,Walk Dog,walk dog/dog walk/walking the dog
-Daily Routines & Chores,18,2,1,Grocery Shopping,Grocery Shopping,grocery shopping/grocery run
-Daily Routines & Chores,19,2,2,Meal Prep,Meal Prep,meal prep
-Daily Routines & Chores,20,2,3,Cook Dinner,Cook Dinner,cook dinner/family dinner
-Daily Routines & Chores,21,2,4,Check Mail,Check Mail,check mail/mailbox/getting the mail
-Daily Routines & Chores,22,2,5,Make a Call,Make a Call,make a call/phone call/calling someone/facetime
-Daily Routines & Chores,23,2,6,Send a Text,Send a Text,send a text/texting/text message/imessage/whatsapp
-Daily Routines & Chores,24,2,7,Plan the Day,Plan the Day,plan the day/daily planning
-Daily Routines & Chores,25,3,0,Set an Alarm,Set an Alarm,set an alarm
-Daily Routines & Chores,26,3,1,Take Medicine,Take Medicine,take medicine/taking pills/daily medicine
-Daily Routines & Chores,27,3,2,Exercise Routine,Exercise Routine,exercise routine/daily workout
-Daily Routines & Chores,28,3,3,Morning Stretch,Morning Stretch,morning stretch/wake up stretch
-Daily Routines & Chores,29,3,4,Read Before Bed,Read Before Bed,read before bed/bedtime reading/nightly reading
-Daily Routines & Chores,30,3,5,Watch TV,Watch TV,watch tv/netflix
-Daily Routines & Chores,31,3,6,Charge Phone,Charge Phone,charge phone/charging phone/plugging in phone
-Daily Routines & Chores,32,3,7,Lock Door,Lock Door,lock door/locking up
-Daily Routines & Chores,33,4,0,Turn Off Lights,Turn Off Lights,turn off lights/lights out
-Daily Routines & Chores,34,4,1,Go to Bed,Go to Bed,go to bed/bedtime/heading to sleep
-Daily Routines & Chores,35,4,2,Sleep In,Sleep In,sleep in
-Daily Routines & Chores,36,4,3,Run Errands,Run Errands,run errands/errands
-Daily Routines & Chores,37,4,4,Pick Up Kids,Pick Up Kids,pick up kids/school pickup/getting the kids
-Daily Routines & Chores,38,4,5,Drop Off Kids,Drop Off Kids,drop off kids/dropping kids/school drop off
-Daily Routines & Chores,39,4,6,Wash Car,Wash Car,wash car/car cleaning/washing the car
-Daily Routines & Chores,40,4,7,Mow the Lawn,Mow the Lawn,mow the lawn/mowing/cutting grass
-Home & Furniture,1,0,0,Living Room,Living Room,living room
-Home & Furniture,2,0,1,Bedroom,Bedroom,bedroom
-Home & Furniture,3,0,2,Kitchen,Kitchen,kitchen
-Home & Furniture,4,0,3,Bathroom,Bathroom,bathroom/washroom
-Home & Furniture,5,0,4,Dining Room,Dining Room,dining room
-Home & Furniture,6,0,5,Home Office,Home Office,home office
-Home & Furniture,7,0,6,Entryway,Entryway,entryway/foyer/front entrance
-Home & Furniture,8,0,7,Porch,Porch,porch
-Home & Furniture,9,1,0,Patio,Patio,patio
-Home & Furniture,10,1,1,Balcony,Balcony,balcony
-Home & Furniture,11,1,2,Backyard,Backyard,backyard
-Home & Furniture,12,1,3,Front Yard,Front Yard,front yard/front lawn
-Home & Furniture,13,1,4,Closet,Closet,closet
-Home & Furniture,14,1,5,Pantry,Pantry,pantry
-Home & Furniture,15,1,6,Laundry Room,Laundry Room,laundry room
-Home & Furniture,16,1,7,Guest Room,Guest Room,guest room
-Home & Furniture,17,2,0,Nursery,Nursery,nursery
-Home & Furniture,18,2,1,Couch,Couch,couch/sofa
-Home & Furniture,19,2,2,Sofa,Sofa,sofa/couch
-Home & Furniture,20,2,3,Chair,Chair,chair
-Home & Furniture,21,2,4,Armchair,Armchair,armchair/reading chair
-Home & Furniture,22,2,5,Recliner,Recliner,recliner
-Home & Furniture,23,2,6,Table,Table,table
-Home & Furniture,24,2,7,Coffee Table,Coffee Table,coffee table
-Home & Furniture,25,3,0,Dining Table,Dining Table,dining table/family dinner table
-Home & Furniture,26,3,1,Desk,Desk,desk
-Home & Furniture,27,3,2,Bed,Bed,bed
-Home & Furniture,28,3,3,Mattress,Mattress,mattress
-Home & Furniture,29,3,4,Pillow,Pillow,pillow
-Home & Furniture,30,3,5,Dresser,Dresser,dresser
-Home & Furniture,31,3,6,Nightstand,Nightstand,nightstand/bedside table
-Home & Furniture,32,3,7,Bookshelf,Bookshelf,bookshelf/ikea
-Home & Furniture,33,4,0,Cabinet,Cabinet,cabinet
-Home & Furniture,34,4,1,Wardrobe,Wardrobe,wardrobe/closet armoire/clothes cabinet
-Home & Furniture,35,4,2,Bench,Bench,bench
-Home & Furniture,36,4,3,Rug,Rug,rug
-Home & Furniture,37,4,4,Carpet,Carpet,carpet
-Home & Furniture,38,4,5,Curtains,Curtains,curtains
-Home & Furniture,39,4,6,Wall Art,Wall Art,wall art/framed art
-Home & Furniture,40,4,7,Picture Frame,Picture Frame,picture frame/photo frame/family photos
-Home & Furniture,41,5,0,Clock,Clock,clock
-Home & Furniture,42,5,1,Vase,Vase,vase
-Home & Furniture,43,5,2,Door,Door,door
-Home & Furniture,44,5,3,Window,Window,window
-Home & Furniture,45,5,4,Stairs,Stairs,stairs/staircase
-Home & Furniture,46,5,5,Fireplace,Fireplace,fireplace
-Home & Furniture,47,5,6,Shelf,Shelf,shelf
-Home & Furniture,48,5,7,Headboard,Headboard,headboard
-"Shopping, Money & Services",1,0,0,Shopping,Shopping,shopping/amazon
-"Shopping, Money & Services",2,0,1,Store,Store,store/target/walmart
-"Shopping, Money & Services",3,0,2,Sale,Sale,sale
-"Shopping, Money & Services",4,0,3,Checkout,Checkout,checkout/checking out/paying at register
-"Shopping, Money & Services",5,0,4,Delivery,Delivery,delivery/fedex/ups/amazon
-"Shopping, Money & Services",6,0,5,Pickup,Pickup,pickup
-"Shopping, Money & Services",7,0,6,Reservation,Reservation,reservation/booking a table/opentable/resy
-"Shopping, Money & Services",8,0,7,Payment,Payment,payment/paying
-"Shopping, Money & Services",9,1,0,Cash Payment,Cash Payment,cash payment/cash money/paying cash
-"Shopping, Money & Services",10,1,1,Gratuity,Gratuity,gratuity/leaving a tip/tip the waiter
-"Shopping, Money & Services",11,1,2,Subscription,Subscription,subscription
-"Shopping, Money & Services",12,1,3,Membership,Membership,membership
-"Shopping, Money & Services",13,1,4,ATM,ATM,atm/withdrawing cash
-"Shopping, Money & Services",14,1,5,Money,Money,money/cash/dollars/venmo/cashapp/paypal/zelle
-"Shopping, Money & Services",15,1,6,Loose Change,Loose Change,loose change/coins back/spare change/pocket change
-"Shopping, Money & Services",16,1,7,Paycheck,Paycheck,paycheck
-"Shopping, Money & Services",17,2,0,Mortgage,Mortgage,mortgage
-"Shopping, Money & Services",18,2,1,Rent,Rent,rent
-"Shopping, Money & Services",19,2,2,Monthly Bill,Monthly Bill,monthly bill/utility bill/paying bills
-"Shopping, Money & Services",20,2,3,Loan,Loan,loan/borrowing money
-"Shopping, Money & Services",21,2,4,Moving Service,Moving Service,moving service/movers
-"Shopping, Money & Services",22,2,5,Laundry Service,Laundry Service,laundry service/dry cleaning/wash and fold
-"Shopping, Money & Services",23,2,6,Car Service,Car Service,car service/auto repair/car maintenance
-"Shopping, Money & Services",24,2,7,Childcare,Childcare,childcare/daycare service/babysitting service
-"Shopping, Money & Services",25,3,0,Savings,Savings,savings/saving money
-"Shopping, Money & Services",26,3,1,Deposit,Deposit,deposit
-"Shopping, Money & Services",27,3,2,Withdrawal,Withdrawal,withdrawal/withdrawing money
-"Shopping, Money & Services",28,3,3,Insurance,Insurance,insurance/coverage/geico/progressive/state farm
-"Shopping, Money & Services",29,3,4,Warranty,Warranty,warranty/protection plan
-"Shopping, Money & Services",30,3,5,Repair Service,Repair Service,repair service/fixing something/repair appointment
-"Shopping, Money & Services",31,3,6,Cleaning Service,Cleaning Service,cleaning service/cleaning appointment
-"Shopping, Money & Services",32,3,7,Banking,Banking,banking/bank visit/bank errand/chase/bank of america
-Celebrations & Life Events,1,0,0,Birthday,Birthday,birthday/bday
-Celebrations & Life Events,2,0,1,Birthday Party,Birthday Party,birthday party/bday party/birthday celebration
-Celebrations & Life Events,3,0,2,Anniversary,Anniversary,anniversary
-Celebrations & Life Events,4,0,3,Wedding,Wedding,wedding/getting married/the knot
-Celebrations & Life Events,5,0,4,Engagement,Engagement,engagement/getting engaged
-Celebrations & Life Events,6,0,5,Proposal,Proposal,proposal/popping the question
-Celebrations & Life Events,7,0,6,Baby Shower,Baby Shower,baby shower/baby celebration
-Celebrations & Life Events,8,0,7,Bridal Shower,Bridal Shower,bridal shower/pre wedding party
-Celebrations & Life Events,9,1,0,Graduation Party,Graduation Party,graduation party/grad party/celebrating graduation
-Celebrations & Life Events,10,1,1,Retirement,Retirement,retirement/retiring
-Celebrations & Life Events,11,1,2,Promotion,Promotion,promotion
-Celebrations & Life Events,12,1,3,New Job,New Job,new job
-Celebrations & Life Events,13,1,4,First Day,First Day,first day
-Celebrations & Life Events,14,1,5,Last Day,Last Day,last day
-Celebrations & Life Events,15,1,6,Moving Day,Moving Day,moving day
-Celebrations & Life Events,16,1,7,New Home,New Home,new home
-Celebrations & Life Events,17,2,0,Housewarming,Housewarming,housewarming
-Celebrations & Life Events,18,2,1,New Baby,New Baby,new baby/welcoming baby/newborn arrival
-Celebrations & Life Events,19,2,2,Pregnancy,Pregnancy,pregnancy/expecting
-Celebrations & Life Events,20,2,3,Adoption,Adoption,adoption/welcoming an adopted child
-Celebrations & Life Events,21,2,4,Baptism,Baptism,baptism/christening
-Celebrations & Life Events,22,2,5,Holiday Party,Holiday Party,holiday party/christmas party
-Celebrations & Life Events,23,2,6,Christmas,Christmas,christmas/xmas
-Celebrations & Life Events,24,2,7,Thanksgiving,Thanksgiving,thanksgiving
-Celebrations & Life Events,25,3,0,Halloween,Halloween,halloween
-Celebrations & Life Events,26,3,1,Easter,Easter,easter
-Celebrations & Life Events,27,3,2,New Year's,New Year's,New Year's/nye countdown
-Celebrations & Life Events,28,3,3,Valentine's Day,Valentine's Day,Valentine's Day/valentine
-Celebrations & Life Events,29,3,4,Mother's Day,Mother's Day,Mother's Day
-Celebrations & Life Events,30,3,5,Father's Day,Father's Day,Father's Day
-Celebrations & Life Events,31,3,6,Fourth of July,Fourth of July,fourth of july/4th of july
-Celebrations & Life Events,32,3,7,Memorial Day,Memorial Day,memorial day
-Celebrations & Life Events,33,4,0,Labor Day,Labor Day,labor day
-Celebrations & Life Events,34,4,1,Veterans Day,Veterans Day,veterans day
-Celebrations & Life Events,35,4,2,Family Reunion,Family Reunion,family reunion/big family get together
-Celebrations & Life Events,36,4,3,Reunion,Reunion,reunion
-Celebrations & Life Events,37,4,4,Celebration,Celebration,celebration/celebrating
-Celebrations & Life Events,38,4,5,Surprise Party,Surprise Party,surprise party/surprise celebration
-Celebrations & Life Events,39,4,6,Dinner Party,Dinner Party,dinner party/dinner
-Celebrations & Life Events,40,4,7,Cocktail Party,Cocktail Party,cocktail party/cocktail hour/happy hour party
-Celebrations & Life Events,41,5,0,Costume Party,Costume Party,costume party/dress up party/halloween party
-Celebrations & Life Events,42,5,1,Pool Party,Pool Party,pool party
-Celebrations & Life Events,43,5,2,Sleepover,Sleepover,sleepover/slumber party
-Celebrations & Life Events,44,5,3,Graduation Ceremony,Graduation Ceremony,graduation ceremony/walking the stage/commencement ceremony
-Celebrations & Life Events,45,5,4,Award,Award,award
-Celebrations & Life Events,46,5,5,Trophy,Trophy,trophy
-Celebrations & Life Events,47,5,6,Ceremony,Ceremony,ceremony
-Celebrations & Life Events,48,5,7,Champagne Toast,Champagne Toast,champagne toast/raising a glass/celebratory toast
-Celebrations & Life Events,49,6,0,Gift,Gift,gift
-Celebrations & Life Events,50,6,1,Greeting Card,Greeting Card,greeting card/birthday card
-Celebrations & Life Events,51,6,2,Bouquet,Bouquet,bouquet
-Celebrations & Life Events,52,6,3,Balloons,Balloons,balloons/balloon arch
-Celebrations & Life Events,53,6,4,Confetti,Confetti,confetti
-Celebrations & Life Events,54,6,5,Candles,Candles,candles
-Celebrations & Life Events,55,6,6,Cake Cutting,Cake Cutting,cake cutting/cutting the cake
-Celebrations & Life Events,56,6,7,Photo Booth,Photo Booth,photo booth
-Celebrations & Life Events,57,7,0,Dance Floor,Dance Floor,dance floor/party dancing
-Celebrations & Life Events,58,7,1,Guest Book,Guest Book,guest book/signing book
-Celebrations & Life Events,59,7,2,Invitation,Invitation,invitation/party invite/evite
-Celebrations & Life Events,60,7,3,RSVP,RSVP,rsvp/responding to invite
-Celebrations & Life Events,61,7,4,Party Hat,Party Hat,party hat
-Celebrations & Life Events,62,7,5,Party Favor,Party Favor,party favor/party gift
-Celebrations & Life Events,63,7,6,Decorations,Decorations,decorations
-Celebrations & Life Events,64,7,7,Fireworks,Fireworks,fireworks
-"Nature, Weather & Seasons",1,0,0,Sun,Sun,sun
-"Nature, Weather & Seasons",2,0,1,Moon,Moon,moon
-"Nature, Weather & Seasons",3,0,2,Star,Star,star
-"Nature, Weather & Seasons",4,0,3,Cloud,Cloud,cloud
-"Nature, Weather & Seasons",5,0,4,Rain,Rain,rain
-"Nature, Weather & Seasons",6,0,5,Snow,Snow,snow
-"Nature, Weather & Seasons",7,0,6,Wind,Wind,wind/breeze
-"Nature, Weather & Seasons",8,0,7,Storm,Storm,storm
-"Nature, Weather & Seasons",9,1,0,Thunder,Thunder,thunder
-"Nature, Weather & Seasons",10,1,1,Lightning,Lightning,lightning
-"Nature, Weather & Seasons",11,1,2,Rainbow,Rainbow,rainbow
-"Nature, Weather & Seasons",12,1,3,Fog,Fog,fog
-"Nature, Weather & Seasons",13,1,4,Mist,Mist,mist
-"Nature, Weather & Seasons",14,1,5,Hail,Hail,hail
-"Nature, Weather & Seasons",15,1,6,Tornado,Tornado,tornado/twister
-"Nature, Weather & Seasons",16,1,7,Hurricane,Hurricane,hurricane/tropical storm
-"Nature, Weather & Seasons",17,2,0,Flood,Flood,flood
-"Nature, Weather & Seasons",18,2,1,Heatwave,Heatwave,heatwave/hot spell
-"Nature, Weather & Seasons",19,2,2,Cold Front,Cold Front,cold front/cold snap
-"Nature, Weather & Seasons",20,2,3,Sunshine,Sunshine,sunshine/sunny weather
-"Nature, Weather & Seasons",21,2,4,Sunset,Sunset,sunset
-"Nature, Weather & Seasons",22,2,5,Sunrise,Sunrise,sunrise
-"Nature, Weather & Seasons",23,2,6,Clear Sky,Clear Sky,clear sky
-"Nature, Weather & Seasons",24,2,7,Blue Sky,Blue Sky,blue sky/sunny sky
-"Nature, Weather & Seasons",25,3,0,Gray Sky,Gray Sky,gray sky/overcast sky
-"Nature, Weather & Seasons",26,3,1,Spring,Spring,spring
-"Nature, Weather & Seasons",27,3,2,Summer,Summer,summer
-"Nature, Weather & Seasons",28,3,3,Autumn,Autumn,autumn/sweater weather/changing leaves/fall season
-"Nature, Weather & Seasons",29,3,4,Winter,Winter,winter
-"Nature, Weather & Seasons",30,3,5,Morning,Morning,morning
-"Nature, Weather & Seasons",31,3,6,Afternoon,Afternoon,afternoon/midday
-"Nature, Weather & Seasons",32,3,7,Evening,Evening,evening/dusk hours
-"Nature, Weather & Seasons",33,4,0,Night,Night,night
-"Nature, Weather & Seasons",34,4,1,Dawn,Dawn,dawn/daybreak
-"Nature, Weather & Seasons",35,4,2,Dusk,Dusk,dusk/twilight
-"Nature, Weather & Seasons",36,4,3,Mountain,Mountain,mountain
-"Nature, Weather & Seasons",37,4,4,Hill,Hill,hill
-"Nature, Weather & Seasons",38,4,5,Valley,Valley,valley
-"Nature, Weather & Seasons",39,4,6,Forest,Forest,forest/woods
-"Nature, Weather & Seasons",40,4,7,Woods,Woods,woods/forest walk/wooded trail
-"Nature, Weather & Seasons",41,5,0,Desert,Desert,desert
-"Nature, Weather & Seasons",42,5,1,Ocean,Ocean,ocean/sea
-"Nature, Weather & Seasons",43,5,2,Sea,Sea,sea
-"Nature, Weather & Seasons",44,5,3,River,River,river
-"Nature, Weather & Seasons",45,5,4,Lake,Lake,lake
-"Nature, Weather & Seasons",46,5,5,Pond,Pond,pond
-"Nature, Weather & Seasons",47,5,6,Waterfall,Waterfall,waterfall/falls
-"Nature, Weather & Seasons",48,5,7,Coast,Coast,coast
-"Nature, Weather & Seasons",49,6,0,Island,Island,island
-"Nature, Weather & Seasons",50,6,1,Cave,Cave,cave
-"Nature, Weather & Seasons",51,6,2,Canyon,Canyon,canyon
-"Nature, Weather & Seasons",52,6,3,Cliff,Cliff,cliff
-"Nature, Weather & Seasons",53,6,4,Field,Field,field
-"Nature, Weather & Seasons",54,6,5,Meadow,Meadow,meadow
-"Nature, Weather & Seasons",55,6,6,Trail,Trail,trail
-"Nature, Weather & Seasons",56,6,7,Rock,Rock,rock
-"Nature, Weather & Seasons",57,7,0,Stone,Stone,stone
-"Nature, Weather & Seasons",58,7,1,Sand,Sand,sand
-"Nature, Weather & Seasons",59,7,2,Wildflowers,Wildflowers,wildflowers/meadow flowers
-"Nature, Weather & Seasons",60,7,3,Pine Tree,Pine Tree,pine tree/evergreen/pine forest
-"Nature, Weather & Seasons",61,7,4,Palm Tree,Palm Tree,palm tree/beach palm/tropical palm
-"Nature, Weather & Seasons",62,7,5,Snowflake,Snowflake,snowflake/falling snow
-"Nature, Weather & Seasons",63,7,6,Raindrop,Raindrop,raindrop
-"Nature, Weather & Seasons",64,7,7,Frost,Frost,frost
+Routine,1,0,0,Work,Work,work/office/job/working
+Routine,2,0,1,Wake Up Early,Wake Up Early,wake up early/early rising
+Routine,3,0,2,Set an Alarm,Set an Alarm,set an alarm/setting alarm
+Routine,4,0,3,Get Dressed,Get Dressed,get dressed/getting dressed
+Routine,5,0,4,Charge Phone,Charge Phone,charge phone/charging phone
+Routine,6,0,5,Driving commute,Driving commute,driving commute/driving to work
+Routine,7,0,6,Public transit,Public transit,public transit/bus/subway
+Routine,8,0,7,Rideshare,Rideshare,rideshare/uber/lyft
+Routine,9,1,0,Stuck in traffic,Stuck in traffic,stuck in traffic/traffic jam
+Routine,10,1,1,Study,Study,study/studying/learning
+Routine,11,1,2,Pick Up Kids,Pick Up Kids,pick up kids/school pickup
+Routine,12,1,3,Drop Off Kids,Drop Off Kids,drop off kids/school drop-off
+Routine,13,1,4,Bedtime routine,Bedtime routine,bedtime routine
+Routine,14,1,5,Lock Door,Lock Door,lock door/locking the door
+Routine,15,1,6,Turn Off Lights,Turn Off Lights,turn off lights
+Chores,1,0,0,Cleaning,Cleaning,cleaning/house cleaning
+Chores,2,0,1,Wash Dishes,Wash Dishes,wash dishes/dishwashing
+Chores,3,0,2,Cooking,Cooking,cooking/making food
+Chores,4,0,3,Laundry,Laundry,laundry/washing clothes
+Chores,5,0,4,Folding clothes,Folding clothes,folding clothes/fold laundry/fold clothes
+Chores,6,0,5,Making bed,Making bed,making bed/make the bed
+Chores,7,0,6,Trash,Trash,trash/take out the trash/garbage
+Chores,8,0,7,Grocery Shopping,Grocery Shopping,grocery shopping/buying groceries
+Chores,9,1,0,Water Plants,Water Plants,water plants/watering plants
+Chores,10,1,1,Plant care,Plant care,plant care/caring for plants
+Chores,11,1,2,Wash Car,Wash Car,wash car/car wash
+Chores,12,1,3,Gas up the Car,Gas up the Car,gas up the car/refuel car
+Chores,13,1,4,Mow the Lawn,Mow the Lawn,mow the lawn/lawn mowing
+Chores,14,1,5,Charge the Car,Charge the Car,charge the car/ev charging
+Chores,15,1,6,Repairs,Repairs,repairs/fixing things
+Exercise,1,0,0,Running,Running,running
+Exercise,2,0,1,Gyming,Gyming,gyming/gym/weightlifting
+Exercise,3,0,2,Yoga,Yoga,yoga
+Exercise,4,0,3,Swimming,Swimming,swimming
+Exercise,5,0,4,Cycling,Cycling,cycling/biking
+Exercise,6,0,5,Stretching,Stretching,stretching
+Exercise,7,0,6,Fitness class,Fitness class,fitness class
+Exercise,8,0,7,Home workout,Home workout,home workout/workout at home
+Exercise,9,1,0,Power walking,Power walking,power walking/brisk walking
+Exercise,10,1,1,Basketball,Basketball,basketball/hoops
+Exercise,11,1,2,Soccer,Soccer,soccer
+Exercise,12,1,3,Football,Football,football/american football
+Exercise,13,1,4,Tennis,Tennis,tennis
+Exercise,14,1,5,Golf,Golf,golf
+Exercise,15,1,6,Volleyball,Volleyball,volleyball
+Exercise,16,1,7,Baseball,Baseball,baseball
+Exercise,17,2,0,Boxing,Boxing,boxing
+Exercise,18,2,1,Pilates,Pilates,pilates
+Exercise,19,2,2,Bowling,Bowling,bowling
+Exercise,20,2,3,Pickleball,Pickleball,pickleball
+Exercise,21,2,4,Badminton,Badminton,badminton
+Exercise,22,2,5,Table Tennis,Table Tennis,table tennis/ping pong
+Exercise,23,2,6,Skating,Skating,skating/ice skating
+Exercise,24,2,7,Skateboarding,Skateboarding,skateboarding
+Exercise,25,3,0,Surfing,Surfing,surfing
+Exercise,26,3,1,Skiing,Skiing,skiing
+Exercise,27,3,2,Snowboarding,Snowboarding,snowboarding
+Exercise,28,3,3,Climbing,Climbing,climbing/rock climbing
+Exercise,29,3,4,Wrestling,Wrestling,wrestling
+Exercise,30,3,5,Hockey,Hockey,hockey
+Exercise,31,3,6,Racquetball,Racquetball,racquetball
+Exercise,32,3,7,Softball,Softball,softball
+Exercise,33,4,0,Lacrosse,Lacrosse,lacrosse
+Exercise,34,4,1,Rugby,Rugby,rugby
+Exercise,35,4,2,Cheerleading,Cheerleading,cheerleading
+Exercise,36,4,3,Gymnastics,Gymnastics,gymnastics
+Exercise,37,4,4,Track and Field,Track and Field,track and field/athletics
+Exercise,38,4,5,Rowing,Rowing,rowing
+Exercise,39,4,6,Kayaking,Kayaking,kayaking
+Exercise,40,4,7,Canoeing,Canoeing,canoeing
+Exercise,41,5,0,Bodybuilding,Bodybuilding,bodybuilding
+Exercise,42,5,1,Zumba,Zumba,zumba
+Exercise,43,5,2,Aerobics,Aerobics,aerobics
+Exercise,44,5,3,Jump Rope,Jump Rope,jump rope/skipping rope
+Eating,1,0,0,Water,Water,water
+Eating,2,0,1,Coffee,Coffee,coffee/latte/espresso/cappuccino/starbucks
+Eating,3,0,2,Tea,Tea,tea
+Eating,4,0,3,Pizza,Pizza,pizza
+Eating,5,0,4,Burger,Burger,burger/hamburger
+Eating,6,0,5,Sandwich,Sandwich,sandwich
+Eating,7,0,6,Chicken,Chicken,chicken
+Eating,8,0,7,Rice,Rice,rice
+Eating,9,1,0,Eggs,Eggs,eggs
+Eating,10,1,1,Salad,Salad,salad
+Eating,11,1,2,Pasta,Pasta,pasta
+Eating,12,1,3,Soup,Soup,soup
+Eating,13,1,4,Steak,Steak,steak
+Eating,14,1,5,Bacon,Bacon,bacon
+Eating,15,1,6,Taco,Taco,taco
+Eating,16,1,7,Burrito,Burrito,burrito
+Eating,17,2,0,Sushi,Sushi,sushi
+Eating,18,2,1,Mac and Cheese,Mac and Cheese,mac and cheese/macaroni and cheese
+Eating,19,2,2,BBQ,BBQ,bbq/barbecue
+Eating,20,2,3,Hot Dog,Hot Dog,hot dog
+Eating,21,2,4,Fries,Fries,fries/french fries
+Eating,22,2,5,Pancakes,Pancakes,pancakes
+Eating,23,2,6,Waffle,Waffle,waffle
+Eating,24,2,7,Cereal,Cereal,cereal
+Eating,25,3,0,Oatmeal,Oatmeal,oatmeal
+Eating,26,3,1,Bagel,Bagel,bagel
+Eating,27,3,2,Toast,Toast,toast
+Eating,28,3,3,Muffin,Muffin,muffin
+Eating,29,3,4,Cookie,Cookie,cookie
+Eating,30,3,5,Chocolate,Chocolate,chocolate
+Eating,31,3,6,Candy,Candy,candy/sweets
+Eating,32,3,7,Popcorn,Popcorn,popcorn
+Eating,33,4,0,Chips,Chips,chips/crisps
+Eating,34,4,1,Pretzel,Pretzel,pretzel
+Eating,35,4,2,Donut,Donut,donut/doughnut
+Eating,36,4,3,Brownie,Brownie,brownie
+Eating,37,4,4,Cupcake,Cupcake,cupcake
+Eating,38,4,5,Cake,Cake,cake
+Eating,39,4,6,Pie,Pie,pie
+Eating,40,4,7,Ice Cream,Ice Cream,ice cream
+Eating,41,5,0,Yogurt,Yogurt,yogurt
+Eating,42,5,1,Granola,Granola,granola
+Eating,43,5,2,Apple,Apple,apple
+Eating,44,5,3,Banana,Banana,banana
+Eating,45,5,4,Strawberry,Strawberry,strawberry
+Eating,46,5,5,Grapes,Grapes,grapes
+Eating,47,5,6,Watermelon,Watermelon,watermelon
+Eating,48,5,7,Avocado,Avocado,avocado
+Eating,49,6,0,Carrot,Carrot,carrot
+Eating,50,6,1,Broccoli,Broccoli,broccoli
+Eating,51,6,2,Corn,Corn,corn
+Eating,52,6,3,Milk,Milk,milk
+Eating,53,6,4,Juice,Juice,juice
+Eating,54,6,5,Soda,Soda,soda/pop/soft drink
+Eating,55,6,6,Lemonade,Lemonade,lemonade
+Eating,56,6,7,Smoothie,Smoothie,smoothie
+Eating,57,7,0,Milkshake,Milkshake,milkshake/shake
+Eating,58,7,1,Hot Chocolate,Hot Chocolate,hot chocolate/cocoa
+Eating,59,7,2,Energy Drink,Energy Drink,energy drink/red bull
+Eating,60,7,3,Sports Drink,Sports Drink,sports drink/gatorade
+Eating,61,7,4,Iced Coffee,Iced Coffee,iced coffee
+Eating,62,7,5,Sparkling Water,Sparkling Water,sparkling water/seltzer
+Eating,63,7,6,Nachos,Nachos,nachos
+Eating,64,7,7,Ramen,Ramen,ramen/cup noodles
+Hobby,1,0,0,Drawing,Drawing,drawing/sketching
+Hobby,2,0,1,Painting,Painting,painting
+Hobby,3,0,2,Photography,Photography,photography/taking photos
+Hobby,4,0,3,Writing,Writing,writing
+Hobby,5,0,4,Baking,Baking,baking
+Hobby,6,0,5,Board game,Board game,board game
+Hobby,7,0,6,Chess,Chess,chess
+Hobby,8,0,7,Puzzles,Puzzles,puzzles/jigsaw puzzles
+Hobby,9,1,0,Guitar,Guitar,guitar
+Hobby,10,1,1,Piano,Piano,piano
+Hobby,11,1,2,DIY Crafting,DIY Crafting,diy crafting/diy
+Hobby,12,1,3,Singing,Singing,singing
+Hobby,13,1,4,Knitting,Knitting,knitting
+Hobby,14,1,5,Sewing,Sewing,sewing
+Hobby,15,1,6,Collecting,Collecting,collecting
+Hobby,16,1,7,Poker,Poker,poker
+Hobby,17,2,0,Darts,Darts,darts
+Hobby,18,2,1,Checkers,Checkers,checkers
+Hobby,19,2,2,Billiards,Billiards,billiards/pool
+Hobby,20,2,3,Foosball,Foosball,foosball/table soccer
+Hobby,21,2,4,Pinball,Pinball,pinball
+Hobby,22,2,5,Charades,Charades,charades
+Hobby,23,2,6,Escape Room,Escape Room,escape room
+Hobby,24,2,7,Scavenger Hunt,Scavenger Hunt,scavenger hunt
+Hobby,25,3,0,Hide-and-Seek,Hide-and-Seek,hide-and-seek/hide and seek
+Hobby,26,3,1,Laser Tag,Laser Tag,laser tag
+Hobby,27,3,2,Mini Golf,Mini Golf,mini golf/putt putt
+Hobby,28,3,3,Sculpting,Sculpting,sculpting
+Hobby,29,3,4,Pottery,Pottery,pottery/ceramics
+Hobby,30,3,5,Woodworking,Woodworking,woodworking
+Hobby,31,3,6,Electric Guitar,Electric Guitar,electric guitar
+Hobby,32,3,7,Drums,Drums,drums
+Hobby,33,4,0,Violin,Violin,violin
+Hobby,34,4,1,Cello,Cello,cello
+Hobby,35,4,2,Flute,Flute,flute
+Hobby,36,4,3,Clarinet,Clarinet,clarinet
+Hobby,37,4,4,Saxophone,Saxophone,saxophone/sax
+Hobby,38,4,5,Trumpet,Trumpet,trumpet
+Hobby,39,4,6,Trombone,Trombone,trombone
+Hobby,40,4,7,Harmonica,Harmonica,harmonica
+Hobby,41,5,0,Ukulele,Ukulele,ukulele
+Hobby,42,5,1,Banjo,Banjo,banjo
+Hobby,43,5,2,Mandolin,Mandolin,mandolin
+Hobby,44,5,3,Harp,Harp,harp
+Hobby,45,5,4,Accordion,Accordion,accordion
+Hobby,46,5,5,Tambourine,Tambourine,tambourine
+Hobby,47,5,6,Maracas,Maracas,maracas
+Hobby,48,5,7,Cymbals,Cymbals,cymbals
+Hobby,49,6,0,Vinyl Record,Vinyl Record,vinyl record/vinyl
+Hobby,50,6,1,Cassette Tape,Cassette Tape,cassette tape/cassette
+Hobby,51,6,2,Choir,Choir,choir
+Hobby,52,6,3,Orchestra,Orchestra,orchestra
+Hobby,53,6,4,Crochet,Crochet,crochet
+Hobby,54,6,5,Embroidery,Embroidery,embroidery
+Hobby,55,6,6,Cross-stitch,Cross-stitch,cross-stitch/cross stitch
+Hobby,56,6,7,Quilting,Quilting,quilting
+Hobby,57,7,0,Macrame,Macrame,macrame
+Hobby,58,7,1,Weaving,Weaving,weaving
+Hobby,59,7,2,Needle felting,Needle felting,needle felting
+Hobby,60,7,3,Origami,Origami,origami/paper folding
+Hobby,61,7,4,Calligraphy,Calligraphy,calligraphy
+Hobby,62,7,5,Scrapbooking,Scrapbooking,scrapbooking
+Hobby,63,7,6,Jewelry making,Jewelry making,jewelry making
+Hobby,64,7,7,Beading,Beading,beading
+Hobby,65,8,0,Wire wrapping,Wire wrapping,wire wrapping
+Hobby,66,8,1,Resin jewelry,Resin jewelry,resin jewelry/resin craft
+Relaxing,1,0,0,TV series,TV series,tv series/tv show/binge watching
+Relaxing,2,0,1,Movie,Movie,movie/film
+Relaxing,3,0,2,Music,Music,music/listening to music
+Relaxing,4,0,3,Gaming,Gaming,gaming/video games/video game
+Relaxing,5,0,4,Short video,Short video,short video/tiktok/reels
+Relaxing,6,0,5,Doomscrolling,Doomscrolling,doomscrolling/scrolling/mindless scrolling
+Relaxing,7,0,6,Vacation,Vacation,vacation/holiday trip
+Relaxing,8,0,7,Road trip,Road trip,road trip
+Relaxing,9,1,0,Flight,Flight,flight/airplane
+Relaxing,10,1,1,Flea market,Flea market,flea market
+Relaxing,11,1,2,Concert,Concert,concert/live show/live music
+Relaxing,12,1,3,Karaoke,Karaoke,karaoke/singing along
+Relaxing,13,1,4,Dance,Dance,dance/dancing
+Relaxing,14,1,5,Arcade,Arcade,arcade/arcade game
+Relaxing,15,1,6,Festival,Festival,festival/music festival
+Relaxing,16,1,7,Exhibition,Exhibition,exhibition
+Relaxing,17,2,0,Stand-up Comedy,Stand-up Comedy,stand-up comedy/comedy show
+Relaxing,18,2,1,Magic Trick,Magic Trick,magic trick/magic show
+Relaxing,19,2,2,Virtual Reality,Virtual Reality,virtual reality/vr
+Beauty,1,0,0,Makeup,Makeup,makeup/cosmetics
+Beauty,2,0,1,Haircut,Haircut,haircut/hair salon
+Beauty,3,0,2,Manicure,Manicure,manicure/nails
+Beauty,4,0,3,Face mask,Face mask,face mask/sheet mask
+Beauty,5,0,4,Lipstick,Lipstick,lipstick
+Beauty,6,0,5,Mascara,Mascara,mascara
+Beauty,7,0,6,Nail Polish,Nail Polish,nail polish
+Beauty,8,0,7,Perfume,Perfume,perfume/fragrance
+Beauty,9,1,0,Lotion,Lotion,lotion/moisturizer
+Beauty,10,1,1,Sunscreen,Sunscreen,sunscreen/spf
+Beauty,11,1,2,Shampoo,Shampoo,shampoo
+Beauty,12,1,3,Hair Dryer,Hair Dryer,hair dryer/blow dryer
+Beauty,13,1,4,Razor,Razor,razor/shaver
+Beauty,14,1,5,Deodorant,Deodorant,deodorant
+Beauty,15,1,6,Lip Balm,Lip Balm,lip balm/chapstick
+Beauty,16,1,7,Foundation,Foundation,foundation/makeup base
+Beauty,17,2,0,Pedicure,Pedicure,pedicure
+Beauty,18,2,1,Massage,Massage,massage
+Beauty,19,2,2,Bathing,Bathing,bathing/bath
+Beauty,20,2,3,Take Shower,Take Shower,take shower/shower
+Beauty,21,2,4,Brushing,Brushing,brushing/brush teeth/brushing teeth
+Beauty,22,2,5,Teeth whitening,Teeth whitening,teeth whitening
+Beauty,23,2,6,Lash treatment,Lash treatment,lash treatment/eyelash extensions
+Beauty,24,2,7,Soap,Soap,soap
+Beauty,25,3,0,Hairbrush,Hairbrush,hairbrush/hair brush
+Beauty,26,3,1,Curling Iron,Curling Iron,curling iron
+Beauty,27,3,2,Shaving Cream,Shaving Cream,shaving cream
+Beauty,28,3,3,Cologne,Cologne,cologne/fragrance
+Beauty,29,3,4,Makeup Brush,Makeup Brush,makeup brush
+Beauty,30,3,5,Tweezers,Tweezers,tweezers
+Beauty,31,3,6,Hand Cream,Hand Cream,hand cream/hand lotion
+Beauty,32,3,7,Bath Bomb,Bath Bomb,bath bomb
+Beauty,33,4,0,Towel,Towel,towel
+Beauty,34,4,1,Hair Spray,Hair Spray,hair spray/hairspray
+Beauty,35,4,2,Beard Oil,Beard Oil,beard oil
+Beauty,36,4,3,Mirror,Mirror,mirror
+Beauty,37,4,4,Nail Salon,Nail Salon,nail salon
+Social,1,0,0,Hangout,Hangout,hangout/hanging out
+Social,2,0,1,Party,Party,party
+Social,3,0,2,Phone call,Phone call,phone call/call
+Social,4,0,3,Chat/texting,Chat/texting,chat/texting/messaging
+Social,5,0,4,Dating,Dating,dating/date
+Social,6,0,5,Family meal,Family meal,family meal
+Social,7,0,6,Play with kids,Play with kids,play with kids
+Social,8,0,7,Family outing,Family outing,family outing
+Social,9,1,0,Reading together,Reading together,reading together
+Social,10,1,1,Homework help,Homework help,homework help
+Social,11,1,2,Elder care,Elder care,elder care/caring for elderly
+Social,12,1,3,Meeting new people,Meeting new people,meeting new people
+Social,13,1,4,Club activity,Club activity,club activity
+Social,14,1,5,Reunion,Reunion,reunion
+Social,15,1,6,Hosting/Treating,Hosting/Treating,hosting/treating
+Social,16,1,7,Volunteering,Volunteering,volunteering/volunteer work
+Better Me,1,0,0,Reading,Reading,reading/read a book
+Better Me,2,0,1,Meditation,Meditation,meditation
+Better Me,3,0,2,Journaling,Journaling,journaling/journal writing
+Better Me,4,0,3,New skill,New skill,new skill/learning new skill
+Better Me,5,0,4,Gratitude practice,Gratitude practice,gratitude practice/gratitude journal
+Better Me,6,0,5,Setting intention,Setting intention,setting intention/goal setting
+Nature&Outdoor,1,0,0,Park walk,Park walk,park walk
+Nature&Outdoor,2,0,1,Hiking,Hiking,hiking
+Nature&Outdoor,3,0,2,Picnic,Picnic,picnic
+Nature&Outdoor,4,0,3,Camping,Camping,camping
+Nature&Outdoor,5,0,4,Fishing,Fishing,fishing
+Nature&Outdoor,6,0,5,Birdwatching,Birdwatching,birdwatching/bird watching
+Nature&Outdoor,7,0,6,Beach,Beach,beach
+Nature&Outdoor,8,0,7,Sun,Sun,sun
+Nature&Outdoor,9,1,0,Moon,Moon,moon
+Nature&Outdoor,10,1,1,Star,Star,star
+Nature&Outdoor,11,1,2,Cloud,Cloud,cloud
+Nature&Outdoor,12,1,3,Rain,Rain,rain
+Nature&Outdoor,13,1,4,Snow,Snow,snow
+Nature&Outdoor,14,1,5,Wind,Wind,wind
+Nature&Outdoor,15,1,6,Storm,Storm,storm
+Nature&Outdoor,16,1,7,Thunder,Thunder,thunder
+Nature&Outdoor,17,2,0,Lightning,Lightning,lightning
+Nature&Outdoor,18,2,1,Rainbow,Rainbow,rainbow
+Nature&Outdoor,19,2,2,Fog,Fog,fog
+Nature&Outdoor,20,2,3,Hail,Hail,hail
+Nature&Outdoor,21,2,4,Tornado,Tornado,tornado
+Nature&Outdoor,22,2,5,Hurricane,Hurricane,hurricane
+Nature&Outdoor,23,2,6,Flood,Flood,flood
+Nature&Outdoor,24,2,7,Heatwave,Heatwave,heatwave/heat wave
+Nature&Outdoor,25,3,0,Sunshine,Sunshine,sunshine
+Nature&Outdoor,26,3,1,Sunset,Sunset,sunset
+Nature&Outdoor,27,3,2,Sunrise,Sunrise,sunrise
+Nature&Outdoor,28,3,3,Clear Sky,Clear Sky,clear sky
+Nature&Outdoor,29,3,4,Blue Sky,Blue Sky,blue sky
+Nature&Outdoor,30,3,5,Gray Sky,Gray Sky,gray sky/grey sky
+Nature&Outdoor,31,3,6,Spring,Spring,spring
+Nature&Outdoor,32,3,7,Summer,Summer,summer
+Nature&Outdoor,33,4,0,Autumn,Autumn,autumn/fall
+Nature&Outdoor,34,4,1,Winter,Winter,winter
+Nature&Outdoor,35,4,2,Morning,Morning,morning
+Nature&Outdoor,36,4,3,Night,Night,night
+Nature&Outdoor,37,4,4,Dawn,Dawn,dawn
+Nature&Outdoor,38,4,5,Dusk,Dusk,dusk/twilight
+Nature&Outdoor,39,4,6,Mountain,Mountain,mountain
+Nature&Outdoor,40,4,7,Hill,Hill,hill
+Nature&Outdoor,41,5,0,Valley,Valley,valley
+Nature&Outdoor,42,5,1,Forest,Forest,forest
+Nature&Outdoor,43,5,2,Desert,Desert,desert
+Nature&Outdoor,44,5,3,Sea,Sea,sea
+Nature&Outdoor,45,5,4,River,River,river
+Nature&Outdoor,46,5,5,Lake,Lake,lake
+Nature&Outdoor,47,5,6,Pond,Pond,pond
+Nature&Outdoor,48,5,7,Waterfall,Waterfall,waterfall
+Nature&Outdoor,49,6,0,Coast,Coast,coast
+Nature&Outdoor,50,6,1,Island,Island,island
+Nature&Outdoor,51,6,2,Cave,Cave,cave
+Nature&Outdoor,52,6,3,Canyon,Canyon,canyon
+Nature&Outdoor,53,6,4,Cliff,Cliff,cliff
+Nature&Outdoor,54,6,5,Meadow,Meadow,meadow
+Nature&Outdoor,55,6,6,Stone,Stone,stone
+Nature&Outdoor,56,6,7,Sand,Sand,sand
+Nature&Outdoor,57,7,0,Wildflowers,Wildflowers,wildflowers
+Nature&Outdoor,58,7,1,Pine Tree,Pine Tree,pine tree
+Nature&Outdoor,59,7,2,Palm Tree,Palm Tree,palm tree
+Nature&Outdoor,60,7,3,Snowflake,Snowflake,snowflake
+Nature&Outdoor,61,7,4,Raindrop,Raindrop,raindrop
+Nature&Outdoor,62,7,5,Frost,Frost,frost
+Petting,1,0,0,Dog walk,Dog walk,dog walk/walking the dog
+Petting,2,0,1,Feeding,Feeding,feeding/pet feeding
+Petting,3,0,2,Playing with pet,Playing with pet,playing with pet
+Petting,4,0,3,Vet visit,Vet visit,vet visit/veterinarian
+Petting,5,0,4,Grooming,Grooming,grooming/pet grooming
+Petting,6,0,5,Litter cleaning,Litter cleaning,litter cleaning/litter box
+Petting,7,0,6,Bathing pet,Bathing pet,bathing pet/pet bath
+Petting,8,0,7,Pet training,Pet training,pet training
+Petting,9,1,0,Pet supplies,Pet supplies,pet supplies
+Petting,10,1,1,Cat,Cat,cat
+Petting,11,1,2,Rabbit,Rabbit,rabbit
+Petting,12,1,3,Hamster,Hamster,hamster
+Petting,13,1,4,Guinea Pig,Guinea Pig,guinea pig
+Petting,14,1,5,Bird,Bird,bird
+Petting,15,1,6,Parrot,Parrot,parrot
+Petting,16,1,7,Canary,Canary,canary
+Petting,17,2,0,Hen,Hen,hen
+Petting,18,2,1,Rooster,Rooster,rooster
+Petting,19,2,2,Duck,Duck,duck
+Petting,20,2,3,Goose,Goose,goose
+Petting,21,2,4,Cow,Cow,cow
+Petting,22,2,5,Pig,Pig,pig
+Petting,23,2,6,Horse,Horse,horse
+Petting,24,2,7,Goat,Goat,goat
+Petting,25,3,0,Sheep,Sheep,sheep
+Petting,26,3,1,Donkey,Donkey,donkey
+Petting,27,3,2,Llama,Llama,llama
+Petting,28,3,3,Alpaca,Alpaca,alpaca
+Petting,29,3,4,Deer,Deer,deer
+Petting,30,3,5,Squirrel,Squirrel,squirrel
+Petting,31,3,6,Raccoon,Raccoon,raccoon
+Petting,32,3,7,Fox,Fox,fox
+Petting,33,4,0,Bear,Bear,bear
+Petting,34,4,1,Lion,Lion,lion
+Petting,35,4,2,Tiger,Tiger,tiger
+Petting,36,4,3,Elephant,Elephant,elephant
+Petting,37,4,4,Giraffe,Giraffe,giraffe
+Petting,38,4,5,Zebra,Zebra,zebra
+Petting,39,4,6,Monkey,Monkey,monkey
+Petting,40,4,7,Gorilla,Gorilla,gorilla
+Petting,41,5,0,Panda,Panda,panda
+Petting,42,5,1,Koala,Koala,koala
+Petting,43,5,2,Kangaroo,Kangaroo,kangaroo
+Petting,44,5,3,Dolphin,Dolphin,dolphin
+Petting,45,5,4,Whale,Whale,whale
+Petting,46,5,5,Shark,Shark,shark
+Petting,47,5,6,Otter,Otter,otter
+Petting,48,5,7,Turtle,Turtle,turtle
+Petting,49,6,0,Frog,Frog,frog
+Petting,50,6,1,Snake,Snake,snake
+Petting,51,6,2,Lizard,Lizard,lizard
+Petting,52,6,3,Gecko,Gecko,gecko
+Petting,53,6,4,Fish,Fish,fish
+Petting,54,6,5,Butterfly,Butterfly,butterfly
+Petting,55,6,6,Bee,Bee,bee
+Petting,56,6,7,Ladybug,Ladybug,ladybug
+Petting,57,7,0,Spider,Spider,spider
+Petting,58,7,1,Octopus,Octopus,octopus
+Gardening,1,0,0,Watering,Watering,watering
+Gardening,2,0,1,Planting,Planting,planting
+Gardening,3,0,2,Seeding,Seeding,seeding/sowing seeds
+Gardening,4,0,3,Transplanting,Transplanting,transplanting
+Gardening,5,0,4,Weeding,Weeding,weeding
+Gardening,6,0,5,Trimming,Trimming,trimming/pruning
+Gardening,7,0,6,Fertilizing,Fertilizing,fertilizing
+Gardening,8,0,7,Mulching,Mulching,mulching
+Gardening,9,1,0,Composting,Composting,composting
+Gardening,10,1,1,Harvesting,Harvesting,harvesting
+Gardening,11,1,2,Repotting,Repotting,repotting
+Gardening,12,1,3,Deadheading,Deadheading,deadheading
+Gardening,13,1,4,Staking,Staking,staking
+Gardening,14,1,5,Rose,Rose,rose
+Gardening,15,1,6,Tulip,Tulip,tulip
+Gardening,16,1,7,Sunflower,Sunflower,sunflower
+Gardening,17,2,0,Daisy,Daisy,daisy
+Gardening,18,2,1,Lily,Lily,lily
+Gardening,19,2,2,Orchid,Orchid,orchid
+Gardening,20,2,3,Peony,Peony,peony
+Gardening,21,2,4,Lavender,Lavender,lavender
+Gardening,22,2,5,Marigold,Marigold,marigold
+Gardening,23,2,6,Hydrangea,Hydrangea,hydrangea
+Gardening,24,2,7,Tomato,Tomato,tomato
+Gardening,25,3,0,Lettuce,Lettuce,lettuce
+Gardening,26,3,1,Pepper,Pepper,pepper
+Gardening,27,3,2,Cucumber,Cucumber,cucumber
+Gardening,28,3,3,Carrot,Carrot,carrot
+Gardening,29,3,4,Basil,Basil,basil
+Gardening,30,3,5,Mint,Mint,mint
+Gardening,31,3,6,Pumpkin,Pumpkin,pumpkin
+Gardening,32,3,7,Succulent,Succulent,succulent
+Gardening,33,4,0,Cactus,Cactus,cactus
+Gardening,34,4,1,Aloe vera,Aloe vera,aloe vera/aloe
+Gardening,35,4,2,Pothos,Pothos,pothos
+Gardening,36,4,3,Monstera,Monstera,monstera
+Gardening,37,4,4,Snake plant,Snake plant,snake plant
+Gardening,38,4,5,Fern,Fern,fern
+Gardening,39,4,6,Fruit tree,Fruit tree,fruit tree
+Emotions,1,0,0,Awful,Awful,awful/terrible
+Emotions,2,0,1,Sad,Sad,sad
+Emotions,3,0,2,Okay,Okay,okay/neutral/fine
+Emotions,4,0,3,Happy,Happy,happy
+Emotions,5,0,4,Great,Great,great/amazing
+Health,1,0,0,Sleep,Sleep,sleep/sleep well/good sleep
+Health,2,0,1,Medication,Medication,medication/medicine/take medicine
+Health,3,0,2,Weight control,Weight control,weight control/track weight/weigh in
+Health,4,0,3,Nutrition,Nutrition,nutrition/healthy eating/nutrients
+Health,5,0,4,Doctor visit,Doctor visit,doctor visit/seeing the doctor
+Health,6,0,5,Mental health,Mental health,mental health/emotional wellbeing
+Health,7,0,6,Dentist,Dentist,dentist/dental visit
+Health,8,0,7,Sobriety,Sobriety,sobriety/sober/no alcohol
+Health,9,1,0,Vitals check,Vitals check,vitals check/blood pressure check
+Health,10,1,1,Period tracking,Period tracking,period tracking/menstrual cycle/period
+Health,11,1,2,Vaccination,Vaccination,vaccination/vaccine/shot
+Health,12,1,3,Physical therapy,Physical therapy,physical therapy/pt
+Health,13,1,4,Therapy,Therapy,therapy
+Health,14,1,5,Pharmacy pickup,Pharmacy pickup,pharmacy pickup/picking up prescription

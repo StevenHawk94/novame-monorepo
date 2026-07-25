@@ -35,30 +35,30 @@ SQL_OUT = os.path.join(ROOT, "supabase/migrations/20260723000026_items_full_cata
 
 # category -> (item id prefix, sprite sheet id). Sheet ids are the webp
 # basenames in apps/mobile/assets/items/ (kebab-case: Metro chokes on spaces).
+#
+# 2026-07-24 taxonomy (14 categories, 460 items). The CSV is already updated;
+# ⚠️ DO NOT RUN until the new sheet images land in assets/memory items/ —
+# regenerating now would point every item at grid cells that don't exist yet.
+# When they land: normalize each sheet (--grid, rows=ceil(n/8)), run this,
+# convert to webp, update ITEM_SHEETS in item-sprite.tsx, bump SQL_OUT's
+# filename, and execute the new migration in Supabase.
+# ('emotions' keeps its prefix but moves to sheet emotions-02 so the stale
+# emotions-01.webp can never render the wrong art.)
 CATEGORIES = {
-    "Food & Drinks": ("food", "food-drinks-01"),
-    "Sports & Fitness": ("sports", "sports-fitness-01"),
-    "Entertainment & Games": ("entertainment", "entertainment-games-01"),
-    "Relaxation & Leisure": ("relax", "relaxation-leisure-01"),
-    "Personal Belongings": ("belongings", "personal-belongings-01"),
-    "Music": ("music", "music-01"),
-    "Plants & Gardening": ("plants", "plants-gardening-01"),
-    "Professions": ("professions", "professions-01"),
-    "Work Activities": ("work", "work-activities-01"),
-    "Places & Buildings": ("places", "places-buildings-01"),
-    "Transportation": ("transport", "transportation-01"),
-    "Animals & Pets": ("animals", "animals-pets-01"),
-    "Clothing & Accessories": ("clothing", "clothing-accessories-01"),
-    "Beauty & Personal Care": ("beauty", "beauty-care-01"),
-    "Home Appliances": ("appliances", "home-appliances-01"),
-    "Kitchen & Cooking": ("kitchen", "kitchen-cooking-01"),
-    "Emotions & Mental States": ("emotions", "emotions-01"),
-    "Health & Medical": ("health", "health-medical-01"),
-    "Daily Routines & Chores": ("routines", "daily-routines-01"),
-    "Home & Furniture": ("home", "home-furniture-01"),
-    "Shopping, Money & Services": ("shopping", "shopping-services-01"),
-    "Celebrations & Life Events": ("celebrations", "celebrations-01"),
-    "Nature, Weather & Seasons": ("nature", "nature-seasons-01"),
+    "Routine": ("routine", "routine-01"),
+    "Chores": ("chores", "chores-01"),
+    "Exercise": ("exercise", "exercise-01"),
+    "Eating": ("eating", "eating-01"),
+    "Hobby": ("hobby", "hobby-01"),
+    "Relaxing": ("relaxing", "relaxing-01"),
+    "Beauty": ("beauty", "beauty-01"),
+    "Social": ("social", "social-01"),
+    "Better Me": ("better_me", "better-me-01"),
+    "Nature&Outdoor": ("outdoor", "nature-outdoor-01"),
+    "Petting": ("petting", "petting-01"),
+    "Gardening": ("gardening", "gardening-01"),
+    "Emotions": ("emotions", "emotions-02"),
+    "Health": ("health", "health-01"),
 }
 
 
