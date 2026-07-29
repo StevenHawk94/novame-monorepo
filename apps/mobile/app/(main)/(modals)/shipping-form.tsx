@@ -163,7 +163,7 @@ export default function ShippingFormModal() {
           <TextInput
             style={styles.input}
             placeholder="John Doe"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor="#B8A588"
             value={shipping.name}
             onChangeText={(v) => update({ name: v })}
             autoCorrect={false}
@@ -181,7 +181,7 @@ export default function ShippingFormModal() {
           <TextInput
             style={styles.input}
             placeholder="123 Main St"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor="#B8A588"
             value={shipping.address}
             onChangeText={(v) => update({ address: v })}
             autoCorrect={false}
@@ -192,7 +192,7 @@ export default function ShippingFormModal() {
           <TextInput
             style={styles.input}
             placeholder="Apt 4B"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor="#B8A588"
             value={shipping.address2}
             onChangeText={(v) => update({ address2: v })}
             autoCorrect={false}
@@ -203,7 +203,7 @@ export default function ShippingFormModal() {
           <TextInput
             style={styles.input}
             placeholder="Los Angeles"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor="#B8A588"
             value={shipping.city}
             onChangeText={(v) => update({ city: v })}
             autoCorrect={false}
@@ -225,7 +225,7 @@ export default function ShippingFormModal() {
                 <TextInput
                   style={styles.input}
                   placeholder="State / Province"
-                  placeholderTextColor="rgba(0,0,0,0.35)"
+                  placeholderTextColor="#B8A588"
                   value={shipping.state}
                   onChangeText={(v) => update({ state: v })}
                   autoCorrect={false}
@@ -239,7 +239,7 @@ export default function ShippingFormModal() {
               <TextInput
                 style={styles.input}
                 placeholder="90001"
-                placeholderTextColor="rgba(0,0,0,0.35)"
+                placeholderTextColor="#B8A588"
                 value={shipping.zip}
                 onChangeText={(v) => update({ zip: v })}
                 autoCorrect={false}
@@ -253,7 +253,7 @@ export default function ShippingFormModal() {
           <TextInput
             style={styles.input}
             placeholder="+1 (555) 000-0000"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor="#B8A588"
             value={shipping.phone}
             onChangeText={(v) => update({ phone: v })}
             keyboardType="phone-pad"
@@ -333,7 +333,7 @@ function CountryPicker({
         <Text style={styles.pickerText}>
           {selected ? selected.name : 'Select country'}
         </Text>
-        <MaterialIcons name="expand-more" size={20} color="rgba(0,0,0,0.5)" />
+        <MaterialIcons name="expand-more" size={20} color="#8A7A63" />
       </Pressable>
 
       <PickerSheet
@@ -392,7 +392,7 @@ function StatePicker({
         <Text style={styles.pickerText}>
           {selected ? selected.name : 'Select state'}
         </Text>
-        <MaterialIcons name="expand-more" size={20} color="rgba(0,0,0,0.5)" />
+        <MaterialIcons name="expand-more" size={20} color="#8A7A63" />
       </Pressable>
 
       <PickerSheet
@@ -450,15 +450,15 @@ function PickerSheet({
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>{title}</Text>
           <Pressable onPress={onClose} hitSlop={12}>
-            <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.6)" />
+            <MaterialIcons name="close" size={22} color="#6B5B44" />
           </Pressable>
         </View>
         <View style={styles.sheetSearchWrap}>
-          <MaterialIcons name="search" size={18} color="rgba(255,255,255,0.4)" />
+          <MaterialIcons name="search" size={18} color="#8A7A63" />
           <TextInput
             style={styles.sheetSearch}
             placeholder="Search…"
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="#B8A588"
             value={query}
             onChangeText={onQueryChange}
             autoFocus
@@ -492,7 +492,7 @@ function PickerSheet({
                     {o.name}
                   </Text>
                   {active ? (
-                    <MaterialIcons name="check" size={18} color="#C084FC" />
+                    <MaterialIcons name="check" size={18} color="#8A6240" />
                   ) : null}
                 </Pressable>
               );
@@ -507,7 +507,7 @@ function PickerSheet({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#F2E6CB',
   },
   header: {
     flexDirection: 'row',
@@ -522,10 +522,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#4A3423',
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 17,
     fontWeight: '800',
   },
@@ -537,22 +537,22 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   fieldLabel: {
-    color: 'rgba(255,255,255,0.55)',
+    color: '#6B5B44',
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 6,
     letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    color: '#1A1A1A',
+    backgroundColor: '#FBF6EA',
+    color: '#4A3423',
     fontSize: 15,
     fontWeight: '500',
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
   },
   row2: {
     flexDirection: 'row',
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pickerText: {
-    color: '#1A1A1A',
+    color: '#4A3423',
     fontSize: 15,
     fontWeight: '500',
   },
@@ -574,9 +574,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(15,11,46,0.92)',
+    backgroundColor: 'rgba(242,230,203,0.92)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: '#E8D5B0',
   },
   cta: {
     width: '100%',
@@ -585,10 +585,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaActive: {
-    backgroundColor: '#A855F7',
+    backgroundColor: '#8A6240',
   },
   ctaInactive: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#E8D5B0',
   },
   ctaText: {
     color: '#FFFFFF',
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   ctaTextInactive: {
-    color: 'rgba(255,255,255,0.35)',
+    color: '#8A7A63',
   },
   // Picker bottom sheet
   sheetBackdrop: {
@@ -604,20 +604,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   sheet: {
-    backgroundColor: '#1A1640',
+    backgroundColor: '#F2E6CB',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingHorizontal: 16,
     paddingTop: 8,
     maxHeight: '70%',
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E8D5B0',
   },
   sheetHandle: {
     width: 36,
     height: 4,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#C9BCA5',
     alignSelf: 'center',
     marginBottom: 8,
   },
@@ -628,14 +628,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   sheetTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 16,
     fontWeight: '800',
   },
   sheetSearchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FBF6EA',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
     borderRadius: 10,
     paddingHorizontal: 10,
     marginVertical: 8,
@@ -643,7 +645,7 @@ const styles = StyleSheet.create({
   },
   sheetSearch: {
     flex: 1,
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 14,
     paddingVertical: 10,
   },
@@ -660,19 +662,21 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   sheetRowActive: {
-    backgroundColor: 'rgba(168,85,247,0.16)',
+    backgroundColor: '#FBF6EA',
+    borderWidth: 1.5,
+    borderColor: '#8A6240',
   },
   sheetRowText: {
-    color: 'rgba(255,255,255,0.85)',
+    color: '#6B5B44',
     fontSize: 14,
     fontWeight: '600',
   },
   sheetRowTextActive: {
-    color: '#C084FC',
+    color: '#8A6240',
     fontWeight: '800',
   },
   sheetEmpty: {
-    color: 'rgba(255,255,255,0.35)',
+    color: '#8A7A63',
     textAlign: 'center',
     paddingVertical: 24,
     fontSize: 13,

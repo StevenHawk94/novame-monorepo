@@ -47,14 +47,14 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const STATUS_TONE: Record<OrderStatus, { bg: string; fg: string }> = {
-  pending_payment: { bg: 'rgba(239,68,68,0.18)', fg: '#F87171' },
-  pending_selection: { bg: 'rgba(249,115,22,0.18)', fg: '#FB923C' },
-  paid: { bg: 'rgba(168,85,247,0.18)', fg: '#C084FC' },
-  processing: { bg: 'rgba(250,204,21,0.18)', fg: '#FACC15' },
-  shipped: { bg: 'rgba(59,130,246,0.18)', fg: '#60A5FA' },
-  delivered: { bg: 'rgba(34,197,94,0.18)', fg: '#4ADE80' },
-  cancelled: { bg: 'rgba(239,68,68,0.18)', fg: '#F87171' },
-  refunded: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.5)' },
+  pending_payment: { bg: 'rgba(194,91,78,0.12)', fg: '#C25B4E' },
+  pending_selection: { bg: 'rgba(181,138,42,0.12)', fg: '#B58A2A' },
+  paid: { bg: 'rgba(138,98,64,0.12)', fg: '#8A6240' },
+  processing: { bg: 'rgba(181,138,42,0.12)', fg: '#B58A2A' },
+  shipped: { bg: 'rgba(74,123,166,0.12)', fg: '#4A7BA6' },
+  delivered: { bg: 'rgba(62,124,79,0.12)', fg: '#3E7C4F' },
+  cancelled: { bg: 'rgba(194,91,78,0.12)', fg: '#C25B4E' },
+  refunded: { bg: 'rgba(138,122,99,0.12)', fg: '#8A7A63' },
 };
 
 function formatDate(iso: string | null | undefined): string {
@@ -145,14 +145,14 @@ export default function OrderDetailModal() {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#A855F7" />
+          <ActivityIndicator size="large" color="#8A6240" />
         </View>
       ) : !order ? (
         <View style={styles.empty}>
           <MaterialIcons
             name="error-outline"
             size={48}
-            color="rgba(255,255,255,0.25)"
+            color="#C9BCA5"
           />
           <Text style={styles.emptyText}>Order not found</Text>
         </View>
@@ -294,7 +294,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F0B2E' },
+  root: { flex: 1, backgroundColor: '#F2E6CB' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -308,13 +308,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#4A3423',
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
+  headerTitle: { color: '#4A3423', fontSize: 17, fontWeight: '800' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: '#8A7A63',
     fontSize: 14,
     marginTop: 12,
   },
@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 16,
   },
-  heroTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
-  heroId: { color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 2 },
+  heroTitle: { color: '#4A3423', fontSize: 18, fontWeight: '800' },
+  heroId: { color: '#8A7A63', fontSize: 12, marginTop: 2 },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -334,15 +334,15 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 11, fontWeight: '800' },
   section: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E8D5B0',
   },
   sectionTitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.6,
@@ -355,16 +355,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: '#E8D5B0',
   },
   rowLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     flexShrink: 0,
     marginRight: 12,
   },
   rowValue: {
-    color: '#FFFFFF',
+    color: '#2B2B2B',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'right',
@@ -377,18 +377,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(15,11,46,0.92)',
+    backgroundColor: 'rgba(242,230,203,0.95)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: '#E8D5B0',
   },
   cta: {
     width: '100%',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
-    backgroundColor: 'rgba(168,85,247,0.18)',
+    backgroundColor: '#8A6240',
     borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.4)',
+    borderColor: '#8A6240',
   },
-  ctaText: { color: '#C084FC', fontSize: 15, fontWeight: '800' },
+  ctaText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });

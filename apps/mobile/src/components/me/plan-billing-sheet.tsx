@@ -149,7 +149,7 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
         <View style={styles.header}>
           <Text style={styles.title}>Plan & Billing</Text>
           <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={8}>
-            <MaterialIcons name="close" size={20} color="rgba(255,255,255,0.6)" />
+            <MaterialIcons name="close" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
@@ -163,13 +163,13 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
             <MaterialIcons
               name="workspace-premium"
               size={32}
-              color="rgba(192,132,252,0.5)"
+              color="#8A6240"
             />
           </View>
           <View style={styles.planFeatures}>
             {tierInfo.features.map((f, i) => (
               <View key={i} style={styles.planFeatureRow}>
-                <MaterialIcons name="check-circle" size={16} color="rgba(192,132,252,0.9)" />
+                <MaterialIcons name="check-circle" size={16} color="#8A6240" />
                 <Text style={styles.planFeatureText}>{f}</Text>
               </View>
             ))}
@@ -202,7 +202,7 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
             <MaterialIcons
               name="redeem"
               size={20}
-              color="rgba(255,255,255,0.6)"
+              color="#4A3423"
             />
             <Text style={styles.secondaryBtnText}>Redeem Code</Text>
           </Pressable>
@@ -218,12 +218,12 @@ PlanBillingSheet.displayName = 'PlanBillingSheet';
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#F2E6CB',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
   grabber: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#C9BCA5',
     width: 40,
     height: 4,
   },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -246,15 +246,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#4A3423',
     alignItems: 'center',
     justifyContent: 'center',
   },
   planCard: {
-    backgroundColor: 'rgba(168,85,247,0.18)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.3)',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
     padding: 20,
     marginBottom: 20,
   },
@@ -265,27 +265,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   currentPlanLabel: {
-    color: 'rgba(192,132,252,0.7)',
+    color: '#8A6240',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   tierName: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 28,
     fontWeight: '900',
   },
   planFeatures: { gap: 10 },
   planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  planFeatureText: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500' },
+  planFeatureText: { color: '#3E3229', fontSize: 14, fontWeight: '500' },
   statLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     marginBottom: 4,
   },
   statValue: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
-    backgroundColor: '#A855F7',
+    backgroundColor: '#8A6240',
     borderRadius: 16,
     marginBottom: 12,
   },
@@ -310,11 +310,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
     borderRadius: 16,
   },
   secondaryBtnText: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#4A3423',
     fontSize: 15,
     fontWeight: '700',
   },

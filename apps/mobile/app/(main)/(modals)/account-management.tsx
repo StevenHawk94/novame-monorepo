@@ -374,9 +374,9 @@ export default function AccountManagementModal() {
             <Text
               style={[
                 styles.statusText,
-                status.kind === 'success' && { color: '#4ADE80' },
-                status.kind === 'warning' && { color: '#FACC15' },
-                status.kind === 'error' && { color: '#F87171' },
+                status.kind === 'success' && { color: '#3E7C4F' },
+                status.kind === 'warning' && { color: '#B58A2A' },
+                status.kind === 'error' && { color: '#C25B4E' },
               ]}
             >
               {status.kind === 'success' ? '✓ ' : status.kind === 'warning' ? '⚠ ' : ''}
@@ -404,7 +404,7 @@ export default function AccountManagementModal() {
                     contentPosition="center"
                   />
                 ) : (
-                  <MaterialIcons name="person" size={36} color="#FFFFFF" />
+                  <MaterialIcons name="person" size={36} color="#B49B7A" />
                 )}
               </View>
               <View style={{ flex: 1 }}>
@@ -441,7 +441,7 @@ export default function AccountManagementModal() {
               value={nameInput}
               onChangeText={(t) => setNameInput(t.slice(0, 16))}
               placeholder="Your name"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#B8A588"
               maxLength={16}
               style={styles.input}
               autoCapitalize="words"
@@ -465,7 +465,7 @@ export default function AccountManagementModal() {
               value={emailInput}
               onChangeText={setEmailInput}
               placeholder="New email"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#B8A588"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -491,7 +491,7 @@ export default function AccountManagementModal() {
               value={newPassword}
               onChangeText={setNewPassword}
               placeholder="New password (min 8)"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#B8A588"
               secureTextEntry
               style={styles.input}
             />
@@ -499,7 +499,7 @@ export default function AccountManagementModal() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="Confirm password"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#B8A588"
               secureTextEntry
               style={[styles.input, { marginTop: 12 }]}
             />
@@ -556,7 +556,7 @@ function SectionHeader({ label, summary, open, onPress }: SectionHeaderProps) {
       <MaterialIcons
         name={open ? 'expand-less' : 'expand-more'}
         size={22}
-        color="rgba(255,255,255,0.4)"
+        color="#C9BCA5"
       />
     </Pressable>
   );
@@ -592,7 +592,7 @@ function PrimaryBtn({ label, busy, onPress }: PrimaryBtnProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#F2E6CB',
   },
   scroll: {
     paddingHorizontal: 24,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#4A3423',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -622,9 +622,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  statusSuccess: { backgroundColor: 'rgba(34,197,94,0.15)' },
-  statusWarning: { backgroundColor: 'rgba(250,204,21,0.15)' },
-  statusError: { backgroundColor: 'rgba(239,68,68,0.15)' },
+  statusSuccess: { backgroundColor: 'rgba(62,124,79,0.12)' },
+  statusWarning: { backgroundColor: 'rgba(181,138,42,0.12)' },
+  statusError: { backgroundColor: 'rgba(194,91,78,0.12)' },
   statusText: {
     fontSize: 13,
     fontWeight: '500',
@@ -633,24 +633,24 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
   },
   sectionLabel: {
-    color: '#FFFFFF',
+    color: '#2B2B2B',
     fontSize: 14,
     fontWeight: '700',
   },
   sectionSummary: {
-    color: 'rgba(255,255,255,0.5)',
+    color: '#8A7A63',
     fontSize: 13,
     marginTop: 2,
   },
   // Section body
   sectionBody: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginTop: -8,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#F2E6CB',
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -678,9 +678,7 @@ const styles = StyleSheet.create({
   uploadBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#8A6240',
     borderRadius: 12,
     alignItems: 'center',
     minHeight: 40,
@@ -692,7 +690,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   avatarHint: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 11,
     marginTop: 6,
   },
@@ -700,22 +698,22 @@ const styles = StyleSheet.create({
   input: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#FBF6EA',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
     borderRadius: 12,
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 14,
   },
   charCount: {
     textAlign: 'right',
-    color: 'rgba(255,255,255,0.4)',
+    color: '#B8A588',
     fontSize: 11,
     marginTop: 6,
     marginBottom: 12,
   },
   helperText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: '#8A7A63',
     fontSize: 12,
     marginTop: 8,
     marginBottom: 12,
@@ -723,7 +721,7 @@ const styles = StyleSheet.create({
   // Primary button
   primaryBtn: {
     paddingVertical: 12,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#8A6240',
     borderRadius: 12,
     alignItems: 'center',
     minHeight: 44,
@@ -740,10 +738,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: '#E8D5B0',
   },
   dangerLabel: {
-    color: '#F87171',
+    color: '#C25B4E',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -752,17 +750,18 @@ const styles = StyleSheet.create({
   deleteBtn: {
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.4)',
+    borderColor: 'rgba(194,91,78,0.5)',
     borderRadius: 12,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   deleteBtnText: {
-    color: '#F87171',
+    color: '#C25B4E',
     fontSize: 14,
     fontWeight: '600',
   },
   dangerHint: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 11,
     textAlign: 'center',
     marginTop: 8,

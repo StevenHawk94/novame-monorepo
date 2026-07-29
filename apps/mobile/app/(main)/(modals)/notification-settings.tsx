@@ -366,7 +366,7 @@ function StepBtn({ dir, onPress }: { dir: 'up' | 'down'; onPress: () => void }) 
       <MaterialIcons
         name={dir === 'up' ? 'expand-less' : 'expand-more'}
         size={24}
-        color="#C084FC"
+        color="#8A6240"
       />
     </Pressable>
   );
@@ -377,7 +377,7 @@ function StepBtn({ dir, onPress }: { dir: 'up' | 'down'; onPress: () => void }) 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#F2E6CB',
   },
   header: {
     flexDirection: 'row',
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#4A3423',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -405,13 +405,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   askTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 12,
   },
   askDesc: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#8A7A63',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
@@ -430,23 +430,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pickerTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 8,
   },
   pickerDesc: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#8A7A63',
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 24,
   },
   pickerCard: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
     padding: 20,
     marginBottom: 32,
   },
@@ -464,36 +464,36 @@ const styles = StyleSheet.create({
     width: 44,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(168,85,247,0.15)',
+    backgroundColor: '#FBF6EA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   digit: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 32,
     fontWeight: '900',
     width: 60,
     textAlign: 'center',
   },
   colon: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#C9BCA5',
     fontSize: 32,
     fontWeight: '900',
   },
   ampm: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: 'rgba(168,85,247,0.15)',
+    backgroundColor: '#FBF6EA',
     borderRadius: 12,
     marginLeft: 8,
   },
   ampmText: {
-    color: '#C084FC',
+    color: '#8A6240',
     fontSize: 16,
     fontWeight: '700',
   },
   pickerSummary: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 16,
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     width: '100%',
     paddingVertical: 16,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#8A6240',
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 12,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipBtnText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -533,13 +533,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   savedTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 8,
   },
   savedTime: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#8A7A63',
     fontSize: 14,
   },
 });

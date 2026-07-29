@@ -337,7 +337,7 @@ export default function PaymentModal() {
             <MaterialIcons
               name={resultBanner.kind === 'cancel' ? 'info' : 'error-outline'}
               size={18}
-              color={resultBanner.kind === 'cancel' ? '#FBBF24' : '#FCA5A5'}
+              color={resultBanner.kind === 'cancel' ? '#B58A2A' : '#C25B4E'}
             />
             <Text style={styles.bannerText}>
               {resultBanner.kind === 'cancel'
@@ -403,7 +403,7 @@ function parseStatusFromUrl(url: string): 'success' | 'cancel' | 'fail' | null {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F0B2E' },
+  root: { flex: 1, backgroundColor: '#F2E6CB' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -417,16 +417,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#4A3423',
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
+  headerTitle: { color: '#4A3423', fontSize: 17, fontWeight: '800' },
   scroll: { paddingHorizontal: 16, paddingTop: 4 },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E8D5B0',
     marginBottom: 14,
   },
   cardRow: {
@@ -434,25 +434,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 6,
   },
-  cardLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 14, fontWeight: '600' },
-  cardValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  cardLabel: { color: '#6B5B44', fontSize: 14, fontWeight: '600' },
+  cardValue: { color: '#2B2B2B', fontSize: 14, fontWeight: '700' },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#E8D5B0',
     marginVertical: 8,
   },
-  cardTotalLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  cardTotalValue: { color: '#C084FC', fontSize: 17, fontWeight: '900' },
+  cardTotalLabel: { color: '#2B2B2B', fontSize: 15, fontWeight: '800' },
+  cardTotalValue: { color: '#8A6240', fontSize: 17, fontWeight: '900' },
   cardSection: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
     marginBottom: 8,
   },
-  shipName: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  shipLine: { color: 'rgba(255,255,255,0.65)', fontSize: 13, marginBottom: 2 },
+  shipName: { color: '#2B2B2B', fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  shipLine: { color: '#6B5B44', fontSize: 13, marginBottom: 2 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -464,16 +464,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   bannerCancel: {
-    backgroundColor: 'rgba(251,191,36,0.08)',
-    borderColor: 'rgba(251,191,36,0.2)',
+    backgroundColor: 'rgba(181,138,42,0.12)',
+    borderColor: 'rgba(181,138,42,0.3)',
   },
   bannerFail: {
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    borderColor: 'rgba(239,68,68,0.2)',
+    backgroundColor: 'rgba(194,91,78,0.12)',
+    borderColor: 'rgba(194,91,78,0.3)',
   },
   bannerText: {
     flex: 1,
-    color: 'rgba(255,255,255,0.85)',
+    color: '#6B5B44',
     fontSize: 13,
     lineHeight: 18,
   },
@@ -484,9 +484,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: 'rgba(15,11,46,0.92)',
+    backgroundColor: 'rgba(242,230,203,0.92)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: '#E8D5B0',
   },
   cta: {
     flexDirection: 'row',
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    backgroundColor: '#A855F7',
+    backgroundColor: '#8A6240',
   },
   ctaText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });

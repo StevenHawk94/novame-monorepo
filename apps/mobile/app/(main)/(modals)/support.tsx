@@ -212,8 +212,8 @@ export default function SupportModal() {
               <Text
                 style={[
                   styles.statusText,
-                  status.kind === 'success' && { color: '#4ADE80' },
-                  status.kind === 'error' && { color: '#F87171' },
+                  status.kind === 'success' && { color: '#3E7C4F' },
+                  status.kind === 'error' && { color: '#C25B4E' },
                 ]}
               >
                 {status.kind === 'success' ? '✓ ' : ''}
@@ -240,7 +240,7 @@ export default function SupportModal() {
                   <MaterialIcons
                     name={cat.icon}
                     size={18}
-                    color={selected ? '#C084FC' : 'rgba(255,255,255,0.4)'}
+                    color={selected ? '#8A6240' : '#8A7A63'}
                   />
                   <Text
                     style={[
@@ -261,7 +261,7 @@ export default function SupportModal() {
             value={email}
             onChangeText={setEmail}
             placeholder="Where should we reply?"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor="#B8A588"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -274,7 +274,7 @@ export default function SupportModal() {
             value={subject}
             onChangeText={setSubject}
             placeholder="Brief description of your issue"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor="#B8A588"
             style={styles.input}
           />
 
@@ -284,7 +284,7 @@ export default function SupportModal() {
             value={message}
             onChangeText={setMessage}
             placeholder="Please describe your issue in detail..."
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor="#B8A588"
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -333,7 +333,7 @@ export default function SupportModal() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#F2E6CB',
   },
   scroll: {
     paddingHorizontal: 24,
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 22,
     fontWeight: '700',
   },
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#4A3423',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -370,15 +370,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  statusSuccess: { backgroundColor: 'rgba(34,197,94,0.15)' },
-  statusError: { backgroundColor: 'rgba(239,68,68,0.15)' },
+  statusSuccess: { backgroundColor: 'rgba(62,124,79,0.12)' },
+  statusError: { backgroundColor: 'rgba(194,91,78,0.12)' },
   statusText: {
     fontSize: 13,
     fontWeight: '500',
   },
   // Section
   sectionLabel: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#4A3423',
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 8,
@@ -400,32 +400,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   categoryBtnSelected: {
-    backgroundColor: 'rgba(168,85,247,0.15)',
-    borderColor: 'rgba(168,85,247,0.5)',
+    backgroundColor: '#FBF6EA',
+    borderColor: '#8A6240',
   },
   categoryLabel: {
-    color: 'rgba(255,255,255,0.7)',
+    color: '#6B5B44',
     fontSize: 13,
     fontWeight: '500',
     flexShrink: 1,
   },
   categoryLabelSelected: {
-    color: '#C084FC',
+    color: '#8A6240',
   },
   // Inputs
   input: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    color: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E8D5B0',
+    color: '#4A3423',
     fontSize: 14,
     marginBottom: 16,
   },
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   // Primary button
   primaryBtn: {
     paddingVertical: 16,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#8A6240',
     borderRadius: 16,
     alignItems: 'center',
     alignSelf: 'stretch',
@@ -454,13 +454,13 @@ const styles = StyleSheet.create({
   },
   // Fallback
   fallbackText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 16,
   },
   fallbackEmail: {
-    color: '#C084FC',
+    color: '#8A6240',
   },
   // Sent
   sentBody: {
@@ -475,20 +475,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sentTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 12,
   },
   sentDesc: {
-    color: 'rgba(255,255,255,0.6)',
+    color: '#6B5B44',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
   },
   sentEmail: {
-    color: '#C084FC',
+    color: '#8A6240',
     fontWeight: '600',
   },
 });

@@ -24,12 +24,12 @@ export default function ProductDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F0B2E', paddingHorizontal: 20 },
+  root: { flex: 1, backgroundColor: '#F2E6CB', paddingHorizontal: 20 },
   close: { alignSelf: 'flex-start', padding: 8 },
-  closeText: { color: 'rgba(255,255,255,0.6)', fontSize: 15 },
+  closeText: { color: '#6B5B44', fontSize: 15 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: {
-    color: 'rgba(255,255,255,0.35)',
+    color: '#8A7A63',
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
   },

@@ -31,14 +31,14 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const STATUS_TONE: Record<OrderStatus, { bg: string; fg: string }> = {
-  pending_payment: { bg: 'rgba(239,68,68,0.18)', fg: '#F87171' },
-  pending_selection: { bg: 'rgba(249,115,22,0.18)', fg: '#FB923C' },
-  paid: { bg: 'rgba(168,85,247,0.18)', fg: '#C084FC' },
-  processing: { bg: 'rgba(250,204,21,0.18)', fg: '#FACC15' },
-  shipped: { bg: 'rgba(59,130,246,0.18)', fg: '#60A5FA' },
-  delivered: { bg: 'rgba(34,197,94,0.18)', fg: '#4ADE80' },
-  cancelled: { bg: 'rgba(239,68,68,0.18)', fg: '#F87171' },
-  refunded: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.5)' },
+  pending_payment: { bg: 'rgba(194,91,78,0.12)', fg: '#C25B4E' },
+  pending_selection: { bg: 'rgba(181,138,42,0.12)', fg: '#B58A2A' },
+  paid: { bg: 'rgba(138,98,64,0.12)', fg: '#8A6240' },
+  processing: { bg: 'rgba(181,138,42,0.12)', fg: '#B58A2A' },
+  shipped: { bg: 'rgba(74,123,166,0.12)', fg: '#4A7BA6' },
+  delivered: { bg: 'rgba(62,124,79,0.12)', fg: '#3E7C4F' },
+  cancelled: { bg: 'rgba(194,91,78,0.12)', fg: '#C25B4E' },
+  refunded: { bg: 'rgba(138,122,99,0.12)', fg: '#8A7A63' },
 };
 
 function formatDate(iso: string): string {
@@ -160,14 +160,14 @@ export default function OrderHistoryModal() {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#A855F7" />
+          <ActivityIndicator size="large" color="#8A6240" />
         </View>
       ) : orders.length === 0 ? (
         <View style={styles.emptyWrap}>
           <MaterialIcons
             name="receipt-long"
             size={56}
-            color="rgba(255,255,255,0.18)"
+            color="#C9BCA5"
           />
           <Text style={styles.emptyTitle}>No orders yet</Text>
           <Text style={styles.emptySub}>
@@ -223,7 +223,7 @@ function OrderCard({
       style={[
         styles.card,
         isPendingPay && {
-          borderColor: 'rgba(239,68,68,0.35)',
+          borderColor: 'rgba(194,91,78,0.45)',
         },
       ]}
     >
@@ -273,7 +273,7 @@ function OrderCard({
             pressed && { opacity: 0.85 },
           ]}
         >
-          <MaterialIcons name="lock" size={14} color="#F87171" />
+          <MaterialIcons name="lock" size={14} color="#C25B4E" />
           <Text style={styles.payNowText}>Pay Now</Text>
         </Pressable>
       ) : null}
@@ -282,7 +282,7 @@ function OrderCard({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F0B2E' },
+  root: { flex: 1, backgroundColor: '#F2E6CB' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -296,9 +296,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#4A3423',
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
+  headerTitle: { color: '#4A3423', fontSize: 17, fontWeight: '800' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: {
     flex: 1,
@@ -307,14 +307,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: '#FFFFFF',
+    color: '#4A3423',
     fontSize: 18,
     fontWeight: '800',
     marginTop: 16,
     marginBottom: 6,
   },
   emptySub: {
-    color: 'rgba(255,255,255,0.45)',
+    color: '#8A7A63',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 19,
@@ -324,19 +324,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 22,
     borderRadius: 12,
-    backgroundColor: 'rgba(168,85,247,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(168,85,247,0.4)',
+    backgroundColor: '#FBF6EA',
+    borderWidth: 1.5,
+    borderColor: '#8A6240',
   },
-  emptyBtnText: { color: '#C084FC', fontSize: 14, fontWeight: '800' },
+  emptyBtnText: { color: '#8A6240', fontSize: 14, fontWeight: '800' },
   scroll: { paddingHorizontal: 16, paddingTop: 4 },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#E8D5B0',
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -345,8 +345,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cardTitleWrap: { flex: 1 },
-  cardTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
-  cardId: { color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 2 },
+  cardTitle: { color: '#2B2B2B', fontSize: 14, fontWeight: '800' },
+  cardId: { color: '#8A7A63', fontSize: 11, marginTop: 2 },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -358,14 +358,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 2,
   },
-  cardMeta: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
+  cardMeta: { color: '#8A7A63', fontSize: 12 },
   cardTracking: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#8A7A63',
     fontSize: 12,
     marginTop: 6,
   },
   cardHintOrange: {
-    color: '#FB923C',
+    color: '#B58A2A',
     fontSize: 12,
     fontWeight: '700',
     marginTop: 8,
@@ -378,9 +378,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     marginTop: 12,
-    backgroundColor: 'rgba(239,68,68,0.18)',
+    backgroundColor: 'rgba(194,91,78,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.32)',
+    borderColor: 'rgba(194,91,78,0.35)',
   },
-  payNowText: { color: '#F87171', fontSize: 13, fontWeight: '800' },
+  payNowText: { color: '#C25B4E', fontSize: 13, fontWeight: '800' },
 });
