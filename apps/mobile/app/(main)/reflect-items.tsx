@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -125,7 +125,8 @@ export default function ReflectItemsScreen() {
   const atLimit = remaining <= 0;
 
   return (
-    <ImageBackground source={BACKGROUNDS.reflect} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
+      <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={styles.scrim} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
@@ -252,7 +253,7 @@ export default function ReflectItemsScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </ImageBackground>
+    </View>
   );
 }
 

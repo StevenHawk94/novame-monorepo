@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
-  ImageBackground,
   Linking,
   Pressable,
   ScrollView,
@@ -12,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -186,7 +185,8 @@ export default function SubscriptionPaywallModal() {
   };
 
   return (
-    <ImageBackground source={ICONS.obGridBg} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
+      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={[styles.root, { paddingTop: insets.top + 14 }]}>
         <Pressable onPress={handleClose} style={styles.closeCircle} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
@@ -200,7 +200,7 @@ export default function SubscriptionPaywallModal() {
                 Store your memories, and theirs.{'\n'}Then connection happens naturally.
               </Text>
               <View style={styles.plusCard}>
-                <Image source={ICONS.obPaywallUnlock} style={styles.lockImg} resizeMode="contain" />
+                <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>BunnyUs Plus</Text>
                 {[
                   ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
@@ -285,7 +285,7 @@ export default function SubscriptionPaywallModal() {
           </View>
         )}
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 

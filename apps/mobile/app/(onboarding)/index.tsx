@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -239,12 +238,13 @@ export default function OnboardingScreen() {
   );
 
   return (
-    <ImageBackground source={ICONS.obGridBg} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
+      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
         {step === 'start' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Image source={ICONS.obIcons} style={styles.iconsGrid} resizeMode="contain" />
+            <ExpoImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
             <Text style={styles.h1}>Stay close to the{'\n'}people who matter.</Text>
             <Text style={styles.h2}>By Collecting Memories Together</Text>
             <View style={{ flex: 1 }} />
@@ -276,7 +276,7 @@ export default function OnboardingScreen() {
                 onPress={() => { void haptics.light(); setWho(o.key); }}
                 style={[styles.optionRow, who === o.key && styles.optionRowOn]}
               >
-                <Image source={o.icon} style={styles.optionIcon} resizeMode="contain" />
+                <ExpoImage source={o.icon} style={styles.optionIcon} contentFit="contain" />
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
@@ -458,7 +458,7 @@ export default function OnboardingScreen() {
             <View style={{ flex: 0.3, minHeight: 16 }} />
             <View>
               <View style={styles.card}>
-                <Image source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} resizeMode="contain" />
+                <ExpoImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
                 <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the App Creator</Text>
                 <Text style={styles.creatorBody}>
                   &quot;I built this at the beginning to stay connected with my mom. We lived thousands
@@ -494,7 +494,7 @@ export default function OnboardingScreen() {
                 Store your memories, and theirs.{'\n'}Then connection happens naturally.
               </Text>
               <View style={styles.plusCard}>
-                <Image source={ICONS.obPaywallUnlock} style={styles.plusLockImg} resizeMode="contain" />
+                <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>BunnyUs Plus</Text>
                 {[
                   ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
@@ -566,7 +566,7 @@ export default function OnboardingScreen() {
               <Text style={[styles.body, { marginTop: 12 }]}>
                 Give a name to your bunny that grows along the way.
               </Text>
-              <Image source={ICONS.obBunnyHead} style={styles.bunny} resizeMode="contain" />
+              <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput
                 style={styles.nameInput}
                 placeholder="Type here"
@@ -648,7 +648,7 @@ export default function OnboardingScreen() {
           </KeyboardAvoidingView>
         )}
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 

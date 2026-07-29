@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Image, ImageBackground, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { Redirect } from 'expo-router';
 
 import { AssetGateError } from '@/components/main/asset-gate-error';
@@ -58,9 +59,10 @@ export default function Index() {
   if (gate === 'failed') return <AssetGateError onRetry={() => setGate('loading')} />;
   if (gate === 'loading' || route === null) {
     return (
-      <ImageBackground source={ICONS.obGridBg} style={styles.splash} resizeMode="cover">
-        <Image source={ICONS.obBunnyHead} style={styles.splashBunny} resizeMode="contain" />
-      </ImageBackground>
+      <View style={[styles.splash, { backgroundColor: '#F8E2C1' }]}>
+        <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <ExpoImage source={ICONS.obBunnyHead} style={styles.splashBunny} contentFit="contain" />
+      </View>
     );
   }
   if (route === 'main') return <Redirect href="/(main)/(tabs)" />;

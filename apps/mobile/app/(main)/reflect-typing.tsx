@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -161,7 +161,8 @@ export default function ReflectTypingScreen() {
   }
 
   return (
-    <ImageBackground source={BACKGROUNDS.reflect} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
+      <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       {/* 输入界面统一 50% 黑色遮罩（设计要求）；pick 页保持原色 */}
       {phase !== 'pick' && <View style={styles.scrim} />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -273,7 +274,7 @@ export default function ReflectTypingScreen() {
           isPaid={isPaid}
         />
       )}
-    </ImageBackground>
+    </View>
   );
 }
 

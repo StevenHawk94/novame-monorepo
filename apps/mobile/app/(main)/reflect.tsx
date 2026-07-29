@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Image, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -64,7 +65,8 @@ export default function ReflectEntryScreen() {
   ];
 
   return (
-    <ImageBackground source={BACKGROUNDS.reflect} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
+      <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
         <Pressable onPress={() => router.back()} style={styles.backCircle} hitSlop={10}>
           <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
@@ -88,11 +90,11 @@ export default function ReflectEntryScreen() {
               <Text style={styles.wayTitle}>{w.title}</Text>
               <Text style={styles.wayText}>{w.text}</Text>
             </View>
-            <Image source={w.icon} style={styles.wayIcon} resizeMode="contain" />
+            <ExpoImage source={w.icon} style={styles.wayIcon} contentFit="contain" />
           </OffsetCard>
         ))}
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 
