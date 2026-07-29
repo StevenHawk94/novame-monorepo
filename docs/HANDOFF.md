@@ -200,6 +200,27 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
 - **动画**：`ui/confetti-burst.tsx`（纯 reanimated 纸屑，UI 线程）+
   FireworksBurst 叠加在 reflect 结果页
 
+## 6.59 图标注册表修复 + Menu 全子页面米黄化（2026-07-29）
+
+- **重大坑（已修，勿再踩）**：onboarding/Reflect 入口素材曾被 require 进
+  `FRIEND_ICONS` 而页面代码引用 `ICONS.obGridBg` 等 → source 全是 undefined，
+  expo-image 静默渲染空白（不报错）。`ICONS` 是 `Record<string,...>`，TS 拦不住
+  错误键名。现全部 ob*/reflectEntry*/calendar/memory/sharedMemories/setting 都
+  定义在 `ICONS`（icons.ts），`FRIEND_ICONS` 共用键改为引用 `ICONS.*`。
+  新增图标一律加进 `ICONS`，并 grep 确认引用对象一致。
+- **Menu 子页面全部换肤为米黄主题**（与 me.tsx 一致，仅改颜色不改逻辑）：
+  account-management / notification-settings / support / plan-billing-sheet /
+  order-history / order-detail / payment-stub / shipping-form / product-detail。
+  色板：页面 #F2E6CB，卡片/输入框 #FFFFFF（输入框 #FBF6EA + 边 #E8D5B0），
+  主按钮 #8A6240，标题 #4A3423/#2B2B2B，弱文本 #8A7A63，成功 #3E7C4F、
+  警告 #B58A2A、错误 #C25B4E（banner 底 0.12 alpha）。
+- **Menu 功能链路代码级验证已通过**：update-profile（名/邮箱/密码，Bearer 守卫
+  + admin API）、upload-avatar（avatars bucket）、delete-account、support-ticket
+  （入库 + Resend 邮件）、duo/join（错误码与客户端文案逐一匹配）、
+  friends/status（稳定 inviteCode → 系统分享）、notification-settings（本地
+  MMKV + expo-notifications）。模拟器实测由用户自行执行（用户已修 xcode-select，
+  `mcp simulator attach` 可用）。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定
