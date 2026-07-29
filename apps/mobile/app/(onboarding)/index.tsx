@@ -43,7 +43,7 @@ import {
  * after a successful purchase, and is skippable there too.
  */
 const INK = '#4A2F17';
-const CARD = '#FDF3E3';
+const CARD = '#FFF4E3';
 const BTN = '#4A3220';
 
 const WHO_OPTIONS = [
@@ -242,18 +242,18 @@ export default function OnboardingScreen() {
     <ImageBackground source={ICONS.obGridBg} style={{ flex: 1 }} resizeMode="cover">
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
         {step === 'start' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Image source={ICONS.obIcons} style={styles.iconsGrid} resizeMode="contain" />
             <Text style={styles.h1}>Stay close to the{'\n'}people who matter.</Text>
             <Text style={styles.h2}>By Collecting Memories Together</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Start" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'someone' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.qmark}>{'⁇'}</Text>
             <Text style={styles.h1}>
@@ -264,11 +264,11 @@ export default function OnboardingScreen() {
             </Text>
             <View style={{ flex: 1.4 }} />
             <Btn label="Yes, I have someone like this" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'who' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <Text style={[styles.h1, { marginTop: 40, marginBottom: 26 }]}>Who is this person to you?</Text>
             {WHO_OPTIONS.map((o) => (
               <Pressable
@@ -282,11 +282,11 @@ export default function OnboardingScreen() {
             ))}
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!who} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'blocker' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <Text style={[styles.h1, { marginTop: 40, marginBottom: 26 }]}>What makes it harder to stay close?</Text>
             {BLOCKER_OPTIONS.map((o) => (
               <Pressable
@@ -299,11 +299,11 @@ export default function OnboardingScreen() {
             ))}
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!blocker} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'feedback' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.7 }} />
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
@@ -313,11 +313,11 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1.3 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'notalk' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
             <Text style={styles.h1}>Staying close doesn&apos;t have to mean talking all the time.</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
@@ -330,11 +330,11 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1.3 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'imagine' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
             <Text style={styles.h1}>Imagine this reflection from that person</Text>
             <View style={[styles.card, { marginTop: 26, paddingVertical: 22 }]}>
@@ -357,11 +357,11 @@ export default function OnboardingScreen() {
             <Text style={[styles.h3, { marginTop: 30 }]}>Can you tell how their day looks like?</Text>
             <View style={{ flex: 1.2 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'how' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.4 }} />
             <Text style={styles.h3}>That&apos;s how it works</Text>
             <Text style={[styles.h1, { marginTop: 16 }]}>
@@ -375,11 +375,11 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1.2 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'space' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.4 }} />
             <Text style={styles.h1}>A private space where your lives naturally connect.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
@@ -398,22 +398,22 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'insights' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
             <Text style={styles.h1}>
               Understand them a little better, every day — gentle insights that help you be there.
             </Text>
             <View style={{ flex: 1.5 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'boundaries' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.4 }} />
             <Text style={styles.h1}>Your moments. Your boundaries.</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
@@ -427,11 +427,11 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1.2 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'routine' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.4 }} />
             <Text style={styles.h1}>Easily Keep Up The Routine</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
@@ -450,13 +450,13 @@ export default function OnboardingScreen() {
             </View>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'creator' && (
-          <View style={styles.center}>
-            <View style={{ flex: 0.3 }} />
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+            <View style={{ flex: 0.3, minHeight: 16 }} />
+            <View>
               <View style={styles.card}>
                 <Image source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} resizeMode="contain" />
                 <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the App Creator</Text>
@@ -477,10 +477,10 @@ export default function OnboardingScreen() {
                   needs.&quot;
                 </Text>
               </View>
-            </ScrollView>
-            <View style={{ flex: 1 }} />
+            </View>
+            <View style={{ flex: 1, minHeight: 16 }} />
             <Btn label="Continue" onPress={next} />
-          </View>
+          </ScrollView>
         )}
 
         {step === 'paywall' && (
@@ -518,7 +518,7 @@ export default function OnboardingScreen() {
         )}
 
         {step === 'plans' && (
-          <View style={styles.center}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
               <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
@@ -555,13 +555,13 @@ export default function OnboardingScreen() {
               <Text style={styles.legalText}>Cancel Anytime</Text>
               <Text style={styles.legalText}>Terms</Text>
             </View>
-          </View>
+          </ScrollView>
         )}
 
         {step === 'name' && (
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.center}>
-              <View style={{ flex: 0.5 }} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
+              <View style={{ flex: 0.5, minHeight: 24 }} />
               <Text style={styles.h1}>Name Your Bunny</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
                 Give a name to your bunny that grows along the way.
@@ -577,13 +577,13 @@ export default function OnboardingScreen() {
               />
               <View style={{ flex: 1 }} />
               <Btn label="Start" onPress={() => void onFinishName()} busy={finishing} />
-            </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         )}
 
         {step === 'connect' && (
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.center}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
                 onPress={() => router.replace('/(auth)/signing-in')}
                 style={styles.closeCircle}
@@ -636,12 +636,15 @@ export default function OnboardingScreen() {
                   <Text style={styles.ctaText}>Connect with Email</Text>
                 )}
               </Pressable>
-              <View style={{ flex: 1 }} />
+              <Pressable onPress={() => router.replace('/(auth)/sign-in')} hitSlop={8}>
+                <Text style={styles.loginLink}>Already have an account? Log in</Text>
+              </Pressable>
+              <View style={{ flex: 1, minHeight: 20 }} />
               <Text style={[styles.legalCenter, { marginBottom: insets.bottom + 14 }]}>
                 By continuing, you agree to BunnyUs&apos;s Terms &amp; Conditions and acknowledge the
                 Privacy Policy
               </Text>
-            </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         )}
       </View>
@@ -651,31 +654,31 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 22 },
-  center: { flex: 1, alignItems: 'stretch' },
+  center: { flexGrow: 1, alignItems: 'stretch' },
 
-  h1: { fontSize: 27, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
-  h2: { fontSize: 18, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 14 },
-  h3: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
-  body: { fontSize: 16.5, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center' },
-  qmark: { fontSize: 56, textAlign: 'center', color: INK, marginBottom: 22, fontFamily: 'Inter_800ExtraBold' },
+  h1: { fontSize: 30, lineHeight: 40, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
+  h2: { fontSize: 19, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center', marginTop: 14 },
+  h3: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
+  body: { fontSize: 17, lineHeight: 25, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center' },
+  qmark: { fontSize: 58, textAlign: 'center', color: INK, marginBottom: 24, fontFamily: 'Inter_800ExtraBold' },
 
-  iconsGrid: { width: '100%', height: 300, marginBottom: 26 },
+  iconsGrid: { width: '100%', height: 320, marginBottom: 28 },
 
-  card: { backgroundColor: CARD, borderRadius: 26, padding: 24 },
-  cardTitle: { fontSize: 21, lineHeight: 30, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
+  card: { backgroundColor: CARD, borderRadius: 28, padding: 26 },
+  cardTitle: { fontSize: 22, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
 
   optionRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: CARD, borderRadius: 24, paddingVertical: 19, paddingHorizontal: 20,
-    marginBottom: 14, borderWidth: 2.5, borderColor: 'transparent',
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: '#FFFCF4', borderRadius: 28, paddingVertical: 22, paddingHorizontal: 24,
+    marginBottom: 16, borderWidth: 2.5, borderColor: 'transparent',
   },
   optionRowCenter: { justifyContent: 'center' },
-  optionRowOn: { borderColor: BTN, backgroundColor: '#FFFDF6' },
+  optionRowOn: { borderColor: BTN },
   optionEmoji: { fontSize: 24 },
-  optionIcon: { width: 44, height: 44 },
+  optionIcon: { width: 48, height: 48 },
   plusLockImg: { width: 62, height: 62, alignSelf: 'center', marginTop: -52, marginBottom: 4 },
   creatorBubbleImg: { width: 56, height: 56, alignSelf: 'center', marginBottom: 6 },
-  optionText: { fontSize: 18, fontFamily: 'Inter_700Bold', color: '#161311' },
+  optionText: { fontSize: 19, fontFamily: 'Inter_700Bold', color: '#161311' },
 
   sampleRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, flexWrap: 'wrap' },
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
@@ -727,6 +730,7 @@ const styles = StyleSheet.create({
   },
   authBtnLightText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#161311' },
 
-  cta: { backgroundColor: BTN, borderRadius: 18, paddingVertical: 18, alignItems: 'center' },
-  ctaText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  cta: { backgroundColor: BTN, borderRadius: 22, paddingVertical: 19, alignItems: 'center' },
+  ctaText: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  loginLink: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center', marginTop: 20 },
 });
