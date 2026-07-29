@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Image as RNImage } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -125,20 +124,6 @@ export default function OnboardingScreen() {
     () => (idx >= FLOW.length ? 'connect' : FLOW[idx]),
     [idx],
   );
-
-  // TEMP DEBUG (2026-07-29): print what the device actually resolves the
-  // assets to — remove once the blank-image hunt is over.
-  useEffect(() => {
-    if (!__DEV__) return;
-    try {
-      const bg = RNImage.resolveAssetSource(ICONS.obGridBg as number);
-      const ic = RNImage.resolveAssetSource(ICONS.obWhoPartner as number);
-      console.warn('[ob-img] gridBg uri =', bg?.uri);
-      console.warn('[ob-img] whoPartner uri =', ic?.uri);
-    } catch (e) {
-      console.warn('[ob-img] resolveAssetSource threw:', e instanceof Error ? e.message : e);
-    }
-  }, []);
 
   useEffect(() => {
     if (step !== 'paywall' && step !== 'plans') return;
@@ -254,13 +239,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
-      <ExpoImage
-        source={ICONS.obGridBg}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        onLoad={() => console.warn('[ob-img] gridBg LOADED')}
-        onError={(e) => console.warn('[ob-img] gridBg ERROR:', e.error)}
-      />
+      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
         {step === 'start' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
@@ -297,13 +276,7 @@ export default function OnboardingScreen() {
                 onPress={() => { void haptics.light(); setWho(o.key); }}
                 style={[styles.optionRow, who === o.key && styles.optionRowOn]}
               >
-                <ExpoImage
-                  source={o.icon}
-                  style={styles.optionIcon}
-                  contentFit="contain"
-                  onLoad={() => console.warn('[ob-img] icon LOADED:', o.key)}
-                  onError={(e) => console.warn('[ob-img] icon ERROR:', o.key, e.error)}
-                />
+                <ExpoImage source={o.icon} style={styles.optionIcon} contentFit="contain" />
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
