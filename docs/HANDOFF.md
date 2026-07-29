@@ -165,6 +165,29 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   （"Latest memories of your paired"）；未绑定显示 Pair Friend + 文案
   （mock 1:1）。friends-list/friend-profile 路由保留但入口收敛
 
+## 6.58 Onboarding v3 + 游客模式（2026-07-26 需求）
+
+- **强制登录已移除**：入口 `app/index.tsx` — 有 session 直进；新装机 →
+  onboarding；老设备无 session → `ensureSession()`（`auth.ts`，
+  `signInAnonymously` 匿名会话）→ signing-in。经典 sign-in 页只在匿名
+  登录不可用或用户主动"Log in"时出现。**⚠️ 需在 Supabase Dashboard →
+  Authentication 开启 "Anonymous sign-ins"，否则回退到旧登录页**。
+  profiles 由 `handle_new_user` 触发器自动建，匿名用户同样生效
+- **Onboarding v3**（(onboarding)/index.tsx，单文件步骤流，mock 1:1）：
+  start → someone → who(4选) → blocker(4选) → **feedback（文案按
+  blocker A-D 映射**，BLOCKER_FEEDBACK）→ notalk → imagine（可点物品条）
+  → how → space → insights → boundaries → routine → creator →
+  **paywall（BunnyUs Plus 权益卡 → Choose your plan，接真 IAP
+  purchaseSubscription，可 X 跳过）** → Name Your Bunny → 完成。
+  **Connect Your Account 仅在购买成功后出现且可跳过**：邮箱绑定走
+  `supabase.auth.updateUser({email})`（匿名转正式）；Apple/Google 绑定
+  是占位弹窗（linkIdentity 深链流程未接，见遗留）
+- 兔名/选择存 kOnboardingState（preauth scope）：`setBunnyName` 等；
+  companion 固定 pet1。素材在 assets/onboarding/（已改无空格文件名），
+  兔头 bunny-head.png 兼作 JS splash（入口 gate 加载期显示）
+- 遗留：Apple/Google 匿名账号 linkIdentity、原生 splash 图（app.json，
+  需重新构建）、ob7 的打字→物品生成演示 GIF（素材未提供）
+
 ## 6.6 全局加载/流畅度（2026-07-24 优化 pass）
 
 - **缓存优先原则**：所有页面 `useState(() => getCachedX())` 起步 + focus 时

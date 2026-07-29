@@ -403,3 +403,29 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
   return { kind: 'success', session: data.session, user: data.user };
 }
 
+
+/**
+ * Guest mode (2026-07-26): the app no longer requires an account. If there is
+ * no session, create an ANONYMOUS one — every downstream system (profiles,
+ * RPCs, RLS) sees a normal user id. "Connect Your Account" later attaches a
+ * real identity to this same user, so nothing is lost.
+ *
+ * Requires "Anonymous sign-ins" to be ENABLED in Supabase Auth settings.
+ * Returns false when no session could be established (feature off / offline)
+ * — the caller falls back to the classic sign-in screen.
+ */
+export async function ensureSession(): Promise<boolean> {
+  const existing = await getCurrentSession();
+  if (existing) return true;
+  try {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      console.warn('[auth] anonymous sign-in failed:', error.message);
+      return false;
+    }
+    return Boolean(data.session);
+  } catch (err) {
+    console.warn('[auth] anonymous sign-in threw:', err instanceof Error ? err.message : err);
+    return false;
+  }
+}

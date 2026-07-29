@@ -19,6 +19,11 @@ export type CompanionId = 'pet1' | 'pet2' | 'pet3';
 
 interface OnboardingState {
   companionId?: CompanionId;
+  /** 2026-07-26 onboarding: the bunny's name from "Name Your Bunny". */
+  bunnyName?: string;
+  /** ob3 choices, kept for the ob4 feedback line + future personalization. */
+  whoChoice?: string;
+  blockerChoice?: string;
 }
 
 function readState(): OnboardingState {
@@ -74,4 +79,20 @@ export async function syncOnboardingCompanion(userId: string): Promise<void> {
     // retried next launch, and Reflect fails loud if the companion is missing.
     console.warn('[onboarding] companion sync failed, will retry:', err instanceof Error ? err.message : err);
   }
+}
+
+function writeState(state: OnboardingState): void {
+  storage.set(kOnboardingState.name, JSON.stringify(state));
+}
+
+export function setBunnyName(name: string): void {
+  writeState({ ...readState(), bunnyName: name.trim().slice(0, 30) });
+}
+
+export function getBunnyName(): string | null {
+  return readState().bunnyName ?? null;
+}
+
+export function setOnboardingChoices(who: string, blocker: string): void {
+  writeState({ ...readState(), whoChoice: who, blockerChoice: blocker });
 }

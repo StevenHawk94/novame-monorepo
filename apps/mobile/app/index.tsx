@@ -1,37 +1,48 @@
 import { useEffect, useState } from 'react';
+import { Image, ImageBackground, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 
 import { AssetGateError } from '@/components/main/asset-gate-error';
-import { getCurrentSession } from '@/lib/auth';
+import { ensureSession, getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
+import { ICONS } from '@/lib/icons';
 
 /**
- * Entry gate. Blocks on P0 assets, then routes on session.
+ * Entry gate. Blocks on P0 assets, then routes.
  *
- * Phase A dropped the onboarding branch. The eleven-step v1 flow is gone and
- * the six-step v2.0 flow does not exist yet, so there is nowhere to send a
- * user who has not finished it. Routing to a screen that is not there is
- * worse than not routing: a stub `isOnboardingDone()` returning false would
- * have been a lie the compiler happily accepts. Phase C restores the branch.
+ * GUEST MODE (2026-07-26): the app never forces a login. A signed-in (or
+ * anonymous) session goes home; a fresh install goes to onboarding, which
+ * ends by creating an ANONYMOUS session; a returning session-less launch
+ * silently re-establishes an anonymous session and goes home. The classic
+ * sign-in screen only appears when anonymous auth is unavailable, or via
+ * "Already have an account? Log in".
  *
- * ensureP0Ready() takes an optional filename -- v1 passed the home video so it
- * would be on disk before the first frame. That filename came from
- * character-state, and the v2.0 P0 set is companion videos anyway. Passing
- * nothing still downloads every bucket-root asset; only the extra hint is lost.
+ * While the gate resolves it shows the splash design (bunny on the beige
+ * grid) instead of a blank frame.
  */
 type Gate = 'loading' | 'ready' | 'failed';
+type Route = 'main' | 'onboarding' | 'bootstrap' | 'signin';
 
 export default function Index() {
   const [gate, setGate] = useState<Gate>('loading');
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [route, setRoute] = useState<Route | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const session = await getCurrentSession();
       if (cancelled) return;
-      setHasSession(Boolean(session));
+      if (session) {
+        setRoute('main');
+      } else if (!hasSeenIntro()) {
+        setRoute('onboarding');
+      } else {
+        // Returning guest without a session: quietly mint an anonymous one.
+        const ok = await ensureSession();
+        if (cancelled) return;
+        setRoute(ok ? 'bootstrap' : 'signin');
+      }
       try {
         await ensureP0Ready();
         if (!cancelled) setGate('ready');
@@ -45,13 +56,20 @@ export default function Index() {
   }, []);
 
   if (gate === 'failed') return <AssetGateError onRetry={() => setGate('loading')} />;
-  if (gate === 'loading' || hasSession === null) return null;
-  // Three-way routing restored in C4 (Phase A dropped the onboarding branch).
-  // A signed-in user goes home. A session-less launch splits on whether THIS
-  // phone has seen the intro: unseen -> onboarding, seen -> sign-in. hasSeenIntro
-  // is device-scoped, so a signed-out returning user lands on sign-in, never
-  // re-watches the intro.
-  if (hasSession) return <Redirect href="/(main)/(tabs)" />;
-  if (hasSeenIntro()) return <Redirect href="/(auth)/sign-in" />;
-  return <Redirect href="/(onboarding)" />;
+  if (gate === 'loading' || route === null) {
+    return (
+      <ImageBackground source={ICONS.obGridBg} style={styles.splash} resizeMode="cover">
+        <Image source={ICONS.obBunnyHead} style={styles.splashBunny} resizeMode="contain" />
+      </ImageBackground>
+    );
+  }
+  if (route === 'main') return <Redirect href="/(main)/(tabs)" />;
+  if (route === 'onboarding') return <Redirect href="/(onboarding)" />;
+  if (route === 'bootstrap') return <Redirect href="/(auth)/signing-in" />;
+  return <Redirect href="/(auth)/sign-in" />;
 }
+
+const styles = StyleSheet.create({
+  splash: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  splashBunny: { width: 132, height: 158 },
+});
