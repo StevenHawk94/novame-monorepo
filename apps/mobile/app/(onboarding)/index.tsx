@@ -43,10 +43,10 @@ const CARD = '#FDF3E3';
 const BTN = '#4A3220';
 
 const WHO_OPTIONS = [
-  { key: 'partner', emoji: '❤️', label: 'Partner/Lover' },
-  { key: 'bestie', emoji: '💖', label: 'Best friend' },
-  { key: 'family', emoji: '🏠', label: 'Family member' },
-  { key: 'special', emoji: '⭐', label: 'Someone special' },
+  { key: 'partner', icon: ICONS.obWhoPartner, label: 'Partner/Lover' },
+  { key: 'bestie', icon: ICONS.obWhoFriends, label: 'Best friend' },
+  { key: 'family', icon: ICONS.obWhoFamily, label: 'Family member' },
+  { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
 ];
 
 const BLOCKER_OPTIONS = [
@@ -233,7 +233,7 @@ export default function OnboardingScreen() {
                 onPress={() => { void haptics.light(); setWho(o.key); }}
                 style={[styles.optionRow, who === o.key && styles.optionRowOn]}
               >
-                <Text style={styles.optionEmoji}>{o.emoji}</Text>
+                <Image source={o.icon} style={styles.optionIcon} resizeMode="contain" />
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
@@ -415,7 +415,7 @@ export default function OnboardingScreen() {
             <View style={{ flex: 0.3 }} />
             <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
               <View style={styles.card}>
-                <Text style={styles.creatorBubble}>{'💬'}</Text>
+                <Image source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} resizeMode="contain" />
                 <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the App Creator</Text>
                 <Text style={styles.creatorBody}>
                   &quot;I built this at the beginning to stay connected with my mom. We lived thousands
@@ -451,7 +451,7 @@ export default function OnboardingScreen() {
                 Store your memories, and theirs.{'\n'}Then connection happens naturally.
               </Text>
               <View style={styles.plusCard}>
-                <Text style={styles.plusLock}>{'🔓'}</Text>
+                <Image source={ICONS.obPaywallUnlock} style={styles.plusLockImg} resizeMode="contain" />
                 <Text style={styles.plusTitle}>BunnyUs Plus</Text>
                 {[
                   ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
@@ -627,6 +627,9 @@ const styles = StyleSheet.create({
   optionRowCenter: { justifyContent: 'center' },
   optionRowOn: { borderColor: BTN, backgroundColor: '#FFFDF6' },
   optionEmoji: { fontSize: 24 },
+  optionIcon: { width: 44, height: 44 },
+  plusLockImg: { width: 62, height: 62, alignSelf: 'center', marginTop: -52, marginBottom: 4 },
+  creatorBubbleImg: { width: 56, height: 56, alignSelf: 'center', marginBottom: 6 },
   optionText: { fontSize: 18, fontFamily: 'Inter_700Bold', color: '#161311' },
 
   sampleRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, flexWrap: 'wrap' },
