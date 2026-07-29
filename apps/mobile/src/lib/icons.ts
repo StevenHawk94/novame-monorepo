@@ -34,6 +34,26 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   // Misc
   interact: require('../../assets/Icons/interact.png'),
   Clover: require('../../assets/Icons/clover.png'),
+  // Reflect entry (three ways in)
+  reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
+  reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
+  reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
+  // Shared with Memories Cave
+  calendar: require('../../assets/Icons/calendar.png'),
+  setting: require('../../assets/Icons/setting.png'),
+  memory: require('../../assets/Icons/memory.png'),
+  sharedMemories: require('../../assets/Icons/shared-memories.png'),
+  // Onboarding v3 (grid background + screen art)
+  obGridBg: require('../../assets/onboarding/onboarding-grid-bg.webp'),
+  obWhoPartner: require('../../assets/Icons/ob2-partner.png'),
+  obWhoFriends: require('../../assets/Icons/ob2-friends.png'),
+  obWhoFamily: require('../../assets/Icons/ob2-family.png'),
+  obWhoSpecial: require('../../assets/Icons/ob2-special.png'),
+  obCreatorBubble: require('../../assets/Icons/ob-12.png'),
+  obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
+  obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
+  obBunnyGrid: require('../../assets/onboarding/onboarding-bunny-grid.webp'),
+  obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 
 /** Focus scene illustrations (design: focus picker rows), keyed by scene id. */
@@ -62,23 +82,10 @@ export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
 /** Friends Cave art set (design: friends mocks). */
 export const FRIEND_ICONS = {
   friendList: require('../../assets/Icons/friend-list.png'),
-  sharedMemories: require('../../assets/Icons/shared-memories.png'),
-  memory: require('../../assets/Icons/memory.png'),
-  reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
-  obGridBg: require('../../assets/onboarding/onboarding-grid-bg.webp'),
-  obWhoPartner: require('../../assets/Icons/ob2-partner.png'),
-  obWhoFriends: require('../../assets/Icons/ob2-friends.png'),
-  obWhoFamily: require('../../assets/Icons/ob2-family.png'),
-  obWhoSpecial: require('../../assets/Icons/ob2-special.png'),
-  obCreatorBubble: require('../../assets/Icons/ob-12.png'),
-  obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
-  obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
-  obBunnyGrid: require('../../assets/onboarding/onboarding-bunny-grid.webp'),
-  obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
-  reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
-  reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
-  calendar: require('../../assets/Icons/calendar.png'),
-  setting: require('../../assets/Icons/setting.png'),
+  sharedMemories: ICONS.sharedMemories,
+  memory: ICONS.memory,
+  calendar: ICONS.calendar,
+  setting: ICONS.setting,
 } as const;
 
 /** Full-bleed screen backgrounds (assets/Background). */
