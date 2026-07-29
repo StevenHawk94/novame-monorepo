@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,7 +28,11 @@ import {
 } from '../../src/lib/onboarding';
 import { ensureSession } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
-import { initIAP, purchaseSubscription } from '../../src/lib/iap';
+import {
+  fetchSubscriptionProducts,
+  initIAP,
+  purchaseSubscription,
+} from '../../src/lib/iap';
 
 /**
  * Onboarding v3 (2026-07-26 mocks 1:1) — the BunnyUs story flow on the beige
@@ -107,11 +111,50 @@ export default function OnboardingScreen() {
   const [finishing, setFinishing] = useState(false);
   const [linkEmail, setLinkEmail] = useState('');
   const [linking, setLinking] = useState(false);
+  // Store-localized prices (industry standard: StoreKit's displayPrice is the
+  // truth per storefront/currency). The design-stub strings only show while
+  // products haven't loaded (dev/simulator without StoreKit config).
+  const [priceYearly, setPriceYearly] = useState<string | null>(null);
+  const [priceMonthly, setPriceMonthly] = useState<string | null>(null);
+  const [perMonth, setPerMonth] = useState<string | null>(null);
+  const [compareAt, setCompareAt] = useState<string | null>(null);
+  const pricesFetched = useRef(false);
+
 
   const step: Step = useMemo(
     () => (idx >= FLOW.length ? 'connect' : FLOW[idx]),
     [idx],
   );
+
+  useEffect(() => {
+    if (step !== 'paywall' && step !== 'plans') return;
+    if (pricesFetched.current) return;
+    pricesFetched.current = true;
+    void (async () => {
+      try {
+        await initIAP();
+        const products = await fetchSubscriptionProducts();
+        const byId = new Map(products.map((pr) => [pr.id, pr]));
+        const yearly = byId.get('novame.plus.yearly');
+        const monthly = byId.get('novame.plus.monthly');
+        if (yearly?.displayPrice) setPriceYearly(yearly.displayPrice);
+        if (monthly?.displayPrice) setPriceMonthly(monthly.displayPrice);
+        // Derived lines share the store currency symbol from displayPrice.
+        const num = (v: unknown) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')));
+        const symbol = (dp?: string) => dp?.replace(/[\d.,\s]/g, '') || '$';
+        const yNum = num(yearly?.price);
+        const mNum = num(monthly?.price);
+        if (Number.isFinite(yNum) && yNum > 0 && yearly?.displayPrice) {
+          setPerMonth(`${symbol(yearly.displayPrice)}${(yNum / 12).toFixed(2)}`);
+        }
+        if (Number.isFinite(mNum) && mNum > 0 && monthly?.displayPrice) {
+          setCompareAt(`${symbol(monthly.displayPrice)}${(mNum * 12).toFixed(2)}`);
+        }
+      } catch {
+        // stay on the stub strings; purchase still resolves real pricing
+      }
+    })();
+  }, [step]);
 
   function next() {
     void haptics.light();
@@ -487,7 +530,9 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.planTitle}>12 Months</Text>
                 <Text style={styles.planPrice}>
-                  <Text style={styles.planStrike}>$119.98</Text>  $69.99 ($5.83/month)
+                  <Text style={styles.planStrike}>{compareAt ?? '$119.98'}</Text>
+                  {'  '}
+                  {priceYearly ?? '$69.99'} ({perMonth ?? '$5.83'}/month)
                 </Text>
               </View>
               <View style={styles.trialBadge}>
@@ -500,7 +545,7 @@ export default function OnboardingScreen() {
             >
               <View>
                 <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={styles.planPrice}>$9.99 every month</Text>
+                <Text style={styles.planPrice}>{priceMonthly ?? '$9.99'} every month</Text>
               </View>
             </Pressable>
             <View style={{ flex: 1 }} />
