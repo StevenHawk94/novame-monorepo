@@ -15,19 +15,22 @@ const PLUS_ONLY = new Set(['pet1-skin5', 'pet1-skin6'])
 // can't buy below list price. Cached briefly per lambda instance.
 const MANIFEST_URL = 'https://media.novameapp.com/video-manifest.json'
 const MANIFEST_TTL_MS = 60_000
-let manifestCache = { at: 0, outfits: null }
+let manifestCache = { at: 0, outfits: null, scenes: [] }
 
-async function getOutfitCatalog() {
+async function getCatalogs() {
   const now = Date.now()
   if (manifestCache.outfits && now - manifestCache.at < MANIFEST_TTL_MS) {
-    return manifestCache.outfits
+    return manifestCache
   }
   const res = await fetch(`${MANIFEST_URL}?t=${now}`)
   if (!res.ok) throw new Error(`manifest fetch ${res.status}`)
   const manifest = await res.json()
-  const outfits = Array.isArray(manifest.outfits) ? manifest.outfits : []
-  manifestCache = { at: now, outfits }
-  return outfits
+  manifestCache = {
+    at: now,
+    outfits: Array.isArray(manifest.outfits) ? manifest.outfits : [],
+    scenes: Array.isArray(manifest.scenes) ? manifest.scenes : [],
+  }
+  return manifestCache
 }
 
 /**
@@ -61,19 +64,26 @@ export async function POST(request) {
     // Resolve price + Plus requirement.
     let price = COSMETIC_PRICE
     let plusRequired = PLUS_ONLY.has(cosmeticId)
-    if (cosmeticType === 'outfit') {
-      let outfits
+    if (cosmeticType === 'outfit' || cosmeticType === 'scene') {
+      let catalogs
       try {
-        outfits = await getOutfitCatalog()
+        catalogs = await getCatalogs()
       } catch (e) {
         console.error('[cosmetics/purchase] manifest error:', e && e.message)
-        return NextResponse.json({ error: 'Failed' }, { status: 500 })
+        if (cosmeticType === 'outfit') return NextResponse.json({ error: 'Failed' }, { status: 500 })
+        catalogs = null // legacy scene ids still purchasable at the flat price
       }
-      const outfit = outfits.find((o) => o.key === cosmeticId)
-      if (!outfit) return NextResponse.json({ error: 'bad_id' }, { status: 400 })
-      price = Number(outfit.price) || 0
-      plusRequired = !!outfit.plusOnly
-      if (price <= 0) return NextResponse.json({ error: 'bad_id' }, { status: 400 })
+      const entry = catalogs
+        ? (cosmeticType === 'outfit' ? catalogs.outfits : catalogs.scenes).find((o) => o.key === cosmeticId)
+        : null
+      if (entry) {
+        price = Number(entry.price) || 0
+        plusRequired = !!entry.plusOnly
+        if (price <= 0) return NextResponse.json({ error: 'bad_id' }, { status: 400 })
+      } else if (cosmeticType === 'outfit') {
+        return NextResponse.json({ error: 'bad_id' }, { status: 400 })
+      }
+      // scene id not in the manifest: legacy sceneN — flat price + PLUS_ONLY set.
     }
 
     const supabase = createClient(

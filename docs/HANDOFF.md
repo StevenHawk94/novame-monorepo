@@ -268,6 +268,20 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   （不进包）。
 - **词典/表更新后必须重跑** `python3 tools/slice-item-images.py`（需 Pillow；
   1072 张约 20 分钟）。
+## 6.67 Maps 场景系统（2026-07-30，与 Outfits 同架构）
+
+- manifest 新增 `scenes[]`（16 景，R2 Maps/<Stem>.webp 大图 + -Small.webp 小图；
+  Snowy-Moutain 为 R2 实际拼写勿改）。免费默认 Mushroom-Wood 打包在
+  assets/Background，不进 manifest；legacy sceneN 选择值一律回落默认。
+- scene-select.tsx 重写为 Unlock New Scenes（米色金边面板 3 列格）；Plus 锁与
+  Outfits 同约定（免费用户点击直达 paywall）；购买 Alert 确认 → 服务端按
+  manifest 计价（purchase route 对 scene 同样查 manifest，查不到按 legacy 500）；
+  切换时 Scene Switching 阻断弹窗（prefetch 大图后返回）。
+- Home 背景走 src/lib/scenes.ts getHomeSceneSource()（ExpoImage，远程磁盘缓存）；
+  day/night 双图机制随旧 sceneN 一起退役。启动预取把 16 景大小图并入 outfits
+  预取(并行)。发布新景：上传两图到 Maps/ 后跑
+  apps/admin/scripts/update-scene-manifest.mjs（编辑其中价格表）。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

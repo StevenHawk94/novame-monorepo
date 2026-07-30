@@ -20,6 +20,7 @@ import { Image as ExpoImage } from 'expo-image';
 
 import { kEquippedOutfit, kOutfitCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
+import { fetchSceneCatalog, sceneAssetUrl } from './scenes';
 
 const R2_BASE = 'https://media.novameapp.com';
 const MANIFEST_URL = `${R2_BASE}/video-manifest.json`;
@@ -143,12 +144,18 @@ export function prefetchOutfitAssets(): void {
   void (async () => {
     try {
       const catalog = await fetchOutfitCatalog();
-      await Promise.all(
-        catalog.flatMap((o) => [
+      // Scene art rides along: thumbs + full backgrounds are all small webp.
+      const scenes = await fetchSceneCatalog();
+      await Promise.all([
+        ...catalog.flatMap((o) => [
           ExpoImage.prefetch(outfitAssetUrl(o.thumb)).catch(() => false),
           ExpoImage.prefetch(outfitAssetUrl(o.bunny)).catch(() => false),
         ]),
-      );
+        ...scenes.flatMap((s) => [
+          ExpoImage.prefetch(sceneAssetUrl(s.thumb)).catch(() => false),
+          ExpoImage.prefetch(sceneAssetUrl(s.image)).catch(() => false),
+        ]),
+      ]);
       const ordered = [
         ...catalog.filter((o) => !o.plusOnly),
         ...catalog.filter((o) => o.plusOnly),

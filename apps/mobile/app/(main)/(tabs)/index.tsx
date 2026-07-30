@@ -9,11 +9,10 @@ import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
-import { HOME_SCENE_BY_ID, DEFAULT_SCENE_ID } from '@novame/domain';
-import { getSelectedScene } from '@/lib/cosmetics-store';
+import { Image as ExpoImage } from 'expo-image';
+import { getHomeSceneSource } from '@/lib/scenes';
 import { getFreshBubble } from '@/lib/bubble-store';
 import { bubbleLineFor } from '@novame/domain';
-import { SCENE_IMAGES } from '@/lib/cosmetic-images';
 import { clearReflectLocal } from '@/lib/reflect-api';
 import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
 import { clearNewLensLocal } from '@/lib/lens-api';
@@ -102,15 +101,11 @@ export default function HomeScreen() {
     sheetRef.current?.present();
   };
 
-  const scene = HOME_SCENE_BY_ID[getSelectedScene()] ?? HOME_SCENE_BY_ID[DEFAULT_SCENE_ID];
-  const sceneArt = SCENE_IMAGES[scene.id];
-  const sceneImg = sceneArt ? (day ? sceneArt.day : sceneArt.night) : undefined;
+  const sceneImg = getHomeSceneSource();
 
   return (
     <View style={styles.root} onLayout={onLayout}>
-      {sceneImg && (
-        <Image source={sceneImg} style={styles.sceneBgImg} resizeMode="cover" />
-      )}
+      <ExpoImage source={sceneImg} style={styles.sceneBgImg} contentFit="cover" />
       <SafeAreaView style={styles.safe} edges={['top']}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>

@@ -361,3 +361,6 @@ export const kOutfitCatalog = defineKey('novame_outfit_catalog', 'device');
 
 /** outfits.ts: which outfit this account has equipped (mirrors kCosmetics skins). */
 export const kEquippedOutfit = defineKey('novame_equipped_outfit', 'user');
+
+/** scenes.ts: cached scene catalog from the R2 video-manifest (user-agnostic). */
+export const kSceneCatalog = defineKey('novame_scene_catalog', 'device');
