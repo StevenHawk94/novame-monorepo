@@ -43,6 +43,11 @@ const MAX_CONCURRENCY = 3;
 // any partial/corrupt file, so no temp-file dance is needed.
 const DOWNLOAD_ATTEMPT_TIMEOUT_MS = 12000;
 const P0_RETRY_MAX_BACKOFF_MS = 30000;
+// A P0 asset that fails this many attempts is marked failed and the gate
+// opens anyway. Retry-forever assumed the manifest was always truthful; a
+// deleted R2 object (2026-07-30 bucket re-org) proved a 404 can be permanent,
+// and bricking every launch over a missing asset is worse than degrading.
+const P0_MAX_ATTEMPTS = 4;
 
 function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -145,18 +150,23 @@ async function runTask(t: DLTask, baseUrl: string): Promise<void> {
     t.status = 'done';
   } catch {
     if (t.tier === 0) {
-      // P0 must eventually land: retry forever with capped exponential
-      // backoff. Re-queue (status stays a P0 'queued' so maybeResolveP0 will
-      // NOT resolve until this genuinely completes) and schedule a pump after
-      // the backoff; pickNext skips it until nextAttemptAt is reached.
+      // P0 retries with capped exponential backoff, but only up to
+      // P0_MAX_ATTEMPTS: a permanently missing object (manifest drift) must
+      // not hold the launch gate forever — mark failed and let the app
+      // degrade (bundled fallbacks cover Home).
       t.attempts = (t.attempts ?? 0) + 1;
-      const backoff = Math.min(
-        1000 * 2 ** Math.min(t.attempts - 1, 5),
-        P0_RETRY_MAX_BACKOFF_MS,
-      );
-      t.nextAttemptAt = Date.now() + backoff;
-      t.status = 'queued';
-      setTimeout(() => pump(baseUrl), backoff);
+      if (t.attempts >= P0_MAX_ATTEMPTS) {
+        console.warn(`[download-queue] P0 gave up after ${t.attempts} attempts: ${t.filename}`);
+        t.status = 'failed';
+      } else {
+        const backoff = Math.min(
+          1000 * 2 ** Math.min(t.attempts - 1, 5),
+          P0_RETRY_MAX_BACKOFF_MS,
+        );
+        t.nextAttemptAt = Date.now() + backoff;
+        t.status = 'queued';
+        setTimeout(() => pump(baseUrl), backoff);
+      }
     } else {
       t.status = 'failed'; // P1: non-blocking; retried on bumpToFront or next launch
     }
