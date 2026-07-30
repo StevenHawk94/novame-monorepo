@@ -257,6 +257,17 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
 - 移动端新增原生依赖无；expo-clipboard 是 6.60 加的。旧 SKIN_IMAGES/皮肤选择
   UI 已无引用（模块保留未删）。
 
+## 6.66 Item 图标性能重构（2026-07-30，方案A已确认执行）
+
+- 旧方案（雪碧图开窗）导致 Bags/Guided/Object Reflect 图标逐个弹出：每格持有
+  整张 2048px 表的缩放图层，23 张表异步解码先后完成。
+- 现方案：`tools/slice-item-images.py` 构建期把 1072 个 item 从标准化大表切成
+  独立 256px webp（assets/items/each/，共 9.1MB），并生成 require 映射
+  `src/lib/item-images.g.ts`（勿手改）。ItemSprite 直接渲染小图，API 不变，
+  emoji 兜底保留；23 张大表 webp 留在 assets/items/ 作切图源但不再被 require
+  （不进包）。
+- **词典/表更新后必须重跑** `python3 tools/slice-item-images.py`（需 Pillow；
+  1072 张约 20 分钟）。
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定
