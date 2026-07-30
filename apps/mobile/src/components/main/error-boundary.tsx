@@ -74,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F0B2E',
+    backgroundColor: '#4C331B',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
