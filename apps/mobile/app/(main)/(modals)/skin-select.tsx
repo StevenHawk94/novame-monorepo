@@ -25,9 +25,10 @@ import {
   type OutfitDef,
 } from '../../../src/lib/outfits';
 
-// outfits background.webp is 550×400; shown full-bleed width, uncropped,
-// pinned to the very top of the screen (design 2026-07-30).
-const BG = require('../../../assets/Background/outfits background.webp');
+// outfits-background.webp is 550×400; shown full-bleed width, uncropped,
+// pinned to the very top of the screen (design 2026-07-30). NO spaces in
+// asset filenames — Metro fails silently on them (see HANDOFF §6).
+const BG = require('../../../assets/Background/outfits-background.webp');
 const BG_ASPECT = 550 / 400;
 // The bunny's default look (no outfit) — shown whenever the "none" slot is
 // previewed or nothing is equipped yet.
