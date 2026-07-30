@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -19,6 +19,7 @@ import {
   ensureOutfitVideoCached,
   fetchOutfitCatalog,
   getCachedOutfitCatalog,
+  getCachedOutfitVideoUri,
   getEquippedOutfitKey,
   outfitAssetUrl,
   setEquippedOutfitKey,
@@ -51,6 +52,8 @@ export default function OutfitClosetScreen() {
   const [equipped, setEquipped] = useState<string | null>(() => getEquippedOutfitKey());
   const [previewKey, setPreviewKey] = useState<string | null>(() => getEquippedOutfitKey());
   const [busy, setBusy] = useState(false);
+  // Blocking "Outfits Switching" overlay while the equipped video downloads.
+  const [switching, setSwitching] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -67,11 +70,25 @@ export default function OutfitClosetScreen() {
   const preview = catalog.find((o) => o.key === previewKey) ?? null;
   const owned = (o: OutfitDef) => isUnlocked(cosmetics, 'outfit', o.key);
 
-  function equip(o: OutfitDef) {
+  /**
+   * Equip + return to Home. If the loop video isn't cached yet, a blocking
+   * "Outfits Switching" modal holds the screen until it lands (usually a
+   * blink — the launch prefetch has warmed most of them), then closes and
+   * navigates back so Home picks the clip up on focus.
+   */
+  async function equipAndReturn(o: OutfitDef) {
     setEquippedOutfitKey(o.key);
     setEquipped(o.key);
-    // Warm the Home loop video now so the swap on return is seamless.
-    void ensureOutfitVideoCached(o);
+    const cached = await getCachedOutfitVideoUri(o.key);
+    if (!cached) {
+      setSwitching(true);
+      const uri = await ensureOutfitVideoCached(o);
+      setSwitching(false);
+      if (!uri) {
+        Alert.alert('Slow network', 'The outfit will finish downloading in the background.');
+      }
+    }
+    router.back();
   }
 
   async function buy(o: OutfitDef) {
@@ -91,33 +108,35 @@ export default function OutfitClosetScreen() {
     if (res.ok) {
       void haptics.success();
       setCosmetics(getCachedCosmetics());
-      equip(o);
+      await equipAndReturn(o);
     } else if (res.error === 'plus_required') {
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
       Alert.alert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
     } else if (res.error === 'already_owned') {
       setCosmetics(getCachedCosmetics());
-      equip(o);
+      await equipAndReturn(o);
     } else {
       Alert.alert('Something went wrong', 'Could not complete the purchase. Try again.');
     }
   }
 
   function onAction() {
-    if (busy) return;
+    if (busy || switching) return;
     if (!preview) {
-      // Default look selected: unequip → Home returns to the default video.
+      // Default look selected: unequip → Home returns to the default video
+      // (bundled, so no download wait).
       if (equipped === null) return;
       void haptics.success();
       setEquippedOutfitKey(null);
       setEquipped(null);
+      router.back();
       return;
     }
     if (equipped === preview.key) return;
     if (owned(preview)) {
       void haptics.success();
-      equip(preview);
+      void equipAndReturn(preview);
     } else {
       void buy(preview);
     }
@@ -188,10 +207,20 @@ export default function OutfitClosetScreen() {
           {catalog.map((o) => {
             const isActive = equipped === o.key;
             const isSelected = previewKey === o.key;
+            const plusLocked = o.plusOnly && !isPaid;
             return (
               <Pressable
                 key={o.key}
-                onPress={() => { void haptics.selection(); setPreviewKey(o.key); }}
+                onPress={() => {
+                  if (plusLocked) {
+                    // Free user on a Plus outfit: straight to the paywall.
+                    void haptics.warning();
+                    router.push('/(main)/(modals)/subscription-paywall');
+                    return;
+                  }
+                  void haptics.selection();
+                  setPreviewKey(o.key);
+                }}
                 style={[styles.card, isSelected && styles.cardSelected]}
               >
                 <ExpoImage
@@ -200,7 +229,12 @@ export default function OutfitClosetScreen() {
                   contentFit="contain"
                   transition={100}
                 />
-                {isActive ? (
+                {plusLocked ? (
+                  <View style={styles.plusPill}>
+                    <MaterialIcons name="lock" size={14} color="#FFFFFF" />
+                    <Text style={styles.plusPillText}>PLUS</Text>
+                  </View>
+                ) : isActive ? (
                   <View style={styles.inUseBadge}>
                     <Text style={styles.inUseText}>In Use</Text>
                   </View>
@@ -208,7 +242,6 @@ export default function OutfitClosetScreen() {
                   <Text style={styles.ownedText}>Owned</Text>
                 ) : (
                   <View style={styles.priceRow}>
-                    {o.plusOnly && <Text style={styles.plusTag}>PLUS</Text>}
                     <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
                     <Text style={styles.priceText}>{o.price}</Text>
                   </View>
@@ -221,15 +254,17 @@ export default function OutfitClosetScreen() {
         {catalog.length === 0 && (
           <Text style={styles.emptyText}>Loading the closet…</Text>
         )}
+      </ScrollView>
 
-        {/* bottom action: buy / use / in use for the previewed look */}
-        {catalog.length > 0 && (
+      {/* fixed bottom action: buy / use / in use — always visible */}
+      {catalog.length > 0 && (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable
             onPress={onAction}
-            disabled={busy || isInUse}
+            disabled={busy || switching || isInUse}
             style={({ pressed }) => [
               styles.actionBtn,
-              (busy || isInUse) && { opacity: 0.6 },
+              (busy || switching || isInUse) && { opacity: 0.6 },
               pressed && !isInUse && { transform: [{ translateY: 1 }] },
             ]}
           >
@@ -238,8 +273,19 @@ export default function OutfitClosetScreen() {
             )}
             <Text style={styles.actionText}>{busy ? '…' : actionLabel}</Text>
           </Pressable>
-        )}
-      </ScrollView>
+        </View>
+      )}
+
+      {/* blocking wait while the outfit's loop video downloads */}
+      <Modal visible={switching} transparent animationType="fade">
+        <View style={styles.switchOverlay}>
+          <View style={styles.switchCard}>
+            <ActivityIndicator size="large" color="#8A6240" />
+            <Text style={styles.switchTitle}>Outfits Switching…</Text>
+            <Text style={styles.switchSub}>Getting your bunny dressed</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -288,18 +334,33 @@ const styles = StyleSheet.create({
   inUseBadge: { backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5 },
   inUseText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
   ownedText: { color: '#8A6240', fontSize: 13, fontFamily: 'Inter_700Bold' },
-  plusTag: { color: '#B97E2A', fontSize: 10.5, fontFamily: 'Inter_800ExtraBold', letterSpacing: 0.8, marginRight: 2 },
+  plusPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#4A3220', borderRadius: 14, paddingHorizontal: 13, paddingVertical: 6,
+  },
+  plusPillText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold', letterSpacing: 0.8 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   priceClover: { width: 18, height: 18 },
   priceText: { color: '#2E7A3A', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
   emptyText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Inter_500Medium', textAlign: 'center', paddingVertical: 32 },
 
+  footer: { paddingHorizontal: 32, paddingTop: 10, backgroundColor: '#5F3A1E' },
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 17,
-    marginTop: 8, marginHorizontal: 24,
   },
   actionClover: { width: 24, height: 24 },
   actionText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
+
+  switchOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  switchCard: {
+    backgroundColor: '#FBF3DF', borderRadius: 28, paddingVertical: 30, paddingHorizontal: 40,
+    alignItems: 'center', gap: 14,
+  },
+  switchTitle: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  switchSub: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: '#8A7A63' },
 });

@@ -16,6 +16,7 @@
  * server-authoritative via cosmetic_unlocks type 'outfit'.
  */
 import * as FileSystem from 'expo-file-system/legacy';
+import { Image as ExpoImage } from 'expo-image';
 
 import { kEquippedOutfit, kOutfitCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
@@ -123,6 +124,42 @@ export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | nul
   })();
   inflight.set(outfit.key, p);
   return p;
+}
+
+/**
+ * Background prefetch, kicked off once per launch from the entry gate
+ * (covers onboarding and normal starts alike). Order matches perceived
+ * urgency (2026-07-30):
+ *   1. all closet images in parallel (~200KB total — thumbs + worn shots)
+ *   2. videos sequentially, free outfits before Plus ones
+ * so by the time a user opens the closet and switches, the wait modal is
+ * a blink instead of a download.
+ */
+let prefetchStarted = false;
+
+export function prefetchOutfitAssets(): void {
+  if (prefetchStarted) return;
+  prefetchStarted = true;
+  void (async () => {
+    try {
+      const catalog = await fetchOutfitCatalog();
+      await Promise.all(
+        catalog.flatMap((o) => [
+          ExpoImage.prefetch(outfitAssetUrl(o.thumb)).catch(() => false),
+          ExpoImage.prefetch(outfitAssetUrl(o.bunny)).catch(() => false),
+        ]),
+      );
+      const ordered = [
+        ...catalog.filter((o) => !o.plusOnly),
+        ...catalog.filter((o) => o.plusOnly),
+      ];
+      for (const o of ordered) {
+        await ensureOutfitVideoCached(o);
+      }
+    } catch {
+      // Best-effort warmup; on-demand download covers whatever is missing.
+    }
+  })();
 }
 
 /**

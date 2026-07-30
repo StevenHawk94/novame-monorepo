@@ -7,6 +7,7 @@ import { AssetGateError } from '@/components/main/asset-gate-error';
 import { ensureSession, getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
+import { prefetchOutfitAssets } from '@/lib/outfits';
 import { ICONS } from '@/lib/icons';
 
 /**
@@ -31,6 +32,9 @@ export default function Index() {
 
   useEffect(() => {
     let cancelled = false;
+    // Warm the Bunny Closet (images then videos, free before Plus) in the
+    // background from the very first launch — including the onboarding path.
+    prefetchOutfitAssets();
     void (async () => {
       const session = await getCurrentSession();
       if (cancelled) return;
