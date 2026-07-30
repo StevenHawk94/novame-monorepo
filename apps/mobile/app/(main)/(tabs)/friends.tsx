@@ -13,8 +13,8 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
   getCachedFriends, getCachedFriendFeed, fetchPairing,
-  fetchSharePrivacy, setSharePrivacy,
-  type FriendsStatus, type FeedEntry, type PairingStatus,
+  fetchSharePrivacy, setSharePrivacy, respondFriend,
+  type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest,
 } from '@/lib/friends-api';
 
 /**
@@ -71,6 +71,17 @@ export default function FriendsScreen() {
         ],
       );
     });
+  }
+
+  async function onRespond(req: PendingRequest, action: 'accept' | 'decline') {
+    void haptics.medium();
+    const res = await respondFriend(req.friendshipId, action);
+    if (res.ok) {
+      if (action === 'accept') void haptics.success();
+      load();
+    } else if (res.error === 'friend_limit_reached') {
+      Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
+    }
   }
 
   function onFeedRow(e: FeedEntry) {
@@ -186,14 +197,36 @@ export default function FriendsScreen() {
             </View>
           </>
         ) : (
-          /* unpaired (mock 1): Pair Friend + the line, any friend rows below */
+          /* unpaired: incoming invitations take the stage (mock 4, Pending
+             Confirmation); otherwise the Pair Friend pill + line (mock 1). */
           <View style={{ flex: 1 }}>
-            <View style={styles.emptyWrap}>
-              {addPill}
-              <Text style={styles.emptyInvite}>
-                Pair with some you care and love,{'\n'}then create memories together!
-              </Text>
-            </View>
+            {pendingCount > 0 ? (
+              <View style={styles.pendingWrap}>
+                <Text style={styles.pendingTitle}>Pending Confirmation</Text>
+                {status.pending.map((req) => (
+                  <View key={req.friendshipId} style={styles.pendingCard}>
+                    <View style={styles.pendingAvatar}><Text style={styles.pendingAvatarEmoji}>{'🐰'}</Text></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.pendingName} numberOfLines={1}>{req.displayName}</Text>
+                      <Text style={styles.pendingRel} numberOfLines={1}>{req.relationship ?? 'Wants to pair'}</Text>
+                    </View>
+                    <Pressable onPress={() => void onRespond(req, 'decline')} style={styles.ignoreBtn}>
+                      <Text style={styles.ignoreText}>Ignore</Text>
+                    </Pressable>
+                    <Pressable onPress={() => void onRespond(req, 'accept')} style={styles.acceptBtn}>
+                      <Text style={styles.acceptText}>Accept</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                {addPill}
+                <Text style={styles.emptyInvite}>
+                  Pair with some you care and love,{'\n'}then create memories together!
+                </Text>
+              </View>
+            )}
             {shownFeed.length > 0 && (
               <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -261,6 +294,23 @@ const styles = StyleSheet.create({
     fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',
     textAlign: 'center', lineHeight: 27,
   },
+
+  pendingWrap: { paddingHorizontal: 16, paddingTop: '32%', gap: 16 },
+  pendingTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  pendingCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 26, padding: 14,
+    shadowColor: '#2B2B2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  pendingAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E9F2E4', alignItems: 'center', justifyContent: 'center' },
+  pendingAvatarEmoji: { fontSize: 28 },
+  pendingName: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  pendingRel: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#6B5A45', marginTop: 2 },
+  ignoreBtn: { backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  ignoreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#6B5A45' },
+  acceptBtn: { backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  acceptText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   panel: {
     flex: 1, marginHorizontal: 12, marginTop: 16, marginBottom: 8,

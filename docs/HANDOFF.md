@@ -221,6 +221,18 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   MMKV + expo-notifications）。模拟器实测由用户自行执行（用户已修 xcode-select，
   `mcp simulator attach` 可用）。
 
+## 6.60 好友配对流程 v2 + Connection tab（2026-07-29 五张设计图）
+
+- 底部 tab `status` 标题 Me → **Connection**；未配对时整页显示
+  `assets/Background/connection.webp` 沙漠图 + 米色锁卡片（点卡片 → friend-add）。
+- Friends 页（Memories Cave）：有待确认邀请时展示 **Pending Confirmation**
+  白色标题 + 邀请卡（头像/名字/关系 + Ignore/Accept，接受走 respondFriend →
+  自动 set_pairing）；无邀请时保持 Pair Friend 药丸 + 文案。
+- friend-add：关系选项改为 Partner / Best Friend / Families / Someone Special /
+  Others；My Pair ID 卡下新增 **Copy ID** 按钮（expo-clipboard，新原生依赖，
+  需要 run:ios 重新构建）。
+- 换 tab 名只改了 _layout 的 title；status.tsx 文件名未动（路由不变）。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

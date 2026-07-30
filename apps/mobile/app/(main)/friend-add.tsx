@@ -3,6 +3,7 @@ import {
   Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -14,9 +15,9 @@ import {
   type FriendsStatus, type PendingRequest,
 } from '@/lib/friends-api';
 
-// 2026-07-24 pairing flow (mock 2): the invitation proposes a relationship
+// 2026-07-29 pairing flow (mock 3): the invitation proposes a relationship
 // and its start date.
-const RELATIONSHIPS = ['Lover', 'Best Friend', 'Mom and Daughter', 'Siblings', 'Someone Special', 'Others'];
+const RELATIONSHIPS = ['Partner', 'Best Friend', 'Families', 'Someone Special', 'Others'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /**
@@ -45,6 +46,7 @@ export default function FriendAddScreen() {
   });
   const [dateOpen, setDateOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
@@ -100,6 +102,15 @@ export default function FriendAddScreen() {
     else if (res.error === 'friend_limit_reached') {
       Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
     }
+  }
+
+  async function onCopyId() {
+    if (!status.inviteCode || copied) return;
+    void haptics.light();
+    await Clipboard.setStringAsync(status.inviteCode);
+    void haptics.success();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
   }
 
   async function onInviteLink() {
@@ -166,6 +177,15 @@ export default function FriendAddScreen() {
             <Text style={styles.idLabel}>My Pair ID</Text>
             <Text style={styles.idValue}>{status.inviteCode ?? '——————'}</Text>
           </View>
+
+          {/* copy id (mock 2) */}
+          <Pressable
+            onPress={() => void onCopyId()}
+            style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.85 }]}
+          >
+            <MaterialIcons name={copied ? 'check' : 'content-copy'} size={20} color="#6B4A25" />
+            <Text style={styles.copyText}>{copied ? 'Copied!' : 'Copy ID'}</Text>
+          </Pressable>
 
           {/* incoming requests */}
           {status.pending.map((req) => (
@@ -306,6 +326,11 @@ const styles = StyleSheet.create({
   idCard: { backgroundColor: '#FFFFFF', borderRadius: 24, paddingVertical: 20, alignItems: 'center', gap: 6 },
   idLabel: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   idValue: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B', letterSpacing: 3 },
+  copyBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: '#F5EBD3', borderRadius: 24, paddingVertical: 17,
+  },
+  copyText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#6B4A25' },
 
   reqCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,

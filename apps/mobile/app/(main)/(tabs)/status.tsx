@@ -6,8 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Image as ExpoImage } from 'expo-image';
+
 import { haptics } from '@/lib/haptics';
-import { ICONS } from '@/lib/icons';
+import { BACKGROUNDS, ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
@@ -117,17 +119,21 @@ export default function ConnectionDashboardScreen() {
       </View>
 
       {!pairing || !partner ? (
-        <View style={st.emptyWrap}>
-          <Text style={st.emptyTitle}>No one paired yet</Text>
-          <Text style={st.emptyBody}>
-            Pair with someone you care and love — this page becomes your window into their days.
-          </Text>
+        /* Unpaired lock state (mock 2026-07-29): the desert art fills the tab
+           under the header; a cream card with a lock invites pairing. */
+        <View style={{ flex: 1 }}>
+          <ExpoImage
+            source={BACKGROUNDS.connection}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            contentPosition="top"
+          />
           <Pressable
             onPress={() => { void haptics.medium(); router.push('/(main)/friend-add' as never); }}
-            style={st.pairBtn}
+            style={st.pairLockCard}
           >
-            <MaterialIcons name="add-circle" size={22} color="#2E7A3E" />
-            <Text style={st.pairBtnText}>Pair Friend</Text>
+            <MaterialIcons name="lock" size={64} color="#5D3A1F" />
+            <Text style={st.pairLockText}>Pair someone now to{'\n'}unlock connection dashboard</Text>
           </Pressable>
         </View>
       ) : (
@@ -301,14 +307,15 @@ const st = StyleSheet.create({
   },
   copyBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 36 },
-  emptyTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#4A3423' },
-  emptyBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#7A5A42', textAlign: 'center', lineHeight: 22 },
-  pairBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF',
-    borderRadius: 26, paddingHorizontal: 22, paddingVertical: 14, marginTop: 6,
+  pairLockCard: {
+    marginHorizontal: 20, marginTop: 48, borderRadius: 32,
+    backgroundColor: '#FBF3DF', alignItems: 'center', justifyContent: 'center',
+    gap: 20, paddingVertical: 96, paddingHorizontal: 28,
   },
-  pairBtnText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  pairLockText: {
+    fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#5D3A1F',
+    textAlign: 'center', lineHeight: 30,
+  },
 
   detailOverlay: {
     ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)',
