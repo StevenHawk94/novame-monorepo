@@ -29,6 +29,9 @@ import {
 // pinned to the very top of the screen (design 2026-07-30).
 const BG = require('../../../assets/Background/outfits background.webp');
 const BG_ASPECT = 550 / 400;
+// The bunny's default look (no outfit) — shown whenever the "none" slot is
+// previewed or nothing is equipped yet.
+const DEFAULT_BUNNY = require('../../../assets/Background/Default.webp');
 
 /**
  * Bunny Closet (mock 1:1). Fixed top band: the room art, close X, clover
@@ -101,7 +104,15 @@ export default function OutfitClosetScreen() {
   }
 
   function onAction() {
-    if (!preview || busy) return;
+    if (busy) return;
+    if (!preview) {
+      // Default look selected: unequip → Home returns to the default video.
+      if (equipped === null) return;
+      void haptics.success();
+      setEquippedOutfitKey(null);
+      setEquipped(null);
+      return;
+    }
     if (equipped === preview.key) return;
     if (owned(preview)) {
       void haptics.success();
@@ -111,9 +122,9 @@ export default function OutfitClosetScreen() {
     }
   }
 
-  const isInUse = preview !== null && equipped === preview.key;
+  const isInUse = preview ? equipped === preview.key : equipped === null;
   const actionLabel = !preview
-    ? 'Pick an outfit'
+    ? isInUse ? 'In Use' : 'Use'
     : isInUse
       ? 'In Use'
       : owned(preview)
@@ -126,14 +137,12 @@ export default function OutfitClosetScreen() {
       {/* ---- fixed top: room art, uncropped, pinned to the top edge ---- */}
       <View style={styles.bgWrap}>
         <ExpoImage source={BG} style={styles.bgImg} contentFit="cover" />
-        {preview && (
-          <ExpoImage
-            source={{ uri: outfitAssetUrl(preview.bunny) }}
-            style={styles.bunny}
-            contentFit="contain"
-            transition={120}
-          />
-        )}
+        <ExpoImage
+          source={preview ? { uri: outfitAssetUrl(preview.bunny) } : DEFAULT_BUNNY}
+          style={styles.bunny}
+          contentFit="contain"
+          transition={120}
+        />
         <Pressable
           onPress={() => { void haptics.light(); router.back(); }}
           style={[styles.closeBtn, { top: insets.top + 8 }]}
@@ -159,6 +168,22 @@ export default function OutfitClosetScreen() {
         </View>
 
         <View style={styles.grid}>
+          {/* slot 0: no outfit — the bunny's default look */}
+          <Pressable
+            onPress={() => { void haptics.selection(); setPreviewKey(null); }}
+            style={[styles.card, styles.noneCard, previewKey === null && styles.cardSelected]}
+          >
+            <View style={styles.noneIconWrap}>
+              <MaterialIcons name="block" size={52} color="#4A3220" />
+            </View>
+            {equipped === null ? (
+              <View style={styles.inUseBadge}>
+                <Text style={styles.inUseText}>In Use</Text>
+              </View>
+            ) : (
+              <Text style={styles.ownedText}>Default</Text>
+            )}
+          </Pressable>
           {catalog.map((o) => {
             const isActive = equipped === o.key;
             const isSelected = previewKey === o.key;
@@ -196,8 +221,8 @@ export default function OutfitClosetScreen() {
           <Text style={styles.emptyText}>Loading the closet…</Text>
         )}
 
-        {/* bottom action: buy / use / in use for the previewed outfit */}
-        {preview && (
+        {/* bottom action: buy / use / in use for the previewed look */}
+        {catalog.length > 0 && (
           <Pressable
             onPress={onAction}
             disabled={busy || isInUse}
@@ -256,6 +281,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12, paddingHorizontal: 8, gap: 8,
   },
   cardSelected: { borderColor: '#FFFFFF' },
+  noneCard: { justifyContent: 'center' },
+  noneIconWrap: { width: '84%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   thumb: { width: '84%', aspectRatio: 1 },
   inUseBadge: { backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5 },
   inUseText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
