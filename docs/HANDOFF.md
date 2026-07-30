@@ -233,6 +233,30 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   需要 run:ios 重新构建）。
 - 换 tab 名只改了 _layout 的 title；status.tsx 文件名未动（路由不变）。
 
+## 6.65 Bunny Closet 服装系统（2026-07-30，R2 驱动，不发版上新）
+
+- **数据源**：R2 `novame-videos/video-manifest.json` 新增 `outfits[]`
+  （key/name/price/plusOnly + thumb/bunny/video 三个对象键）。⚠️ manifest 的
+  `version` 必须保持字符串 `'v1'`（asset-cache.ts 硬校验，改了全端资产管线报错）。
+  已发布 11 套（Aloha Friday 500 … Yeehaw Sheriff 1000，后四套 Plus Only）。
+- **三件套约定**：`Outfits/<Name>.webp`（衣柜缩略图）、`Outfits/<Name>-Bunny.webp`
+  （穿搭效果图）、`Character Videos/<Name>.mov`（Home 透明循环视频）。
+- **移动端**：skin-select.tsx 重写为 Bunny Closet（顶部 outfits background.webp
+  550×400 固定不裁剪 + 关闭钮 + clovers.png 余额丸；下方整体滚动：标题、3 列卡片、
+  底部购买/Use/In Use 按钮）。`src/lib/outfits.ts`：目录 cache-first 拉取、
+  equip 本地 MMKV（kEquippedOutfit）、视频下载到本地缓存后才播（不卡顿）。
+  companion-video.tsx 在 focus 时用 replaceAsync 无缝换片，默认回落 default.mov。
+- **购买**：cosmetics/purchase route 支持 type='outfit'，价格/Plus 以服务端拉
+  manifest 为准（60s 缓存）；Plus 门槛已从 subscriptions.plan 统一改为
+  profiles.subscription_tier。迁移 029（cosmetic_unlocks_type_chk 加 'outfit'）
+  ——需用户在 Supabase SQL 执行后才可购买。
+- **管理端**（apps/admin 新 Outfits tab）：presign（浏览器直传 R2，绕过 Vercel
+  4.5MB 限制）→ PUT ×3 → commit（HeadObject 校验三件齐全后合并 manifest）。
+  ⚠️ 浏览器直传需要 R2 bucket 配置 CORS 允许 admin 域名的 PUT。
+  依赖新增 @aws-sdk/s3-request-presigner。
+- 移动端新增原生依赖无；expo-clipboard 是 6.60 加的。旧 SKIN_IMAGES/皮肤选择
+  UI 已无引用（模块保留未删）。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

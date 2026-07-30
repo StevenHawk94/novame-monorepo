@@ -1,219 +1,277 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { SKIN_COUNT } from '@novame/domain';
-import { useTheme } from '../../../src/theme/use-theme';
 import { haptics } from '../../../src/lib/haptics';
-import { getCachedCompanion } from '../../../src/lib/companion-api';
-import { getSelectedSkin, setSelectedSkin } from '../../../src/lib/cosmetics-store';
+import { ICONS } from '../../../src/lib/icons';
 import { getCachedSubscriptionTier } from '../../../src/lib/subscription';
-import { SKIN_IMAGES } from '../../../src/lib/cosmetic-images';
 import {
-  COSMETIC_PRICE,
   fetchCosmetics,
   getCachedCosmetics,
   isUnlocked,
   purchaseCosmetic,
   type CosmeticsState,
 } from '../../../src/lib/cosmetics-api';
+import {
+  ensureOutfitVideoCached,
+  fetchOutfitCatalog,
+  getCachedOutfitCatalog,
+  getEquippedOutfitKey,
+  outfitAssetUrl,
+  setEquippedOutfitKey,
+  type OutfitDef,
+} from '../../../src/lib/outfits';
 
-// The last two pet1 skins are Plus-exclusive (still cost clovers).
-const PLUS_SKINS = new Set([5, 6]); // skin numbers (1-based)
+// outfits background.webp is 550×400; shown full-bleed width, uncropped,
+// pinned to the very top of the screen (design 2026-07-30).
+const BG = require('../../../assets/Background/outfits background.webp');
+const BG_ASPECT = 550 / 400;
 
 /**
- * Skin center. Skins are bought with clovers (a flat price each); skin 1 is the
- * free default. The last two are Plus-exclusive -- they still cost clovers but
- * need an active subscription. Owned skins are selectable; unowned ones show
- * their price and buy on tap. Balance shows at the top.
+ * Bunny Closet (mock 1:1). Fixed top band: the room art, close X, clover
+ * balance pill, and the previewed outfit's -Bunny.webp worn shot. Everything
+ * below the art — title included — scrolls as one region. The catalog comes
+ * from R2's video-manifest (prices/plus flags server-trusted on purchase),
+ * so new outfits appear without an app release.
  */
-export default function SkinSelectScreen() {
+export default function OutfitClosetScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
-
-  const companion = getCachedCompanion();
-  const companionId = companion?.companionId ?? 'pet1';
   const isPaid = getCachedSubscriptionTier() !== 'free';
-  const skinArt = SKIN_IMAGES[companionId];
 
+  const [catalog, setCatalog] = useState<OutfitDef[]>(() => getCachedOutfitCatalog());
   const [cosmetics, setCosmetics] = useState<CosmeticsState>(() => getCachedCosmetics());
-  const [selected, setSelected] = useState(() => getSelectedSkin(companionId));
+  const [equipped, setEquipped] = useState<string | null>(() => getEquippedOutfitKey());
+  const [previewKey, setPreviewKey] = useState<string | null>(() => getEquippedOutfitKey());
   const [busy, setBusy] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      void fetchOutfitCatalog().then(setCatalog);
       void fetchCosmetics().then(setCosmetics);
     }, []),
   );
 
-  function skinCosmeticId(skinNumber: number): string {
-    return `${companionId}-skin${skinNumber}`;
+  // Prefetch worn-preview images so tapping cards feels instant.
+  useEffect(() => {
+    for (const o of catalog) void ExpoImage.prefetch(outfitAssetUrl(o.bunny));
+  }, [catalog]);
+
+  const preview = catalog.find((o) => o.key === previewKey) ?? null;
+  const owned = (o: OutfitDef) => isUnlocked(cosmetics, 'outfit', o.key);
+
+  function equip(o: OutfitDef) {
+    setEquippedOutfitKey(o.key);
+    setEquipped(o.key);
+    // Warm the Home loop video now so the swap on return is seamless.
+    void ensureOutfitVideoCached(o);
   }
 
-  function ownedFor(skinNumber: number): boolean {
-    if (skinNumber === 1) return true; // default free skin
-    return isUnlocked(cosmetics, 'skin', skinCosmeticId(skinNumber));
-  }
-
-  async function buy(skinNumber: number) {
-    const plusOnly = PLUS_SKINS.has(skinNumber);
-    if (plusOnly && !isPaid) {
+  async function buy(o: OutfitDef) {
+    if (o.plusOnly && !isPaid) {
       void haptics.warning();
       router.push('/(main)/(modals)/subscription-paywall');
       return;
     }
-    if (cosmetics.balance < COSMETIC_PRICE) {
+    if (cosmetics.balance < o.price) {
       void haptics.warning();
-      Alert.alert('Not enough clovers', `You need ${COSMETIC_PRICE} clovers for this skin.`);
+      Alert.alert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
       return;
     }
     setBusy(true);
-    const res = await purchaseCosmetic('skin', skinCosmeticId(skinNumber));
+    const res = await purchaseCosmetic('outfit', o.key);
     setBusy(false);
     if (res.ok) {
       void haptics.success();
       setCosmetics(getCachedCosmetics());
-      // Auto-select the freshly bought skin.
-      setSelected(skinNumber);
-      setSelectedSkin(companionId, skinNumber);
+      equip(o);
     } else if (res.error === 'plus_required') {
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
-      Alert.alert('Not enough clovers', `You need ${COSMETIC_PRICE} clovers for this skin.`);
+      Alert.alert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
     } else if (res.error === 'already_owned') {
       setCosmetics(getCachedCosmetics());
+      equip(o);
     } else {
       Alert.alert('Something went wrong', 'Could not complete the purchase. Try again.');
     }
   }
 
-  function onTap(skinNumber: number) {
-    if (busy) return;
-    if (ownedFor(skinNumber)) {
-      void haptics.selection();
-      setSelected(skinNumber);
-      setSelectedSkin(companionId, skinNumber);
+  function onAction() {
+    if (!preview || busy) return;
+    if (equipped === preview.key) return;
+    if (owned(preview)) {
+      void haptics.success();
+      equip(preview);
     } else {
-      void buy(skinNumber);
+      void buy(preview);
     }
   }
 
-  void c;
-  const previewArt = skinArt?.[selected - 1];
+  const isInUse = preview !== null && equipped === preview.key;
+  const actionLabel = !preview
+    ? 'Pick an outfit'
+    : isInUse
+      ? 'In Use'
+      : owned(preview)
+        ? 'Use'
+        : String(preview.price);
+  const showActionClover = preview !== null && !isInUse && !owned(preview);
 
   return (
     <View style={styles.root}>
-      {/* ---- preview: wardrobe scene (tan placeholder until art lands) ---- */}
-      <View style={[styles.preview, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={12}>
+      {/* ---- fixed top: room art, uncropped, pinned to the top edge ---- */}
+      <View style={styles.bgWrap}>
+        <ExpoImage source={BG} style={styles.bgImg} contentFit="cover" />
+        {preview && (
+          <ExpoImage
+            source={{ uri: outfitAssetUrl(preview.bunny) }}
+            style={styles.bunny}
+            contentFit="contain"
+            transition={120}
+          />
+        )}
+        <Pressable
+          onPress={() => { void haptics.light(); router.back(); }}
+          style={[styles.closeBtn, { top: insets.top + 8 }]}
+          hitSlop={12}
+        >
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </Pressable>
-        <View style={styles.balancePill}>
-          <Text style={styles.clover}>{'\u{1F340}'}</Text>
+        <View style={[styles.balancePill, { top: insets.top + 8 }]}>
+          <Image source={ICONS.Clovers} style={styles.cloverIcon} resizeMode="contain" />
           <Text style={styles.balanceText}>{cosmetics.balance}</Text>
-        </View>
-        <View style={styles.previewCenter}>
-          {previewArt ? (
-            <Image source={previewArt} style={styles.previewImg} resizeMode="contain" />
-          ) : (
-            <MaterialIcons name="pets" size={96} color="#C9A87A" />
-          )}
         </View>
       </View>
 
-      {/* ---- brown shop panel (design: Get Your Outfit) ---- */}
-      <View style={styles.panel}>
+      {/* ---- everything below the art scrolls as one region ---- */}
+      <ScrollView
+        style={styles.panel}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.panelContent, { paddingBottom: insets.bottom + 24 }]}
+      >
         <View style={styles.panelHeader}>
-          <Text style={styles.panelHeaderEmoji}>{'👕'}</Text>
-          <Text style={styles.panelHeaderText}>Get Your Outfit</Text>
+          <Image source={ICONS.Outfits} style={styles.headerIcon} resizeMode="contain" />
+          <Text style={styles.panelHeaderText}>Bunny Closet</Text>
         </View>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
-          {Array.from({ length: SKIN_COUNT }).map((_, index) => {
-            const skinNumber = index + 1;
-            const owned = ownedFor(skinNumber);
-            const isActive = selected === skinNumber;
-            const plusOnly = PLUS_SKINS.has(skinNumber);
-            const art = skinArt?.[index];
+
+        <View style={styles.grid}>
+          {catalog.map((o) => {
+            const isActive = equipped === o.key;
+            const isSelected = previewKey === o.key;
             return (
               <Pressable
-                key={index}
-                onPress={() => onTap(skinNumber)}
-                style={[styles.card, isActive && styles.cardActive]}
+                key={o.key}
+                onPress={() => { void haptics.selection(); setPreviewKey(o.key); }}
+                style={[styles.card, isSelected && styles.cardSelected]}
               >
-                <View style={styles.thumb}>
-                  {art ? (
-                    <Image source={art} style={styles.thumbImg} resizeMode="contain" />
-                  ) : (
-                    <MaterialIcons name="checkroom" size={40} color="#B07A46" />
-                  )}
-                </View>
+                <ExpoImage
+                  source={{ uri: outfitAssetUrl(o.thumb) }}
+                  style={styles.thumb}
+                  contentFit="contain"
+                  transition={100}
+                />
                 {isActive ? (
                   <View style={styles.inUseBadge}>
                     <Text style={styles.inUseText}>In Use</Text>
                   </View>
-                ) : owned ? (
+                ) : owned(o) ? (
                   <Text style={styles.ownedText}>Owned</Text>
                 ) : (
                   <View style={styles.priceRow}>
-                    {plusOnly && <Text style={styles.plusTag}>PLUS </Text>}
-                    <Text style={styles.priceClover}>{'\u{1F340}'}</Text>
-                    <Text style={styles.priceText}>{COSMETIC_PRICE}</Text>
+                    {o.plusOnly && <Text style={styles.plusTag}>PLUS</Text>}
+                    <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
+                    <Text style={styles.priceText}>{o.price}</Text>
                   </View>
                 )}
               </Pressable>
             );
           })}
-        </ScrollView>
-      </View>
+        </View>
+
+        {catalog.length === 0 && (
+          <Text style={styles.emptyText}>Loading the closet…</Text>
+        )}
+
+        {/* bottom action: buy / use / in use for the previewed outfit */}
+        {preview && (
+          <Pressable
+            onPress={onAction}
+            disabled={busy || isInUse}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              (busy || isInUse) && { opacity: 0.6 },
+              pressed && !isInUse && { transform: [{ translateY: 1 }] },
+            ]}
+          >
+            {showActionClover && (
+              <Image source={ICONS.Clovers} style={styles.actionClover} resizeMode="contain" />
+            )}
+            <Text style={styles.actionText}>{busy ? '…' : actionLabel}</Text>
+          </Pressable>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
-// Design palette (outfits change.png): tan wardrobe preview over a rich
-// brown shop panel with light-orange item tiles.
+// Palette from the Bunny Closet mock: deep brown panel, cream cards with a
+// soft blush border, white action button with green price.
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#7B4B22' },
+  root: { flex: 1, backgroundColor: '#5F3A1E' },
 
-  preview: { height: '42%', backgroundColor: '#EFD9B8', paddingHorizontal: 16 },
+  bgWrap: { width: '100%', aspectRatio: BG_ASPECT },
+  bgImg: { ...StyleSheet.absoluteFillObject },
+  bunny: {
+    position: 'absolute', alignSelf: 'center', bottom: '6%',
+    width: '52%', height: '72%',
+  },
   closeBtn: {
-    position: 'absolute', left: 16, top: 54,
+    position: 'absolute', left: 16,
     width: 44, height: 44, borderRadius: 22, backgroundColor: '#4A3220',
     alignItems: 'center', justifyContent: 'center', zIndex: 2,
   },
   balancePill: {
-    position: 'absolute', left: 72, top: 58,
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 8,
+    position: 'absolute', right: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8,
     zIndex: 2,
   },
+  cloverIcon: { width: 22, height: 22 },
   balanceText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
-  clover: { fontSize: 16 },
-  previewCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  previewImg: { width: '70%', height: '85%' },
 
-  panel: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
-  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 },
-  panelHeaderEmoji: { fontSize: 22 },
-  panelHeaderText: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  panel: { flex: 1 },
+  panelContent: { paddingHorizontal: 18, paddingTop: 22 },
+  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 18 },
+  headerIcon: { width: 34, height: 34 },
+  panelHeaderText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 32 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   card: {
     width: '31%', marginBottom: 16, alignItems: 'center',
-    backgroundColor: '#D9964F', borderRadius: 18, borderWidth: 3, borderColor: '#E8B088',
+    backgroundColor: '#FBF3DF', borderRadius: 22, borderWidth: 2.5, borderColor: '#E3B7A0',
     paddingVertical: 12, paddingHorizontal: 8, gap: 8,
   },
-  cardActive: { borderColor: '#FFFFFF' },
-  thumb: { width: '86%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
-  thumbImg: { width: '100%', height: '100%' },
+  cardSelected: { borderColor: '#FFFFFF' },
+  thumb: { width: '84%', aspectRatio: 1 },
   inUseBadge: { backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5 },
   inUseText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
-  ownedText: { color: '#5A3A1B', fontSize: 13, fontFamily: 'Inter_700Bold' },
-  plusTag: { color: '#FFE9B8', fontSize: 11, fontFamily: 'Inter_800ExtraBold', letterSpacing: 1 },
+  ownedText: { color: '#8A6240', fontSize: 13, fontFamily: 'Inter_700Bold' },
+  plusTag: { color: '#B97E2A', fontSize: 10.5, fontFamily: 'Inter_800ExtraBold', letterSpacing: 0.8, marginRight: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  priceText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
-  priceClover: { fontSize: 14 },
+  priceClover: { width: 18, height: 18 },
+  priceText: { color: '#2E7A3A', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+
+  emptyText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontFamily: 'Inter_500Medium', textAlign: 'center', paddingVertical: 32 },
+
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 17,
+    marginTop: 8, marginHorizontal: 24,
+  },
+  actionClover: { width: 24, height: 24 },
+  actionText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
 });

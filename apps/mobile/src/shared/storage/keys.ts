@@ -355,3 +355,9 @@ export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
  * The public Seek feed. No userId in the key, no user data in the value.
  */
 export const kSeekQuestions = definePrefixKey('novame_seek_questions:', 'device');
+
+/** outfits.ts: cached outfit catalog from the R2 video-manifest (user-agnostic). */
+export const kOutfitCatalog = defineKey('novame_outfit_catalog', 'device');
+
+/** outfits.ts: which outfit this account has equipped (mirrors kCosmetics skins). */
+export const kEquippedOutfit = defineKey('novame_equipped_outfit', 'user');

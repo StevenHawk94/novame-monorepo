@@ -26,7 +26,9 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // ============================================================
 // S3Client singleton
@@ -118,6 +120,46 @@ export async function r2GetObjectBytes(key) {
     offset += c.length;
   }
   return merged;
+}
+
+/**
+ * HEAD an object: returns { size, lastModified } or null if it doesn't exist.
+ * Used to verify a browser-side presigned upload actually landed before the
+ * manifest is updated to point at it.
+ */
+export async function r2HeadObject(key) {
+  const client = getR2Client();
+  try {
+    const resp = await client.send(
+      new HeadObjectCommand({ Bucket: getBucketName(), Key: key }),
+    );
+    return {
+      size: resp.ContentLength ?? null,
+      lastModified: resp.LastModified ? resp.LastModified.toISOString() : null,
+    };
+  } catch (e) {
+    if (e && (e.name === 'NotFound' || e.$metadata?.httpStatusCode === 404)) return null;
+    throw e;
+  }
+}
+
+/**
+ * Presigned PUT URL so the admin browser can upload straight to R2 —
+ * bypassing Vercel's ~4.5MB request-body limit (outfit videos exceed it).
+ * The URL pins the exact key + content type and expires in `expiresIn`
+ * seconds (default 10 minutes).
+ *
+ * NOTE: the R2 bucket must allow cross-origin PUT from the admin origin
+ * (bucket Settings → CORS policy), or the browser upload will be blocked.
+ */
+export async function r2PresignPut({ key, contentType, expiresIn = 600 }) {
+  const client = getR2Client();
+  const cmd = new PutObjectCommand({
+    Bucket: getBucketName(),
+    Key: key,
+    ContentType: contentType || 'application/octet-stream',
+  });
+  return getSignedUrl(client, cmd, { expiresIn });
 }
 
 /**

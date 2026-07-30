@@ -3,6 +3,8 @@ import { AppState, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 
+import { getEquippedOutfitKey, resolveEquippedOutfitVideo } from '../../lib/outfits';
+
 /**
  * Home companion video. Plays the bundled default.mov (transparent HEVC/alpha)
  * on a loop, muted. Unlike VideoCharacter (which streams outfit/state clips from
@@ -84,11 +86,47 @@ export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onR
     return () => sub.remove();
   }, [safePlay]);
 
-  // Back-navigation to Home: whatever happened elsewhere, the pet moves.
+  // Outfit swap (2026-07-30): when an outfit is equipped in the Bunny Closet,
+  // Home plays its transparent .mov instead of the default. The clip is
+  // downloaded to the local cache first (outfits.ts) so the loop never
+  // stutters; until it's ready — or when nothing is equipped — the bundled
+  // default keeps playing. replaceAsync swaps without remounting the player,
+  // so the loop/mute/mixing settings carry over.
+  const loadedOutfitKey = useRef<string | null>(null);
+  const syncOutfitVideo = useCallback(() => {
+    const want = getEquippedOutfitKey();
+    if (want === loadedOutfitKey.current) return;
+    if (!want) {
+      loadedOutfitKey.current = null;
+      void (async () => {
+        try {
+          await player.replaceAsync(DEFAULT_SOURCE);
+          player.play();
+        } catch { /* released */ }
+      })();
+      return;
+    }
+    void resolveEquippedOutfitVideo().then((resolved) => {
+      // Stale-guard: the user may have changed outfits again mid-download.
+      if (!resolved || getEquippedOutfitKey() !== resolved.key) return;
+      if (loadedOutfitKey.current === resolved.key) return;
+      loadedOutfitKey.current = resolved.key;
+      void (async () => {
+        try {
+          await player.replaceAsync({ uri: resolved.uri });
+          player.play();
+        } catch { /* released */ }
+      })();
+    });
+  }, [player]);
+
+  // Back-navigation to Home: whatever happened elsewhere, the pet moves —
+  // and if the closet just changed the outfit, pick the new clip up.
   useFocusEffect(
     useCallback(() => {
       safePlay();
-    }, [safePlay]),
+      syncOutfitVideo();
+    }, [safePlay, syncOutfitVideo]),
   );
 
   return (

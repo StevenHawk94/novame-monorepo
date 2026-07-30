@@ -12,7 +12,7 @@ import { supabase } from './supabase';
 export const COSMETIC_PRICE = 500;
 
 export interface CosmeticUnlock {
-  type: 'skin' | 'scene';
+  type: 'skin' | 'scene' | 'outfit';
   id: string;
 }
 
@@ -53,7 +53,7 @@ export async function fetchCosmetics(): Promise<CosmeticsState> {
   }
 }
 
-export function isUnlocked(state: CosmeticsState, type: 'skin' | 'scene', id: string): boolean {
+export function isUnlocked(state: CosmeticsState, type: 'skin' | 'scene' | 'outfit', id: string): boolean {
   return state.unlocks.some((u) => u.type === type && u.id === id);
 }
 
@@ -62,7 +62,7 @@ export type PurchaseResult =
   | { ok: false; error: 'insufficient' | 'plus_required' | 'already_owned' | 'network' };
 
 /** Buy a cosmetic. On success, updates the cached balance + unlocks. */
-export async function purchaseCosmetic(type: 'skin' | 'scene', id: string): Promise<PurchaseResult> {
+export async function purchaseCosmetic(type: 'skin' | 'scene' | 'outfit', id: string): Promise<PurchaseResult> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'network' };
