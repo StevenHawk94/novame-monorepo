@@ -128,13 +128,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Scene: speech bubble + companion video */}
+        {/* Scene: companion video at a FIXED spot; the speech bubble is
+            anchored to the video's top edge and grows UPWARD as its text
+            wraps, so the bunny never shifts with the line count. */}
         <View style={styles.scene}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{speechFor(day, bubbleRotation)}</Text>
-            <View style={styles.bubbleTail} />
+          <View style={styles.videoSlot}>
+            <View style={styles.bubbleWrap}>
+              <View style={styles.bubble}>
+                <Text style={styles.bubbleText}>{speechFor(day, bubbleRotation)}</Text>
+                <View style={styles.bubbleTail} />
+              </View>
+            </View>
+            <CompanionVideo onPress={onPetTap} onReady={onLayout} />
           </View>
-          <CompanionVideo onPress={onPetTap} onReady={onLayout} />
         </View>
 
         {/* Permanent entries */}
@@ -206,9 +212,19 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   topIcon: { width: 40, height: 40 },
   scene: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 140 },
+  // The video's 240×240 slot is what gets centered — a fixed box, so the
+  // bunny's position never depends on the bubble. marginTop offsets roughly
+  // half a typical bubble so the visual balance matches the old layout.
+  videoSlot: { width: 240, height: 240, marginTop: 56 },
+  // Absolute above the slot, wider than it (so long lines can still wrap at
+  // a comfortable width), anchored by its BOTTOM edge → extra lines grow up.
+  bubbleWrap: {
+    position: 'absolute', bottom: 248, left: -90, right: -90,
+    alignItems: 'center',
+  },
   bubble: {
     backgroundColor: '#F4E4C1', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
-    marginHorizontal: 24, maxWidth: '82%', marginBottom: 8,
+    maxWidth: 330,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   bubbleTail: {
