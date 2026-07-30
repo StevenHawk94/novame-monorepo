@@ -113,10 +113,14 @@ export default function SceneSelectScreen() {
       return;
     }
     void haptics.light();
-    Alert.alert(`Unlock ${s.name}?`, `Spend ${s.price} clovers to unlock this scene.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Unlock', onPress: () => void buyAndUse(s) },
-    ]);
+    Alert.alert(
+      `Unlock ${s.name}?`,
+      `This will spend ${s.price} clovers (you have ${cosmetics.balance}). Unlock and switch to this scene?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm', onPress: () => void buyAndUse(s) },
+      ],
+    );
   }
 
   return (
@@ -135,13 +139,14 @@ export default function SceneSelectScreen() {
         </View>
       </View>
 
-      <Text style={styles.title}>Unlock New Scenes</Text>
-      <Image source={ICONS.Maps} style={styles.mapsIcon} resizeMode="contain" />
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
       >
+        <View style={styles.titleRow}>
+          <Image source={ICONS.Maps} style={styles.mapsIcon} resizeMode="contain" />
+          <Text style={styles.title}>Unlock New Scenes</Text>
+        </View>
         <View style={styles.panel}>
           <View style={styles.grid}>
             {/* slot 0: the free bundled default */}
@@ -229,11 +234,12 @@ const styles = StyleSheet.create({
   cloverIcon: { width: 22, height: 22 },
   balanceText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
 
-  title: {
-    fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',
-    textAlign: 'center', marginTop: 14,
+  titleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    marginTop: 14, marginBottom: 14,
   },
-  mapsIcon: { width: 52, height: 52, alignSelf: 'center', marginTop: 10, marginBottom: 12 },
+  title: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  mapsIcon: { width: 44, height: 44 },
 
   scroll: { paddingHorizontal: 14 },
   panel: {
