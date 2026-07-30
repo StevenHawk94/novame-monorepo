@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   headerIcon: { width: 34, height: 34 },
   panelHeaderText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '3.5%' },
   card: {
     width: '31%', marginBottom: 16, alignItems: 'center',
     backgroundColor: '#FBF3DF', borderRadius: 22, borderWidth: 2.5, borderColor: '#E3B7A0',

@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF3DF', borderRadius: 30, borderWidth: 4, borderColor: '#E8B54D',
     paddingHorizontal: 14, paddingVertical: 18,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '3.5%' },
   cell: { width: '31%', alignItems: 'center', marginBottom: 20 },
   thumb: { width: '100%', aspectRatio: 1, borderRadius: 22 },
   cellName: {
