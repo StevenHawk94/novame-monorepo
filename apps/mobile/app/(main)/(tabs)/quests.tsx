@@ -117,7 +117,6 @@ export default function QuestsScreen() {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.bannerSlot} />
           <View style={styles.header}>
             <Text style={styles.title}>7-Day Daily Plan</Text>
           </View>
@@ -190,17 +189,28 @@ export default function QuestsScreen() {
   }
 
   // ---- No active plan: theme picker ----
+  // Self keeps the dark-brown ground; Friend flips the page to warm cream
+  // (design call 2026-07-29), so text and card shadows adapt per scope.
+  const isSelf = scope === 'self';
+  const pageBg = isSelf ? BG : CREAM_BG;
+  const cardOffset = isSelf ? OFFSET : CREAM_OFFSET;
+  const titleColor = isSelf ? CREAM : INK;
+  const mutedColor = isSelf ? CREAM_MUTED : '#8A7A63';
+
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: pageBg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.bannerSlot} />
         <View style={styles.header}>
-          <Text style={styles.title}>Weekly Quests</Text>
-          <Text style={styles.subtitle}>Select your main goal of the week, finish and get rewards!</Text>
+          <Text style={[styles.title, { color: titleColor }]}>Weekly Quests</Text>
+          <Text style={[styles.subtitle, { color: mutedColor }]}>
+            {isSelf
+              ? 'Select your main goal of the week, finish and get rewards!'
+              : 'Select the shared goal of the week and finish together!'}
+          </Text>
         </View>
 
         {/* Self / Friend toggle: white pill strip, active segment dark brown */}
-        <OffsetCard color={OFFSET} offset={4} radius={26} cardStyle={styles.toggle} style={styles.cardGap}>
+        <OffsetCard color={cardOffset} offset={4} radius={26} cardStyle={styles.toggle} style={styles.cardGap}>
           {(['self', 'friend'] as Scope[]).map((s) => {
             const active = scope === s;
             return (
@@ -215,7 +225,7 @@ export default function QuestsScreen() {
 
         {custom && (
           <OffsetCard
-            color={OFFSET}
+            color={cardOffset}
             offset={4}
             radius={20}
             onPress={() => onPickTheme(custom)}
@@ -236,13 +246,13 @@ export default function QuestsScreen() {
           </OffsetCard>
         )}
 
-        <Text style={styles.hint}>Choose 1 theme  ·  20 tasks inside  ·  pick 7 for the next 7 days</Text>
+        <Text style={[styles.hint, { color: mutedColor }]}>Choose 1 theme  ·  20 tasks inside  ·  pick 7 for the next 7 days</Text>
 
         {standard.map((theme) => {
           const art = THEME_ART[theme.key] ?? FALLBACK_ART;
           const isStart = !!theme.isWriteOwn;
           return (
-            <OffsetCard key={theme.key} color={OFFSET} offset={4} radius={20} cardStyle={styles.themeCard} style={styles.rowGap}>
+            <OffsetCard key={theme.key} color={cardOffset} offset={4} radius={20} cardStyle={styles.themeCard} style={styles.rowGap}>
               <Image source={art.icon} style={styles.themeIcon} resizeMode="contain" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.themeTitle}>{theme.title}</Text>
@@ -261,8 +271,11 @@ export default function QuestsScreen() {
 }
 
 // Dark-brown ground (user call 2026-07-23) + darker offset drop; white faces.
+// Friend Quests picker flips to warm cream with a tan offset (2026-07-29).
 const BG = '#4C331B';
 const OFFSET = '#33220F';
+const CREAM_BG = '#FFF6E8';
+const CREAM_OFFSET = '#E5B57E';
 const CARD = '#FFFFFF';
 const TEXT = '#4A3B2A';
 const MUTED = '#9A8A76';
@@ -275,10 +288,7 @@ const INK = '#4A3423';
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
-  // Banner art (mock's walking-companion scene) not in the repo yet -- the
-  // slot keeps its place as a soft tint until the asset lands.
-  bannerSlot: { height: 96, borderRadius: 18, backgroundColor: 'rgba(255,246,232,0.08)', marginTop: 4, marginBottom: 16, overflow: 'hidden' },
-  header: { paddingBottom: 14, paddingHorizontal: 4 },
+  header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },
   title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: CREAM },
   subtitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6 },
 

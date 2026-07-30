@@ -14,9 +14,7 @@ import { haptics } from '@/lib/haptics';
 import {
   getCachedSubscriptionTier,
   fetchSubscriptionTier,
-  clearCachedSubscription,
 } from '@/lib/subscription';
-import { signOut } from '@/lib/auth';
 import { fetchDuoStatus, joinDuo, type DuoStatus } from '@/lib/duo-api';
 import { fetchFriends } from '@/lib/friends-api';
 import { supabase } from '@/lib/supabase';
@@ -136,22 +134,6 @@ export default function MeScreen() {
     } catch (e) {
       console.warn('[me] store review failed:', e);
     }
-  };
-
-  const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          void haptics.warning();
-          clearCachedSubscription();
-          await signOut();
-          router.replace('/');
-        },
-      },
-    ], { cancelable: true });
   };
 
   // Defensive: a stale cache may still hold an old tier key (pro/basic/ultra)
@@ -278,12 +260,6 @@ export default function MeScreen() {
             </View>
           ) : null}
 
-          {/* Sign Out */}
-          <Pressable onPress={handleSignOut} style={({ pressed }) => [styles.signOutBtn, { opacity: pressed ? 0.85 : 1 }]}>
-            <MaterialIcons name="logout" size={20} color="#C25B4E" />
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </Pressable>
-
           {/* Legal */}
           <View style={styles.legalRow}>
             <Pressable onPress={() => openUrl(PRIVACY_URL)} hitSlop={8}>
@@ -374,13 +350,7 @@ const styles = StyleSheet.create({
   duoJoinBtn: { backgroundColor: '#8A6240', borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
   duoJoinText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
-  signOutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 15, borderRadius: 20, backgroundColor: '#FFFFFF', marginBottom: 20,
-  },
-  signOutText: { color: '#C25B4E', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
-
-  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 },
   legalLink: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium' },
   legalDot: { color: '#C9BCA5' },
   versionText: { color: '#B8A588', fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 12, letterSpacing: 1 },
