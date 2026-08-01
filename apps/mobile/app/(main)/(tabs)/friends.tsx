@@ -26,6 +26,53 @@ import {
  *
  * Item art isn't ready — item slots render as blank tiles on purpose.
  */
+// ---- Demo friend (pre-pairing preview) ----
+// A tap on "Preview" fakes one active friend so an unpaired user can feel
+// what the cave becomes: 5 reflects' worth of item drops, each opening a
+// full memory detail. Pure client-side; ends on tap or when leaving the tab.
+const DEMO_NAME = 'Mochi';
+
+function buildDemoFeed(): FeedEntry[] {
+  const ago = (mins: number) => new Date(Date.now() - mins * 60000).toISOString();
+  const mk = (
+    id: string,
+    mins: number,
+    details: { itemId: string; text: string }[],
+  ): FeedEntry => ({
+    friendUserId: 'demo',
+    friendName: DEMO_NAME,
+    emoji: '🐰',
+    reflectId: id,
+    createdAt: ago(mins),
+    itemIds: details.map((d) => d.itemId),
+    unread: mins < 60,
+    sharesDetails: true,
+    details,
+  });
+  return [
+    mk('demo-1', 25, [
+      { itemId: 'appliances.coffee_maker', text: 'Made myself a slow pour-over this morning and thought of our café plan ☕' },
+      { itemId: 'belongings.book', text: 'Started the novel you mentioned — two chapters in and hooked already.' },
+    ]),
+    mk('demo-2', 180, [
+      { itemId: 'food.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
+      { itemId: 'entertainment.movie', text: 'Then we watched a silly rom-com. You would have hated it. I loved it.' },
+    ]),
+    mk('demo-3', 8 * 60, [
+      { itemId: 'nature.sunset', text: 'The sky went full peach tonight. Took a mental photo for you.' },
+      { itemId: 'places.beach', text: 'Walked the shore for an hour. Cold sand, warm thoughts.' },
+    ]),
+    mk('demo-4', 26 * 60, [
+      { itemId: 'animals.cat', text: 'A stray cat followed me home. Naming him Biscuit until further notice.' },
+      { itemId: 'music.acoustic_guitar', text: 'Practiced our song. Still fumbling the bridge, but getting there.' },
+    ]),
+    mk('demo-5', 49 * 60, [
+      { itemId: 'celebrations.cake_cutting', text: "Grandma's birthday — she cut the cake wearing the hat you'd adore." },
+      { itemId: 'nature.wildflowers', text: 'Picked wildflowers on the way back. The kitchen smells like spring.' },
+    ]),
+  ];
+}
+
 function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const m = Math.floor(ms / 60000);
@@ -42,6 +89,7 @@ export default function FriendsScreen() {
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
   const [pairing, setPairing] = useState<PairingStatus | null>(null);
+  const [demoFeed, setDemoFeed] = useState<FeedEntry[] | null>(null);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
@@ -82,6 +130,21 @@ export default function FriendsScreen() {
     } else if (res.error === 'friend_limit_reached') {
       Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
     }
+  }
+
+  function onDemoRow(e: FeedEntry) {
+    void haptics.light();
+    setDemoFeed((cur) =>
+      cur ? cur.map((x) => (x.reflectId === e.reflectId ? { ...x, unread: false } : x)) : cur,
+    );
+    router.push({
+      pathname: '/(main)/friend-reflect-detail' as never,
+      params: {
+        friendName: `${DEMO_NAME} (demo)`,
+        createdAt: e.createdAt,
+        detailsJson: JSON.stringify(e.details),
+      },
+    } as never);
   }
 
   function onFeedRow(e: FeedEntry) {
@@ -219,12 +282,59 @@ export default function FriendsScreen() {
                   </View>
                 ))}
               </View>
+            ) : demoFeed ? (
+              /* demo cave: what an active friend's day looks like */
+              <View style={styles.panel}>
+                <View style={styles.panelHeader}>
+                  <View style={styles.listDot}>
+                    <MaterialIcons name="auto-awesome" size={13} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.panelTitle}>{DEMO_NAME}'s day — a preview</Text>
+                  <Pressable
+                    onPress={() => { void haptics.light(); setDemoFeed(null); }}
+                    style={styles.demoEndBtn}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.demoEndText}>End</Text>
+                  </Pressable>
+                </View>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.feedScroll}>
+                  <Text style={styles.demoHint}>
+                    This is a demo. Pair your person and their real moments will land here.
+                  </Text>
+                  {demoFeed.map((e) => (
+                    <Pressable
+                      key={e.reflectId}
+                      onPress={() => onDemoRow(e)}
+                      style={styles.feedRow}
+                    >
+                      <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                      <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
+                      <View style={styles.tileRow}>
+                        {e.itemIds.slice(0, 4).map((id, i) => (
+                          <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
+                        ))}
+                      </View>
+                      <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
+                      {e.unread && <View style={styles.unreadDot} />}
+                    </Pressable>
+                  ))}
+                  <View style={{ alignItems: 'center', marginTop: 10 }}>{addPill}</View>
+                </ScrollView>
+              </View>
             ) : (
               <View style={styles.emptyWrap}>
                 {addPill}
                 <Text style={styles.emptyInvite}>
                   Pair with some you care and love,{'\n'}then create memories together!
                 </Text>
+                <Pressable
+                  onPress={() => { void haptics.medium(); setDemoFeed(buildDemoFeed()); }}
+                  style={({ pressed }) => [styles.demoBtn, pressed && { opacity: 0.85 }]}
+                >
+                  <MaterialIcons name="auto-awesome" size={17} color="#FFF6E8" />
+                  <Text style={styles.demoBtnText}>Preview a friend's day</Text>
+                </Pressable>
               </View>
             )}
             {shownFeed.length > 0 && (
@@ -293,6 +403,18 @@ const styles = StyleSheet.create({
   emptyInvite: {
     fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',
     textAlign: 'center', lineHeight: 27,
+  },
+  demoBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(255,246,232,0.18)', borderWidth: 1.5, borderColor: 'rgba(255,246,232,0.55)',
+    borderRadius: 22, paddingHorizontal: 18, paddingVertical: 11,
+  },
+  demoBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFF6E8' },
+  demoEndBtn: { backgroundColor: '#4A3220', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  demoEndText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_700Bold' },
+  demoHint: {
+    fontSize: 12.5, fontFamily: 'Inter_500Medium', color: '#8A7A63',
+    textAlign: 'center', lineHeight: 18, marginBottom: 4, paddingHorizontal: 8,
   },
 
   pendingWrap: { paddingHorizontal: 16, paddingTop: '32%', gap: 16 },
