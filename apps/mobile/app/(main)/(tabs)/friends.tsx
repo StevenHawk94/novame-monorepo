@@ -41,7 +41,7 @@ function buildDemoFeed(): FeedEntry[] {
   ): FeedEntry => ({
     friendUserId: 'demo',
     friendName: DEMO_NAME,
-    emoji: '🐰',
+    emoji: [],
     reflectId: id,
     createdAt: ago(mins),
     itemIds: details.map((d) => d.itemId),
