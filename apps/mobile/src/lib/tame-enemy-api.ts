@@ -8,7 +8,9 @@
  * flag; the skill pool for a battle is fetched from the skills cache, filtered
  * by the monster's dimension.
  */
-import { kTameEnemyState } from '../shared/storage/keys';
+import { MONSTERS } from '@novame/engine';
+
+import { kTameEnemyState, kTameStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
@@ -57,7 +59,50 @@ export function clearTameEnemyLocal(): void {
   storage.remove(kTameEnemyState.name);
 }
 
-export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; doneToday: boolean; perEnemyDaily: boolean; battlePoints: number }> {
+export interface TameStatusPayload {
+  monsters: MonsterStatus[];
+  doneToday: boolean;
+  perEnemyDaily: boolean;
+  battlePoints: number;
+}
+
+/**
+ * Cache-first status so the select screen paints instantly. First run (no
+ * cache yet) synthesizes the grid from the engine's static MONSTERS list —
+ * names/prep lines are local, only skill counts and tame flags arrive with
+ * the background refresh.
+ */
+export function getCachedTameStatus(): TameStatusPayload {
+  const raw = storage.getString(kTameStatus.name);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as TameStatusPayload;
+      if (Array.isArray(parsed.monsters) && parsed.monsters.length > 0) {
+        return { ...parsed, doneToday: parsed.doneToday || isTameEnemyDoneToday() };
+      }
+    } catch {
+      // fall through to the synthesized default
+    }
+  }
+  return {
+    monsters: MONSTERS.map((m) => ({
+      id: m.id,
+      name: m.name,
+      dimension: m.dimension,
+      prep: m.prep,
+      tamed: m.tamed,
+      skillCount: 0,
+      tamedBefore: false,
+      tamedCount: 0,
+      tamedToday: false,
+    })),
+    doneToday: isTameEnemyDoneToday(),
+    perEnemyDaily: false,
+    battlePoints: 0,
+  };
+}
+
+export async function fetchTameStatus(): Promise<TameStatusPayload> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
@@ -66,10 +111,17 @@ export async function fetchTameStatus(): Promise<{ monsters: MonsterStatus[]; do
     const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean; battlePoints?: number }>(
       `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
     );
-    if (!data.success || !data.monsters) return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
-    return { monsters: data.monsters, doneToday: !!data.doneToday, perEnemyDaily: !!data.perEnemyDaily, battlePoints: data.battlePoints ?? 0 };
+    if (!data.success || !data.monsters) return getCachedTameStatus();
+    const payload: TameStatusPayload = {
+      monsters: data.monsters,
+      doneToday: !!data.doneToday,
+      perEnemyDaily: !!data.perEnemyDaily,
+      battlePoints: data.battlePoints ?? 0,
+    };
+    storage.set(kTameStatus.name, JSON.stringify(payload));
+    return payload;
   } catch {
-    return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
+    return getCachedTameStatus();
   }
 }
 

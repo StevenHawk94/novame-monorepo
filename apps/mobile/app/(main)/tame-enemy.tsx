@@ -12,9 +12,13 @@ import { SKILL_LIBRARY_SIZE } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
+import { Image as ExpoImage } from 'expo-image';
+
 import {
-  fetchTameStatus, submitTame, markTameEnemyDoneToday, MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
+  fetchTameStatus, getCachedTameStatus, submitTame, markTameEnemyDoneToday,
+  MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
 } from '../../src/lib/tame-enemy-api';
+import { MONSTER_ART } from '../../src/lib/monster-images';
 import { fetchSkills, getCachedSkills, type Skill } from '../../src/lib/skills-api';
 
 type Phase = 'select' | 'prep' | 'battle' | 'done';
@@ -40,10 +44,13 @@ export default function TameEnemyScreen() {
   void c;
 
   const [phase, setPhase] = useState<Phase>('select');
-  const [monsters, setMonsters] = useState<MonsterStatus[]>([]);
-  const [doneToday, setDoneToday] = useState(false);
-  const [perEnemyDaily, setPerEnemyDaily] = useState(false);
-  const [battlePoints, setBattlePoints] = useState(0);
+  // Cache-first (2026-07-30): the grid renders instantly from the cached (or
+  // engine-synthesized) status; the network fetch below only refreshes it.
+  const cached = getCachedTameStatus();
+  const [monsters, setMonsters] = useState<MonsterStatus[]>(cached.monsters);
+  const [doneToday, setDoneToday] = useState(cached.doneToday);
+  const [perEnemyDaily, setPerEnemyDaily] = useState(cached.perEnemyDaily);
+  const [battlePoints, setBattlePoints] = useState(cached.battlePoints);
   const [firstTime, setFirstTime] = useState(false);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [allSkills, setAllSkills] = useState<Skill[]>(() => getCachedSkills());
@@ -59,6 +66,9 @@ export default function TameEnemyScreen() {
   const [lastTap, setLastTap] = useState<{ id: string; at: number }>({ id: '', at: 0 });
   const [reward, setReward] = useState<number | null>(null);
   const [milestoneBonus, setMilestoneBonus] = useState(0);
+  // -Hit art frame flashes ~0.5s after each landed skill (design 2026-07-30).
+  const [hitFlash, setHitFlash] = useState(false);
+  const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // BUG FIX: opening the zoom on the FIRST tap covered the hand with the
   // overlay, so the second tap always hit the backdrop and the double tap
@@ -136,6 +146,12 @@ export default function TameEnemyScreen() {
     const next = applyHit(hp, kind);
     setHp(next);
     setHits((h) => h + 1);
+    setHitFlash(true);
+    if (hitTimer.current) clearTimeout(hitTimer.current);
+    hitTimer.current = setTimeout(() => {
+      hitTimer.current = null;
+      setHitFlash(false);
+    }, 500);
     if (skillId) setUsedSkillIds((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
 
     const tier = monsterTierFor(next, maxHp);
@@ -208,7 +224,11 @@ export default function TameEnemyScreen() {
                 onPress={() => (locked ? undefined : startBattle(m))}
                 style={[styles.monsterCell, { backgroundColor: kit.card, borderColor: kit.border, opacity: locked ? 0.5 : 1 }]}
               >
-                <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
+                {MONSTER_ART[m.id] ? (
+                  <ExpoImage source={MONSTER_ART[m.id].normal} style={styles.monsterImg} contentFit="contain" />
+                ) : (
+                  <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
+                )}
                 <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
                 <Text style={[styles.monsterSkills, { color: ready ? kit.accent : kit.textMuted }]}>
                   {ready ? `${m.skillCount} skill${m.skillCount > 1 ? 's' : ''} ready` : 'Just Breathe ready'}
@@ -237,7 +257,11 @@ export default function TameEnemyScreen() {
           <Text style={styles.prepNameText}>{active.name}</Text>
         </View>
 
-        <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
+        {MONSTER_ART[active.id] ? (
+          <ExpoImage source={MONSTER_ART[active.id].normal} style={styles.prepImg} contentFit="contain" />
+        ) : (
+          <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
+        )}
         <Text style={[styles.prepQuote, { color: kit.text }]}>“{active.prep}”</Text>
 
         {/* milestone track: next three 🍀 rewards */}
@@ -308,9 +332,17 @@ export default function TameEnemyScreen() {
             <Text style={styles.monsterBubbleText}>{active.prep}</Text>
             <View style={styles.monsterBubbleTail} />
           </View>
-          <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.85 : 1 }]}>
-            {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
-          </Text>
+          {MONSTER_ART[active.id] ? (
+            <ExpoImage
+              source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
+              style={[styles.battleImg, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.9 : 1 }]}
+              contentFit="contain"
+            />
+          ) : (
+            <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.85 : 1 }]}>
+              {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
+            </Text>
+          )}
           {/* Pixel-flavored HP bar, labeled per the mock */}
           <View style={styles.hpTrack}>
             <View style={[styles.hpFill, { width: `${(hp / maxHp) * 100}%` }]} />
@@ -396,7 +428,11 @@ export default function TameEnemyScreen() {
       <View style={[styles.battleRoot, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
         <Text style={styles.victoryTitle}>VICTORY!</Text>
-        <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
+        {MONSTER_ART[active.id] ? (
+          <ExpoImage source={MONSTER_ART[active.id].normal} style={styles.doneImg} contentFit="contain" />
+        ) : (
+          <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
+        )}
         <Text style={styles.victoryText}>{active.tamed}</Text>
         {reward != null && reward > 0 && (
           <View style={styles.rewardBlock}>
@@ -436,6 +472,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 32 },
   monsterCell: { width: '48%', borderRadius: 20, padding: 18, marginBottom: 14, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
   monsterEmoji: { fontSize: 40, marginBottom: 8 },
+  monsterImg: { width: 92, height: 92, marginBottom: 8 },
   monsterName: { fontSize: 15, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   monsterSkills: { fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 4 },
   tamedBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
@@ -448,6 +485,7 @@ const styles = StyleSheet.create({
   },
   prepNameText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   prepEmoji: { fontSize: 96 },
+  prepImg: { width: 190, height: 190 },
   prepQuote: { fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 24, paddingHorizontal: 16, marginTop: 10 },
   milestoneTrack: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 22, paddingHorizontal: 8 },
   milestoneNodeWrap: { alignItems: 'center', flex: 1 },
@@ -502,6 +540,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#FFFFFF',
   },
   battleEmoji: { fontSize: 110 },
+  battleImg: { width: 230, height: 230 },
   // Pixel-flavored HP bar: hard corners, chunky dark border, red fill.
   hpTrack: {
     width: '72%', height: 22, borderRadius: 3, backgroundColor: '#FFFFFF',
@@ -571,4 +610,5 @@ const styles = StyleSheet.create({
   confirmText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
 
   doneEmoji: { fontSize: 96 },
+  doneImg: { width: 170, height: 170 },
 });

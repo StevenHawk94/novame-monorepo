@@ -364,3 +364,6 @@ export const kEquippedOutfit = defineKey('novame_equipped_outfit', 'user');
 
 /** scenes.ts: cached scene catalog from the R2 video-manifest (user-agnostic). */
 export const kSceneCatalog = defineKey('novame_scene_catalog', 'device');
+
+/** tame-enemy-api.ts: cached tame status (monsters + points), cache-first open. */
+export const kTameStatus = defineKey('novame_tame_status', 'user');
