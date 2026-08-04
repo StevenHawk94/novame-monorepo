@@ -1,6 +1,12 @@
 -- 030: items v3 catalog (2026-07-30). 1693 items from
 -- icon_keyword_mapping_final.xlsx. Upsert only — legacy v2 ids keep
 -- their rows so old reflect history still references valid items.
+-- v3 renders per-item images; the v2 sprite-sheet coordinate columns
+-- become nullable legacy fields.
+ALTER TABLE public.items ALTER COLUMN sheet_id DROP NOT NULL;
+ALTER TABLE public.items ALTER COLUMN "row" DROP NOT NULL;
+ALTER TABLE public.items ALTER COLUMN col DROP NOT NULL;
+
 INSERT INTO public.items (id, display_name, category, rarity) VALUES
   ('actions_activities.aerobics', 'Aerobics', 'actions_activities', 'common'),
   ('actions_activities.archery', 'Archery', 'actions_activities', 'common'),
