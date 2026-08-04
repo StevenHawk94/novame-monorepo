@@ -33,6 +33,7 @@ import {
   GUIDED_MAX,
   GUIDED_MIN,
   availableGuidedCategories,
+  itemsForGuidedCategory,
   getGuidedSelection,
   guidedCategoryFor,
   setGuidedSelection,
@@ -45,7 +46,6 @@ import {
   ReflectResultView,
   ReflectTopBar,
   SelectableItemGrid,
-  itemIdsForCategories,
 } from '../../src/components/main/reflect-shared';
 
 const MAX_CHARS = 5000;
@@ -93,7 +93,7 @@ export default function ReflectGuidedScreen() {
 
   const stepDef = guidedCategoryFor(chosen[step] ?? '');
   const gridIds = useMemo(
-    () => (chosen[step] ? itemIdsForCategories([chosen[step]]) : []),
+    () => (chosen[step] ? itemsForGuidedCategory(chosen[step]) : []),
     [chosen, step],
   );
   const selectedList = useMemo(
@@ -121,7 +121,7 @@ export default function ReflectGuidedScreen() {
       if (next.has(key)) {
         next.delete(key);
       } else if (next.size >= GUIDED_MAX) {
-        Alert.alert('Up to 20', `You can pick at most ${GUIDED_MAX} categories.`);
+        Alert.alert(`Up to ${GUIDED_MAX}`, `You can pick at most ${GUIDED_MAX} themes.`);
         return cur;
       } else {
         next.add(key);

@@ -51,24 +51,24 @@ function buildDemoFeed(): FeedEntry[] {
   });
   return [
     mk('demo-1', 25, [
-      { itemId: 'appliances.coffee_maker', text: 'Made myself a slow pour-over this morning and thought of our café plan ☕' },
-      { itemId: 'belongings.book', text: 'Started the novel you mentioned — two chapters in and hooked already.' },
+      { itemId: 'food_drink.coffee', text: 'Made myself a slow pour-over this morning and thought of our café plan ☕' },
+      { itemId: 'stationery_office.book', text: 'Started the novel you mentioned — two chapters in and hooked already.' },
     ]),
     mk('demo-2', 180, [
-      { itemId: 'food.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
-      { itemId: 'entertainment.movie', text: 'Then we watched a silly rom-com. You would have hated it. I loved it.' },
+      { itemId: 'food_drink.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
+      { itemId: 'actions_activities.movie', text: 'Then we watched a silly rom-com. You would have hated it. I loved it.' },
     ]),
     mk('demo-3', 8 * 60, [
-      { itemId: 'nature.sunset', text: 'The sky went full peach tonight. Took a mental photo for you.' },
-      { itemId: 'places.beach', text: 'Walked the shore for an hour. Cold sand, warm thoughts.' },
+      { itemId: 'nature_weather.sunset', text: 'The sky went full peach tonight. Took a mental photo for you.' },
+      { itemId: 'nature_weather.beach', text: 'Walked the shore for an hour. Cold sand, warm thoughts.' },
     ]),
     mk('demo-4', 26 * 60, [
       { itemId: 'animals.cat', text: 'A stray cat followed me home. Naming him Biscuit until further notice.' },
-      { itemId: 'music.acoustic_guitar', text: 'Practiced our song. Still fumbling the bridge, but getting there.' },
+      { itemId: 'musical_instruments.guitar', text: 'Practiced our song. Still fumbling the bridge, but getting there.' },
     ]),
     mk('demo-5', 49 * 60, [
-      { itemId: 'celebrations.cake_cutting', text: "Grandma's birthday — she cut the cake wearing the hat you'd adore." },
-      { itemId: 'nature.wildflowers', text: 'Picked wildflowers on the way back. The kitchen smells like spring.' },
+      { itemId: 'food_drink.cake', text: "Grandma's birthday — she cut the cake wearing the hat you'd adore." },
+      { itemId: 'plants.wildflower', text: 'Picked wildflowers on the way back. The kitchen smells like spring.' },
     ]),
   ];
 }

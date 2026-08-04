@@ -282,6 +282,22 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   预取(并行)。发布新景：上传两图到 Maps/ 后跑
   apps/admin/scripts/update-scene-manifest.mjs（编辑其中价格表）。
 
+## 6.68 Items v3（2026-07-30，icon_keyword_mapping_final.xlsx 1693 项）
+
+- **管线**：`tools/build-items-v3.py` 一键完成——连通域检测切图（图标非均匀
+  网格，禁止均匀切格！自适应膨胀 + 最小碎片合并；Emotions 页专用"取大圆脸"
+  检测排除文字）、边界洪泛去底（图标内部白色保留，绝不啃内容）、生成词典/
+  item-images.g.ts/guided-catalog.g.ts/迁移 SQL。关键词分隔符是分号。
+- **数据**：1693 items / 21 美术类 / 5 Bags 类（Myself·Food & Fun·Stuff·
+  Places·Nature，从词典 bagsCategory 过滤）；prompt reflection 表 = 11 个
+  guided/object-reflect 分类（623 精选项，带 Rank）。同义词 1723 条。
+- **UI**：Bags 六栏文字签；guided-prompts.ts 由 guided-catalog.g.ts 驱动
+  （11 主题，每主题一条设计问题，选择持久化 + Edit 调整不变）；Object
+  Reflect 分类条 = all + 11 主题 emoji chips（横向滚动）。
+- **迁移 030**（20260730000030_items_v3.sql）：items 表 upsert 1693 行，旧
+  v2 行保留（历史引用不破坏）——需用户执行后新物品才能入库。
+- v2 大表 webp 已从 assets/items 删除；engine ItemDef 的 sheet 坐标转为可选。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

@@ -8,23 +8,20 @@ import { ICONS } from '@/lib/icons';
 import { fetchBags, getCachedBags, type CollectedItem } from '@/lib/bags-api';
 import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { ITEM_DICTIONARY } from '@novame/engine';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { useWindowDimensions } from 'react-native';
 
-// Seven category slots (design 2026-07-22: "all" + six item families). Keys
-// are real dictionary categories (2026-07-23 batch has 23 -- these six are a
-// first cut; the full category bar design is pending). Only "all" has art
-// (the grid glyph on the dark pill); the six family icons are not in the repo
-// yet, so their slots render as faint placeholders until the assets land --
-// deliberate 空缺, not an oversight.
-const CATEGORIES: { key: string }[] = [
-  { key: 'all' },
-  { key: 'food' },
-  { key: 'emotions' },
-  { key: 'relax' },
-  { key: 'animals' },
-  { key: 'places' },
-  { key: 'nature' },
+// v3 (2026-07-30): "all" + the master sheet's 5 Bags categories. Filtering
+// resolves each item's bagsCategory through the dictionary, so the server's
+// art-category column never matters here.
+const CATEGORIES: { key: string; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'Myself', label: 'Myself' },
+  { key: 'Food & Fun', label: 'Food & Fun' },
+  { key: 'Stuff', label: 'Stuff' },
+  { key: 'Places', label: 'Places' },
+  { key: 'Nature', label: 'Nature' },
 ];
 
 /**
@@ -54,7 +51,10 @@ export default function BagsScreen() {
     }, []),
   );
 
-  const shown = category === 'all' ? items : items.filter((it) => it.category === category);
+  const shown =
+    category === 'all'
+      ? items
+      : items.filter((it) => ITEM_DICTIONARY.items[it.itemId]?.bagsCategory === category);
 
   function openItem(item: CollectedItem) {
     itemSheetRef.current?.present(item.itemId);
@@ -93,10 +93,11 @@ export default function BagsScreen() {
               style={[styles.catChip, active && styles.catChipActive]}
             >
               {cat.key === 'all' ? (
-                <MaterialIcons name="apps" size={24} color={active ? '#FFF6DE' : '#B99C6B'} />
+                <MaterialIcons name="apps" size={22} color={active ? '#FFF6DE' : '#B99C6B'} />
               ) : (
-                // Family icon art pending -- faint empty slot on purpose.
-                <View style={styles.catPlaceholder} />
+                <Text style={[styles.catLabel, active && styles.catLabelActive]} numberOfLines={2}>
+                  {cat.label}
+                </Text>
               )}
             </Pressable>
           );
@@ -165,6 +166,8 @@ const styles = StyleSheet.create({
   },
   catChip: { width: 46, height: 46, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   catChipActive: { backgroundColor: '#4A3423', width: 62 },
+  catLabelActive: { color: '#FFF6DE' },
+  catLabel: { fontSize: 11, fontFamily: 'Inter_700Bold', color: '#8A6B3F', textAlign: 'center' },
   catPlaceholder: { width: 30, height: 30, borderRadius: 10, backgroundColor: 'rgba(74,52,35,0.06)' },
 
   gridScroll: { paddingBottom: 24 },

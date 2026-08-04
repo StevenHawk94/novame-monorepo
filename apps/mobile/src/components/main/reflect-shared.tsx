@@ -49,7 +49,7 @@ export function itemIdsForCategories(categories: string[]): string[] {
   for (const cat of categories) {
     const ids = Object.entries(ITEM_DICTIONARY.items)
       .filter(([, def]) => def.category === cat)
-      .sort((a, b) => a[1].row - b[1].row || a[1].col - b[1].col)
+      .sort((a, b) => a[1].displayName.localeCompare(b[1].displayName))
       .map(([id]) => id);
     out.push(...ids);
   }

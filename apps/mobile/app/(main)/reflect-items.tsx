@@ -34,19 +34,28 @@ import {
   ReflectResultView,
   ReflectTopBar,
   SelectableItemGrid,
-  itemIdsForCategories,
 } from '../../src/components/main/reflect-shared';
 
 const MAX_CHARS = 5000;
 
-// Same first-cut category chips as Bags (art pending, "all" + six families).
-const CATEGORIES = ['all', 'food', 'emotions', 'relax', 'animals', 'places', 'nature'];
-const ALL_CATEGORIES = [
-  'food', 'emotions', 'relax', 'entertainment', 'sports', 'beauty', 'music',
-  'plants', 'professions', 'work', 'places', 'transport', 'animals', 'clothing',
-  'appliances', 'kitchen', 'health', 'routines', 'home', 'shopping',
-  'celebrations', 'nature', 'belongings',
-];
+// v3 (2026-07-30): the library picker groups by the 11 prompt-reflection
+// categories (curated, ranked). 'all' = their union in sheet order.
+import { availableGuidedCategories, itemsForGuidedCategory } from '../../src/lib/guided-prompts';
+
+const PICKER_CATEGORIES = availableGuidedCategories();
+const ALL_IDS: string[] = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const c of PICKER_CATEGORIES) {
+    for (const id of itemsForGuidedCategory(c.key)) {
+      if (!seen.has(id)) {
+        seen.add(id);
+        out.push(id);
+      }
+    }
+  }
+  return out;
+})();
 
 /**
  * 流程3 — Object Reflect: pick items from the whole library (category chips +
@@ -79,7 +88,7 @@ export default function ReflectItemsScreen() {
   );
 
   const gridIds = useMemo(() => {
-    const base = category === 'all' ? itemIdsForCategories(ALL_CATEGORIES) : itemIdsForCategories([category]);
+    const base = category === 'all' ? ALL_IDS : itemsForGuidedCategory(category);
     const q = query.trim().toLowerCase();
     if (!q) return base;
     return base.filter((id) =>
@@ -169,10 +178,16 @@ export default function ReflectItemsScreen() {
                   autoFocus
                 />
               )}
-              {/* Category strip: "all" glyph + family slots (art pending, 同 Bags) */}
-              <View style={styles.catStrip}>
-                {CATEGORIES.map((key) => {
+              {/* Category strip: "all" + the 11 prompt themes (emoji chips) */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.catStripScroll}
+                contentContainerStyle={styles.catStrip}
+              >
+                {['all', ...PICKER_CATEGORIES.map((c) => c.key)].map((key) => {
                   const active = key === category;
+                  const def = PICKER_CATEGORIES.find((c) => c.key === key);
                   return (
                     <Pressable
                       key={key}
@@ -182,12 +197,12 @@ export default function ReflectItemsScreen() {
                       {key === 'all' ? (
                         <MaterialIcons name="apps" size={22} color={active ? '#FFF6DE' : '#B99C6B'} />
                       ) : (
-                        <View style={styles.catPlaceholder} />
+                        <Text style={styles.catEmoji}>{def?.emoji ?? '✨'}</Text>
                       )}
                     </Pressable>
                   );
                 })}
-              </View>
+              </ScrollView>
               <View style={styles.gridCard}>
                 <SelectableItemGrid itemIds={gridIds} selected={selected} onToggle={toggle} />
               </View>
@@ -279,6 +294,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8E3', borderRadius: 26, borderWidth: 1.5, borderColor: '#3E2C1A',
     paddingHorizontal: 8, paddingVertical: 6, marginBottom: 12,
   },
+  catStripScroll: { flexGrow: 0 },
+  catEmoji: { fontSize: 20 },
   catChip: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   catChipActive: { backgroundColor: '#4A3423', width: 56 },
   catPlaceholder: { width: 26, height: 26, borderRadius: 9, backgroundColor: 'rgba(74,52,35,0.06)' },

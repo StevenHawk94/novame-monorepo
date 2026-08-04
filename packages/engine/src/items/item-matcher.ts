@@ -25,9 +25,12 @@ export interface ItemDef {
   displayName: string;
   rarity: ItemRarity;
   category: string;
-  sheetId: string;
-  row: number;
-  col: number;
+  /** Bags tab grouping (v3: Myself / Food & Fun / Stuff / Places / Nature). */
+  bagsCategory?: string;
+  /** Legacy sprite-sheet coords (v2) — v3 renders per-item images instead. */
+  sheetId?: string;
+  row?: number;
+  col?: number;
   /** Placeholder glyph until sprite art lands. */
   emoji?: string;
 }
