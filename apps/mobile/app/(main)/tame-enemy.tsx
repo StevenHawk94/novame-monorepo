@@ -8,7 +8,6 @@ import {
   MONSTER_HP, SKILL_DAMAGE, applyHit, monsterHpForStage, monsterTierFor, isTamed,
   nextMilestoneThresholds, BATTLE_MILESTONE_REWARD, type SkillKind,
 } from '@novame/engine';
-import { SKILL_LIBRARY_SIZE } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -249,12 +248,12 @@ export default function TameEnemyScreen() {
   // ---- PREP (design: Enemy selected — data + progress before the fight) ----
   if (phase === 'prep' && active) {
     const nextThresholds = nextMilestoneThresholds(battlePoints, 3);
-    const skillsOwned = Math.min(allSkills.length, SKILL_LIBRARY_SIZE);
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
-        {/* name bubble */}
+        {/* name bubble with a tail pointing at the monster (mock) */}
         <View style={styles.prepNameBubble}>
           <Text style={styles.prepNameText}>{active.name}</Text>
+          <View style={styles.prepNameTail} />
         </View>
 
         {MONSTER_ART[active.id] ? (
@@ -264,8 +263,8 @@ export default function TameEnemyScreen() {
         )}
         <Text style={[styles.prepQuote, { color: kit.text }]}>“{active.prep}”</Text>
 
-        {/* milestone track: next three 🍀 rewards */}
-        <View style={styles.milestoneTrack}>
+        {/* milestone banner: dark brown card, next three 🍀 rewards (mock) */}
+        <View style={styles.milestoneBanner}>
           {nextThresholds.map((t, i) => (
             <View key={t} style={styles.milestoneNodeWrap}>
               {i > 0 && <View style={styles.milestoneLink} />}
@@ -276,9 +275,10 @@ export default function TameEnemyScreen() {
               <Text style={styles.milestoneThreshold}>{t.toLocaleString()}</Text>
             </View>
           ))}
+          <MaterialIcons name="play-arrow" size={30} color="rgba(255,246,222,0.45)" style={styles.milestoneArrow} />
         </View>
 
-        {/* history + skills chips */}
+        {/* history bar + skills sticker (count intentionally not shown) */}
         <View style={styles.prepStatsBar}>
           <View style={styles.prepStatLeft}>
             <Text style={styles.prepStatEmoji}>{'🦖'}</Text>
@@ -291,15 +291,12 @@ export default function TameEnemyScreen() {
           </View>
           <View style={styles.prepStatRight}>
             <Text style={styles.prepStatEmoji}>{'🃏'}</Text>
-            <View>
-              <Text style={styles.prepStatTitle}>Skills</Text>
-              <Text style={styles.prepStatValue}>{skillsOwned}/{SKILL_LIBRARY_SIZE}</Text>
-            </View>
+            <Text style={styles.prepStatTitle}>Skills</Text>
           </View>
         </View>
 
-        <Text style={[styles.prepHint, { color: kit.textSub }]}>
-          Tame the monster to quiet {active.name.toLowerCase()}.
+        <Text style={[styles.prepHint, { color: kit.text }]}>
+          Tame the monster to relieve from {active.name.toLowerCase()}.
         </Text>
 
         <Pressable
@@ -480,27 +477,40 @@ const styles = StyleSheet.create({
 
   prepRoot: { flex: 1, backgroundColor: '#F6E7C8', paddingHorizontal: 20, alignItems: 'center' },
   prepNameBubble: {
-    backgroundColor: '#EFD9A8', borderRadius: 18, paddingHorizontal: 24, paddingVertical: 12,
-    marginBottom: 14,
+    backgroundColor: '#EFD9A8', borderRadius: 18, paddingHorizontal: 26, paddingVertical: 13,
+    marginBottom: 22,
+  },
+  prepNameTail: {
+    position: 'absolute', bottom: -11, left: '38%',
+    width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 12, borderTopWidth: 13,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#EFD9A8',
   },
   prepNameText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   prepEmoji: { fontSize: 96 },
   prepImg: { width: 190, height: 190 },
   prepQuote: { fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 24, paddingHorizontal: 16, marginTop: 10 },
-  milestoneTrack: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 22, paddingHorizontal: 8 },
+  milestoneBanner: {
+    flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 22,
+    backgroundColor: '#4A3220', borderRadius: 20, paddingVertical: 16, paddingHorizontal: 18,
+  },
+  milestoneArrow: { position: 'absolute', right: 2, top: '58%' },
   milestoneNodeWrap: { alignItems: 'center', flex: 1 },
-  milestoneLink: { position: 'absolute', top: 22, right: '58%', left: '-42%', height: 3, backgroundColor: '#E0CBA0' },
+  milestoneLink: { position: 'absolute', top: 20, right: '58%', left: '-42%', height: 2.5, backgroundColor: 'rgba(255,246,222,0.5)' },
   milestoneNode: { alignItems: 'center' },
   milestoneClover: { fontSize: 32 },
-  milestoneReward: { position: 'absolute', top: -6, right: -26, fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
-  milestoneThreshold: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 6 },
+  milestoneReward: { position: 'absolute', top: -6, right: -26, fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE' },
+  milestoneThreshold: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE', marginTop: 6 },
   prepStatsBar: {
     flexDirection: 'row', width: '100%', marginTop: 18,
     backgroundColor: '#FBF2DE', borderRadius: 16, borderWidth: 1.5, borderColor: '#E0CBA0',
     padding: 12, justifyContent: 'space-between',
   },
   prepStatLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1.4 },
-  prepStatRight: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' },
+  prepStatRight: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, flex: 0.8, justifyContent: 'center',
+    backgroundColor: '#F0DFBC', alignSelf: 'stretch', marginVertical: -12, marginRight: -12,
+    borderTopRightRadius: 16, borderBottomRightRadius: 16,
+  },
   prepStatEmoji: { fontSize: 26 },
   prepStatTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   prepStatValue: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 2 },

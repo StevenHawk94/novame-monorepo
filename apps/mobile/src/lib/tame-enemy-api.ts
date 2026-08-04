@@ -78,7 +78,14 @@ export function getCachedTameStatus(): TameStatusPayload {
     try {
       const parsed = JSON.parse(raw) as TameStatusPayload;
       if (Array.isArray(parsed.monsters) && parsed.monsters.length > 0) {
-        return { ...parsed, doneToday: parsed.doneToday || isTameEnemyDoneToday() };
+        // Identity fields (name/prep/tamed) always come from the engine so
+        // copy renames apply instantly, stale cache or not.
+        const byId = new Map(MONSTERS.map((m) => [m.id, m]));
+        const monsters = parsed.monsters.map((m) => {
+          const def = byId.get(m.id);
+          return def ? { ...m, name: def.name, prep: def.prep, tamed: def.tamed } : m;
+        });
+        return { ...parsed, monsters, doneToday: parsed.doneToday || isTameEnemyDoneToday() };
       }
     } catch {
       // fall through to the synthesized default
