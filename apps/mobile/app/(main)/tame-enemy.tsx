@@ -5,8 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import {
-  MONSTER_HP, SKILL_DAMAGE, applyHit, monsterHpForStage, monsterTierFor, isTamed,
-  nextMilestoneThresholds, BATTLE_MILESTONE_REWARD, type SkillKind,
+  MONSTER_HP, monsterHpForStage, monsterTierFor, isTamed,
+  nextMilestoneThresholds, BATTLE_MILESTONE_REWARD,
 } from '@novame/engine';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
@@ -18,17 +18,20 @@ import {
   MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
 } from '../../src/lib/tame-enemy-api';
 import { MONSTER_ART } from '../../src/lib/monster-images';
-import { fetchSkills, getCachedSkills, type Skill } from '../../src/lib/skills-api';
+import { CARD_BACK, CARD_FRONTS, deckFor, type TameCard } from '../../src/lib/tame-cards';
 
 type Phase = 'select' | 'prep' | 'battle' | 'done';
 
 /**
- * Tame Enemy (C9b). Four screens as phases: select an enemy, a prep line, the
- * battle (tap skill cards to hit; the monster shrinks by remaining-HP tier),
- * and the tamed screen. One tame a day across all monsters (server gate). The
- * battle resolves client-side with the shared engine; skills come from the
- * chosen monster's dimension. No skills -> Just Breathe (a weak default that
- * still always finishes). Quitting mid-battle keeps no progress (PRD).
+ * Tame Enemy. Four screens as phases: select an enemy, a prep page, the
+ * battle, and the tamed screen. One tame a day (server gate).
+ *
+ * Battle (2026-07-31 design): each monster owns a fixed 10-card deck
+ * (tame-cards.ts) — themed card fronts with the damage number in the circle.
+ * LONG-PRESS flips a card to its back (the counter-argument); DOUBLE-TAP
+ * plays it: the monster loses that card's damage, and the FIRST time a card
+ * lands its persuaded line replaces the monster's speech bubble (replays
+ * deal damage but leave the bubble unchanged). HP 0 → tamed.
  */
 export default function TameEnemyScreen() {
   const insets = useSafeAreaInsets();
@@ -52,16 +55,16 @@ export default function TameEnemyScreen() {
   const [battlePoints, setBattlePoints] = useState(cached.battlePoints);
   const [firstTime, setFirstTime] = useState(false);
   const [active, setActive] = useState<MonsterStatus | null>(null);
-  const [allSkills, setAllSkills] = useState<Skill[]>(() => getCachedSkills());
   const [hp, setHp] = useState(MONSTER_HP);
   const [maxHp, setMaxHp] = useState(MONSTER_HP);
   const [hits, setHits] = useState(0);
-  const [usedSkillIds, setUsedSkillIds] = useState<string[]>([]);
-  const [showDrawer, setShowDrawer] = useState(false);
-  // Battle interactions per mock/PRD: single tap (or long-press) zooms a card,
-  // double tap applies it. Tracked with a per-card timestamp — RN has no
-  // built-in double-tap.
-  const [zoomSkill, setZoomSkill] = useState<Skill | 'default' | null>(null);
+  const [usedCardIds, setUsedCardIds] = useState<string[]>([]);
+  // The monster's current speech: its complaint at first, then the latest
+  // NEW card's persuaded line.
+  const [bubbleText, setBubbleText] = useState('');
+  // Long-press flips a card; double-tap plays it (RN has no built-in
+  // double-tap, so a per-card timestamp tracks it).
+  const [zoomCard, setZoomCard] = useState<TameCard | null>(null);
   const [lastTap, setLastTap] = useState<{ id: string; at: number }>({ id: '', at: 0 });
   const [reward, setReward] = useState<number | null>(null);
   const [milestoneBonus, setMilestoneBonus] = useState(0);
@@ -69,30 +72,15 @@ export default function TameEnemyScreen() {
   const [hitFlash, setHitFlash] = useState(false);
   const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // BUG FIX: opening the zoom on the FIRST tap covered the hand with the
-  // overlay, so the second tap always hit the backdrop and the double tap
-  // never reached the card. The zoom now waits out the double-tap window
-  // (pending timer); a second tap inside the window cancels it and applies.
-  // The zoomed card is also directly tappable to apply (belt and braces).
-  const DOUBLE_TAP_MS = 280;
-  const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function onCardTap(id: string, apply: () => void, zoom: () => void) {
+  const DOUBLE_TAP_MS = 300;
+  function onCardTap(card: TameCard) {
     const now = Date.now();
-    if (lastTap.id === id && now - lastTap.at < DOUBLE_TAP_MS) {
-      if (zoomTimer.current) {
-        clearTimeout(zoomTimer.current);
-        zoomTimer.current = null;
-      }
+    if (lastTap.id === card.cardId && now - lastTap.at < DOUBLE_TAP_MS) {
       setLastTap({ id: '', at: 0 });
-      setZoomSkill(null);
-      apply();
+      setZoomCard(null);
+      playCard(card);
     } else {
-      setLastTap({ id, at: now });
-      if (zoomTimer.current) clearTimeout(zoomTimer.current);
-      zoomTimer.current = setTimeout(() => {
-        zoomTimer.current = null;
-        zoom();
-      }, DOUBLE_TAP_MS + 20);
+      setLastTap({ id: card.cardId, at: now });
     }
   }
 
@@ -105,31 +93,13 @@ export default function TameEnemyScreen() {
         setBattlePoints(r.battlePoints);
         setFirstTime(r.monsters.every((m) => !m.tamedBefore));
       });
-      void fetchSkills().then(setAllSkills);
     }, []),
   );
 
-  // Battle pool = the monster's dimension skills PLUS mega cards (dimension
-  // null — the 9th library group, usable against every monster per Q13).
-  const pool = useMemo(
-    () =>
-      active
-        ? allSkills.filter((s) => s.dimension === active.dimension || s.dimension == null)
-        : [],
-    [active, allSkills],
-  );
-
-  /** Damage class: library tier wins; legacy rows fall back to rarity. */
-  function kindFor(sk: Skill): SkillKind {
-    if (sk.tier === 'advanced') return 'hidden';
-    if (sk.tier === 'intermediate') return 'intermediate';
-    if (sk.tier === 'normal') return 'learned';
-    return sk.rarity === 'secret' ? 'hidden' : 'learned';
-  }
+  // Battle pool = the monster's fixed 10-card deck.
+  const deck = useMemo(() => (active ? deckFor(active.id) : []), [active]);
 
   function startBattle(m: MonsterStatus) {
-    // Every monster is playable: Just Breathe is the default when a dimension
-    // has no skills yet (weak but always finishes), so 0 skills never blocks.
     void haptics.medium();
     setActive(m);
     // Staged HP (Q15): grows with prior tames of this monster, capped at 300.
@@ -137,12 +107,13 @@ export default function TameEnemyScreen() {
     setMaxHp(cap);
     setHp(cap);
     setHits(0);
-    setUsedSkillIds([]);
+    setUsedCardIds([]);
+    setBubbleText(m.prep);
     setPhase('prep');
   }
 
-  function hit(kind: SkillKind, skillId?: string) {
-    const next = applyHit(hp, kind);
+  function playCard(card: TameCard) {
+    const next = Math.max(0, hp - card.damage);
     setHp(next);
     setHits((h) => h + 1);
     setHitFlash(true);
@@ -151,7 +122,11 @@ export default function TameEnemyScreen() {
       hitTimer.current = null;
       setHitFlash(false);
     }, 500);
-    if (skillId) setUsedSkillIds((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
+    // A NEW card persuades — the bubble takes its line. Replays just damage.
+    if (!usedCardIds.includes(card.cardId)) {
+      setUsedCardIds((ids) => [...ids, card.cardId]);
+      setBubbleText(card.persuaded);
+    }
 
     const tier = monsterTierFor(next, maxHp);
     if (tier === 'defeated') void haptics.heavy();
@@ -166,7 +141,7 @@ export default function TameEnemyScreen() {
   async function finishTame() {
     if (!active) return;
     // Record the completion (best-effort; the tame is already visually done).
-    const res = await submitTame({ monsterId: active.id, skillsUsed: usedSkillIds, hits: hits + 1 });
+    const res = await submitTame({ monsterId: active.id, skillsUsed: usedCardIds, hits: hits + 1 });
     setReward(res.ok ? (res.xpAwarded ?? null) : null);
     setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
     markTameEnemyDoneToday();
@@ -314,9 +289,6 @@ export default function TameEnemyScreen() {
 
   // ---- BATTLE (design: dark dungeon scene) ----
   if (phase === 'battle' && active) {
-    const visible = showDrawer ? pool : pool.slice(0, 9);
-    const powerFor = (sk: Skill | 'default') =>
-      sk === 'default' ? 10 : SKILL_DAMAGE[kindFor(sk)];
     return (
       <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={exit} style={styles.back} hitSlop={12}>
@@ -326,7 +298,7 @@ export default function TameEnemyScreen() {
         {/* Monster speech bubble (prep line as its complaint) + monster */}
         <View style={styles.battleScene}>
           <View style={styles.monsterBubble}>
-            <Text style={styles.monsterBubbleText}>{active.prep}</Text>
+            <Text style={styles.monsterBubbleText}>{bubbleText || active.prep}</Text>
             <View style={styles.monsterBubbleTail} />
           </View>
           {MONSTER_ART[active.id] ? (
@@ -347,72 +319,52 @@ export default function TameEnemyScreen() {
           <Text style={styles.hpLabel}>Negative Power</Text>
         </View>
 
-        {/* Bottom skill panel — tap to view, double tap to apply */}
+        {/* Bottom deck — long-press flips, double-tap plays */}
         <View style={[styles.skillPanel, { paddingBottom: insets.bottom + 10 }]}>
           <ScrollView contentContainerStyle={styles.skillWrap} showsVerticalScrollIndicator={false}>
-            {pool.length === 0 ? (
+            {deck.map((card) => (
               <Pressable
-                onPress={() => onCardTap('default', () => hit('default'), () => setZoomSkill('default'))}
-                style={styles.skillChip}
+                key={card.cardId}
+                onPress={() => onCardTap(card)}
+                onLongPress={() => { void haptics.light(); setZoomCard(card); }}
+                delayLongPress={260}
+                style={styles.cardWrap}
               >
-                <View style={styles.lvBadge}><Text style={styles.lvBadgeText}>Lv.1</Text></View>
-                <Text style={styles.skillChipText} numberOfLines={2}>Just Breathe</Text>
+                <ExpoImage
+                  source={CARD_FRONTS[card.monsterId]}
+                  style={styles.cardImg}
+                  contentFit="cover"
+                />
+                <View style={styles.cardScore}>
+                  <Text style={styles.cardScoreText}>{card.damage}</Text>
+                </View>
               </Pressable>
-            ) : (
-              visible.map((sk) => (
-                <Pressable
-                  key={sk.skillId}
-                  onPress={() =>
-                    onCardTap(
-                      sk.skillId,
-                      () => hit(kindFor(sk), sk.skillId),
-                      () => setZoomSkill(sk),
-                    )
-                  }
-                  style={[styles.skillChip, sk.rarity === 'secret' && styles.skillChipSecret]}
-                >
-                  <View style={styles.lvBadge}>
-                    <Text style={styles.lvBadgeText}>{sk.tier === 'advanced' || sk.rarity === 'secret' ? 'Lv.5' : sk.tier === 'intermediate' ? 'Lv.3' : 'Lv.2'}</Text>
-                  </View>
-                  <Text style={styles.skillChipText} numberOfLines={2}>{sk.title}</Text>
-                </Pressable>
-              ))
-            )}
-            {pool.length > 9 && !showDrawer && (
-              <Pressable onPress={() => setShowDrawer(true)} style={styles.moreBtn}>
-                <Text style={styles.moreText}>Show all {pool.length} skills</Text>
-              </Pressable>
-            )}
+            ))}
           </ScrollView>
-          <Text style={styles.panelHint}>Tap to view, double tap to apply.</Text>
-          <Text style={styles.panelHintSub}>Different cards land differently — tame the monster!</Text>
+          <Text style={styles.panelHint}>Hold to read, double tap to play.</Text>
+          <Text style={styles.panelHintSub}>Every card chips away — talk the monster down!</Text>
         </View>
 
-        {/* Card zoom overlay (design: card details) */}
-        {zoomSkill !== null && (
-          <Pressable style={styles.zoomBackdrop} onPress={() => setZoomSkill(null)}>
+        {/* Card back overlay (long-press): the counter-argument */}
+        {zoomCard !== null && (
+          <Pressable style={styles.zoomBackdrop} onPress={() => setZoomCard(null)}>
             <Pressable
-              style={styles.zoomCard}
+              style={styles.zoomCardWrap}
               onPress={() => {
-                const z = zoomSkill;
-                setZoomSkill(null);
-                if (z === 'default') hit('default');
-                else if (z) hit(kindFor(z), z.skillId);
+                const z = zoomCard;
+                setZoomCard(null);
+                if (z) playCard(z);
               }}
             >
-              <Text style={styles.zoomTitle}>
-                {zoomSkill === 'default' ? 'Just Breathe' : zoomSkill.title}
-              </Text>
-              <Text style={styles.zoomBody}>
-                {zoomSkill === 'default'
-                  ? 'Something everyone already knows how to do.'
-                  : zoomSkill.body}
-              </Text>
-              <View style={styles.powerPill}>
-                <Text style={styles.powerPillText}>{'⚔️'} {powerFor(zoomSkill)} Power</Text>
+              <ExpoImage source={CARD_BACK} style={styles.zoomBackImg} contentFit="cover" />
+              <View style={styles.zoomBackInner}>
+                <Text style={styles.zoomArgument}>{zoomCard.argument}</Text>
+              </View>
+              <View style={styles.zoomScore}>
+                <Text style={styles.zoomScoreText}>{zoomCard.damage}</Text>
               </View>
             </Pressable>
-            <Text style={styles.zoomHint}>Tap the card to apply it — or tap outside to go back.</Text>
+            <Text style={styles.zoomHint}>Tap the card to play it — or tap outside to go back.</Text>
           </Pressable>
         )}
       </View>
@@ -564,16 +516,14 @@ const styles = StyleSheet.create({
     marginHorizontal: -20, paddingHorizontal: 16, paddingTop: 14, maxHeight: 300,
   },
   skillWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingBottom: 8 },
-  skillChip: {
-    width: 92, borderRadius: 12, backgroundColor: '#3A2C55', borderWidth: 2, borderColor: '#6C4FA3',
-    padding: 8, alignItems: 'center', gap: 6,
+  cardWrap: { width: 88, height: 132, borderRadius: 10, overflow: 'hidden' },
+  cardImg: { width: '100%', height: '100%' },
+  cardScore: {
+    position: 'absolute', right: 4, bottom: 4, width: 30, height: 30, borderRadius: 15,
+    backgroundColor: '#FFF6E8', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: '#3A2E1A',
   },
-  skillChipSecret: { borderColor: '#F0C24B', backgroundColor: '#4A3B20' },
-  lvBadge: { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  lvBadgeText: { fontSize: 10, fontFamily: 'Inter_800ExtraBold', color: '#F0C24B' },
-  skillChipText: { fontSize: 12, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', lineHeight: 16 },
-  moreBtn: { alignItems: 'center', paddingVertical: 10, width: '100%' },
-  moreText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#B9A6E8' },
+  cardScoreText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   panelHint: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 4 },
   panelHintSub: { fontSize: 12, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 2 },
 
@@ -581,17 +531,20 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,18,0.82)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 18,
   },
-  zoomCard: {
-    width: '100%', backgroundColor: '#F5A445', borderRadius: 22, borderWidth: 4, borderColor: '#3B4A8F',
-    paddingVertical: 36, paddingHorizontal: 22, alignItems: 'center', gap: 14, minHeight: 300, justifyContent: 'center',
+  zoomCardWrap: {
+    width: 320, height: 480, borderRadius: 22, overflow: 'hidden',
   },
-  zoomTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
-  zoomBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', lineHeight: 22, textAlign: 'center' },
-  powerPill: {
-    backgroundColor: '#F7CE46', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 10,
-    borderWidth: 2, borderColor: '#2B2B2B',
+  zoomBackImg: { ...StyleSheet.absoluteFillObject },
+  zoomBackInner: {
+    flex: 1, justifyContent: 'center', paddingHorizontal: 34, paddingVertical: 44,
   },
-  powerPillText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  zoomArgument: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#1F1B16', lineHeight: 23 },
+  zoomScore: {
+    position: 'absolute', right: 14, bottom: 14, width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#FFF6E8', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#3A2E1A',
+  },
+  zoomScoreText: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   zoomHint: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
 
   titleBanner: {
