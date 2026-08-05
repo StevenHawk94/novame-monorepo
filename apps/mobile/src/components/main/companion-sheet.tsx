@@ -18,8 +18,8 @@ import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
 import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
-import { ICONS } from '@/lib/icons';
-import { WaveBackground, WAVE_PALETTES } from './wave-background';
+import { BACKGROUNDS, ICONS } from '@/lib/icons';
+import { Image as ExpoImage } from 'expo-image';
 import { getCachedCosmetics, fetchCosmetics } from '@/lib/cosmetics-api';
 
 export type CompanionSheetRef = {
@@ -56,10 +56,11 @@ function readDoneState(): DoneState {
 }
 
 /**
- * Companion interaction sheet (Home). A warm orange gradient-wave card that
- * slides up: the companion's portrait, name, level + EXP bar, and the list of
- * Kits. Daily Kits drop out once done and return next day; permanent Kits (True
- * North weekly, Visit Master 48h) always show. Follows the design 1:1.
+ * Companion interaction sheet (Home) — 2026-08-05 design: the connection grid
+ * ground with an inset peach card (brown outline). Clover balance top-left,
+ * the bunny head centered, "What do you need from me?", then the Kit cards.
+ * Daily Kits drop out once done and return next day; permanent Kits (True
+ * North weekly, Visit Master) always show.
  */
 export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
@@ -103,11 +104,11 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 
   const kits: KitRow[] = useMemo(() => {
     return [
-      { key: 'new_lens', label: 'New Lens', desc: 'See something a different way', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
-      { key: 'true_north', label: 'True North', desc: 'Rank what matters most right now', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
-      { key: 'quiet_wins', label: 'Small Wins', desc: 'Notice the small things you did', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
-      { key: 'tame_enemy', label: 'Tame Enemy', desc: "Face what's been loud lately", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
-      { key: 'visit_master', label: 'Visit Master', desc: 'Consult the Master \u2014 Plus', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
+      { key: 'new_lens', label: 'New Lens', desc: 'See something you concern in a different way', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
+      { key: 'true_north', label: 'True North', desc: 'Find out what actually matters to you right now', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
+      { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today, even if you missed it', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
+      { key: 'tame_enemy', label: 'Tame Enemy', desc: 'Quick release of your fear by taming them', icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
+      { key: 'visit_master', label: 'Visit Master', desc: 'Seek answers from the smart mind master', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
     ];
   }, [doneState, trueNorthAvail]);
 
@@ -134,23 +135,20 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       enableOverDrag={false}
     >
       <BottomSheetView style={[styles.outer, { height: sheetH }]}>
-        <WaveBackground palette={WAVE_PALETTES.orange} />
-        {/* Inner framed content -- the double-border layer over the wave card. */}
+        <ExpoImage source={BACKGROUNDS.connection} style={StyleSheet.absoluteFill} contentFit="cover" />
+        {/* Inset peach card with the brown outline (mock). */}
         <View style={styles.inner}>
           <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {/* Header: clovers balance (the Skills entry retired 2026-08-05
-                with the card library — battle arguments live in Tame Enemy) */}
             <View style={styles.header}>
               <View style={styles.cloverPill}>
-                <Text style={styles.cloverEmoji}>{'\u{1F340}'}</Text>
+                <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
                 <Text style={styles.cloverBalance}>{balance}</Text>
               </View>
             </View>
-            <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
             <View style={styles.portraitWrap}>
-              <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
+              <Image source={ICONS.obBunnyHead} style={styles.portrait} resizeMode="contain" />
             </View>
-            <Text style={styles.hangout}>Hey, Let{'\u2019'}s hang out, You want to.....</Text>
+            <Text style={styles.hangout}>Hey, What do you need from me?</Text>
             {visibleKits.map((kit) => (
               <Pressable
                 key={kit.key}
@@ -165,10 +163,14 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
               </Pressable>
             ))}
           </BottomSheetScrollView>
+          <Pressable
+            onPress={() => sheetRef.current?.dismiss()}
+            style={[styles.closeBtn, { bottom: insets.bottom + 6 }]}
+            hitSlop={8}
+          >
+            <MaterialIcons name="close" size={26} color="#FFFFFF" />
+          </Pressable>
         </View>
-        <Pressable onPress={() => sheetRef.current?.dismiss()} style={[styles.closeBtn, { bottom: insets.bottom + 12 }]} hitSlop={8}>
-          <MaterialIcons name="close" size={26} color="#3A2A1A" />
-        </Pressable>
       </BottomSheetView>
     </BottomSheetModal>
   );
@@ -178,20 +180,22 @@ CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
   sheetBg: { backgroundColor: 'transparent', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  outer: { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 10 },
-  // Inner framed layer: a rounded panel inset from the wave card, giving the
-  // double-border depth from the design. Slightly translucent so the wave shows.
+  outer: { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 14 },
+  // Inset peach panel with the brown outline over the grid ground (mock).
   inner: {
-    flex: 1, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
+    flex: 1, borderRadius: 30,
+    backgroundColor: '#F9D9B2',
+    borderWidth: 2.5, borderColor: '#A9714B',
     overflow: 'hidden',
   },
-  scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 110 },
+  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 110 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cloverPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 7 },
-  cloverEmoji: { fontSize: 17 },
-  cloverBalance: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A' },
+  cloverPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#FFFFFF',
+    borderRadius: 14, paddingHorizontal: 13, paddingVertical: 8,
+  },
+  cloverIcon: { width: 22, height: 22 },
+  cloverBalance: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
   skillsBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#4A3423', borderRadius: 18,
@@ -200,16 +204,19 @@ const styles = StyleSheet.create({
   },
   skillsGlyph: { fontSize: 16 },
   skillsLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  name: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#3A2A1A', textAlign: 'center', marginTop: 6 },
-  portraitWrap: { alignItems: 'center', marginTop: 4 },
-  portrait: { width: 120, height: 120 },
+  portraitWrap: { alignItems: 'center', marginTop: 2 },
+  portrait: { width: 140, height: 168 },
   portraitPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
-  hangout: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3A2A1A', textAlign: 'center', marginTop: 18, marginBottom: 12 },
+  hangout: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#4A2E1A', textAlign: 'center', marginTop: 12, marginBottom: 16 },
   kitList: { gap: 12, paddingBottom: 8 },
   kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 } },
   kitCardPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
   kitIcon: { width: 44, height: 44 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
   kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
-  closeBtn: { position: 'absolute', alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  closeBtn: {
+    position: 'absolute', alignSelf: 'center', width: 54, height: 54, borderRadius: 27,
+    backgroundColor: '#5C3A24', alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+  },
 });
