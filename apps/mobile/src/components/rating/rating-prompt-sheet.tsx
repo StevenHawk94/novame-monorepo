@@ -8,7 +8,7 @@
  * that closes without recording an "expressed" state.
  *
  * Design constraints (Stage 6 brand):
- *   - Paywall-purple bg (#7C3AED) + pink CTA (#EC4899) + deep-purple
+ *   - Brown bg (#4A3423) + orange CTA (#C96F2A) + deep-brown
  *     text on white secondary buttons (#1F1147)
  *   - One primary action per step (pink button) + small skip text
  *     below -- no parallel skip button, per design spec
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     backgroundColor: '#C96F2A',
-    shadowColor: '#EC4899',
+    shadowColor: '#C96F2A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
     shadowRadius: 16,

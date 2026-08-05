@@ -7,7 +7,7 @@ import { hideSplashOnce } from '@/lib/splash';
  * bucket-root assets the Home screen needs couldn't be downloaded in
  * time (poor / no network). Single Retry re-runs ensureP0Ready().
  *
- * Background is the splash purple (#7C3AED) so there's no jarring
+ * Background is the splash beige (#F8E2C1) so there's no jarring
  * color jump from the launch/splash screen to this error state. The
  * root onLayout calls hideSplashOnce() so the native splash steps
  * aside and this screen becomes visible (same pattern as the real
@@ -36,21 +36,21 @@ export function AssetGateError({ onRetry }: { onRetry: () => void }) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#F8E2C1',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
   body: { width: '100%', maxWidth: 360, alignItems: 'center' },
   title: {
-    color: '#FFFFFF',
+    color: '#2B2B2B',
     fontSize: 24,
     fontFamily: 'Inter_700Bold',
     marginBottom: 14,
     textAlign: 'center',
   },
   message: {
-    color: 'rgba(255,255,255,0.9)',
+    color: '#6B5B44',
     fontSize: 15,
     lineHeight: 23,
     textAlign: 'center',
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: '#EC4899',
+    backgroundColor: '#4A3423',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
