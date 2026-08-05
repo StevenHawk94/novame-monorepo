@@ -11,9 +11,9 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        // Auth screens are pure black -- override the root Stack's brown
+        // Auth screens sit on the splash beige -- override the root Stack's brown
         // so there's no dark-purple flash on the auth path.
-        contentStyle: { backgroundColor: '#000000' },
+        contentStyle: { backgroundColor: '#F8E2C1' },
       }}
     />
   );

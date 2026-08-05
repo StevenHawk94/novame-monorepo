@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
@@ -12,6 +13,7 @@ import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { AssetGateError } from '@/components/main/asset-gate-error';
+import { ICONS } from '@/lib/icons';
 
 /**
  * P0 asset gate on the login path.
@@ -40,7 +42,6 @@ import { AssetGateError } from '@/components/main/asset-gate-error';
  * this effect, may do that.
  */
 
-const LOGO = require('../../assets/images/logo.png');
 
 const MIN_DISPLAY_MS = 600;
 
@@ -122,14 +123,17 @@ export default function SigningInScreen() {
 
   return (
     <View style={styles.root}>
-      <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-      <ActivityIndicator size="small" color="rgba(255,255,255,0.85)" style={styles.spinner} />
+      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
+      <ActivityIndicator size="small" color="#8A6240" style={styles.spinner} />
     </View>
   );
 }
 
+// Same look as the entry-gate splash (grid ground + bunny head) so the
+// onboarding→home handoff never flashes a different scene.
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 96, height: 96, marginBottom: 24 },
+  root: { flex: 1, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
+  bunny: { width: 132, height: 158, marginBottom: 24 },
   spinner: { marginTop: 4 },
 });
