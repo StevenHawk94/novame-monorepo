@@ -74,11 +74,10 @@ type TabButtonProps = {
 };
 
 function TabButton({ icon, label, isFocused, onPress }: TabButtonProps): ReactNode {
+  // Focused pill wraps icon + label together with even padding (mock).
   return (
-    <Pressable onPress={onPress} style={styles.tabBtn}>
-      <View style={[styles.iconWrap, isFocused && styles.iconWrapActive]}>
-        <Image source={icon} style={styles.tabIcon} resizeMode="contain" />
-      </View>
+    <Pressable onPress={onPress} style={[styles.tabBtn, isFocused && styles.tabBtnActive]}>
+      <Image source={icon} style={styles.tabIcon} resizeMode="contain" />
       <Text style={styles.tabLabel}>{label}</Text>
     </Pressable>
   );
@@ -90,14 +89,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-around',
-    height: 68,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
-  tabBtn: { width: 66, alignItems: 'center', justifyContent: 'flex-start', gap: 2, paddingTop: 2 },
-  iconWrap: {
-    width: 52, height: 44, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
+  tabBtn: {
+    minWidth: 66, alignItems: 'center', justifyContent: 'center', gap: 2,
+    paddingVertical: 7, paddingHorizontal: 10, borderRadius: 20,
   },
-  iconWrapActive: { backgroundColor: 'rgba(255,255,255,0.45)' },
+  tabBtnActive: { backgroundColor: '#F8EFDA' },
   tabIcon: { width: 40, height: 40 },
   tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold', color: '#5A4A32' },
 });
