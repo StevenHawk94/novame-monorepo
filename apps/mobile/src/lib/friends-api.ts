@@ -5,6 +5,7 @@
  * creates a pending request the other side accepts.
  */
 import { ITEM_DICTIONARY } from '@novame/engine';
+import { syncWidgetLatestFriend } from './widget-sync';
 
 import { apiClient } from './api';
 import { supabase } from './supabase';
@@ -195,6 +196,7 @@ export async function fetchFriendFeed(): Promise<FeedEntry[]> {
     if (!data.success || !data.feed) return getCachedFriendFeed();
     const feed = data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
     storage.set(kFriendsFeed.name, JSON.stringify(feed));
+    void syncWidgetLatestFriend(feed);
     return feed;
   } catch {
     return getCachedFriendFeed();

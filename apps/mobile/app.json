@@ -23,7 +23,13 @@
           "audio"
         ]
       },
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.novame.app"
+        ]
+      },
+      "appleTeamId": "VFUC7899NP"
     },
     "android": {
       "package": "com.novame.app",
@@ -71,7 +77,14 @@
       "expo-notifications",
       "./plugins/with-photo-permissions",
       "expo-iap",
-      "./plugins/with-ios-modular-headers"
+      "./plugins/with-ios-modular-headers",
+      "expo-asset",
+      [
+        "@bacons/apple-targets",
+        {
+          "appleTeamId": "VFUC7899NP"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
