@@ -53,9 +53,10 @@ import { haptics } from '@/lib/haptics';
 import { markAiConsent } from '@/lib/ai-consent';
 import { supabase } from '@/lib/supabase';
 
-const PURPLE = '#7C3AED';
-const PURPLE_DEEP = '#6D28D9';
-const STAR_YELLOW = '#FBBF24';
+// Cream card with dark-brown accents (2026-08-05 — was the legacy purple).
+const BROWN = '#4A3423';
+const BROWN_DEEP = '#3A2A1A';
+const STAR_YELLOW = '#F2C14E';
 
 export default function AiConsentModal() {
   const insets = useSafeAreaInsets();
@@ -208,7 +209,7 @@ export default function AiConsentModal() {
             ]}
           >
             {agreed ? (
-              <MaterialIcons name="check" size={16} color={PURPLE} />
+              <MaterialIcons name="check" size={16} color="#FFFFFF" />
             ) : null}
           </View>
           <Text style={styles.checkboxLabel}>
@@ -229,7 +230,7 @@ export default function AiConsentModal() {
           <MaterialIcons
             name="open-in-new"
             size={14}
-            color="rgba(255,255,255,0.75)"
+            color="#8A7A63"
           />
         </Pressable>
 
@@ -243,7 +244,7 @@ export default function AiConsentModal() {
           ]}
         >
           {busy ? (
-            <ActivityIndicator size="small" color={PURPLE} />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Text
               style={[
@@ -271,12 +272,12 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: PURPLE,
+    backgroundColor: '#FBF3DF',
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-    shadowColor: PURPLE_DEEP,
+    shadowColor: BROWN_DEEP,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 24,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: BROWN,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   title: {
-    color: '#FFFFFF',
+    color: '#2B2B2B',
     fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   body: {
-    color: 'rgba(255,255,255,0.85)',
+    color: '#6B5B44',
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 14,
     marginBottom: 20,
@@ -341,18 +342,18 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderColor: '#B8A588',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
   },
   checkboxChecked: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+    backgroundColor: BROWN,
+    borderColor: BROWN,
   },
   checkboxLabel: {
     flex: 1,
-    color: '#FFFFFF',
+    color: '#3E3229',
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '500',
@@ -368,29 +369,29 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   learnMoreText: {
-    color: 'rgba(255,255,255,0.75)',
+    color: '#8A7A63',
     fontSize: 13,
     fontWeight: '600',
     textDecorationLine: 'underline',
-    textDecorationColor: 'rgba(255,255,255,0.5)',
+    textDecorationColor: '#B8A588',
   },
   ctaBtn: {
     paddingVertical: 16,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BROWN,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 54,
   },
   ctaBtnDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(74,52,35,0.35)',
   },
   ctaText: {
-    color: PURPLE,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
   ctaTextDisabled: {
-    color: 'rgba(124,58,237,0.6)',
+    color: 'rgba(255,255,255,0.75)',
   },
 });
