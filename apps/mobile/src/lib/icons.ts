@@ -35,6 +35,8 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   interact: require('../../assets/Icons/interact.png'),
   Clover: require('../../assets/Icons/clover.png'),
   Clovers: require('../../assets/Icons/clovers.png'),
+  send: require('../../assets/Icons/send.png'),
+  visitMasterHistory: require('../../assets/Icons/visit-master-history.png'),
   // Reflect entry (three ways in)
   reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
   reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
@@ -96,4 +98,5 @@ export const BACKGROUNDS = {
   friends: require('../../assets/Background/friends.webp'),
   connection: require('../../assets/Background/connection.webp'),
   tameEnemy: require('../../assets/Background/tame-enemy.webp'),
+  visitMaster: require('../../assets/Background/visit-master.webp'),
 } as const;
