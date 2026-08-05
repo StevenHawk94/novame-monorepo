@@ -9,7 +9,7 @@
  * Every input screen sits on the sunset art under a 50% black scrim (设计
  * 要求), so these pieces assume a dark ground.
  */
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -113,22 +113,53 @@ export function SelectableItemGrid({
   selected: Set<string>;
   onToggle: (id: string) => void;
 }) {
+  // Tap feedback (2026-08-05): the tapped item's name flashes centered for
+  // ~1s — white on a black pill — so sprite-only tiles are never ambiguous.
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
+  const handleToggle = useCallback(
+    (id: string) => {
+      onToggle(id);
+      const name = ITEM_DICTIONARY.items[id]?.displayName;
+      if (name) {
+        setToast(name);
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => {
+          toastTimer.current = null;
+          setToast(null);
+        }, 1000);
+      }
+    },
+    [onToggle],
+  );
   return (
-    <FlatList
-      data={itemIds}
-      keyExtractor={(id) => id}
-      numColumns={6}
-      renderItem={({ item }) => (
-        <GridCell id={item} on={selected.has(item)} onToggle={onToggle} />
+    <View style={{ flex: 1 }}>
+      <FlatList
+        data={itemIds}
+        keyExtractor={(id) => id}
+        numColumns={6}
+        renderItem={({ item }) => (
+          <GridCell id={item} on={selected.has(item)} onToggle={handleToggle} />
+        )}
+        columnWrapperStyle={s.gridRow}
+        contentContainerStyle={s.gridContent}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={60}
+        maxToRenderPerBatch={48}
+        windowSize={7}
+        removeClippedSubviews
+      />
+      {toast !== null && (
+        <View pointerEvents="none" style={s.nameToastWrap}>
+          <View style={s.nameToast}>
+            <Text style={s.nameToastText}>{toast}</Text>
+          </View>
+        </View>
       )}
-      columnWrapperStyle={s.gridRow}
-      contentContainerStyle={s.gridContent}
-      showsVerticalScrollIndicator={false}
-      initialNumToRender={60}
-      maxToRenderPerBatch={48}
-      windowSize={7}
-      removeClippedSubviews
-    />
+    </View>
   );
 }
 
@@ -332,6 +363,16 @@ export function ReflectResultView({
 }
 
 const s = StyleSheet.create({
+  nameToastWrap: {
+    ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center',
+  },
+  nameToast: {
+    backgroundColor: 'rgba(0,0,0,0.82)', borderRadius: 14,
+    paddingHorizontal: 20, paddingVertical: 11, maxWidth: '80%',
+  },
+  nameToastText: {
+    color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center',
+  },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   backCircle: {
     width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFFFFF',

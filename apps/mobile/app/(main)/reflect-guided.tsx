@@ -250,7 +250,7 @@ export default function ReflectGuidedScreen() {
                           style={[styles.pill, on && styles.pillOn]}
                         >
                           <Text style={styles.pillEmoji}>{c.emoji}</Text>
-                          <Text style={[styles.pillText, on && styles.pillTextOn]} numberOfLines={1}>
+                          <Text style={[styles.pillText, on && styles.pillTextOn]}>
                             {c.label}
                           </Text>
                         </Pressable>
