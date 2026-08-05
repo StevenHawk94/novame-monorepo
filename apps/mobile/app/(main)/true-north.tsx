@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -234,12 +234,17 @@ function Reveal({
   void c;
   const top = ranking[0];
   const bottom = ranking[ranking.length - 1];
-  const medals = ['🏆', '🥈', '🥉'];
+  // Podium trophies use the dedicated art set (assets/Icons/true-north-N.png).
+  const medals = [
+    require('../../assets/Icons/true-north-1.png'),
+    require('../../assets/Icons/true-north-2.png'),
+    require('../../assets/Icons/true-north-3.png'),
+  ];
 
   // Podium card, extracted so the 2-1-3 layout below stays readable.
   const podium = (rank: number) => (
     <View style={[styles.podiumCard, rank === 0 && styles.podiumCardFirst]}>
-      <Text style={styles.podiumMedal}>{medals[rank]}</Text>
+      <Image source={medals[rank]} style={styles.podiumMedal} resizeMode="contain" />
       <Text style={styles.podiumPhrase}>{TRUE_NORTH_PHRASES[ranking[rank]]}</Text>
     </View>
   );
@@ -320,7 +325,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   podiumCardFirst: { minWidth: '60%', flex: 0 },
-  podiumMedal: { fontSize: 30, marginTop: -32, marginBottom: 4 },
+  podiumMedal: { width: 44, height: 44, marginTop: -38, marginBottom: 4 },
   podiumPhrase: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center', lineHeight: 22 },
   revealCard: {
     backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 2, borderColor: '#2B2B2B',
