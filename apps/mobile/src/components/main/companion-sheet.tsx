@@ -146,7 +146,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
               </View>
             </View>
             <View style={styles.portraitWrap}>
-              <Image source={ICONS.obBunnyHead} style={styles.portrait} resizeMode="contain" />
+              <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
             </View>
             <Text style={styles.hangout}>Hey, What do you need from me?</Text>
             {visibleKits.map((kit) => (
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   skillsGlyph: { fontSize: 16 },
   skillsLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   portraitWrap: { alignItems: 'center', marginTop: 2 },
-  portrait: { width: 140, height: 168 },
+  portrait: { width: 150, height: 150 },
   portraitPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
   hangout: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#4A2E1A', textAlign: 'center', marginTop: 12, marginBottom: 16 },
   kitList: { gap: 12, paddingBottom: 8 },
