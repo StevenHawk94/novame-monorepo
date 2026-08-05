@@ -18,7 +18,7 @@ import {
   MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
 } from '../../src/lib/tame-enemy-api';
 import { MONSTER_ART } from '../../src/lib/monster-images';
-import { CARD_BACK, CARD_FRONTS, deckFor, type TameCard } from '../../src/lib/tame-cards';
+import { POINT_ICONS, deckFor, type TameCard } from '../../src/lib/tame-cards';
 
 type Phase = 'select' | 'prep' | 'battle' | 'done';
 
@@ -26,12 +26,12 @@ type Phase = 'select' | 'prep' | 'battle' | 'done';
  * Tame Enemy. Four screens as phases: select an enemy, a prep page, the
  * battle, and the tamed screen. One tame a day (server gate).
  *
- * Battle (2026-07-31 design): each monster owns a fixed 10-card deck
- * (tame-cards.ts) — themed card fronts with the damage number in the circle.
- * LONG-PRESS flips a card to its back (the counter-argument); DOUBLE-TAP
- * plays it: the monster loses that card's damage, and the FIRST time a card
- * lands its persuaded line replaces the monster's speech bubble (replays
- * deal damage but leave the bubble unchanged). HP 0 → tamed.
+ * Battle (2026-08-05 design): each monster owns a fixed 10-argument deck
+ * (tame-cards.ts), listed as text rows — points icon + the argument's
+ * opening line. TAP opens the full text; DOUBLE-TAP plays it: the monster
+ * loses that argument's damage, and the FIRST time one lands its persuaded
+ * line replaces the speech bubble (replays deal damage but leave the bubble
+ * unchanged). HP 0 → tamed.
  */
 export default function TameEnemyScreen() {
   const insets = useSafeAreaInsets();
@@ -72,15 +72,27 @@ export default function TameEnemyScreen() {
   const [hitFlash, setHitFlash] = useState(false);
   const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Single tap opens the full text once the double-tap window passes; a
+  // second tap inside the window plays the argument instead.
   const DOUBLE_TAP_MS = 300;
+  const viewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function onCardTap(card: TameCard) {
     const now = Date.now();
     if (lastTap.id === card.cardId && now - lastTap.at < DOUBLE_TAP_MS) {
+      if (viewTimer.current) {
+        clearTimeout(viewTimer.current);
+        viewTimer.current = null;
+      }
       setLastTap({ id: '', at: 0 });
       setZoomCard(null);
       playCard(card);
     } else {
       setLastTap({ id: card.cardId, at: now });
+      if (viewTimer.current) clearTimeout(viewTimer.current);
+      viewTimer.current = setTimeout(() => {
+        viewTimer.current = null;
+        setZoomCard(card);
+      }, DOUBLE_TAP_MS + 20);
     }
   }
 
@@ -319,52 +331,46 @@ export default function TameEnemyScreen() {
           <Text style={styles.hpLabel}>Negative Power</Text>
         </View>
 
-        {/* Bottom deck — long-press flips, double-tap plays */}
+        {/* Bottom deck — text rows: tap to view, double tap to apply */}
         <View style={[styles.skillPanel, { paddingBottom: insets.bottom + 10 }]}>
-          <ScrollView contentContainerStyle={styles.skillWrap} showsVerticalScrollIndicator={false}>
+          <Text style={styles.panelHint}>Tap to view, double tap to apply.</Text>
+          <ScrollView contentContainerStyle={styles.rowsWrap} showsVerticalScrollIndicator={false}>
             {deck.map((card) => (
               <Pressable
                 key={card.cardId}
                 onPress={() => onCardTap(card)}
-                onLongPress={() => { void haptics.light(); setZoomCard(card); }}
-                delayLongPress={260}
-                style={styles.cardWrap}
+                style={({ pressed }) => [styles.argRow, pressed && { opacity: 0.85 }]}
               >
                 <ExpoImage
-                  source={CARD_FRONTS[card.monsterId]}
-                  style={styles.cardImg}
-                  contentFit="cover"
+                  source={POINT_ICONS[card.damage] ?? POINT_ICONS[10]}
+                  style={styles.argIcon}
+                  contentFit="contain"
                 />
-                <View style={styles.cardScore}>
-                  <Text style={styles.cardScoreText}>{card.damage}</Text>
-                </View>
+                <Text style={styles.argText} numberOfLines={1}>{card.argument}</Text>
               </Pressable>
             ))}
           </ScrollView>
-          <Text style={styles.panelHint}>Hold to read, double tap to play.</Text>
-          <Text style={styles.panelHintSub}>Every card chips away — talk the monster down!</Text>
         </View>
 
-        {/* Card back overlay (long-press): the counter-argument */}
+        {/* Full-text overlay (tap): the whole counter-argument */}
         {zoomCard !== null && (
           <Pressable style={styles.zoomBackdrop} onPress={() => setZoomCard(null)}>
             <Pressable
-              style={styles.zoomCardWrap}
+              style={styles.zoomTextCard}
               onPress={() => {
                 const z = zoomCard;
                 setZoomCard(null);
                 if (z) playCard(z);
               }}
             >
-              <ExpoImage source={CARD_BACK} style={styles.zoomBackImg} contentFit="cover" />
-              <View style={styles.zoomBackInner}>
-                <Text style={styles.zoomArgument}>{zoomCard.argument}</Text>
-              </View>
-              <View style={styles.zoomScore}>
-                <Text style={styles.zoomScoreText}>{zoomCard.damage}</Text>
-              </View>
+              <ExpoImage
+                source={POINT_ICONS[zoomCard.damage] ?? POINT_ICONS[10]}
+                style={styles.zoomIcon}
+                contentFit="contain"
+              />
+              <Text style={styles.zoomArgument}>{zoomCard.argument}</Text>
             </Pressable>
-            <Text style={styles.zoomHint}>Tap the card to play it — or tap outside to go back.</Text>
+            <Text style={styles.zoomHint}>Tap the card to apply it — or tap outside to go back.</Text>
           </Pressable>
         )}
       </View>
@@ -515,36 +521,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#1B1626', borderTopLeftRadius: 22, borderTopRightRadius: 22,
     marginHorizontal: -20, paddingHorizontal: 16, paddingTop: 14, maxHeight: 300,
   },
-  skillWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingBottom: 8 },
-  cardWrap: { width: 88, height: 132, borderRadius: 10, overflow: 'hidden' },
-  cardImg: { width: '100%', height: '100%' },
-  cardScore: {
-    position: 'absolute', right: 4, bottom: 4, width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#FFF6E8', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5, borderColor: '#3A2E1A',
+  rowsWrap: { gap: 10, paddingBottom: 10, paddingTop: 2 },
+  argRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 13, paddingHorizontal: 14,
   },
-  cardScoreText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
-  panelHint: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 4 },
-  panelHintSub: { fontSize: 12, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginTop: 2 },
+  argIcon: { width: 30, height: 30 },
+  argText: { flex: 1, fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#7A4A16' },
+  panelHint: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
 
   zoomBackdrop: {
     ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,18,0.82)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 18,
   },
-  zoomCardWrap: {
-    width: 320, height: 480, borderRadius: 22, overflow: 'hidden',
+  zoomTextCard: {
+    width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: 24,
+    paddingVertical: 30, paddingHorizontal: 26, alignItems: 'center', gap: 16,
   },
-  zoomBackImg: { ...StyleSheet.absoluteFillObject },
-  zoomBackInner: {
-    flex: 1, justifyContent: 'center', paddingHorizontal: 34, paddingVertical: 44,
-  },
-  zoomArgument: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#1F1B16', lineHeight: 23 },
-  zoomScore: {
-    position: 'absolute', right: 14, bottom: 14, width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#FFF6E8', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#3A2E1A',
-  },
-  zoomScoreText: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
+  zoomIcon: { width: 52, height: 52 },
+  zoomArgument: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#2A2118', lineHeight: 24 },
   zoomHint: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
 
   titleBanner: {

@@ -1,29 +1,22 @@
 /**
- * Tame Enemy battle decks (2026-07-31 design).
+ * Tame Enemy battle decks (2026-08-05 design: text rows, no card art).
  *
- * Each monster has a fixed 10-card deck. The card FRONT is one themed
- * template per monster (assets/skills, 500×750) with the damage number
- * rendered into the circle at runtime; the BACK (shared Back.webp template)
- * carries the counter-argument. Battle interactions: long-press flips to the
- * back, double-tap applies damage. The first time a card lands, the
- * monster's speech bubble becomes that card's persuaded line; re-using a
- * card deals damage but leaves the bubble unchanged.
+ * Each monster has a fixed 10-argument deck. The battle lists them as text
+ * rows (points icon + the argument's opening); tap opens the full text,
+ * double-tap plays it. The first time an argument lands, the monster's
+ * speech bubble becomes its persuaded line; replays deal damage silently.
  *
  * Damage split per deck: 5 ×1, 10 ×4, 15 ×3, 20 ×2 (indices 1..10).
  */
 import type { ImageSourcePropType } from 'react-native';
 
-export const CARD_BACK: ImageSourcePropType = require('../../assets/skills/Back.webp');
-
-export const CARD_FRONTS: Record<string, ImageSourcePropType> = {
-  procrastination: require('../../assets/skills/procrastination.webp'),
-  overthinking: require('../../assets/skills/overthinking.webp'),
-  the_swallower: require('../../assets/skills/people-pleasing.webp'),
-  the_fog: require('../../assets/skills/lose-direction.webp'),
-  the_spiral: require('../../assets/skills/anxiety.webp'),
-  the_wall: require('../../assets/skills/isolation.webp'),
-  the_comparer: require('../../assets/skills/comparison.webp'),
-  the_hollow: require('../../assets/skills/self-doubt.webp'),
+/** Damage badge icons (assets/Icons/<n>-points.png), keyed by damage value. */
+export const POINT_ICONS: Record<number, ImageSourcePropType> = {
+  5: require('../../assets/Icons/5-points.png'),
+  10: require('../../assets/Icons/10-points.png'),
+  15: require('../../assets/Icons/15-points.png'),
+  20: require('../../assets/Icons/20-points.png'),
+  30: require('../../assets/Icons/30-points.png'),
 };
 
 /** Card damage by 1-based deck position. */

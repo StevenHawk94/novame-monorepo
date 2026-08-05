@@ -138,24 +138,13 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         {/* Inner framed content -- the double-border layer over the wave card. */}
         <View style={styles.inner}>
           <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {/* Header: clovers balance (left) + Skills entry (right) */}
+            {/* Header: clovers balance (the Skills entry retired 2026-08-05
+                with the card library — battle arguments live in Tame Enemy) */}
             <View style={styles.header}>
               <View style={styles.cloverPill}>
                 <Text style={styles.cloverEmoji}>{'\u{1F340}'}</Text>
                 <Text style={styles.cloverBalance}>{balance}</Text>
               </View>
-              {/* Design: brown pill with crossed-swords + "Skills". No dedicated
-                  asset yet, so the glyph is an emoji placeholder (swap when the
-                  sticker icon lands). ICONS.Skills never existed — an Image with
-                  an undefined source rendered nothing. */}
-              <Pressable
-                onPress={() => { void haptics.light(); router.push('/(main)/(modals)/skills-list'); }}
-                style={styles.skillsBtn}
-                hitSlop={8}
-              >
-                <Text style={styles.skillsGlyph}>{'⚔️'}</Text>
-                <Text style={styles.skillsLabel}>Skills</Text>
-              </Pressable>
             </View>
             <Text style={styles.name} numberOfLines={1}>{companion?.name || 'The Poppet'}</Text>
             <View style={styles.portraitWrap}>
