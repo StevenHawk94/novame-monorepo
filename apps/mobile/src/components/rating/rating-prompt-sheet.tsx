@@ -300,7 +300,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
 
 const styles = StyleSheet.create({
   background: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#4A3423',
   },
   handle: {
     paddingTop: 12,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    backgroundColor: '#EC4899',
+    backgroundColor: '#C96F2A',
     shadowColor: '#EC4899',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
