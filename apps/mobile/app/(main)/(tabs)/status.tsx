@@ -2,14 +2,15 @@ import { useCallback, useState } from 'react';
 import {
   Image, Pressable, ScrollView, Share, StyleSheet, Text, View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Image as ExpoImage } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
-import { BACKGROUNDS, ICONS } from '@/lib/icons';
+import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
@@ -35,6 +36,22 @@ const INSIGHT_SECTIONS: { key: keyof ConnectionInsights; label: string; emoji: s
   { key: 'boundaries', label: 'Boundaries', emoji: '🚧' },
   { key: 'hangoutIdeas', label: 'Hangout Ideas', emoji: '🎈' },
 ];
+
+// The unpaired teaser pills (mock 2026-08-05): what pairing unlocks.
+const TEASER_PILLS = [
+  'Vibe Matching Moments', 'Emotion', 'Care Tips',
+  'Interested Topics', 'Boundaries', 'Hangout Ideas',
+];
+
+// Free users see the insight cards with STANDARD placeholder copy behind a
+// blur — never the real content (which is not even fetched for free tiers).
+const MOCK_INSIGHTS: Record<string, string> = {
+  emotion: 'They seemed lighter today — a small win at work put a spring in their step and they kept humming that one song.',
+  topic: 'Ask them about the little café they discovered on their walk — they clearly want to tell someone about it.',
+  careTips: 'A short voice note tonight would land better than a long text. Keep it warm and easy.',
+  boundaries: 'Maybe skip the schedule talk today — it came up twice and felt heavy both times.',
+  hangoutIdeas: 'A 20-minute watch-together of that show you both dropped last month. Low effort, high laughs.',
+};
 
 function Initial({ name, size = 56 }: { name: string; size?: number }) {
   return (
@@ -83,57 +100,63 @@ export default function ConnectionDashboardScreen() {
   async function copySend(text: string) {
     void haptics.light();
     try {
+      await Clipboard.setStringAsync(text);
       await Share.share({ message: text });
     } catch {
-      // user dismissed the share sheet — nothing to do
+      // user dismissed the share sheet — the text is on the clipboard anyway
     }
   }
 
   const partner = pairing?.partner ?? null;
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={st.root} edges={['top']}>
-      {/* 板块1: header */}
-      <View style={st.header}>
+    <View style={st.root}>
+      {/* 板块1: header — the brown block owns the status-bar area too */}
+      <View style={[st.header, { paddingTop: insets.top + 10 }]}>
         <View style={{ flex: 1 }}>
           <Text style={st.title}>Connection Dashboard</Text>
           <Text style={st.subtitle}>Connecting Through Daily Moments</Text>
         </View>
-        <Pressable
-          onPress={() => {
-            void haptics.light();
-            if (partner) {
+        {partner && (
+          <Pressable
+            onPress={() => {
+              void haptics.light();
               router.push({
                 pathname: '/(main)/friend-memories',
                 params: { friendUserId: partner.userId, friendName: partner.displayName },
               } as never);
-            } else {
-              router.push('/(main)/friend-add' as never);
-            }
-          }}
-          style={st.hubPill}
-        >
-          <Image source={ICONS.sharedMemories} style={{ width: 22, height: 22 }} resizeMode="contain" />
-          <Text style={st.hubPillText}>Memories Hub</Text>
-        </Pressable>
+            }}
+            style={st.hubPill}
+          >
+            <Image source={ICONS.sharedMemories} style={{ width: 22, height: 22 }} resizeMode="contain" />
+            <Text style={st.hubPillText}>Memories Hub</Text>
+          </Pressable>
+        )}
       </View>
 
       {!pairing || !partner ? (
-        /* Unpaired lock state (mock 2026-07-29): the desert art fills the tab
-           under the header; a cream card with a lock invites pairing. */
+        /* Unpaired (mock 2026-08-05): grid ground, cream lock card with the
+           six teaser pills previewing what pairing unlocks. */
         <View style={{ flex: 1 }}>
           <ExpoImage
-            source={BACKGROUNDS.connection}
+            source={ICONS.obGridBg}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
-            contentPosition="top"
           />
           <Pressable
             onPress={() => { void haptics.medium(); router.push('/(main)/friend-add' as never); }}
             style={st.pairLockCard}
           >
-            <MaterialIcons name="lock" size={64} color="#5D3A1F" />
-            <Text style={st.pairLockText}>Pair someone now to{'\n'}unlock connection dashboard</Text>
+            <MaterialIcons name="lock" size={56} color="#5D3A1F" />
+            <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock connection dashboard</Text>
+            <View style={st.teaserGrid}>
+              {TEASER_PILLS.map((t) => (
+                <View key={t} style={st.teaserPill}>
+                  <Text style={st.teaserPillText}>{t}</Text>
+                </View>
+              ))}
+            </View>
           </Pressable>
         </View>
       ) : (
@@ -184,16 +207,25 @@ export default function ConnectionDashboardScreen() {
           </View>
 
           {!isPaid || insightsGate === 'plus_required' ? (
-            <Pressable
-              onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
-              style={st.lockCard}
-            >
-              <MaterialIcons name="lock" size={22} color="#8A5F3F" />
-              <Text style={st.lockText}>
-                Daily Emotion, Topics, Care Tips, Boundaries and Hangout Ideas about{' '}
-                {partner.displayName} come with NovaMe Plus.
-              </Text>
-            </Pressable>
+            /* Free tier: standard placeholder copy behind a blur (the real
+               insights are never fetched), one paywall button per card. */
+            INSIGHT_SECTIONS.map(({ key, label, emoji }) => (
+              <View key={key} style={st.insightCard}>
+                <View style={st.insightBadge}>
+                  <Text style={st.insightBadgeText}>{emoji} {label}</Text>
+                </View>
+                <Text style={[st.insightText, st.insightBlurred]}>
+                  “{MOCK_INSIGHTS[key] ?? ''}”
+                </Text>
+                <Pressable
+                  onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
+                  style={st.plusBtn}
+                >
+                  <MaterialIcons name="lock" size={17} color="#FFFFFF" />
+                  <Text style={st.copyBtnText}>Join Plus to Access Details</Text>
+                </Pressable>
+              </View>
+            ))
           ) : insightsGate === 'consent_required' ? (
             <View style={st.lockCard}>
               <MaterialIcons name="privacy-tip" size={22} color="#8A5F3F" />
@@ -220,7 +252,8 @@ export default function ConnectionDashboardScreen() {
             <View style={st.lockCard}>
               <MaterialIcons name="hourglass-empty" size={22} color="#8A5F3F" />
               <Text style={st.lockText}>
-                Nothing to read yet today — guidance appears once {partner.displayName} reflects.
+                {partner.displayName} hasn't reflected yet — these cards fill in
+                the moment their first reflect lands.
               </Text>
             </View>
           )}
@@ -247,7 +280,7 @@ export default function ConnectionDashboardScreen() {
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -308,13 +341,35 @@ const st = StyleSheet.create({
   copyBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   pairLockCard: {
-    marginHorizontal: 20, marginTop: 48, borderRadius: 32,
+    marginHorizontal: 18, marginTop: 44, borderRadius: 32,
     backgroundColor: '#FBF3DF', alignItems: 'center', justifyContent: 'center',
-    gap: 20, paddingVertical: 96, paddingHorizontal: 28,
+    gap: 22, paddingVertical: 56, paddingHorizontal: 20,
   },
   pairLockText: {
-    fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#5D3A1F',
-    textAlign: 'center', lineHeight: 30,
+    fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B',
+    textAlign: 'center', lineHeight: 29,
+  },
+  teaserGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+    columnGap: 12, rowGap: 14, marginTop: 8,
+  },
+  teaserPill: {
+    width: '44%', backgroundColor: '#FFFFFF', borderRadius: 18,
+    paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center',
+    minHeight: 62,
+    shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  teaserPillText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#161311', textAlign: 'center' },
+  insightBlurred: {
+    color: 'transparent',
+    textShadowColor: 'rgba(42,33,24,0.6)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 7,
+  },
+  plusBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#8A6240', borderRadius: 16, paddingVertical: 14,
   },
 
   detailOverlay: {
