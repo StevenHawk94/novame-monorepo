@@ -27,7 +27,7 @@ function isoWeek(dateStr) {
  * Records one tame. PRD v2.0 economy:
  *   - pays XP_RULES.tameEnemy.award (+30) and credits the monster's dimension
  *     +10 (PRD 1.2)
- *   - FREE: once a day across all monsters (period = local date)
+ *   - FREE: 3 tames a day across all monsters (period = date#slot, slots 1-3)
  *   - PAID: once per monster per day, up to all 8 (period = date:monsterId)
  * The tier fork only widens the period key -- submit_kit's unique row stays
  * the single gate either way. The battle resolves entirely client-side
@@ -59,20 +59,28 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const usedIds = Array.isArray(skillsUsed) ? skillsUsed : []
 
-    // Tier fork (PRD benefits matrix): paid tames each enemy once a day.
+    // Tier fork (PRD benefits matrix): paid tames each enemy once a day;
+    // free gets 3 tames a day across all monsters (2026-07-31 ruling), gated
+    // by a per-slot period key so submit_kit's unique row still guards each.
     const { data: profile } = await supabase
       .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
     const isPaid = (profile?.subscription_tier ?? 'free') !== 'free'
-    const periodKey = isPaid ? `${dateStr}:${monsterId}` : dateStr
+
+    const { data: priorRows } = await supabase
+      .from('kit_completions')
+      .select('payload, local_date')
+      .eq('user_id', userId)
+      .eq('kit', 'tame_enemy')
+    const tamesToday = (priorRows || []).filter((r) => r.local_date === dateStr).length
+    const FREE_DAILY_TAMES = 3
+    if (!isPaid && tamesToday >= FREE_DAILY_TAMES) {
+      return NextResponse.json({ error: 'already_done' }, { status: 409 })
+    }
+    const periodKey = isPaid ? `${dateStr}:${monsterId}` : `${dateStr}#${tamesToday + 1}`
 
     // Staged HP (Q15): this battle's max HP grows with prior tames of THIS
     // monster (50 → 150 → 250 → 300 cap) and is what the tame banks as
     // battle points. Counted before this tame is recorded.
-    const { data: priorRows } = await supabase
-      .from('kit_completions')
-      .select('payload')
-      .eq('user_id', userId)
-      .eq('kit', 'tame_enemy')
     const timesTamedBefore = (priorRows || []).filter(
       (r) => r.payload?.monster_id === monsterId,
     ).length

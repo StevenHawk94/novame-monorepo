@@ -37,18 +37,33 @@ function localDateStr(): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Mark today's single tame as done, so the sheet drops the Kit until tomorrow. */
+/** Free tier tames per day (2026-07-31: was 1). */
+export const FREE_DAILY_TAMES = 3;
+
+/** Count one completed tame toward today's local tally. */
 export function markTameEnemyDoneToday(): void {
-  storage.set(kTameEnemyState.name, JSON.stringify({ date: localDateStr(), done: true }));
+  const today = localDateStr();
+  let count = 0;
+  const raw = storage.getString(kTameEnemyState.name);
+  if (raw) {
+    try {
+      const s = JSON.parse(raw) as { date?: string; count?: number; done?: boolean };
+      if (s.date === today) count = s.count ?? (s.done ? 1 : 0);
+    } catch {
+      // fresh start
+    }
+  }
+  storage.set(kTameEnemyState.name, JSON.stringify({ date: today, count: count + 1 }));
 }
 
-/** Whether the one daily tame is already spent (local view; server is truth). */
+/** Whether all daily tames are spent (local view; server is truth). */
 export function isTameEnemyDoneToday(): boolean {
   const raw = storage.getString(kTameEnemyState.name);
   if (!raw) return false;
   try {
-    const s = JSON.parse(raw) as { date?: string; done?: boolean };
-    return s.date === localDateStr() && s.done === true;
+    const s = JSON.parse(raw) as { date?: string; count?: number; done?: boolean };
+    if (s.date !== localDateStr()) return false;
+    return (s.count ?? (s.done ? 1 : 0)) >= FREE_DAILY_TAMES;
   } catch {
     return false;
   }

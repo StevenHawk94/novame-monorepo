@@ -77,7 +77,7 @@ export async function GET(request) {
     const perEnemyDaily = (profile?.subscription_tier ?? 'free') !== 'free'
     const doneToday = perEnemyDaily
       ? tamedTodayIds.size >= MONSTERS.length
-      : tamesToday >= 1
+      : tamesToday >= 3
 
     // Battle points total for the prep screen's milestone track.
     const { data: bp } = await supabase

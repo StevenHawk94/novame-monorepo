@@ -182,7 +182,7 @@ export default function TameEnemyScreen() {
             <Text style={[styles.hintText, { color: kit.accent }]}>
               {perEnemyDaily
                 ? "All eight tamed today — that's the full sweep. Back tomorrow!"
-                : "You've tamed one today. Come back tomorrow for another."}
+                : "All 3 tames used today. Come back tomorrow for more."}
             </Text>
           </View>
         )}
