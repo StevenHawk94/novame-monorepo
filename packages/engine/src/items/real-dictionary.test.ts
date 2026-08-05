@@ -7,8 +7,8 @@ import { ITEM_DICTIONARY } from './dictionary';
 // icon_keyword_mapping_final.xlsx, 2026-07-30) — pins the phrase-priority
 // rule against real data and guards referential integrity after any regen.
 describe('real dictionary smoke (v3)', () => {
-  it('has the full 1693-item catalog', () => {
-    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(1693);
+  it('has the full 2665-item catalog', () => {
+    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(2665);
   });
 
   it('every synonym points at an existing item', () => {

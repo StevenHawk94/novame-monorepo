@@ -298,6 +298,17 @@ emotions-02 防旧图残留）。图到位后的重跑清单写在该工具的�
   v2 行保留（历史引用不破坏）——需用户执行后新物品才能入库。
 - v2 大表 webp 已从 assets/items 删除；engine ItemDef 的 sheet 坐标转为可选。
 
+## 6.69 Items v3.1（2026-08-05，icon_keyword_mapping_updated.xlsx 2665 项）
+
+- Food & Drink 扩到 1208 项 / 22 页（总量 1693→2665）。管线输入换为
+  icon_keyword_mapping_updated.xlsx；迁移 031（items_food_expansion）需执行。
+- 检测器强化（tools/build-items-v3.py banded_grid_detect）：行带 y 投影 +
+  孤带吸收 + 超高带按中位行高拆分；格内包围盒取"主导连通域 ∩ 窗口"；相邻格
+  共享连通域（贴连/漂移）时按范围内真实组件重新一一分配（fused-cells.txt
+  记录风险名单，本轮 15 处全部 QA 通过）；Celebration 花环走宽松合并。
+- Guided Food & Drink 全量同步规则保留（1208 项进 prompt 分类）。
+- 引擎回归改 2665；bundle 2818 资产 / each 目录 36MB。
+
 ## 7. 遗留工作（下一步）
 
 **任务 13（已建）**：iOS/Android 桌面 Widget（原生）、陌生人搜索（需产品定

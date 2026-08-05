@@ -23,7 +23,7 @@ Outputs:
   packages/engine/src/items/dictionary.json          items + synonyms
   apps/mobile/src/lib/item-images.g.ts               require map
   apps/mobile/src/lib/guided-catalog.g.ts            11 prompt categories
-  supabase/migrations/20260730000030_items_v3.sql    catalog upsert
+  supabase/migrations/<latest>_items_catalog.sql    catalog upsert
   <scratch>/preview.html + flagged list              human spot-check
 """
 import json
@@ -56,7 +56,7 @@ def slugify(s: str) -> str:
     return s
 
 # ---------------- master data ----------------
-wb = openpyxl.load_workbook(SRC / 'icon_keyword_mapping_final.xlsx', read_only=True)
+wb = openpyxl.load_workbook(SRC / 'icon_keyword_mapping_updated.xlsx', read_only=True)
 ws = wb['icon_keyword_mapping_final']
 master = []  # per category, ordered by n
 for r in ws.iter_rows(min_row=2, values_only=True):
@@ -149,6 +149,18 @@ def cut_icon(im: Image.Image, bbox, out_path: Path):
     border_labels.discard(0)
     exterior = np.isin(lab, list(border_labels)) if border_labels else np.zeros_like(nearbg)
     alpha = np.where(exterior, 0, 255).astype(np.uint8)
+    # Drop slivers of neighboring icons that leak across grid-cell borders:
+    # keep only content components with meaningful area (or near the center),
+    # then bbox the survivors. Detached icon parts (steam, sparks) survive the
+    # 6% threshold; a neighbor's clipped edge doesn't get to widen the frame.
+    content = alpha > 0
+    clab, ccount = ndimage.label(content)
+    if ccount > 1:
+        sizes = ndimage.sum(content, clab, range(1, ccount + 1))
+        biggest = float(sizes.max())
+        keep = {i + 1 for i, sz in enumerate(sizes) if sz >= biggest * 0.06}
+        drop_mask = ~np.isin(clab, list(keep)) & content
+        alpha[drop_mask] = 0
     rgba = np.dstack([np.asarray(crop, dtype=np.uint8), alpha])
     icon = Image.fromarray(rgba, 'RGBA')
     # tight bbox on alpha, then center on the canvas with the safe margin
@@ -162,6 +174,163 @@ def cut_icon(im: Image.Image, bbox, out_path: Path):
     canvas = Image.new('RGBA', (CANVAS, CANVAS), (0, 0, 0, 0))
     canvas.paste(icon, ((CANVAS - icon.size[0]) // 2, (CANVAS - icon.size[1]) // 2), icon)
     canvas.save(out_path, 'WEBP', quality=92, method=4)
+
+FUSED_LOG: list = []
+
+
+def banded_grid_detect(im: Image.Image, cols: int = 8, lenient_dedupe: bool = False):
+    """Fallback for dense uniform-grid pages where neighboring icons touch:
+    row bands come from component clustering (robust even when icons within a
+    row merge), then each band is split into `cols` uniform columns and empty
+    cells are skipped. Reading order is band-major."""
+    rgb = np.asarray(im.convert('RGB'), dtype=np.int16)
+    h, w, _ = rgb.shape
+    ring = np.concatenate([
+        rgb[0:6].reshape(-1, 3), rgb[-6:].reshape(-1, 3),
+        rgb[:, 0:6].reshape(-1, 3), rgb[:, -6:].reshape(-1, 3),
+    ])
+    bg = np.median(ring, axis=0)
+    mask = np.abs(rgb - bg).sum(axis=2) > BG_THRESH
+    # row bands from the horizontal projection: rows of content separated by
+    # (near-)empty gaps
+    proj = mask.sum(axis=1)
+    on = proj > (w * 0.01)
+    bands = []
+    start = None
+    for y, v in enumerate(on):
+        if v and start is None:
+            start = y
+        elif not v and start is not None:
+            if y - start > 12:
+                bands.append((start, y))
+            start = None
+    if start is not None and h - start > 12:
+        bands.append((start, h))
+    # A hairline gap inside one icon (a cord under a power strip) can strand
+    # a fragment as its own tiny band. Absorb ONLY runt bands (well under the
+    # median height) into their nearest neighbor — full-height rows stay
+    # separate no matter how thin the gap (dense pages have 4-6px row gaps).
+    if len(bands) > 1:
+        med_h = sorted(b[1] - b[0] for b in bands)[len(bands) // 2]
+        absorbed = []
+        for b in bands:
+            if absorbed and (b[1] - b[0]) < med_h * 0.4:
+                absorbed[-1] = (absorbed[-1][0], b[1])
+            elif absorbed and (absorbed[-1][1] - absorbed[-1][0]) < med_h * 0.4:
+                absorbed[-1] = (absorbed[-1][0], b[1])
+            else:
+                absorbed.append(b)
+        bands = absorbed
+    # Rows that touch vertically fuse into one double-height band — split any
+    # band ~k× the median height into k equal sub-bands.
+    if bands:
+        heights = sorted(b[1] - b[0] for b in bands)
+        med = heights[len(heights) // 2]
+        split = []
+        for (y0, y1) in bands:
+            k = max(1, round((y1 - y0) / med)) if med > 0 else 1
+            if k <= 1:
+                split.append((y0, y1))
+            else:
+                step = (y1 - y0) / k
+                for i in range(k):
+                    split.append((int(y0 + i * step), int(y0 + (i + 1) * step)))
+        bands = split
+    cw = w / cols
+    out = []
+    for (y0, y1) in bands:
+        band_mask = mask[y0:y1]
+        blab, _ = ndimage.label(band_mask)
+        cell_area = (y1 - y0) * cw
+        min_px = max(60, int(cell_area * 0.015))
+        row_cells = []  # [col, bbox, dom_label, dom_frac]
+        for cidx in range(cols):
+            x0, x1 = int(cidx * cw), int((cidx + 1) * cw)
+            cell = band_mask[:, x0:x1]
+            px = int(cell.sum())
+            if px < min_px:
+                continue
+            labs = blab[:, x0:x1][cell]
+            dom = int(np.bincount(labs).argmax()) if labs.size else 0
+            dom_frac = float((labs == dom).sum()) / max(1, labs.size)
+            sel = (blab[:, x0:x1] == dom) & cell
+            ys, xs = np.nonzero(sel)
+            if xs.size == 0:
+                ys, xs = np.nonzero(cell)
+            bbox = (x0 + int(xs.min()), y0 + int(ys.min()),
+                    x0 + int(xs.max()) + 1, y0 + int(ys.max()) + 1)
+            row_cells.append([cidx, bbox, dom, dom_frac])
+        def seam_connected(border_x: float) -> bool:
+            sx0 = max(0, int(border_x - cw * 0.18))
+            sx1 = min(band_mask.shape[1], int(border_x + cw * 0.18))
+            win = band_mask[:, sx0:sx1]
+            colsum = win.sum(axis=0)
+            if colsum.size == 0:
+                return False
+            return int(colsum.min()) > max(2, int(colsum.max() * 0.05))
+        # group adjacent cells sharing a dominant component
+        groups = []
+        for rc in row_cells:
+            if (groups and rc[2] == groups[-1][-1][2] and rc[2] != 0
+                    and rc[0] == groups[-1][-1][0] + 1):
+                groups[-1].append(rc)
+            else:
+                groups.append([rc])
+        for g in groups:
+            if len(g) == 1:
+                out.append(tuple(g[0][1]))
+                continue
+            if (lenient_dedupe and all(rc[3] >= 0.6 for rc in g)
+                    and all(seam_connected(g[i + 1][0] * cw) for i in range(len(g) - 1))):
+                ys, xs = np.nonzero(blab == g[0][2])
+                out.append((int(xs.min()), y0 + int(ys.min()),
+                            int(xs.max()) + 1, y0 + int(ys.max()) + 1))
+                continue
+            # One component dominates several windows (a drifted icon straddling
+            # the border can drown its neighbor). Re-assign by the REAL
+            # components inside the group's x-range: majors sorted by x-center,
+            # one per cell when the counts agree.
+            FUSED_LOG.append((getattr(im, 'filename', '?'), y0, g[0][0]))
+            gx0 = int(g[0][0] * cw)
+            gx1 = min(band_mask.shape[1], int((g[-1][0] + 1) * cw))
+            in_range = {}
+            for lbl in np.unique(blab[:, gx0:gx1]):
+                if lbl == 0:
+                    continue
+                ys, xs = np.nonzero(blab == lbl)
+                inside = ((xs >= gx0) & (xs < gx1)).sum()
+                if inside > 0:
+                    in_range[int(lbl)] = (int(inside), float(xs.mean()))
+            biggest = max(v[0] for v in in_range.values())
+            majors = sorted(
+                [(v[1], lbl) for lbl, v in in_range.items() if v[0] >= biggest * 0.2])
+            if len(majors) == len(g):
+                for _xc, lbl in majors:
+                    ys, xs = np.nonzero(blab == lbl)
+                    out.append((int(xs.min()), y0 + int(ys.min()),
+                                int(xs.max()) + 1, y0 + int(ys.max()) + 1))
+                continue
+            # fallback: cut the shared component at its thinnest valley
+            # between cell centers
+            comp_cols = (blab == g[0][2]).sum(axis=0)
+            cuts = []
+            for i in range(len(g) - 1):
+                c0 = int((g[i][0] + 0.5) * cw)
+                c1 = int((g[i + 1][0] + 0.5) * cw)
+                lo, hi = max(0, c0), min(len(comp_cols), c1)
+                seg = comp_cols[lo:hi]
+                cuts.append(lo + int(np.argmin(seg)) if seg.size else int(g[i + 1][0] * cw))
+            edges = [0] + cuts + [band_mask.shape[1]]
+            for i in range(len(g)):
+                win = blab[:, edges[i]:edges[i + 1]] == g[i][2]
+                ys, xs = np.nonzero(win)
+                if xs.size == 0:
+                    out.append(tuple(g[i][1]))
+                    continue
+                out.append((edges[i] + int(xs.min()), y0 + int(ys.min()),
+                            edges[i] + int(xs.max()) + 1, y0 + int(ys.max()) + 1))
+    return out
+
 
 def merge_nearest(boxes, target):
     """Deterministic fallback: fuse the smallest box into its nearest
@@ -230,7 +399,9 @@ if __name__ == '__main__':
 
     failures = []
     done = 0
-    ITER_LADDER = [5, 8, 11, 15, 20, 26, 33]
+    # Down to 1: dense pages (Food & Drink v2, 2026-08-05) already glue
+    # neighboring icons at 5, so the ladder must be able to split first.
+    ITER_LADDER = [1, 2, 3, 5, 8, 11, 15, 20, 26, 33]
     for cat, items in by_cat.items():
         ims = [Image.open(p) for p in pages_for(cat)]
         if cat in SPECIAL_DETECT:
@@ -249,39 +420,35 @@ if __name__ == '__main__':
             print(f'  {cat}: {len(items)} ok (special face detect)')
             continue
         chosen = None
+        best_over = None  # (overshoot, boxes_all) — smallest overshoot wins
         # adaptive glue: climb the dilation ladder until the category's icon
-        # count matches the master exactly
+        # count matches the master exactly; keep the tightest over-detection
+        # as merge fodder if no rung is exact
         for iters in ITER_LADDER:
             boxes_all = [(im, detect_icons(im, iters)) for im in ims]
             detected = sum(len(b) for _, b in boxes_all)
             if detected == len(items):
                 chosen = (boxes_all, iters, 'exact')
                 break
-            if detected < len(items):
-                break  # over-merged: stronger glue only makes it worse
-            last_over = boxes_all
+            if detected > len(items):
+                over = detected - len(items)
+                if best_over is None or over < best_over[0]:
+                    best_over = (over, boxes_all)
         if chosen is None:
-            # fall back to the last over-detection and fuse smallest fragments
-            boxes_all = last_over
-            total = sum(len(b) for _, b in boxes_all)
-            # distribute the merge target per page proportionally is unsafe;
-            # merge within pages, biggest overshoot first
-            counts = [len(b) for _, b in boxes_all]
-            overshoot = total - len(items)
-            merged_all = []
-            for idx, (im, boxes) in enumerate(boxes_all):
-                merged_all.append((im, boxes))
-            # merge greedily on the page with the smallest min-area fragment
-            flat = merged_all
-            while overshoot > 0:
-                pick = min(range(len(flat)), key=lambda k: min(
-                    ((b[2]-b[0])*(b[3]-b[1]) for b in flat[k][1]), default=1e18))
-                im, boxes = flat[pick]
-                boxes = merge_nearest(boxes, len(boxes) - 1)
-                flat[pick] = (im, boxes)
-                overshoot -= 1
-            boxes_all = flat
-            chosen = (boxes_all, ITER_LADDER[-1], 'merged')
+            # Component counting couldn't hit the exact total — these are the
+            # dense uniform-grid pages where neighbors touch. Slice by row
+            # bands × uniform columns instead (alignment-safe by design).
+            # Celebration's bunting garland genuinely spans two slots — that
+            # page gets the lenient wide-icon dedupe; dense catalogs (packed
+            # food rows) need the strict seam test.
+            lenient = cat == 'Celebration & Gifts'
+            boxes_all = [(im, banded_grid_detect(im, lenient_dedupe=lenient)) for im in ims]
+            detected = sum(len(b) for _, b in boxes_all)
+            if detected != len(items):
+                failures.append((cat, len(items), f'grid fallback got {detected}'))
+                print(f'  MISMATCH {cat}: grid fallback expected {len(items)}, got {detected}')
+                continue
+            chosen = (boxes_all, 0, 'banded-grid')
         boxes_all, iters, how = chosen
         detected = sum(len(b) for _, b in boxes_all)
         if detected != len(items):
@@ -376,9 +543,9 @@ if __name__ == '__main__':
 
     # 4) SQL migration: upsert the v3 catalog (old rows stay for history)
     sql = [
-        '-- 030: items v3 catalog (2026-07-30). 1693 items from',
-        '-- icon_keyword_mapping_final.xlsx. Upsert only — legacy v2 ids keep',
-        '-- their rows so old reflect history still references valid items.',
+        f'-- 031: items catalog refresh (2026-08-05). {len(master)} items from',
+        '-- icon_keyword_mapping_updated.xlsx (Food & Drink expanded to 1208).',
+        '-- Upsert only — earlier ids keep their rows.',
         '-- v3 renders per-item images; the v2 sprite-sheet coordinate columns',
         '-- become nullable legacy fields.',
         'ALTER TABLE public.items ALTER COLUMN sheet_id DROP NOT NULL;',
@@ -394,8 +561,8 @@ if __name__ == '__main__':
     sql.append(',\n'.join(vals))
     sql.append('ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name,')
     sql.append('  category = EXCLUDED.category, rarity = EXCLUDED.rarity;')
-    (ROOT / 'supabase' / 'migrations' / '20260730000030_items_v3.sql').write_text('\n'.join(sql) + '\n')
-    print('migration 030 written')
+    (ROOT / 'supabase' / 'migrations' / '20260805000031_items_food_expansion.sql').write_text('\n'.join(sql) + '\n')
+    print('migration 031 written')
 
     # 5) preview page for the human spot-check
     rows_html = []
@@ -409,3 +576,6 @@ if __name__ == '__main__':
         "border-radius:10px;padding:6px}img{width:84px;height:84px}span{font-size:10px;display:block}"
         "</style>" + '\n'.join(rows_html))
     print(f'preview: {SCRATCH / "preview.html"}')
+    (SCRATCH / 'fused-cells.txt').write_text(
+        '\n'.join(f'{f} band_y0={y} col={c}' for f, y, c in FUSED_LOG))
+    print(f'fused-cell flags: {len(FUSED_LOG)} (see fused-cells.txt)')
