@@ -4,10 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Image } from 'react-native';
+
 import {
   MONSTER_HP, monsterHpForStage, monsterTierFor, isTamed,
-  nextMilestoneThresholds, BATTLE_MILESTONE_REWARD,
+  battleMilestoneCount, battleMilestoneThreshold, BATTLE_MILESTONE_REWARD,
 } from '@novame/engine';
+import { ICONS } from '../../src/lib/icons';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -201,8 +204,7 @@ export default function TameEnemyScreen() {
 
         <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
           {monsters.map((m) => {
-            const ready = m.skillCount > 0;
-            // Free: one tame across all monsters. Paid: one per monster.
+            // Free: 3 tames a day across all monsters. Paid: one per monster.
             const locked = perEnemyDaily ? m.tamedToday : doneToday;
             return (
               <Pressable
@@ -216,9 +218,6 @@ export default function TameEnemyScreen() {
                   <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
                 )}
                 <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
-                <Text style={[styles.monsterSkills, { color: ready ? kit.accent : kit.textMuted }]}>
-                  {ready ? `${m.skillCount} skill${m.skillCount > 1 ? 's' : ''} ready` : 'Just Breathe ready'}
-                </Text>
                 {m.tamedBefore && (
                   <View style={[styles.tamedBadge, { backgroundColor: 'rgba(58,46,26,0.08)' }]}>
                     <Text style={[styles.tamedBadgeText, { color: kit.textSub }]}>Tamed once</Text>
@@ -234,7 +233,16 @@ export default function TameEnemyScreen() {
 
   // ---- PREP (design: Enemy selected — data + progress before the fight) ----
   if (phase === 'prep' && active) {
-    const nextThresholds = nextMilestoneThresholds(battlePoints, 3);
+    // Milestones come in rolling windows of three: finish all three and the
+    // banner advances to the next trio. Crossed ones show a Claimed badge
+    // (rewards are auto-paid server-side when the threshold is crossed).
+    const crossed = battleMilestoneCount(battlePoints);
+    const windowStart = Math.floor(crossed / 3) * 3;
+    const milestones = [1, 2, 3].map((i) => ({
+      n: windowStart + i,
+      threshold: battleMilestoneThreshold(windowStart + i),
+      claimed: windowStart + i <= crossed,
+    }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
         {/* name bubble with a tail pointing at the monster (mock) */}
@@ -250,35 +258,33 @@ export default function TameEnemyScreen() {
         )}
         <Text style={[styles.prepQuote, { color: kit.text }]}>“{active.prep}”</Text>
 
-        {/* milestone banner: dark brown card, next three 🍀 rewards (mock) */}
+        {/* milestone banner: dark brown card, the current trio of 🍀 rewards;
+            crossed ones wear a Claimed badge */}
         <View style={styles.milestoneBanner}>
-          {nextThresholds.map((t, i) => (
-            <View key={t} style={styles.milestoneNodeWrap}>
+          {milestones.map((m, i) => (
+            <View key={m.n} style={styles.milestoneNodeWrap}>
               {i > 0 && <View style={styles.milestoneLink} />}
-              <View style={styles.milestoneNode}>
-                <Text style={styles.milestoneClover}>{'🍀'}</Text>
+              <View style={[styles.milestoneNode, m.claimed && { opacity: 0.55 }]}>
+                <Image source={ICONS.Clover} style={styles.milestoneCloverImg} resizeMode="contain" />
                 <Text style={styles.milestoneReward}>x{BATTLE_MILESTONE_REWARD}</Text>
               </View>
-              <Text style={styles.milestoneThreshold}>{t.toLocaleString()}</Text>
+              <Text style={styles.milestoneThreshold}>{m.threshold.toLocaleString()}</Text>
+              {m.claimed && (
+                <View style={styles.claimedChip}>
+                  <Text style={styles.claimedText}>Claimed</Text>
+                </View>
+              )}
             </View>
           ))}
-          <MaterialIcons name="play-arrow" size={30} color="rgba(255,246,222,0.45)" style={styles.milestoneArrow} />
         </View>
 
-        {/* history bar + skills sticker (count intentionally not shown) */}
+        {/* history bar (mock): icon + label left, pts chip right */}
         <View style={styles.prepStatsBar}>
-          <View style={styles.prepStatLeft}>
-            <Text style={styles.prepStatEmoji}>{'🦖'}</Text>
-            <View>
-              <Text style={styles.prepStatTitle}>Tame History</Text>
-              <View style={styles.ptsChip}>
-                <Text style={styles.ptsChipText}>{battlePoints.toLocaleString()} pts</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.prepStatRight}>
-            <Text style={styles.prepStatEmoji}>{'🃏'}</Text>
-            <Text style={styles.prepStatTitle}>Skills</Text>
+          <Image source={ICONS.TameEnemy} style={styles.prepStatIcon} resizeMode="contain" />
+          <Text style={styles.prepStatTitle}>Tame History</Text>
+          <View style={{ flex: 1 }} />
+          <View style={styles.ptsChip}>
+            <Text style={styles.ptsChipText}>{battlePoints.toLocaleString()} pts</Text>
           </View>
         </View>
 
@@ -448,28 +454,27 @@ const styles = StyleSheet.create({
   prepImg: { width: 190, height: 190 },
   prepQuote: { fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', lineHeight: 24, paddingHorizontal: 16, marginTop: 10 },
   milestoneBanner: {
-    flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 22,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start',
+    width: '100%', marginTop: 22,
     backgroundColor: '#4A3220', borderRadius: 20, paddingVertical: 16, paddingHorizontal: 18,
   },
-  milestoneArrow: { position: 'absolute', right: 2, top: '58%' },
   milestoneNodeWrap: { alignItems: 'center', flex: 1 },
   milestoneLink: { position: 'absolute', top: 20, right: '58%', left: '-42%', height: 2.5, backgroundColor: 'rgba(255,246,222,0.5)' },
   milestoneNode: { alignItems: 'center' },
-  milestoneClover: { fontSize: 32 },
+  milestoneCloverImg: { width: 40, height: 40 },
   milestoneReward: { position: 'absolute', top: -6, right: -26, fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE' },
   milestoneThreshold: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE', marginTop: 6 },
+  claimedChip: {
+    marginTop: 4, backgroundColor: '#7BB661', borderRadius: 9,
+    paddingHorizontal: 9, paddingVertical: 2,
+  },
+  claimedText: { fontSize: 10.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', letterSpacing: 0.4 },
   prepStatsBar: {
-    flexDirection: 'row', width: '100%', marginTop: 18,
+    flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', marginTop: 18,
     backgroundColor: '#FBF2DE', borderRadius: 16, borderWidth: 1.5, borderColor: '#E0CBA0',
-    padding: 12, justifyContent: 'space-between',
+    paddingVertical: 14, paddingHorizontal: 14,
   },
-  prepStatLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1.4 },
-  prepStatRight: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, flex: 0.8, justifyContent: 'center',
-    backgroundColor: '#F0DFBC', alignSelf: 'stretch', marginVertical: -12, marginRight: -12,
-    borderTopRightRadius: 16, borderBottomRightRadius: 16,
-  },
-  prepStatEmoji: { fontSize: 26 },
+  prepStatIcon: { width: 34, height: 34 },
   prepStatTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   prepStatValue: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginTop: 2 },
   ptsChip: { backgroundColor: '#4A3220', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginTop: 3, alignSelf: 'flex-start' },
