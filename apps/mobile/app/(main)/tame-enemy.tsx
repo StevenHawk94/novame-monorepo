@@ -10,7 +10,7 @@ import {
   MONSTER_HP, monsterHpForStage, monsterTierFor, isTamed,
   battleMilestoneCount, battleMilestoneThreshold, BATTLE_MILESTONE_REWARD,
 } from '@novame/engine';
-import { ICONS } from '../../src/lib/icons';
+import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { haptics } from '../../src/lib/haptics';
@@ -169,7 +169,6 @@ export default function TameEnemyScreen() {
   }
 
   const tier = monsterTierFor(hp, maxHp);
-  const monsterScale = tier === 'healthy' ? 1 : tier === 'wounded' ? 0.8 : 0.6;
 
   // ---- SELECT ----
   if (phase === 'select') {
@@ -309,12 +308,18 @@ export default function TameEnemyScreen() {
   if (phase === 'battle' && active) {
     return (
       <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={exit} style={styles.back} hitSlop={12}>
+        <Pressable onPress={exit} style={[styles.back, { marginLeft: 20 }]} hitSlop={12}>
           <MaterialIcons name="close" size={24} color="rgba(255,255,255,0.7)" />
         </Pressable>
 
-        {/* Monster speech bubble (prep line as its complaint) + monster */}
+        {/* Monster speech bubble (persuaded lines land here) + monster,
+            over the tame-enemy dungeon art */}
         <View style={styles.battleScene}>
+          <ExpoImage
+            source={BACKGROUNDS.tameEnemy}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
           <View style={styles.monsterBubble}>
             <Text style={styles.monsterBubbleText}>{bubbleText || active.prep}</Text>
             <View style={styles.monsterBubbleTail} />
@@ -322,11 +327,11 @@ export default function TameEnemyScreen() {
           {MONSTER_ART[active.id] ? (
             <ExpoImage
               source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
-              style={[styles.battleImg, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.9 : 1 }]}
+              style={styles.battleImg}
               contentFit="contain"
             />
           ) : (
-            <Text style={[styles.battleEmoji, { transform: [{ scale: monsterScale }], opacity: tier === 'wounded' ? 0.85 : 1 }]}>
+            <Text style={styles.battleEmoji}>
               {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
             </Text>
           )}
@@ -500,8 +505,11 @@ const styles = StyleSheet.create({
   exitText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
 
   // ---- battle (dark dungeon per mock; art asset lands later, solid tones now) ----
-  battleRoot: { flex: 1, backgroundColor: '#2A2140', paddingHorizontal: 20 },
-  battleScene: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  battleRoot: { flex: 1, backgroundColor: '#2A2140' },
+  battleScene: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12,
+    paddingHorizontal: 20, overflow: 'hidden',
+  },
   monsterBubble: {
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18,
     maxWidth: '90%', marginBottom: 10,
@@ -513,7 +521,7 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#FFFFFF',
   },
   battleEmoji: { fontSize: 110 },
-  battleImg: { width: 230, height: 230 },
+  battleImg: { width: 184, height: 184 },
   // Pixel-flavored HP bar: hard corners, chunky dark border, red fill.
   hpTrack: {
     width: '72%', height: 22, borderRadius: 3, backgroundColor: '#FFFFFF',
@@ -523,8 +531,8 @@ const styles = StyleSheet.create({
   hpLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   skillPanel: {
-    backgroundColor: '#1B1626', borderTopLeftRadius: 22, borderTopRightRadius: 22,
-    marginHorizontal: -20, paddingHorizontal: 16, paddingTop: 14, maxHeight: 300,
+    flex: 1, backgroundColor: '#1B1626', borderTopLeftRadius: 22, borderTopRightRadius: 22,
+    paddingHorizontal: 16, paddingTop: 14,
   },
   rowsWrap: { gap: 10, paddingBottom: 10, paddingTop: 2 },
   argRow: {
