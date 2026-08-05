@@ -507,8 +507,9 @@ const styles = StyleSheet.create({
   // ---- battle (dark dungeon per mock; art asset lands later, solid tones now) ----
   battleRoot: { flex: 1, backgroundColor: '#2A2140' },
   battleScene: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12,
-    paddingHorizontal: 20, overflow: 'hidden',
+    alignItems: 'center', gap: 12,
+    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18,
+    overflow: 'hidden',
   },
   monsterBubble: {
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18,
