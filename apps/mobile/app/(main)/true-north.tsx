@@ -23,7 +23,7 @@ import {
   type TrueNorthStatus,
 } from '../../src/lib/true-north-api';
 
-type Phase = 'loading' | 'intro' | 'rank' | 'reveal';
+type Phase = 'intro' | 'rank' | 'reveal';
 
 // Light warm palette for the Kit screen over the wave backdrop (coral/red tone).
 const KIT_PALETTE = {
@@ -39,29 +39,49 @@ export default function TrueNorthScreen() {
   const c = theme.colors;
   const kit = KIT_PALETTE;
 
-  const [status, setStatus] = useState<TrueNorthStatus>(() => getCachedStatus());
-  const [phase, setPhase] = useState<Phase>('loading');
+  // Cache-first (2026-08-05): the entry paints instantly from the cached
+  // weekly status — done weeks open straight on the saved ranking, fresh
+  // weeks on the intro. The network fetch below only reconciles.
+  const cached = getCachedStatus();
+  const [status, setStatus] = useState<TrueNorthStatus>(cached);
+  const [phase, setPhase] = useState<Phase>(
+    cached.doneThisWeek && cached.thisWeekRanking ? 'reveal' : 'intro',
+  );
   const [picked, setPicked] = useState<DimensionId[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [revealRanking, setRevealRanking] = useState<DimensionId[] | null>(null);
+  const [revealRanking, setRevealRanking] = useState<DimensionId[] | null>(
+    cached.doneThisWeek ? cached.thisWeekRanking : null,
+  );
+  // The clover burst fires only on a FRESH submit, never when re-opening a
+  // completed week from cache.
+  const [justEarned, setJustEarned] = useState(false);
 
-  // On mount, get the real weekly status; decide whether to rank or show last.
+  // Background reconcile: flip to reveal if the server knows this week is
+  // done (stale cache), or back to intro when a new week started — without
+  // ever yanking the user out of an in-progress ranking.
   useEffect(() => {
     let active = true;
     fetchStatus().then((s) => {
       if (!active) return;
       setStatus(s);
-      if (s.doneThisWeek && s.thisWeekRanking) {
-        setRevealRanking(s.thisWeekRanking);
-        setPhase('reveal');
-      } else {
-        setPhase('intro');
-      }
+      setPhase((prev) => {
+        if (prev === 'rank') return prev;
+        if (s.doneThisWeek && s.thisWeekRanking) {
+          setRevealRanking(s.thisWeekRanking);
+          return 'reveal';
+        }
+        if (!s.doneThisWeek && prev === 'reveal' && !justEarned) {
+          setRevealRanking(null);
+          return 'intro';
+        }
+        return prev;
+      });
     });
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const remaining = useMemo(
@@ -84,6 +104,7 @@ export default function TrueNorthScreen() {
     const res = await submitTrueNorth(picked);
     setSubmitting(false);
     if (res.ok) {
+      setJustEarned(true);
       setRevealRanking(picked);
       setPhase('reveal');
     } else if (res.error === 'already_done') {
@@ -104,12 +125,6 @@ export default function TrueNorthScreen() {
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
-
-      {phase === 'loading' && (
-        <View style={styles.center}>
-          <ActivityIndicator color={kit.accent} />
-        </View>
-      )}
 
       {phase === 'intro' && (
         <View style={styles.center}>
@@ -190,7 +205,13 @@ export default function TrueNorthScreen() {
       )}
 
       {phase === 'reveal' && revealRanking && (
-        <Reveal ranking={revealRanking} lastRanking={status.lastRanking} colors={KIT_PALETTE} onDone={() => router.back()} />
+        <Reveal
+          ranking={revealRanking}
+          lastRanking={status.lastRanking}
+          showReward={justEarned}
+          colors={KIT_PALETTE}
+          onDone={() => router.back()}
+        />
       )}
     </View>
   );
@@ -199,11 +220,13 @@ export default function TrueNorthScreen() {
 function Reveal({
   ranking,
   lastRanking,
+  showReward,
   colors: c,
   onDone,
 }: {
   ranking: DimensionId[];
   lastRanking: DimensionId[] | null;
+  showReward: boolean;
   colors: typeof KIT_PALETTE;
   onDone: () => void;
 }) {
@@ -230,7 +253,7 @@ function Reveal({
         </Text>
       </View>
 
-      <CloverBurst amount={XP_RULES.trueNorth.award} />
+      {showReward && <CloverBurst amount={XP_RULES.trueNorth.award} />}
 
       {/* Podium: #1 raised center, #2 left, #3 right */}
       <View style={styles.podiumFirstRow}>{podium(0)}</View>
