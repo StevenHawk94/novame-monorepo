@@ -84,7 +84,12 @@ export default function VisitMasterScreen() {
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.root}>
-          <ExpoImage source={BACKGROUNDS.visitMaster} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <ExpoImage
+          source={BACKGROUNDS.visitMaster}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          contentPosition="top"
+        />
 
           {/* top bar: close + history */}
           <View style={[styles.topBar, { top: insets.top + 8 }]}>
@@ -171,7 +176,12 @@ export default function VisitMasterScreen() {
     };
     return (
       <View style={styles.root}>
-        <ExpoImage source={BACKGROUNDS.visitMaster} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <ExpoImage
+          source={BACKGROUNDS.visitMaster}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          contentPosition="top"
+        />
         <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
           <View style={styles.card}>
             <Image source={ICONS.VisitMaster} style={styles.cardMasterIcon} resizeMode="contain" />
@@ -192,7 +202,12 @@ export default function VisitMasterScreen() {
   if (phase === 'history') {
     return (
       <View style={styles.root}>
-        <ExpoImage source={BACKGROUNDS.visitMaster} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <ExpoImage
+          source={BACKGROUNDS.visitMaster}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          contentPosition="top"
+        />
         <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
           <View style={styles.card}>
             <View style={styles.historyTitleRow}>
