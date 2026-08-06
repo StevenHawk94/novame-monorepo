@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -292,7 +284,7 @@ export default function AccountManagementModal() {
 
   const handleDeleteAccount = () => {
     void haptics.light();
-    Alert.alert(
+    appAlert(
       'Delete Account?',
       'This permanently deletes your account, wisdoms, cards, and all data. This cannot be undone.',
       [
@@ -301,7 +293,7 @@ export default function AccountManagementModal() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            Alert.alert(
+            appAlert(
               'Final Confirmation',
               'Are you absolutely sure? Once deleted, your data cannot be recovered.',
               [

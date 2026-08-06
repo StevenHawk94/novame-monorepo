@@ -1,15 +1,6 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -62,7 +53,7 @@ export default function QuestCustomScreen() {
       return;
     }
     if (res.error === 'plus_required') {
-      Alert.alert(
+      appAlert(
         'A Plus feature',
         'AI-built plans come with NovaMe Plus.',
         [
@@ -75,7 +66,7 @@ export default function QuestCustomScreen() {
       );
       return;
     }
-    Alert.alert(
+    appAlert(
       res.error === 'ai_unavailable' ? 'The planner is busy' : 'Something went wrong',
       'Please try again in a moment.',
     );

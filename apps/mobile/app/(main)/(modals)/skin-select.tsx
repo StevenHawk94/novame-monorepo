@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -85,7 +86,7 @@ export default function OutfitClosetScreen() {
       const uri = await ensureOutfitVideoCached(o);
       setSwitching(false);
       if (!uri) {
-        Alert.alert('Slow network', 'The outfit will finish downloading in the background.');
+        appAlert('Slow network', 'The outfit will finish downloading in the background.');
       }
     }
     router.back();
@@ -99,7 +100,7 @@ export default function OutfitClosetScreen() {
     }
     if (cosmetics.balance < o.price) {
       void haptics.warning();
-      Alert.alert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
+      appAlert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
       return;
     }
     setBusy(true);
@@ -112,12 +113,12 @@ export default function OutfitClosetScreen() {
     } else if (res.error === 'plus_required') {
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
-      Alert.alert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
+      appAlert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
     } else if (res.error === 'already_owned') {
       setCosmetics(getCachedCosmetics());
       await equipAndReturn(o);
     } else {
-      Alert.alert('Something went wrong', 'Could not complete the purchase. Try again.');
+      appAlert('Something went wrong', 'Could not complete the purchase. Try again.');
     }
   }
 

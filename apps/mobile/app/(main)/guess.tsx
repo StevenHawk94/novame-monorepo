@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -39,7 +40,7 @@ export default function GuessScreen() {
     const res = await submitGuess(userId, body);
     setSending(false);
     if (res.ok) {
-      Alert.alert('Sent', `Only ${name} will see your guess.`, [
+      appAlert('Sent', `Only ${name} will see your guess.`, [
         { text: 'Done', onPress: () => router.back() },
       ]);
     } else {
@@ -47,7 +48,7 @@ export default function GuessScreen() {
         res.error === 'already_guessed' ? `You've already guessed ${name}'s day today.`
         : res.error === 'not_friends' ? 'You can only guess a friend’s day.'
         : 'Something went wrong. Try again.';
-      Alert.alert('Hmm', msg);
+      appAlert('Hmm', msg);
     }
   }
 

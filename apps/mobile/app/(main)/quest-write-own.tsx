@@ -1,16 +1,6 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -63,9 +53,9 @@ export default function QuestWriteOwnScreen() {
     }
     setSubmitting(false);
     if (res.error === 'already_active') {
-      Alert.alert('You already have an active plan', 'Finish or wait for it to end before starting a new one.');
+      appAlert('You already have an active plan', 'Finish or wait for it to end before starting a new one.');
     } else {
-      Alert.alert('Could not start', 'Please try again.');
+      appAlert('Could not start', 'Please try again.');
     }
   }
 

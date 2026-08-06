@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View,
-} from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -101,7 +100,7 @@ export default function FriendsScreen() {
   function onPrivacyGear() {
     void haptics.light();
     void fetchSharePrivacy().then((share) => {
-      Alert.alert(
+      appAlert(
         'Memory details',
         share
           ? 'Friends can currently read the details behind your memory items.'
@@ -128,7 +127,7 @@ export default function FriendsScreen() {
       if (action === 'accept') void haptics.success();
       load();
     } else if (res.error === 'friend_limit_reached') {
-      Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
+      appAlert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
     }
   }
 
@@ -163,7 +162,7 @@ export default function FriendsScreen() {
         },
       } as never);
     } else {
-      Alert.alert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
+      appAlert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
     }
   }
 

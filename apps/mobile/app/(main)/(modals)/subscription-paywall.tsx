@@ -1,14 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { router } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -108,7 +100,7 @@ export default function SubscriptionPaywallModal() {
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
-      Alert.alert(
+      appAlert(
         'Purchase Failed',
         err.message || 'Something went wrong with the purchase. Please try again.',
       );
@@ -133,7 +125,7 @@ export default function SubscriptionPaywallModal() {
       const result = await restoreSubscriptions();
       setBusy('idle');
       if (result.restored && result.tier) {
-        Alert.alert('Restored', 'Your Plus subscription is now active.', [
+        appAlert('Restored', 'Your Plus subscription is now active.', [
           {
             text: 'OK',
             onPress: () => {
@@ -143,11 +135,11 @@ export default function SubscriptionPaywallModal() {
           },
         ]);
       } else {
-        Alert.alert('Nothing to Restore', 'We did not find any prior subscription on this Apple ID.');
+        appAlert('Nothing to Restore', 'We did not find any prior subscription on this Apple ID.');
       }
     } catch (e) {
       setBusy('idle');
-      Alert.alert('Restore Failed', e instanceof Error ? e.message : 'Please try again.');
+      appAlert('Restore Failed', e instanceof Error ? e.message : 'Please try again.');
     }
   };
 
@@ -171,7 +163,7 @@ export default function SubscriptionPaywallModal() {
       if (outcome.kind === 'scheduled') {
         // Downgrade/crossgrade: no new transaction; lands at period end.
         setBusy('idle');
-        Alert.alert(
+        appAlert(
           'Change Scheduled',
           'Your plan change takes effect at the end of the current billing period.',
           [{ text: 'OK', onPress: () => { if (router.canGoBack()) router.back(); } }],
@@ -180,7 +172,7 @@ export default function SubscriptionPaywallModal() {
       // 'completed' resolves through the global listener above.
     } catch (e) {
       setBusy('idle');
-      Alert.alert('Purchase Failed', e instanceof Error ? e.message : 'Please try again.');
+      appAlert('Purchase Failed', e instanceof Error ? e.message : 'Please try again.');
     }
   };
 

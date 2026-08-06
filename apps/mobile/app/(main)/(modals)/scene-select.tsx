@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -85,12 +86,12 @@ export default function SceneSelectScreen() {
     } else if (res.error === 'plus_required') {
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
-      Alert.alert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
+      appAlert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
     } else if (res.error === 'already_owned') {
       setCosmetics(getCachedCosmetics());
       await useScene(s.key, sceneAssetUrl(s.image));
     } else {
-      Alert.alert('Something went wrong', 'Could not complete the purchase. Try again.');
+      appAlert('Something went wrong', 'Could not complete the purchase. Try again.');
     }
   }
 
@@ -109,11 +110,11 @@ export default function SceneSelectScreen() {
     }
     if (cosmetics.balance < s.price) {
       void haptics.warning();
-      Alert.alert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
+      appAlert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
       return;
     }
     void haptics.light();
-    Alert.alert(
+    appAlert(
       `Unlock ${s.name}?`,
       `This will spend ${s.price} clovers (you have ${cosmetics.balance}). Unlock and switch to this scene?`,
       [

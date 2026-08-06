@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,7 +69,7 @@ export default function FriendAddScreen() {
         : res.error === 'friend_limit_reached' ? 'Your friend slots are full. NovaMe Plus holds 99.'
         : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
         : 'Something went wrong. Try again.';
-      Alert.alert('Hmm', msg);
+      appAlert('Hmm', msg);
     }
   }
 
@@ -82,7 +81,7 @@ export default function FriendAddScreen() {
     const res = await addFriend(found.code, { relationship, relationshipSince: iso });
     setSending(false);
     if (res.ok) {
-      Alert.alert('Invitation sent', `We've sent your invitation to ${res.requestedTo ?? found.name}.`);
+      appAlert('Invitation sent', `We've sent your invitation to ${res.requestedTo ?? found.name}.`);
       setFound(null);
       setQuery('');
       load();
@@ -91,7 +90,7 @@ export default function FriendAddScreen() {
         res.error === 'already_friends' ? "You're already friends."
         : res.error === 'already_pending' ? 'A request is already pending with them.'
         : 'Something went wrong. Try again.';
-      Alert.alert('Hmm', msg);
+      appAlert('Hmm', msg);
     }
   }
 
@@ -100,7 +99,7 @@ export default function FriendAddScreen() {
     const res = await respondFriend(req.friendshipId, action);
     if (res.ok) load();
     else if (res.error === 'friend_limit_reached') {
-      Alert.alert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
+      appAlert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
     }
   }
 
@@ -160,7 +159,7 @@ export default function FriendAddScreen() {
           {/* scan + invite */}
           <View style={styles.toolRow}>
             <Pressable
-              onPress={() => Alert.alert('Scan Code', 'QR scanning is coming soon — share your Friend ID for now!')}
+              onPress={() => appAlert('Scan Code', 'QR scanning is coming soon — share your Friend ID for now!')}
               style={styles.toolBtn}
             >
               <MaterialIcons name="qr-code-scanner" size={22} color="#2E8B57" />

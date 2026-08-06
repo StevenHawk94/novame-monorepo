@@ -39,15 +39,8 @@
  *                (e.g. user swiped down). Treat as cancel.
  */
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -133,7 +126,7 @@ export default function PaymentModal() {
     void haptics.light();
     if (busy) return;
     if (!shipping) {
-      Alert.alert('Missing address', 'Please go back and complete the shipping form.');
+      appAlert('Missing address', 'Please go back and complete the shipping form.');
       return;
     }
     setBusy(true);
@@ -145,7 +138,7 @@ export default function PaymentModal() {
       const userId = sess.session?.user?.id;
       const userEmail = sess.session?.user?.email ?? '';
       if (!userId) {
-        Alert.alert('Not signed in', 'Please sign in to continue.');
+        appAlert('Not signed in', 'Please sign in to continue.');
         setBusy(false);
         return;
       }

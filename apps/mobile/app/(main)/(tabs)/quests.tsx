@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator, Alert, Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View,
-} from 'react-native';
+import { ActivityIndicator, Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -59,7 +58,7 @@ export default function QuestsScreen() {
     // backend (P4). Until then, starting one would silently create a solo plan
     // that claims to be shared — block with an honest notice instead.
     if (scope === 'friend') {
-      Alert.alert('Almost here', 'Friend quests are coming in the next update. Try a self quest for now!');
+      appAlert('Almost here', 'Friend quests are coming in the next update. Try a self quest for now!');
       return;
     }
     if (theme.isCustom) {
@@ -76,7 +75,7 @@ export default function QuestsScreen() {
   async function onCheck(index: number) {
     if (!status.plan || checking !== null) return;
     if (status.plan.checkedToday) {
-      Alert.alert('Come back tomorrow', 'You can complete one task per day.');
+      appAlert('Come back tomorrow', 'You can complete one task per day.');
       return;
     }
     setChecking(index);
@@ -84,15 +83,15 @@ export default function QuestsScreen() {
     setChecking(null);
     if (!res.ok) {
       if (res.error === 'already_checked_today') {
-        Alert.alert('Come back tomorrow', 'You can complete one task per day.');
+        appAlert('Come back tomorrow', 'You can complete one task per day.');
       } else {
-        Alert.alert('Could not complete that', 'Please try again.');
+        appAlert('Could not complete that', 'Please try again.');
       }
       return;
     }
     void fetchCosmetics().then((s) => setBalance(s.balance));
     if (res.allDone) {
-      Alert.alert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
+      appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
       void fetchQuestStatus().then(setStatus);
       return;
     }

@@ -1,16 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -178,7 +168,7 @@ export default function OnboardingScreen() {
         setPurchased(true);
       }
     } catch {
-      Alert.alert('Purchase didn’t go through', 'You can subscribe anytime from the app.');
+      appAlert('Purchase didn’t go through', 'You can subscribe anytime from the app.');
     } finally {
       setPurchasing(false);
       setIdx(FLOW.indexOf('name'));
@@ -215,10 +205,10 @@ export default function OnboardingScreen() {
     const { error } = await supabase.auth.updateUser({ email });
     setLinking(false);
     if (error) {
-      Alert.alert('Could not connect', 'You can connect your account anytime from settings.');
+      appAlert('Could not connect', 'You can connect your account anytime from settings.');
       return;
     }
-    Alert.alert('Check your inbox', `We sent a confirmation link to ${email}. Your memories are now safe.`);
+    appAlert('Check your inbox', `We sent a confirmation link to ${email}. Your memories are now safe.`);
     router.replace('/(auth)/signing-in');
   }
 
@@ -598,7 +588,7 @@ export default function OnboardingScreen() {
               <View style={{ height: 36 }} />
               <Pressable
                 onPress={() =>
-                  Alert.alert(
+                  appAlert(
                     'Coming soon',
                     'Apple linking lands shortly — connect with email for now, your data stays safe either way.',
                   )
@@ -609,7 +599,7 @@ export default function OnboardingScreen() {
               </Pressable>
               <Pressable
                 onPress={() =>
-                  Alert.alert(
+                  appAlert(
                     'Coming soon',
                     'Google linking lands shortly — connect with email for now, your data stays safe either way.',
                   )

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -78,7 +79,7 @@ export default function MeScreen() {
     const res = await joinDuo(code);
     setJoining(false);
     if (res.ok) {
-      Alert.alert('Welcome to Plus', "You've joined a Duo plan. Enjoy everything Plus.", [
+      appAlert('Welcome to Plus', "You've joined a Duo plan. Enjoy everything Plus.", [
         { text: 'Great', onPress: () => { setJoinCode(''); void fetchDuoStatus().then(setDuo); } },
       ]);
     } else {
@@ -89,7 +90,7 @@ export default function MeScreen() {
         : res.error === 'cannot_claim_own' ? "That's your own code!"
         : res.error === 'owner_inactive' ? "The owner's plan isn't active."
         : 'Something went wrong. Try again.';
-      Alert.alert('Hmm', msg);
+      appAlert('Hmm', msg);
     }
   }
 

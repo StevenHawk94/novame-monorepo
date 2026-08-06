@@ -1,16 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -121,7 +111,7 @@ export default function ReflectGuidedScreen() {
       if (next.has(key)) {
         next.delete(key);
       } else if (next.size >= GUIDED_MAX) {
-        Alert.alert(`Up to ${GUIDED_MAX}`, `You can pick at most ${GUIDED_MAX} themes.`);
+        appAlert(`Up to ${GUIDED_MAX}`, `You can pick at most ${GUIDED_MAX} themes.`);
         return cur;
       } else {
         next.add(key);
@@ -159,7 +149,7 @@ export default function ReflectGuidedScreen() {
   async function onSubmit(wantStory: boolean) {
     if (submitting || selected.size === 0) return;
     if (wantStory && !isPaid) {
-      Alert.alert('A Plus feature', 'Cute stories come with NovaMe Plus.', [
+      appAlert('A Plus feature', 'Cute stories come with NovaMe Plus.', [
         { text: 'Not now', style: 'cancel' },
         { text: 'See Plus', onPress: () => router.push('/(main)/(modals)/subscription-paywall' as never) },
       ]);

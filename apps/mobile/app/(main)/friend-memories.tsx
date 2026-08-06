@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -56,13 +54,13 @@ export default function FriendMemoriesScreen() {
     const res = await createSharedMemories(friendUserId, trimmed);
     setSubmitting(false);
     if (!res.ok) {
-      Alert.alert('Could not save that', 'Please try again.');
+      appAlert('Could not save that', 'Please try again.');
       return;
     }
     setText('');
     setMode('grid');
     if (res.createdCount === 0) {
-      Alert.alert(
+      appAlert(
         'No items matched',
         "We couldn't find any memory items in that text — try mentioning the things themselves (the coffee, the movie, the flowers…).",
       );
@@ -163,7 +161,7 @@ export default function FriendMemoriesScreen() {
             {items.map((it) => (
               <Pressable
                 key={it.id}
-                onPress={() => Alert.alert(it.description || 'A shared memory', undefined)}
+                onPress={() => appAlert(it.description || 'A shared memory', undefined)}
                 style={styles.cell}
               >
                 <ItemSprite itemId={it.itemId} size={memTile} radius={14} tileColor="#EFEDF6" />

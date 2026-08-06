@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator, Alert, Image, Keyboard, KeyboardAvoidingView, Platform,
-  Pressable, ScrollView, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -57,7 +55,7 @@ export default function VisitMasterScreen() {
         : res.error === 'not_paid' ? 'Visiting the Master is part of Plus.'
         : res.error === 'ai_unavailable' ? 'The Master is deep in thought. Try again shortly.'
         : 'Something went wrong. Try again.';
-      Alert.alert('The Master', msg);
+      appAlert('The Master', msg);
       setPhase('ask');
     }
   }

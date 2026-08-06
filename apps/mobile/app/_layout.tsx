@@ -32,6 +32,7 @@ import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
 import { BackgroundResumeOverlay } from '@/components/main/background-resume-overlay';
+import { AppDialogHost } from '@/components/ui/app-dialog';
 import {
   showResumeOverlay,
   useResumeOverlayVisible,
@@ -439,6 +440,7 @@ export default function RootLayout() {
               />
               {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
               {resumeVisible ? <BackgroundResumeOverlay /> : null}
+              <AppDialogHost />
             </ErrorBoundary>
           </ThemeProvider>
         </SafeAreaProvider>

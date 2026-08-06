@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -97,7 +92,7 @@ export default function NotificationSettingsModal() {
     if (result === 'granted') {
       setPhase('time-picker');
     } else {
-      Alert.alert(
+      appAlert(
         'Notifications Disabled',
         'Enable notifications in Settings to receive a daily reminder.',
         [{ text: 'OK', onPress: handleClose }],
@@ -123,7 +118,7 @@ export default function NotificationSettingsModal() {
       }, 1200);
     } catch (e) {
       console.warn('[notification] schedule failed:', e);
-      Alert.alert('Could not schedule reminder', 'Please try again.');
+      appAlert('Could not schedule reminder', 'Please try again.');
     } finally {
       setBusy(false);
     }

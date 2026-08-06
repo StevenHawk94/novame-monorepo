@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -157,7 +158,7 @@ export default function HomeScreen() {
                   clearNewLensLocal();
                   clearReflectLocal();
                   clearTameEnemyLocal();
-                  Alert.alert('Reset done', 'Local kit + reflect flags cleared.');
+                  appAlert('Reset done', 'Local kit + reflect flags cleared.');
                 }}
                 style={styles.devBtn}
               >
@@ -169,9 +170,9 @@ export default function HomeScreen() {
                   const ok = await devSetTier(next);
                   if (ok) {
                     setTier(next);
-                    Alert.alert('Tier switched', `Now: ${next === 'free' ? 'FREE' : 'PAID'}`);
+                    appAlert('Tier switched', `Now: ${next === 'free' ? 'FREE' : 'PAID'}`);
                   } else {
-                    Alert.alert('Failed', 'Could not switch tier. Check connection.');
+                    appAlert('Failed', 'Could not switch tier. Check connection.');
                   }
                 }}
                 style={styles.devBtn}
