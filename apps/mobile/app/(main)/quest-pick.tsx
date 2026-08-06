@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -58,24 +58,65 @@ export default function QuestPickScreen() {
   );
   const planTitle =
     (typeof titleParam === 'string' && titleParam) || theme?.title || 'My Plan';
-  const [selected, setSelected] = useState<number[]>([]);
+  // Selection is tracked by stable id ('m<i>' manual / 'p<i>' preset) so
+  // manually added rows never shift what's already picked.
+  const [manualTasks, setManualTasks] = useState<string[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const items = useMemo(
+    () => [
+      ...manualTasks.map((text, i) => ({ id: `m${i}`, text, manual: true })),
+      ...candidates.map((text, i) => ({ id: `p${i}`, text, manual: false })),
+    ],
+    [manualTasks, candidates],
+  );
 
   const count = selected.length;
   const ready = count === TASKS_TO_PICK;
 
-  function toggle(i: number) {
+  function toggle(id: string) {
     setSelected((cur) => {
-      if (cur.includes(i)) return cur.filter((x) => x !== i);
+      if (cur.includes(id)) return cur.filter((x) => x !== id);
       if (cur.length >= TASKS_TO_PICK) return cur;
-      return [...cur, i];
+      return [...cur, id];
     });
+  }
+
+  function onAddManual() {
+    const text = draft.trim();
+    if (!text) return;
+    setManualTasks((cur) => [...cur, text]);
+    // Auto-select the new task if there's room.
+    setSelected((cur) =>
+      cur.length < TASKS_TO_PICK ? [...cur, `m${manualTasks.length}`] : cur,
+    );
+    setDraft('');
+    setAdding(false);
+  }
+
+  function removeManual(id: string) {
+    const idx = Number(id.slice(1));
+    setManualTasks((cur) => cur.filter((_, i) => i !== idx));
+    // Re-key: drop the removed id and shift later manual ids down by one.
+    setSelected((cur) =>
+      cur
+        .filter((x) => x !== id)
+        .map((x) => {
+          if (!x.startsWith('m')) return x;
+          const n = Number(x.slice(1));
+          return n > idx ? `m${n - 1}` : x;
+        }),
+    );
   }
 
   async function onStart() {
     if (!ready || submitting || (!theme && !customTasks)) return;
     setSubmitting(true);
-    const picked = selected.map((i) => candidates[i]);
+    const byId = new Map(items.map((it) => [it.id, it.text]));
+    const picked = selected.map((id) => byId.get(id)).filter((t): t is string => !!t);
     const res = await startPlan(themeKey ?? 'custom', planTitle, picked);
     if (res.ok) {
       await fetchQuestStatus();
@@ -109,24 +150,67 @@ export default function QuestPickScreen() {
         <Text style={[styles.counter, { color: ready ? GREEN : CREAM_MUTED }]}>{count} / {TASKS_TO_PICK} selected</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {candidates.map((task, i) => {
-          const on = selected.includes(i);
+      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Add Manually (top of the list): tap → inline input, confirm appends
+            a task row and auto-selects it. */}
+        {adding ? (
+          <OffsetCard color={OFFSET} offset={4} radius={16} cardStyle={styles.taskRow} style={styles.rowGap}>
+            <TextInput
+              style={styles.addInput}
+              placeholder="Write your own task…"
+              placeholderTextColor={MUTED}
+              value={draft}
+              onChangeText={setDraft}
+              autoFocus
+              maxLength={80}
+              onSubmitEditing={onAddManual}
+              returnKeyType="done"
+            />
+            <Pressable onPress={onAddManual} hitSlop={8} style={[styles.addConfirm, !draft.trim() && { opacity: 0.4 }]}>
+              <MaterialIcons name="check" size={20} color="#FFFFFF" />
+            </Pressable>
+            <Pressable onPress={() => { setAdding(false); setDraft(''); }} hitSlop={8}>
+              <MaterialIcons name="close" size={22} color={MUTED} />
+            </Pressable>
+          </OffsetCard>
+        ) : (
+          <OffsetCard
+            color={OFFSET}
+            offset={4}
+            radius={16}
+            onPress={() => setAdding(true)}
+            cardStyle={styles.taskRow}
+            style={styles.rowGap}
+          >
+            <View style={styles.addPlus}>
+              <MaterialIcons name="add" size={18} color="#FFFFFF" />
+            </View>
+            <Text style={styles.addText}>Add Manually</Text>
+          </OffsetCard>
+        )}
+
+        {items.map((it) => {
+          const on = selected.includes(it.id);
           const full = !on && count >= TASKS_TO_PICK;
           return (
             <OffsetCard
-              key={i}
+              key={it.id}
               color={OFFSET}
               offset={4}
               radius={16}
-              onPress={() => toggle(i)}
+              onPress={() => toggle(it.id)}
               cardStyle={[styles.taskRow, on && styles.taskRowOn]}
               style={[styles.rowGap, full && styles.taskRowDim]}
             >
               <View style={[styles.checkbox, on && styles.checkboxOn]}>
                 {on && <MaterialIcons name="check" size={16} color="#FFFFFF" />}
               </View>
-              <Text style={[styles.taskText, on && styles.taskTextOn]}>{task}</Text>
+              <Text style={[styles.taskText, on && styles.taskTextOn]}>{it.text}</Text>
+              {it.manual && (
+                <Pressable onPress={() => removeManual(it.id)} hitSlop={8}>
+                  <MaterialIcons name="close" size={18} color={MUTED} />
+                </Pressable>
+              )}
             </OffsetCard>
           );
         })}
@@ -168,6 +252,10 @@ const styles = StyleSheet.create({
   checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, borderColor: '#D8C9B2', alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { backgroundColor: ORANGE, borderColor: ORANGE },
   taskText: { flex: 1, fontSize: 15, fontFamily: 'Inter_500Medium', color: TEXT },
+  addPlus: { width: 24, height: 24, borderRadius: 8, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center' },
+  addText: { flex: 1, fontSize: 15, fontFamily: 'Inter_700Bold', color: TEXT },
+  addInput: { flex: 1, fontSize: 15, fontFamily: 'Inter_500Medium', color: TEXT, paddingVertical: 0 },
+  addConfirm: { width: 28, height: 28, borderRadius: 14, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center' },
   taskTextOn: { fontFamily: 'Inter_700Bold' },
 
   bottomBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10 },
