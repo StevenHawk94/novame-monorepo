@@ -232,7 +232,8 @@ function Reveal({
 }) {
   void lastRanking; // the mock drops the week-over-week comparison
   void c;
-  const top = ranking[0];
+  // Copy spec 2026-08-06: FOCUS surfaces the TOP-TWO dimensions, RELEASE the last.
+  const topTwo = ranking.slice(0, 2);
   const bottom = ranking[ranking.length - 1];
   // Podium trophies use the dedicated art set (assets/Icons/true-north-N.png).
   const medals = [
@@ -267,14 +268,19 @@ function Reveal({
         {podium(2)}
       </View>
 
-      {/* What matters most — the #1 dimension's focus list */}
+      {/* What matters most — the top-two dimensions' focus lists */}
       <View style={styles.revealCard}>
         <View style={styles.revealCardHeader}>
           <Text style={styles.revealCardEmoji}>{'🎯'}</Text>
           <Text style={styles.revealCardTitle}>What matters to you most:</Text>
         </View>
-        {TRUE_NORTH_FOCUS_POINTS[top].map((line) => (
-          <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
+        {topTwo.map((dim, i) => (
+          <View key={dim} style={i > 0 && styles.focusSectionGap}>
+            <Text style={styles.focusSectionTitle}>{TRUE_NORTH_PHRASES[dim]}</Text>
+            {TRUE_NORTH_FOCUS_POINTS[dim].map((line) => (
+              <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
+            ))}
+          </View>
         ))}
       </View>
 
@@ -339,6 +345,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center', width: 52, height: 52, borderRadius: 26, backgroundColor: '#1B1B1B',
     alignItems: 'center', justifyContent: 'center', marginTop: 4,
   },
+  focusSectionTitle: {
+    fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#8A5F3F', marginBottom: 6,
+  },
+  focusSectionGap: { marginTop: 14 },
   revealCloseX: { color: '#F6D68A', fontSize: 20, fontFamily: 'Inter_800ExtraBold' },
 
   primaryBtn: { borderRadius: 16, paddingVertical: 17, alignItems: 'center', borderWidth: 2, borderColor: '#2B2B2B', shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },

@@ -40,10 +40,10 @@ export function trueNorthGemHits(
 }
 
 /**
- * Reveal-page content (design: true north result.png). The #1-ranked
- * dimension surfaces its FOCUS list ("What matters to you most"); the
+ * Reveal-page content (copy finalized 2026-08-06). The TOP-TWO ranked
+ * dimensions surface their FOCUS lists ("What matters to you most"); the
  * LAST-ranked dimension surfaces its RELEASE list ("What you should forgive
- * and forget"). PLACEHOLDER copy — product will retune wording.
+ * and forget", six per dimension).
  */
 export const TRUE_NORTH_FOCUS_POINTS: Record<DimensionId, string[]> = {
   expression: ['Speaking honestly', 'Sharing your thoughts', 'Being heard', 'Hard conversations', 'Saying no clearly', 'Finding your voice', 'Emotional honesty', 'Standing by your words', 'Asking for what you need', 'Telling your story'],
@@ -53,16 +53,16 @@ export const TRUE_NORTH_FOCUS_POINTS: Record<DimensionId, string[]> = {
   steadiness: ['Staying calm under pressure', 'Grounding routines', 'Steady breathing', 'Weathering hard days', 'Emotional balance', 'Rest without guilt', 'Slow mornings', 'Letting waves pass', 'Keeping your footing', 'A quiet center'],
   confidence: ['Trusting yourself', 'Owning your wins', 'Trying without guarantees', 'Standing your ground', 'Feeling enough', 'Backing your decisions', 'Quiet certainty', 'Bouncing back', 'Asking for more', 'Self-respect'],
   gratitude: ['Noticing small joys', 'Savoring good moments', 'Saying thank you', 'Simple pleasures', 'Appreciating people', 'Ordinary magic', 'Counting the good', 'Warm little rituals', 'Enough as plenty', 'Being present for it'],
-  connection: ['Taking care of yourself', 'Showing up for people', 'Real listening', 'Small kindnesses', 'Time with loved ones', 'Reaching out first', 'Letting people in', 'Repairing quickly', 'Shared moments', 'Being there'],
+  connection: ['Showing up for people', 'Real listening', 'Small kindnesses', 'Time with loved ones', 'Reaching out first', 'Letting people in', 'Repairing quickly', 'Shared moments', 'Being there', 'Celebrating their wins'],
 };
 
 export const TRUE_NORTH_RELEASE_POINTS: Record<DimensionId, string[]> = {
-  expression: ['Sharing your thoughts', 'Being understood', 'Finding your voice', 'Emotional honesty'],
-  awareness: ['Analyzing everything', 'Re-reading the past', 'Perfect self-knowledge', 'Fixing every flaw'],
-  momentum: ['Doing it all today', 'Constant productivity', 'Never resting', 'Racing everyone'],
-  direction: ['Having it all figured out', 'The perfect plan', 'Comparing paths', 'Rushing the answer'],
-  steadiness: ['Controlling everything', 'Never feeling shaken', 'Instant calm', 'Hiding every wobble'],
-  confidence: ['Everyone approving', 'Never doubting', 'Being impressive', 'Winning every room'],
-  gratitude: ['Forcing positivity', 'Ranking your joys', 'Perfect contentment', 'Guilt about wanting more'],
-  connection: ['Pleasing everyone', 'Being needed always', 'Fixing other people', 'Never disappointing anyone'],
+  expression: ['Oversharing everything', 'Needing to be understood', 'Having the perfect words', 'Confessing every thought', 'Needing the last word', 'Filling every silence'],
+  awareness: ['Analyzing everything', 'Re-reading the past', 'Perfect self-knowledge', 'Fixing every flaw', 'Needing a reason for every feeling', 'Journaling every emotion'],
+  momentum: ['Doing it all today', 'Constant productivity', 'Never resting', 'Racing everyone', 'Multitasking everything at once', 'Guilt over slow days'],
+  direction: ['Having it all figured out', 'The perfect plan', 'Comparing paths', 'Rushing the answer', 'Refusing to change course', 'Needing certainty before moving'],
+  steadiness: ['Controlling everything', 'Never feeling shaken', 'Instant calm', 'Hiding every wobble', 'Numbing every feeling', 'Bracing for the worst'],
+  confidence: ["Everyone\u2019s approval", 'Never doubting', 'Being impressive', 'Winning every room', 'Proving yourself constantly', 'Never asking for help'],
+  gratitude: ['Forcing positivity', 'Ranking your joys', 'Perfect contentment', 'Guilt about wanting more', 'Silencing bad days', 'Never allowed to complain'],
+  connection: ['Pleasing everyone', 'Being needed always', 'Fixing other people', 'Never disappointing anyone', 'Never saying no to people', "Carrying everyone\u2019s feelings"],
 };

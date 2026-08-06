@@ -30,7 +30,7 @@ export const QUIET_WINS: readonly QuietWin[] = [
     id: 'qw_expression_1',
     dimension: 'expression',
     text: "Said what I actually thought, even though staying quiet was easier",
-    feedback: "Saying it out loud when silence was right there \u2014 that took something.",
+    feedback: "Saying it out loud when silence was right there, that took something.",
   },
   {
     id: 'qw_expression_2',
@@ -42,7 +42,7 @@ export const QUIET_WINS: readonly QuietWin[] = [
     id: 'qw_awareness_1',
     dimension: 'awareness',
     text: "Caught myself mid-spiral and actually paused",
-    feedback: "Noticing it while it's happening is the hard part \u2014 and you did.",
+    feedback: "Noticing it while it's happening is the hard part, and you did.",
   },
   {
     id: 'qw_awareness_2',
@@ -78,13 +78,13 @@ export const QUIET_WINS: readonly QuietWin[] = [
     id: 'qw_steadiness_1',
     dimension: 'steadiness',
     text: "Handled something that threw me off, and stayed standing",
-    feedback: "It knocked you sideways and you didn't fall. That's steadiness.",
+    feedback: "It knocked you sideways and you didn't fall. That's what staying steady actually looks like.",
   },
   {
     id: 'qw_steadiness_2',
     dimension: 'steadiness',
     text: "Took a break without guilt",
-    feedback: "Resting without earning it first \u2014 that's a quiet kind of strength.",
+    feedback: "Resting without earning it first, that's a quiet kind of strength.",
   },
   {
     id: 'qw_confidence_1',
@@ -102,7 +102,7 @@ export const QUIET_WINS: readonly QuietWin[] = [
     id: 'qw_gratitude_1',
     dimension: 'gratitude',
     text: "Noticed a small thing that was better than I expected",
-    feedback: "Catching the good ones as they pass \u2014 that's a skill, not luck.",
+    feedback: "Catching the good ones as they pass, that's a skill, not luck.",
   },
   {
     id: 'qw_gratitude_2',
@@ -111,10 +111,12 @@ export const QUIET_WINS: readonly QuietWin[] = [
     feedback: "A real thank-you lands differently. You gave someone that.",
   },
   {
-    id: 'qw_connection_1',
+    // qw_connection_1 ("Told someone the truth, gently") retired 2026-08-06 —
+    // ids are never reused; old payloads referencing it are simply ignored.
+    id: 'qw_connection_3',
     dimension: 'connection',
-    text: "Told someone the truth, gently",
-    feedback: "Honest and kind at once is a hard balance. You held it.",
+    text: "Showed up for someone without being asked",
+    feedback: "You didn't wait for a signal, you just showed up. That's a quiet kind of love.",
   },
   {
     id: 'qw_connection_2',
@@ -174,13 +176,20 @@ export function quietWinsFeedback(checkedIds: string[]): QuietWinsFeedback {
   }
 
   if (n <= 5) {
-    const highlight = wins[0].feedback;
-    const rest = n - 1;
+    // Two of the checked wins at random get their full feedback line; the
+    // rest are summed up (no dependence on check order).
+    const pool = [...wins];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const rest = n - 2;
     return {
       tier: 2,
       lines: [
-        highlight,
-        `Along with the other ${rest} ${rest === 1 ? 'thing' : 'things'} you checked, today held more than it looked like.`,
+        pool[0].feedback,
+        pool[1].feedback,
+        `Plus ${rest} more \u2014 today held more than it looked like.`,
       ],
     };
   }
@@ -191,6 +200,8 @@ export function quietWinsFeedback(checkedIds: string[]): QuietWinsFeedback {
   const labels = dims.map((d) => DIMENSION_LABEL[d]);
   return {
     tier: 3,
-    lines: [`Today you showed up across ${joinList(labels)}.`],
+    lines: [
+      `Today you showed up across ${joinList(labels)} \u2014 that's a full day, even if it didn't feel like a big one.`,
+    ],
   };
 }
