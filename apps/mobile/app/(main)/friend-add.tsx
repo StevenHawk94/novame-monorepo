@@ -10,7 +10,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import {
-  fetchFriends, addFriend, previewFriend, respondFriend,
+  fetchFriends, getCachedFriends, addFriend, previewFriend, respondFriend,
   type FriendsStatus, type PendingRequest,
 } from '@/lib/friends-api';
 
@@ -34,7 +34,9 @@ function sentAgo(iso: string): string {
 
 export default function FriendAddScreen() {
   const router = useRouter();
-  const [status, setStatus] = useState<FriendsStatus>({ inviteCode: null, friends: [], pending: [], sent: [] });
+  // Cache-first: the Pair ID never changes, so paint it instantly from the
+  // cached status; the focus-effect fetch reconciles in the background.
+  const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [query, setQuery] = useState('');
   // Search-result card (mock 2): the resolved user + the proposed relationship.
   const [found, setFound] = useState<{ code: string; name: string } | null>(null);
