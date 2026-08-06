@@ -35,13 +35,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fail-closed allowlist: unset env => nobody can use this route.
+    // Fail-closed gate, two ways in (unset envs => nobody can use this route):
+    //  1. x-dev-tier-secret header matching DEV_TIER_SECRET — survives the
+    //     anonymous-account UUID churn (every reinstall mints a new user id),
+    //     so the [DEV] tier button keeps working without env updates.
+    //  2. UUID allowlist (DEV_TIER_TESTER_IDS / ADMIN_USER_IDS).
+    const secret = (process.env.DEV_TIER_SECRET || '').trim()
+    const secretOk = !!secret && (request.headers.get('x-dev-tier-secret') || '').trim() === secret
     const testerIds = [
       ...(process.env.DEV_TIER_TESTER_IDS || '').split(','),
       ...(process.env.ADMIN_USER_IDS || '').split(','),
     ].map(s => s.trim()).filter(Boolean)
-    if (!testerIds.includes(verified.id)) {
-      console.warn('[dev/set-tier] rejected: user', verified.id, 'not in DEV_TIER_TESTER_IDS/ADMIN_USER_IDS')
+    if (!secretOk && !testerIds.includes(verified.id)) {
+      console.warn('[dev/set-tier] rejected: user', verified.id, 'no valid secret and not in DEV_TIER_TESTER_IDS/ADMIN_USER_IDS')
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     if (tier !== 'free' && tier !== 'plus') {

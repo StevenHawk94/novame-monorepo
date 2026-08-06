@@ -172,7 +172,10 @@ export default function HomeScreen() {
                     setTier(next);
                     appAlert('Tier switched', `Now: ${next === 'free' ? 'FREE' : 'PAID'}`);
                   } else {
-                    appAlert('Failed', 'Could not switch tier. Check connection.');
+                    appAlert(
+                      'Failed',
+                      'Could not switch tier. Set DEV_TIER_SECRET on the API (Vercel env) and the same value as EXPO_PUBLIC_DEV_TIER_SECRET in apps/mobile/.env.local, then restart Metro.',
+                    );
                   }
                 }}
                 style={styles.devBtn}

@@ -140,7 +140,15 @@ export async function devSetTier(tier: 'free' | 'plus'): Promise<boolean> {
   const userId = sess.session?.user?.id;
   if (!userId) return false;
   try {
-    await apiClient.post('/api/dev/set-tier', { userId, tier });
+    // The route is fail-closed; the shared secret (same value as the API's
+    // DEV_TIER_SECRET) lets it work regardless of which anonymous account
+    // the install happens to have. Only attached in dev builds.
+    const secret = process.env.EXPO_PUBLIC_DEV_TIER_SECRET;
+    await apiClient.post(
+      '/api/dev/set-tier',
+      { userId, tier },
+      __DEV__ && secret ? { headers: { 'x-dev-tier-secret': secret } } : undefined,
+    );
     setCachedSubscription({ tier, lastFetchedAtMs: Date.now() });
     return true;
   } catch {
