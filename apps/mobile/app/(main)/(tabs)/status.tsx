@@ -37,10 +37,14 @@ const INSIGHT_SECTIONS: { key: keyof ConnectionInsights; label: string; emoji: s
   { key: 'hangoutIdeas', label: 'Hangout Ideas', emoji: '🎈' },
 ];
 
-// The unpaired teaser pills (mock 2026-08-05): what pairing unlocks.
+// The unpaired teaser cards (mock 2026-08-05 v2): what pairing unlocks.
 const TEASER_PILLS = [
-  'Vibe Matching Moments', 'Emotion', 'Care Tips',
-  'Interested Topics', 'Boundaries', 'Hangout Ideas',
+  { label: 'Vibe Matching Moments', icon: ICONS.vibeMatching },
+  { label: 'Emotion Status', icon: ICONS.emotionStatus },
+  { label: 'Care Tips', icon: ICONS.careTips },
+  { label: 'Topics Ideas', icon: ICONS.topicIdeas },
+  { label: 'Boundaries', icon: ICONS.boundary },
+  { label: 'Hangout Ideas', icon: ICONS.hangout },
 ];
 
 // Free users see the insight cards with STANDARD placeholder copy behind a
@@ -118,21 +122,22 @@ export default function ConnectionDashboardScreen() {
           <Text style={st.title}>Connection Dashboard</Text>
           <Text style={st.subtitle}>Connecting Through Daily Moments</Text>
         </View>
-        {partner && (
-          <Pressable
-            onPress={() => {
-              void haptics.light();
-              router.push({
-                pathname: '/(main)/friend-memories',
-                params: { friendUserId: partner.userId, friendName: partner.displayName },
-              } as never);
-            }}
-            style={st.hubPill}
-          >
-            <Image source={ICONS.sharedMemories} style={{ width: 22, height: 22 }} resizeMode="contain" />
-            <Text style={st.hubPillText}>Memories Hub</Text>
-          </Pressable>
-        )}
+        {/* Always shown (mock); display-only until a partner exists. */}
+        <Pressable
+          disabled={!partner}
+          onPress={() => {
+            if (!partner) return;
+            void haptics.light();
+            router.push({
+              pathname: '/(main)/friend-memories',
+              params: { friendUserId: partner.userId, friendName: partner.displayName },
+            } as never);
+          }}
+          style={st.hubPill}
+        >
+          <Image source={ICONS.friendList} style={{ width: 26, height: 26 }} resizeMode="contain" />
+          <Text style={st.hubPillText}>Memories Hub</Text>
+        </Pressable>
       </View>
 
       {!pairing || !partner ? (
@@ -144,20 +149,19 @@ export default function ConnectionDashboardScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
-          <Pressable
-            onPress={() => { void haptics.medium(); router.push('/(main)/friend-add' as never); }}
-            style={st.pairLockCard}
-          >
+          {/* Display-only until paired: no tap targets anywhere (mock v2). */}
+          <View style={st.pairLockCard}>
             <MaterialIcons name="lock" size={56} color="#5D3A1F" />
             <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock connection dashboard</Text>
             <View style={st.teaserGrid}>
               {TEASER_PILLS.map((t) => (
-                <View key={t} style={st.teaserPill}>
-                  <Text style={st.teaserPillText}>{t}</Text>
+                <View key={t.label} style={st.teaserPill}>
+                  <Image source={t.icon} style={st.teaserIcon} resizeMode="contain" />
+                  <Text style={st.teaserPillText}>{t.label}</Text>
                 </View>
               ))}
             </View>
-          </Pressable>
+          </View>
         </View>
       ) : (
         <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
@@ -354,13 +358,14 @@ const st = StyleSheet.create({
     columnGap: 12, rowGap: 14, marginTop: 8,
   },
   teaserPill: {
-    width: '44%', backgroundColor: '#FFFFFF', borderRadius: 18,
-    paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center',
-    minHeight: 62,
+    width: '46%', backgroundColor: '#FFFFFF', borderRadius: 18,
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    paddingVertical: 14, paddingHorizontal: 12, minHeight: 64,
     shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  teaserPillText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#161311', textAlign: 'center' },
+  teaserIcon: { width: 32, height: 32 },
+  teaserPillText: { flex: 1, fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#161311' },
   insightBlurred: {
     color: 'transparent',
     textShadowColor: 'rgba(42,33,24,0.6)',

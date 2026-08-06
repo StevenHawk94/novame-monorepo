@@ -41,6 +41,14 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
   reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
   reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
+  // Connection Dashboard (unpaired teaser cards + Memories Hub pill)
+  friendList: require('../../assets/Icons/friend-list.png'),
+  vibeMatching: require('../../assets/Icons/vibe-matching.png'),
+  emotionStatus: require('../../assets/Icons/emotion-status.png'),
+  careTips: require('../../assets/Icons/care-tips.png'),
+  topicIdeas: require('../../assets/Icons/topic-ideas.png'),
+  boundary: require('../../assets/Icons/boundary.png'),
+  hangout: require('../../assets/Icons/hangout.png'),
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
   setting: require('../../assets/Icons/setting.png'),
