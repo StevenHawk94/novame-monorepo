@@ -1,17 +1,16 @@
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
-import { Image as ExpoImage } from 'expo-image';
 import * as Clipboard from 'expo-clipboard';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
-import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
+import { ICONS } from '@/lib/icons';
 import {
-  fetchFriends, getCachedFriends, addFriend, previewFriend, respondFriend,
-  type FriendsStatus, type PendingRequest,
+  fetchFriends, getCachedFriends, addFriend, previewFriend,
+  type FriendsStatus,
 } from '@/lib/friends-api';
 
 // 2026-07-29 pairing flow (mock 3): the invitation proposes a relationship
@@ -20,20 +19,15 @@ const RELATIONSHIPS = ['Partner', 'Best Friend', 'Families', 'Someone Special', 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /**
- * Add Friends (mock 1:1): search by Friend ID, Scan Code / Invite Link, the
- * My Friend ID card, then incoming requests (Ignore / Accept) and outgoing
- * ones (Sent Nh ago / Pending). Search-by-name arrives with the stranger-
- * search backend — the field accepts a Friend ID today.
+ * Add Friends (mock 2026-08-05, 1:1): brown full screen, vertically centered
+ * column — two-bunny art, the one-close-friend copy, Friend ID search, Invite
+ * Link, the My Pair ID card, Copy ID — and a white round close at the bottom.
+ * Searching opens the Search Result overlay (relationship + since date →
+ * Send Invitation). Incoming/outgoing requests live on the Friends tab.
  */
-function sentAgo(iso: string): string {
-  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
-  if (h < 1) return 'Sent just now';
-  if (h < 24) return `Sent ${h}h ago`;
-  return `Sent ${Math.floor(h / 24)}d ago`;
-}
-
 export default function FriendAddScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   // Cache-first: the Pair ID never changes, so paint it instantly from the
   // cached status; the focus-effect fetch reconciles in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
@@ -96,15 +90,6 @@ export default function FriendAddScreen() {
     }
   }
 
-  async function onRespond(req: PendingRequest, action: 'accept' | 'decline') {
-    void haptics.medium();
-    const res = await respondFriend(req.friendshipId, action);
-    if (res.ok) load();
-    else if (res.error === 'friend_limit_reached') {
-      appAlert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
-    }
-  }
-
   async function onCopyId() {
     if (!status.inviteCode || copied) return;
     void haptics.light();
@@ -122,243 +107,204 @@ export default function FriendAddScreen() {
     });
   }
 
+  const closeBottom = insets.bottom + 18;
+
   return (
     <View style={styles.root}>
-      <ExpoImage
-        source={BACKGROUNDS.friends}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        contentPosition="top"
-      />
-      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-            <MaterialIcons name="arrow-back" size={22} color="#4A3220" />
+      {/* Vertically centered column (mock 1). */}
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Image source={ICONS.friendList} style={styles.bunnies} resizeMode="contain" />
+        <Text style={styles.intro}>
+          You can add 1 closest friend right now, please add someone important
+          that you want to stay closer, even not living together.
+        </Text>
+
+        {/* Friend ID search */}
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Enter Friend ID here"
+            placeholderTextColor="#A99A85"
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="characters"
+            onSubmitEditing={() => void onSearch()}
+          />
+          <Pressable onPress={() => void onSearch()} hitSlop={8}>
+            <MaterialIcons name="search" size={28} color="#7A4A2A" />
           </Pressable>
-          <Text style={styles.title}>Add Friends</Text>
-          <View style={styles.headerIcons}>
-            <Image source={FRIEND_ICONS.setting} style={styles.gearIcon} resizeMode="contain" />
-          </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* search */}
-          <View style={styles.searchBox}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name or Friend ID"
-              placeholderTextColor="#A99A85"
-              value={query}
-              onChangeText={setQuery}
-              autoCapitalize="characters"
-              onSubmitEditing={() => void onSearch()}
-            />
-            <Pressable onPress={() => void onSearch()} hitSlop={8}>
-              <MaterialIcons name="search" size={26} color="#4A3220" />
-            </Pressable>
-          </View>
+        {/* Invite Link */}
+        <Pressable
+          onPress={() => void onInviteLink()}
+          style={({ pressed }) => [styles.creamBtn, pressed && { opacity: 0.85 }]}
+        >
+          <MaterialIcons name="link" size={24} color="#2E8B57" />
+          <Text style={styles.creamBtnText}>Invite Link</Text>
+        </Pressable>
 
-          {/* scan + invite */}
-          <View style={styles.toolRow}>
-            <Pressable
-              onPress={() => appAlert('Scan Code', 'QR scanning is coming soon — share your Friend ID for now!')}
-              style={styles.toolBtn}
-            >
-              <MaterialIcons name="qr-code-scanner" size={22} color="#2E8B57" />
-              <Text style={styles.toolText}>Scan Code</Text>
-            </Pressable>
-            <Pressable onPress={() => void onInviteLink()} style={styles.toolBtn}>
-              <MaterialIcons name="link" size={22} color="#2E8B57" />
-              <Text style={styles.toolText}>Invite Link</Text>
-            </Pressable>
-          </View>
+        {/* My Pair ID */}
+        <View style={styles.idCard}>
+          <Text style={styles.idLabel}>My Pair ID</Text>
+          <Text style={styles.idValue}>{status.inviteCode ?? '——————'}</Text>
+        </View>
 
-          {/* my id */}
-          <View style={styles.idCard}>
-            <Text style={styles.idLabel}>My Pair ID</Text>
-            <Text style={styles.idValue}>{status.inviteCode ?? '——————'}</Text>
-          </View>
+        {/* Copy ID */}
+        <Pressable
+          onPress={() => void onCopyId()}
+          style={({ pressed }) => [styles.creamBtn, pressed && { opacity: 0.85 }]}
+        >
+          <MaterialIcons name={copied ? 'check' : 'content-copy'} size={22} color="#2E8B57" />
+          <Text style={styles.creamBtnText}>{copied ? 'Copied!' : 'Copy ID'}</Text>
+        </Pressable>
+      </ScrollView>
 
-          {/* copy id (mock 2) */}
-          <Pressable
-            onPress={() => void onCopyId()}
-            style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.85 }]}
-          >
-            <MaterialIcons name={copied ? 'check' : 'content-copy'} size={20} color="#6B4A25" />
-            <Text style={styles.copyText}>{copied ? 'Copied!' : 'Copy ID'}</Text>
-          </Pressable>
+      {/* Round white close (mock: bottom center) */}
+      <Pressable
+        onPress={() => router.back()}
+        style={[styles.closeBtn, { bottom: closeBottom }]}
+        hitSlop={8}
+      >
+        <MaterialIcons name="close" size={28} color="#6B4226" />
+      </Pressable>
 
-          {/* incoming requests */}
-          {status.pending.map((req) => (
-            <View key={req.friendshipId} style={styles.reqCard}>
-              <View style={styles.reqAvatar}><Text style={styles.reqAvatarEmoji}>{'🐰'}</Text></View>
-              <View style={styles.reqBody}>
-                <Text style={styles.reqName}>{req.displayName}</Text>
-                <Text style={styles.reqSub}>{req.relationship ?? 'Wants to share memories'}</Text>
-              </View>
-              <Pressable onPress={() => void onRespond(req, 'decline')} style={styles.ignoreBtn}>
-                <Text style={styles.ignoreText}>Ignore</Text>
-              </Pressable>
-              <Pressable onPress={() => void onRespond(req, 'accept')} style={styles.acceptBtn}>
-                <Text style={styles.acceptText}>Accept</Text>
-              </Pressable>
+      {/* Search Result → relationship + since (mock 2) */}
+      {found && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Search Result</Text>
+            <View style={styles.foundRow}>
+              <View style={styles.foundAvatar}><Text style={styles.foundAvatarEmoji}>{'🐰'}</Text></View>
+              <Text style={styles.foundName}>{found.name}</Text>
             </View>
-          ))}
 
-          {/* outgoing requests */}
-          {status.sent.map((req) => (
-            <View key={req.friendshipId} style={styles.reqCard}>
-              <View style={styles.reqAvatar}><Text style={styles.reqAvatarEmoji}>{'🐰'}</Text></View>
-              <View style={styles.reqBody}>
-                <Text style={styles.reqName}>{req.displayName}</Text>
-                <Text style={styles.reqSub}>{sentAgo(req.createdAt)}</Text>
-              </View>
-              <View style={styles.pendingChip}>
-                <Text style={styles.pendingText}>Pending</Text>
-              </View>
+            <Text style={styles.modalQ}>What is your relationship with them?</Text>
+            <View style={styles.relGrid}>
+              {RELATIONSHIPS.map((r) => {
+                const on = relationship === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => { void haptics.light(); setRelationship(r); }}
+                    style={[styles.relPill, on && styles.relPillOn]}
+                  >
+                    <Text style={[styles.relPillText, on && styles.relPillTextOn]} numberOfLines={1}>{r}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
-          ))}
-        </ScrollView>
 
-        {/* Search Result → relationship + since (mock 2) */}
-        {found && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Search Result</Text>
-              <View style={styles.foundRow}>
-                <View style={styles.reqAvatar}><Text style={styles.reqAvatarEmoji}>{'🐰'}</Text></View>
-                <Text style={styles.foundName}>{found.name}</Text>
-              </View>
-
-              <Text style={styles.modalQ}>What is your relationship with them?</Text>
-              <View style={styles.relGrid}>
-                {RELATIONSHIPS.map((r) => {
-                  const on = relationship === r;
-                  return (
-                    <Pressable
-                      key={r}
-                      onPress={() => { void haptics.light(); setRelationship(r); }}
-                      style={[styles.relPill, on && styles.relPillOn]}
-                    >
-                      <Text style={[styles.relPillText, on && styles.relPillTextOn]} numberOfLines={1}>{r}</Text>
+            <Text style={styles.modalQ}>When is the first time you be in the relationship?</Text>
+            <Pressable onPress={() => { void haptics.light(); setDateOpen((v) => !v); }} style={styles.dateField}>
+              <Text style={styles.dateFieldText}>
+                {MONTHS[since.m]} {since.d} {since.y}
+              </Text>
+              <MaterialIcons name={dateOpen ? 'arrow-drop-up' : 'arrow-drop-down'} size={24} color="#4A3220" />
+            </Pressable>
+            {dateOpen && (
+              <View style={styles.dateWheels}>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                  {MONTHS.map((mn, i) => (
+                    <Pressable key={mn} onPress={() => setSince((c) => ({ ...c, m: i }))} style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}>
+                      <Text style={[styles.wheelText, since.m === i && styles.wheelTextOn]}>{mn.slice(0, 3)}</Text>
                     </Pressable>
-                  );
-                })}
+                  ))}
+                </ScrollView>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <Pressable key={d} onPress={() => setSince((c) => ({ ...c, d }))} style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}>
+                      <Text style={[styles.wheelText, since.d === d && styles.wheelTextOn]}>{d}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 80 }, (_, i) => now.getFullYear() - i).map((y) => (
+                    <Pressable key={y} onPress={() => setSince((c) => ({ ...c, y }))} style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}>
+                      <Text style={[styles.wheelText, since.y === y && styles.wheelTextOn]}>{y}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
               </View>
+            )}
 
-              <Text style={styles.modalQ}>When is the first time you be in the relationship?</Text>
-              <Pressable onPress={() => { void haptics.light(); setDateOpen((v) => !v); }} style={styles.dateField}>
-                <Text style={styles.dateFieldText}>
-                  {MONTHS[since.m]} {since.d} {since.y}
-                </Text>
-                <MaterialIcons name={dateOpen ? 'arrow-drop-up' : 'arrow-drop-down'} size={24} color="#4A3220" />
-              </Pressable>
-              {dateOpen && (
-                <View style={styles.dateWheels}>
-                  <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
-                    {MONTHS.map((mn, i) => (
-                      <Pressable key={mn} onPress={() => setSince((c) => ({ ...c, m: i }))} style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}>
-                        <Text style={[styles.wheelText, since.m === i && styles.wheelTextOn]}>{mn.slice(0, 3)}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                  <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                      <Pressable key={d} onPress={() => setSince((c) => ({ ...c, d }))} style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}>
-                        <Text style={[styles.wheelText, since.d === d && styles.wheelTextOn]}>{d}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                  <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
-                    {Array.from({ length: 80 }, (_, i) => now.getFullYear() - i).map((y) => (
-                      <Pressable key={y} onPress={() => setSince((c) => ({ ...c, y }))} style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}>
-                        <Text style={[styles.wheelText, since.y === y && styles.wheelTextOn]}>{y}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              <Pressable
-                onPress={() => void onSendInvitation()}
-                disabled={!relationship || sending}
-                style={[styles.sendBtn, (!relationship || sending) && { opacity: 0.5 }]}
-              >
-                <Text style={styles.sendBtnText}>{sending ? 'Sending…' : 'Send Invitation'}</Text>
-              </Pressable>
-              <Pressable onPress={() => setFound(null)} style={styles.modalClose} hitSlop={8}>
-                <MaterialIcons name="close" size={22} color="#6B5A45" />
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={() => void onSendInvitation()}
+              disabled={!relationship || sending}
+              style={[styles.sendBtn, (!relationship || sending) && { opacity: 0.5 }]}
+            >
+              <Text style={styles.sendBtnText}>{sending ? 'Sending…' : 'Send Invitation'}</Text>
+            </Pressable>
           </View>
-        )}
-      </SafeAreaView>
+
+          {/* Same round white close, dismissing the result overlay */}
+          <Pressable
+            onPress={() => setFound(null)}
+            style={[styles.closeBtn, { bottom: closeBottom }]}
+            hitSlop={8}
+          >
+            <MaterialIcons name="close" size={28} color="#6B4226" />
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#6B4226' },
-  headerRow: { height: 52, justifyContent: 'center' },
-  backBtn: {
-    position: 'absolute', left: 14, top: 4,
-    width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center', zIndex: 2,
-  },
-  title: { fontSize: 28, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center' },
-  headerIcons: { position: 'absolute', right: 14, top: 4, flexDirection: 'row' },
-  gearIcon: { width: 34, height: 34 },
+  root: { flex: 1, backgroundColor: '#7E5233' },
 
-  scroll: { paddingHorizontal: 18, paddingTop: '30%', paddingBottom: 32, gap: 14 },
+  scroll: {
+    flexGrow: 1, justifyContent: 'center',
+    paddingHorizontal: 22, paddingBottom: 110, gap: 15,
+  },
+
+  bunnies: { width: 118, height: 88, alignSelf: 'center' },
+  intro: {
+    fontSize: 17, lineHeight: 25, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
+    textAlign: 'center', marginBottom: 8, paddingHorizontal: 4,
+  },
 
   searchBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFDF6', borderRadius: 26, paddingHorizontal: 18, paddingVertical: 4,
+    backgroundColor: '#FFFFFF', borderRadius: 26, paddingHorizontal: 20, paddingVertical: 6,
   },
-  searchInput: { flex: 1, fontSize: 17, fontFamily: 'Inter_500Medium', color: '#4A3220', paddingVertical: 14 },
+  searchInput: { flex: 1, fontSize: 17, fontFamily: 'Inter_500Medium', color: '#4A3220', paddingVertical: 16 },
 
-  toolRow: { flexDirection: 'row', gap: 14 },
-  toolBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#F5EBD3', borderRadius: 20, paddingVertical: 15,
-  },
-  toolText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2E5B3E' },
-
-  idCard: { backgroundColor: '#FFFFFF', borderRadius: 24, paddingVertical: 20, alignItems: 'center', gap: 6 },
-  idLabel: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
-  idValue: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B', letterSpacing: 3 },
-  copyBtn: {
+  creamBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: '#F5EBD3', borderRadius: 24, paddingVertical: 17,
+    backgroundColor: '#FBF0CF', borderRadius: 26, paddingVertical: 18,
   },
-  copyText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#6B4A25' },
+  creamBtnText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
 
-  reqCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#FFFDF6', borderRadius: 22, padding: 14,
+  idCard: { backgroundColor: '#FFFFFF', borderRadius: 26, paddingVertical: 22, alignItems: 'center', gap: 6 },
+  idLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  idValue: { fontSize: 34, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B', letterSpacing: 3 },
+
+  closeBtn: {
+    position: 'absolute', alignSelf: 'center',
+    width: 58, height: 58, borderRadius: 29, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
-  reqAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E9F2E4', alignItems: 'center', justifyContent: 'center' },
-  reqAvatarEmoji: { fontSize: 28 },
-  reqBody: { flex: 1 },
-  reqName: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
-  reqSub: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A63', marginTop: 2 },
-  ignoreBtn: { backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
-  ignoreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#6B5A45' },
-  acceptBtn: { backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
-  acceptText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  pendingChip: { backgroundColor: '#F5C46B', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 10 },
-  pendingText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#7A4A16' },
 
   modalOverlay: {
-    ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center', justifyContent: 'center', padding: 16,
+    ...StyleSheet.absoluteFillObject, backgroundColor: '#7E5233',
+    alignItems: 'center', justifyContent: 'center', padding: 18,
   },
-  modalCard: { backgroundColor: '#F8E3BF', borderRadius: 28, padding: 18, width: '100%' },
+  modalCard: { backgroundColor: '#F8E3BF', borderRadius: 30, padding: 20, width: '100%' },
   modalTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center', marginBottom: 14 },
   foundRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12, marginBottom: 16,
   },
+  foundAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#E9F2E4', alignItems: 'center', justifyContent: 'center' },
+  foundAvatarEmoji: { fontSize: 26 },
   foundName: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   modalQ: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 10 },
   relGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
@@ -366,13 +312,14 @@ const styles = StyleSheet.create({
     width: '47%', backgroundColor: '#FFFFFF', borderRadius: 22,
     paddingVertical: 13, alignItems: 'center',
   },
-  relPillOn: { backgroundColor: '#8A5F3F' },
+  relPillOn: { backgroundColor: '#4A3220' },
   relPillText: { fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#161311' },
   relPillTextOn: { color: '#FFFFFF' },
   dateField: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#8B7FD9',
-    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 13, marginBottom: 12,
+    alignSelf: 'stretch', maxWidth: 300,
   },
   dateFieldText: { fontSize: 17, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
   dateWheels: { flexDirection: 'row', gap: 8, height: 150, marginBottom: 12 },
@@ -381,7 +328,9 @@ const styles = StyleSheet.create({
   wheelRowOn: { backgroundColor: '#F0E3D0' },
   wheelText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#6B5A45' },
   wheelTextOn: { color: '#161311', fontFamily: 'Inter_800ExtraBold' },
-  sendBtn: { backgroundColor: '#4A3220', borderRadius: 22, alignItems: 'center', paddingVertical: 16, marginTop: 4 },
+  sendBtn: {
+    backgroundColor: '#4A3220', borderRadius: 24, alignItems: 'center',
+    paddingVertical: 17, marginTop: 6, marginHorizontal: 20,
+  },
   sendBtnText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  modalClose: { alignSelf: 'center', marginTop: 10, padding: 6 },
 });
