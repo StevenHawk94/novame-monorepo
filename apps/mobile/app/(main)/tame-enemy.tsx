@@ -73,6 +73,8 @@ export default function TameEnemyScreen() {
   const [milestoneBonus, setMilestoneBonus] = useState(0);
   // -Hit art frame flashes ~0.5s after each landed skill (design 2026-07-30).
   const [hitFlash, setHitFlash] = useState(false);
+  // Damage number floated over the monster for the 0.5s hit window.
+  const [lastDamage, setLastDamage] = useState<number | null>(null);
   const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Single tap opens the full text once the double-tap window passes; a
@@ -132,10 +134,12 @@ export default function TameEnemyScreen() {
     setHp(next);
     setHits((h) => h + 1);
     setHitFlash(true);
+    setLastDamage(card.damage);
     if (hitTimer.current) clearTimeout(hitTimer.current);
     hitTimer.current = setTimeout(() => {
       hitTimer.current = null;
       setHitFlash(false);
+      setLastDamage(null);
     }, 500);
     // A NEW card persuades — the bubble takes its line. Replays just damage.
     if (!usedCardIds.includes(card.cardId)) {
@@ -325,11 +329,16 @@ export default function TameEnemyScreen() {
             <View style={styles.monsterBubbleTail} />
           </View>
           {MONSTER_ART[active.id] ? (
-            <ExpoImage
-              source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
-              style={styles.battleImg}
-              contentFit="contain"
-            />
+            <View style={styles.monsterWrap}>
+              {lastDamage !== null && (
+                <Text style={styles.damagePop}>-{lastDamage}</Text>
+              )}
+              <ExpoImage
+                source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
+                style={styles.battleImg}
+                contentFit="contain"
+              />
+            </View>
           ) : (
             <Text style={styles.battleEmoji}>
               {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
@@ -523,6 +532,12 @@ const styles = StyleSheet.create({
   },
   battleEmoji: { fontSize: 110 },
   battleImg: { width: 184, height: 184 },
+  monsterWrap: { alignSelf: 'center', alignItems: 'center' },
+  damagePop: {
+    position: 'absolute', top: -6, alignSelf: 'center', zIndex: 2,
+    fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#E5484D',
+    textShadowColor: '#FFFFFF', textShadowRadius: 4, textShadowOffset: { width: 0, height: 0 },
+  },
   // Pixel-flavored HP bar: hard corners, chunky dark border, red fill.
   hpTrack: {
     width: '72%', height: 22, borderRadius: 3, backgroundColor: '#FFFFFF',
