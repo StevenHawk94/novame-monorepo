@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FullWindowOverlay } from 'react-native-screens';
 
 /**
  * Themed replacement for the system Alert.alert (design 2026-08-05): white
@@ -70,39 +71,52 @@ export function AppDialogHost() {
 
   const cancelBtn = dialog.buttons.find(isCancel);
 
-  return (
-    <Modal visible transparent animationType="fade" onRequestClose={() => press(cancelBtn ?? dialog.buttons[0])}>
-      <View style={s.overlay}>
-        <View style={s.card}>
-          <Text style={s.title}>{dialog.title}</Text>
-          {!!dialog.message && <Text style={s.message}>{dialog.message}</Text>}
-          <View style={[s.buttons, row ? s.buttonsRow : s.buttonsStack]}>
-            {ordered.map((b, i) => (
-              <Pressable
-                key={`${b.text}-${i}`}
-                onPress={() => press(b)}
-                style={({ pressed }) => [
-                  s.btn,
-                  isCancel(b) ? s.btnCancel : s.btnConfirm,
-                  row && s.btnRowItem,
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Text style={[s.btnText, isCancel(b) ? s.btnTextCancel : s.btnTextConfirm]} numberOfLines={1}>
-                  {b.text}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+  const content = (
+    <View style={s.overlay}>
+      <View style={s.card}>
+        <Text style={s.title}>{dialog.title}</Text>
+        {!!dialog.message && <Text style={s.message}>{dialog.message}</Text>}
+        <View style={[s.buttons, row ? s.buttonsRow : s.buttonsStack]}>
+          {ordered.map((b, i) => (
+            <Pressable
+              key={`${b.text}-${i}`}
+              onPress={() => press(b)}
+              style={({ pressed }) => [
+                s.btn,
+                isCancel(b) ? s.btnCancel : s.btnConfirm,
+                row && s.btnRowItem,
+                pressed && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={[s.btnText, isCancel(b) ? s.btnTextCancel : s.btnTextConfirm]} numberOfLines={1}>
+                {b.text}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       </View>
+    </View>
+  );
+
+  // iOS: (modals)-group screens are NATIVE modals (presentation: 'modal').
+  // An RN <Modal> mounted at the root cannot present on top of one — the
+  // dialog never appears and its half-mounted host eats every touch.
+  // FullWindowOverlay renders in a window above all view controllers, so
+  // the dialog shows over any screen. Android keeps <Modal> (a Dialog
+  // window: always on top, and it gives us hardware-back handling).
+  if (Platform.OS === 'ios') {
+    return <FullWindowOverlay>{content}</FullWindowOverlay>;
+  }
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={() => press(cancelBtn ?? dialog.buttons[0])}>
+      {content}
     </Modal>
   );
 }
 
 const s = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(42,33,24,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
