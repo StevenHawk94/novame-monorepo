@@ -11,7 +11,6 @@ import { OffsetCard } from '@/components/ui/offset-card';
 import { fetchCosmetics, getCachedCosmetics } from '@/lib/cosmetics-api';
 import { checkTask, fetchQuestStatus, getCachedStatus, type QuestStatus } from '@/lib/quests-api';
 
-type Scope = 'self' | 'friend';
 
 const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = {
   custom: { icon: ICONS.ThemeCustom, color: '#8B7FD9' },
@@ -36,7 +35,6 @@ const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
  */
 export default function QuestsScreen() {
   const router = useRouter();
-  const [scope, setScope] = useState<Scope>('self');
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   const [balance, setBalance] = useState<number>(() => getCachedCosmetics().balance);
   const [checking, setChecking] = useState<number | null>(null);
@@ -49,18 +47,11 @@ export default function QuestsScreen() {
     }, []),
   );
 
-  const themes = useMemo(() => themesForScope(scope), [scope]);
+  const themes = useMemo(() => themesForScope('self'), []);
   const custom = themes.find((t) => t.isCustom);
   const standard = themes.filter((t) => !t.isCustom);
 
   function onPickTheme(theme: QuestTheme) {
-    // Friend co-op plans (shared progress, invites) arrive with the friends
-    // backend (P4). Until then, starting one would silently create a solo plan
-    // that claims to be shared — block with an honest notice instead.
-    if (scope === 'friend') {
-      appAlert('Almost here', 'Friend quests are coming in the next update. Try a self quest for now!');
-      return;
-    }
     if (theme.isCustom) {
       router.push('/(main)/quest-custom' as never);
       return;
@@ -187,14 +178,12 @@ export default function QuestsScreen() {
     );
   }
 
-  // ---- No active plan: theme picker ----
-  // Self keeps the dark-brown ground; Friend flips the page to warm cream
-  // (design call 2026-07-29), so text and card shadows adapt per scope.
-  const isSelf = scope === 'self';
-  const pageBg = isSelf ? BG : CREAM_BG;
-  const cardOffset = isSelf ? OFFSET : CREAM_OFFSET;
-  const titleColor = isSelf ? CREAM : INK;
-  const mutedColor = isSelf ? CREAM_MUTED : '#8A7A63';
+  // ---- No active plan: theme picker (Self only, 2026-08-06 — the Friend
+  // scope and its toggle are gone; water/mindfulness moved into Self). ----
+  const pageBg = BG;
+  const cardOffset = OFFSET;
+  const titleColor = CREAM;
+  const mutedColor = CREAM_MUTED;
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: pageBg }]} edges={['top']}>
@@ -202,25 +191,9 @@ export default function QuestsScreen() {
         <View style={styles.header}>
           <Text style={[styles.title, { color: titleColor }]}>Weekly Quests</Text>
           <Text style={[styles.subtitle, { color: mutedColor }]}>
-            {isSelf
-              ? 'Select your main goal of the week, finish and get rewards!'
-              : 'Select the shared goal of the week and finish together!'}
+            Select your main goal of the week, finish and get rewards!
           </Text>
         </View>
-
-        {/* Self / Friend toggle: white pill strip, active segment dark brown */}
-        <OffsetCard color={cardOffset} offset={4} radius={26} cardStyle={styles.toggle} style={styles.cardGap}>
-          {(['self', 'friend'] as Scope[]).map((s) => {
-            const active = scope === s;
-            return (
-              <Pressable key={s} onPress={() => setScope(s)} style={[styles.toggleBtn, active && styles.toggleBtnActive]}>
-                <Text style={[styles.toggleText, active && styles.toggleTextActive]}>
-                  {s === 'self' ? 'Self Quests' : 'Friend Quests'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </OffsetCard>
 
         {custom && (
           <OffsetCard
@@ -273,8 +246,6 @@ export default function QuestsScreen() {
 // Friend Quests picker flips to warm cream with a tan offset (2026-07-29).
 const BG = '#4C331B';
 const OFFSET = '#33220F';
-const CREAM_BG = '#FFF6E8';
-const CREAM_OFFSET = '#E5B57E';
 const CARD = '#FFFFFF';
 const TEXT = '#4A3B2A';
 const MUTED = '#9A8A76';
@@ -294,11 +265,6 @@ const styles = StyleSheet.create({
   cardGap: { marginBottom: 12 },
   rowGap: { marginBottom: 8 },
 
-  toggle: { flexDirection: 'row', backgroundColor: CARD, padding: 4 },
-  toggleBtn: { flex: 1, paddingVertical: 11, borderRadius: 22, alignItems: 'center' },
-  toggleBtnActive: { backgroundColor: INK },
-  toggleText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#8A7A64' },
-  toggleTextActive: { color: '#FFFFFF' },
 
   customCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: CARD, padding: 16 },
   customTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

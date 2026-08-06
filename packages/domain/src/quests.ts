@@ -127,7 +127,7 @@ export const QUEST_THEMES: QuestTheme[] = [
     key: 'water',
     title: 'Water Challenge',
     subtitle: 'Drink enough water to keep refresh',
-    scope: 'friend',
+    scope: 'self',
     tasks: [
       'Drink a glass of water when you wake up', 'Finish a bottle before lunch', 'Drink water instead of soda',
       'Have a glass before each meal', 'Refill your bottle 3 times', 'Drink a glass after exercise',
@@ -144,7 +144,7 @@ export const QUEST_THEMES: QuestTheme[] = [
     key: 'mindfulness',
     title: 'Mindfulness',
     subtitle: 'Stay peaceful mind and do not be mad',
-    scope: 'friend',
+    scope: 'self',
     tasks: [
       'Take 10 slow breaths', 'Sit quietly for 5 minutes', 'Notice 5 things you can see, hear, feel',
       'Do one thing without multitasking', 'Take a mindful walk', 'Write down 3 things you\u2019re grateful for',
