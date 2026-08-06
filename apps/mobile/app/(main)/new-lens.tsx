@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { LENS_THEMES, NEW_LENS_PROMPT } from '@novame/domain';
+import { LENS_THEMES, LENS_THEME_BY_KEY, NEW_LENS_PROMPT } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
@@ -31,8 +31,8 @@ export default function NewLensScreen() {
 
   // Design: two-step — tap a capsule to select it, then "Spark Me" fetches
   // the card (was a one-tap instant fetch before the mock landed).
-  function pickTheme(dimension: string) {
-    setActiveTheme((cur) => (cur === dimension ? null : dimension));
+  function pickTheme(key: string) {
+    setActiveTheme((cur) => (cur === key ? null : key));
     setError(null);
   }
 
@@ -64,7 +64,7 @@ export default function NewLensScreen() {
           pathname: '/(main)/reflect',
           params: {
             presetPrompt: NEW_LENS_PROMPT,
-            presetDimension: activeTheme,
+            presetDimension: LENS_THEME_BY_KEY[activeTheme]?.dimension ?? activeTheme,
             sourceKit: 'new_lens',
           },
         });
@@ -93,11 +93,11 @@ export default function NewLensScreen() {
           </Text>
           <View style={styles.capsules}>
             {LENS_THEMES.map((t) => {
-              const on = activeTheme === t.dimension;
+              const on = activeTheme === t.key;
               return (
                 <Pressable
-                  key={t.dimension}
-                  onPress={() => pickTheme(t.dimension)}
+                  key={t.key}
+                  onPress={() => pickTheme(t.key)}
                   style={({ pressed }) => [
                     styles.capsule,
                     { backgroundColor: kit.card, opacity: pressed ? 0.8 : 1 },

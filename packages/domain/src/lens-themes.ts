@@ -13,22 +13,39 @@
 import type { DimensionId } from './dimensions';
 
 export interface LensTheme {
-  /** Keyed to a dimension; the theme IS that dimension's "struggle" framing. */
+  /**
+   * Stable identifier used as lens_cards.theme / lens_progress.theme and in
+   * the API. The original eight equal their dimension id (preserves the
+   * per-user cursors seeded before v2); the 2026-08-06 additions get their
+   * own keys and borrow the nearest dimension for reflect crediting.
+   */
+  key: string;
+  /** The dimension a "I see it differently" reflect is credited to. */
   dimension: DimensionId;
   /** The capsule label on the picker. */
   capsule: string;
 }
 
 export const LENS_THEMES: readonly LensTheme[] = [
-  { dimension: 'expression', capsule: 'Holding it in' },
-  { dimension: 'awareness',  capsule: 'Overthinking everything' },
-  { dimension: 'momentum',   capsule: 'Stuck in place' },
-  { dimension: 'direction',  capsule: 'Not sure what I want' },
-  { dimension: 'steadiness', capsule: 'Everything feels shaky' },
-  { dimension: 'confidence', capsule: 'Doubting myself' },
-  { dimension: 'gratitude',  capsule: 'Nothing feels enough' },
-  { dimension: 'connection', capsule: 'Feeling distant' },
+  { key: 'expression',    dimension: 'expression', capsule: 'Holding it in' },
+  { key: 'awareness',     dimension: 'awareness',  capsule: 'Overthinking everything' },
+  { key: 'momentum',      dimension: 'momentum',   capsule: 'Stuck in place' },
+  { key: 'direction',     dimension: 'direction',  capsule: 'Not sure what I want' },
+  { key: 'steadiness',    dimension: 'steadiness', capsule: 'Everything feels shaky' },
+  { key: 'confidence',    dimension: 'confidence', capsule: 'Doubting myself' },
+  { key: 'gratitude',     dimension: 'gratitude',  capsule: 'Nothing feels enough' },
+  { key: 'connection',    dimension: 'connection', capsule: 'Feeling distant' },
+  { key: 'comparison',    dimension: 'confidence', capsule: 'Comparing myself to others' },
+  { key: 'fear_of_wrong', dimension: 'momentum',   capsule: 'Afraid to get it wrong' },
+  { key: 'running_empty', dimension: 'steadiness', capsule: 'Running on empty' },
 ];
+
+/** Valid theme keys, for API-side validation. */
+export const LENS_THEME_KEYS: readonly string[] = LENS_THEMES.map((t) => t.key);
+
+export const LENS_THEME_BY_KEY: Record<string, LensTheme> = Object.fromEntries(
+  LENS_THEMES.map((t) => [t.key, t]),
+);
 
 /**
  * The guiding line for a reflect routed in from New Lens's "I see it

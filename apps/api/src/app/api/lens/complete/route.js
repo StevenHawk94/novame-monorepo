@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { DIMENSION_IDS } from '@novame/domain'
+import { LENS_THEME_KEYS } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
 
 export const runtime = 'edge'
@@ -40,7 +40,7 @@ export async function POST(request) {
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (!DIMENSION_IDS.includes(theme)) {
+    if (!LENS_THEME_KEYS.includes(theme)) {
       return NextResponse.json({ error: 'Invalid theme' }, { status: 400 })
     }
     if (response !== 'resonates' && response !== 'different') {

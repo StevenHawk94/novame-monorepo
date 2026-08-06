@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { DIMENSION_IDS } from '@novame/domain'
+import { LENS_THEME_KEYS } from '@novame/domain'
 
 export const runtime = 'edge'
 
@@ -21,7 +21,7 @@ export async function GET(request) {
     if (!userId || !theme) {
       return NextResponse.json({ error: 'Missing userId or theme' }, { status: 400 })
     }
-    if (!DIMENSION_IDS.includes(theme)) {
+    if (!LENS_THEME_KEYS.includes(theme)) {
       return NextResponse.json({ error: 'Invalid theme' }, { status: 400 })
     }
 
