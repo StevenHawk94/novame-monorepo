@@ -70,14 +70,15 @@ export default function ReflectDetailScreen() {
               <Image source={ICONS.memory} style={styles.memTitleIcon} resizeMode="contain" />
               <Text style={styles.memTitle}>Memory Items Created</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.memRow}>
+            {/* Wrapping grid: every item visible, growing downward (no side-scroll). */}
+            <View style={styles.memRow}>
               {gathered.map((g) => (
                 <View key={g.itemId} style={styles.memItem}>
                   <ItemSprite itemId={g.itemId} size={72} radius={16} />
                   <Text style={styles.memCount}>x{g.count}</Text>
                 </View>
               ))}
-            </ScrollView>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   memTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
   memTitleIcon: { width: 30, height: 30 },
   memTitle: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
-  memRow: { gap: 14, paddingHorizontal: 4 },
+  memRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 4 },
   memItem: { alignItems: 'center', gap: 6 },
   memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
 

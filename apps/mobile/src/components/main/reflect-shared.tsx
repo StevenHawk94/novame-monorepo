@@ -320,14 +320,14 @@ export function ReflectResultView({
               <Text style={s.itemsCardLabel}>Memory Items</Text>
             </View>
             {counts.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.itemsRow}>
+              <View style={s.itemsRow}>
                 {counts.map(([id, n]) => (
                   <View key={id} style={{ alignItems: 'center', gap: 4 }}>
                     <ItemSprite itemId={id} size={64} radius={14} />
                     {n > 1 && <Text style={s.itemCount}>x{n}</Text>}
                   </View>
                 ))}
-              </ScrollView>
+              </View>
             ) : (
               <Text style={s.itemsEmpty}>A quiet one — no items this time, and that's okay.</Text>
             )}
@@ -433,7 +433,7 @@ const s = StyleSheet.create({
   itemsCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 12 },
   itemsCardAmount: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   itemsCardLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#6B4E2E' },
-  itemsRow: { gap: 10, paddingHorizontal: 2 },
+  itemsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingHorizontal: 2 },
   itemCount: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
   itemsEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#9A8770', textAlign: 'center', paddingVertical: 8 },
   storyCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 18 },
