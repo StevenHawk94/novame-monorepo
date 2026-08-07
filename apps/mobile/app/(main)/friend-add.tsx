@@ -62,7 +62,7 @@ export default function FriendAddScreen() {
         : res.error === 'already_friends' ? "You're already friends."
         : res.error === 'already_pending' ? 'A request is already pending with them.'
         : res.error === 'cannot_add_self' ? "That's your own ID!"
-        : res.error === 'friend_limit_reached' ? 'Your friend slots are full. NovaMe Plus holds 99.'
+        : res.error === 'friend_limit_reached' ? 'Your friend slots are full. Burrow Plus holds 99.'
         : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
         : 'Something went wrong. Try again.';
       appAlert('Hmm', msg);
@@ -103,7 +103,7 @@ export default function FriendAddScreen() {
     if (!status.inviteCode) return;
     void haptics.light();
     await Share.share({
-      message: `Add me on NovaMe! My Friend ID is ${status.inviteCode} — let's share memory items together.`,
+      message: `Add me on Burrow! My Friend ID is ${status.inviteCode} — let's share memory items together.`,
     });
   }
 

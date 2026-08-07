@@ -54,8 +54,8 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>
             {persistent
-              ? 'NovaMe keeps running into a problem. Please fully close the app and open it again.'
-              : 'NovaMe hit an unexpected error. Tap reload to try again.'}
+              ? 'Burrow keeps running into a problem. Please fully close the app and open it again.'
+              : 'Burrow hit an unexpected error. Tap reload to try again.'}
           </Text>
           {!persistent ? (
             <Pressable

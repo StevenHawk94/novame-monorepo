@@ -1,6 +1,11 @@
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-const APP_STORE_URL = 'https://apps.apple.com/app/id6763723281';
+// Play URL is a placeholder slot — points at the package name; goes live
+// automatically once the Play listing exists.
+const STORE_URL = Platform.select({
+  android: 'https://play.google.com/store/apps/details?id=com.novame.app',
+  default: 'https://apps.apple.com/app/id6763723281',
+}) as string;
 
 /**
  * Full-screen, UNESCAPABLE hard-update screen.
@@ -15,7 +20,7 @@ const APP_STORE_URL = 'https://apps.apple.com/app/id6763723281';
  */
 export function ForceUpdateGate({ message }: { message: string | null }) {
   const handleUpdate = () => {
-    void Linking.openURL(APP_STORE_URL).catch(() => {
+    void Linking.openURL(STORE_URL).catch(() => {
       // If the store URL somehow fails to open, there is nothing else the user
       // can do from here; leave the screen up so they can retry.
     });
@@ -29,7 +34,7 @@ export function ForceUpdateGate({ message }: { message: string | null }) {
           <Text style={styles.message}>
             {message && message.trim().length > 0
               ? message
-              : 'This version of NovaMe is out of date. Please update to continue.'}
+              : 'This version of Burrow is out of date. Please update to continue.'}
           </Text>
           <Pressable
             onPress={handleUpdate}

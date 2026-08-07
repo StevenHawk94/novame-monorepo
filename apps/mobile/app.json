@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "NovaMe",
+    "name": "Burrow",
     "slug": "novame-mobile",
     "version": "1.0.11",
     "orientation": "portrait",
@@ -36,7 +36,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F0B2E"
+        "backgroundColor": "#F8E2C1"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -74,7 +74,13 @@
         }
       ],
       "expo-web-browser",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#8A6240"
+        }
+      ],
       "./plugins/with-photo-permissions",
       "expo-iap",
       "./plugins/with-ios-modular-headers",
@@ -83,6 +89,16 @@
         "@bacons/apple-targets",
         {
           "appleTeamId": "VFUC7899NP"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "android": {
+            "image": "./assets/splash-icon.png",
+            "imageWidth": 220,
+            "backgroundColor": "#F8E2C1"
+          }
         }
       ]
     ],

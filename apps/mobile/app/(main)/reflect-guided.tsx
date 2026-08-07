@@ -149,7 +149,7 @@ export default function ReflectGuidedScreen() {
   async function onSubmit(wantStory: boolean) {
     if (submitting || selected.size === 0) return;
     if (wantStory && !isPaid) {
-      appAlert('A Plus feature', 'Cute stories come with NovaMe Plus.', [
+      appAlert('A Plus feature', 'Cute stories come with Burrow Plus.', [
         { text: 'Not now', style: 'cancel' },
         { text: 'See Plus', onPress: () => router.push('/(main)/(modals)/subscription-paywall' as never) },
       ]);

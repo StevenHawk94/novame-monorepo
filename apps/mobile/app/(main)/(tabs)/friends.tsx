@@ -127,7 +127,7 @@ export default function FriendsScreen() {
       if (action === 'accept') void haptics.success();
       load();
     } else if (res.error === 'friend_limit_reached') {
-      appAlert('Slots full', 'Your friend slots are full. NovaMe Plus holds 99.');
+      appAlert('Slots full', 'Your friend slots are full. Burrow Plus holds 99.');
     }
   }
 

@@ -178,10 +178,10 @@ export default function AiConsentModal() {
           />
         </View>
 
-        <Text style={styles.title}>NovaMe uses AI to support you</Text>
+        <Text style={styles.title}>Burrow uses AI to support you</Text>
 
         <Text style={styles.body}>
-          To generate &ldquo;Wisdom Cards&rdquo; and insights, NovaMe uses
+          To generate &ldquo;Wisdom Cards&rdquo; and insights, Burrow uses
           third-party AI technology.
         </Text>
 

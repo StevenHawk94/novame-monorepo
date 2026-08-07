@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
+import { Platform,
   ActivityIndicator,
   Linking,
   Pressable,
@@ -230,12 +230,12 @@ export default function AuthScreen() {
 
   // ---- shared visual fragments ----
 
-  const Branding = () => <Text style={styles.brand}>NovaMe</Text>;
+  const Branding = () => <Text style={styles.brand}>Burrow</Text>;
 
   const Footer = () => (
     <View style={styles.footer}>
       <Text style={styles.footerText}>
-        By continuing, you agree to NovaMe&apos;s{' '}
+        By continuing, you agree to Burrow&apos;s{' '}
       </Text>
       <View style={styles.footerLinks}>
         <Pressable onPress={() => { void haptics.light(); Linking.openURL(TERMS_URL); }}>
@@ -271,7 +271,9 @@ export default function AuthScreen() {
             Your wisdoms and cards will be waiting for you.
           </Text>
           <View style={styles.buttonGroup}>
-            {/* Sign in with Apple — HIG-compliant white variant */}
+            {/* Sign in with Apple — HIG-compliant white variant (iOS only;
+                Android would render a dead control) */}
+            {Platform.OS === 'ios' && (
             <View style={styles.btnSlot}>
               <TouchableOpacity
                 activeOpacity={0.85}
@@ -289,6 +291,7 @@ export default function AuthScreen() {
                 <Text style={styles.btnAppleText}>Sign in with Apple</Text>
               </TouchableOpacity>
             </View>
+            )}
 
             {/* Continue with Google — official white variant */}
             <View style={styles.btnSlot}>

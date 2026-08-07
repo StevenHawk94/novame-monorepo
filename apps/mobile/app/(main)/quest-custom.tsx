@@ -55,7 +55,7 @@ export default function QuestCustomScreen() {
     if (res.error === 'plus_required') {
       appAlert(
         'A Plus feature',
-        'AI-built plans come with NovaMe Plus.',
+        'AI-built plans come with Burrow Plus.',
         [
           { text: 'Not now', style: 'cancel' },
           {

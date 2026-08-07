@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -439,6 +440,7 @@ export default function RootLayout() {
                 }}
               />
               {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+              <StatusBar style="dark" />
               {resumeVisible ? <BackgroundResumeOverlay /> : null}
               <AppDialogHost />
             </ErrorBoundary>

@@ -27,7 +27,7 @@ const TERMS_URL = 'https://novameapp.com/terms';
 /**
  * Settings center (design: menu.png), reached from Home's top-left hamburger.
  * Warm cream page: X close, avatar + name, an Enable Notifications card, the
- * NovaMe Plus banner, then a white list card of settings rows. All v2 logic
+ * Burrow Plus banner, then a white list card of settings rows. All v2 logic
  * (Plan & Billing sheet, Duo seats, sign out, legal) is unchanged from the
  * previous night-theme build — this is a reskin plus the design's new rows
  * (Invite Friends, Rate Us, Report Bugs / Help Centers → support).
@@ -68,7 +68,7 @@ export default function MeScreen() {
   async function shareDuoCode() {
     if (!duo.asOwner) return;
     void haptics.light();
-    await Share.share({ message: `Join me on NovaMe Plus! Enter my Duo code: ${duo.asOwner.inviteCode}` });
+    await Share.share({ message: `Join me on Burrow Plus! Enter my Duo code: ${duo.asOwner.inviteCode}` });
   }
 
   async function onJoinDuo() {
@@ -115,7 +115,7 @@ export default function MeScreen() {
       const status = await fetchFriends();
       if (status.inviteCode) {
         await Share.share({
-          message: `Add me on NovaMe! My friend code is ${status.inviteCode} — let's share memory items together.`,
+          message: `Add me on Burrow! My friend code is ${status.inviteCode} — let's share memory items together.`,
         });
         return;
       }
@@ -178,12 +178,12 @@ export default function MeScreen() {
             </Pressable>
           </View>
 
-          {/* NovaMe Plus banner (design: brown, white View button) */}
+          {/* Burrow Plus banner (design: brown, white View button) */}
           <View style={styles.plusBanner}>
             <Text style={styles.rowEmoji}>{'🪪'}</Text>
             <View style={{ flex: 1 }}>
               <View style={styles.plusTitleRow}>
-                <Text style={styles.plusTitle}>NovaMe</Text>
+                <Text style={styles.plusTitle}>Burrow</Text>
                 <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
               </View>
               <Text style={styles.plusSub}>

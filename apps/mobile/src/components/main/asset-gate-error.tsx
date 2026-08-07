@@ -17,9 +17,9 @@ export function AssetGateError({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={styles.root} onLayout={hideSplashOnce}>
       <View style={styles.body}>
-        <Text style={styles.title}>Couldn{'\u2019'}t load NovaMe</Text>
+        <Text style={styles.title}>Couldn{'\u2019'}t load Burrow</Text>
         <Text style={styles.message}>
-          We couldn{'\u2019'}t download the content NovaMe needs to start.
+          We couldn{'\u2019'}t download the content Burrow needs to start.
           Please check your internet connection and try again.
         </Text>
         <Pressable

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ import {
 } from '../../src/lib/iap';
 
 /**
- * Onboarding v3 (2026-07-26 mocks 1:1) — the BunnyUs story flow on the beige
+ * Onboarding v3 (2026-07-26 mocks 1:1) — the Burrow story flow on the beige
  * grid: hook → who/what-blocks questions (ob4's line answers ob3's choice) →
  * how-it-works pages → creator's words → the two-people paywall (Try for
  * Free → plans) → Name Your Bunny → done. GUEST MODE: finishing creates an
@@ -485,7 +485,7 @@ export default function OnboardingScreen() {
               </Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
-                <Text style={styles.plusTitle}>BunnyUs Plus</Text>
+                <Text style={styles.plusTitle}>Burrow Plus</Text>
                 {[
                   ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
                   ['Connection Up', 'Real-time insights to help you understand each other better.'],
@@ -535,15 +535,26 @@ export default function OnboardingScreen() {
             >
               <View>
                 <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={styles.planPrice}>{priceMonthly ?? '$9.99'} every month</Text>
+                <Text style={styles.planPrice}>{priceMonthly ?? '$6.99'} every month</Text>
               </View>
             </Pressable>
             <View style={{ flex: 1 }} />
             <Btn label="Start My Plan" onPress={() => void onStartPlan()} busy={purchasing} />
-            <View style={[styles.legalRow, { marginBottom: insets.bottom + 8, marginTop: -6 }]}>
-              <Text style={styles.legalText}>Privacy</Text>
-              <Text style={styles.legalText}>Cancel Anytime</Text>
-              <Text style={styles.legalText}>Terms</Text>
+            {/* Apple 3.1.2: subscription terms + working legal links. */}
+            <Text style={styles.disclosure}>
+              {plan === 'yearly'
+                ? 'Burrow Plus Yearly: $69.99 per 12 months after a 3-day free trial. '
+                : 'Burrow Plus Monthly: $6.99 per month. '}
+              Auto-renews unless cancelled at least 24 hours before the period ends.
+              Cancel anytime in your App Store settings.
+            </Text>
+            <View style={[styles.legalRow, { marginBottom: insets.bottom + 8, marginTop: 8 }]}>
+              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/privacy')} hitSlop={8}>
+                <Text style={styles.legalLink}>Privacy</Text>
+              </Pressable>
+              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/terms')} hitSlop={8}>
+                <Text style={styles.legalLink}>Terms</Text>
+              </Pressable>
             </View>
           </ScrollView>
         )}
@@ -583,7 +594,7 @@ export default function OnboardingScreen() {
               </Pressable>
               <Text style={[styles.h1, { marginTop: 56 }]}>Connect Your Account</Text>
               <Text style={[styles.body, { marginTop: 14 }]}>
-                To keep your data safe, we recommend you connect an account for BunnyUs.
+                To keep your data safe, we recommend you connect an account for Burrow.
               </Text>
               <View style={{ height: 36 }} />
               <Pressable
@@ -631,7 +642,7 @@ export default function OnboardingScreen() {
               </Pressable>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Text style={[styles.legalCenter, { marginBottom: insets.bottom + 14 }]}>
-                By continuing, you agree to BunnyUs&apos;s Terms &amp; Conditions and acknowledge the
+                By continuing, you agree to Burrow&apos;s Terms &amp; Conditions and acknowledge the
                 Privacy Policy
               </Text>
             </ScrollView>
@@ -706,6 +717,11 @@ const styles = StyleSheet.create({
   trialBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   legalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12 },
   legalText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK },
+  legalLink: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#6B5B44', textDecorationLine: 'underline' },
+  disclosure: {
+    fontSize: 11.5, lineHeight: 16, fontFamily: 'Inter_500Medium', color: '#7A6A52',
+    textAlign: 'center', marginTop: 10, paddingHorizontal: 8,
+  },
   legalCenter: { fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: '#3A2E1A', textAlign: 'center', lineHeight: 18 },
 
   bunny: { width: 180, height: 216, alignSelf: 'center', marginTop: 30, marginBottom: 30 },

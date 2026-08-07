@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-// NovaMe "Friend Reflect" widget — shows the latest friend feed entry:
+// Burrow "Friend Reflect" widget — shows the latest friend feed entry:
 // avatar circle, friend name, up to 6 memory-item icons and a relative
 // timestamp. The app writes the payload (JSON + copied item images) into
 // the shared App Group container on every friend-feed fetch; the widget
@@ -152,7 +152,7 @@ struct FriendReflectView: View {
           Text("No friend reflects yet")
             .font(.system(size: 14, weight: .bold))
             .foregroundColor(cardText)
-          Text("Pair with a friend in NovaMe to see their latest memories here.")
+          Text("Pair with a friend in Burrow to see their latest memories here.")
             .font(.system(size: 11))
             .foregroundColor(mutedText)
             .multilineTextAlignment(.center)

@@ -25,7 +25,7 @@ import { ICONS } from '@/lib/icons';
 
 /**
  * Subscription paywall (2026-07-26 redesign — same look as onboarding):
- * the BunnyUs Plus benefits page on the beige grid, then Choose your plan
+ * the Burrow Plus benefits page on the beige grid, then Choose your plan
  * with store-localized prices. Solo monthly/yearly only (the onboarding
  * offer); duo lives in the Friend Pack flow.
  *
@@ -180,20 +180,20 @@ export default function SubscriptionPaywallModal() {
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
       <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={[styles.root, { paddingTop: insets.top + 14 }]}>
-        <Pressable onPress={handleClose} style={styles.closeCircle} hitSlop={10}>
+        <Pressable onPress={handleClose} style={[styles.closeCircle, { top: insets.top + 6 }]} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </Pressable>
 
         {phase === 'benefits' ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={{ flex: 1, minHeight: '100%' }}>
-              <Text style={[styles.h1, { marginTop: 44 }]}>One Subscription for Two People.</Text>
+              <Text style={[styles.h1, { marginTop: 62 }]}>One Subscription for Two People.</Text>
               <Text style={[styles.body, { marginTop: 14 }]}>
                 Store your memories, and theirs.{'\n'}Then connection happens naturally.
               </Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
-                <Text style={styles.plusTitle}>BunnyUs Plus</Text>
+                <Text style={styles.plusTitle}>Burrow Plus</Text>
                 {[
                   ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
                   ['Connection Up', 'Real-time insights to help you understand each other better.'],
@@ -227,7 +227,7 @@ export default function SubscriptionPaywallModal() {
           </ScrollView>
         ) : (
           <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { marginTop: 44, marginBottom: 26 }]}>Choose your plan</Text>
+            <Text style={[styles.h1, { marginTop: 62, marginBottom: 26 }]}>Choose your plan</Text>
             <Pressable
               onPress={() => { void haptics.light(); setPlan('yearly'); }}
               style={[styles.planCard, plan === 'yearly' && styles.planCardOn]}
@@ -250,7 +250,7 @@ export default function SubscriptionPaywallModal() {
             >
               <View>
                 <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={styles.planPrice}>{priceMonthly ?? '$9.99'} every month</Text>
+                <Text style={styles.planPrice}>{priceMonthly ?? '$6.99'} every month</Text>
               </View>
             </Pressable>
             <View style={{ flex: 1 }} />
@@ -265,14 +265,27 @@ export default function SubscriptionPaywallModal() {
                 <Text style={styles.ctaText}>{isPaid ? 'Manage Subscription' : 'Start My Plan'}</Text>
               )}
             </Pressable>
-            <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 12 }]}>
-              <Text style={styles.legalText}>Privacy</Text>
+            {/* Apple 3.1.2: price-per-period, auto-renew and trial terms on the
+                purchase screen, plus working Privacy/Terms links. */}
+            <Text style={styles.disclosure}>
+              {plan === 'yearly'
+                ? 'Burrow Plus Yearly: $69.99 per 12 months after a 3-day free trial. '
+                : 'Burrow Plus Monthly: $6.99 per month. '}
+              Subscription auto-renews unless cancelled at least 24 hours before the end
+              of the current period. Manage or cancel anytime in your App Store settings.
+            </Text>
+            <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 10 }]}>
+              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/privacy')} hitSlop={8}>
+                <Text style={styles.legalLink}>Privacy</Text>
+              </Pressable>
               <Pressable onPress={() => void handleRestore()} hitSlop={8}>
                 <Text style={styles.legalText}>
-                  {busy === 'restoring' ? 'Restoring…' : 'Cancel Anytime'}
+                  {busy === 'restoring' ? 'Restoring…' : 'Restore purchases'}
                 </Text>
               </Pressable>
-              <Text style={styles.legalText}>Terms</Text>
+              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/terms')} hitSlop={8}>
+                <Text style={styles.legalLink}>Terms</Text>
+              </Pressable>
             </View>
           </View>
         )}
@@ -284,11 +297,16 @@ export default function SubscriptionPaywallModal() {
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 22 },
   closeCircle: {
-    position: 'absolute', left: 22, top: 58, zIndex: 3,
+    position: 'absolute', left: 0, zIndex: 3,
     width: 44, height: 44, borderRadius: 22, backgroundColor: BTN,
     alignItems: 'center', justifyContent: 'center',
   },
 
+  disclosure: {
+    fontSize: 11.5, lineHeight: 16, fontFamily: 'Inter_500Medium', color: '#7A6A52',
+    textAlign: 'center', marginTop: 12, paddingHorizontal: 6,
+  },
+  legalLink: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#6B5B44', textDecorationLine: 'underline' },
   h1: { fontSize: 27, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   body: { fontSize: 16.5, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center' },
 

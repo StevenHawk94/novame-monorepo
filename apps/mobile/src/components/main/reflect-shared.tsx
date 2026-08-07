@@ -198,7 +198,7 @@ export function MemoryEditSheet({
             </View>
             <View style={s.plusWrap}>
               <View style={s.plusPill}>
-                <Text style={s.plusPillText}>NovaMe Plus</Text>
+                <Text style={s.plusPillText}>Burrow Plus</Text>
               </View>
               {!isPaid && <Text style={s.plusNote}>Join Plus to add memories automatically</Text>}
             </View>

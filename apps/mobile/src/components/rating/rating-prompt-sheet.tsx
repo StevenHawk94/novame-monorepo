@@ -1,7 +1,7 @@
 /**
  * rating-prompt-sheet.tsx -- Stage 6.RatingPrompt
  *
- * Bottom sheet that asks "How's NovaMe so far?" and routes the user
+ * Bottom sheet that asks "How's Burrow so far?" and routes the user
  * to either the App Store rating prompt (Loving it path) or a
  * pre-filled mailto support email (Could be better path). Each step
  * has a Skip / Maybe later fallback in small text at the bottom
@@ -145,10 +145,10 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
       const osVersion =
         Platform.Version != null ? String(Platform.Version) : 'unknown';
 
-      const subject = encodeURIComponent('NovaMe Feedback');
+      const subject = encodeURIComponent('Burrow Feedback');
       const body = encodeURIComponent(
         [
-          'Hi NovaMe team,',
+          'Hi Burrow team,',
           '',
           '[Your feedback here]',
           '',
@@ -181,7 +181,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
     if (step === 'initial') {
       body = (
         <>
-          <Text style={styles.title}>How's NovaMe so far? ✨</Text>
+          <Text style={styles.title}>How's Burrow so far? ✨</Text>
           <Text style={styles.subtitle}>
             We'd love to hear what you think.
           </Text>
@@ -223,7 +223,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
           <Text style={styles.title}>Glad you're enjoying it! 💜</Text>
           <Text style={styles.subtitle}>
             Would you mind taking a moment to rate us on the App Store?
-            Every rating helps NovaMe reach more people.
+            Every rating helps Burrow reach more people.
           </Text>
 
           <Pressable
@@ -233,7 +233,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
               { opacity: pressed ? 0.9 : 1 },
             ]}
           >
-            <Text style={styles.primaryLabel}>Rate NovaMe ⭐</Text>
+            <Text style={styles.primaryLabel}>Rate Burrow ⭐</Text>
           </Pressable>
 
           <Pressable

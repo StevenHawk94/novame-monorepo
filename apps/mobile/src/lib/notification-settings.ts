@@ -158,7 +158,7 @@ export async function scheduleDailyReminder(
 
   const identifier = await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'NovaMe',
+      title: 'Burrow',
       body: buildBody(),
       sound: 'default',
     },
