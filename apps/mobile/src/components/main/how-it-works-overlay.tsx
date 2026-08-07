@@ -4,7 +4,7 @@
  *   1. the paired feed — sample rows with VARIED item counts that rotate
  *      daily; header (avatar + name + time) on top, tiles span the full
  *      card width (as many per line as fit), 2 lines max, and an
- *      overflowing row ends in a "+N" tile that opens the details screen
+ *      overflowing row ends in a "+N" tile (display-only; Next advances)
  *   2. detail bubbles — icon + vivid text
  *   3. insights teaser — the six Connection pills
  * Next / Next / Done. Pure display; all data is local sample content.
@@ -32,15 +32,13 @@ const POOL = [
 ];
 
 const ROW_META = [
-  { label: '5m ago', unread: true },
-  { label: '3h ago', unread: false },
-  { label: '8h ago', unread: false },
+  { label: '2h ago', unread: true },
   { label: '1d ago', unread: false },
   { label: '2d ago', unread: false },
 ];
 
-// Varied sizes: a packed day (overflows into +N), medium days, quiet days.
-const ROW_SIZES = [16, 7, 4, 2, 3];
+// Varied sizes: a packed day (overflows into +N), a medium day, a quiet day.
+const ROW_SIZES = [16, 7, 3];
 
 const DETAILS: { itemId: string; text: string }[] = [
   { itemId: 'food_drink.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
@@ -102,7 +100,7 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
                 const shown = overflow ? row.items.slice(0, maxShown - 1) : row.items;
                 const rest = row.items.length - shown.length;
                 return (
-                  <Pressable key={row.key} style={styles.feedRow} onPress={next}>
+                  <View key={row.key} style={styles.feedRow}>
                     <View style={styles.rowHeader}>
                       <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
                       <Text style={styles.feedName}>Mom</Text>
@@ -121,7 +119,7 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
                         </View>
                       )}
                     </View>
-                  </Pressable>
+                  </View>
                 );
               })}
             </>
