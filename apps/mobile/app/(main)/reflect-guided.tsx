@@ -202,7 +202,7 @@ export default function ReflectGuidedScreen() {
     <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       {phase !== 'choose' && <View style={styles.scrim} />}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
             <View style={styles.topRow}>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    flex: 1, minHeight: 80, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
     fontSize: 16, fontFamily: 'Inter_400Regular', lineHeight: 24, color: '#2A2118',
   },
   countRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
 
   matchLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 12, marginBottom: 8 },
   matchBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8, maxHeight: 56,
     backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 10, paddingLeft: 12, paddingRight: 10,
   },
   matchRow: { gap: 8, alignItems: 'center', flexGrow: 1, justifyContent: 'center' },

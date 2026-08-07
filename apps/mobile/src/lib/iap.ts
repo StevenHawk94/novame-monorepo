@@ -188,7 +188,6 @@ export function onPurchaseError(
  */
 export async function initIAP(): Promise<void> {
   if (initialized) return;
-  if (Platform.OS !== 'ios') return; // Stage 5: iOS only.
 
   try {
     await initConnection();
@@ -319,8 +318,11 @@ export async function cleanupIAP(): Promise<void> {
  * Optional in Stage 5.IAP.3 -- the paywall can keep using
  * PRICING_TIERS for now and switch to live prices in a follow-up.
  */
+// Play Billing needs an offerToken per sku at purchase time; harvested from
+// the last fetchProducts result (first offer of each product).
+const androidOfferTokens = new Map<string, string>();
+
 export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]> {
-  if (Platform.OS !== 'ios') return [];
   if (!initialized) {
     try {
       await initConnection();
@@ -334,9 +336,16 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
       skus: [...IOS_SUBSCRIPTION_PRODUCT_IDS],
       type: 'subs',
     });
-    return Array.isArray(products)
-      ? (products as ProductSubscription[])
-      : [];
+    const list = Array.isArray(products) ? (products as ProductSubscription[]) : [];
+    if (Platform.OS === 'android') {
+      for (const prod of list) {
+        const offers = (prod as { subscriptionOffers?: { offerTokenAndroid?: string | null }[] })
+          .subscriptionOffers;
+        const token = offers?.[0]?.offerTokenAndroid;
+        if (token) androidOfferTokens.set(prod.id, token);
+      }
+    }
+    return list;
   } catch (e) {
     console.warn('[iap] fetchProducts failed:', e);
     return [];
@@ -357,9 +366,6 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
 export async function purchaseSubscription(
   productId: IOSSubscriptionProductId,
 ): Promise<PurchaseOutcome> {
-  if (Platform.OS !== 'ios') {
-    throw new Error('IAP only supported on iOS in this build');
-  }
   if (!initialized) {
     throw new Error('IAP not initialized -- call initIAP() first');
   }
@@ -384,8 +390,22 @@ export async function purchaseSubscription(
     //                           autoRenewPreference and takes effect at
     //                           the end of the current period.
     // Cancellation throws ErrorCode.UserCancelled.
+    // Android requires the Play offer token alongside the sku; make sure
+    // products (and their tokens) are loaded before the purchase call.
+    if (Platform.OS === 'android' && !androidOfferTokens.has(productId)) {
+      await fetchSubscriptionProducts();
+    }
+    const androidOffer = androidOfferTokens.get(productId);
     const result = await requestPurchase({
-      request: { ios: { sku: productId } },
+      request: {
+        ios: { sku: productId },
+        android: {
+          skus: [productId],
+          ...(androidOffer
+            ? { subscriptionOffers: [{ sku: productId, offerToken: androidOffer }] }
+            : {}),
+        },
+      },
       type: 'subs',
     });
 
@@ -445,7 +465,6 @@ export async function restoreSubscriptions(): Promise<{
   restored: boolean;
   tier?: PricingTierKey;
 }> {
-  if (Platform.OS !== 'ios') return { restored: false };
   if (!initialized) {
     try {
       await initConnection();
@@ -672,7 +691,8 @@ async function uploadPurchaseToServer(purchase: Purchase): Promise<void> {
       ? purchase.purchaseToken
       : null;
 
-  const data = await apiClient.post<AppleIapResponse>('/api/apple-iap', {
+  const endpoint = Platform.OS === 'android' ? '/api/google-iap' : '/api/apple-iap';
+  const data = await apiClient.post<AppleIapResponse>(endpoint, {
     userId,
     transactionId: String(purchase.id),
     productId: purchase.productId,
@@ -682,7 +702,7 @@ async function uploadPurchaseToServer(purchase: Purchase): Promise<void> {
   });
 
   if (!data.success) {
-    throw new Error(data.error ?? 'apple-iap upload returned !success');
+    throw new Error(data.error ?? 'iap upload returned !success');
   }
 }
 

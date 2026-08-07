@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Image, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
 import { getCurrentSession } from '@/lib/auth';
 import {
@@ -34,6 +34,8 @@ const THROTTLE_MS = 10 * 60 * 1000; // Q1b = 10 min between foreground checks
 export function AnnouncementGate() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const lastCheckRef = useRef(0);
+  // Long admin messages scroll instead of pushing "Got it" off short screens.
+  const { height: winHeight } = useWindowDimensions();
 
   const check = useCallback(async () => {
     const now = Date.now();
@@ -115,7 +117,12 @@ export function AnnouncementGate() {
             resizeMode="contain"
           />
           <Text style={styles.title}>{announcement.title}</Text>
-          <Text style={styles.body}>{announcement.content}</Text>
+          <ScrollView
+            style={{ maxHeight: winHeight * 0.45, alignSelf: 'stretch' }}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.body}>{announcement.content}</Text>
+          </ScrollView>
           <Pressable style={styles.button} onPress={close}>
             <Text style={styles.buttonText}>Got it</Text>
           </Pressable>

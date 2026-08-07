@@ -146,7 +146,11 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
               </View>
             </View>
             <View style={styles.portraitWrap}>
-              <Image source={ICONS.interact} style={styles.portrait} resizeMode="contain" />
+              <Image
+                source={ICONS.interact}
+                style={[styles.portrait, screenH < 700 && { width: 110, height: 110 }]}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.hangout}>Hey, What do you need from me?</Text>
             {visibleKits.map((kit) => (
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
   portraitPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
   hangout: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#4A2E1A', textAlign: 'center', marginTop: 12, marginBottom: 16 },
   kitList: { gap: 12, paddingBottom: 8 },
-  kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 } },
+  kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },
   kitCardPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
   kitIcon: { width: 44, height: 44 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
@@ -218,5 +222,6 @@ const styles = StyleSheet.create({
     position: 'absolute', alignSelf: 'center', width: 54, height: 54, borderRadius: 27,
     backgroundColor: '#5C3A24', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
   },
 });

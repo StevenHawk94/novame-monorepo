@@ -137,7 +137,7 @@ export default function ReflectItemsScreen() {
     <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View style={styles.scrim} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
             <View style={styles.topRow}>
@@ -238,11 +238,11 @@ export default function ReflectItemsScreen() {
 
               <Text style={styles.matchLabel}>Selected Item</Text>
               <View style={styles.selectedCard}>
-                <View style={styles.selectedWrap}>
+                <ScrollView contentContainerStyle={styles.selectedWrap} showsVerticalScrollIndicator={false}>
                   {selectedList.map((id) => (
                     <ItemSprite key={id} itemId={id} size={44} radius={12} />
                   ))}
-                </View>
+                </ScrollView>
               </View>
 
               <OffsetCard

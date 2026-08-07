@@ -165,7 +165,7 @@ export default function ReflectTypingScreen() {
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       {/* 输入界面统一 50% 黑色遮罩（设计要求）；pick 页保持原色 */}
       {phase !== 'pick' && <View style={styles.scrim} />}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
             <ReflectTopBar remaining={remaining} onBack={() => router.back()} />
@@ -244,7 +244,7 @@ export default function ReflectTypingScreen() {
                 radius={24}
                 onPress={() => void onSubmit()}
                 disabled={submitting || body.trim().length === 0}
-                style={{ marginTop: 16, opacity: submitting || body.trim().length === 0 ? 0.55 : 1 }}
+                style={{ marginTop: 16, marginBottom: insets.bottom + 12, opacity: submitting || body.trim().length === 0 ? 0.55 : 1 }}
                 cardStyle={styles.yellowBtn}
               >
                 {submitting ? (

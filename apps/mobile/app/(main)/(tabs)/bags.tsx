@@ -66,7 +66,7 @@ export default function BagsScreen() {
       <View style={styles.header}>
         <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Memories{'\n'}Collection</Text>
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>Memories{'\n'}Collection</Text>
         </View>
         <OffsetCard
           color="#C96F2A"

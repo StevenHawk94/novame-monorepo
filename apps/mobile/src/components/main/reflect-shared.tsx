@@ -205,6 +205,7 @@ export function MemoryEditSheet({
           </View>
 
           <ScrollView
+            style={{ flexShrink: 1 }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: 14, paddingBottom: 16 }}
             keyboardShouldPersistTaps="handled"

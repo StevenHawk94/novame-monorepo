@@ -23,13 +23,16 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -151,6 +154,12 @@ export default function ShippingFormModal() {
         <Text style={styles.headerTitle}>Shipping Information</Text>
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? undefined : 'height'}
+      >
+      {/* iOS: automaticallyAdjustKeyboardInsets keeps the focused field above
+          the keyboard; Android relies on the KAV 'height' behavior. */}
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
@@ -158,6 +167,7 @@ export default function ShippingFormModal() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <Field label="Full Name">
           <TextInput
@@ -277,6 +287,7 @@ export default function ShippingFormModal() {
           </Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -432,6 +443,9 @@ function PickerSheet({
   onSelect: (code: string) => void;
 }) {
   const insets = useSafeAreaInsets();
+  // The list height scales with the window so the sheet + keyboard never
+  // push options off a short screen (fixed 380 overflowed on iPhone SE).
+  const { height: winHeight } = useWindowDimensions();
   return (
     <Modal
       visible={visible}
@@ -440,6 +454,7 @@ function PickerSheet({
       onRequestClose={onClose}
     >
       <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View
         style={[
           styles.sheet,
@@ -467,7 +482,7 @@ function PickerSheet({
           />
         </View>
         <ScrollView
-          style={styles.sheetList}
+          style={[styles.sheetList, { maxHeight: winHeight * 0.35 }]}
           contentContainerStyle={{ paddingBottom: 8 }}
           keyboardShouldPersistTaps="handled"
         >
@@ -500,6 +515,7 @@ function PickerSheet({
           )}
         </ScrollView>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -650,7 +666,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   sheetList: {
-    maxHeight: 380,
+    flexGrow: 0,
   },
   sheetRow: {
     flexDirection: 'row',

@@ -15,7 +15,7 @@ import {
   setChosenCompanion,
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
-import { ensureSession } from '../../src/lib/auth';
+import { linkIdentityWithProvider, ensureSession } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import {
   fetchSubscriptionProducts,
@@ -195,6 +195,23 @@ export default function OnboardingScreen() {
       setIdx(FLOW.length); // → connect
     } else {
       router.replace('/(auth)/signing-in');
+    }
+  }
+
+  async function onLinkProvider(provider: 'apple' | 'google') {
+    if (linking) return;
+    setLinking(true);
+    const res = await linkIdentityWithProvider(provider);
+    setLinking(false);
+    if (res.ok) {
+      appAlert('Account connected', 'Your memories are now safe on this account.', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in') },
+      ]);
+    } else if (!res.cancelled) {
+      appAlert(
+        'Could not connect',
+        res.error ?? 'You can connect your account anytime from settings.',
+      );
     }
   }
 
@@ -560,7 +577,7 @@ export default function OnboardingScreen() {
         )}
 
         {step === 'name' && (
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <View style={{ flex: 0.5, minHeight: 24 }} />
               <Text style={styles.h1}>Name Your Bunny</Text>
@@ -583,7 +600,7 @@ export default function OnboardingScreen() {
         )}
 
         {step === 'connect' && (
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
                 onPress={() => router.replace('/(auth)/signing-in')}
@@ -597,25 +614,19 @@ export default function OnboardingScreen() {
                 To keep your data safe, we recommend you connect an account for Burrow.
               </Text>
               <View style={{ height: 36 }} />
+              {Platform.OS === 'ios' && (
+                <Pressable
+                  onPress={() => void onLinkProvider('apple')}
+                  disabled={linking}
+                  style={[styles.authBtnLight, linking && { opacity: 0.6 }]}
+                >
+                  <Text style={styles.authBtnLightText}>{'\uF8FF Sign in with Apple'}</Text>
+                </Pressable>
+              )}
               <Pressable
-                onPress={() =>
-                  appAlert(
-                    'Coming soon',
-                    'Apple linking lands shortly — connect with email for now, your data stays safe either way.',
-                  )
-                }
-                style={styles.authBtnLight}
-              >
-                <Text style={styles.authBtnLightText}>{' Sign in with Apple'}</Text>
-              </Pressable>
-              <Pressable
-                onPress={() =>
-                  appAlert(
-                    'Coming soon',
-                    'Google linking lands shortly — connect with email for now, your data stays safe either way.',
-                  )
-                }
-                style={styles.authBtnLight}
+                onPress={() => void onLinkProvider('google')}
+                disabled={linking}
+                style={[styles.authBtnLight, linking && { opacity: 0.6 }]}
               >
                 <Text style={styles.authBtnLightText}>{'G  Continue with Google'}</Text>
               </Pressable>

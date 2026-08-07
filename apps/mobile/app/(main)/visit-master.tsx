@@ -80,7 +80,7 @@ export default function VisitMasterScreen() {
   // ── ASK (the scene) ──
   if (phase === 'ask' || phase === 'waiting') {
     return (
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.root}>
           <ExpoImage
           source={BACKGROUNDS.visitMaster}
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     borderWidth: 2.5, borderColor: '#2B2B2B', overflow: 'hidden',
   },
   cardMasterIcon: { width: 64, height: 64, alignSelf: 'center', marginTop: -6 },
-  cardScroll: { paddingHorizontal: 22, paddingTop: 10, paddingBottom: 28 },
+  cardScroll: { paddingHorizontal: 22, paddingTop: 10, paddingBottom: 80 },
   cardClose: {
     position: 'absolute', bottom: 8, alignSelf: 'center',
     width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF',

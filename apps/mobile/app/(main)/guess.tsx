@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -55,10 +55,18 @@ export default function GuessScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.bgPrimary }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
+      {/* Middle content scrolls when the keyboard shrinks the container; the
+          send button stays pinned below as a sticky footer. */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
         <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
       </Pressable>
@@ -89,6 +97,7 @@ export default function GuessScreen() {
         style={[styles.input, { backgroundColor: c.inputBg, color: c.textPrimary, borderColor: c.border }]}
       />
       <Text style={[styles.counter, { color: c.textMuted }]}>{text.length}/50</Text>
+      </ScrollView>
 
       <Pressable
         onPress={onSend}
@@ -117,6 +126,6 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 14, padding: 16, fontSize: 16, fontFamily: 'Inter_400Regular', minHeight: 90, textAlignVertical: 'top' },
   counter: { fontSize: 12, fontFamily: 'Inter_400Regular', textAlign: 'right', marginTop: 6 },
 
-  sendBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 'auto' },
+  sendBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 12 },
   sendText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 });

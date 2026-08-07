@@ -73,7 +73,7 @@ export default function FriendMemoriesScreen() {
   // ---- CREATE (mock: brown room, white paper, Create button, X) ----
   if (mode === 'create') {
     return (
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.createRoot, { paddingTop: insets.top + 26 }]}>
           <View style={styles.paperWrap}>
             <Image source={FRIEND_ICONS.memory} style={styles.paperBook} resizeMode="contain" />
@@ -124,7 +124,7 @@ export default function FriendMemoriesScreen() {
     <SafeAreaView edges={['top']} style={styles.root}>
       <View style={styles.header}>
         <Image source={FRIEND_ICONS.memory} style={styles.headerBook} resizeMode="contain" />
-        <Text style={styles.headerTitle} numberOfLines={2}>
+        <Text style={styles.headerTitle} numberOfLines={2} adjustsFontSizeToFit>
           Your memories{'\n'}with {name}
         </Text>
         <View style={styles.headerAvatar}><Text style={styles.headerAvatarEmoji}>{'🐰'}</Text></View>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   filterSlot: { flex: 1, alignItems: 'center' },
 
   gridScroll: { paddingBottom: 90 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', columnGap: 4 },
   cell: { width: '15.5%', aspectRatio: 0.85, marginBottom: 10 },
   tile: { flex: 1, borderRadius: 14, backgroundColor: '#EFEDF6' },
 

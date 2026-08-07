@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   rankBadgeText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
   rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 
-  revealScroll: { paddingVertical: 16, paddingBottom: 40, gap: 14 },
+  revealScroll: { paddingVertical: 16, paddingBottom: 40, gap: 26 },
   revealBanner: { backgroundColor: '#4A3220', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18 },
   revealBannerText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', lineHeight: 22 },
   podiumFirstRow: { alignItems: 'center' },

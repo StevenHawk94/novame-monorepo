@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -27,6 +27,10 @@ export default function FriendProfileScreen() {
   const router = useRouter();
   const { friendUserId, friendName } = useLocalSearchParams<{ friendUserId: string; friendName?: string }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'Friend';
+  // Tiles are 56pt + 8 gap; reserve room for the +N chip and the Details pill
+  // so they stay inside the card (fixed 4 overflowed at 375pt width).
+  const { width } = useWindowDimensions();
+  const maxTiles = Math.min(4, Math.max(2, Math.floor((width - 190) / 64)));
   // Cache-first: this friend's slice of the cached feed paints instantly.
   const [entries, setEntries] = useState<FeedEntry[]>(() =>
     typeof friendUserId === 'string'
@@ -61,7 +65,7 @@ export default function FriendProfileScreen() {
       {/* header */}
       <View style={styles.header}>
         <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
-        <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{name}</Text>
         <Pressable
           onPress={() => {
             void haptics.light();
@@ -73,7 +77,7 @@ export default function FriendProfileScreen() {
           style={({ pressed }) => [styles.memChip, pressed && { transform: [{ translateY: 2 }] }]}
         >
           <Image source={FRIEND_ICONS.sharedMemories} style={styles.memChipIcon} resizeMode="contain" />
-          <Text style={styles.memChipText}>Shared Memories</Text>
+          <Text style={styles.memChipText} numberOfLines={1}>Shared Memories</Text>
         </Pressable>
       </View>
 
@@ -88,12 +92,12 @@ export default function FriendProfileScreen() {
                 <Text style={styles.dateText}>{fmtDate(e.createdAt)}</Text>
               </View>
               <View style={styles.tilesRow}>
-                {e.itemIds.slice(0, 4).map((id, i) => (
+                {e.itemIds.slice(0, maxTiles).map((id, i) => (
                   <ItemSprite key={`${id}:${i}`} itemId={id} size={56} radius={12} />
                 ))}
-                {e.itemIds.length > 4 && (
+                {e.itemIds.length > maxTiles && (
                   <View style={styles.moreChip}>
-                    <Text style={styles.moreChipText}>+{e.itemIds.length - 4}</Text>
+                    <Text style={styles.moreChipText}>+{e.itemIds.length - maxTiles}</Text>
                   </View>
                 )}
                 <View style={{ flex: 1 }} />
@@ -118,6 +122,7 @@ const styles = StyleSheet.create({
   avatarEmoji: { fontSize: 32 },
   name: { flex: 1, fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
   memChip: {
+    flexShrink: 1,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#4A3220', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12,
     shadowColor: '#D98B4B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 },

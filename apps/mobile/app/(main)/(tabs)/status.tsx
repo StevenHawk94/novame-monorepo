@@ -119,8 +119,8 @@ export default function ConnectionDashboardScreen() {
       {/* 板块1: header — the brown block owns the status-bar area too */}
       <View style={[st.header, { paddingTop: insets.top + 10 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={st.title}>Connection Dashboard</Text>
-          <Text style={st.subtitle}>Connecting Through Daily Moments</Text>
+          <Text style={st.title} numberOfLines={1} adjustsFontSizeToFit>Connection Dashboard</Text>
+          <Text style={st.subtitle} numberOfLines={2}>Connecting Through Daily Moments</Text>
         </View>
         {/* Always shown (mock); display-only until a partner exists. */}
         <Pressable
@@ -150,18 +150,20 @@ export default function ConnectionDashboardScreen() {
             contentFit="cover"
           />
           {/* Display-only until paired: no tap targets anywhere (mock v2). */}
-          <View style={st.pairLockCard}>
-            <MaterialIcons name="lock" size={56} color="#5D3A1F" />
-            <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock connection dashboard</Text>
-            <View style={st.teaserGrid}>
-              {TEASER_PILLS.map((t) => (
-                <View key={t.label} style={st.teaserPill}>
-                  <Image source={t.icon} style={st.teaserIcon} resizeMode="contain" />
-                  <Text style={st.teaserPillText}>{t.label}</Text>
-                </View>
-              ))}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={st.pairLockCard}>
+              <MaterialIcons name="lock" size={56} color="#5D3A1F" />
+              <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock connection dashboard</Text>
+              <View style={st.teaserGrid}>
+                {TEASER_PILLS.map((t) => (
+                  <View key={t.label} style={st.teaserPill}>
+                    <Image source={t.icon} style={st.teaserIcon} resizeMode="contain" />
+                    <Text style={st.teaserPillText} numberOfLines={2}>{t.label}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       ) : (
         <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
@@ -345,9 +347,9 @@ const st = StyleSheet.create({
   copyBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   pairLockCard: {
-    marginHorizontal: 18, marginTop: 44, borderRadius: 32,
+    marginHorizontal: 18, marginTop: 20, borderRadius: 32,
     backgroundColor: '#FBF3DF', alignItems: 'center', justifyContent: 'center',
-    gap: 22, paddingVertical: 56, paddingHorizontal: 20,
+    gap: 22, paddingVertical: 32, paddingHorizontal: 20,
   },
   pairLockText: {
     fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B',
@@ -355,17 +357,17 @@ const st = StyleSheet.create({
   },
   teaserGrid: {
     flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-    columnGap: 12, rowGap: 14, marginTop: 8,
+    columnGap: 8, rowGap: 14, marginTop: 8,
   },
   teaserPill: {
-    width: '46%', backgroundColor: '#FFFFFF', borderRadius: 18,
+    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18,
     flexDirection: 'row', alignItems: 'center', gap: 9,
-    paddingVertical: 14, paddingHorizontal: 12, minHeight: 64,
+    paddingVertical: 14, paddingHorizontal: 10, minHeight: 64,
     shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  teaserIcon: { width: 32, height: 32 },
-  teaserPillText: { flex: 1, fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#161311' },
+  teaserIcon: { width: 26, height: 26 },
+  teaserPillText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
   insightBlurred: {
     color: 'transparent',
     textShadowColor: 'rgba(42,33,24,0.6)',

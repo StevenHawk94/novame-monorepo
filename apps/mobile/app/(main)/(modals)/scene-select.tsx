@@ -160,7 +160,7 @@ export default function SceneSelectScreen() {
               style={styles.cell}
             >
               <ExpoImage source={DEFAULT_SCENE_THUMB} style={styles.thumb} contentFit="cover" />
-              <Text style={styles.cellName} numberOfLines={1}>Mushroom Wood</Text>
+              <Text style={styles.cellName} numberOfLines={2}>Mushroom Wood</Text>
               {isCurrent(DEFAULT_SCENE_KEY) ? (
                 <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
               ) : (
@@ -178,7 +178,7 @@ export default function SceneSelectScreen() {
                     contentFit="cover"
                     transition={100}
                   />
-                  <Text style={styles.cellName} numberOfLines={1}>{s.name}</Text>
+                  <Text style={styles.cellName} numberOfLines={2}>{s.name}</Text>
                   {isCurrent(s.key) ? (
                     <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
                   ) : plusLocked ? (
@@ -248,11 +248,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 18,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '3.5%' },
-  cell: { width: '31%', alignItems: 'center', marginBottom: 20 },
+  cell: { width: '30%', alignItems: 'center', marginBottom: 20 },
   thumb: { width: '100%', aspectRatio: 1, borderRadius: 22 },
   cellName: {
-    fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220',
-    marginTop: 8, marginBottom: 5,
+    fontSize: 13, fontFamily: 'Inter_800ExtraBold', color: '#4A3220',
+    marginTop: 8, marginBottom: 5, textAlign: 'center',
   },
   currentChip: { backgroundColor: '#4A3220', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
   currentText: { color: '#FFFFFF', fontSize: 12.5, fontFamily: 'Inter_700Bold' },

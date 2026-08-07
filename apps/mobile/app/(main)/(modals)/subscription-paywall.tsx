@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { router } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -147,7 +147,11 @@ export default function SubscriptionPaywallModal() {
     if (busy !== 'idle') return;
     if (isPaid) {
       // Already subscribed: Apple rules forbid in-app cancel/manage.
-      void Linking.openURL('https://apps.apple.com/account/subscriptions');
+      void Linking.openURL(
+        Platform.OS === 'android'
+          ? 'https://play.google.com/store/account/subscriptions'
+          : 'https://apps.apple.com/account/subscriptions',
+      );
       return;
     }
     void haptics.medium();

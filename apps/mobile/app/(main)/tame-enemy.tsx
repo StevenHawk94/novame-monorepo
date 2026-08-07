@@ -248,6 +248,7 @@ export default function TameEnemyScreen() {
     }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
+        <ScrollView contentContainerStyle={styles.prepScroll} showsVerticalScrollIndicator={false}>
         {/* name bubble with a tail pointing at the monster (mock) */}
         <View style={styles.prepNameBubble}>
           <Text style={styles.prepNameText}>{active.name}</Text>
@@ -304,6 +305,7 @@ export default function TameEnemyScreen() {
         <Pressable onPress={exit} style={[styles.prepClose, { marginBottom: insets.bottom + 8 }]} hitSlop={10}>
           <Text style={styles.prepCloseX}>✕</Text>
         </Pressable>
+        </ScrollView>
       </View>
     );
   }
@@ -325,7 +327,7 @@ export default function TameEnemyScreen() {
             contentFit="cover"
           />
           <View style={styles.monsterBubble}>
-            <Text style={styles.monsterBubbleText}>{bubbleText || active.prep}</Text>
+            <Text style={styles.monsterBubbleText} numberOfLines={4}>{bubbleText || active.prep}</Text>
             <View style={styles.monsterBubbleTail} />
           </View>
           {MONSTER_ART[active.id] ? (
@@ -400,7 +402,8 @@ export default function TameEnemyScreen() {
   // ---- DONE (design: victory overlay) ----
   if (phase === 'done' && active) {
     return (
-      <View style={[styles.battleRoot, styles.centerRoot, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
+        <ScrollView contentContainerStyle={styles.centerRoot} showsVerticalScrollIndicator={false}>
         <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
         <Text style={styles.victoryTitle}>VICTORY!</Text>
         {MONSTER_ART[active.id] ? (
@@ -427,6 +430,7 @@ export default function TameEnemyScreen() {
         >
           <Text style={styles.confirmText}>Confirm</Text>
         </Pressable>
+        </ScrollView>
       </View>
     );
   }
@@ -436,7 +440,7 @@ export default function TameEnemyScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 20 },
-  centerRoot: { alignItems: 'center', justifyContent: 'center', gap: 24 },
+  centerRoot: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 24 },
   back: { alignSelf: 'flex-start', paddingVertical: 8 },
   h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 4 },
   sub: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 6, marginBottom: 16 },
@@ -453,7 +457,8 @@ const styles = StyleSheet.create({
   tamedBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
   tamedBadgeText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
 
-  prepRoot: { flex: 1, backgroundColor: '#F6E7C8', paddingHorizontal: 20, alignItems: 'center' },
+  prepRoot: { flex: 1, backgroundColor: '#F6E7C8' },
+  prepScroll: { flexGrow: 1, paddingHorizontal: 20, alignItems: 'center' },
   prepNameBubble: {
     backgroundColor: '#EFD9A8', borderRadius: 18, paddingHorizontal: 26, paddingVertical: 13,
     marginBottom: 22,
@@ -516,6 +521,7 @@ const styles = StyleSheet.create({
   // ---- battle (dark dungeon per mock; art asset lands later, solid tones now) ----
   battleRoot: { flex: 1, backgroundColor: '#2A2140' },
   battleScene: {
+    flexShrink: 1,
     alignItems: 'center', gap: 12,
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18,
     overflow: 'hidden',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -103,6 +103,10 @@ export default function HomeScreen() {
   };
 
   const sceneImg = getHomeSceneSource();
+  // Short screens (iPhone SE) can't spare 140pt above the companion — scale
+  // the gap with the window so the video never crowds Focus/Reflect.
+  const { height } = useWindowDimensions();
+  const scenePadTop = Math.max(60, Math.round(height * 0.14));
 
   return (
     <View style={styles.root} onLayout={onLayout}>
@@ -127,7 +131,7 @@ export default function HomeScreen() {
         {/* Scene: companion video at a FIXED spot; the speech bubble is
             anchored to the video's top edge and grows UPWARD as its text
             wraps, so the bunny never shifts with the line count. */}
-        <View style={styles.scene}>
+        <View style={[styles.scene, { paddingTop: scenePadTop }]}>
           <View style={styles.videoSlot}>
             <View style={styles.bubbleWrap}>
               <View style={styles.bubble}>
@@ -210,11 +214,11 @@ const styles = StyleSheet.create({
   },
   topRight: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   topIcon: { width: 40, height: 40 },
-  scene: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 140 },
+  scene: { flex: 1, flexShrink: 1, alignItems: 'center', justifyContent: 'center' },
   // The video's 240×240 slot is what gets centered — a fixed box, so the
   // bunny's position never depends on the bubble. marginTop offsets roughly
   // half a typical bubble so the visual balance matches the old layout.
-  videoSlot: { width: 240, height: 240, marginTop: 56 },
+  videoSlot: { width: 240, height: 240, marginTop: 56, flexShrink: 1 },
   // Absolute above the slot, wider than it (so long lines can still wrap at
   // a comfortable width), anchored by its BOTTOM edge → extra lines grow up.
   bubbleWrap: {
@@ -225,6 +229,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4E4C1', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
     maxWidth: 330,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   bubbleTail: {
     position: 'absolute', bottom: -10, alignSelf: 'center',

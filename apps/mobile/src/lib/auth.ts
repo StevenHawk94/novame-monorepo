@@ -1,4 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
 import {
   GoogleSignin,
   statusCodes,
@@ -427,5 +428,56 @@ export async function ensureSession(): Promise<boolean> {
   } catch (err) {
     console.warn('[auth] anonymous sign-in threw:', err instanceof Error ? err.message : err);
     return false;
+  }
+}
+
+// ---- Anonymous-account linking (onboarding "Connect Your Account") ----
+
+/**
+ * Links the CURRENT (anonymous) session to an Apple/Google identity via
+ * Supabase's linkIdentity OAuth flow in an auth browser session. This is the
+ * supported way to convert a guest without minting a new user (native
+ * signInWithIdToken would sign into a different account and orphan the
+ * guest's data). Requires the provider to be enabled in the Supabase
+ * dashboard with novame://auth-callback in the allowed redirect URLs.
+ */
+export async function linkIdentityWithProvider(
+  provider: 'apple' | 'google',
+): Promise<{ ok: boolean; cancelled?: boolean; error?: string }> {
+  try {
+    const redirectTo = 'novame://auth-callback';
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider,
+      options: { redirectTo, skipBrowserRedirect: true },
+    });
+    if (error || !data?.url) {
+      return { ok: false, error: error?.message ?? 'Could not start linking' };
+    }
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (res.type !== 'success' || !res.url) {
+      return { ok: false, cancelled: true };
+    }
+    const url = new URL(res.url);
+    const errDesc = url.searchParams.get('error_description');
+    if (errDesc) return { ok: false, error: errDesc };
+    const code = url.searchParams.get('code');
+    if (code) {
+      const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+      if (exErr) return { ok: false, error: exErr.message };
+    } else {
+      const params = new URLSearchParams(url.hash.replace(/^#/, ''));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token && refresh_token) {
+        const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (setErr) return { ok: false, error: setErr.message };
+      } else {
+        // The link may still have landed server-side; pick it up.
+        await supabase.auth.refreshSession();
+      }
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Linking failed' };
   }
 }

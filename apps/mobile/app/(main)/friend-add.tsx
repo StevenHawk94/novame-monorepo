@@ -177,6 +177,7 @@ export default function FriendAddScreen() {
       {found && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.modalTitle}>Search Result</Text>
             <View style={styles.foundRow}>
               <View style={styles.foundAvatar}><Text style={styles.foundAvatarEmoji}>{'🐰'}</Text></View>
@@ -208,21 +209,21 @@ export default function FriendAddScreen() {
             </Pressable>
             {dateOpen && (
               <View style={styles.dateWheels}>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                   {MONTHS.map((mn, i) => (
                     <Pressable key={mn} onPress={() => setSince((c) => ({ ...c, m: i }))} style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}>
                       <Text style={[styles.wheelText, since.m === i && styles.wheelTextOn]}>{mn.slice(0, 3)}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                     <Pressable key={d} onPress={() => setSince((c) => ({ ...c, d }))} style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}>
                       <Text style={[styles.wheelText, since.d === d && styles.wheelTextOn]}>{d}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false}>
+                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                   {Array.from({ length: 80 }, (_, i) => now.getFullYear() - i).map((y) => (
                     <Pressable key={y} onPress={() => setSince((c) => ({ ...c, y }))} style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}>
                       <Text style={[styles.wheelText, since.y === y && styles.wheelTextOn]}>{y}</Text>
@@ -239,6 +240,7 @@ export default function FriendAddScreen() {
             >
               <Text style={styles.sendBtnText}>{sending ? 'Sending…' : 'Send Invitation'}</Text>
             </Pressable>
+            </ScrollView>
           </View>
 
           {/* Same round white close, dismissing the result overlay */}
@@ -297,7 +299,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, backgroundColor: '#7E5233',
     alignItems: 'center', justifyContent: 'center', padding: 18,
   },
-  modalCard: { backgroundColor: '#F8E3BF', borderRadius: 30, padding: 20, width: '100%' },
+  modalCard: { backgroundColor: '#F8E3BF', borderRadius: 30, padding: 20, width: '100%', maxHeight: '88%', marginBottom: 90 },
   modalTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center', marginBottom: 14 },
   foundRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -322,7 +324,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch', maxWidth: 300,
   },
   dateFieldText: { fontSize: 17, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
-  dateWheels: { flexDirection: 'row', gap: 8, height: 150, marginBottom: 12 },
+  dateWheels: { flexDirection: 'row', gap: 8, height: 120, marginBottom: 12 },
   wheel: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12 },
   wheelRow: { paddingVertical: 9, alignItems: 'center' },
   wheelRowOn: { backgroundColor: '#F0E3D0' },

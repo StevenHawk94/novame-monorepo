@@ -32,7 +32,6 @@ import {
   forwardRef,
   useCallback,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -78,8 +77,6 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
       },
       dismiss: () => internalRef.current?.dismiss(),
     }));
-
-    const snapPoints = useMemo(() => ['54%'], []);
 
     const renderBackdrop = useCallback(
       (backdropProps: BottomSheetBackdropProps) => (
@@ -282,15 +279,13 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
     return (
       <BottomSheetModal
         ref={internalRef}
-        index={0}
-        snapPoints={snapPoints}
         onChange={handleChange}
         backdropComponent={renderBackdrop}
         handleStyle={styles.handle}
         handleIndicatorStyle={styles.handleIndicator}
         backgroundStyle={styles.background}
         enablePanDownToClose
-        enableDynamicSizing={false}
+        enableDynamicSizing
       >
         <BottomSheetView style={styles.container}>{body}</BottomSheetView>
       </BottomSheetModal>
@@ -311,7 +306,6 @@ const styles = StyleSheet.create({
     width: 40,
   },
   container: {
-    flex: 1,
     paddingHorizontal: 28,
     paddingTop: 12,
     paddingBottom: 32,

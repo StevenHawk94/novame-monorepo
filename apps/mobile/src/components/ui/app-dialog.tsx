@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 
 /**
@@ -74,8 +74,11 @@ export function AppDialogHost() {
   const content = (
     <View style={s.overlay}>
       <View style={s.card}>
-        <Text style={s.title}>{dialog.title}</Text>
-        {!!dialog.message && <Text style={s.message}>{dialog.message}</Text>}
+        {/* Long titles/messages scroll; the buttons stay pinned below. */}
+        <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
+          <Text style={s.title}>{dialog.title}</Text>
+          {!!dialog.message && <Text style={s.message}>{dialog.message}</Text>}
+        </ScrollView>
         <View style={[s.buttons, row ? s.buttonsRow : s.buttonsStack]}>
           {ordered.map((b, i) => (
             <Pressable
@@ -88,7 +91,7 @@ export function AppDialogHost() {
                 pressed && { opacity: 0.85 },
               ]}
             >
-              <Text style={[s.btnText, isCancel(b) ? s.btnTextCancel : s.btnTextConfirm]} numberOfLines={1}>
+              <Text style={[s.btnText, isCancel(b) ? s.btnTextCancel : s.btnTextConfirm]} numberOfLines={row ? 2 : 1}>
                 {b.text}
               </Text>
             </Pressable>
@@ -125,6 +128,7 @@ const s = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 380,
+    maxHeight: '80%',
     backgroundColor: '#FDFBF7',
     borderRadius: 28,
     paddingHorizontal: 24,
@@ -150,6 +154,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
+  body: { flexGrow: 0, flexShrink: 1 },
   buttons: { marginTop: 24 },
   buttonsRow: { flexDirection: 'row', gap: 14 },
   buttonsStack: { gap: 12 },
@@ -167,6 +172,7 @@ const s = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 0,
     shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
   },
   btnCancel: {
     backgroundColor: '#F0D2A0',
@@ -174,8 +180,9 @@ const s = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 0,
     shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
   },
-  btnText: { fontSize: 16, fontFamily: 'Inter_700Bold' },
+  btnText: { fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   btnTextConfirm: { color: '#FFFFFF' },
   btnTextCancel: { color: '#6B4A2F' },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
+import { consumeHowItWorksRequest } from '@/lib/how-it-works';
 import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
@@ -84,6 +85,9 @@ function timeAgo(iso: string): string {
 
 export default function FriendsScreen() {
   const router = useRouter();
+  // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
+  const { width } = useWindowDimensions();
+  const maxTiles = width < 400 ? 3 : 4;
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
@@ -96,6 +100,12 @@ export default function FriendsScreen() {
     void fetchPairing().then(setPairing);
   }, []);
   useFocusEffect(load);
+  // Menu → "How It Works" lands here with a one-shot flag: start the demo.
+  useFocusEffect(
+    useCallback(() => {
+      if (consumeHowItWorksRequest()) setDemoFeed(buildDemoFeed());
+    }, []),
+  );
 
   function onPrivacyGear() {
     void haptics.light();
@@ -197,7 +207,7 @@ export default function FriendsScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* header: centered title, mail + gear at right */}
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Memories Cave</Text>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>Memories Cave</Text>
           <View style={styles.headerIcons}>
             <Pressable
               onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}
@@ -241,12 +251,12 @@ export default function FriendsScreen() {
                       <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
                       <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
                       <View style={styles.tileRow}>
-                        {e.itemIds.slice(0, 4).map((id, i) => (
+                        {e.itemIds.slice(0, maxTiles).map((id, i) => (
                           <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
                         ))}
-                        {e.itemIds.length > 4 && (
+                        {e.itemIds.length > maxTiles && (
                           <View style={styles.blankTile}>
-                            <Text style={styles.moreText}>+{e.itemIds.length - 4}</Text>
+                            <Text style={styles.moreText}>+{e.itemIds.length - maxTiles}</Text>
                           </View>
                         )}
                       </View>
@@ -263,7 +273,7 @@ export default function FriendsScreen() {
              Confirmation); otherwise the Pair Friend pill + line (mock 1). */
           <View style={{ flex: 1 }}>
             {pendingCount > 0 ? (
-              <View style={styles.pendingWrap}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.pendingWrap}>
                 <Text style={styles.pendingTitle}>Pending Confirmation</Text>
                 {status.pending.map((req) => (
                   <View key={req.friendshipId} style={styles.pendingCard}>
@@ -280,7 +290,7 @@ export default function FriendsScreen() {
                     </Pressable>
                   </View>
                 ))}
-              </View>
+              </ScrollView>
             ) : demoFeed ? (
               /* demo cave: what an active friend's day looks like */
               <View style={styles.panel}>
@@ -310,7 +320,7 @@ export default function FriendsScreen() {
                       <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
                       <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
                       <View style={styles.tileRow}>
-                        {e.itemIds.slice(0, 4).map((id, i) => (
+                        {e.itemIds.slice(0, maxTiles).map((id, i) => (
                           <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
                         ))}
                       </View>
@@ -332,7 +342,7 @@ export default function FriendsScreen() {
                   style={({ pressed }) => [styles.demoBtn, pressed && { opacity: 0.85 }]}
                 >
                   <MaterialIcons name="auto-awesome" size={17} color="#FFF6E8" />
-                  <Text style={styles.demoBtnText}>Preview a friend's day</Text>
+                  <Text style={styles.demoBtnText}>How It Works</Text>
                 </Pressable>
               </View>
             )}
@@ -351,12 +361,12 @@ export default function FriendsScreen() {
                     <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
                     <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
                     <View style={styles.tileRow}>
-                      {e.itemIds.slice(0, 4).map((id, i) => (
+                      {e.itemIds.slice(0, maxTiles).map((id, i) => (
                         <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
                       ))}
-                      {e.itemIds.length > 4 && (
+                      {e.itemIds.length > maxTiles && (
                         <View style={styles.blankTile}>
-                          <Text style={styles.moreText}>+{e.itemIds.length - 4}</Text>
+                          <Text style={styles.moreText}>+{e.itemIds.length - maxTiles}</Text>
                         </View>
                       )}
                     </View>
@@ -377,7 +387,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#6B4226' },
 
   headerRow: { height: 52, justifyContent: 'center' },
-  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center' },
+  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center', paddingHorizontal: 110 },
   headerIcons: { position: 'absolute', right: 14, top: 0, flexDirection: 'row', gap: 10 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   mailEmoji: { fontSize: 30 },
@@ -416,7 +426,7 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 18, marginBottom: 4, paddingHorizontal: 8,
   },
 
-  pendingWrap: { paddingHorizontal: 16, paddingTop: '32%', gap: 16 },
+  pendingWrap: { paddingHorizontal: 16, paddingTop: 48, paddingBottom: 24, gap: 16 },
   pendingTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
   pendingCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -428,9 +438,9 @@ const styles = StyleSheet.create({
   pendingAvatarEmoji: { fontSize: 28 },
   pendingName: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   pendingRel: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#6B5A45', marginTop: 2 },
-  ignoreBtn: { backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  ignoreBtn: { flexShrink: 1, backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   ignoreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#6B5A45' },
-  acceptBtn: { backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  acceptBtn: { flexShrink: 1, backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   acceptText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   panel: {
@@ -463,7 +473,7 @@ const styles = StyleSheet.create({
   avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
   avatarEmoji: { fontSize: 24 },
   feedName: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', maxWidth: 84 },
-  tileRow: { flexDirection: 'row', gap: 5, flex: 1, justifyContent: 'center' },
+  tileRow: { flexDirection: 'row', gap: 5, flex: 1, flexShrink: 1, justifyContent: 'center', overflow: 'hidden' },
   blankTile: {
     width: 38, height: 38, borderRadius: 10, backgroundColor: '#F4F1F8',
     alignItems: 'center', justifyContent: 'center',

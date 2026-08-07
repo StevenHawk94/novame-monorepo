@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -333,6 +333,12 @@ export default function AccountManagementModal() {
 
   return (
     <View style={styles.root}>
+      {/* iOS: automaticallyAdjustKeyboardInsets keeps the password fields
+          above the keyboard; Android relies on the KAV 'height' behavior. */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? undefined : 'height'}
+      >
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
@@ -344,6 +350,7 @@ export default function AccountManagementModal() {
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         {/* Header */}
         <View style={styles.headerRow}>
@@ -517,6 +524,7 @@ export default function AccountManagementModal() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
