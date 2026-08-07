@@ -2,7 +2,8 @@
  * "How It Works" walkthrough (mock 2026-08-07, 3 screens over the Friends
  * page, tab bar stays visible):
  *   1. the paired feed — sample rows with VARIED item counts that rotate
- *      daily; tiles cap at 5 per line (width-aware), 2 lines max, and an
+ *      daily; header (avatar + name + time) on top, tiles span the full
+ *      card width (as many per line as fit), 2 lines max, and an
  *      overflowing row ends in a "+N" tile that opens the details screen
  *   2. detail bubbles — icon + vivid text
  *   3. insights teaser — the six Connection pills
@@ -39,7 +40,7 @@ const ROW_META = [
 ];
 
 // Varied sizes: a packed day (overflows into +N), medium days, quiet days.
-const ROW_SIZES = [12, 7, 4, 2, 3];
+const ROW_SIZES = [16, 7, 4, 2, 3];
 
 const DETAILS: { itemId: string; text: string }[] = [
   { itemId: 'food_drink.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
@@ -65,11 +66,11 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
   const { width } = useWindowDimensions();
 
-  // Tile area width: screen − overlay margins (16×2) − card padding (18×2)
-  // − avatar column (46+10) − time column (~56).
-  const tilesWidth = width - 32 - 36 - 56 - 56;
-  const perLine = Math.max(3, Math.min(5, Math.floor((tilesWidth + TILE_GAP) / (TILE + TILE_GAP))));
-  const maxShown = perLine * 2; // 2 lines max (≤10)
+  // Tiles span the full card width (mock 2): screen − overlay margins (16×2)
+  // − card padding (18×2) − row padding (12×2). As many per line as fit.
+  const tilesWidth = width - 32 - 36 - 24;
+  const perLine = Math.max(4, Math.floor((tilesWidth + TILE_GAP) / (TILE + TILE_GAP)));
+  const maxShown = perLine * 2; // 2 lines max
 
   // Daily rotation: the pool offset shifts with the date, so the sample
   // rows read differently every day.
@@ -102,9 +103,15 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
                 const rest = row.items.length - shown.length;
                 return (
                   <Pressable key={row.key} style={styles.feedRow} onPress={next}>
-                    <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
-                    <Text style={styles.feedName}>Mom</Text>
-                    <View style={[styles.tileWrap, { maxWidth: perLine * (TILE + TILE_GAP) }]}>
+                    <View style={styles.rowHeader}>
+                      <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                      <Text style={styles.feedName}>Mom</Text>
+                      <View style={styles.timeCol}>
+                        <Text style={styles.timeText}>{row.label}</Text>
+                        {row.unread && <View style={styles.unreadDot} />}
+                      </View>
+                    </View>
+                    <View style={styles.tileWrap}>
                       {shown.map((id, k) => (
                         <ItemSprite key={`${row.key}-${k}`} itemId={id} size={TILE} radius={10} />
                       ))}
@@ -113,10 +120,6 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
                           <Text style={styles.moreTileText}>+{rest}</Text>
                         </View>
                       )}
-                    </View>
-                    <View style={styles.timeCol}>
-                      <Text style={styles.timeText}>{row.label}</Text>
-                      {row.unread && <View style={styles.unreadDot} />}
                     </View>
                   </Pressable>
                 );
@@ -179,22 +182,22 @@ const styles = StyleSheet.create({
   },
   scroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 16 },
   title: {
-    fontSize: 21, lineHeight: 30, fontFamily: 'Inter_800ExtraBold', color: '#5A3A1B',
-    textAlign: 'center', marginBottom: 24, paddingHorizontal: 6,
+    fontSize: 24, lineHeight: 33, fontFamily: 'Inter_800ExtraBold', color: '#5A3A1B',
+    textAlign: 'center', marginBottom: 24, paddingHorizontal: 4,
   },
 
   feedRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 12,
-    marginBottom: 12,
+    marginBottom: 12, gap: 10,
     shadowColor: '#C9A97C', shadowOpacity: 0.6, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 24 },
-  feedName: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#2B2B2B', width: 46 },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
+  avatarEmoji: { fontSize: 23 },
+  feedName: { flex: 1, fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   tileWrap: {
-    flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: TILE_GAP,
+    flexDirection: 'row', flexWrap: 'wrap', gap: TILE_GAP,
     justifyContent: 'flex-start',
   },
   moreTile: {
@@ -202,7 +205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   moreTileText: { fontSize: 13, fontFamily: 'Inter_800ExtraBold', color: '#6B4A2F' },
-  timeCol: { alignItems: 'flex-end', gap: 5, minWidth: 48 },
+  timeCol: { alignItems: 'flex-end', gap: 5 },
   timeText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: '#9A8A76' },
   unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#E5484D' },
 
