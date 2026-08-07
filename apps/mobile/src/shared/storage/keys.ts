@@ -64,6 +64,9 @@ export const kMasterState = defineKey('novame_master_state', 'user');
 /** Selected Home scene + companion skin (personalization panel). */
 export const kCosmetics = defineKey('novame_cosmetics', 'user');
 
+/** Last-known bound email for the Connect Account screen (cache-first paint). */
+export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 

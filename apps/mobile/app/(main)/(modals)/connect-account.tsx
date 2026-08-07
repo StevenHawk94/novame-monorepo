@@ -11,6 +11,8 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { supabase } from '@/lib/supabase';
+import { storage } from '@/lib/storage';
+import { kConnectedAccount } from '@/shared/storage/keys';
 import {
   connectProviderOrSignIn, isAlreadyBoundError,
   sendLoginEmailOtp, verifyEmailChangeOtp, verifyLoginEmailOtp,
@@ -33,16 +35,36 @@ export default function ConnectAccountScreen() {
   // account the address already belongs to (smart-connect fallback).
   const [emailMode, setEmailMode] = useState<'change' | 'login'>('change');
   const [busy, setBusy] = useState(false);
-  const [connectedAs, setConnectedAs] = useState<string | null>(null);
+  // Cache-first: paint the bound state instantly from the stored value; the
+  // getUser() fetch below only reconciles (and updates the cache).
+  const [connectedAs, setConnectedAs] = useState<string | null>(
+    () => storage.getString(kConnectedAccount.name) ?? null,
+  );
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
       const u = data.user;
       if (!u) return;
       const anonymous = (u as { is_anonymous?: boolean }).is_anonymous ?? false;
-      if (!anonymous || u.email) setConnectedAs(u.email ?? 'your account');
+      if (!anonymous || u.email) {
+        const label = u.email ?? 'your account';
+        setConnectedAs(label);
+        storage.set(kConnectedAccount.name, label);
+      } else {
+        setConnectedAs(null);
+        storage.remove(kConnectedAccount.name);
+      }
     });
   }, []);
+
+  /** Post-link: fetch the (new) bound email once and remember it. */
+  function refreshConnected() {
+    void supabase.auth.getUser().then(({ data }) => {
+      const label = data.user?.email ?? 'your account';
+      setConnectedAs(label);
+      storage.set(kConnectedAccount.name, label);
+    });
+  }
 
   async function onProvider(provider: 'apple' | 'google') {
     if (busy) return;
@@ -51,6 +73,7 @@ export default function ConnectAccountScreen() {
     const res = await connectProviderOrSignIn(provider);
     setBusy(false);
     if (res.ok && res.mode === 'linked') {
+      refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -109,6 +132,7 @@ export default function ConnectAccountScreen() {
     }
     void haptics.success();
     if (emailMode === 'change') {
+      refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -134,7 +158,7 @@ export default function ConnectAccountScreen() {
               <Text style={styles.body}>
                 You&apos;re connected as {connectedAs}.{'\n'}Your memories are safe.
               </Text>
-              <MaterialIcons name="check-circle" size={54} color="#7BB661" style={{ marginTop: 26 }} />
+              <MaterialIcons name="check-circle" size={54} color="#7BB661" style={{ marginTop: 26, alignSelf: 'center' }} />
             </>
           ) : (
             <>
