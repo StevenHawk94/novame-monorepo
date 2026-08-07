@@ -12,7 +12,6 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PRICING_TIERS } from '@novame/core';
 import { PlanBillingSheet, type PlanBillingSheetRef } from '@/components/me/plan-billing-sheet';
 import { haptics } from '@/lib/haptics';
-import { requestHowItWorks } from '@/lib/how-it-works';
 import {
   getCachedSubscriptionTier,
   fetchSubscriptionTier,
@@ -110,13 +109,6 @@ export default function MeScreen() {
   };
 
   /** Design row "Invite Friends": share your friend code via the system sheet. */
-  const onHowItWorks = () => {
-    void haptics.light();
-    requestHowItWorks();
-    router.back(); // leave the Menu, then land on the Friends tab demo
-    setTimeout(() => router.push('/(main)/(tabs)/friends' as never), 80);
-  };
-
   const onInviteFriends = async () => {
     void haptics.light();
     try {
@@ -213,7 +205,7 @@ export default function MeScreen() {
             <MenuRow emoji={'🙂'} label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
             <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }} divider />
             <MenuRow emoji={'🐰'} label="Invite Friends" onPress={() => void onInviteFriends()} divider />
-            <MenuRow emoji={'✨'} label="How It Works" onPress={onHowItWorks} divider />
+            <MenuRow emoji={'🔗'} label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
             <MenuRow emoji={'⭐'} label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
             <MenuRow emoji={'🐞'} label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
             <MenuRow emoji={'💝'} label="Help Centers" onPress={() => goTo('/(main)/(modals)/support')} />

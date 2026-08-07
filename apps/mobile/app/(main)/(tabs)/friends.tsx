@@ -7,7 +7,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
-import { consumeHowItWorksRequest } from '@/lib/how-it-works';
 import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
@@ -100,12 +99,6 @@ export default function FriendsScreen() {
     void fetchPairing().then(setPairing);
   }, []);
   useFocusEffect(load);
-  // Menu → "How It Works" lands here with a one-shot flag: start the demo.
-  useFocusEffect(
-    useCallback(() => {
-      if (consumeHowItWorksRequest()) setDemoFeed(buildDemoFeed());
-    }, []),
-  );
 
   function onPrivacyGear() {
     void haptics.light();

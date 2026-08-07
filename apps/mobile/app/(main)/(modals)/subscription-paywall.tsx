@@ -16,6 +16,7 @@ import {
   onPurchaseError,
 } from '@/lib/iap';
 import { getCachedSubscription } from '@/lib/subscription';
+import { supabase } from '@/lib/supabase';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import {
   shouldPromptNotifAfterPurchase,
@@ -97,6 +98,23 @@ export default function SubscriptionPaywallModal() {
           router.push('/(main)/(modals)/notification-settings');
         }, 450);
       }
+      // First-payment safety prompt: a paying guest should bind an account
+      // so the subscription and memories survive reinstalls.
+      void supabase.auth.getUser().then(({ data }) => {
+        const u = data.user;
+        const anonymous = (u as { is_anonymous?: boolean } | null)?.is_anonymous ?? false;
+        if (!u || (!anonymous && u.email)) return;
+        setTimeout(() => {
+          appAlert(
+            'Keep your Plus safe',
+            'Connect an account so your subscription and memories are never lost — even if you change phones.',
+            [
+              { text: 'Later', style: 'cancel' },
+              { text: 'Connect Now', onPress: () => router.push('/(main)/(modals)/connect-account' as never) },
+            ],
+          );
+        }, promptNotif ? 900 : 500);
+      });
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
