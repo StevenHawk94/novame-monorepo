@@ -173,8 +173,15 @@ export default function OnboardingScreen() {
       if (outcome.kind === 'completed' || outcome.kind === 'scheduled') {
         setPurchased(true);
       }
-    } catch {
-      appAlert('Purchase didn’t go through', 'You can subscribe anytime from the app.');
+    } catch (e) {
+      // Surface the underlying StoreKit reason — a silent catch made
+      // failures undiagnosable (2026-08-07).
+      const detail = e instanceof Error ? e.message : String(e);
+      console.warn('[onboarding] purchase failed:', detail);
+      appAlert(
+        'Purchase didn’t go through',
+        `You can subscribe anytime from the app.\n\n(${detail})`,
+      );
     } finally {
       setPurchasing(false);
       setIdx(FLOW.indexOf('name'));
