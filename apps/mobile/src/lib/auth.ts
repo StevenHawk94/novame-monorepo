@@ -127,6 +127,23 @@ export async function verifyEmailOtp(
   return { data, error };
 }
 
+/**
+ * Confirms an email-change 6-digit code (Connect Account flow: an anonymous
+ * user attaches an email via updateUser({email}), Supabase mails the code,
+ * this verifies it and completes the binding).
+ */
+export async function verifyEmailChangeOtp(
+  email: string,
+  token: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email_change',
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 // ---- session lifecycle ----
 
 /**

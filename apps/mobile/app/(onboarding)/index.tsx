@@ -15,7 +15,7 @@ import {
   setChosenCompanion,
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
-import { linkIdentityWithProvider, ensureSession } from '../../src/lib/auth';
+import { linkIdentityWithProvider, verifyEmailChangeOtp, ensureSession } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import {
   fetchSubscriptionProducts,
@@ -100,6 +100,8 @@ export default function OnboardingScreen() {
   const [finishing, setFinishing] = useState(false);
   const [linkEmail, setLinkEmail] = useState('');
   const [linking, setLinking] = useState(false);
+  const [linkCode, setLinkCode] = useState('');
+  const [linkPhase, setLinkPhase] = useState<'enter' | 'verify'>('enter');
   // Store-localized prices (industry standard: StoreKit's displayPrice is the
   // truth per storefront/currency). The design-stub strings only show while
   // products haven't loaded (dev/simulator without StoreKit config).
@@ -225,8 +227,23 @@ export default function OnboardingScreen() {
       appAlert('Could not connect', 'You can connect your account anytime from settings.');
       return;
     }
-    appAlert('Check your inbox', `We sent a confirmation link to ${email}. Your memories are now safe.`);
-    router.replace('/(auth)/signing-in');
+    // Supabase mailed a 6-digit code; collect it in the verify phase.
+    setLinkPhase('verify');
+  }
+
+  async function onVerifyLinkCode() {
+    const token = linkCode.trim();
+    if (token.length !== 6 || linking) return;
+    setLinking(true);
+    const res = await verifyEmailChangeOtp(linkEmail.trim(), token);
+    setLinking(false);
+    if (!res.ok) {
+      appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');
+      return;
+    }
+    appAlert('Account connected', 'Your memories are now safe.', [
+      { text: 'OK', onPress: () => router.replace('/(auth)/signing-in') },
+    ]);
   }
 
   const Btn = ({ label, onPress, disabled, busy }: {
@@ -630,24 +647,56 @@ export default function OnboardingScreen() {
               >
                 <Text style={styles.authBtnLightText}>{'G  Continue with Google'}</Text>
               </Pressable>
-              <TextInput
-                style={[styles.nameInput, { marginTop: 6, textAlign: 'center' }]}
-                placeholder="you@example.com"
-                placeholderTextColor="#B7A88F"
-                value={linkEmail}
-                onChangeText={setLinkEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              <Pressable
-                onPress={() => void onLinkEmail()}
-                disabled={linking || !linkEmail.includes('@')}
-                style={[styles.cta, { marginTop: 14, opacity: !linkEmail.includes('@') ? 0.5 : 1 }]}
-              >
-                {linking ? <ActivityIndicator color="#FFFFFF" /> : (
-                  <Text style={styles.ctaText}>Connect with Email</Text>
-                )}
-              </Pressable>
+              {linkPhase === 'enter' ? (
+                <>
+                  <TextInput
+                    style={[styles.nameInput, { marginTop: 6, textAlign: 'center' }]}
+                    placeholder="you@example.com"
+                    placeholderTextColor="#B7A88F"
+                    value={linkEmail}
+                    onChangeText={setLinkEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                  <Pressable
+                    onPress={() => void onLinkEmail()}
+                    disabled={linking || !linkEmail.includes('@')}
+                    style={[styles.cta, { marginTop: 14, opacity: !linkEmail.includes('@') ? 0.5 : 1 }]}
+                  >
+                    {linking ? <ActivityIndicator color="#FFFFFF" /> : (
+                      <Text style={styles.ctaText}>Connect with Email</Text>
+                    )}
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.linkCodeHint}>
+                    We sent a 6-digit code to {linkEmail.trim()}. Enter it below.
+                  </Text>
+                  <TextInput
+                    style={[styles.nameInput, styles.linkCodeInput]}
+                    placeholder="123456"
+                    placeholderTextColor="#B7A88F"
+                    value={linkCode}
+                    onChangeText={(t) => setLinkCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+                    keyboardType="number-pad"
+                    autoFocus
+                    maxLength={6}
+                  />
+                  <Pressable
+                    onPress={() => void onVerifyLinkCode()}
+                    disabled={linking || linkCode.length !== 6}
+                    style={[styles.cta, { marginTop: 14, opacity: linkCode.length !== 6 || linking ? 0.5 : 1 }]}
+                  >
+                    {linking ? <ActivityIndicator color="#FFFFFF" /> : (
+                      <Text style={styles.ctaText}>Verify Code</Text>
+                    )}
+                  </Pressable>
+                  <Pressable onPress={() => { setLinkPhase('enter'); setLinkCode(''); }} hitSlop={8}>
+                    <Text style={styles.loginLink}>Use a different email</Text>
+                  </Pressable>
+                </>
+              )}
               <Pressable onPress={() => router.replace('/(auth)/sign-in')} hitSlop={8}>
                 <Text style={styles.loginLink}>Already have an account? Log in</Text>
               </Pressable>
@@ -750,4 +799,9 @@ const styles = StyleSheet.create({
   cta: { backgroundColor: BTN, borderRadius: 22, paddingVertical: 19, alignItems: 'center' },
   ctaText: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   loginLink: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center', marginTop: 20 },
+  linkCodeHint: {
+    fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#6B5B44',
+    textAlign: 'center', marginTop: 6, marginBottom: 10,
+  },
+  linkCodeInput: { marginTop: 0, textAlign: 'center', letterSpacing: 8, fontSize: 22, fontFamily: 'Inter_800ExtraBold' },
 });
