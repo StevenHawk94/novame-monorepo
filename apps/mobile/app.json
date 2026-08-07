@@ -100,7 +100,8 @@
             "backgroundColor": "#F8E2C1"
           }
         }
-      ]
+      ],
+      "@sentry/react-native/expo"
     ],
     "experiments": {
       "typedRoutes": true

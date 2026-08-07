@@ -79,6 +79,23 @@ export default function FriendProfileScreen() {
           <Image source={FRIEND_ICONS.sharedMemories} style={styles.memChipIcon} resizeMode="contain" />
           <Text style={styles.memChipText} numberOfLines={1}>Shared Memories</Text>
         </Pressable>
+        {/* UGC compliance: report this user (prefills a support ticket). */}
+        <Pressable
+          onPress={() => {
+            void haptics.light();
+            router.push({
+              pathname: '/(main)/(modals)/support' as never,
+              params: {
+                category: 'other',
+                subject: `Report user: ${name} (${friendUserId})`,
+              },
+            } as never);
+          }}
+          hitSlop={8}
+          style={styles.reportBtn}
+        >
+          <MaterialIcons name="flag" size={20} color="#8A6240" />
+        </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -130,6 +147,7 @@ const styles = StyleSheet.create({
   },
   memChipIcon: { width: 24, height: 24 },
   memChipText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
+  reportBtn: { marginLeft: 6, padding: 6 },
 
   scroll: { gap: 14, paddingBottom: 80 },
   empty: {

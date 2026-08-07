@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -60,9 +60,15 @@ export default function SupportModal() {
   const insets = useSafeAreaInsets();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [category, setCategory] = useState<SupportCategory | null>(null);
+  // Prefill support (e.g. friend-profile's Report entry) via route params.
+  const prefill = useLocalSearchParams<{ category?: string; subject?: string }>();
+  const [category, setCategory] = useState<SupportCategory | null>(
+    prefill.category && ['bug', 'feature', 'billing', 'account', 'other'].includes(prefill.category)
+      ? (prefill.category as SupportCategory)
+      : null,
+  );
   const [email, setEmail] = useState<string>('');
-  const [subject, setSubject] = useState<string>('');
+  const [subject, setSubject] = useState<string>(typeof prefill.subject === 'string' ? prefill.subject : '');
   const [message, setMessage] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });

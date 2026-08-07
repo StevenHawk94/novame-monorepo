@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -104,7 +105,16 @@ const PREWARM_TIMEOUT_MS = 3000;
  *      via getCurrentSession() (avoids race between this listener
  *      and the initial Redirect).
  */
-export default function RootLayout() {
+// Crash reporting: enabled only when a DSN is configured (EAS env /
+// .env.local EXPO_PUBLIC_SENTRY_DSN) and never in dev sessions.
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+Sentry.init({
+  dsn: SENTRY_DSN,
+  enabled: !!SENTRY_DSN && !__DEV__,
+  tracesSampleRate: 0.1,
+});
+
+function RootLayout() {
   // Cold-start prewarm gate. Stays false until either:
   //   - All three critical fetches resolve (character state, tier, me-stats), or
   //   - PREWARM_TIMEOUT_MS elapses (safety net for slow networks).
@@ -450,3 +460,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);
