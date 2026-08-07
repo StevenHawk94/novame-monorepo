@@ -1,13 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { themesForScope, type QuestTheme } from '@novame/domain';
+import { CLOVERS_PER_TASK, themesForScope, type QuestTheme } from '@novame/domain';
 
 import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
+import { ConfettiBurst } from '@/components/main/confetti-burst';
+import { haptics } from '@/lib/haptics';
 import { fetchCosmetics, getCachedCosmetics } from '@/lib/cosmetics-api';
 import { checkTask, fetchQuestStatus, getCachedStatus, type QuestStatus } from '@/lib/quests-api';
 
@@ -37,7 +39,10 @@ export default function QuestsScreen() {
   const router = useRouter();
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   const [balance, setBalance] = useState<number>(() => getCachedCosmetics().balance);
-  const [checking, setChecking] = useState<number | null>(null);
+  // Optimistic check-off (2026-08-07): the row completes instantly with
+  // confetti; the server call reconciles silently in the background.
+  const [confetti, setConfetti] = useState(false);
+  const checkInFlight = useRef(false);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
   useFocusEffect(
@@ -63,34 +68,52 @@ export default function QuestsScreen() {
     router.push({ pathname: '/(main)/quest-pick', params: { themeKey: theme.key } });
   }
 
-  async function onCheck(index: number) {
-    if (!status.plan || checking !== null) return;
+  function onCheck(index: number) {
+    if (!status.plan || checkInFlight.current) return;
     if (status.plan.checkedToday) {
       appAlert('Come back tomorrow', 'You can complete one task per day.');
       return;
     }
-    setChecking(index);
-    const res = await checkTask(index);
-    setChecking(null);
-    if (!res.ok) {
-      if (res.error === 'already_checked_today') {
-        appAlert('Come back tomorrow', 'You can complete one task per day.');
-      } else {
-        appAlert('Could not complete that', 'Please try again.');
-      }
-      return;
-    }
-    void fetchCosmetics().then((s) => setBalance(s.balance));
-    if (res.allDone) {
-      appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
-      void fetchQuestStatus().then(setStatus);
-      return;
-    }
+    checkInFlight.current = true;
+
+    // Optimistic: complete the row NOW — confetti, haptic, +clovers.
+    void haptics.success();
+    setConfetti(true);
+    const prevStatus = status;
+    const prevBalance = balance;
     setStatus((cur) => {
       if (!cur.plan) return cur;
       const tasks = cur.plan.tasks.map((t, i) => (i === index ? { ...t, done: true } : t));
-      return { ...cur, plan: { ...cur.plan, tasks, checkedToday: true, checkedCount: res.checkedCount } };
+      return { ...cur, plan: { ...cur.plan, tasks, checkedToday: true, checkedCount: cur.plan.checkedCount + 1 } };
     });
+    setBalance((b) => b + CLOVERS_PER_TASK);
+
+    // Background reconcile: confirm with the server, roll back on rejection.
+    void (async () => {
+      const res = await checkTask(index);
+      checkInFlight.current = false;
+      if (!res.ok) {
+        setStatus(prevStatus);
+        setBalance(prevBalance);
+        if (res.error === 'already_checked_today') {
+          appAlert('Come back tomorrow', 'You can complete one task per day.');
+        } else {
+          appAlert('Could not complete that', 'Please check your connection and try again.');
+        }
+        return;
+      }
+      void fetchCosmetics().then((c) => setBalance(c.balance));
+      if (res.allDone) {
+        appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
+        void fetchQuestStatus().then(setStatus);
+        return;
+      }
+      // Align the count with the server's authoritative value.
+      setStatus((cur) => {
+        if (!cur.plan) return cur;
+        return { ...cur, plan: { ...cur.plan, checkedCount: res.checkedCount } };
+      });
+    })();
   }
 
   // ---- Active plan: 7-day checklist ----
@@ -102,7 +125,7 @@ export default function QuestsScreen() {
     const indexed = p.tasks.map((t, i) => ({ t, i }));
     const done = indexed.filter((x) => x.t.done);
     const todo = indexed.filter((x) => !x.t.done);
-    const canCheck = !p.checkedToday && checking === null;
+    const canCheck = !p.checkedToday;
 
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
@@ -162,11 +185,7 @@ export default function QuestsScreen() {
                 disabled={!canCheck}
                 style={[styles.checkBtn, canCheck ? styles.checkBtnReady : styles.checkBtnLocked]}
               >
-                {checking === i ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <MaterialIcons name="check" size={22} color={canCheck ? '#FFFFFF' : '#C9BCA6'} />
-                )}
+                <MaterialIcons name="check" size={22} color={canCheck ? '#FFFFFF' : '#C9BCA6'} />
               </Pressable>
             </OffsetCard>
           ))}
@@ -174,6 +193,7 @@ export default function QuestsScreen() {
           <Text style={styles.editHint}>You can edit your plan anytime.</Text>
           <View style={{ height: 24 }} />
         </ScrollView>
+        {confetti && <ConfettiBurst onDone={() => setConfetti(false)} />}
       </SafeAreaView>
     );
   }
