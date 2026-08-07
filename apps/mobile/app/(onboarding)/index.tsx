@@ -15,7 +15,10 @@ import {
   setChosenCompanion,
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
-import { linkIdentityWithProvider, verifyEmailChangeOtp, ensureSession } from '../../src/lib/auth';
+import {
+  connectProviderOrSignIn, isAlreadyBoundError, sendLoginEmailOtp,
+  verifyEmailChangeOtp, verifyLoginEmailOtp, ensureSession,
+} from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import {
   fetchSubscriptionProducts,
@@ -102,6 +105,7 @@ export default function OnboardingScreen() {
   const [linking, setLinking] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linkPhase, setLinkPhase] = useState<'enter' | 'verify'>('enter');
+  const [linkMode, setLinkMode] = useState<'change' | 'login'>('change');
   // Store-localized prices (industry standard: StoreKit's displayPrice is the
   // truth per storefront/currency). The design-stub strings only show while
   // products haven't loaded (dev/simulator without StoreKit config).
@@ -203,12 +207,16 @@ export default function OnboardingScreen() {
   async function onLinkProvider(provider: 'apple' | 'google') {
     if (linking) return;
     setLinking(true);
-    const res = await linkIdentityWithProvider(provider);
+    const res = await connectProviderOrSignIn(provider);
     setLinking(false);
     if (res.ok) {
-      appAlert('Account connected', 'Your memories are now safe on this account.', [
-        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in') },
-      ]);
+      appAlert(
+        res.mode === 'linked' ? 'Account connected' : 'Welcome back!',
+        res.mode === 'linked'
+          ? 'Your memories are now safe on this account.'
+          : 'Your account and memories have been restored.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/signing-in') }],
+      );
     } else if (!res.cancelled) {
       appAlert(
         'Could not connect',
@@ -222,12 +230,25 @@ export default function OnboardingScreen() {
     if (!email.includes('@') || linking) return;
     setLinking(true);
     const { error } = await supabase.auth.updateUser({ email });
-    setLinking(false);
-    if (error) {
+    if (!error) {
+      setLinking(false);
+      setLinkMode('change');
+      setLinkPhase('verify'); // Supabase mailed the 6-digit binding code
+      return;
+    }
+    if (!isAlreadyBoundError(error.message)) {
+      setLinking(false);
       appAlert('Could not connect', 'You can connect your account anytime from settings.');
       return;
     }
-    // Supabase mailed a 6-digit code; collect it in the verify phase.
+    // Returning user: the address already has an account — log back in.
+    const login = await sendLoginEmailOtp(email);
+    setLinking(false);
+    if (!login.ok) {
+      appAlert('Could not connect', login.error ?? 'Please try again.');
+      return;
+    }
+    setLinkMode('login');
     setLinkPhase('verify');
   }
 
@@ -235,15 +256,21 @@ export default function OnboardingScreen() {
     const token = linkCode.trim();
     if (token.length !== 6 || linking) return;
     setLinking(true);
-    const res = await verifyEmailChangeOtp(linkEmail.trim(), token);
+    const res = linkMode === 'change'
+      ? await verifyEmailChangeOtp(linkEmail.trim(), token)
+      : await verifyLoginEmailOtp(linkEmail.trim(), token);
     setLinking(false);
     if (!res.ok) {
       appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');
       return;
     }
-    appAlert('Account connected', 'Your memories are now safe.', [
-      { text: 'OK', onPress: () => router.replace('/(auth)/signing-in') },
-    ]);
+    appAlert(
+      linkMode === 'change' ? 'Account connected' : 'Welcome back!',
+      linkMode === 'change'
+        ? 'Your memories are now safe.'
+        : 'Your account and memories have been restored.',
+      [{ text: 'OK', onPress: () => router.replace('/(auth)/signing-in') }],
+    );
   }
 
   const Btn = ({ label, onPress, disabled, busy }: {

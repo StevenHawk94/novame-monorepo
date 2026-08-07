@@ -11,7 +11,10 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { supabase } from '@/lib/supabase';
-import { linkIdentityWithProvider, verifyEmailChangeOtp } from '@/lib/auth';
+import {
+  connectProviderOrSignIn, isAlreadyBoundError,
+  sendLoginEmailOtp, verifyEmailChangeOtp, verifyLoginEmailOtp,
+} from '@/lib/auth';
 
 /**
  * Connect Account (2026-08-07): standalone entry for binding the anonymous
@@ -26,6 +29,9 @@ export default function ConnectAccountScreen() {
   const [code, setCode] = useState('');
   // 'enter' → email form; 'verify' → the 6-digit code sent to that email.
   const [emailPhase, setEmailPhase] = useState<'enter' | 'verify'>('enter');
+  // 'change' binds the address to this account; 'login' recovers the old
+  // account the address already belongs to (smart-connect fallback).
+  const [emailMode, setEmailMode] = useState<'change' | 'login'>('change');
   const [busy, setBusy] = useState(false);
   const [connectedAs, setConnectedAs] = useState<string | null>(null);
 
@@ -42,11 +48,17 @@ export default function ConnectAccountScreen() {
     if (busy) return;
     void haptics.light();
     setBusy(true);
-    const res = await linkIdentityWithProvider(provider);
+    const res = await connectProviderOrSignIn(provider);
     setBusy(false);
-    if (res.ok) {
+    if (res.ok && res.mode === 'linked') {
       appAlert('Account connected', 'Your memories are now safe on this account.', [
         { text: 'OK', onPress: () => router.back() },
+      ]);
+    } else if (res.ok) {
+      // Recovered an existing account — reload every cache as that user.
+      void haptics.success();
+      appAlert('Welcome back!', 'Your account and memories have been restored.', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in' as never) },
       ]);
     } else if (!res.cancelled) {
       appAlert('Could not connect', res.error ?? 'Please try again.');
@@ -59,12 +71,26 @@ export default function ConnectAccountScreen() {
     void haptics.light();
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ email: addr });
-    setBusy(false);
-    if (error) {
+    if (!error) {
+      setBusy(false);
+      setEmailMode('change');
+      setEmailPhase('verify'); // Supabase mailed the 6-digit binding code
+      return;
+    }
+    if (!isAlreadyBoundError(error.message)) {
+      setBusy(false);
       appAlert('Could not connect', error.message);
       return;
     }
-    // Supabase mailed a 6-digit code to the address; collect it.
+    // The address already has an account — send a LOGIN code instead and
+    // recover it (smart-connect fallback).
+    const login = await sendLoginEmailOtp(addr);
+    setBusy(false);
+    if (!login.ok) {
+      appAlert('Could not connect', login.error ?? 'Please try again.');
+      return;
+    }
+    setEmailMode('login');
     setEmailPhase('verify');
   }
 
@@ -73,16 +99,24 @@ export default function ConnectAccountScreen() {
     if (token.length !== 6 || busy) return;
     void haptics.light();
     setBusy(true);
-    const res = await verifyEmailChangeOtp(email.trim(), token);
+    const res = emailMode === 'change'
+      ? await verifyEmailChangeOtp(email.trim(), token)
+      : await verifyLoginEmailOtp(email.trim(), token);
     setBusy(false);
     if (!res.ok) {
       appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');
       return;
     }
     void haptics.success();
-    appAlert('Account connected', 'Your memories are now safe on this account.', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    if (emailMode === 'change') {
+      appAlert('Account connected', 'Your memories are now safe on this account.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } else {
+      appAlert('Welcome back!', 'Your account and memories have been restored.', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in' as never) },
+      ]);
+    }
   }
 
   return (

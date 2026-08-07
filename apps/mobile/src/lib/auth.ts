@@ -498,3 +498,64 @@ export async function linkIdentityWithProvider(
     return { ok: false, error: e instanceof Error ? e.message : 'Linking failed' };
   }
 }
+
+// ---- Smart connect: bind, or recover the existing account ----
+
+/**
+ * True when a link/updateUser rejection means "this credential already
+ * belongs to some account" — the one case where falling back to sign-in
+ * is correct. Any other failure (manual linking disabled, network, bad
+ * config) must NOT fall through: an id-token sign-in would silently mint
+ * a fresh user and orphan the guest\u2019s data.
+ */
+export function isAlreadyBoundError(msg?: string): boolean {
+  if (!msg) return false;
+  const m = msg.toLowerCase();
+  return m.includes('already') && (m.includes('linked') || m.includes('registered') || m.includes('exists') || m.includes('in use'));
+}
+
+export type ConnectResult =
+  | { ok: true; mode: 'linked' | 'signedIn' }
+  | { ok: false; cancelled?: boolean; error?: string };
+
+/**
+ * The one-button "Connect" contract (product call 2026-08-07):
+ *   1. try to LINK the provider identity to the current (anonymous) user;
+ *   2. if the identity already belongs to another account, this is a
+ *      returning user \u2014 SIGN IN natively instead, recovering that account
+ *      (the freshly-minted empty guest is abandoned, by design).
+ */
+export async function connectProviderOrSignIn(
+  provider: 'apple' | 'google',
+): Promise<ConnectResult> {
+  const link = await linkIdentityWithProvider(provider);
+  if (link.ok) return { ok: true, mode: 'linked' };
+  if (link.cancelled) return { ok: false, cancelled: true };
+  if (!isAlreadyBoundError(link.error)) return { ok: false, error: link.error };
+
+  const res = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
+  if (res.kind === 'success') return { ok: true, mode: 'signedIn' };
+  if (res.kind === 'cancelled') return { ok: false, cancelled: true };
+  return {
+    ok: false,
+    error: res.kind === 'error' ? res.message : 'Sign-in is not available on this device.',
+  };
+}
+
+/** Login-code request for the email fallback (existing accounts only). */
+export async function sendLoginEmailOtp(email: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false },
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+/** Confirms a login code (verifyOtp type email) \u2014 restores the old account. */
+export async function verifyLoginEmailOtp(
+  email: string,
+  token: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
