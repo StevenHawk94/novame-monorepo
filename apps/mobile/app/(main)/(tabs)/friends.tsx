@@ -40,7 +40,7 @@ function timeAgo(iso: string): string {
 export default function FriendsScreen() {
   const router = useRouter();
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const maxTiles = width < 400 ? 3 : 4;
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
@@ -96,7 +96,9 @@ export default function FriendsScreen() {
       void markFriendRead(e.friendUserId);
       setFeed((cur) => cur.map((x) => (x.friendUserId === e.friendUserId ? { ...x, unread: false } : x)));
     }
-    if (e.details && e.details.length > 0) {
+    // No detail screen when the friend hasn't shared details (details null)
+    // or this reflect carries no written text (empty/blank entries).
+    if (e.details && e.details.some((d) => d.text && d.text.trim().length > 0)) {
       router.push({
         pathname: '/(main)/friend-reflect-detail' as never,
         params: {
@@ -161,8 +163,10 @@ export default function FriendsScreen() {
 
         {paired ? (
           <>
-            {/* cream messages panel — the paired person's stream (mock 4) */}
-            <View style={styles.panel}>
+            {/* cream messages panel BELOW the banner art (mock 2026-08-08):
+                the meadow/mailbox stays fully visible; the feed scrolls
+                inside the panel underneath it. */}
+            <View style={[styles.panel, { marginTop: Math.max(110, Math.round(height * 0.17)) }]}>
               <View style={styles.panelHeader}>
                 <View style={styles.listDot}>
                   <MaterialIcons name="menu" size={13} color="#FFFFFF" />
@@ -180,22 +184,22 @@ export default function FriendsScreen() {
                     <Pressable
                       key={`${e.friendUserId}:${e.reflectId}`}
                       onPress={() => onFeedRow(e)}
-                      style={styles.feedRow}
+                      style={styles.pairCard}
                     >
-                      <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
-                      <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
-                      <View style={styles.tileRow}>
-                        {e.itemIds.slice(0, maxTiles).map((id, i) => (
-                          <ItemSprite key={`${id}:${i}`} itemId={id} size={38} radius={10} />
-                        ))}
-                        {e.itemIds.length > maxTiles && (
-                          <View style={styles.blankTile}>
-                            <Text style={styles.moreText}>+{e.itemIds.length - maxTiles}</Text>
-                          </View>
-                        )}
+                      <View style={styles.pairCardHeader}>
+                        <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                        <Text style={styles.pairCardName} numberOfLines={1}>{e.friendName}</Text>
+                        <View style={styles.pairCardTimeCol}>
+                          <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
+                          {e.unread && <View style={styles.unreadDot} />}
+                        </View>
                       </View>
-                      <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
-                      {e.unread && <View style={styles.unreadDot} />}
+                      {/* Every item, wrapping — no truncation (mock 2026-08-08). */}
+                      <View style={styles.pairCardTiles}>
+                        {e.itemIds.map((id, i) => (
+                          <ItemSprite key={`${id}:${i}`} itemId={id} size={40} radius={10} />
+                        ))}
+                      </View>
                     </Pressable>
                   ))
                 )}
@@ -355,6 +359,17 @@ const styles = StyleSheet.create({
   listChipText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
 
   feedScroll: { gap: 10, paddingBottom: 8 },
+  // Paired feed card (mock 2026-08-08): header row + full wrapping tile grid.
+  pairCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 12,
+    gap: 10,
+    shadowColor: '#C9A97C', shadowOpacity: 0.5, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  pairCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pairCardName: { flex: 1, fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  pairCardTimeCol: { alignItems: 'flex-end', gap: 5 },
+  pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   emptyFeedText: {
     fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63',
     textAlign: 'center', lineHeight: 21, paddingVertical: 28, paddingHorizontal: 14,
