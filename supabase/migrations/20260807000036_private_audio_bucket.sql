@@ -1,0 +1,15 @@
+-- Make the `audio` bucket private (2026-08-07 security audit, M-4).
+--
+-- `audio` holds legacy voice recordings from the pre-rebrand Visdom app. The
+-- current Burrow app never reads it (recordings live in a local file; only
+-- delete-account cleans this bucket up, via the service role which bypasses
+-- bucket privacy). A public bucket means any leaked object URL is playable
+-- from the CDN, bypassing storage.objects RLS. Flipping it private closes
+-- that with zero client impact.
+--
+-- NOTE: `avatars` is intentionally NOT changed here. It holds both the 10
+-- shipped default avatars (user-defaults/, meant to be public) and user photos
+-- at unguessable UUID paths; making the whole bucket private would break every
+-- default + every existing avatar_url. That needs a dedicated private-bucket
+-- migration (see the launch notes), not a blanket flip.
+update storage.buckets set public = false where id = 'audio';
