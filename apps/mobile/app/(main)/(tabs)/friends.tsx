@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   pairCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pairCardName: { flex: 1, fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   pairCardTimeCol: { alignItems: 'flex-end', gap: 5 },
-  pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
   emptyFeedText: {
     fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63',
     textAlign: 'center', lineHeight: 21, paddingVertical: 28, paddingHorizontal: 14,
