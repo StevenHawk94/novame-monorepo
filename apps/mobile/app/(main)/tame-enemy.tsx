@@ -313,21 +313,25 @@ export default function TameEnemyScreen() {
   // ---- BATTLE (design: dark dungeon scene) ----
   if (phase === 'battle' && active) {
     return (
-      <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={exit} style={[styles.back, { marginLeft: 20 }]} hitSlop={12}>
-          <MaterialIcons name="close" size={24} color="rgba(255,255,255,0.7)" />
-        </Pressable>
-
-        {/* Monster speech bubble (persuaded lines land here) + monster,
-            over the tame-enemy dungeon art */}
-        <View style={styles.battleScene}>
+      <View style={styles.battleRoot}>
+        {/* Monster speech bubble (persuaded lines land here) + monster, over
+            the dungeon art. The art owns the top safe area (no close button —
+            a battle runs to its end); content clears the notch via padding. */}
+        <View style={[styles.battleScene, { paddingTop: insets.top + 12 }]}>
           <ExpoImage
             source={BACKGROUNDS.tameEnemy}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
           <View style={styles.monsterBubble}>
-            <Text style={styles.monsterBubbleText} numberOfLines={4}>{bubbleText || active.prep}</Text>
+            <Text
+              style={styles.monsterBubbleText}
+              numberOfLines={5}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {bubbleText || active.prep}
+            </Text>
             <View style={styles.monsterBubbleTail} />
           </View>
           {MONSTER_ART[active.id] ? (
@@ -523,12 +527,14 @@ const styles = StyleSheet.create({
   battleScene: {
     flexShrink: 1,
     alignItems: 'center', gap: 12,
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18,
+    paddingHorizontal: 20, paddingBottom: 18,
     overflow: 'hidden',
   },
+  // Fixed-height bubble (5 lines × 22 + padding) so the monster never shifts
+  // with the line count; longer persuaded lines shrink to fit instead.
   monsterBubble: {
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18,
-    maxWidth: '90%', marginBottom: 10,
+    width: '92%', height: 138, justifyContent: 'center', marginBottom: 10,
   },
   monsterBubbleText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2B2B2B', textAlign: 'center', lineHeight: 22 },
   monsterBubbleTail: {
