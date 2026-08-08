@@ -46,7 +46,8 @@ export default function FriendsScreen() {
   // edge-to-edge. Inner width = window − panel margins/padding − card padding;
   // ~56pt targets pick the column count, then the size stretches to fill.
   const pairRowWidth = width - 24 - 28 - 24;
-  const pairCols = Math.max(4, Math.floor((pairRowWidth + 8) / (56 + 8)));
+  // +1 over the ~56pt target: one extra tile per row, slightly smaller.
+  const pairCols = Math.max(5, Math.floor((pairRowWidth + 8) / (56 + 8)) + 1);
   const pairTile = Math.floor((pairRowWidth - (pairCols - 1) * 8) / pairCols);
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
