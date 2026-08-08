@@ -135,12 +135,19 @@ export function SelectableItemGrid({
     },
     [onToggle],
   );
+  // Columns derive from the MEASURED container (cards pad differently per
+  // flow): cell footprint ≈ 44 sprite + 5 border/padding + 8 gap. A hardcoded
+  // 6 overflowed on narrow screens and left dead space on tablets.
+  const [gridWidth, setGridWidth] = useState(0);
+  const numColumns = Math.max(4, Math.floor((gridWidth - 24 + 8) / (44 + 9 + 8)));
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
+      {gridWidth > 0 && (
       <FlatList
+        key={numColumns}
         data={itemIds}
         keyExtractor={(id) => id}
-        numColumns={6}
+        numColumns={numColumns}
         renderItem={({ item }) => (
           <GridCell id={item} on={selected.has(item)} onToggle={handleToggle} />
         )}
@@ -152,6 +159,7 @@ export function SelectableItemGrid({
         windowSize={7}
         removeClippedSubviews
       />
+      )}
       {toast !== null && (
         <View pointerEvents="none" style={s.nameToastWrap}>
           <View style={s.nameToast}>

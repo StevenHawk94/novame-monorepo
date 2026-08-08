@@ -33,8 +33,11 @@ const CATEGORIES: { key: string; label: string }[] = [
 export default function BagsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  // 6-across grid: cell = (screen - page padding) / 6, minus cell padding.
-  const tileSize = Math.floor((width - 32) / 6) - 6;
+  // Adaptive grid: aim for ~62pt cells, clamp 5..10 per row (phones land on
+  // 5-6, tablets spread wider instead of inflating tiles).
+  const numColumns = Math.min(10, Math.max(5, Math.floor((width - 32) / 62)));
+  const tileSize = Math.floor((width - 32) / numColumns) - 6;
+  const cellWidth = `${100 / numColumns}%` as const;
   const [items, setItems] = useState<CollectedItem[]>(() => getCachedBags());
   // Wait-state gate: with no cache yet, show a quiet spinner instead of the
   // empty-state copy while the first fetch is in flight.
@@ -122,7 +125,7 @@ export default function BagsScreen() {
         <ScrollView contentContainerStyle={styles.gridScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.grid}>
             {shown.map((item) => (
-              <Pressable key={item.itemId} onPress={() => openItem(item)} style={styles.cell}>
+              <Pressable key={item.itemId} onPress={() => openItem(item)} style={[styles.cell, { width: cellWidth }]}>
                 <View style={styles.itemCard}>
                   <ItemSprite itemId={item.itemId} size={tileSize} radius={18} />
                   {item.count > 1 && (
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
 
   gridScroll: { paddingBottom: 24 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: '16.66%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 3 },
+  cell: { alignItems: 'center', marginBottom: 10, paddingHorizontal: 3 },
   itemCard: { width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
   // Duplicate count, PRD 4.2: corner badge, capped at 99+.
   countBadge: {
