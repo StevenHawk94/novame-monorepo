@@ -150,7 +150,7 @@ export default function FriendsScreen() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* header: centered title, mail + gear at right */}
         <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>Memories Cave</Text>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>Memories Cave</Text>
           <View style={styles.headerIcons}>
             <Pressable
               onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}

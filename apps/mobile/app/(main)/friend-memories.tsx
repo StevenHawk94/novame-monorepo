@@ -124,7 +124,7 @@ export default function FriendMemoriesScreen() {
     <SafeAreaView edges={['top']} style={styles.root}>
       <View style={styles.header}>
         <Image source={FRIEND_ICONS.memory} style={styles.headerBook} resizeMode="contain" />
-        <Text style={styles.headerTitle} numberOfLines={2} adjustsFontSizeToFit>
+        <Text style={styles.headerTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
           Your memories{'\n'}with {name}
         </Text>
         <View style={styles.headerAvatar}><Text style={styles.headerAvatarEmoji}>{'🐰'}</Text></View>

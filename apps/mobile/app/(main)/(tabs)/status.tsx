@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  Image, Pressable, ScrollView, Share, StyleSheet, Text, View,
+  Image, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -113,14 +113,26 @@ export default function ConnectionDashboardScreen() {
 
   const partner = pairing?.partner ?? null;
   const insets = useSafeAreaInsets();
+  // Narrow-screen type hierarchy (2026-08-08): the title may auto-shrink to
+  // fit beside the Memories Hub pill, but only to 80% — and the subtitle
+  // steps down with it so the pair never reads the same size.
+  const { width: winW } = useWindowDimensions();
+  const narrow = winW < 380;
 
   return (
     <View style={st.root}>
       {/* 板块1: header — the brown block owns the status-bar area too */}
       <View style={[st.header, { paddingTop: insets.top + 10 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={st.title} numberOfLines={1} adjustsFontSizeToFit>Connection Dashboard</Text>
-          <Text style={st.subtitle} numberOfLines={2}>Connecting Through Daily Moments</Text>
+          <Text
+            style={[st.title, narrow && { fontSize: 19 }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Connection Dashboard
+          </Text>
+          <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>Connecting Through Daily Moments</Text>
         </View>
         {/* Always shown (mock); display-only until a partner exists. */}
         <Pressable
