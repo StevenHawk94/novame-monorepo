@@ -12,17 +12,13 @@ import { submitFocus } from '../../src/lib/focus-api';
 import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { OffsetCard } from '../../src/components/ui/offset-card';
+import {
+  FOCUS_VOICE_BUNDLED, getFocusVoiceSource, onFocusVoiceListened, type FocusVoiceSource,
+} from '../../src/lib/focus-voice';
 import { XP_RULES } from '@novame/engine';
 
-// Test-phase bundled audio. Every free scene falls back to the one bundled
-// track until its own recording lands (the R2 manifest replaces these);
-// locked/paid scenes with no track show "Soon".
-const WORK1 = require('../../assets/audio/focus/work1.mp3');
-const LOCAL_TRACKS: Record<string, number> = {
-  work: WORK1,
-  learn: WORK1, // placeholder until learn1.mp3 lands
-  connect: WORK1, // placeholder until connect1.mp3 lands
-};
+// Focus voice rotation (2026-08-08): track 1 per scene is bundled, later
+// tracks stream/prefetch from R2 — see src/lib/focus-voice.ts.
 
 type Phase = 'select' | 'play';
 
@@ -54,9 +50,10 @@ export default function FocusScreen() {
   const [completed, setCompleted] = useState(false);
   const creditedRef = useRef(false);
 
-  // One player for the whole screen; source swapped when a scene starts.
-  const source = scene && LOCAL_TRACKS[scene.id] ? LOCAL_TRACKS[scene.id] : null;
-  const player = useAudioPlayer(source);
+  // One player for the whole screen; the source resolves async when a scene
+  // starts (bundled track 1, prefetched cache file, or an R2 stream).
+  const [audio, setAudio] = useState<{ source: FocusVoiceSource; index: number } | null>(null);
+  const player = useAudioPlayer(audio?.source ?? null);
   const status = useAudioPlayerStatus(player);
 
   // Configure background + silent-mode playback once.
@@ -77,19 +74,23 @@ export default function FocusScreen() {
       creditedRef.current = true;
       setCompleted(true);
       void haptics.medium();
-      if (scene) void submitFocus({ sceneId: scene.id, trackIndex: 1 });
+      if (scene) void submitFocus({ sceneId: scene.id, trackIndex: audio?.index ?? 1 });
     }
   }, [status.didJustFinish, phase, scene]);
 
   const startScene = useCallback(
     (s: FocusScene) => {
       if (!s.free && !isPaid) return; // locked
-      if (!LOCAL_TRACKS[s.id]) return; // no track yet
       void haptics.medium();
       creditedRef.current = false;
       setCompleted(false);
       setScene(s);
       setPhase('play');
+      void getFocusVoiceSource(s.id).then((resolved) => {
+        setAudio(resolved);
+        // Listening has begun: discover new uploads + prefetch tomorrow's track.
+        void onFocusVoiceListened(s.id, resolved.index);
+      });
     },
     [isPaid],
   );
@@ -106,6 +107,7 @@ export default function FocusScreen() {
     player.pause();
     setPhase('select');
     setScene(null);
+    setAudio(null);
   }, [player]);
 
   // ---- SELECT (design: "What are you preparing for?") ----
@@ -122,7 +124,8 @@ export default function FocusScreen() {
           <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
             {FOCUS_SCENES.map((s) => {
               const locked = !s.free && !isPaid;
-              const noTrack = !LOCAL_TRACKS[s.id];
+              // Every scene has a bundled track 1 now — no more 'Soon' gating.
+              const noTrack = !FOCUS_VOICE_BUNDLED[s.id];
               return (
                 <OffsetCard
                   key={s.id}

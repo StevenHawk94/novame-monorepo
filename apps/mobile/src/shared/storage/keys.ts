@@ -67,6 +67,9 @@ export const kCosmetics = defineKey('novame_cosmetics', 'user');
 /** Last-known bound email for the Connect Account screen (cache-first paint). */
 export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
 
+/** Focus voice rotation state: per-scene next/knownMax/resolved R2 keys. */
+export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 
