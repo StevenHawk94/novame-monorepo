@@ -96,11 +96,26 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scroll}
               >
-                {item.memories.map((m, i) => (
+                {item.memories.map((m, i) => {
+                  // A name-only excerpt is not a written memory (mock 2026-08-08):
+                  // rows show DATE + description, never the item's own name.
+                  const wrote =
+                    m.excerpt.trim().length > 0 &&
+                    m.excerpt.trim().toLowerCase() !== item.displayName.trim().toLowerCase();
+                  const dateLabel = new Date(m.createdAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                  });
+                  return (
                   <View key={i} style={styles.memCard}>
                     <ItemSprite itemId={item.itemId} size={72} radius={16} />
                     <View style={styles.memBody}>
-                      <Text style={styles.memExcerpt} numberOfLines={3}>{m.excerpt}</Text>
+                      <Text style={styles.memDate}>{dateLabel}</Text>
+                      <Text
+                        style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}
+                        numberOfLines={3}
+                      >
+                        {wrote ? m.excerpt : 'You did not add any memory to this item.'}
+                      </Text>
                     </View>
                     <Pressable
                       onPress={() => openReflect(m.reflectId)}
@@ -110,7 +125,8 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
                       <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
                     </Pressable>
                   </View>
-                ))}
+                  );
+                })}
               </BottomSheetScrollView>
             </>
           )}
@@ -162,6 +178,8 @@ const styles = StyleSheet.create({
   },
   memBody: { flex: 1 },
   memExcerpt: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 23 },
+  memDate: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#161311', marginBottom: 3 },
+  memExcerptEmpty: { color: '#A99A85' },
   // Design: solid dark-brown Details pill with white text.
   detailsBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 1,
