@@ -9,6 +9,7 @@ import { Image } from 'react-native';
 import {
   MONSTER_HP, monsterHpForStage, monsterTierFor, isTamed,
   battleMilestoneCount, battleMilestoneThreshold, BATTLE_MILESTONE_REWARD,
+  XP_RULES,
 } from '@novame/engine';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
 import { useTheme } from '../../src/theme/use-theme';
@@ -153,18 +154,23 @@ export default function TameEnemyScreen() {
     else void haptics.light();
 
     if (isTamed(next)) {
-      void finishTame();
+      finishTame();
     }
   }
 
-  async function finishTame() {
+  function finishTame() {
     if (!active) return;
-    // Record the completion (best-effort; the tame is already visually done).
-    const res = await submitTame({ monsterId: active.id, skillsUsed: usedCardIds, hits: hits + 1 });
-    setReward(res.ok ? (res.xpAwarded ?? null) : null);
-    setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
+    // Optimistic victory (2026-08-08): the screen flips the moment HP hits 0,
+    // showing the standard reward; the server submit reconciles the numbers
+    // (milestone bonus, server-declined reward) in the background.
+    setReward(XP_RULES.tameEnemy.award);
+    setMilestoneBonus(0);
     markTameEnemyDoneToday();
     setPhase('done');
+    void submitTame({ monsterId: active.id, skillsUsed: usedCardIds, hits: hits + 1 }).then((res) => {
+      setReward(res.ok ? (res.xpAwarded ?? null) : null);
+      setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
+    });
   }
 
   function exit() {
