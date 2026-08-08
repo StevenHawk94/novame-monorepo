@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'edge'
 
@@ -44,10 +45,16 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const date = searchParams.get('date') || new Date().toISOString().slice(0, 10)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const reqDate = searchParams.get('date') || new Date().toISOString().slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(reqDate)) {
       return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
     }
+    // SECURITY (2026-08-07 audit): the daily cache is keyed on `date`; a client
+    // iterating past dates forced a fresh AI call each time. Clamp to
+    // today/yesterday so the once-per-day cache can't be walked.
+    const today = new Date().toISOString().slice(0, 10)
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    const date = reqDate === today || reqDate === yesterday ? reqDate : today
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,

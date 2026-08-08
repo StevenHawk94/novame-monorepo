@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth-guard'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export const runtime = 'edge'
+
+// Minimal HTML/header escaper for user-supplied strings in the email.
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/[\r\n]+/g, ' ')
+}
 
 function getSupabase() {
   return createClient(
@@ -43,13 +51,37 @@ async function checkAdminAuth(request) {
  */
 export async function POST(req) {
   try {
-    const { userId, email, category, subject, message } = await req.json()
+    // SECURITY (2026-08-07 audit): this route sends a Resend email per call.
+    // It was fully unauthenticated — anyone could loop it into an unbounded
+    // email bill + inbox flood with tickets attributed to arbitrary user ids.
+    // Now require a valid token, bind the ticket to it, and rate-limit.
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    const verified = token ? await verifyToken(token) : null
+    if (!verified) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { email, category, subject, message } = await req.json()
+    const userId = verified.id // never trust a client-supplied user id
 
     if (!email || !category || !subject?.trim() || !message?.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const supabase = getSupabase()
+
+    // 5 tickets/hour per user, 10/hour per IP.
+    const [byUser, byIp] = await Promise.all([
+      rateLimit(supabase, `support:u:${userId}`, 5, 3600),
+      rateLimit(supabase, `support:ip:${clientIp(req)}`, 10, 3600),
+    ])
+    if (!byUser.allowed || !byIp.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      )
+    }
 
     // 1. Save to DB
     let ticketId = null
@@ -87,7 +119,7 @@ export async function POST(req) {
             from: 'Novame Support <noreply@soulsayit.com>',
             to: ['support@soulsayit.com'],
             reply_to: email,
-            subject: `[${category.toUpperCase()}] ${subject}`,
+            subject: `[${String(category).toUpperCase()}] ${esc(subject)}`,
             html: `
               <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #7C3AED;">New Support Ticket</h2>

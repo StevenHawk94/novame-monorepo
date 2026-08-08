@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth-guard'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'edge'
 
@@ -133,6 +134,13 @@ export async function POST(request) {
     if (authErr || !authUser || authUser.id !== userId) {
       console.warn('[upload-avatar] rejected: token/user mismatch')
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // SECURITY (2026-08-07 audit): each upload is a paid Google Vision call.
+    // Cap at 20/hour/user so it can't be looped for unbounded Vision spend.
+    const rl = await rateLimit(authClient, `upload-avatar:${userId}`, 20, 3600)
+    if (!rl.allowed) {
+      return Response.json({ error: 'Too many uploads. Try again later.' }, { status: 429 })
     }
 
     // Validate type + size BEFORE the Vision call so a bad/oversized file

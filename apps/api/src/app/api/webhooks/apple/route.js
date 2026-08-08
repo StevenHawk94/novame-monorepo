@@ -104,7 +104,11 @@ export async function POST(request) {
     // verification temporarily. NEVER leave this on in normal
     // operation -- it disables the entire defense.
     let notification
-    const verifyDisabled = process.env.WEBHOOK_VERIFY_DISABLED === 'true'
+    // SECURITY (2026-08-07 audit): this bypass turns the payment webhook into
+    // an unauthenticated "grant me Plus" endpoint. Honor it ONLY outside a
+    // production deploy, so a stray prod env var can never disable verification.
+    const verifyDisabled =
+      process.env.WEBHOOK_VERIFY_DISABLED === 'true' && process.env.VERCEL_ENV !== 'production'
 
     if (verifyDisabled) {
       // Fallback path: base64url decode without verification.

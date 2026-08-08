@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
+import { rateLimit } from '@/lib/rate-limit'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
 import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, matchSkillCards, XP_RULES } from '@novame/engine'
@@ -245,11 +246,19 @@ export async function POST(request) {
       presetDimension && DIMENSION_IDS.includes(presetDimension)
         ? presetDimension
         : promptDimension(promptId)
+    const dateStr = localDate || new Date().toISOString().slice(0, 10)
+    const weekStr = isoWeek(dateStr)
+
+    // SECURITY (2026-08-07 audit): the paid Gemini call fires before the
+    // daily-gate RPC, so a rejected reflect still costs an AI call. Cap the
+    // AI-bearing path at 6/hour/user (double the 3/day product limit, enough
+    // headroom for retries) so a paid token can't loop it for unbounded spend.
     let aiDimensions = []
-    // AI reads text, so only the typing flow feeds it; <10 chars skips the
-    // call entirely (PRD: <10 字跳过 AI).
     if (isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
-      aiDimensions = await analyzeDimensions(body, pDim)
+      const rl = await rateLimit(supabase, `reflect-ai:${userId}`, 6, 3600)
+      if (rl.allowed) {
+        aiDimensions = await analyzeDimensions(body, pDim)
+      }
     }
 
     const gems = gemsForReflect({
@@ -259,9 +268,6 @@ export async function POST(request) {
       isPaid,
     })
     const dimensionHits = gems.credited.map((d) => ({ dimension: d, gems: GEMS_PER_DIMENSION }))
-
-    const dateStr = localDate || new Date().toISOString().slice(0, 10)
-    const weekStr = isoWeek(dateStr)
 
     // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,
     // so a successful submit is always one of the first three and pays 30.

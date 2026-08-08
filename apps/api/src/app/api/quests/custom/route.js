@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -46,6 +47,13 @@ export async function POST(request) {
       .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
     if ((profile?.subscription_tier ?? 'free') === 'free') {
       return NextResponse.json({ error: 'not_paid' }, { status: 403 })
+    }
+
+    // SECURITY (2026-08-07 audit): largest AI call in the app (3k tokens) with
+    // no cooldown — cap at 10/hour/user so a paid token can't loop it.
+    const rl = await rateLimit(supabase, `quest-custom:${userId}`, 10, 3600)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
     // Generate candidate tasks.
