@@ -20,12 +20,12 @@
 import { ITEM_DICTIONARY } from '@novame/engine';
 
 import { apiClient } from './api';
-import { fetchFriends } from './friends-api';
+import { fetchFriendFeed } from './friends-api';
 import { storage } from './storage';
 import { supabase } from './supabase';
 import { kHomeBubblesState } from '../shared/storage/keys';
 
-export const MAX_BUBBLES = 5;
+export const MAX_BUBBLES = 6;
 
 export interface MemoryBubble {
   id: string; // `${friendUserId}:${itemId}` — stable for the day
@@ -34,7 +34,10 @@ export interface MemoryBubble {
   itemId: string;
   emoji: string;
   itemName: string;
-  /** P4 will wire the real per-item privacy flag; treat all as public until then. */
+  /** The written/AI memory text for this item — null when the friend shared
+   *  nothing (no permission, or nothing written): pop only, no card. */
+  memoryText: string | null;
+  /** @deprecated kept for the card gate; true iff memoryText exists. */
   isPublic: boolean;
 }
 
@@ -44,13 +47,6 @@ function localDateStr(): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-/** djb2 — tiny, stable, good enough to order a handful of bubbles. */
-function hash(s: string): number {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-  return h;
 }
 
 interface PoppedState {
@@ -115,26 +111,32 @@ export async function submitBubblePop(bubble: MemoryBubble): Promise<number> {
  */
 export async function loadTodayBubbles(): Promise<MemoryBubble[]> {
   try {
-    const status = await fetchFriends();
-    const date = localDateStr();
+    // Feed-based (2026-08-08): newest publishes win — fresh reflects replace
+    // older bubbles — and each item carries its memory text when the friend
+    // shares one (the card shows only then; otherwise a pop is just a pop).
+    const feed = await fetchFriendFeed();
+    const newestFirst = [...feed].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const candidates: MemoryBubble[] = [];
-    for (const f of status.friends) {
-      for (const itemId of f.todayItemIds) {
+    const seen = new Set<string>();
+    for (const e of newestFirst) {
+      for (const itemId of e.itemIds) {
+        const id = `${e.friendUserId}:${itemId}`;
+        if (seen.has(id)) continue; // newest occurrence of an item wins
+        seen.add(id);
         const entry = ITEM_DICTIONARY.items[itemId];
+        const text = e.details?.find((d) => d.itemId === itemId && d.text?.trim())?.text ?? null;
         candidates.push({
-          id: `${f.userId}:${itemId}`,
-          friendUserId: f.userId,
-          friendName: f.displayName,
+          id,
+          friendUserId: e.friendUserId,
+          friendName: e.friendName,
           itemId,
           emoji: entry?.emoji ?? '✨',
           itemName: entry?.displayName ?? 'A little memory',
-          isPublic: true,
+          memoryText: text,
+          isPublic: !!text,
         });
       }
     }
-    candidates.sort(
-      (a, b) => hash(`${date}|${a.id}`) - hash(`${date}|${b.id}`),
-    );
     return candidates.slice(0, MAX_BUBBLES).filter((b) => !isPopped(b.id));
   } catch {
     return [];

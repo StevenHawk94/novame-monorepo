@@ -44,6 +44,7 @@ const SLOTS: ReadonlyArray<{ x: number; y: number }> = [
   { x: 0.11, y: 0.45 },
   { x: 0.84, y: 0.48 },
   { x: 0.85, y: 0.66 },
+  { x: 0.14, y: 0.68 },
 ];
 
 function jitter(seed: string, range: number): number {
@@ -71,7 +72,8 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
       void submitBubblePop(bubble);
       setRewards((cur) => [...cur, { id: bubble.id, ...pos }]);
       onPopped(bubble.id);
-      if (bubble.isPublic) setCard(bubble);
+      // A card only when there IS a memory (written / AI) — else just the pop.
+      if (bubble.memoryText) setCard(bubble);
     },
     [onPopped],
   );
@@ -101,7 +103,7 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
             <View style={styles.cardRow}>
               <ItemSprite itemId={card.itemId} size={72} radius={12} />
               <View style={styles.cardBody}>
-                <Text style={styles.cardText}>{card.itemName}</Text>
+                <Text style={styles.cardText}>{card.memoryText ?? card.itemName}</Text>
                 <Text style={styles.cardFriend}>{card.friendName}</Text>
               </View>
             </View>
@@ -274,10 +276,10 @@ const styles = StyleSheet.create({
   rewardText: {
     fontSize: 22,
     fontFamily: 'Inter_800ExtraBold',
-    color: '#2E7A3A',
-    textShadowColor: '#FFFFFF',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
     textShadowRadius: 4,
-    textShadowOffset: { width: 0, height: 0 },
+    textShadowOffset: { width: 0, height: 1 },
   },
   rewardClover: { width: 24, height: 24 },
 
