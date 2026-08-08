@@ -95,13 +95,16 @@ export default function FocusScreen() {
     [isPaid],
   );
 
-  // Play once the source is loaded after entering play phase.
+  // Autoplay once the (async-resolved) source is loaded in play phase. `audio`
+  // and `player` are real deps: the player instance is recreated when the
+  // resolved source lands, and the old effect closure would call play() on the
+  // stale one — the "have to tap play" bug.
   useEffect(() => {
-    if (phase === 'play' && status.isLoaded && !status.playing && !completed) {
+    if (phase === 'play' && audio && status.isLoaded && !status.playing && !completed) {
       player.play();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, status.isLoaded]);
+  }, [phase, status.isLoaded, audio, player]);
 
   const exit = useCallback(() => {
     player.pause();
@@ -180,7 +183,7 @@ export default function FocusScreen() {
             </View>
           ) : (
             <>
-              <Text style={styles.playTitle}>{scene?.title} #1</Text>
+              <Text style={styles.playTitle}>{scene?.title} #{audio?.index ?? 1}</Text>
               <Text style={styles.playSub}>{scene?.subtitle}</Text>
 
               {/* Display-only progress with times, per the mock. */}

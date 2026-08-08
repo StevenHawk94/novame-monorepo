@@ -2,13 +2,12 @@
  * Focus voice rotation (2026-08-08 spec).
  *
  * Track 1 of every scene ships in the app bundle; tracks 2+ live on R2 under
- * `Focus Voice/<Base><n>.MP3`. Listening to track N fires
- * `onFocusVoiceListened`, which:
- *   1. probes past the highest known track — fresh uploads are downloaded and
- *      become the NEXT play (the "jump to newest" rule);
- *   2. otherwise steps the loop forward (N+1, wrapping to the bundled track 1
- *      after the last known one) and prefetches the coming file so tomorrow's
- *      listen starts instantly.
+ * `Focus Voice/<Base><n>.MP3`. The rotation advances ONCE PER LOCAL DATE —
+ * replays on the same day repeat today's track. Each listen also:
+ *   1. probes past the highest known track — fresh uploads download and become
+ *      the next NEW day's play (the "jump to newest" rule);
+ *   2. prefetches tomorrow's file (step N+1, wrapping to the bundled track 1
+ *      after the last known one) so the next listen starts instantly.
  *
  * R2 keys are case-sensitive and the uploads drift (work2.MP3 vs Work3.MP3),
  * so probing tries a small set of case candidates and remembers the exact key
@@ -43,12 +42,16 @@ const BASE_NAME: Record<string, string> = {
 };
 
 interface SceneState {
-  /** Track index to play on the next listen (1 = bundled). */
-  next: number;
+  /** Track index playing TODAY (1 = bundled). Advances once per local date. */
+  current: number;
   /** Highest track index known to exist on R2 (1 = bundled only). */
   knownMax: number;
   /** Resolved R2 filename per index (exact case that answered the probe). */
   keys: Record<string, string>;
+  /** Local date (YYYY-MM-DD) of the last listen — same-day replays repeat. */
+  lastDate?: string;
+  /** Set when new uploads were discovered: the next NEW day jumps here. */
+  jumpTo?: number;
 }
 
 type VoiceState = Record<string, SceneState>;
@@ -66,7 +69,18 @@ function writeState(state: VoiceState): void {
 }
 
 function sceneState(state: VoiceState, scene: string): SceneState {
-  return state[scene] ?? { next: 1, knownMax: 1, keys: {} };
+  return state[scene] ?? { current: 1, knownMax: 1, keys: {} };
+}
+
+function localDateStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** The index that plays on a fresh day: newest upload wins, else step+wrap. */
+function advancedIndex(st: SceneState): number {
+  if (st.jumpTo && st.jumpTo > 1) return st.jumpTo;
+  return st.current + 1 <= st.knownMax ? st.current + 1 : 1;
 }
 
 function urlFor(key: string): string {
@@ -124,17 +138,30 @@ export async function getFocusVoiceSource(
   scene: string,
 ): Promise<{ source: FocusVoiceSource; index: number }> {
   const bundled = FOCUS_VOICE_BUNDLED[scene];
-  const st = sceneState(readState(), scene);
-  if (st.next <= 1) return { source: bundled, index: 1 };
+  const state = readState();
+  const st = { ...sceneState(state, scene) };
 
-  const path = localPath(scene, st.next);
+  // Advance only when the local date changed — replays within the same day
+  // keep playing the same track.
+  const today = localDateStr();
+  if (st.lastDate && st.lastDate !== today) {
+    st.current = advancedIndex(st);
+    st.jumpTo = undefined;
+  }
+  st.lastDate = today;
+  state[scene] = st;
+  writeState(state);
+
+  if (st.current <= 1) return { source: bundled, index: 1 };
+
+  const path = localPath(scene, st.current);
   try {
     const info = await FileSystem.getInfoAsync(path);
-    if (info.exists) return { source: { uri: path }, index: st.next };
+    if (info.exists) return { source: { uri: path }, index: st.current };
   } catch { /* fall through to streaming */ }
 
-  const key = st.keys[String(st.next)];
-  if (key) return { source: { uri: urlFor(key) }, index: st.next };
+  const key = st.keys[String(st.current)];
+  if (key) return { source: { uri: urlFor(key) }, index: st.current };
   return { source: bundled, index: 1 };
 }
 
@@ -144,10 +171,12 @@ export async function getFocusVoiceSource(
  * prefetches whatever plays next.
  */
 export async function onFocusVoiceListened(scene: string, playedIndex: number): Promise<void> {
+  void playedIndex; // today's index is pinned by getFocusVoiceSource
   const state = readState();
   const st = { ...sceneState(state, scene), keys: { ...sceneState(state, scene).keys } };
 
-  // 1) Look past the known ceiling for new uploads.
+  // 1) Look past the known ceiling for new uploads. Fresh content becomes the
+  //    jump target for the NEXT day (same-day replays stay on today's track).
   let discovered = 0;
   for (let i = 0; i < MAX_NEW_PROBES; i++) {
     const idx = st.knownMax + 1;
@@ -157,19 +186,13 @@ export async function onFocusVoiceListened(scene: string, playedIndex: number): 
     st.knownMax = idx;
     discovered = idx;
   }
+  if (discovered > 0) st.jumpTo = discovered;
 
-  if (discovered > 0) {
-    // Fresh content: next play starts at the newest track.
-    st.next = discovered;
-  } else {
-    // Sequential loop: step forward, wrap to the bundled track after the end.
-    st.next = playedIndex + 1 <= st.knownMax ? playedIndex + 1 : 1;
-  }
-
-  // 2) Prefetch the coming track so the next listen starts instantly.
-  if (st.next > 1) {
-    const key = st.keys[String(st.next)];
-    if (key) void ensureDownloaded(scene, st.next, key);
+  // 2) Prefetch tomorrow's track so the next listen starts instantly.
+  const coming = advancedIndex(st);
+  if (coming > 1) {
+    const key = st.keys[String(coming)];
+    if (key) void ensureDownloaded(scene, coming, key);
   }
 
   state[scene] = st;
