@@ -124,14 +124,19 @@ export async function loadTodayBubbles(): Promise<MemoryBubble[]> {
         if (seen.has(id)) continue; // newest occurrence of an item wins
         seen.add(id);
         const entry = ITEM_DICTIONARY.items[itemId];
-        const text = e.details?.find((d) => d.itemId === itemId && d.text?.trim())?.text ?? null;
+        const name = entry?.displayName ?? 'A little memory';
+        // A REAL memory only: item-pick reflects store the item's own name as
+        // the description — that's not a written memory, so no card for it.
+        const raw = e.details?.find((d) => d.itemId === itemId && d.text?.trim())?.text ?? null;
+        const norm = (v: string) => v.trim().toLowerCase();
+        const text = raw && norm(raw) !== norm(name) && norm(raw) !== norm(itemId) ? raw : null;
         candidates.push({
           id,
           friendUserId: e.friendUserId,
           friendName: e.friendName,
           itemId,
           emoji: entry?.emoji ?? '✨',
-          itemName: entry?.displayName ?? 'A little memory',
+          itemName: name,
           memoryText: text,
           isPublic: !!text,
         });
