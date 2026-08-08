@@ -42,6 +42,12 @@ export default function FriendsScreen() {
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
   const { width, height } = useWindowDimensions();
   const maxTiles = width < 400 ? 3 : 4;
+  // Paired-card tile sizing (mock 2026-08-08): tiles fill the full row width
+  // edge-to-edge. Inner width = window − panel margins/padding − card padding;
+  // ~56pt targets pick the column count, then the size stretches to fill.
+  const pairRowWidth = width - 24 - 28 - 24;
+  const pairCols = Math.max(4, Math.floor((pairRowWidth + 8) / (56 + 8)));
+  const pairTile = Math.floor((pairRowWidth - (pairCols - 1) * 8) / pairCols);
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
@@ -197,7 +203,7 @@ export default function FriendsScreen() {
                       {/* Every item, wrapping — no truncation (mock 2026-08-08). */}
                       <View style={styles.pairCardTiles}>
                         {e.itemIds.map((id, i) => (
-                          <ItemSprite key={`${id}:${i}`} itemId={id} size={40} radius={10} />
+                          <ItemSprite key={`${id}:${i}`} itemId={id} size={pairTile} radius={12} />
                         ))}
                       </View>
                     </Pressable>
@@ -369,7 +375,7 @@ const styles = StyleSheet.create({
   pairCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pairCardName: { flex: 1, fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   pairCardTimeCol: { alignItems: 'flex-end', gap: 5 },
-  pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
+  pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' },
   emptyFeedText: {
     fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63',
     textAlign: 'center', lineHeight: 21, paddingVertical: 28, paddingHorizontal: 14,
