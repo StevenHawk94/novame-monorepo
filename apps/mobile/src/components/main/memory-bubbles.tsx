@@ -27,7 +27,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { Image } from 'react-native';
+import { XP_RULES } from '@novame/engine';
+
 import { haptics } from '@/lib/haptics';
+import { ICONS } from '@/lib/icons';
 import { markPopped, submitBubblePop, type MemoryBubble } from '@/lib/home-bubbles';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
@@ -56,18 +60,25 @@ type Props = {
 
 export function MemoryBubbles({ bubbles, onPopped }: Props) {
   const [card, setCard] = useState<MemoryBubble | null>(null);
+  // Collect effects: a "+5 🍀" floats up from each popped bubble's spot.
+  const [rewards, setRewards] = useState<{ id: string; left: number; top: number }[]>([]);
 
   const handlePopFinished = useCallback(
-    (bubble: MemoryBubble) => {
+    (bubble: MemoryBubble, pos: { left: number; top: number }) => {
       markPopped(bubble.id);
       // Server-authoritative +5 (idempotent, capped). Fire-and-forget: the
       // pop already happened visually; the balance shows it on next refresh.
       void submitBubblePop(bubble);
+      setRewards((cur) => [...cur, { id: bubble.id, ...pos }]);
       onPopped(bubble.id);
       if (bubble.isPublic) setCard(bubble);
     },
     [onPopped],
   );
+
+  const removeReward = useCallback((id: string) => {
+    setRewards((cur) => cur.filter((r) => r.id !== id));
+  }, []);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -78,6 +89,10 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
           slot={SLOTS[i % SLOTS.length]}
           onPopFinished={handlePopFinished}
         />
+      ))}
+
+      {rewards.map((r) => (
+        <PopReward key={r.id} left={r.left} top={r.top} onDone={() => removeReward(r.id)} />
       ))}
 
       {card && (
@@ -104,7 +119,7 @@ function FloatingBubble({
 }: {
   bubble: MemoryBubble;
   slot: { x: number; y: number };
-  onPopFinished: (b: MemoryBubble) => void;
+  onPopFinished: (b: MemoryBubble, pos: { left: number; top: number }) => void;
 }) {
   const { width, height } = useWindowDimensions();
   const bob = useSharedValue(0);
@@ -139,7 +154,7 @@ function FloatingBubble({
     void haptics.light();
     popScale.value = withTiming(1.25, { duration: 140, easing: Easing.out(Easing.quad) });
     popOpacity.value = withTiming(0, { duration: 160 }, (finished) => {
-      if (finished) runOnJS(onPopFinished)(bubble);
+      if (finished) runOnJS(onPopFinished)(bubble, { left, top });
     });
   };
 
@@ -153,10 +168,37 @@ function FloatingBubble({
   return (
     <Animated.View style={[styles.bubbleWrap, { left, top }, animStyle]}>
       <Pressable onPress={onPress} hitSlop={6} style={styles.bubble}>
+        <View style={styles.fogRing} />
         <View style={styles.shineLarge} />
         <View style={styles.shineSmall} />
+        <View style={styles.shineLeft} />
         <ItemSprite itemId={bubble.itemId} size={48} radius={12} tileColor="transparent" />
       </Pressable>
+      <View pointerEvents="none" style={styles.fogHalo} />
+    </Animated.View>
+  );
+}
+
+/** "+5 🍀" that rises and fades from a popped bubble — the collect beat. */
+function PopReward({ left, top, onDone }: { left: number; top: number; onDone: () => void }) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = withTiming(1, { duration: 850, easing: Easing.out(Easing.quad) }, (finished) => {
+      if (finished) runOnJS(onDone)();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: -52 * t.value },
+      { scale: 0.8 + 0.35 * Math.min(1, t.value * 3) },
+    ],
+    opacity: t.value < 0.6 ? 1 : 1 - (t.value - 0.6) / 0.4,
+  }));
+  return (
+    <Animated.View pointerEvents="none" style={[styles.rewardWrap, { left, top: top + 18 }, style]}>
+      <Text style={styles.rewardText}>+{XP_RULES.bubble.award}</Text>
+      <Image source={ICONS.Clover} style={styles.rewardClover} resizeMode="contain" />
     </Animated.View>
   );
 }
@@ -196,6 +238,48 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-28deg' }],
   },
   bubbleEmoji: { fontSize: 34 },
+  // Frosted rim (mock 2026-08-08): a wide translucent band inside the edge +
+  // a soft halo just outside fake the fogged-glass look without blur support.
+  fogRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BUBBLE_SIZE / 2,
+    borderWidth: 7,
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  fogHalo: {
+    position: 'absolute',
+    top: -3, left: -3, right: -3, bottom: -3,
+    borderRadius: (BUBBLE_SIZE + 6) / 2,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  shineLeft: {
+    position: 'absolute',
+    bottom: 16,
+    left: 10,
+    width: 12,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    transform: [{ rotate: '30deg' }],
+  },
+  rewardWrap: {
+    position: 'absolute',
+    width: BUBBLE_SIZE,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  rewardText: {
+    fontSize: 22,
+    fontFamily: 'Inter_800ExtraBold',
+    color: '#2E7A3A',
+    textShadowColor: '#FFFFFF',
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 0 },
+  },
+  rewardClover: { width: 24, height: 24 },
 
   cardBackdrop: {
     ...StyleSheet.absoluteFillObject,
