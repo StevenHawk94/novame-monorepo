@@ -40,7 +40,7 @@ const CARD = '#FFF4E3';
 const BTN = '#4A3220';
 
 const WHO_OPTIONS = [
-  { key: 'partner', icon: ICONS.obWhoPartner, label: 'Partner/Lover' },
+  { key: 'partner', icon: ICONS.obWhoPartner, label: 'Partner' },
   { key: 'bestie', icon: ICONS.obWhoFriends, label: 'Best friend' },
   { key: 'family', icon: ICONS.obWhoFamily, label: 'Family member' },
   { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
@@ -53,13 +53,37 @@ const BLOCKER_OPTIONS = [
   { key: 'D', label: "You don't know what to talk about" },
 ];
 
-// ob4 反馈文案 ↔ ob3 选择 (2026-07-26 产品口径).
+// Ob3 inline feedback ↔ the picked blocker (2026-08-09 产品口径).
 const BLOCKER_FEEDBACK: Record<string, string> = {
   A: 'Sometimes caring is easy. Finding the time is the hard part.',
   B: "Distance changes where you are, but it doesn't have to change how close you feel.",
   C: "Caring about someone shouldn't feel like adding pressure to their day.",
   D: "Sometimes the hardest part isn't caring — it's knowing where to start.",
 };
+
+// Ob4 — branched "I'm fine" screen (2026-08-09): each blocker gets its own
+// title + body; every branch closes on the same subtitle so all four paths
+// land into Ob5's reflection mockup.
+const IMFINE_BRANCH: Record<string, { title: string; body: string }> = {
+  A: {
+    title: 'Tired of hearing "I\'m fine" when you\'re both just too busy to really talk?',
+    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're squeezing in a quick reply between meetings.",
+  },
+  B: {
+    title: 'Tired of hearing "I\'m fine" on a call that barely covers the basics?',
+    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're catching up in a rushed, scheduled call.",
+  },
+  C: {
+    title: 'Tired of getting "I\'m fine" because you didn\'t want to ask twice?',
+    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're worried about being a bother by asking.",
+  },
+  D: {
+    title: 'Tired of hearing "I\'m fine" because neither of you knew where to start?',
+    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're trying to find the right thing to say.",
+  },
+};
+const IMFINE_SUBTITLE =
+  'What if you could turn the honesty of their day into something you could actually see?';
 
 // ob6's tappable sample day (renders whatever the current dictionary holds;
 // unknown ids fall back to blank tiles, so this survives the taxonomy swap).
@@ -80,13 +104,13 @@ const PRIVATE_SPACE_ITEMS = [
 ];
 
 type Step =
-  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'notalk' | 'imagine'
-  | 'how' | 'space' | 'insights' | 'boundaries' | 'routine' | 'creator'
+  | 'start' | 'someone' | 'who' | 'blocker' | 'imfine' | 'imagine'
+  | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
   | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'someone', 'who', 'blocker', 'feedback', 'notalk', 'imagine',
-  'how', 'space', 'insights', 'boundaries', 'routine', 'creator',
+  'start', 'someone', 'who', 'blocker', 'imfine', 'imagine',
+  'how', 'space', 'insights', 'boundaries', 'creator',
   'paywall', 'plans', 'name',
 ];
 
@@ -305,7 +329,7 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <ExpoImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
             <Text style={styles.h1}>Stay close to the{'\n'}people who matter.</Text>
-            <Text style={styles.h2}>By Collecting Memories Together</Text>
+            <Text style={styles.h2}>By collecting memories together.</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Start" onPress={next} />
           </ScrollView>
@@ -314,12 +338,13 @@ export default function OnboardingScreen() {
         {step === 'someone' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.qmark}>{'⁇'}</Text>
+            <ExpoImage source={ICONS.obQuestion} style={styles.qmarkIcon} contentFit="contain" />
             <Text style={styles.h1}>
-              Is there someone important to you whose everyday moments you wish you could be closer to?
+              Is there someone you wish you could be closer to?
             </Text>
             <Text style={[styles.body, { marginTop: 22 }]}>
-              You care about them deeply, but life doesn&apos;t always let you be there for the little things.
+              If there is, you already know you care deeply, but life doesn&apos;t always let you be
+              there for the little things.
             </Text>
             <View style={{ flex: 1.4 }} />
             <Btn label="Yes, I have someone like this" onPress={next} />
@@ -356,38 +381,25 @@ export default function OnboardingScreen() {
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
+            {blocker && (
+              <View style={[styles.card, { marginTop: 6 }]}>
+                <Text style={styles.body}>{BLOCKER_FEEDBACK[blocker]}</Text>
+              </View>
+            )}
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!blocker} />
           </ScrollView>
         )}
 
-        {step === 'feedback' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.7 }} />
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
-              <Text style={[styles.cardTitle, { marginTop: 18 }]}>
-                Small, everyday moments are often what&apos;s missing.
-              </Text>
-            </View>
-            <View style={{ flex: 1.3 }} />
-            <Btn label="Continue" onPress={next} />
-          </ScrollView>
-        )}
-
-        {step === 'notalk' && (
+        {step === 'imfine' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
-            <Text style={styles.h1}>Staying close doesn&apos;t have to mean talking all the time.</Text>
+            <Text style={styles.h1}>{IMFINE_BRANCH[blocker ?? 'A'].title}</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
-              <Text style={styles.body}>
-                By connecting everyday moments together, the two of you bond — almost without noticing.
-              </Text>
-              <Text style={[styles.body, { marginTop: 16 }]}>
-                Your everyday moments can become a connection between you.
-              </Text>
+              <Text style={styles.body}>{IMFINE_BRANCH[blocker ?? 'A'].body}</Text>
             </View>
-            <View style={{ flex: 1.3 }} />
+            <Text style={[styles.h3, { marginTop: 26 }]}>{IMFINE_SUBTITLE}</Text>
+            <View style={{ flex: 1.2 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
@@ -395,7 +407,7 @@ export default function OnboardingScreen() {
         {step === 'imagine' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
-            <Text style={styles.h1}>Imagine this reflection from that person</Text>
+            <Text style={styles.h1}>Imagine getting this reflection from that person.</Text>
             <View style={[styles.card, { marginTop: 26, paddingVertical: 22 }]}>
               <View style={styles.sampleRow}>
                 {SAMPLE_DAY.map((s) => (
@@ -413,7 +425,9 @@ export default function OnboardingScreen() {
                   : 'Tap to see details'}
               </Text>
             </View>
-            <Text style={[styles.h3, { marginTop: 30 }]}>Can you tell how their day looks like?</Text>
+            <Text style={[styles.h3, { marginTop: 30 }]}>
+              Can you tell what their day was like — without a single text?
+            </Text>
             <View style={{ flex: 1.2 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -422,14 +436,15 @@ export default function OnboardingScreen() {
         {step === 'how' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.4 }} />
-            <Text style={styles.h3}>That&apos;s how it works</Text>
-            <Text style={[styles.h1, { marginTop: 16 }]}>
-              Turn everyday moments into something meaningful. Simply reflect on your day.
-            </Text>
+            <Text style={styles.h1}>That&apos;s how it works.</Text>
+            {/* TODO(asset): looping video — fast typing → memory item generation. */}
             <View style={[styles.card, { marginTop: 26 }]}>
               <Text style={styles.body}>
-                Your moments become meaningful memory items, automatically creating a private space
-                between you and the people who matter.
+                Simply reflect on your day. Your thoughts, feelings, and experiences become adorable
+                memory items.
+              </Text>
+              <Text style={[styles.body, { marginTop: 16 }]}>
+                Creating a private space between you and that special person.
               </Text>
             </View>
             <View style={{ flex: 1.2 }} />
@@ -442,13 +457,13 @@ export default function OnboardingScreen() {
             <View style={{ flex: 0.4 }} />
             <Text style={styles.h1}>A private space where your lives naturally connect.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Both of your memory items appear in a shared space between you.
-            </Text>
-            <Text style={[styles.body, { marginTop: 14 }]}>
-              No need to ask.{'\n'}No need to explain.
+              Add a widget to your homescreen and see their latest reflection at a glance.
             </Text>
             <Text style={[styles.body, { marginTop: 14 }]}>
               Just small glimpses into each other&apos;s lives.
+            </Text>
+            <Text style={[styles.body, { marginTop: 14 }]}>
+              Reach out when they need you. Give them space when they don&apos;t.
             </Text>
             <View style={styles.spaceGrid}>
               {PRIVATE_SPACE_ITEMS.map((id) => (
@@ -464,7 +479,11 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.5 }} />
             <Text style={styles.h1}>
-              Understand them a little better, every day — gentle insights that help you be there.
+              Understand them a little better, every day, with AI-powered connection insights.
+            </Text>
+            {/* TODO(asset): screenshot of the insight page. */}
+            <Text style={[styles.body, { marginTop: 20 }]}>
+              Gentle insights that help you know when, and how, to show up.
             </Text>
             <View style={{ flex: 1.5 }} />
             <Btn label="Continue" onPress={next} />
@@ -489,51 +508,27 @@ export default function OnboardingScreen() {
           </ScrollView>
         )}
 
-        {step === 'routine' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.4 }} />
-            <Text style={styles.h1}>Easily Keep Up The Routine</Text>
-            <View style={[styles.card, { marginTop: 26 }]}>
-              <Text style={styles.body}>Some days it feels tiring to reflect.</Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                This app has multiple ways to collect your day — write freely, or simply tap your
-                screen through gentle prompts.
-              </Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                We also have a set of kits to make sure you start your day with energy and end it
-                with healing.
-              </Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                And everything you do makes your little bunny more vibing!!
-              </Text>
-            </View>
-            <View style={{ flex: 1 }} />
-            <Btn label="Continue" onPress={next} />
-          </ScrollView>
-        )}
-
         {step === 'creator' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 0.3, minHeight: 16 }} />
             <View>
               <View style={styles.card}>
                 <ExpoImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
-                <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the App Creator</Text>
+                <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the app creator</Text>
                 <Text style={styles.creatorBody}>
-                  &quot;I built this at the beginning to stay connected with my mom. We lived thousands
-                  of miles apart — we call every month, but I wanted to feel her life right in front
-                  of me every day. In a busy working life, I couldn&apos;t stay tuned with her all
-                  the time.
+                  I built this to stay connected with my mom. We live thousands of miles apart, we
+                  talk every month, but with a busy work life, I couldn&apos;t stay close to her
+                  day-to-day.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  After using this app, every day when I open it, I know what she ate, where she
-                  visited, how she is doing — and she knows mine, without the burden of constant
-                  calls while my time is occupied.
+                  Now, every time I open the app, I know what she ate, where she went, how
+                  she&apos;s really doing — and she knows mine — without either of us needing to
+                  carve out time for a call.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  And she loves using it, because she gets to know my life in a cute way. The app
-                  carries all the kits I built to help her feel good and motivated anytime she
-                  needs.&quot;
+                  She loves it too. It lets her see my life in a way that feels light and fun, not
+                  like one more thing to manage. Everything I&apos;ve built into this app started as
+                  something I wanted for the two of us.
                 </Text>
               </View>
             </View>
@@ -548,27 +543,29 @@ export default function OnboardingScreen() {
               <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
-              <Text style={[styles.h1, { marginTop: 44 }]}>One Subscription for Two People.</Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                Store your memories, and theirs.{'\n'}Then connection happens naturally.
+              <Text style={[styles.h1, { marginTop: 44 }]}>90% of users feel closer to their person.</Text>
+              <Text style={[styles.h3, { marginTop: 14 }]}>
+                Not because they talk more — because they talk better.
               </Text>
+              <Text style={[styles.body, { marginTop: 14 }]}>One subscription connects two people.</Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>Burrow Plus</Text>
                 {[
-                  ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
-                  ['Connection Up', 'Real-time insights to help you understand each other better.'],
-                  ['Vibe Up', 'Unlock new outfits and scenes for your bunny.'],
-                  ['Unlock access to Master Visit', 'Get deeper insight of your day from Master.'],
-                ].map(([t, b]) => (
+                  'Build memories with barely any effort.',
+                  'Connection insights that respect your boundaries.',
+                  'Grow closer — naturally.',
+                ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.benefitTitle}>{t}</Text>
-                      <Text style={styles.benefitBody}>{b}</Text>
                     </View>
                   </View>
                 ))}
+                <Text style={styles.benefitClose}>
+                  Unlock every feature to stay close, every day.
+                </Text>
               </View>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Btn label="Try for Free" onPress={onTryFree} />
@@ -632,9 +629,9 @@ export default function OnboardingScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <View style={{ flex: 0.5, minHeight: 24 }} />
-              <Text style={styles.h1}>Name Your Bunny</Text>
+              <Text style={styles.h1}>Name your bunny.</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
-                Give a name to your bunny that grows along the way.
+                They&apos;ll be your reflection and connection guide along the way.
               </Text>
               <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput
@@ -756,12 +753,11 @@ const styles = StyleSheet.create({
   h2: { fontSize: 19, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center', marginTop: 14 },
   h3: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   body: { fontSize: 17, lineHeight: 25, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center' },
-  qmark: { fontSize: 58, textAlign: 'center', color: INK, marginBottom: 24, fontFamily: 'Inter_800ExtraBold' },
+  qmarkIcon: { width: 94, height: 94, alignSelf: 'center', marginBottom: 24 },
 
   iconsGrid: { width: '100%', height: 320, marginBottom: 28 },
 
   card: { backgroundColor: CARD, borderRadius: 28, padding: 26 },
-  cardTitle: { fontSize: 22, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
 
   optionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
@@ -797,7 +793,7 @@ const styles = StyleSheet.create({
   plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
   benefitRow: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
   benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  benefitBody: { fontSize: 14.5, lineHeight: 20, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.92)', marginTop: 2 },
+  benefitClose: { fontSize: 15, lineHeight: 21, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 6 },
 
   planCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
