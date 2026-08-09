@@ -11,6 +11,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import { haptics } from '@/lib/haptics';
 import { signOut } from '@/lib/auth';
+import { getBunnyName } from '@/lib/onboarding';
+import { resolveAvatarSource } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import {
   deleteAccount,
@@ -64,11 +66,19 @@ export default function AccountManagementModal() {
   const insets = useSafeAreaInsets();
 
   const [userId, setUserId] = useState<string | null>(null);
+  // display_name is auto-seeded at signup ('user' for guests) — a literal
+  // 'user' is placeholder noise; the onboarding name outranks it. Same
+  // resolution as the Me page header.
+  const resolveName = (raw: string | undefined) =>
+    (raw && raw !== 'user' ? raw : '') || getBunnyName() || '';
   const [displayName, setDisplayName] = useState<string>(
-    () => getCachedMeStats()?.displayName ?? '',
+    () => resolveName(getCachedMeStats()?.displayName),
   );
   const [avatarUrl, setAvatarUrl] = useState<string>(
     () => getCachedMeStats()?.avatarUrl ?? '',
+  );
+  const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(
+    () => getCachedMeStats()?.isDefaultAvatar,
   );
   const [email, setEmail] = useState<string>('');
 
@@ -99,8 +109,9 @@ export default function AccountManagementModal() {
   const refreshFromCache = () => {
     const cached = getCachedMeStats();
     if (cached) {
-      setDisplayName(cached.displayName);
+      setDisplayName(resolveName(cached.displayName));
       setAvatarUrl(cached.avatarUrl);
+      setIsDefaultAvatar(cached.isDefaultAvatar);
     }
   };
 
@@ -189,6 +200,7 @@ export default function AccountManagementModal() {
 
     if (res.kind === 'success') {
       setAvatarUrl(res.avatarUrl);
+      setIsDefaultAvatar(false);
       setStatus({ kind: 'success', text: 'Profile picture updated.' });
       void haptics.success();
       invalidateMeStats();
@@ -395,16 +407,12 @@ export default function AccountManagementModal() {
           <View style={styles.sectionBody}>
             <View style={styles.avatarRow}>
               <View style={styles.avatarWrap}>
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={styles.avatarImg}
-                    contentFit="cover"
-                    contentPosition="center"
-                  />
-                ) : (
-                  <MaterialIcons name="person" size={36} color="#B49B7A" />
-                )}
+                <Image
+                  source={resolveAvatarSource(avatarUrl, isDefaultAvatar, userId)}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Pressable

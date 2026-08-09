@@ -132,7 +132,7 @@ export async function GET(request) {
       supabase
         .from('profiles')
         .select(
-          'display_name, avatar_url, better_self_score, people_impacted_display, subscription_tier',
+          'display_name, avatar_url, is_default_avatar, better_self_score, people_impacted_display, subscription_tier',
         )
         .eq('id', userId)
         .single(),
@@ -215,6 +215,10 @@ export async function GET(request) {
       profile: {
         displayName: profile.display_name || '',
         avatarUrl: profile.avatar_url || '',
+        // false only when the user uploaded a real avatar; the signup
+        // trigger's random default_avatars URL keeps this true and the
+        // client renders its own bundled default art instead.
+        isDefaultAvatar: profile.is_default_avatar !== false,
       },
     })
   } catch (e) {

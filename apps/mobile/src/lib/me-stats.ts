@@ -74,6 +74,7 @@ export const DEFAULT_NEW_USER_ME_STATS: CachedMeStats = {
   planName: 'Free',
   displayName: '',
   avatarUrl: '',
+  isDefaultAvatar: true,
   lastFetchedAtMs: 0,
 };
 
@@ -95,6 +96,7 @@ type MeStatsResponse = {
   profile: {
     displayName: string;
     avatarUrl: string;
+    isDefaultAvatar?: boolean;
   };
 };
 
@@ -110,6 +112,8 @@ export type CachedMeStats = {
   planName: string;
   displayName: string;
   avatarUrl: string;
+  /** false only when the user uploaded a real avatar (profiles.is_default_avatar). */
+  isDefaultAvatar: boolean;
   lastFetchedAtMs: number;
 };
 
@@ -165,6 +169,7 @@ export async function fetchMeStats(userId: string): Promise<CachedMeStats> {
     planName: data.stats.planName,
     displayName: data.profile.displayName,
     avatarUrl: data.profile.avatarUrl,
+    isDefaultAvatar: data.profile.isDefaultAvatar !== false,
     lastFetchedAtMs: Date.now(),
   };
   setCachedMeStats(next);

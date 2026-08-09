@@ -4,6 +4,7 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
@@ -18,6 +19,9 @@ import {
 } from '@/lib/subscription';
 import { fetchDuoStatus, joinDuo, type DuoStatus } from '@/lib/duo-api';
 import { fetchFriends } from '@/lib/friends-api';
+import { fetchMeStats, getCachedMeStats } from '@/lib/me-stats';
+import { getBunnyName } from '@/lib/onboarding';
+import { resolveAvatarSource } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import { useRef } from 'react';
 
@@ -39,30 +43,51 @@ export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);
   const [tier, setTier] = useState(() => getCachedSubscriptionTier());
-  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(undefined);
   const [duo, setDuo] = useState<DuoStatus>({ asOwner: null, asMember: null });
   const [joining, setJoining] = useState(false);
   const [joinCode, setJoinCode] = useState('');
 
-  useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user;
-      setEmail(user?.email ?? '');
-      const meta = (user?.user_metadata ?? {}) as { display_name?: string; name?: string };
-      setDisplayName(meta.display_name || meta.name || '');
-    });
+  // Name + avatar come from me-stats (profiles), the same source Account
+  // Management edits — so a save there shows here on the next focus.
+  // display_name is auto-seeded at signup ('user' for guests, email prefix
+  // otherwise); a literal 'user' is placeholder noise, so the onboarding
+  // name the user typed outranks it.
+  const refreshProfile = useCallback(() => {
+    const cached = getCachedMeStats();
+    const profileName =
+      cached?.displayName && cached.displayName !== 'user' ? cached.displayName : '';
+    setDisplayName(profileName || getBunnyName() || '');
+    setAvatarUrl(cached?.avatarUrl ?? '');
+    setIsDefaultAvatar(cached?.isDefaultAvatar);
   }, []);
 
-  // Refresh tier on focus (e.g. returning from the paywall).
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      const uid = data.session?.user?.id ?? null;
+      setUserId(uid);
+      // Cache miss (Home warm-up failed / cold cache): fetch once so the
+      // header doesn't sit on fallbacks forever.
+      if (uid && !getCachedMeStats()) {
+        void fetchMeStats(uid).then(refreshProfile).catch(() => {});
+      }
+    });
+  }, [refreshProfile]);
+
+  // Refresh tier + profile on focus (e.g. returning from the paywall or
+  // Account Management).
   useFocusEffect(
     useCallback(() => {
+      refreshProfile();
       void supabase.auth.getSession().then(({ data }) => {
-        const userId = data.session?.user?.id;
-        if (userId) void fetchSubscriptionTier(userId).then((s) => setTier(s.tier)).catch(() => {});
+        const uid = data.session?.user?.id;
+        if (uid) void fetchSubscriptionTier(uid).then((s) => setTier(s.tier)).catch(() => {});
       });
       void fetchDuoStatus().then(setDuo);
-    }, []),
+    }, [refreshProfile]),
   );
 
   async function shareDuoCode() {
@@ -154,11 +179,15 @@ export default function MeScreen() {
             </Pressable>
             <View style={styles.userRow}>
               <View style={styles.avatarWrap}>
-                <MaterialIcons name="person" size={34} color="#B49B7A" />
+                <Image
+                  source={resolveAvatarSource(avatarUrl, isDefaultAvatar, userId)}
+                  style={styles.avatarImg}
+                  contentFit="cover"
+                  contentPosition="center"
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.userName} numberOfLines={1}>{displayName || 'You'}</Text>
-                {email ? <Text style={styles.userEmail} numberOfLines={1}>{email}</Text> : null}
               </View>
             </View>
           </View>
@@ -304,9 +333,9 @@ const styles = StyleSheet.create({
   header: { marginBottom: 18 },
   closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#4A3423', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatarWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  avatarWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImg: { width: '100%', height: '100%' },
   userName: { color: '#4A3423', fontSize: 24, fontFamily: 'Inter_800ExtraBold' },
-  userEmail: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
 
   rowEmoji: { fontSize: 24 },
   pressedBtn: { transform: [{ translateY: 1 }], opacity: 0.85 },
