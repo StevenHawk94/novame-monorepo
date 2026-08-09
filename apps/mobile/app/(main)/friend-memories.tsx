@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,19 +7,30 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { useWindowDimensions } from 'react-native';
 import { FRIEND_ICONS } from '@/lib/icons';
+import { ITEM_DICTIONARY, matchItems } from '@novame/engine';
+import { PROMPT_CATEGORIES } from '@/lib/guided-catalog.g';
+import { itemsForGuidedCategory } from '@/lib/guided-prompts';
 import {
   createSharedMemories, fetchSharedBox, type SharedBoxItem, getCachedFriends,
 } from '@/lib/friends-api';
 import { UserAvatar } from '@/components/ui/user-avatar';
 
+// Same strip as Bags: "all" + the 11 guided prompt categories.
+const CATEGORIES: { key: string; label: string }[] = [
+  { key: 'all', label: 'All' },
+  ...PROMPT_CATEGORIES.map((c) => ({ key: c.key, label: c.label })),
+];
+
 /**
  * Shared memories (mocks 1:1). Grid view: memory-book header ("Your memories
- * with {name}"), avatar, the orange Create New button, the category filter
- * bar, then a 6-across grid of item tiles (blank until the item art lands —
- * tapping one still shows its memory text). Create view: the brown room with
- * a white paper card — type the memory, we match the items for both of you.
+ * with {name}"), avatar, the orange Create New button, the Bags-style
+ * category strip, then a 6-across grid of item tiles — tapping one opens the
+ * same ItemSheet as Bags. Create view: the brown room with a white paper
+ * card — a free write whose matched items preview live under the input,
+ * exactly like Reflect's typing flow.
  */
 type Mode = 'grid' | 'create';
 
@@ -39,6 +50,29 @@ export default function FriendMemoriesScreen() {
   const [items, setItems] = useState<SharedBoxItem[]>([]);
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const itemSheetRef = useRef<ItemSheetRef>(null);
+
+  // Category strip (same behavior as Bags): capsule fixed on the ScrollView,
+  // tapped chip centers into view on small screens.
+  const [category, setCategory] = useState<string>('all');
+  const catScrollRef = useRef<ScrollView>(null);
+  const chipLayout = useRef<Record<string, { x: number; width: number }>>({});
+  const categoryIds = useMemo(
+    () => (category === 'all' ? null : new Set(itemsForGuidedCategory(category))),
+    [category],
+  );
+  const shown = categoryIds === null ? items : items.filter((it) => categoryIds.has(it.itemId));
+
+  // Live match while typing (same as Reflect free write): debounce 250ms,
+  // run the shared engine locally — zero server calls.
+  const [liveMatched, setLiveMatched] = useState<{ itemId: string }[]>([]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const matches = matchItems(text, ITEM_DICTIONARY);
+      setLiveMatched(matches.map((m) => ({ itemId: m.itemId })));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [text]);
 
   const load = useCallback(() => {
     if (typeof friendUserId === 'string' && friendUserId) {
@@ -93,6 +127,20 @@ export default function FriendMemoriesScreen() {
             </View>
           </View>
 
+          {/* Live match bar — same pattern as Reflect's free write */}
+          <Text style={styles.matchLabel}>Items matched from your memory</Text>
+          <View style={styles.matchBar}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
+              {liveMatched.length === 0 ? (
+                <Text style={styles.matchEmpty}>Items will appear as you write…</Text>
+              ) : (
+                liveMatched.map((m) => (
+                  <ItemSprite key={m.itemId} itemId={m.itemId} size={44} radius={12} />
+                ))
+              )}
+            </ScrollView>
+          </View>
+
           <Pressable
             onPress={() => void onCreate()}
             disabled={text.trim().length < 4 || submitting}
@@ -138,32 +186,63 @@ export default function FriendMemoriesScreen() {
         </Pressable>
       </View>
 
-      {/* category filter bar — the "all" pill; categories light up with the item art */}
-      <View style={styles.filterBar}>
-        <View style={styles.filterAll}>
-          <MaterialIcons name="apps" size={22} color="#FFFFFF" />
-        </View>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <View key={i} style={styles.filterSlot}>
-            <MaterialIcons name="circle" size={10} color="#E3CBA4" />
-          </View>
-        ))}
-      </View>
+      {/* Category strip — identical to Bags (capsule fixed on the ScrollView,
+          content scrolls inside; tapped chip centers into view). */}
+      <ScrollView
+        ref={catScrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.catStripScroll}
+        contentContainerStyle={styles.catStrip}
+      >
+        {CATEGORIES.map((cat) => {
+          const active = cat.key === category;
+          return (
+            <Pressable
+              key={cat.key}
+              onLayout={(e) => { chipLayout.current[cat.key] = e.nativeEvent.layout; }}
+              onPress={() => {
+                void haptics.light();
+                setCategory(cat.key);
+                const l = chipLayout.current[cat.key];
+                if (l) {
+                  const viewport = width - 32; // root paddingHorizontal
+                  catScrollRef.current?.scrollTo({
+                    x: Math.max(0, l.x + l.width / 2 - viewport / 2),
+                    animated: true,
+                  });
+                }
+              }}
+              style={[styles.catChip, active && styles.catChipActive]}
+            >
+              {cat.key === 'all' ? (
+                <MaterialIcons name="apps" size={22} color={active ? '#FFF6DE' : '#B99C6B'} />
+              ) : (
+                <Text style={[styles.catLabel, active && styles.catLabelActive]} numberOfLines={2}>
+                  {cat.label}
+                </Text>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-      {items.length === 0 ? (
+      {shown.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>{'🎁'}</Text>
           <Text style={styles.emptyText}>
-            Nothing here yet — create a shared memory, or pick "{'I have done something with my friend'}" when you reflect.
+            {items.length === 0
+              ? `Nothing here yet — create a shared memory, or pick "I have done something with my friend" when you reflect.`
+              : 'Nothing in this category yet.'}
           </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.gridScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.grid}>
-            {items.map((it) => (
+            {shown.map((it) => (
               <Pressable
                 key={it.id}
-                onPress={() => appAlert(it.description || 'A shared memory', undefined)}
+                onPress={() => itemSheetRef.current?.present(it.itemId)}
                 style={styles.cell}
               >
                 <ItemSprite itemId={it.itemId} size={memTile} radius={14} tileColor="#EFEDF6" />
@@ -180,6 +259,8 @@ export default function FriendMemoriesScreen() {
       >
         <MaterialIcons name="close" size={24} color="#FFFFFF" />
       </Pressable>
+
+      <ItemSheet ref={itemSheetRef} />
     </SafeAreaView>
   );
 }
@@ -197,16 +278,21 @@ const styles = StyleSheet.create({
   },
   newBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold' },
 
-  filterBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FBF3D8', borderRadius: 22, borderWidth: 2, borderColor: '#3A2E1A',
-    paddingHorizontal: 10, paddingVertical: 8, marginBottom: 16,
+  // Category strip — same visual system as Bags (capsule on the ScrollView).
+  catStrip: {
+    flexGrow: 1,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 10, paddingVertical: 8,
   },
-  filterAll: {
-    width: 62, height: 40, borderRadius: 20, backgroundColor: '#4A3423',
-    alignItems: 'center', justifyContent: 'center',
+  catStripScroll: {
+    flexGrow: 0,
+    backgroundColor: '#FFF8E3', borderRadius: 30, borderWidth: 1.5, borderColor: '#3E2C1A',
+    marginBottom: 16, overflow: 'hidden',
   },
-  filterSlot: { flex: 1, alignItems: 'center' },
+  catChip: { minWidth: 52, height: 46, borderRadius: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  catChipActive: { backgroundColor: '#4A3423' },
+  catLabel: { fontSize: 11, fontFamily: 'Inter_700Bold', color: '#8A6B3F', textAlign: 'center' },
+  catLabelActive: { color: '#FFF6DE' },
 
   gridScroll: { paddingBottom: 90 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', columnGap: 4 },
@@ -232,6 +318,17 @@ const styles = StyleSheet.create({
     shadowColor: '#2B1A0E', shadowOpacity: 0.4, shadowRadius: 0, shadowOffset: { width: 0, height: 5 },
   },
   paperInput: { flex: 1, fontSize: 17, fontFamily: 'Inter_600SemiBold', lineHeight: 27, color: '#2B2B2B' },
+  matchLabel: {
+    fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
+    textAlign: 'center', marginBottom: 8,
+  },
+  matchBar: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 10, paddingHorizontal: 12,
+    marginBottom: 18, minHeight: 64,
+  },
+  matchRow: { gap: 8, alignItems: 'center', flexGrow: 1, justifyContent: 'center' },
+  matchEmpty: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#B7AEA6' },
   createBtn: {
     alignSelf: 'center', minWidth: 220, backgroundColor: '#FBCFA6',
     borderRadius: 14, paddingVertical: 15, alignItems: 'center',
