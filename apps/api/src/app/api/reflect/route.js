@@ -37,7 +37,12 @@ async function analyzeDimensions(body, excludeDim) {
     const res = await callAI({
       systemInstruction: DIMENSION_SYSTEM_PROMPT,
       userText: body,
-      generationConfig: { temperature: 0.3, maxOutputTokens: 500 },
+      // 256-token thinking budget (2026-08-09): enough to weigh an ambiguous
+      // entry between dimensions, while capping the reasoning spend.
+      generationConfig: {
+        temperature: 0.3, maxOutputTokens: 500,
+        thinkingConfig: { thinkingBudget: 256 },
+      },
     })
     const parsed = parseAIJson(res.text)
     if (!Array.isArray(parsed)) return []
@@ -67,34 +72,9 @@ async function generateBubble(body) {
 }
 
 // Skill generation: whether this reflection holds a durable lesson worth
-// keeping as a card. This is a FIRST-DRAFT prompt -- the content judgment (what
-// counts as a real lesson, the voice) will be tuned; the JSON contract is what
-// the code depends on. Not every reflect yields a skill: a play-by-play of a
-// day has no lesson, and the model should say so via a low confidence.
 const BUBBLE_SYSTEM_PROMPT = `You are the user's companion pet in a personal-growth app. They just finished writing a reflection. Respond with ONE warm, short line, under 25 words, the way their companion would -- caring and specific to what they wrote, like a friend checking in. No preamble. Return ONLY the line: no quotes, no JSON, no markdown.`
 
-const SKILL_SYSTEM_PROMPT = `You read a personal journal entry and extract a small lesson or insight from it -- something positive or meaningful the writer could carry forward.
 
-[TEST PHASE: be generous. If the entry contains anything positive, any small realization, effort, feeling, or meaningful moment, generate a lesson from it. Only decline for an entry that is purely empty, gibberish, or has no content at all.]
-
-Phrase the lesson as an insight in the writer's own register -- warm, specific to what they wrote, not a generic platitude.
-
-Return ONLY a JSON object, no prose, no markdown:
-{
-  "hasSkill": boolean,        // true whenever there's anything to draw a lesson from
-  "confidence": number,       // 0.0 to 1.0
-  "title": string,            // <= 6 words, the lesson as a memorable handle
-  "body": string,             // one sentence, the lesson
-  "dimension": string         // one of: expression, awareness, momentum, direction, steadiness, confidence, gratitude, connection
-}
-
-Only return hasSkill false for truly empty or meaningless input.`
-
-// Confidence gate. LOW for the test phase so skills generate easily and the
-// flow is visible; tightens (and moves to app_config, tunable without a
-// release) before launch.
-const SKILL_CONFIDENCE_THRESHOLD = 0.3
-const SECRET_SKILL_CHANCE = 0.1
 
 // Plus 回忆标题 (2026-08-09 final spec: Memory Items Title Generator).
 // One call titles every un-edited item at once; user-edited items are never
@@ -135,41 +115,6 @@ Also write one short caption per item (max 12 words) that matches the story.
 
 Return ONLY JSON: { "story": "<the story>", "items": { "<itemId>": "<caption>", ... } }. No prose, no markdown.`
 
-/**
- * Generate a skill from the reflection, if it holds one. Paid+consented only
- * (skill count is a paid signal; free users never generate). Returns the skill
- * object to persist, or null -- on low confidence, no-skill, or any AI failure.
- * Dedup happens in the caller, against the user's existing skills.
- */
-async function generateSkill(body, promptDim) {
-  try {
-    const res = await callAI({
-      systemInstruction: SKILL_SYSTEM_PROMPT,
-      userText: body,
-      // Gemini 2.5-flash spends tokens on internal reasoning before output, so
-      // a small cap yields an empty response; 2000 leaves room for the JSON.
-      // response_mime_type is stripped by callGemini (2.5 + system_instruction
-      // 400s), so the prompt itself must demand pure JSON.
-      generationConfig: { temperature: 0.4, maxOutputTokens: 2000 },
-    })
-    const parsed = parseAIJson(res.text)
-    if (!parsed || typeof parsed !== 'object') return null
-    if (!parsed.hasSkill || typeof parsed.confidence !== 'number') return null
-    if (parsed.confidence < SKILL_CONFIDENCE_THRESHOLD) return null
-    if (!parsed.title || !parsed.body) return null
-
-    const dim = DIMENSION_IDS.includes(parsed.dimension) ? parsed.dimension : promptDim
-    return {
-      title: String(parsed.title).slice(0, 80),
-      body: String(parsed.body).slice(0, 300),
-      dimension: dim,
-      rarity: Math.random() < SECRET_SKILL_CHANCE ? 'secret' : 'normal',
-    }
-  } catch (err) {
-    console.warn('[reflect] skill generation failed (non-fatal):', err && err.message)
-    return null
-  }
-}
 
 /** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
 function isoWeek(dateStr) {
@@ -411,7 +356,12 @@ export async function POST(request) {
           const res = await callAI({
             systemInstruction: makeStory ? STORY_SYSTEM_PROMPT : REFINE_SYSTEM_PROMPT,
             userText: `Items:\n${names}\n\nJournal:\n${body || '(none)'}`,
-            generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
+            // Structured short-copy task: thinking OFF (2026-08-09 cost pass)
+            // — output tokens drop ~4x with no quality loss on titles.
+            generationConfig: {
+              temperature: 0.6, maxOutputTokens: 2000,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
           })
           const parsed = parseAIJson(res.text)
           if (parsed && typeof parsed === 'object') {
