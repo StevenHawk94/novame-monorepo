@@ -2,42 +2,30 @@
 
 import { useState } from 'react';
 import OverviewTab from './_components/OverviewTab';
-import PostsTab from './_components/PostsTab';
-import CardsTab from './_components/CardsTab';
 import DefaultUsersTab from './_components/DefaultUsersTab';
 import RealUsersTab from './_components/RealUsersTab';
-import AssetsTab from './_components/AssetsTab';
 import OutfitsTab from './_components/OutfitsTab';
 import ScenesTab from './_components/ScenesTab';
 import OrdersTab from './_components/OrdersTab';
 import PricingTab from './_components/PricingTab';
-import SeekQuestionsTab from './_components/SeekQuestionsTab';
 
 type TabId =
   | 'overview'
-  | 'posts'
-  | 'cards'
   | 'default-users'
   | 'real-users'
   | 'orders'
   | 'pricing'
-  | 'assets'
   | 'outfits'
   | 'scenes'
-  | 'seek'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
-  { id: 'posts', icon: '💬', label: 'Posts' },
-  { id: 'cards', icon: '🃏', label: 'Cards' },
   { id: 'default-users', icon: '👤', label: 'Default Users' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'orders', icon: '📦', label: 'Orders' },
   { id: 'pricing', icon: '💰', label: 'Pricing' },
-  { id: 'assets', icon: '🖼️', label: 'Assets' },
   { id: 'outfits', icon: '👕', label: 'Outfits' },
   { id: 'scenes', icon: '🗺️', label: 'Scenes' },
-  { id: 'seek', icon: '❓', label: 'Seek Questions' },
 ];
 
 /**
@@ -73,16 +61,12 @@ export default function AdminDashboard() {
       </div>
 
       {tab === 'overview' && <OverviewTab stats={null} loading={false} />}
-      {tab === 'posts' && <PostsTab />}
-      {tab === 'cards' && <CardsTab />}
       {tab === 'default-users' && <DefaultUsersTab />}
       {tab === 'real-users' && <RealUsersTab />}
       {tab === 'orders' && <OrdersTab />}
       {tab === 'pricing' && <PricingTab />}
-      {tab === 'assets' && <AssetsTab />}
       {tab === 'outfits' && <OutfitsTab />}
       {tab === 'scenes' && <ScenesTab />}
-      {tab === 'seek' && <SeekQuestionsTab />}
     </>
   );
 }
