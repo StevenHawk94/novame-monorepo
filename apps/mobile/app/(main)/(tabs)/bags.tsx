@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { FlatList, ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -58,6 +58,16 @@ export default function BagsScreen() {
     category === 'all'
       ? items
       : items.filter((it) => ITEM_DICTIONARY.items[it.itemId]?.bagsCategory === category);
+
+  // Incremental loading (2026-08-08): big collections froze the old
+  // render-everything ScrollView. A virtualized list shows 100 tiles and
+  // appends 100 more as the user nears the bottom.
+  const PAGE = 100;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  useEffect(() => {
+    setVisibleCount(PAGE);
+  }, [category]);
+  const paged = shown.slice(0, visibleCount);
 
   function openItem(item: CollectedItem) {
     itemSheetRef.current?.present(item.itemId);
@@ -122,24 +132,34 @@ export default function BagsScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.gridScroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.grid}>
-            {shown.map((item) => (
-              <Pressable key={item.itemId} onPress={() => openItem(item)} style={[styles.cell, { width: cellWidth }]}>
-                <View style={styles.itemCard}>
-                  <ItemSprite itemId={item.itemId} size={tileSize} radius={18} />
-                  {item.count > 1 && (
-                    <View style={styles.countBadge}>
-                      <Text style={styles.countBadgeText}>
-                        x{item.count > 99 ? '99+' : item.count}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
+        <FlatList
+          key={numColumns}
+          data={paged}
+          keyExtractor={(it) => it.itemId}
+          numColumns={numColumns}
+          contentContainerStyle={styles.gridScroll}
+          showsVerticalScrollIndicator={false}
+          onEndReached={() => setVisibleCount((c) => Math.min(c + PAGE, shown.length))}
+          onEndReachedThreshold={0.6}
+          initialNumToRender={40}
+          maxToRenderPerBatch={40}
+          windowSize={7}
+          removeClippedSubviews
+          renderItem={({ item }) => (
+            <Pressable onPress={() => openItem(item)} style={[styles.cell, { width: cellWidth }]}>
+              <View style={styles.itemCard}>
+                <ItemSprite itemId={item.itemId} size={tileSize} radius={18} />
+                {item.count > 1 && (
+                  <View style={styles.countBadge}>
+                    <Text style={styles.countBadgeText}>
+                      x{item.count > 99 ? '99+' : item.count}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          )}
+        />
       )}
 
       <ItemSheet ref={itemSheetRef} />

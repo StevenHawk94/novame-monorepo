@@ -140,14 +140,23 @@ export function SelectableItemGrid({
   // 6 overflowed on narrow screens and left dead space on tablets.
   const [gridWidth, setGridWidth] = useState(0);
   const numColumns = Math.max(4, Math.floor((gridWidth - 24 + 8) / (44 + 9 + 8)));
+  // Incremental loading: 100 tiles at a time — Food & Drink's 1200+ ids
+  // otherwise stutter the first paint.
+  const PAGE = 100;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  useEffect(() => {
+    setVisibleCount(PAGE);
+  }, [itemIds]);
   return (
     <View style={{ flex: 1 }} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
       {gridWidth > 0 && (
       <FlatList
         key={numColumns}
-        data={itemIds}
+        data={itemIds.slice(0, visibleCount)}
         keyExtractor={(id) => id}
         numColumns={numColumns}
+        onEndReached={() => setVisibleCount((c) => Math.min(c + PAGE, itemIds.length))}
+        onEndReachedThreshold={0.6}
         renderItem={({ item }) => (
           <GridCell id={item} on={selected.has(item)} onToggle={handleToggle} />
         )}
