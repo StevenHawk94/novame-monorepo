@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { FlatList, ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -9,20 +9,17 @@ import { fetchBags, getCachedBags, type CollectedItem } from '@/lib/bags-api';
 import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { ITEM_DICTIONARY } from '@novame/engine';
-import { itemBagsCategory } from '@/lib/remote-items';
+import { PROMPT_CATEGORIES } from '@/lib/guided-catalog.g';
+import { itemsForGuidedCategory } from '@/lib/guided-prompts';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { useWindowDimensions } from 'react-native';
 
-// v3 (2026-07-30): "all" + the master sheet's 5 Bags categories. Filtering
-// resolves each item's bagsCategory through the dictionary, so the server's
-// art-category column never matters here.
+// 2026-08-08: "all" + the SAME 11 categories Object Reflect uses (guided
+// prompt categories) — membership resolves through itemsForGuidedCategory,
+// which already appends OTA manifest additions.
 const CATEGORIES: { key: string; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'Myself', label: 'Myself' },
-  { key: 'Food & Fun', label: 'Food & Fun' },
-  { key: 'Stuff', label: 'Stuff' },
-  { key: 'Places', label: 'Places' },
-  { key: 'Nature', label: 'Nature' },
+  ...PROMPT_CATEGORIES.map((c) => ({ key: c.key, label: c.label })),
 ];
 
 /**
@@ -55,10 +52,12 @@ export default function BagsScreen() {
     }, []),
   );
 
+  const categoryIds = useMemo(
+    () => (category === 'all' ? null : new Set(itemsForGuidedCategory(category))),
+    [category],
+  );
   const shown =
-    category === 'all'
-      ? items
-      : items.filter((it) => itemBagsCategory(it.itemId) === category);
+    categoryIds === null ? items : items.filter((it) => categoryIds.has(it.itemId));
 
   // Incremental loading (2026-08-08): big collections froze the old
   // render-everything ScrollView. A virtualized list shows 100 tiles and
@@ -96,8 +95,14 @@ export default function BagsScreen() {
 
       <Text style={styles.availNote}>All items are sharable with your friends</Text>
 
-      {/* Category strip: cream, thin ink border; active slot is the dark pill */}
-      <View style={styles.catStrip}>
+      {/* Category strip: cream, thin ink border; active slot is the dark pill.
+          Horizontal scroll — All + 11 Object Reflect categories. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.catStripScroll}
+        contentContainerStyle={styles.catStrip}
+      >
         {CATEGORIES.map((cat) => {
           const active = cat.key === category;
           return (
@@ -116,7 +121,7 @@ export default function BagsScreen() {
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* Grid */}
       {shown.length === 0 && !loaded ? (
@@ -188,8 +193,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8E3', borderRadius: 30, borderWidth: 1.5, borderColor: '#3E2C1A',
     paddingHorizontal: 10, paddingVertical: 8, marginBottom: 18,
   },
-  catChip: { width: 46, height: 46, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  catChipActive: { backgroundColor: '#4A3423', width: 62 },
+  catStripScroll: { flexGrow: 0 },
+  catChip: { minWidth: 52, height: 46, borderRadius: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  catChipActive: { backgroundColor: '#4A3423' },
   catLabelActive: { color: '#FFF6DE' },
   catLabel: { fontSize: 11, fontFamily: 'Inter_700Bold', color: '#8A6B3F', textAlign: 'center' },
   catPlaceholder: { width: 30, height: 30, borderRadius: 10, backgroundColor: 'rgba(74,52,35,0.06)' },
