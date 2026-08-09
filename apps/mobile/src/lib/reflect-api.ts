@@ -35,14 +35,6 @@ export interface MatchedItem {
   label: string;
 }
 
-export interface GeneratedSkill {
-  skillId: string;
-  title: string;
-  body: string;
-  dimension: string;
-  rarity: 'normal' | 'secret';
-}
-
 export interface ReflectSnapshot {
   reflectId: string;
   xpAwarded: number;
@@ -51,7 +43,6 @@ export interface ReflectSnapshot {
   reflectsToday: number;
   reflectsRemaining: number;
   matchedItems: MatchedItem[];
-  generatedSkill: GeneratedSkill | null;
   bubble: string | null;
   /** Plus 流程2 cute story, when requested. */
   story: string | null;
@@ -131,7 +122,6 @@ interface WireSnapshot {
   reflects_today?: number;
   reflects_remaining?: number;
   matchedItems?: MatchedItem[];
-  generatedSkill?: GeneratedSkill | null;
   bubble?: string | null;
   story?: string | null;
 }
@@ -145,7 +135,6 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     reflectsToday: w.reflects_today ?? 0,
     reflectsRemaining: w.reflects_remaining ?? 0,
     matchedItems: w.matchedItems ?? [],
-    generatedSkill: w.generatedSkill ?? null,
     bubble: w.bubble ?? null,
     story: w.story ?? null,
   };

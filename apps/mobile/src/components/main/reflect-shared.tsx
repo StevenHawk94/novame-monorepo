@@ -4,7 +4,7 @@
  *   - SelectableItemGrid the tappable sprite grid (guided + object flows)
  *   - MemoryEditSheet   the "N Items" note editor (mocks: yellow-frame card)
  *   - ReflectResultView "Reflection Done" (+clovers, +memory items, claim,
- *                       the paired-details toggle) and the skill reveal
+ *                       the paired-details toggle)
  *
  * Every input screen sits on the sunset art under a 50% black scrim (设计
  * 要求), so these pieces assume a dark ground.
@@ -267,7 +267,6 @@ export function ReflectResultView({
   result: ReflectSnapshot;
   onFinished: () => void;
 }) {
-  const [phase, setPhase] = useState<'claim' | 'skill'>('claim');
   // 结果页 toggle：默认开（paired 可见细节）；关掉只藏细节、物品仍可见。
   const [detailsVisible, setDetailsVisible] = useState(true);
   const counts = useMemo(() => {
@@ -285,33 +284,7 @@ export function ReflectResultView({
 
   function onClaim() {
     void haptics.medium();
-    if (phase === 'claim' && result.generatedSkill) {
-      setPhase('skill');
-      return;
-    }
     onFinished();
-  }
-
-  if (phase === 'skill' && result.generatedSkill) {
-    const sk = result.generatedSkill;
-    return (
-      <View style={s.resultWrap}>
-        <FireworksBurst />
-        <ConfettiBurst />
-        <View style={s.resultCenter}>
-          <Text style={s.resultTitle}>Your Rabbit Learned a New Skill!</Text>
-          <SpringPop>
-            <View style={[s.skillCard, sk.rarity === 'secret' && s.skillCardSecret]}>
-              <Text style={s.skillTitle}>{sk.title}</Text>
-              <Text style={s.skillBody}>{sk.body}</Text>
-            </View>
-          </SpringPop>
-        </View>
-        <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={onClaim} cardStyle={s.claimBtn}>
-          <Text style={s.claimBtnText}>Claim</Text>
-        </OffsetCard>
-      </View>
-    );
   }
 
   return (
@@ -434,7 +407,6 @@ const s = StyleSheet.create({
   doneBtnText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },
 
   resultWrap: { flex: 1 },
-  resultCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, paddingHorizontal: 20 },
   resultScroll: { alignItems: 'stretch', gap: 14, paddingBottom: 16, paddingTop: 8 },
   resultEmoji: { fontSize: 40, textAlign: 'center' },
   resultTitle: {
@@ -458,13 +430,6 @@ const s = StyleSheet.create({
   storyTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#161311', marginBottom: 8 },
   storyBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 23 },
 
-  skillCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 3, borderColor: RC.yellow,
-    padding: 24, width: 300, gap: 10,
-  },
-  skillCardSecret: { borderColor: '#B57BC9' },
-  skillTitle: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center' },
-  skillBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 23, textAlign: 'center' },
 
   resultFooter: { gap: 14, paddingTop: 6 },
   claimBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },

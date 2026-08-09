@@ -4,7 +4,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
-import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, matchSkillCards, XP_RULES } from '@novame/engine'
+import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, XP_RULES } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
 
 export const runtime = 'edge'
@@ -71,7 +71,6 @@ async function generateBubble(body) {
   }
 }
 
-// Skill generation: whether this reflection holds a durable lesson worth
 const BUBBLE_SYSTEM_PROMPT = `You are the user's companion pet in a personal-growth app. They just finished writing a reflection. Respond with ONE warm, short line, under 25 words, the way their companion would -- caring and specific to what they wrote, like a friend checking in. No preamble. Return ONLY the line: no quotes, no JSON, no markdown.`
 
 
@@ -386,71 +385,14 @@ export async function POST(request) {
       }
     }
 
-    // Skill acquisition (2026-07 ruling Q13): the FIXED 81-card library,
-    // keyword-matched by the engine — a rule engine like item matching, never
-    // AI, so every tier earns cards (free users included: no AI cost). A card
-    // acquires exactly once (owned set filter + the (user_id, card_id) unique
-    // index behind it). Best-effort — never blocks the reflect.
-    let generatedSkill = null
-    if (reflectId && body.length > 0) {
-      try {
-        const { data: ownedRows } = await supabase
-          .from('skills')
-          .select('card_id')
-          .eq('user_id', userId)
-          .not('card_id', 'is', null)
-        const owned = new Set((ownedRows || []).map((r) => r.card_id))
-        const newCards = matchSkillCards(body, owned)
-        if (newCards.length > 0) {
-          const rows = newCards.map((c) => ({
-            user_id: userId,
-            reflect_id: reflectId,
-            dimension: c.group === 'mega' ? null : c.group, // mega sits outside dimension_t
-            title: c.title,
-            body: c.body,
-            rarity: c.tier === 'advanced' ? 'secret' : 'normal',
-            source: 'self',
-            card_id: c.id,
-            tier: c.tier,
-          }))
-          const { data: inserted, error: insErr } = await supabase
-            .from('skills')
-            .insert(rows)
-            .select('id, card_id')
-          if (insErr) {
-            // A race on the unique index rejects the batch; the next reflect
-            // simply re-filters against the then-owned set. Non-fatal.
-            console.warn('[reflect] skill insert skipped:', insErr.message)
-          } else {
-            // Surface the highest-tier new card on the claim screen.
-            const order = { advanced: 3, intermediate: 2, normal: 1 }
-            const best = [...newCards].sort((a, b) => order[b.tier] - order[a.tier])[0]
-            const bestRow = (inserted || []).find((r) => r.card_id === best.id)
-            if (bestRow) {
-              generatedSkill = {
-                skillId: bestRow.id,
-                title: best.title,
-                body: best.body,
-                dimension: best.group,
-                rarity: best.tier === 'advanced' ? 'secret' : 'normal',
-                tier: best.tier,
-              }
-            }
-          }
-        }
-      } catch (skillErr) {
-        console.warn('[reflect] skill flow failed (non-fatal):', skillErr && skillErr.message)
-      }
-    }
-
-    // Companion bubble (best-effort, paid + consented -- same gate as skills;
+    // Companion bubble (best-effort, paid + consented -- paid + consented only;
     // free users get the rotating default lines on Home instead).
     let bubble = null
     if (reflectId && isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
       bubble = await generateBubble(body)
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, generatedSkill, bubble, story })
+    return NextResponse.json({ success: true, ...result, matchedItems, bubble, story })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
