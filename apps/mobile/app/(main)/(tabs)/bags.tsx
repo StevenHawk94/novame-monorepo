@@ -9,6 +9,7 @@ import { fetchBags, getCachedBags, type CollectedItem } from '@/lib/bags-api';
 import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { ITEM_DICTIONARY } from '@novame/engine';
+import { itemBagsCategory } from '@/lib/remote-items';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { useWindowDimensions } from 'react-native';
 
@@ -57,7 +58,7 @@ export default function BagsScreen() {
   const shown =
     category === 'all'
       ? items
-      : items.filter((it) => ITEM_DICTIONARY.items[it.itemId]?.bagsCategory === category);
+      : items.filter((it) => itemBagsCategory(it.itemId) === category);
 
   // Incremental loading (2026-08-08): big collections froze the old
   // render-everything ScrollView. A virtualized list shows 100 tiles and

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "food_drink.boba",
+      "name": "Boba",
+      "bagsCategory": "Food & Fun",
+      "promptCategory": "Food & Drink",
+      "keywords": ["boba", "bubble tea", "milk tea"]
+    }
+  ]
+}

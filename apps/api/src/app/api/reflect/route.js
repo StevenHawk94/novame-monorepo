@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { rateLimit } from '@/lib/rate-limit'
+import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
 import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, matchSkillCards, XP_RULES } from '@novame/engine'
@@ -200,6 +201,15 @@ export async function POST(request) {
     if (body.length > MAX_BODY_CHARS) {
       return NextResponse.json({ error: 'Body too long' }, { status: 400 })
     }
+    // OTA items: validation + matching run on the MERGED dictionary (bundled
+    // + R2 manifest), so no-release items are accepted and matchable.
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
+    const DICT = await getMergedDictionary(supabase)
+
     // Manual picks: [{ itemId, note? }], every id must exist in the dictionary.
     // The note (≤200 chars) becomes the memory excerpt, else the display name.
     let picks = []
@@ -211,7 +221,7 @@ export async function POST(request) {
       for (const s of selectedItems.slice(0, 100)) {
         const id = typeof s?.itemId === 'string' ? s.itemId : null
         if (!id || seen.has(id)) continue
-        const def = ITEM_DICTIONARY.items[id]
+        const def = DICT.items[id]
         if (!def) return NextResponse.json({ error: 'Unknown item', itemId: id }, { status: 400 })
         seen.add(id)
         const note = typeof s.note === 'string' ? s.note.trim().slice(0, 200) : ''
@@ -221,12 +231,6 @@ export async function POST(request) {
         return NextResponse.json({ error: 'No items selected' }, { status: 400 })
       }
     }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    )
 
     const { data: profile, error: pErr } = await supabase
       .from('profiles')
@@ -305,7 +309,7 @@ export async function POST(request) {
         let matches
         if (mode === 'typing') {
           const removed = new Set(Array.isArray(removedItemIds) ? removedItemIds.filter((x) => typeof x === 'string') : [])
-          matches = matchItems(body, ITEM_DICTIONARY).filter((m) => !removed.has(m.itemId))
+          matches = matchItems(body, DICT).filter((m) => !removed.has(m.itemId))
           // Pre-submit edit sheet: a user-typed note replaces the engine label.
           if (itemNotes && typeof itemNotes === 'object') {
             matches = matches.map((m) => {

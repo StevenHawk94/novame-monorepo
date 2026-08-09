@@ -9,6 +9,7 @@
  * Object Reflect shares the same 11 categories for its library picker.
  */
 import { PROMPT_CATEGORIES } from './guided-catalog.g';
+import { remoteIdsForPromptCategory } from './remote-items';
 import { kGuidedCategories } from '../shared/storage/keys';
 import { storage } from './storage';
 
@@ -54,7 +55,11 @@ export function availableGuidedCategories(): GuidedCategory[] {
 
 /** Ranked, curated item ids for one category's prompt page / picker tab. */
 export function itemsForGuidedCategory(key: string): string[] {
-  return ITEMS_BY_KEY.get(key) ?? [];
+  const base = ITEMS_BY_KEY.get(key) ?? [];
+  // OTA items: R2-manifest additions tagged with this prompt category append
+  // after the bundled list (no release needed).
+  const extra = remoteIdsForPromptCategory(key).filter((id) => !base.includes(id));
+  return extra.length > 0 ? [...base, ...extra] : base;
 }
 
 /** The stored picks, filtered to categories that still exist (regen-safe). */

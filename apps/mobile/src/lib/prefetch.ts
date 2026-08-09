@@ -11,6 +11,7 @@ import { fetchBags } from './bags-api';
 import { fetchCosmetics } from './cosmetics-api';
 import { fetchCommonItems, fetchFriendFeed, fetchFriends, fetchInsights, fetchPairing } from './friends-api';
 import { fetchQuestStatus } from './quests-api';
+import { refreshRemoteItems } from './remote-items';
 import { fetchReflectFeed } from './reflect-feed-api';
 
 const THROTTLE_MS = 60_000;
@@ -20,6 +21,7 @@ export function prefetchAppData(): void {
   const now = Date.now();
   if (now - lastRun < THROTTLE_MS) return;
   lastRun = now;
+  void refreshRemoteItems();
   void fetchBags();
   void fetchReflectFeed();
   void fetchFriends();

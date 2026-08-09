@@ -15,11 +15,12 @@
  * assets/items/, then run tools/slice-item-images.py to refresh both the
  * per-item webps and the generated map.
  */
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
 import { ITEM_DICTIONARY } from '@novame/engine';
+import { remoteImageUri } from '@/lib/remote-items';
 
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 
@@ -36,9 +37,14 @@ type Props = {
 // value-stable, so memo turns tab re-renders into no-ops for every tile.
 export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
   const art = ITEM_IMAGES[itemId];
+  // OTA items (2026-08-08): ids missing from the bundle render their art
+  // straight from R2 (expo-image disk-caches it); a failed load falls back
+  // to the emoji tile.
+  const [remoteFailed, setRemoteFailed] = useState(false);
 
   if (art == null) {
     const item = ITEM_DICTIONARY.items[itemId];
+    const showRemote = !item && !remoteFailed;
     return (
       <View
         style={[
@@ -47,7 +53,14 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
           style,
         ]}
       >
-        {item?.emoji ? (
+        {showRemote ? (
+          <Image
+            source={{ uri: remoteImageUri(itemId) }}
+            style={{ width: size, height: size }}
+            contentFit="contain"
+            onError={() => setRemoteFailed(true)}
+          />
+        ) : item?.emoji ? (
           <Text style={{ fontSize: size * 0.55, lineHeight: size * 0.7 }}>{item.emoji}</Text>
         ) : null}
       </View>

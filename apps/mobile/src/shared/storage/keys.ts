@@ -75,6 +75,9 @@ export const kPairingStatus = defineKey('burrow_pairing_status', 'user');
 export const kCommonItems = defineKey('burrow_common_items', 'user');
 export const kConnInsights = defineKey('burrow_conn_insights', 'user');
 
+/** OTA items manifest (R2 Items/items-manifest.json) — global content. */
+export const kRemoteItems = defineKey('burrow_remote_items', 'device');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 

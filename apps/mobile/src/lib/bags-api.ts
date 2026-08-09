@@ -7,6 +7,7 @@
  * the dictionary, with no API or client-shape change.
  */
 import { ITEM_DICTIONARY, type ItemRarity } from '@novame/engine';
+import { remoteItemDef } from './remote-items';
 
 import { kBagsState } from '../shared/storage/keys';
 import { apiClient } from './api';
@@ -44,7 +45,7 @@ function decorate(w: WireItem): CollectedItem {
   const def = ITEM_DICTIONARY.items[w.itemId];
   return {
     itemId: w.itemId,
-    displayName: def?.displayName ?? w.itemId,
+    displayName: def?.displayName ?? remoteItemDef(w.itemId)?.name ?? w.itemId,
     rarity: def?.rarity ?? 'common',
     emoji: def?.emoji ?? '\ud83d\udce6',
     category: def?.category ?? 'other',
