@@ -39,6 +39,9 @@ export interface MemoryBubble {
   memoryText: string | null;
   /** @deprecated kept for the card gate; true iff memoryText exists. */
   isPublic: boolean;
+  /** Fixed on-screen slot (assigned at load) — popping neighbors never
+   *  reshuffles the survivors. */
+  slot: number;
 }
 
 function localDateStr(): string {
@@ -139,10 +142,14 @@ export async function loadTodayBubbles(): Promise<MemoryBubble[]> {
           itemName: name,
           memoryText: text,
           isPublic: !!text,
+          slot: 0, // assigned after the newest-first cap below
         });
       }
     }
-    return candidates.slice(0, MAX_BUBBLES).filter((b) => !isPopped(b.id));
+    return candidates
+      .slice(0, MAX_BUBBLES)
+      .map((b, i) => ({ ...b, slot: i }))
+      .filter((b) => !isPopped(b.id));
   } catch {
     return [];
   }

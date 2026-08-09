@@ -84,11 +84,11 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {bubbles.map((b, i) => (
+      {bubbles.map((b) => (
         <FloatingBubble
           key={b.id}
           bubble={b}
-          slot={SLOTS[i % SLOTS.length]}
+          slot={SLOTS[b.slot % SLOTS.length]}
           onPopFinished={handlePopFinished}
         />
       ))}

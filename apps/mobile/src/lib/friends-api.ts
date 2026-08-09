@@ -10,7 +10,7 @@ import { syncWidgetLatestFriend } from './widget-sync';
 import { apiClient } from './api';
 import { supabase } from './supabase';
 import { storage } from './storage';
-import { kFriendsFeed, kFriendsStatus } from '../shared/storage/keys';
+import { kCommonItems, kConnInsights, kFriendsFeed, kFriendsStatus, kPairingStatus } from '../shared/storage/keys';
 
 export interface FriendCard {
   userId: string;
@@ -309,6 +309,15 @@ export interface PairingStatus {
   pairedDays?: number;
 }
 
+/** Cached pairing snapshot — tabs paint from this instantly on open. */
+export function getCachedPairing(): PairingStatus | null {
+  try {
+    const raw = storage.getString(kPairingStatus.name);
+    if (raw) return JSON.parse(raw) as PairingStatus;
+  } catch { /* fall through */ }
+  return null;
+}
+
 export async function fetchPairing(): Promise<PairingStatus> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
@@ -317,16 +326,18 @@ export async function fetchPairing(): Promise<PairingStatus> {
     const data = await apiClient.get<{ success?: boolean } & PairingStatus>(
       `/api/friends/pair?userId=${encodeURIComponent(userId)}`,
     );
-    if (!data.success) return { paired: false, partner: null };
-    return {
+    if (!data.success) return getCachedPairing() ?? { paired: false, partner: null };
+    const status: PairingStatus = {
       paired: !!data.paired,
       partner: data.partner ?? null,
       relationship: data.relationship ?? null,
       relationshipSince: data.relationshipSince ?? null,
       pairedDays: data.pairedDays ?? 0,
     };
+    storage.set(kPairingStatus.name, JSON.stringify(status));
+    return status;
   } catch {
-    return { paired: false, partner: null };
+    return getCachedPairing() ?? { paired: false, partner: null };
   }
 }
 
@@ -403,6 +414,14 @@ export interface CommonItem {
 }
 
 /** 板块3: up to 8 items both members reflected recently. */
+export function getCachedCommonItems(): CommonItem[] {
+  try {
+    const raw = storage.getString(kCommonItems.name);
+    if (raw) return JSON.parse(raw) as CommonItem[];
+  } catch { /* fall through */ }
+  return [];
+}
+
 export async function fetchCommonItems(): Promise<CommonItem[]> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
@@ -411,9 +430,12 @@ export async function fetchCommonItems(): Promise<CommonItem[]> {
     const data = await apiClient.get<{ success?: boolean; items?: CommonItem[] }>(
       `/api/friends/common-items?userId=${encodeURIComponent(userId)}`,
     );
-    return data.success ? data.items ?? [] : [];
+    if (!data.success) return getCachedCommonItems();
+    const items = data.items ?? [];
+    storage.set(kCommonItems.name, JSON.stringify(items));
+    return items;
   } catch {
-    return [];
+    return getCachedCommonItems();
   }
 }
 
@@ -423,6 +445,18 @@ export interface ConnectionInsights {
   careTips: string | null;
   boundaries: string | null;
   hangoutIdeas: string | null;
+}
+
+export type InsightsResult =
+  | { ok: true; insights: ConnectionInsights | null }
+  | { ok: false; error: 'plus_required' | 'consent_required' | 'network' };
+
+export function getCachedInsights(): InsightsResult | null {
+  try {
+    const raw = storage.getString(kConnInsights.name);
+    if (raw) return JSON.parse(raw) as InsightsResult;
+  } catch { /* fall through */ }
+  return null;
 }
 
 /** 板块4 (Plus): daily AI guidance about the partner. */
@@ -438,14 +472,20 @@ export async function fetchInsights(): Promise<
     const data = await apiClient.get<{ success?: boolean; error?: string; insights?: ConnectionInsights | null }>(
       `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}`,
     );
-    if (data.success) return { ok: true, insights: data.insights ?? null };
-    if (data.error === 'plus_required' || data.error === 'consent_required') {
-      return { ok: false, error: data.error };
+    if (data.success) {
+      const res: InsightsResult = { ok: true, insights: data.insights ?? null };
+      storage.set(kConnInsights.name, JSON.stringify(res));
+      return res;
     }
-    return { ok: false, error: 'network' };
+    if (data.error === 'plus_required' || data.error === 'consent_required') {
+      const res: InsightsResult = { ok: false, error: data.error };
+      storage.set(kConnInsights.name, JSON.stringify(res));
+      return res;
+    }
+    return getCachedInsights() ?? { ok: false, error: 'network' };
   } catch (err) {
     const e = (err as { body?: { error?: string } })?.body?.error;
     if (e === 'plus_required' || e === 'consent_required') return { ok: false, error: e };
-    return { ok: false, error: 'network' };
+    return getCachedInsights() ?? { ok: false, error: 'network' };
   }
 }

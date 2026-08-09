@@ -12,7 +12,7 @@ import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
-  getCachedFriends, getCachedFriendFeed, fetchPairing,
+  getCachedFriends, getCachedFriendFeed, getCachedPairing, fetchPairing,
   fetchSharePrivacy, setSharePrivacy, respondFriend,
   type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest,
 } from '@/lib/friends-api';
@@ -52,7 +52,7 @@ export default function FriendsScreen() {
   // Cache-first: paint the last visit instantly, refresh in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
-  const [pairing, setPairing] = useState<PairingStatus | null>(null);
+  const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [howItWorks, setHowItWorks] = useState(false);
 
   const load = useCallback(() => {

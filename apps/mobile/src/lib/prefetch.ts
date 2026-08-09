@@ -9,7 +9,7 @@
  */
 import { fetchBags } from './bags-api';
 import { fetchCosmetics } from './cosmetics-api';
-import { fetchFriendFeed, fetchFriends, fetchPairing } from './friends-api';
+import { fetchCommonItems, fetchFriendFeed, fetchFriends, fetchInsights, fetchPairing } from './friends-api';
 import { fetchQuestStatus } from './quests-api';
 import { fetchReflectFeed } from './reflect-feed-api';
 
@@ -24,7 +24,12 @@ export function prefetchAppData(): void {
   void fetchReflectFeed();
   void fetchFriends();
   void fetchFriendFeed();
-  void fetchPairing();
+  void fetchPairing().then((p) => {
+    if (p.paired) {
+      void fetchCommonItems();
+      void fetchInsights();
+    }
+  });
   void fetchQuestStatus();
   void fetchCosmetics();
 }

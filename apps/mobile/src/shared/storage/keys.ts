@@ -70,6 +70,11 @@ export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
 /** Focus voice rotation state: per-scene next/knownMax/resolved R2 keys. */
 export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
 
+/** Cache-first Connection/Friends state: pairing, common items, insights. */
+export const kPairingStatus = defineKey('burrow_pairing_status', 'user');
+export const kCommonItems = defineKey('burrow_common_items', 'user');
+export const kConnInsights = defineKey('burrow_conn_insights', 'user');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 

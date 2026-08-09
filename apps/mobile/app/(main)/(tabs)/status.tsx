@@ -14,6 +14,7 @@ import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
+  getCachedCommonItems, getCachedInsights, getCachedPairing,
   type CommonItem, type ConnectionInsights, type PairingStatus,
 } from '@/lib/friends-api';
 import { supabase } from '@/lib/supabase';
@@ -69,11 +70,18 @@ function Initial({ name, size = 56 }: { name: string; size?: number }) {
 
 export default function ConnectionDashboardScreen() {
   const router = useRouter();
-  const [pairing, setPairing] = useState<PairingStatus | null>(null);
+  // Cache-first (2026-08-08): the tab paints its last-known state instantly;
+  // the focus-effect fetches only reconcile in the background.
+  const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [myName, setMyName] = useState('Me');
-  const [items, setItems] = useState<CommonItem[]>([]);
-  const [insights, setInsights] = useState<ConnectionInsights | null>(null);
-  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(null);
+  const [items, setItems] = useState<CommonItem[]>(() => getCachedCommonItems());
+  const cachedIns = getCachedInsights();
+  const [insights, setInsights] = useState<ConnectionInsights | null>(
+    cachedIns?.ok ? cachedIns.insights : null,
+  );
+  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(
+    cachedIns ? (cachedIns.ok ? 'ok' : cachedIns.error === 'network' ? null : cachedIns.error) : null,
+  );
   const [openItem, setOpenItem] = useState<CommonItem | null>(null);
   const isPaid = getCachedSubscriptionTier() !== 'free';
 
