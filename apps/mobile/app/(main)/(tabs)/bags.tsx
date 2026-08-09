@@ -42,6 +42,10 @@ export default function BagsScreen() {
   const [loaded, setLoaded] = useState(() => getCachedBags().length > 0);
   const [category, setCategory] = useState<string>('all');
   const itemSheetRef = useRef<ItemSheetRef>(null);
+  // Small screens: the strip scrolls, so center the tapped chip — otherwise
+  // a chip picked at the clipped edge stays half-hidden while active.
+  const catScrollRef = useRef<ScrollView>(null);
+  const chipLayout = useRef<Record<string, { x: number; width: number }>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -96,8 +100,13 @@ export default function BagsScreen() {
       <Text style={styles.availNote}>All items are sharable with your friends</Text>
 
       {/* Category strip: cream, thin ink border; active slot is the dark pill.
-          Horizontal scroll — All + 11 Object Reflect categories. */}
+          Horizontal scroll — All + 11 Object Reflect categories. The capsule
+          (background + border) lives on the ScrollView, NOT the content
+          container: on small screens the content scrolls, and a border on the
+          content would scroll with it — open-ended on the right, corners
+          sliding off mid-scroll, the active pill riding over the border. */}
       <ScrollView
+        ref={catScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.catStripScroll}
@@ -108,7 +117,18 @@ export default function BagsScreen() {
           return (
             <Pressable
               key={cat.key}
-              onPress={() => setCategory(cat.key)}
+              onLayout={(e) => { chipLayout.current[cat.key] = e.nativeEvent.layout; }}
+              onPress={() => {
+                setCategory(cat.key);
+                const l = chipLayout.current[cat.key];
+                if (l) {
+                  const viewport = width - 32; // root paddingHorizontal
+                  catScrollRef.current?.scrollTo({
+                    x: Math.max(0, l.x + l.width / 2 - viewport / 2),
+                    animated: true,
+                  });
+                }
+              }}
               style={[styles.catChip, active && styles.catChipActive]}
             >
               {cat.key === 'all' ? (
@@ -188,12 +208,19 @@ const styles = StyleSheet.create({
 
   availNote: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#2E2418', marginTop: 8, marginBottom: 16, paddingHorizontal: 2 },
 
+  // flexGrow keeps space-between spreading the chips on wide screens where
+  // the content doesn't fill the viewport; on small screens it overflows and
+  // scrolls inside the fixed capsule.
   catStrip: {
+    flexGrow: 1,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFF8E3', borderRadius: 30, borderWidth: 1.5, borderColor: '#3E2C1A',
-    paddingHorizontal: 10, paddingVertical: 8, marginBottom: 18,
+    paddingHorizontal: 10, paddingVertical: 8,
   },
-  catStripScroll: { flexGrow: 0 },
+  catStripScroll: {
+    flexGrow: 0,
+    backgroundColor: '#FFF8E3', borderRadius: 30, borderWidth: 1.5, borderColor: '#3E2C1A',
+    marginBottom: 18, overflow: 'hidden',
+  },
   catChip: { minWidth: 52, height: 46, borderRadius: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   catChipActive: { backgroundColor: '#4A3423' },
   catLabelActive: { color: '#FFF6DE' },

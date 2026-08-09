@@ -289,12 +289,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10,
     fontSize: 15, fontFamily: 'Inter_500Medium', color: '#2A2118', marginBottom: 10,
   },
+  // Capsule on the ScrollView, not the content container — a border on the
+  // content scrolls with it on small screens (same fix as the Bags strip).
   catStrip: {
+    flexGrow: 1,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFF8E3', borderRadius: 26, borderWidth: 1.5, borderColor: '#3E2C1A',
-    paddingHorizontal: 8, paddingVertical: 6, marginBottom: 12,
+    paddingHorizontal: 8, paddingVertical: 6,
   },
-  catStripScroll: { flexGrow: 0 },
+  catStripScroll: {
+    flexGrow: 0,
+    backgroundColor: '#FFF8E3', borderRadius: 26, borderWidth: 1.5, borderColor: '#3E2C1A',
+    marginBottom: 12, overflow: 'hidden',
+  },
   catEmoji: { fontSize: 20 },
   catChip: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   catChipActive: { backgroundColor: '#4A3423', width: 56 },
