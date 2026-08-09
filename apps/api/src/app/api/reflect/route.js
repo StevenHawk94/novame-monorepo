@@ -96,14 +96,36 @@ Only return hasSkill false for truly empty or meaningless input.`
 const SKILL_CONFIDENCE_THRESHOLD = 0.3
 const SECRET_SKILL_CHANCE = 0.1
 
-// Plus 回忆精炼 (2026-07-24, PLACEHOLDER copy -- final tone pending product).
-// One call refines every un-edited item at once; user-edited items are never
+// Plus 回忆标题 (2026-08-09 final spec: Memory Items Title Generator).
+// One call titles every un-edited item at once; user-edited items are never
 // in the list. JSON only, keyed by item id.
-const REFINE_SYSTEM_PROMPT = `You turn a journal entry into short, warm memory captions for the items it mentions.
+const REFINE_SYSTEM_PROMPT = `You label "memory objects" pulled from a diary entry. You get the diary text and a list of matched items (id: name). For each item, write one short title that folds in the most specific context the entry attaches to THAT item's mention -- as if labeling a keepsake from that day. Do not re-extract or invent items.
 
-You get a list of items (id: name) and the journal text. For each item, write one specific, warm caption (max 15 words) rooted in what the journal actually says -- like "The iced latte from that new corner cafe". If the journal says nothing about an item, use a gentle generic line for it.
+Finding context -- scan around each item's mention for:
+- who it's connected to (present, made it, gave it, shared it)
+- what else was happening at the same time
+- a stated quality or sensory detail
+- an action, plan, or obligation tied to it
+- a cause or reason behind it
+- where/when, if that's the most distinctive detail
+- the entry's overall mood -- ONLY as a last resort when nothing item-specific exists
 
-Return ONLY JSON: { "items": { "<itemId>": "<caption>", ... } }. No prose, no markdown.`
+How much to include: rank the distinct details you find for that item by specificity and use the top 1-2. One real detail beats padding in a second; three or more means pick the best 2. A detail unique to that item (a person, a simultaneous action, an origin) always beats a generic one that fits the whole entry (overall mood). Two items may share the same context when that's all the entry gives.
+
+Title rules:
+- No fixed template. Start with "The" + the item (or a natural reference like "Mom's ___"); let the grammar follow the content: adjective, "with ___", "while ___", "that ___", a clause about what happens next.
+- Use the entry's own wording where possible; light cleanup ok; never invent people, events, or opinions.
+- Roughly 4-10 words with one detail, up to 14 with two. Shorter and accurate beats longer and forced.
+- Title Case; keep connectors (a, an, on, to, by, of, with, that, while) lowercase unless first.
+- If the entry says nothing about an item at all, a simple "The <name>" plus the day's mood is fine.
+
+Examples of range (not templates):
+Entry: "Feeling anxious but had lunch on time -- the sandwich was actually pretty good, had coffee with it. That Breaking Bad episode is legit. A colleague says the PowerPoint needs to be finished by tomorrow."
+-> sandwich: "The Sandwich That Was Actually Pretty Good"; coffee: "The Coffee on an Anxious Lunch"; netflix: "The Legit Breaking Bad Episode"; powerpoint: "The PowerPoint That Needs to be Done by Tomorrow"
+Entry: "Mom made me a sandwich before I sat down to binge Breaking Bad -- honestly the best one in a while."
+-> sandwich: "Mom's Sandwich Before Binging Breaking Bad" (3 details found; only the top 2 kept)
+
+Return ONLY JSON: { "items": { "<itemId>": "<title>", ... } }, one entry per input item. No prose, no markdown, no reasoning.`
 
 // Plus cute story (流程2, PLACEHOLDER copy): a tiny warm story of the day
 // woven from the picked items, to share with the paired person.
