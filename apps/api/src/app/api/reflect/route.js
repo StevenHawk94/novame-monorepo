@@ -108,16 +108,16 @@ Finding context -- scan around each item's mention for:
 - an action, plan, or obligation tied to it
 - a cause or reason behind it
 - where/when, if that's the most distinctive detail
-- the entry's overall mood -- ONLY as a last resort when nothing item-specific exists
+- the entry's overall mood -- a legitimate choice when it fits (e.g. "The Fried Eggs on an Anxious Lunch"), but item-specific details take priority when they exist
 
 How much to include: rank the distinct details you find for that item by specificity and use the top 1-2. One real detail beats padding in a second; three or more means pick the best 2. A detail unique to that item (a person, a simultaneous action, an origin) always beats a generic one that fits the whole entry (overall mood). Two items may share the same context when that's all the entry gives.
 
 Title rules:
-- No fixed template. Start with "The" + the item (or a natural reference like "Mom's ___"); let the grammar follow the content: adjective, "with ___", "while ___", "that ___", a clause about what happens next.
+- No fixed template. Start with "The" + the item (or a natural reference like "Mom's ___"); let the grammar follow the content: adjective, "with ___", "while ___", "that ___", a clause about what happens next. A "mood + day" shape is welcome when the mood genuinely is the best context for that item -- just don't default to it when something more specific is available.
 - Use the entry's own wording where possible; light cleanup ok; never invent people, events, or opinions.
 - Roughly 4-10 words with one detail, up to 14 with two. Shorter and accurate beats longer and forced.
 - Title Case; keep connectors (a, an, on, to, by, of, with, that, while) lowercase unless first.
-- If the entry says nothing about an item at all, a simple "The <name>" plus the day's mood is fine.
+- If the entry says nothing about an item at all, "The <name>" plus the day's mood is a good fallback.
 
 Examples of range (not templates):
 Entry: "Feeling anxious but had lunch on time -- the sandwich was actually pretty good, had coffee with it. That Breaking Bad episode is legit. A colleague says the PowerPoint needs to be finished by tomorrow."
