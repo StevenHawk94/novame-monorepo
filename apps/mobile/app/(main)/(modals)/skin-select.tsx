@@ -109,7 +109,10 @@ export default function OutfitClosetScreen() {
     if (res.ok) {
       void haptics.success();
       setCosmetics(getCachedCosmetics());
-      await equipAndReturn(o);
+      // Celebrate first (2026-08-08): equip + return to Home only after Done.
+      appAlert('Purchase complete!', `${o.name} is yours — your bunny is putting it on.`, [
+        { text: 'Done', onPress: () => void equipAndReturn(o) },
+      ]);
     } else if (res.error === 'plus_required') {
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
