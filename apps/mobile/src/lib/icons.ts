@@ -55,7 +55,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   memory: require('../../assets/Icons/memory.png'),
   sharedMemories: require('../../assets/Icons/shared-memories.png'),
   // Onboarding v3 (grid background + screen art)
-  obGridBg: require('../../assets/onboarding/onboarding-grid-bg.webp'),
   obWhoPartner: require('../../assets/Icons/ob2-partner.png'),
   obWhoFriends: require('../../assets/Icons/ob2-friends.png'),
   obWhoFamily: require('../../assets/Icons/ob2-family.png'),
@@ -63,7 +62,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obCreatorBubble: require('../../assets/Icons/ob-12.png'),
   obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
   obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
-  obBunnyGrid: require('../../assets/onboarding/onboarding-bunny-grid.webp'),
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 

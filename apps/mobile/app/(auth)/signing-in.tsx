@@ -14,6 +14,7 @@ import { syncOnboardingCompanion } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { AssetGateError } from '@/components/main/asset-gate-error';
 import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 
 /**
  * P0 asset gate on the login path.
@@ -123,7 +124,7 @@ export default function SigningInScreen() {
 
   return (
     <View style={styles.root}>
-      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <GridBackground />
       <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
       <ActivityIndicator size="small" color="#8A6240" style={styles.spinner} />
     </View>

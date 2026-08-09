@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
-import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 import { supabase } from '@/lib/supabase';
 import { storage } from '@/lib/storage';
 import { kConnectedAccount } from '@/shared/storage/keys';
@@ -145,7 +144,7 @@ export default function ConnectAccountScreen() {
 
   return (
     <View style={styles.root}>
-      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <GridBackground />
       <View style={[styles.inner, { paddingTop: insets.top + 14 }]}>
         <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />

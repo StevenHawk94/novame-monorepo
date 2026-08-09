@@ -23,6 +23,7 @@ import {
   markNotifPromptedAfterPurchase,
 } from '@/lib/notification-settings';
 import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 
 /**
  * Subscription paywall (2026-07-26 redesign — same look as onboarding):
@@ -200,7 +201,7 @@ export default function SubscriptionPaywallModal() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
-      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <GridBackground />
       <View style={[styles.root, { paddingTop: insets.top + 14 }]}>
         <Pressable onPress={handleClose} style={[styles.closeCircle, { top: insets.top + 6 }]} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />

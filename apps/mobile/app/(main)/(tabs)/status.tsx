@@ -7,10 +7,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Image as ExpoImage } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
@@ -184,11 +184,7 @@ export default function ConnectionDashboardScreen() {
         /* Unpaired (mock 2026-08-05): grid ground, cream lock card with the
            six teaser pills previewing what pairing unlocks. */
         <View style={{ flex: 1 }}>
-          <ExpoImage
-            source={ICONS.obGridBg}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-          />
+          <GridBackground />
           {/* Display-only until paired: no tap targets anywhere (mock v2). */}
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={st.pairLockCard}>

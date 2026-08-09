@@ -9,6 +9,7 @@ import { hasSeenIntro } from '@/lib/onboarding';
 import { ensureP0Ready } from '@/lib/download-queue';
 import { prefetchOutfitAssets } from '@/lib/outfits';
 import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 
 /**
  * Entry gate. Blocks on P0 assets, then routes.
@@ -64,7 +65,7 @@ export default function Index() {
   if (gate === 'loading' || route === null) {
     return (
       <View style={[styles.splash, { backgroundColor: '#F8E2C1' }]}>
-        <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <GridBackground />
         <ExpoImage source={ICONS.obBunnyHead} style={styles.splashBunny} contentFit="contain" />
       </View>
     );

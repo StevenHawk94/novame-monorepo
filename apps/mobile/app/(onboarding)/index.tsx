@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
+import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import {
   markIntroSeen,
@@ -297,7 +298,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
-      <ExpoImage source={ICONS.obGridBg} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <GridBackground />
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
         {step === 'start' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
