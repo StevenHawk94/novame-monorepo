@@ -52,9 +52,15 @@ export default function SceneSelectScreen() {
     }, []),
   );
 
-  // Warm the grid thumbs; full backgrounds are prefetched at launch.
+  // Warm the grid thumbs AND the full backgrounds (the 'prefetched at
+  // launch' claim was never true — switching used to download the 1-2MB art
+  // on the spot behind the Switching modal). Browsing time covers the
+  // downloads; an already-cached switch then resolves instantly.
   useEffect(() => {
-    for (const s of catalog) void ExpoImage.prefetch(sceneAssetUrl(s.thumb));
+    for (const s of catalog) {
+      void ExpoImage.prefetch(sceneAssetUrl(s.thumb));
+      if (s.image) void ExpoImage.prefetch(sceneAssetUrl(s.image));
+    }
   }, [catalog]);
 
   const isCurrent = (key: string) =>

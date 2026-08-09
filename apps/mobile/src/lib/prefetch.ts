@@ -12,6 +12,8 @@ import { fetchCosmetics } from './cosmetics-api';
 import { fetchCommonItems, fetchFriendFeed, fetchFriends, fetchInsights, fetchPairing } from './friends-api';
 import { fetchQuestStatus } from './quests-api';
 import { refreshRemoteItems } from './remote-items';
+import { getHomeSceneSource } from './scenes';
+import { Image as ExpoImage } from 'expo-image';
 import { fetchReflectFeed } from './reflect-feed-api';
 
 const THROTTLE_MS = 60_000;
@@ -22,6 +24,9 @@ export function prefetchAppData(): void {
   if (now - lastRun < THROTTLE_MS) return;
   lastRun = now;
   void refreshRemoteItems();
+  // Selected Home scene background (remote scenes only — bundled default is a number).
+  const sceneSrc = getHomeSceneSource();
+  if (typeof sceneSrc === 'object' && sceneSrc.uri) void ExpoImage.prefetch(sceneSrc.uri);
   void fetchBags();
   void fetchReflectFeed();
   void fetchFriends();
