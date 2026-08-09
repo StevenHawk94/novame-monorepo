@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useWindowDimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,6 +18,12 @@ import { getCachedBags } from '@/lib/bags-api';
  */
 export default function ReflectDetailScreen() {
   const insets = useSafeAreaInsets();
+  // Justified item grid (2026-08-08): ~72pt targets pick the column count,
+  // then the tile size stretches so each full row spans the card exactly.
+  const { width: winW } = useWindowDimensions();
+  const memInner = winW - 36 - 40 - 8; // page pad(18x2) + memCard pad + memRow pad
+  const memCols = Math.max(4, Math.floor((memInner + 14) / (72 + 14)));
+  const memTile = Math.floor((memInner - (memCols - 1) * 14) / memCols);
   const router = useRouter();
   const { reflectId } = useLocalSearchParams<{ reflectId: string }>();
   // Cache-first: the pushed-from screen already had this feed cached.
@@ -74,7 +80,7 @@ export default function ReflectDetailScreen() {
             <View style={styles.memRow}>
               {gathered.map((g) => (
                 <View key={g.itemId} style={styles.memItem}>
-                  <ItemSprite itemId={g.itemId} size={72} radius={16} />
+                  <ItemSprite itemId={g.itemId} size={memTile} radius={16} />
                   <Text style={styles.memCount}>x{g.count}</Text>
                 </View>
               ))}
