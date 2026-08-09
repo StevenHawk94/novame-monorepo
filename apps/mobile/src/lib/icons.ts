@@ -104,7 +104,6 @@ export const BACKGROUNDS = {
   focus: require('../../assets/Background/focus.webp'),
   reflect: require('../../assets/Background/reflection.webp'),
   friends: require('../../assets/Background/friends.webp'),
-  connection: require('../../assets/Background/connection.webp'),
   tameEnemy: require('../../assets/Background/tame-enemy.webp'),
   visitMaster: require('../../assets/Background/visit-master.webp'),
 } as const;

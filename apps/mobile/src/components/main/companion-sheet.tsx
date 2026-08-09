@@ -18,8 +18,8 @@ import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
 import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
-import { BACKGROUNDS, ICONS } from '@/lib/icons';
-import { Image as ExpoImage } from 'expo-image';
+import { ICONS } from '@/lib/icons';
+import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics } from '@/lib/cosmetics-api';
 
 export type CompanionSheetRef = {
@@ -135,7 +135,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       enableOverDrag={false}
     >
       <BottomSheetView style={[styles.outer, { height: sheetH }]}>
-        <ExpoImage source={BACKGROUNDS.connection} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <GridBackground />
         {/* Inset peach card with the brown outline (mock). */}
         <View style={styles.inner}>
           <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
