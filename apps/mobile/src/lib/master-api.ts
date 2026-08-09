@@ -8,11 +8,14 @@ import { storage } from './storage';
 import { supabase } from './supabase';
 
 export interface MasterResponse {
-  quote_short: string;
-  insight_full: string;
-  flipped_lens: string;
-  micro_task: string;
-  reflective_question: string;
+  /** New contract (2026-08-09): four Master sections with original headers. */
+  sections?: { header: string; text: string }[];
+  /** Legacy visits (pre-sections) keep the old five fields. */
+  quote_short?: string;
+  insight_full?: string;
+  flipped_lens?: string;
+  micro_task?: string;
+  reflective_question?: string;
 }
 
 export interface MasterVisit {

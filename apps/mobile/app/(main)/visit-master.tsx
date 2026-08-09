@@ -242,6 +242,22 @@ export default function VisitMasterScreen() {
 }
 
 function ReplyBody({ reply }: { reply: MasterResponse }) {
+  // New contract: four sections with the Master's own chapter titles.
+  if (reply.sections && reply.sections.length > 0) {
+    return (
+      <View style={{ gap: 18 }}>
+        {reply.sections.map((sec, i) => (
+          <View key={i} style={{ gap: 6 }}>
+            <Text style={styles.sectionTitle}>{sec.header}</Text>
+            <Text style={i === reply.sections!.length - 1 ? styles.reflectQ : styles.insight}>
+              {sec.text}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  }
+  // Legacy visits keep the old five-field layout.
   return (
     <View style={{ gap: 18 }}>
       {!!reply.quote_short && <Text style={styles.quote}>{reply.quote_short}</Text>}
