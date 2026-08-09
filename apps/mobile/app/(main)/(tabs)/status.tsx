@@ -18,7 +18,7 @@ import {
   type CommonItem, type ConnectionInsights, type PairingStatus,
 } from '@/lib/friends-api';
 import { supabase } from '@/lib/supabase';
-import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
 
 /**
  * Me tab → Connection Dashboard (2026-07-24 重构, mock 1:1). The old Me page
@@ -75,15 +75,23 @@ export default function ConnectionDashboardScreen() {
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [myName, setMyName] = useState('Me');
   const [items, setItems] = useState<CommonItem[]>(() => getCachedCommonItems());
+  // The cached subscription tier decides the lock INSTANTLY (fetched once at
+  // launch + after purchases — industry pattern). A cached 'plus_required'
+  // gate from before an upgrade is stale noise: ignore it when the tier says
+  // paid, so members never flash 'Unlock Plus' while the fetch reconciles.
+  const isPaid = getCachedSubscriptionTier() !== 'free';
   const cachedIns = getCachedInsights();
   const [insights, setInsights] = useState<ConnectionInsights | null>(
     cachedIns?.ok ? cachedIns.insights : null,
   );
-  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(
-    cachedIns ? (cachedIns.ok ? 'ok' : cachedIns.error === 'network' ? null : cachedIns.error) : null,
-  );
+  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(() => {
+    if (!cachedIns) return null;
+    if (cachedIns.ok) return 'ok';
+    if (cachedIns.error === 'network') return null;
+    if (cachedIns.error === 'plus_required' && isPaid) return null; // stale gate
+    return cachedIns.error;
+  });
   const [openItem, setOpenItem] = useState<CommonItem | null>(null);
-  const isPaid = getCachedSubscriptionTier() !== 'free';
 
   useFocusEffect(
     useCallback(() => {
@@ -97,6 +105,13 @@ export default function ConnectionDashboardScreen() {
               setInsightsGate('ok');
             } else if (r.error === 'plus_required' || r.error === 'consent_required') {
               setInsightsGate(r.error);
+              if (r.error === 'plus_required' && isPaid) {
+                // Tier cache says paid but the server disagrees — re-sync it.
+                void supabase.auth.getSession().then(({ data }) => {
+                  const uid = data.session?.user?.id;
+                  if (uid) void fetchSubscriptionTier(uid).catch(() => {});
+                });
+              }
             }
           });
         }
