@@ -92,8 +92,8 @@ export async function GET(request) {
     const friends = []
     if (acceptedIds.length > 0) {
       const { data: profs } = await supabase
-        .from('profiles').select('id, display_name').in('id', acceptedIds)
-      const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
+        .from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', acceptedIds)
+      const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
 
       // Today = the friend's reflect local_date. Item icons are ALWAYS
       // visible to friends (2026-07-24: the per-reflect toggle only gates
@@ -123,7 +123,9 @@ export async function GET(request) {
         }
         friends.push({
           userId: fid,
-          displayName: nameById[fid] || 'Friend',
+          displayName: profById[fid]?.display_name || 'Friend',
+          avatarUrl: profById[fid]?.avatar_url || '',
+          isDefaultAvatar: profById[fid]?.is_default_avatar !== false,
           todayItemIds: items.map((i) => i.item_id),
         })
       }
@@ -133,10 +135,17 @@ export async function GET(request) {
     const pendingOut = []
     if (pending.length > 0) {
       const ids = pending.map((p) => p.userId)
-      const { data: profs } = await supabase.from('profiles').select('id, display_name').in('id', ids)
-      const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
+      const { data: profs } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
       for (const p of pending) {
-        pendingOut.push({ friendshipId: p.friendshipId, userId: p.userId, displayName: nameById[p.userId] || 'Someone', relationship: p.relationship ?? null })
+        pendingOut.push({
+          friendshipId: p.friendshipId,
+          userId: p.userId,
+          displayName: profById[p.userId]?.display_name || 'Someone',
+          avatarUrl: profById[p.userId]?.avatar_url || '',
+          isDefaultAvatar: profById[p.userId]?.is_default_avatar !== false,
+          relationship: p.relationship ?? null,
+        })
       }
     }
 
@@ -144,13 +153,15 @@ export async function GET(request) {
     const sent = []
     if (sentRaw.length > 0) {
       const ids = sentRaw.map((p) => p.userId)
-      const { data: profs } = await supabase.from('profiles').select('id, display_name').in('id', ids)
-      const nameById = Object.fromEntries((profs || []).map((p) => [p.id, p.display_name]))
+      const { data: profs } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
       for (const p of sentRaw) {
         sent.push({
           friendshipId: p.friendshipId,
           userId: p.userId,
-          displayName: nameById[p.userId] || 'Someone',
+          displayName: profById[p.userId]?.display_name || 'Someone',
+          avatarUrl: profById[p.userId]?.avatar_url || '',
+          isDefaultAvatar: profById[p.userId]?.is_default_avatar !== false,
           createdAt: p.createdAt,
         })
       }

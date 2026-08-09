@@ -49,7 +49,7 @@ export async function GET(request) {
     // Names + per-friend privacy in one query.
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, display_name, share_memory_details')
+      .select('id, display_name, share_memory_details, avatar_url, is_default_avatar')
       .in('id', friendIds)
     const profileById = new Map((profiles || []).map((p) => [p.id, p]))
 
@@ -115,6 +115,8 @@ export async function GET(request) {
       .map((e) => ({
         ...e,
         friendName: profileById.get(e.friendUserId)?.display_name || 'Friend',
+        friendAvatarUrl: profileById.get(e.friendUserId)?.avatar_url || '',
+        friendIsDefaultAvatar: profileById.get(e.friendUserId)?.is_default_avatar !== false,
         sharesDetails: !!profileById.get(e.friendUserId)?.share_memory_details,
         unread: e.createdAt > (readAt.get(e.friendUserId) ?? '1970-01-01T00:00:00Z'),
       }))

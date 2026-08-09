@@ -46,7 +46,7 @@ export async function GET(request) {
 
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, display_name')
+      .select('id, display_name, avatar_url, is_default_avatar')
       .eq('id', row.partner_user_id)
       .maybeSingle()
     // Duration: since the relationship's stated start when given, else since
@@ -58,7 +58,12 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       paired: true,
-      partner: { userId: row.partner_user_id, displayName: prof?.display_name || 'Partner' },
+      partner: {
+        userId: row.partner_user_id,
+        displayName: prof?.display_name || 'Partner',
+        avatarUrl: prof?.avatar_url || '',
+        isDefaultAvatar: prof?.is_default_avatar !== false,
+      },
       relationship: row.relationship || null,
       relationshipSince: row.relationship_since || null,
       pairedDays: days,

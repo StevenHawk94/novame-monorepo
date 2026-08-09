@@ -17,7 +17,10 @@ import {
   getCachedCommonItems, getCachedInsights, getCachedPairing,
   type CommonItem, type ConnectionInsights, type PairingStatus,
 } from '@/lib/friends-api';
+import { getCachedMeStats } from '@/lib/me-stats';
+import { getBunnyName } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
 
 /**
@@ -58,15 +61,6 @@ const MOCK_INSIGHTS: Record<string, string> = {
   hangoutIdeas: 'A 20-minute watch-together of that show you both dropped last month. Low effort, high laughs.',
 };
 
-function Initial({ name, size = 56 }: { name: string; size?: number }) {
-  return (
-    <View style={[st.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Text style={[st.avatarText, { fontSize: size * 0.42 }]}>
-        {(name || '?').slice(0, 1).toUpperCase()}
-      </Text>
-    </View>
-  );
-}
 
 export default function ConnectionDashboardScreen() {
   const router = useRouter();
@@ -74,6 +68,9 @@ export default function ConnectionDashboardScreen() {
   // the focus-effect fetches only reconcile in the background.
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [myName, setMyName] = useState('Me');
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState('');
+  const [myIsDefaultAvatar, setMyIsDefaultAvatar] = useState<boolean | undefined>(undefined);
   const [items, setItems] = useState<CommonItem[]>(() => getCachedCommonItems());
   // The cached subscription tier decides the lock INSTANTLY (fetched once at
   // launch + after purchases — industry pattern). A cached 'plus_required'
@@ -117,9 +114,17 @@ export default function ConnectionDashboardScreen() {
         }
       });
       void supabase.auth.getSession().then(({ data }) => {
-        const n = (data.session?.user?.user_metadata?.display_name
-          ?? data.session?.user?.email?.split('@')[0]) as string | undefined;
+        setMyUserId(data.session?.user?.id ?? null);
+        // Same resolution as the Me page header: profiles.display_name via
+        // me-stats (auto-seeded 'user' filtered out) -> onboarding name.
+        const cached = getCachedMeStats();
+        const profileName =
+          cached?.displayName && cached.displayName !== 'user' ? cached.displayName : '';
+        const n = profileName || getBunnyName()
+          || (data.session?.user?.email?.split('@')[0] as string | undefined);
         if (n) setMyName(n);
+        setMyAvatarUrl(cached?.avatarUrl ?? '');
+        setMyIsDefaultAvatar(cached?.isDefaultAvatar);
       });
     }, []),
   );
@@ -205,7 +210,7 @@ export default function ConnectionDashboardScreen() {
           {/* 板块2: the relationship */}
           <View style={st.relCard}>
             <View style={st.relSide}>
-              <Initial name={myName} />
+              <UserAvatar userId={myUserId} avatarUrl={myAvatarUrl} isDefaultAvatar={myIsDefaultAvatar} size={56} />
               <Text style={st.relName} numberOfLines={1}>{myName}</Text>
             </View>
             <View style={st.relMid}>
@@ -213,7 +218,7 @@ export default function ConnectionDashboardScreen() {
               <Text style={st.relDays}>For {pairing.pairedDays ?? 0} days</Text>
             </View>
             <View style={st.relSide}>
-              <Initial name={partner.displayName} />
+              <UserAvatar userId={partner.userId} avatarUrl={partner.avatarUrl} isDefaultAvatar={partner.isDefaultAvatar} size={56} />
               <Text style={st.relName} numberOfLines={1}>{partner.displayName}</Text>
             </View>
           </View>
@@ -347,8 +352,6 @@ const st = StyleSheet.create({
     borderRadius: 22, padding: 16,
   },
   relSide: { alignItems: 'center', width: 84, gap: 6 },
-  avatar: { backgroundColor: '#8A5F3F', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#FFFFFF', fontFamily: 'Inter_800ExtraBold' },
   relName: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#3A2A1A', maxWidth: 84 },
   relMid: { flex: 1, alignItems: 'center', gap: 4 },
   relTitle: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center' },

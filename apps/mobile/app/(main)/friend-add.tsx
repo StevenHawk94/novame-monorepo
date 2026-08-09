@@ -12,6 +12,7 @@ import {
   fetchFriends, getCachedFriends, addFriend, previewFriend,
   type FriendsStatus,
 } from '@/lib/friends-api';
+import { UserAvatar } from '@/components/ui/user-avatar';
 
 // 2026-07-29 pairing flow (mock 3): the invitation proposes a relationship
 // and its start date.
@@ -33,7 +34,7 @@ export default function FriendAddScreen() {
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
   const [query, setQuery] = useState('');
   // Search-result card (mock 2): the resolved user + the proposed relationship.
-  const [found, setFound] = useState<{ code: string; name: string } | null>(null);
+  const [found, setFound] = useState<{ code: string; name: string; userId?: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null>(null);
   const [relationship, setRelationship] = useState<string | null>(null);
   const now = new Date();
   const [since, setSince] = useState<{ y: number; m: number; d: number }>({
@@ -54,7 +55,7 @@ export default function FriendAddScreen() {
     void haptics.medium();
     const res = await previewFriend(code);
     if (res.ok && res.targetName) {
-      setFound({ code, name: res.targetName });
+      setFound({ code, name: res.targetName, userId: res.targetUserId, avatarUrl: res.targetAvatarUrl, isDefaultAvatar: res.targetIsDefaultAvatar });
       setRelationship(null);
     } else {
       const msg =
@@ -180,7 +181,7 @@ export default function FriendAddScreen() {
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.modalTitle}>Search Result</Text>
             <View style={styles.foundRow}>
-              <View style={styles.foundAvatar}><Text style={styles.foundAvatarEmoji}>{'🐰'}</Text></View>
+              <UserAvatar userId={found.userId} avatarUrl={found.avatarUrl} isDefaultAvatar={found.isDefaultAvatar} size={52} />
               <Text style={styles.foundName}>{found.name}</Text>
             </View>
 
@@ -305,8 +306,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12, marginBottom: 16,
   },
-  foundAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#E9F2E4', alignItems: 'center', justifyContent: 'center' },
-  foundAvatarEmoji: { fontSize: 26 },
   foundName: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   modalQ: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 10 },
   relGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },

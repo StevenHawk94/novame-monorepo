@@ -10,6 +10,7 @@ import { haptics } from '@/lib/haptics';
 import { HowItWorksOverlay } from '@/components/main/how-it-works-overlay';
 import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
   getCachedFriends, getCachedFriendFeed, getCachedPairing, fetchPairing,
@@ -109,6 +110,7 @@ export default function FriendsScreen() {
       router.push({
         pathname: '/(main)/friend-reflect-detail' as never,
         params: {
+          friendUserId: e.friendUserId,
           friendName: e.friendName,
           createdAt: e.createdAt,
           detailsJson: JSON.stringify(e.details),
@@ -194,7 +196,7 @@ export default function FriendsScreen() {
                       style={styles.pairCard}
                     >
                       <View style={styles.pairCardHeader}>
-                        <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                        <UserAvatar userId={e.friendUserId} avatarUrl={e.friendAvatarUrl} isDefaultAvatar={e.friendIsDefaultAvatar} size={46} />
                         <Text style={styles.pairCardName} numberOfLines={1}>{e.friendName}</Text>
                         <View style={styles.pairCardTimeCol}>
                           <Text style={styles.timeText}>{timeAgo(e.createdAt)}</Text>
@@ -222,7 +224,7 @@ export default function FriendsScreen() {
                 <Text style={styles.pendingTitle}>Pending Confirmation</Text>
                 {status.pending.map((req) => (
                   <View key={req.friendshipId} style={styles.pendingCard}>
-                    <View style={styles.pendingAvatar}><Text style={styles.pendingAvatarEmoji}>{'🐰'}</Text></View>
+                    <UserAvatar userId={req.userId} avatarUrl={req.avatarUrl} isDefaultAvatar={req.isDefaultAvatar} size={56} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.pendingName} numberOfLines={1}>{req.displayName}</Text>
                       <Text style={styles.pendingRel} numberOfLines={1}>{req.relationship ?? 'Wants to pair'}</Text>
@@ -263,7 +265,7 @@ export default function FriendsScreen() {
                     onPress={() => onFeedRow(e)}
                     style={styles.feedRow}
                   >
-                    <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                    <UserAvatar userId={e.friendUserId} avatarUrl={e.friendAvatarUrl} isDefaultAvatar={e.friendIsDefaultAvatar} size={46} />
                     <Text style={styles.feedName} numberOfLines={1}>{e.friendName}</Text>
                     <View style={styles.tileRow}>
                       {e.itemIds.slice(0, maxTiles).map((id, i) => (
@@ -340,8 +342,6 @@ const styles = StyleSheet.create({
     shadowColor: '#2B2B2B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
-  pendingAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#E9F2E4', alignItems: 'center', justifyContent: 'center' },
-  pendingAvatarEmoji: { fontSize: 28 },
   pendingName: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   pendingRel: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#6B5A45', marginTop: 2 },
   ignoreBtn: { flexShrink: 1, backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
@@ -387,8 +387,6 @@ const styles = StyleSheet.create({
     shadowColor: '#5A4A2B', shadowOpacity: 0.15, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 24 },
   feedName: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', maxWidth: 84 },
   tileRow: { flexDirection: 'row', gap: 5, flex: 1, flexShrink: 1, justifyContent: 'center', overflow: 'hidden' },
   blankTile: {

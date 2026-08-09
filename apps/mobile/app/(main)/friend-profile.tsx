@@ -6,7 +6,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import { CaveShell } from '@/components/main/cave-shell';
 import { FRIEND_ICONS } from '@/lib/icons';
-import { fetchFriendFeed, getCachedFriendFeed, markFriendRead, type FeedEntry } from '@/lib/friends-api';
+import { fetchFriendFeed, getCachedFriendFeed, getCachedFriends, markFriendRead, type FeedEntry } from '@/lib/friends-api';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
 /**
@@ -27,6 +28,9 @@ export default function FriendProfileScreen() {
   const router = useRouter();
   const { friendUserId, friendName } = useLocalSearchParams<{ friendUserId: string; friendName?: string }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'Friend';
+  // Their avatar comes from the cached friends roster (same fetch that
+  // populated whatever list navigated here) — no extra request.
+  const cachedFriend = getCachedFriends().friends.find((f) => f.userId === friendUserId);
   // Tiles are 56pt + 8 gap; reserve room for the +N chip and the Details pill
   // so they stay inside the card (fixed 4 overflowed at 375pt width).
   const { width } = useWindowDimensions();
@@ -53,6 +57,7 @@ export default function FriendProfileScreen() {
     router.push({
       pathname: '/(main)/friend-reflect-detail' as never,
       params: {
+        friendUserId: e.friendUserId,
         friendName: e.friendName,
         createdAt: e.createdAt,
         detailsJson: JSON.stringify(e.details ?? []),
@@ -64,7 +69,7 @@ export default function FriendProfileScreen() {
     <CaveShell>
       {/* header */}
       <View style={styles.header}>
-        <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+        <UserAvatar userId={typeof friendUserId === 'string' ? friendUserId : null} avatarUrl={cachedFriend?.avatarUrl} isDefaultAvatar={cachedFriend?.isDefaultAvatar} size={66} />
         <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{name}</Text>
         <Pressable
           onPress={() => {
@@ -135,8 +140,6 @@ export default function FriendProfileScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  avatar: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 32 },
   name: { flex: 1, fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
   memChip: {
     flexShrink: 1,

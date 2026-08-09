@@ -63,7 +63,7 @@ export async function POST(request) {
     const normalized = code.trim().toUpperCase()
     const { data: target } = await supabase
       .from('profiles')
-      .select('id, display_name')
+      .select('id, display_name, avatar_url, is_default_avatar')
       .eq('invite_code', normalized)
       .maybeSingle()
     if (!target) {
@@ -76,7 +76,14 @@ export async function POST(request) {
     // Search-result preview: name only, nothing written, nothing enumerable
     // (still exact-code matching — no fuzzy lookup surface).
     if (preview === true) {
-      return NextResponse.json({ success: true, preview: true, targetName: target.display_name || 'Friend' })
+      return NextResponse.json({
+        success: true,
+        preview: true,
+        targetName: target.display_name || 'Friend',
+        targetUserId: target.id,
+        targetAvatarUrl: target.avatar_url || '',
+        targetIsDefaultAvatar: target.is_default_avatar !== false,
+      })
     }
 
     const rel = RELATIONSHIPS.includes(relationship) ? relationship : null

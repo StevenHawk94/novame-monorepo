@@ -47,7 +47,7 @@ export async function GET(request) {
     const partnerId = pairing.partner_user_id
 
     const [{ data: prof }, { data: reflects }] = await Promise.all([
-      supabase.from('profiles').select('id, display_name').eq('id', partnerId).maybeSingle(),
+      supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').eq('id', partnerId).maybeSingle(),
       supabase
         .from('reflects')
         .select('id')
@@ -74,7 +74,12 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       paired: true,
-      partner: { userId: partnerId, displayName: prof?.display_name || 'Partner' },
+      partner: {
+        userId: partnerId,
+        displayName: prof?.display_name || 'Partner',
+        avatarUrl: prof?.avatar_url || '',
+        isDefaultAvatar: prof?.is_default_avatar !== false,
+      },
       date,
       items,
     })

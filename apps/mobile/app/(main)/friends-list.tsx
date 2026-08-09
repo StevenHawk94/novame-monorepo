@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { haptics } from '@/lib/haptics';
 import { CaveShell } from '@/components/main/cave-shell';
 import { fetchFriends, type FriendsStatus } from '@/lib/friends-api';
+import { UserAvatar } from '@/components/ui/user-avatar';
 
 /**
  * Friends List (mock 1:1): the roster inside the cave shell — avatar, name,
@@ -31,7 +32,7 @@ export default function FriendsListScreen() {
             <View key={f.userId}>
               {i > 0 && <View style={styles.divider} />}
               <View style={styles.row}>
-                <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                <UserAvatar userId={f.userId} avatarUrl={f.avatarUrl} isDefaultAvatar={f.isDefaultAvatar} size={46} />
                 <Text style={styles.name} numberOfLines={1}>{f.displayName}</Text>
                 <Pressable
                   onPress={() => {
@@ -61,8 +62,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18 },
   divider: { height: 2, backgroundColor: '#E3DACB', borderRadius: 1 },
-  avatar: { width: 62, height: 62, borderRadius: 31, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 30 },
   name: { flex: 1, fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
   profileBtn: {
     backgroundColor: '#4A3220', borderRadius: 20, paddingHorizontal: 30, paddingVertical: 14,

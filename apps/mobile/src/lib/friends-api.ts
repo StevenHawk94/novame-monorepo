@@ -15,6 +15,9 @@ import { kCommonItems, kConnInsights, kFriendsFeed, kFriendsStatus, kPairingStat
 export interface FriendCard {
   userId: string;
   displayName: string;
+  avatarUrl?: string;
+  /** false only when they uploaded a real avatar; default art renders client-side. */
+  isDefaultAvatar?: boolean;
   todayItemIds: string[];
   todayEmoji: string[]; // decorated from dictionary
 }
@@ -23,6 +26,9 @@ export interface PendingRequest {
   friendshipId: string;
   userId: string;
   displayName: string;
+  avatarUrl?: string;
+  /** false only when they uploaded a real avatar; default art renders client-side. */
+  isDefaultAvatar?: boolean;
   /** The relationship proposed on the invitation (2026-07-24 pairing flow). */
   relationship?: string | null;
 }
@@ -31,6 +37,9 @@ export interface SentRequest {
   friendshipId: string;
   userId: string;
   displayName: string;
+  avatarUrl?: string;
+  /** false only when they uploaded a real avatar; default art renders client-side. */
+  isDefaultAvatar?: boolean;
   createdAt: string;
 }
 
@@ -83,7 +92,7 @@ export async function fetchFriends(): Promise<FriendsStatus> {
     const data = await apiClient.get<{
       success?: boolean;
       inviteCode?: string | null;
-      friends?: { userId: string; displayName: string; todayItemIds: string[] }[];
+      friends?: { userId: string; displayName: string; avatarUrl?: string; isDefaultAvatar?: boolean; todayItemIds: string[] }[];
       pending?: PendingRequest[];
       sent?: SentRequest[];
     }>(`/api/friends/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`);
@@ -129,17 +138,30 @@ export async function addFriend(
 /** Resolve a Pair ID to a name WITHOUT sending anything (search-result card). */
 export async function previewFriend(
   code: string,
-): Promise<{ ok: boolean; targetName?: string; error?: string }> {
+): Promise<{ ok: boolean; targetName?: string; targetUserId?: string; targetAvatarUrl?: string; targetIsDefaultAvatar?: boolean; error?: string }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
   try {
-    const data = await apiClient.post<{ success?: boolean; error?: string; targetName?: string }>(
+    const data = await apiClient.post<{
+      success?: boolean;
+      error?: string;
+      targetName?: string;
+      targetUserId?: string;
+      targetAvatarUrl?: string;
+      targetIsDefaultAvatar?: boolean;
+    }>(
       '/api/friends/add',
       { userId, code, preview: true },
     );
     if (data.error) return { ok: false, error: data.error };
-    return { ok: true, targetName: data.targetName };
+    return {
+      ok: true,
+      targetName: data.targetName,
+      targetUserId: data.targetUserId,
+      targetAvatarUrl: data.targetAvatarUrl,
+      targetIsDefaultAvatar: data.targetIsDefaultAvatar,
+    };
   } catch (err) {
     const e = (err as { body?: { error?: string } })?.body?.error;
     return { ok: false, error: e || 'network' };
@@ -174,6 +196,8 @@ export interface FeedDetail {
 export interface FeedEntry {
   friendUserId: string;
   friendName: string;
+  friendAvatarUrl?: string;
+  friendIsDefaultAvatar?: boolean;
   reflectId: string;
   createdAt: string;
   itemIds: string[];
@@ -303,7 +327,7 @@ export async function createSharedMemories(
 
 export interface PairingStatus {
   paired: boolean;
-  partner: { userId: string; displayName: string } | null;
+  partner: { userId: string; displayName: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null;
   relationship?: string | null;
   relationshipSince?: string | null;
   pairedDays?: number;
@@ -383,7 +407,7 @@ export async function unsetPairing(): Promise<boolean> {
 /** The partner's icon stream for one day (widget + paired view). */
 export interface PairedFeed {
   paired: boolean;
-  partner: { userId: string; displayName: string } | null;
+  partner: { userId: string; displayName: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null;
   date: string;
   items: { itemId: string; reflectId: string; createdAt: string }[];
 }

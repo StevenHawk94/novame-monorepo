@@ -4,6 +4,8 @@ import { useLocalSearchParams } from 'expo-router';
 
 import { CaveShell } from '@/components/main/cave-shell';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { UserAvatar } from '@/components/ui/user-avatar';
+import { getCachedFriends } from '@/lib/friends-api';
 
 /**
  * Friend reflect detail (mock 1:1): one reflect's memories inside the cave
@@ -22,12 +24,14 @@ function timeAgo(iso: string): string {
 }
 
 export default function FriendReflectDetailScreen() {
-  const { friendName, createdAt, detailsJson } = useLocalSearchParams<{
+  const { friendUserId, friendName, createdAt, detailsJson } = useLocalSearchParams<{
+    friendUserId?: string;
     friendName?: string;
     createdAt?: string;
     detailsJson?: string;
   }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'Friend';
+  const cachedFriend = getCachedFriends().friends.find((f) => f.userId === friendUserId);
 
   const details = useMemo<{ itemId: string; text: string }[]>(() => {
     if (typeof detailsJson !== 'string' || !detailsJson) return [];
@@ -43,7 +47,7 @@ export default function FriendReflectDetailScreen() {
   return (
     <CaveShell>
       <View style={styles.header}>
-        <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+        <UserAvatar userId={typeof friendUserId === 'string' ? friendUserId : null} avatarUrl={cachedFriend?.avatarUrl} isDefaultAvatar={cachedFriend?.isDefaultAvatar} size={46} />
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
         {typeof createdAt === 'string' && !!createdAt && (
           <Text style={styles.time}>{timeAgo(createdAt)}</Text>
@@ -64,8 +68,6 @@ export default function FriendReflectDetailScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  avatar: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 32 },
   name: { flex: 1, fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
   time: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
 

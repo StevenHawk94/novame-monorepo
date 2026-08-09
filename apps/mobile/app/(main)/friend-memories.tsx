@@ -10,8 +10,9 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 import { useWindowDimensions } from 'react-native';
 import { FRIEND_ICONS } from '@/lib/icons';
 import {
-  createSharedMemories, fetchSharedBox, type SharedBoxItem,
+  createSharedMemories, fetchSharedBox, type SharedBoxItem, getCachedFriends,
 } from '@/lib/friends-api';
+import { UserAvatar } from '@/components/ui/user-avatar';
 
 /**
  * Shared memories (mocks 1:1). Grid view: memory-book header ("Your memories
@@ -30,6 +31,7 @@ export default function FriendMemoriesScreen() {
     friendName?: string;
   }>();
   const name = typeof friendName === 'string' && friendName ? friendName : 'your friend';
+  const cachedFriend = getCachedFriends().friends.find((f) => f.userId === friendUserId);
 
   const { width } = useWindowDimensions();
   const memTile = Math.floor((width - 32) / 6) - 6;
@@ -127,7 +129,7 @@ export default function FriendMemoriesScreen() {
         <Text style={styles.headerTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
           Your memories{'\n'}with {name}
         </Text>
-        <View style={styles.headerAvatar}><Text style={styles.headerAvatarEmoji}>{'🐰'}</Text></View>
+        <UserAvatar userId={typeof friendUserId === 'string' ? friendUserId : null} avatarUrl={cachedFriend?.avatarUrl} isDefaultAvatar={cachedFriend?.isDefaultAvatar} size={46} />
         <Pressable
           onPress={() => { void haptics.light(); setMode('create'); }}
           style={({ pressed }) => [styles.newBtn, pressed && { transform: [{ translateY: 2 }] }]}
@@ -188,8 +190,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 14 },
   headerBook: { width: 52, height: 52 },
   headerTitle: { flex: 1, fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', lineHeight: 26 },
-  headerAvatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  headerAvatarEmoji: { fontSize: 24 },
   newBtn: {
     backgroundColor: '#F0885C', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 13,
     shadowColor: '#C9552F', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 },
