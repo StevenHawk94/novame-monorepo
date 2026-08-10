@@ -104,12 +104,12 @@ const PRIVATE_SPACE_ITEMS = [
 ];
 
 type Step =
-  | 'start' | 'someone' | 'who' | 'blocker' | 'imfine' | 'imagine'
+  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imfine' | 'imagine'
   | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
   | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'someone', 'who', 'blocker', 'imfine', 'imagine',
+  'start', 'someone', 'who', 'blocker', 'feedback', 'imfine', 'imagine',
   'how', 'space', 'insights', 'boundaries', 'creator',
   'paywall', 'plans', 'name',
 ];
@@ -381,13 +381,19 @@ export default function OnboardingScreen() {
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
-            {blocker && (
-              <View style={[styles.card, { marginTop: 6 }]}>
-                <Text style={styles.body}>{BLOCKER_FEEDBACK[blocker]}</Text>
-              </View>
-            )}
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!blocker} />
+          </ScrollView>
+        )}
+
+        {step === 'feedback' && (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+            <View style={{ flex: 0.7 }} />
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
+            </View>
+            <View style={{ flex: 1.3 }} />
+            <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
@@ -758,6 +764,7 @@ const styles = StyleSheet.create({
   iconsGrid: { width: '100%', height: 320, marginBottom: 28 },
 
   card: { backgroundColor: CARD, borderRadius: 28, padding: 26 },
+  cardTitle: { fontSize: 22, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
 
   optionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
