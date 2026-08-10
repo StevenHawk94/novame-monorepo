@@ -181,8 +181,8 @@ export default function AiConsentModal() {
         <Text style={styles.title}>Burrow uses AI to support you</Text>
 
         <Text style={styles.body}>
-          To generate &ldquo;Wisdom Cards&rdquo; and insights, Burrow uses
-          third-party AI technology.
+          To help you create memories details and connection insight, Burrow
+          uses third-party AI technology.
         </Text>
 
         {/* Checkbox row. The entire row is pressable so a tap anywhere
