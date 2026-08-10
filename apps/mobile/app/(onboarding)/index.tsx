@@ -454,7 +454,7 @@ export default function OnboardingScreen() {
               </Text>
             </View>
             <Text style={[styles.h3, { marginTop: 30 }]}>
-              Can you tell what their day was like — without a single text?
+              Can you tell what their day was like without a single text?
             </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
