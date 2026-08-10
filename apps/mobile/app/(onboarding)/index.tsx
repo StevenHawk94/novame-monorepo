@@ -10,6 +10,7 @@ import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
+import { DEFAULT_AVATARS } from '../../src/lib/avatar';
 import {
   markIntroSeen,
   setBunnyName,
@@ -85,16 +86,15 @@ const IMFINE_BRANCH: Record<string, { title: string; body: string }> = {
 const IMFINE_SUBTITLE =
   'What if you could turn the honesty of their day into something you could actually see?';
 
-// ob6's tappable sample day (renders whatever the current dictionary holds;
-// unknown ids fall back to blank tiles, so this survives the taxonomy swap).
+// Ob5's tappable sample reflection (2026-08-10 mock: Jimmy's card) — real
+// ids from the current dictionary; each note reads like a keepsake label.
 const SAMPLE_DAY: { itemId: string; note: string }[] = [
-  { itemId: 'food.coffee', note: 'Morning coffee, extra hot' },
-  { itemId: 'food.pancakes', note: 'Pancakes for a slow breakfast' },
-  { itemId: 'sports.walking', note: 'A short walk after lunch' },
-  { itemId: 'entertainment.movie', note: 'A movie night in' },
-  { itemId: 'food.ramen', note: 'Ramen with a friend' },
-  { itemId: 'emotions.happy', note: 'A genuinely good day' },
-  { itemId: 'relax.reading', note: 'A few pages before bed' },
+  { itemId: 'actions_activities.baking', note: 'Baked an apple pie from scratch' },
+  { itemId: 'actions_activities.movie', note: 'A cozy movie night in' },
+  { itemId: 'bathroom_personal_care.toilet', note: 'Finally deep-cleaned the bathroom' },
+  { itemId: 'food_drink.avocado', note: 'Perfectly ripe avocado at breakfast' },
+  { itemId: 'food_drink.banh_mi', note: 'Grabbed a banh mi for lunch' },
+  { itemId: 'tools_hardware.workbench', note: 'An afternoon tinkering at the workbench' },
 ];
 
 type Step =
@@ -416,14 +416,21 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Imagine getting this reflection from that person.</Text>
-            <View style={[styles.card, { marginTop: 26, paddingVertical: 22 }]}>
+            {/* Mock 2026-08-10: Jimmy's reflection card — avatar + name + time,
+                then the six tappable items. */}
+            <View style={styles.sampleCard}>
+              <View style={styles.sampleHeader}>
+                <ExpoImage source={DEFAULT_AVATARS[2]} style={styles.sampleAvatar} contentFit="cover" />
+                <Text style={styles.sampleName}>Jimmy</Text>
+                <Text style={styles.sampleTime}>10h ago</Text>
+              </View>
               <View style={styles.sampleRow}>
                 {SAMPLE_DAY.map((s) => (
                   <Pressable
                     key={s.itemId}
                     onPress={() => { void haptics.light(); setTappedSample(s.itemId); }}
                   >
-                    <ItemSprite itemId={s.itemId} size={40} radius={10} tileColor="transparent" />
+                    <ItemSprite itemId={s.itemId} size={44} radius={12} />
                   </Pressable>
                 ))}
               </View>
@@ -773,11 +780,16 @@ const styles = StyleSheet.create({
   creatorBubbleImg: { width: 56, height: 56, alignSelf: 'center', marginBottom: 6 },
   optionText: { fontSize: 19, fontFamily: 'Inter_700Bold', color: '#161311' },
 
-  sampleRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, flexWrap: 'wrap' },
+  sampleCard: { backgroundColor: '#FFFDF8', borderRadius: 24, padding: 18, marginTop: 26 },
+  sampleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  sampleAvatar: { width: 38, height: 38, borderRadius: 19 },
+  sampleName: { flex: 1, fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  sampleTime: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
+  sampleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' },
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
 
   widgetPhone: { width: '100%', aspectRatio: 540 / 500, marginTop: 26 },
-  howGif: { width: '100%', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
+  howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
