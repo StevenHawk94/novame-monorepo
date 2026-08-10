@@ -1,12 +1,11 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetScrollView,
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
@@ -66,6 +65,10 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  // The sheet's visible height at the single 90% snap: the modal container is
+  // full-screen, so the sheet top sits at screenH*0.1. An explicit height is
+  // required — flex:1 inside BottomSheetView resolves to content height,
+  // which silently disables the inner ScrollView (viewport == content).
   const sheetH = screenH * 0.9;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
@@ -138,7 +141,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
         <GridBackground />
         {/* Inset peach card with the brown outline (mock). */}
         <View style={styles.inner}>
-          <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
             <View style={styles.header}>
               <View style={styles.cloverPill}>
                 <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
@@ -166,7 +169,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                 </View>
               </Pressable>
             ))}
-          </BottomSheetScrollView>
+          </ScrollView>
           <Pressable
             onPress={() => sheetRef.current?.dismiss()}
             style={[styles.closeBtn, { bottom: insets.bottom + 6 }]}

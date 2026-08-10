@@ -7,11 +7,9 @@
  * A real upload (profiles.is_default_avatar = false, surfaced by
  * /api/me-stats as isDefaultAvatar) always wins over the bundled default.
  *
- * The legacy DB trigger (trigger_assign_default_avatar) still writes a
- * default_avatars URL into profiles.avatar_url on INSERT with
- * is_default_avatar = true; we deliberately ignore those URLs and render
- * the bundled art instead, so the default look is controlled by the app
- * assets, not by stale rows in that table.
+ * The client is the ONLY source of default avatars: the legacy DB-side
+ * default_avatars table + assign trigger were dropped in migration 037,
+ * and new profiles simply carry avatar_url NULL / is_default_avatar true.
  */
 
 export const DEFAULT_AVATARS = [

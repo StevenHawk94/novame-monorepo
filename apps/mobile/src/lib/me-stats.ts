@@ -54,11 +54,10 @@ const STORAGE_KEY = 'novame_me_stats';
  * `displayName` is intentionally empty -- signing-in.tsx fills it
  * from MMKV onboarding state (user named themselves at step 10).
  *
- * `avatarUrl` is intentionally empty -- the server's
- * trigger_assign_default_avatar randomly selects one of the
- * default_avatars rows during INSERT, which the client cannot
- * predict. Me page renders an initials-based placeholder until the
- * background fetchMeStats() resolves with the assigned URL.
+ * `avatarUrl` is intentionally empty -- new profiles carry no
+ * avatar_url (the legacy server-side default_avatars system was
+ * dropped in migration 037); the client renders the bundled default
+ * portrait picked from the userId.
  *
  * Stage 5.WR.2 (new-user instant-home pattern).
  */

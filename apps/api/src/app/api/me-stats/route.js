@@ -215,9 +215,8 @@ export async function GET(request) {
       profile: {
         displayName: profile.display_name || '',
         avatarUrl: profile.avatar_url || '',
-        // false only when the user uploaded a real avatar; the signup
-        // trigger's random default_avatars URL keeps this true and the
-        // client renders its own bundled default art instead.
+        // false only when the user uploaded a real avatar; otherwise the
+        // client renders its own bundled default art.
         isDefaultAvatar: profile.is_default_avatar !== false,
       },
     })
