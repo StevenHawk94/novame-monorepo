@@ -104,12 +104,12 @@ const PRIVATE_SPACE_ITEMS = [
 ];
 
 type Step =
-  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imfine' | 'imagine'
+  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imfine' | 'honesty' | 'imagine'
   | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
   | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'someone', 'who', 'blocker', 'feedback', 'imfine', 'imagine',
+  'start', 'someone', 'who', 'blocker', 'feedback', 'imfine', 'honesty', 'imagine',
   'how', 'space', 'insights', 'boundaries', 'creator',
   'paywall', 'plans', 'name',
 ];
@@ -346,7 +346,7 @@ export default function OnboardingScreen() {
               If there is, you already know you care deeply, but life doesn&apos;t always let you be
               there for the little things.
             </Text>
-            <View style={{ flex: 1.4 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Yes, I have someone like this" onPress={next} />
           </ScrollView>
         )}
@@ -388,31 +388,39 @@ export default function OnboardingScreen() {
 
         {step === 'feedback' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.7 }} />
+            <View style={{ flex: 1 }} />
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
             </View>
-            <View style={{ flex: 1.3 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'imfine' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.5 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>{IMFINE_BRANCH[blocker ?? 'A'].title}</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
               <Text style={styles.body}>{IMFINE_BRANCH[blocker ?? 'A'].body}</Text>
             </View>
-            <Text style={[styles.h3, { marginTop: 26 }]}>{IMFINE_SUBTITLE}</Text>
-            <View style={{ flex: 1.2 }} />
+            <View style={{ flex: 1 }} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        )}
+
+        {step === 'honesty' && (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+            <View style={{ flex: 1 }} />
+            <Text style={styles.h1}>{IMFINE_SUBTITLE}</Text>
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'imagine' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.5 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Imagine getting this reflection from that person.</Text>
             <View style={[styles.card, { marginTop: 26, paddingVertical: 22 }]}>
               <View style={styles.sampleRow}>
@@ -434,14 +442,14 @@ export default function OnboardingScreen() {
             <Text style={[styles.h3, { marginTop: 30 }]}>
               Can you tell what their day was like — without a single text?
             </Text>
-            <View style={{ flex: 1.2 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'how' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.4 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>That&apos;s how it works.</Text>
             {/* TODO(asset): looping video — fast typing → memory item generation. */}
             <View style={[styles.card, { marginTop: 26 }]}>
@@ -453,14 +461,14 @@ export default function OnboardingScreen() {
                 Creating a private space between you and that special person.
               </Text>
             </View>
-            <View style={{ flex: 1.2 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'space' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.4 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>A private space where your lives naturally connect.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
               Add a widget to your homescreen and see their latest reflection at a glance.
@@ -483,7 +491,7 @@ export default function OnboardingScreen() {
 
         {step === 'insights' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.5 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>
               Understand them a little better, every day, with AI-powered connection insights.
             </Text>
@@ -491,14 +499,14 @@ export default function OnboardingScreen() {
             <Text style={[styles.body, { marginTop: 20 }]}>
               Gentle insights that help you know when, and how, to show up.
             </Text>
-            <View style={{ flex: 1.5 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'boundaries' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.4 }} />
+            <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Your moments. Your boundaries.</Text>
             <View style={[styles.card, { marginTop: 26 }]}>
               <Text style={styles.body}>You decide what becomes part of your shared space.</Text>
@@ -509,14 +517,14 @@ export default function OnboardingScreen() {
                 Your connection should feel comfortable for both of you.
               </Text>
             </View>
-            <View style={{ flex: 1.2 }} />
+            <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'creator' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 0.3, minHeight: 16 }} />
+            <View style={{ flex: 1, minHeight: 16 }} />
             <View>
               <View style={styles.card}>
                 <ExpoImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
@@ -634,7 +642,7 @@ export default function OnboardingScreen() {
         {step === 'name' && (
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
-              <View style={{ flex: 0.5, minHeight: 24 }} />
+              <View style={{ flex: 1, minHeight: 24 }} />
               <Text style={styles.h1}>Name your bunny.</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
                 They&apos;ll be your reflection and connection guide along the way.
