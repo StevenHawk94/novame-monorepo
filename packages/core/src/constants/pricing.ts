@@ -51,11 +51,12 @@ export const PRICING_TIERS: Record<PricingTierKey, PricingTier> = {
     maxSecondsPerRecord: 600,
     dailyRecordSeconds: 600,
     dailyTypeChars: 5000,
+    // Same four selling points as the onboarding paywall (2026-08-10).
     features: [
-      'Full AI reflections',
-      'Skills from your own words',
-      'Visit the Master',
-      'All focus scenes',
+      'Build memories with barely any effort.',
+      'Connection insights that respect your boundaries.',
+      'Daily tools that help you feel grounded and ready.',
+      'Stay close and connected, naturally.',
     ],
   },
 }

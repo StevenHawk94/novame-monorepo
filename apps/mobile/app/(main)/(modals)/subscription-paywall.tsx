@@ -218,16 +218,15 @@ export default function SubscriptionPaywallModal() {
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>Burrow Plus</Text>
                 {[
-                  ['Save the Hustle', 'Let AI organize your memories with beautiful detail.'],
-                  ['Connection Up', 'Real-time insights to help you understand each other better.'],
-                  ['Vibe Up', 'Unlock new outfits and scenes for your bunny.'],
-                  ['Unlock access to Master Visit', 'Get deeper insight of your day from Master.'],
-                ].map(([t, b]) => (
+                  'Build memories with barely any effort.',
+                  'Connection insights that respect your boundaries.',
+                  'Daily tools that help you feel grounded and ready.',
+                  'Stay close and connected, naturally.',
+                ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.benefitTitle}>{t}</Text>
-                      <Text style={styles.benefitBody}>{b}</Text>
                     </View>
                   </View>
                 ))}
@@ -338,7 +337,6 @@ const styles = StyleSheet.create({
   plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
   benefitRow: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
   benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  benefitBody: { fontSize: 14.5, lineHeight: 20, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.92)', marginTop: 2 },
 
   planCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
