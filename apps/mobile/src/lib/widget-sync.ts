@@ -3,12 +3,14 @@ import { Asset } from 'expo-asset';
 
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
+import { getDefaultAvatar } from './avatar';
 import type { FeedEntry } from './friends-api';
 
 /**
- * Pushes the newest friend-feed entry to the iOS home-screen widget
- * (avatar is the app's 🐰 placeholder, drawn widget-side; we ship the
- * name, timestamp and up to 6 item images via the App Group container).
+ * Pushes the newest friend-feed entry to the iOS home-screen widget:
+ * name, timestamp, the friend's avatar (their uploaded photo, else the
+ * bundled default portrait picked from their userId) and up to 6 item
+ * images, all via the App Group container.
  * Fire-and-forget: no-ops on Android, Expo Go, or an empty feed.
  */
 export async function syncWidgetLatestFriend(feed: FeedEntry[]): Promise<void> {
@@ -32,8 +34,27 @@ export async function syncWidgetLatestFriend(feed: FeedEntry[]): Promise<void> {
         return { src, emoji: latest.emoji[i] ?? '✨' };
       }),
     );
+    // Avatar: real upload wins; otherwise the friend's assigned bundled
+    // default (same resolution as UserAvatar in-app).
+    let avatarSrc: string | null = null;
+    if (latest.friendAvatarUrl && latest.friendIsDefaultAvatar === false) {
+      avatarSrc = latest.friendAvatarUrl;
+    } else {
+      try {
+        const asset = Asset.fromModule(getDefaultAvatar(latest.friendUserId));
+        if (!asset.localUri) await asset.downloadAsync();
+        avatarSrc = asset.localUri;
+      } catch {
+        // widget falls back to its 🐰 placeholder
+      }
+    }
     await nativeSyncLatestFriendReflect(
-      JSON.stringify({ name: latest.friendName, createdAt: latest.createdAt, items }),
+      JSON.stringify({
+        name: latest.friendName,
+        createdAt: latest.createdAt,
+        avatar: avatarSrc ? { src: avatarSrc } : null,
+        items,
+      }),
     );
   } catch {
     // widget sync must never break the feed path

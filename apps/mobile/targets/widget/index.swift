@@ -21,12 +21,14 @@ struct FriendItem: Decodable {
 struct FriendPayload: Decodable {
   let name: String
   let createdAt: String
+  let avatar: String?
   let items: [FriendItem]
 }
 
 struct FriendReflect {
   let name: String
   let date: Date?
+  let avatar: UIImage?
   let tiles: [(image: UIImage?, emoji: String)]
 }
 
@@ -49,13 +51,18 @@ func loadLatestReflect() -> FriendReflect? {
     let image = UIImage(contentsOfFile: container.appendingPathComponent(file).path)
     return (image, item.emoji)
   }
-  return FriendReflect(name: payload.name, date: date, tiles: Array(tiles))
+  var avatar: UIImage? = nil
+  if let file = payload.avatar, let container {
+    avatar = UIImage(contentsOfFile: container.appendingPathComponent(file).path)
+  }
+  return FriendReflect(name: payload.name, date: date, avatar: avatar, tiles: Array(tiles))
 }
 
 func sampleReflect(now: Date) -> FriendReflect {
   FriendReflect(
     name: "Mochi",
     date: now.addingTimeInterval(-15 * 60),
+    avatar: nil,
     tiles: ["☕", "📖", "🍜", "🌇", "🐱", "🎂"].map { (nil, $0) }
   )
 }
@@ -116,7 +123,15 @@ struct FriendReflectView: View {
           HStack(spacing: 10) {
             ZStack {
               Circle().fill(avatarFill)
-              Text("🐰").font(.system(size: 21))
+              if let avatar = reflect.avatar {
+                Image(uiImage: avatar)
+                  .resizable()
+                  .scaledToFill()
+                  .frame(width: 42, height: 42)
+                  .clipShape(Circle())
+              } else {
+                Text("🐰").font(.system(size: 21))
+              }
             }
             .frame(width: 42, height: 42)
             Text(reflect.name)

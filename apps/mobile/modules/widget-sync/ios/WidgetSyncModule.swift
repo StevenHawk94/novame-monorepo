@@ -5,7 +5,8 @@ import WidgetKit
  * Bridge between the RN app and the NovaMe home-screen widget.
  *
  * `syncLatestFriendReflect(payloadJson)` receives
- *   { name, createdAt, items: [{ src?, emoji }] }   (items already capped at 6)
+ *   { name, createdAt, avatar?: { src }, items: [{ src?, emoji }] }
+ *   (items already capped at 6)
  * where `src` is a local file URI (release / expo-asset) or a Metro http URL
  * (dev). Each image is copied into the App Group container, the rewritten
  * payload is stored in shared UserDefaults, and WidgetKit reloads.
@@ -30,30 +31,41 @@ public class WidgetSyncModule: Module {
       try? FileManager.default.removeItem(at: dir)
       try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
+      // Shared copier: local file URI (release / expo-asset) or an http URL
+      // (dev Metro assets, uploaded-avatar URLs).
+      func copyIn(_ src: String, as name: String) -> String? {
+        guard let url = URL(string: src) else { return nil }
+        let dest = container.appendingPathComponent(name)
+        if url.isFileURL {
+          return (try? FileManager.default.copyItem(at: url, to: dest)) != nil ? name : nil
+        }
+        if let bytes = try? Data(contentsOf: url) {
+          return (try? bytes.write(to: dest)) != nil ? name : nil
+        }
+        return nil
+      }
+
+      var outAvatar: String? = nil
+      if let avatar = obj["avatar"] as? [String: Any], let src = avatar["src"] as? String {
+        outAvatar = copyIn(src, as: "friend-widget/avatar")
+      }
+
       var outItems: [[String: Any]] = []
       for (i, item) in items.prefix(6).enumerated() {
         var record: [String: Any] = ["emoji": (item["emoji"] as? String) ?? "✨"]
-        if let src = item["src"] as? String, let url = URL(string: src) {
-          let name = "friend-widget/item-\(i)"
-          let dest = container.appendingPathComponent(name)
-          if url.isFileURL {
-            if (try? FileManager.default.copyItem(at: url, to: dest)) != nil {
-              record["file"] = name
-            }
-          } else if let bytes = try? Data(contentsOf: url) { // dev: Metro asset URL
-            if (try? bytes.write(to: dest)) != nil {
-              record["file"] = name
-            }
-          }
+        if let src = item["src"] as? String,
+           let name = copyIn(src, as: "friend-widget/item-\(i)") {
+          record["file"] = name
         }
         outItems.append(record)
       }
 
-      let out: [String: Any] = [
+      var out: [String: Any] = [
         "name": obj["name"] ?? "",
         "createdAt": obj["createdAt"] ?? "",
         "items": outItems,
       ]
+      if let outAvatar { out["avatar"] = outAvatar }
       guard
         let outData = try? JSONSerialization.data(withJSONObject: out),
         let outJson = String(data: outData, encoding: .utf8),
