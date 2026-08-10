@@ -6,7 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import type { ImageSourcePropType } from 'react-native';
@@ -67,7 +66,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const { height: screenH } = useWindowDimensions();
   // The sheet's visible height at the single 90% snap: the modal container is
   // full-screen, so the sheet top sits at screenH*0.1. An explicit height is
-  // required — flex:1 inside BottomSheetView resolves to content height,
+  // required — flex:1 on the sheet root resolves to content height,
   // which silently disables the inner ScrollView (viewport == content).
   const sheetH = screenH * 0.9;
   const sheetRef = useRef<BottomSheetModal>(null);
@@ -137,7 +136,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       enableHandlePanningGesture={false}
       enableOverDrag={false}
     >
-      <BottomSheetView style={[styles.outer, { height: sheetH }]}>
+      <View style={[styles.outer, { height: sheetH, width: '100%' }]}>
         <GridBackground />
         {/* Inset peach card with the brown outline (mock). */}
         <View style={styles.inner}>
@@ -178,7 +177,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
             <MaterialIcons name="close" size={26} color="#FFFFFF" />
           </Pressable>
         </View>
-      </BottomSheetView>
+      </View>
     </BottomSheetModal>
   );
 });
