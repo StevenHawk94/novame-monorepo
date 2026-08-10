@@ -445,16 +445,15 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>That&apos;s how it works.</Text>
-            {/* TODO(asset): looping video — fast typing → memory item generation. */}
-            <View style={[styles.card, { marginTop: 26 }]}>
-              <Text style={styles.body}>
-                Simply reflect on your day. Your thoughts, feelings, and experiences become adorable
-                memory items.
-              </Text>
-              <Text style={[styles.body, { marginTop: 16 }]}>
-                Creating a private space between you and that special person.
-              </Text>
-            </View>
+            <Text style={[styles.body, { marginTop: 20 }]}>
+              Simply reflect on your day. Your thoughts, feelings, and experiences become adorable
+              memory items.
+            </Text>
+            <Text style={[styles.body, { marginTop: 14 }]}>
+              Creating a private space between you and that special person.
+            </Text>
+            {/* expo-image plays and loops animated GIFs natively. */}
+            <ExpoImage source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -778,6 +777,7 @@ const styles = StyleSheet.create({
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
 
   widgetPhone: { width: '100%', aspectRatio: 540 / 500, marginTop: 26 },
+  howGif: { width: '100%', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },

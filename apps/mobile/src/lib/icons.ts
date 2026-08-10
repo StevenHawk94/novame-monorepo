@@ -64,6 +64,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
   obQuestion: require('../../assets/onboarding/ob-2.png'),
   obWidgetPhone: require('../../assets/onboarding/ob-7.png'),
+  obHowItWorksGif: require('../../assets/onboarding/ob-6.gif'),
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 
