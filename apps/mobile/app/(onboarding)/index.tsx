@@ -358,7 +358,8 @@ export default function OnboardingScreen() {
 
         {step === 'who' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <Text style={[styles.h1, { marginTop: 40, marginBottom: 26 }]}>Who is this person to you?</Text>
+            <View style={{ flex: 1, minHeight: 24 }} />
+            <Text style={[styles.h1, { marginBottom: 26 }]}>Who is this person to you?</Text>
             {WHO_OPTIONS.map((o) => (
               <Pressable
                 key={o.key}
@@ -376,7 +377,8 @@ export default function OnboardingScreen() {
 
         {step === 'blocker' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <Text style={[styles.h1, { marginTop: 40, marginBottom: 26 }]}>What makes it harder to stay close?</Text>
+            <View style={{ flex: 1, minHeight: 24 }} />
+            <Text style={[styles.h1, { marginBottom: 26 }]}>What makes it harder to stay close?</Text>
             {BLOCKER_OPTIONS.map((o) => (
               <Pressable
                 key={o.key}
@@ -567,7 +569,8 @@ export default function OnboardingScreen() {
               <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
-              <Text style={[styles.h1, { marginTop: 44 }]}>One Subscription for{'\n'}Two People.</Text>
+              <View style={{ flex: 1, minHeight: 56 }} />
+              <Text style={styles.h1}>One Subscription for{'\n'}Two People.</Text>
               <Text style={[styles.body, { marginTop: 14 }]}>
                 90% of users feel closer to their person. Not because they talk more, because they
                 talk better.
