@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react';
 import {
-  Image, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions,
+  Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -129,15 +128,6 @@ export default function ConnectionDashboardScreen() {
     }, []),
   );
 
-  async function copySend(text: string) {
-    void haptics.light();
-    try {
-      await Clipboard.setStringAsync(text);
-      await Share.share({ message: text });
-    } catch {
-      // user dismissed the share sheet — the text is on the clipboard anyway
-    }
-  }
 
   const partner = pairing?.partner ?? null;
   const insets = useSafeAreaInsets();
@@ -283,10 +273,6 @@ export default function ConnectionDashboardScreen() {
                     <Text style={st.insightBadgeText}>{emoji} {label}</Text>
                   </View>
                   <Text style={st.insightText}>“{text}”</Text>
-                  <Pressable onPress={() => void copySend(text)} style={st.copyBtn}>
-                    <MaterialIcons name="content-copy" size={18} color="#FFFFFF" />
-                    <Text style={st.copyBtnText}>Copy and Send Message</Text>
-                  </Pressable>
                 </View>
               );
             })
