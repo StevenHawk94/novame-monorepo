@@ -518,14 +518,13 @@ export default function OnboardingScreen() {
         {step === 'boundaries' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>Your moments. Your boundaries.</Text>
-            <View style={[styles.card, { marginTop: 26 }]}>
-              <Text style={styles.body}>You decide what becomes part of your shared space.</Text>
-              <Text style={[styles.body, { marginTop: 16 }]}>
+            <Text style={styles.h1}>Your moments.{'\n'}Your boundaries.</Text>
+            <View style={[styles.card, { marginTop: 26, paddingVertical: 34 }]}>
+              <Text style={styles.cardBodyBold}>
                 Choose what to show.{'\n'}Choose what stays private.
               </Text>
-              <Text style={[styles.body, { marginTop: 16 }]}>
-                Your connection should feel comfortable for both of you.
+              <Text style={[styles.cardBodyBold, { marginTop: 18 }]}>
+                Your connection should feel{'\n'}comfortable for both of you.
               </Text>
             </View>
             <View style={{ flex: 1 }} />
@@ -568,18 +567,22 @@ export default function OnboardingScreen() {
               <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
-              <Text style={[styles.h1, { marginTop: 44 }]}>90% of users feel closer to their person.</Text>
-              <Text style={[styles.h3, { marginTop: 14 }]}>
-                Not because they talk more — because they talk better.
+              <Text style={[styles.h1, { marginTop: 44 }]}>One Subscription for{'\n'}Two People.</Text>
+              <Text style={[styles.body, { marginTop: 14 }]}>
+                90% of users feel closer to their person. Not because they talk more, because they
+                talk better.
               </Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>One subscription connects two people.</Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
-                <Text style={styles.plusTitle}>Burrow Plus</Text>
+                <View style={styles.plusTitleRow}>
+                  <Text style={styles.plusTitle}>Burrow</Text>
+                  <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
+                </View>
                 {[
                   'Build memories with barely any effort.',
                   'Connection insights that respect your boundaries.',
-                  'Grow closer — naturally.',
+                  'Daily tools that help you feel grounded and ready.',
+                  'Stay close and connected, naturally.',
                 ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -588,9 +591,6 @@ export default function OnboardingScreen() {
                     </View>
                   </View>
                 ))}
-                <Text style={styles.benefitClose}>
-                  Unlock every feature to stay close, every day.
-                </Text>
               </View>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Btn label="Try for Free" onPress={onTryFree} />
@@ -784,6 +784,7 @@ const styles = StyleSheet.create({
 
   card: { backgroundColor: CARD, borderRadius: 28, padding: 26 },
   cardTitle: { fontSize: 22, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
+  cardBodyBold: { fontSize: 17, lineHeight: 26, fontFamily: 'Inter_700Bold', color: '#2B2318', textAlign: 'center' },
 
   optionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
@@ -832,12 +833,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  plusCard: { backgroundColor: 'rgba(90,64,40,0.85)', borderRadius: 26, padding: 20, marginTop: 30 },
+  plusCard: { backgroundColor: '#7D6450', borderRadius: 26, padding: 20, marginTop: 30 },
   plusLock: { fontSize: 30, textAlign: 'center', marginTop: -40, marginBottom: 4 },
-  plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
+  plusTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 18 },
+  plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  plusChip: { backgroundColor: '#3B2A1C', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
+  plusChipText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   benefitRow: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
   benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  benefitClose: { fontSize: 15, lineHeight: 21, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 6 },
 
   planCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
