@@ -241,6 +241,19 @@ export default function FriendsScreen() {
             ) : (
               <View style={styles.emptyWrap}>
                 {addPill}
+                {status.sent.length > 0 ? (
+                  <View style={styles.sentList}>
+                    {status.sent.map((req) => (
+                      <View key={req.friendshipId} style={styles.pendingCard}>
+                        <UserAvatar userId={req.userId} avatarUrl={req.avatarUrl} isDefaultAvatar={req.isDefaultAvatar} size={46} />
+                        <Text style={styles.pendingName} numberOfLines={1}>{req.displayName}</Text>
+                        <View style={styles.sentBadge}>
+                          <Text style={styles.sentBadgeText}>Pending</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
                 <Text style={styles.emptyInvite}>
                   Pair with some you care and love,{'\n'}then create memories together!
                 </Text>
@@ -334,8 +347,11 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 18, marginBottom: 4, paddingHorizontal: 8,
   },
 
-  pendingWrap: { paddingHorizontal: 16, paddingTop: 48, paddingBottom: 24, gap: 16 },
+  pendingWrap: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 24, gap: 16 },
   pendingTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  sentList: { alignSelf: 'stretch', paddingHorizontal: 16, gap: 12 },
+  sentBadge: { backgroundColor: '#F0E7D8', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  sentBadgeText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8A6B3F' },
   pendingCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#FFFFFF', borderRadius: 26, padding: 14,

@@ -9,8 +9,9 @@ export const runtime = 'edge'
  *
  * The single privacy switch behind the Friends page gear (PRD 6.2 / visual
  * spec): whether MY memory details (excerpts/refined descriptions) are
- * visible to my accepted friends. Default false — journals stay private
- * until the owner opts in. GET reads it; POST { userId, share } sets it.
+ * visible to my accepted friends. Default true (2026-08-10 ruling) — the
+ * per-reflect toggle on the reward screen is the opt-out surface.
+ * GET reads it; POST { userId, share } sets it.
  */
 export async function GET(request) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request) {
     )
     const { data } = await supabase
       .from('profiles').select('share_memory_details').eq('id', userId).maybeSingle()
-    return NextResponse.json({ success: true, share: !!data?.share_memory_details })
+    return NextResponse.json({ success: true, share: data?.share_memory_details !== false })
   } catch (err) {
     console.error('[friends/privacy] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

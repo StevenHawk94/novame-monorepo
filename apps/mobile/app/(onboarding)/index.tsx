@@ -22,6 +22,7 @@ import {
   verifyEmailChangeOtp, verifyLoginEmailOtp, ensureSession,
 } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
+import { updateDisplayName } from '../../src/lib/account-api';
 import {
   fetchSubscriptionProducts,
   initIAP,
@@ -233,6 +234,15 @@ export default function OnboardingScreen() {
     if (!ok) {
       router.replace('/(auth)/sign-in');
       return;
+    }
+    // The onboarding name is also the user's default display name (2026-08-09
+    // ruling) — write it to profiles so friends/partners see a real name
+    // instead of the signup seed ('user'). Fire-and-forget.
+    if (name.trim()) {
+      void supabase.auth.getSession().then(({ data }) => {
+        const uid = data.session?.user?.id;
+        if (uid) void updateDisplayName(uid, name.trim().slice(0, 16)).catch(() => {});
+      });
     }
     if (purchased) {
       setIdx(FLOW.length); // → connect

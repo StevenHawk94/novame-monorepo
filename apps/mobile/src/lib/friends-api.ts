@@ -239,18 +239,19 @@ export async function markFriendRead(friendUserId: string): Promise<void> {
   }
 }
 
-/** My detail-sharing switch (default false — private). */
+/** My detail-sharing switch (2026-08-10 ruling: default ON — users hide
+ * individual reflects from the post-reflect reward screen instead). */
 export async function fetchSharePrivacy(): Promise<boolean> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return false;
+  if (!userId) return true;
   try {
     const data = await apiClient.get<{ success?: boolean; share?: boolean }>(
       `/api/friends/privacy?userId=${encodeURIComponent(userId)}`,
     );
-    return !!data.share;
+    return data.share !== false;
   } catch {
-    return false;
+    return true;
   }
 }
 

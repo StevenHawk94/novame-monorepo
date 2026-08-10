@@ -85,9 +85,20 @@ export async function POST(request) {
     }
 
     const supabase = serviceClient()
+    // Carry the invitation's relationship into the pairing (same as the
+    // accept path in /friends/respond) — without it Connection falls back
+    // to the generic 'Paired' label.
+    const { data: fr } = await supabase
+      .from('friendships')
+      .select('relationship, relationship_since')
+      .eq('user_a', userId < friendUserId ? userId : friendUserId)
+      .eq('user_b', userId < friendUserId ? friendUserId : userId)
+      .maybeSingle()
     const { data: result, error } = await supabase.rpc('set_pairing', {
       p_user_id: userId,
       p_partner_id: friendUserId,
+      p_relationship: fr?.relationship ?? null,
+      p_since: fr?.relationship_since ?? null,
     })
     if (error) {
       console.error('[friends/pair] rpc error:', error.message)
