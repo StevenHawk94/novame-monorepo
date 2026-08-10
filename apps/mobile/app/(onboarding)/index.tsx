@@ -97,12 +97,6 @@ const SAMPLE_DAY: { itemId: string; note: string }[] = [
   { itemId: 'relax.reading', note: 'A few pages before bed' },
 ];
 
-const PRIVATE_SPACE_ITEMS = [
-  'food.coffee', 'food.pancakes', 'food.pizza', 'food.sushi', 'food.ice_cream', 'food.donut',
-  'sports.running', 'sports.hiking', 'sports.swimming', 'entertainment.movie', 'entertainment.gaming', 'music.guitar',
-  'emotions.happy', 'emotions.calm', 'relax.reading', 'plants.flower', 'animals.dog', 'nature.sun',
-];
-
 type Step =
   | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imfine' | 'honesty' | 'imagine'
   | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
@@ -471,19 +465,12 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>A private space where your lives naturally connect.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Add a widget to your homescreen and see their latest reflection at a glance.
-            </Text>
-            <Text style={[styles.body, { marginTop: 14 }]}>
-              Just small glimpses into each other&apos;s lives.
+              Add a widget and catch small glimpses of their day, right from your homescreen.
             </Text>
             <Text style={[styles.body, { marginTop: 14 }]}>
               Reach out when they need you. Give them space when they don&apos;t.
             </Text>
-            <View style={styles.spaceGrid}>
-              {PRIVATE_SPACE_ITEMS.map((id) => (
-                <ItemSprite key={id} itemId={id} size={36} radius={9} tileColor="transparent" />
-              ))}
-            </View>
+            <ExpoImage source={ICONS.obWidgetPhone} style={styles.widgetPhone} contentFit="contain" />
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -790,9 +777,7 @@ const styles = StyleSheet.create({
   sampleRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, flexWrap: 'wrap' },
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
 
-  spaceGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 24,
-  },
+  widgetPhone: { width: '100%', aspectRatio: 540 / 500, marginTop: 26 },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },

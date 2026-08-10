@@ -63,6 +63,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
   obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
   obQuestion: require('../../assets/onboarding/ob-2.png'),
+  obWidgetPhone: require('../../assets/onboarding/ob-7.png'),
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 
