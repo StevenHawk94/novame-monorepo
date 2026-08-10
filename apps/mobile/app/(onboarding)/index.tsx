@@ -86,6 +86,17 @@ const IMFINE_BRANCH: Record<string, { title: string; body: string }> = {
 const IMFINE_SUBTITLE =
   'What if you could turn the honesty of their day into something you could actually see?';
 
+// Ob8's insight teasers — the SAME six pills the Connection tab shows while
+// unpaired (status.tsx TEASER_PILLS), so the promise matches the product.
+const INSIGHT_PILLS = [
+  { label: 'Vibe Matching Moments', icon: ICONS.vibeMatching },
+  { label: 'Emotion Status', icon: ICONS.emotionStatus },
+  { label: 'Care Tips', icon: ICONS.careTips },
+  { label: 'Topics Ideas', icon: ICONS.topicIdeas },
+  { label: 'Boundaries', icon: ICONS.boundary },
+  { label: 'Hangout Ideas', icon: ICONS.hangout },
+];
+
 // Ob5's tappable sample reflection (2026-08-10 mock: Jimmy's card) — real
 // ids from the current dictionary; each note reads like a keepsake label.
 const SAMPLE_DAY: { itemId: string; note: string }[] = [
@@ -488,10 +499,17 @@ export default function OnboardingScreen() {
             <Text style={styles.h1}>
               Understand them a little better, every day, with AI-powered connection insights.
             </Text>
-            {/* TODO(asset): screenshot of the insight page. */}
             <Text style={[styles.body, { marginTop: 20 }]}>
               Gentle insights that help you know when, and how, to show up.
             </Text>
+            <View style={styles.insightGrid}>
+              {INSIGHT_PILLS.map((t) => (
+                <View key={t.label} style={styles.insightPill}>
+                  <ExpoImage source={t.icon} style={styles.insightIcon} contentFit="contain" />
+                  <Text style={styles.insightPillText} numberOfLines={2}>{t.label}</Text>
+                </View>
+              ))}
+            </View>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -790,6 +808,20 @@ const styles = StyleSheet.create({
 
   widgetPhone: { width: '100%', aspectRatio: 540 / 500, marginTop: 26 },
   howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
+  // Same visual system as the Connection tab's unpaired teaser pills.
+  insightGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+    columnGap: 8, rowGap: 14, marginTop: 30,
+  },
+  insightPill: {
+    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18,
+    flexDirection: 'row', alignItems: 'center', gap: 9,
+    paddingVertical: 14, paddingHorizontal: 10, minHeight: 64,
+    shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  insightIcon: { width: 26, height: 26 },
+  insightPillText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
