@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
 
   closeCircle: {
-    position: 'absolute', left: 0, top: 0, zIndex: 3,
+    position: 'absolute', left: 10, top: 0, zIndex: 3,
     width: 44, height: 44, borderRadius: 22, backgroundColor: BTN,
     alignItems: 'center', justifyContent: 'center',
   },

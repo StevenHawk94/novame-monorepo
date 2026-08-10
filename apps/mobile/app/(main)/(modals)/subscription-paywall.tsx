@@ -319,7 +319,7 @@ export default function SubscriptionPaywallModal() {
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 22 },
   closeCircle: {
-    position: 'absolute', left: 0, zIndex: 3,
+    position: 'absolute', left: 10, zIndex: 3,
     width: 44, height: 44, borderRadius: 22, backgroundColor: BTN,
     alignItems: 'center', justifyContent: 'center',
   },
