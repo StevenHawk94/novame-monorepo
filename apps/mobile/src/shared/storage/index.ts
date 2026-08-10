@@ -10,6 +10,7 @@
 
 export {
   assertAllKeysRegistered,
+  purgeLegacyKeys,
   clearOnSignIn,
   clearOnSignOut,
   clearScope,

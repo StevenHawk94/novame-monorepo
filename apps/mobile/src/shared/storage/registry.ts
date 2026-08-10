@@ -213,6 +213,22 @@ export function clearOnSignOut(): void {
  *
  * ESLint stops it at author time. This catches whatever slips through.
  */
+/**
+ * Keys written by builds whose feature no longer exists. Purged on every
+ * startup (dev AND prod) so stale devices neither trip the drift guard nor
+ * hold orphaned data forever. `growth_hero_h_` was the v1 growth page's
+ * per-width hero-height cache.
+ */
+const LEGACY_KEY_PREFIXES = ['growth_hero_h_'];
+
+export function purgeLegacyKeys(): void {
+  for (const k of mmkv.getAllKeys()) {
+    if (LEGACY_KEY_PREFIXES.some((p) => k.startsWith(p)) && mmkv.remove(k)) {
+      if (__DEV__) console.log(`[storage] purged legacy key ${k}`);
+    }
+  }
+}
+
 export function assertAllKeysRegistered(): void {
   if (!__DEV__) return;
 

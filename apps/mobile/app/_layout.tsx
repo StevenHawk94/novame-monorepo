@@ -44,6 +44,7 @@ import { ErrorBoundary } from '@/components/main/error-boundary';
 import { hideSplashOnce } from '@/lib/splash';
 import {
   assertAllKeysRegistered,
+  purgeLegacyKeys,
   clearOnSignIn,
   clearOnSignOut,
   debugAccountKeysRemaining,
@@ -62,6 +63,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 // Dev-only. Fails loudly if MMKV holds a key that was never declared in
 // src/shared/storage/keys.ts. An undeclared key has no scope, which means
 // nothing will ever clear it on sign-out -- the exact shape of P0-1.
+purgeLegacyKeys();
 assertAllKeysRegistered();
 
 // Hard timeout on cold-start prewarm. Per Apple App Store guidance and
