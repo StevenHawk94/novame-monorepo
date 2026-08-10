@@ -20,6 +20,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ITEM_DICTIONARY } from '@novame/engine';
@@ -199,7 +200,7 @@ export function MemoryEditSheet({
   isPaid: boolean;
 }) {
   return (
-    <View style={s.sheetOverlay}>
+    <KeyboardDismissView style={s.sheetOverlay}>
       <View style={s.sheetFrame}>
         <View style={s.sheetCard}>
           <View style={s.sheetHeader}>
@@ -254,7 +255,7 @@ export function MemoryEditSheet({
           </OffsetCard>
         </View>
       </View>
-    </View>
+    </KeyboardDismissView>
   );
 }
 

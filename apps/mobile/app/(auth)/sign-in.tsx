@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { Platform,
   ActivityIndicator,
   Linking,
@@ -262,6 +263,7 @@ export default function AuthScreen() {
   if (mode === 'login') {
     return (
       <SafeAreaView style={styles.container} onLayout={hideSplashOnce}>
+      <KeyboardDismissView style={{ flex: 1 }}>
         <View style={styles.body}>
           <Branding />
           <Text style={styles.headline}>
@@ -341,13 +343,15 @@ export default function AuthScreen() {
           </Pressable>
         )}
         <Footer />
-      </SafeAreaView>
+      </KeyboardDismissView>
+    </SafeAreaView>
     );
   }
 
   if (mode === 'register') {
     return (
       <SafeAreaView style={styles.container}>
+      <KeyboardDismissView style={{ flex: 1 }}>
         <View style={styles.body}>
           <Branding />
           <Text style={styles.formTitle}>Create account</Text>
@@ -405,13 +409,15 @@ export default function AuthScreen() {
           </Pressable>
         </View>
         <Footer />
-      </SafeAreaView>
+      </KeyboardDismissView>
+    </SafeAreaView>
     );
   }
 
   if (mode === 'email-login') {
     return (
       <SafeAreaView style={styles.container}>
+      <KeyboardDismissView style={{ flex: 1 }}>
         <View style={styles.body}>
           <Branding />
           <Text style={styles.formTitle}>Sign in</Text>
@@ -462,13 +468,15 @@ export default function AuthScreen() {
           </Pressable>
         </View>
         <Footer />
-      </SafeAreaView>
+      </KeyboardDismissView>
+    </SafeAreaView>
     );
   }
 
   if (mode === 'verify') {
     return (
       <SafeAreaView style={styles.container}>
+      <KeyboardDismissView style={{ flex: 1 }}>
         <Pressable
           onPress={() => { void haptics.light(); goTo('register'); }}
           hitSlop={12}
@@ -508,13 +516,15 @@ export default function AuthScreen() {
 
         </View>
         <Footer />
-      </SafeAreaView>
+      </KeyboardDismissView>
+    </SafeAreaView>
     );
   }
 
   // mode === 'forgot'
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardDismissView style={{ flex: 1 }}>
       <View style={styles.body}>
         <Branding />
         <Text style={styles.formTitle}>Reset password</Text>
@@ -548,6 +558,7 @@ export default function AuthScreen() {
         </Pressable>
       </View>
       <Footer />
+    </KeyboardDismissView>
     </SafeAreaView>
   );
 }

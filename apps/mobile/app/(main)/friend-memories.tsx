@@ -16,6 +16,7 @@ import { itemsForGuidedCategory } from '@/lib/guided-prompts';
 import {
   createSharedMemories, fetchSharedBox, type SharedBoxItem, getCachedFriends,
 } from '@/lib/friends-api';
+import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { UserAvatar } from '@/components/ui/user-avatar';
 
 // Same strip as Bags: "all" + the 11 guided prompt categories.
@@ -110,7 +111,7 @@ export default function FriendMemoriesScreen() {
   if (mode === 'create') {
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={[styles.createRoot, { paddingTop: insets.top + 26 }]}>
+        <KeyboardDismissView style={[styles.createRoot, { paddingTop: insets.top + 26 }]}>
           <View style={styles.paperWrap}>
             <Image source={FRIEND_ICONS.memory} style={styles.paperBook} resizeMode="contain" />
             <View style={styles.paper}>
@@ -164,7 +165,7 @@ export default function FriendMemoriesScreen() {
           >
             <MaterialIcons name="close" size={26} color="#4A3220" />
           </Pressable>
-        </View>
+        </KeyboardDismissView>
       </KeyboardAvoidingView>
     );
   }

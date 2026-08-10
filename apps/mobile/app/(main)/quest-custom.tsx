@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { haptics } from '@/lib/haptics';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { generateCustomTasks } from '@/lib/quests-api';
@@ -77,7 +78,7 @@ export default function QuestCustomScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
+      <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 12 }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Custom Goal</Text>
           <Text style={styles.sub}>
@@ -115,7 +116,7 @@ export default function QuestCustomScreen() {
             )}
           </Pressable>
         </View>
-      </View>
+      </KeyboardDismissView>
     </KeyboardAvoidingView>
   );
 }
