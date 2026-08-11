@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -14,11 +13,6 @@ import { Image as ExpoImage } from 'expo-image';
 import { getHomeSceneSource } from '@/lib/scenes';
 import { getFreshBubble } from '@/lib/bubble-store';
 import { bubbleLineFor } from '@novame/domain';
-import { clearReflectLocal } from '@/lib/reflect-api';
-import { clearQuietWinsLocal } from '@/lib/quiet-wins-api';
-import { clearNewLensLocal } from '@/lib/lens-api';
-import { clearTameEnemyLocal } from '@/lib/tame-enemy-api';
-import { devSetTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
@@ -54,7 +48,6 @@ export default function HomeScreen() {
   const sheetRef = useRef<CompanionSheetRef>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
-  const [tier, setTier] = useState(getCachedSubscriptionTier());
   const [, setCosmeticTick] = useState(0);
   const [bubbleRotation, setBubbleRotation] = useState(0);
   const day = isDaytime();
@@ -71,7 +64,6 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setTier(getCachedSubscriptionTier());
       setCosmeticTick((t) => t + 1);
       sheetRef.current?.refresh();
       void fetchCompanion().then((c) => {
@@ -154,42 +146,6 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {__DEV__ && (
-            <View style={styles.devRow}>
-              <Pressable
-                onPress={() => {
-                  clearQuietWinsLocal();
-                  clearNewLensLocal();
-                  clearReflectLocal();
-                  clearTameEnemyLocal();
-                  appAlert('Reset done', 'Local kit + reflect flags cleared.');
-                }}
-                style={styles.devBtn}
-              >
-                <Text style={styles.devText}>[DEV] Reset kits</Text>
-              </Pressable>
-              <Pressable
-                onPress={async () => {
-                  const next = tier === 'free' ? 'plus' : 'free';
-                  const ok = await devSetTier(next);
-                  if (ok) {
-                    setTier(next);
-                    appAlert('Tier switched', `Now: ${next === 'free' ? 'FREE' : 'PAID'}`);
-                  } else {
-                    appAlert(
-                      'Failed',
-                      'Could not switch tier. Set DEV_TIER_SECRET on the API (Vercel env) and the same value as EXPO_PUBLIC_DEV_TIER_SECRET in apps/mobile/.env.local, then restart Metro.',
-                    );
-                  }
-                }}
-                style={styles.devBtn}
-              >
-                <Text style={styles.devText}>
-                  [DEV] Now: {tier === 'free' ? 'FREE' : 'PAID'} (tap to switch)
-                </Text>
-              </Pressable>
-            </View>
-          )}
         </View>
 
         {/* Friend memory bubbles float over the scene; box-none so the pet,
@@ -251,7 +207,4 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 2 }, { translateY: 3 }],
   },
   entryText: { fontSize: 20, fontFamily: 'Inter_700Bold', color: '#3A2E1A' },
-  devRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 4 },
-  devBtn: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 8 },
-  devText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF' },
 });
