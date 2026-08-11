@@ -104,6 +104,15 @@ export function updateDisplayName(
   return postUpdate({ userId, displayName });
 }
 
+/** Onboarding funnel answers — fire-and-forget analytics write. */
+export function reportOnboardingChoices(
+  userId: string,
+  who: string,
+  blocker: string,
+): Promise<UpdateResult> {
+  return postUpdate({ userId, onboardingWho: who, onboardingBlocker: blocker });
+}
+
 export function updateEmail(
   userId: string,
   newEmail: string,

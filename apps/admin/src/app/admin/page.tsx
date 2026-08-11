@@ -8,9 +8,11 @@ import OutfitsTab from './_components/OutfitsTab';
 import ScenesTab from './_components/ScenesTab';
 import OrdersTab from './_components/OrdersTab';
 import PricingTab from './_components/PricingTab';
+import AnalysisTab from './_components/AnalysisTab';
 
 type TabId =
   | 'overview'
+  | 'analysis'
   | 'default-users'
   | 'real-users'
   | 'orders'
@@ -20,6 +22,7 @@ type TabId =
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
+  { id: 'analysis', icon: '📈', label: 'Analysis' },
   { id: 'default-users', icon: '👤', label: 'Default Users' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'orders', icon: '📦', label: 'Orders' },
@@ -61,6 +64,7 @@ export default function AdminDashboard() {
       </div>
 
       {tab === 'overview' && <OverviewTab stats={null} loading={false} />}
+      {tab === 'analysis' && <AnalysisTab />}
       {tab === 'default-users' && <DefaultUsersTab />}
       {tab === 'real-users' && <RealUsersTab />}
       {tab === 'orders' && <OrdersTab />}

@@ -22,7 +22,7 @@ function getSupabaseAdmin() {
  */
 export async function POST(request) {
   try {
-    const { userId, displayName, avatarUrl, birthday, newEmail, newPassword, aspireWords } = await request.json()
+    const { userId, displayName, avatarUrl, birthday, newEmail, newPassword, aspireWords, onboardingWho, onboardingBlocker } = await request.json()
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
@@ -106,6 +106,14 @@ export async function POST(request) {
       updateData.is_default_avatar = false
     }
     
+    // Onboarding funnel answers (2026-08-10 analytics) — whitelisted keys only.
+    if (['partner', 'bestie', 'family', 'special'].includes(onboardingWho)) {
+      updateData.onboarding_who = onboardingWho
+    }
+    if (['A', 'B', 'C', 'D'].includes(onboardingBlocker)) {
+      updateData.onboarding_blocker = onboardingBlocker
+    }
+
     if (birthday !== undefined) {
       updateData.birthday = birthday
     }
