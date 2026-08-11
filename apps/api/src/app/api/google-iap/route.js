@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 import crypto from 'node:crypto'
 
 // nodejs runtime: RS256 service-account JWT signing uses node crypto.
@@ -176,6 +177,9 @@ export async function POST(request) {
         { status: 500 }
       )
     }
+
+    // 2026-08-11: a fresh own-Plus auto-seats the paired partner.
+    if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
 
     // Preserve the billing-period anchor on re-reports of the same period
     // (same QuotaFix rule as apple-iap: resetting it would refill quotas).

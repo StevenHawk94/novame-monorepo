@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { decodeTransaction } from 'app-store-server-api'
+import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 
 // A2: nodejs runtime required -- app-store-server-api's decodeTransaction
 // uses Node crypto for X.509 cert-chain validation (not available on Edge),
@@ -207,6 +208,9 @@ export async function POST(request) {
         { status: 500 }
       )
     }
+
+    // 2026-08-11: a fresh own-Plus auto-seats the paired partner.
+    if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
 
     // ── Upsert subscriptions table (atomic) ──
     //

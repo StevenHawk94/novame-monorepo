@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
-import { appAlert } from '@/components/ui/app-dialog';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,7 +16,7 @@ import {
   getCachedSubscriptionTier,
   fetchSubscriptionTier,
 } from '@/lib/subscription';
-import { fetchDuoStatus, joinDuo, type DuoStatus } from '@/lib/duo-api';
+import { fetchDuoStatus, type DuoStatus } from '@/lib/duo-api';
 import { fetchFriends } from '@/lib/friends-api';
 import { fetchMeStats, getCachedMeStats } from '@/lib/me-stats';
 import { getBunnyName } from '@/lib/onboarding';
@@ -48,8 +47,6 @@ export default function MeScreen() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(undefined);
   const [duo, setDuo] = useState<DuoStatus>({ asOwner: null, asMember: null });
-  const [joining, setJoining] = useState(false);
-  const [joinCode, setJoinCode] = useState('');
 
   // Name + avatar come from me-stats (profiles), the same source Account
   // Management edits — so a save there shows here on the next focus.
@@ -90,34 +87,7 @@ export default function MeScreen() {
     }, [refreshProfile]),
   );
 
-  async function shareDuoCode() {
-    if (!duo.asOwner) return;
-    void haptics.light();
-    await Share.share({ message: `Join me on Burrow Plus! Enter my Duo code: ${duo.asOwner.inviteCode}` });
-  }
 
-  async function onJoinDuo() {
-    const code = joinCode.trim();
-    if (code.length < 4 || joining) return;
-    setJoining(true);
-    void haptics.medium();
-    const res = await joinDuo(code);
-    setJoining(false);
-    if (res.ok) {
-      appAlert('Welcome to Plus', "You've joined a Duo plan. Enjoy everything Plus.", [
-        { text: 'Great', onPress: () => { setJoinCode(''); void fetchDuoStatus().then(setDuo); } },
-      ]);
-    } else {
-      const msg =
-        res.error === 'already_plus' ? "You're already on Plus."
-        : res.error === 'code_not_found' ? "That code doesn't look right."
-        : res.error === 'seat_taken' ? 'That Duo seat is already taken.'
-        : res.error === 'cannot_claim_own' ? "That's your own code!"
-        : res.error === 'owner_inactive' ? "The owner's plan isn't active."
-        : 'Something went wrong. Try again.';
-      appAlert('Hmm', msg);
-    }
-  }
 
   const goTo = (path: string) => {
     void haptics.light();
@@ -240,7 +210,8 @@ export default function MeScreen() {
             <MenuRow emoji={'💝'} label="Help Centers" onPress={() => goTo('/(main)/(modals)/support')} />
           </View>
 
-          {/* Duo seat (kept from v2 build — not in the mock, but load-bearing) */}
+          {/* Duo seat: auto-granted to the paired partner (2026-08-11) —
+              the manual invite-code entry is retired. */}
           {duo.asOwner ? (
             <View style={styles.duoCard}>
               <Text style={styles.duoTitle}>Your Duo plan</Text>
@@ -249,16 +220,10 @@ export default function MeScreen() {
                   {duo.asOwner.memberName} has joined your Plus. Both of you are covered.
                 </Text>
               ) : (
-                <>
-                  <Text style={styles.duoBody}>Share this one-time code with a friend to give them Plus:</Text>
-                  <Pressable onPress={shareDuoCode}>
-                    <Text style={styles.duoCode}>{duo.asOwner.inviteCode}</Text>
-                  </Pressable>
-                  <Pressable onPress={shareDuoCode} style={styles.duoShareBtn}>
-                    <MaterialIcons name="ios-share" size={16} color="#7A5A36" />
-                    <Text style={styles.duoShareText}>Share code</Text>
-                  </Pressable>
-                </>
+                <Text style={styles.duoBody}>
+                  Your Plus covers two people — pair with someone on the Connection tab and
+                  they get Plus automatically.
+                </Text>
               )}
             </View>
           ) : duo.asMember ? (
@@ -267,27 +232,6 @@ export default function MeScreen() {
               <Text style={styles.duoBody}>
                 You're on Plus through {duo.asMember.ownerName}'s Duo plan.
               </Text>
-            </View>
-          ) : safeTier === 'free' ? (
-            <View style={styles.duoCard}>
-              <Text style={styles.duoTitle}>Join Plus by Duo Plan</Text>
-              <Text style={styles.duoBody}>Got a Duo code from a friend? Enter it to unlock Plus.</Text>
-              <TextInput
-                value={joinCode}
-                onChangeText={(t) => setJoinCode(t.toUpperCase())}
-                placeholder="Enter Duo code"
-                placeholderTextColor="#B8A588"
-                autoCapitalize="characters"
-                maxLength={8}
-                style={styles.duoInput}
-              />
-              <Pressable
-                onPress={onJoinDuo}
-                disabled={joinCode.trim().length < 4 || joining}
-                style={[styles.duoJoinBtn, { opacity: joinCode.trim().length < 4 ? 0.5 : 1 }]}
-              >
-                <Text style={styles.duoJoinText}>{joining ? 'Joining...' : 'Join Plus'}</Text>
-              </Pressable>
             </View>
           ) : null}
 
@@ -369,17 +313,6 @@ const styles = StyleSheet.create({
   duoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E8D5B0' },
   duoTitle: { color: '#4A3423', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginBottom: 8 },
   duoBody: { color: '#6B5B44', fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19, marginBottom: 6 },
-  duoCode: { color: '#8A6240', fontSize: 26, fontFamily: 'Inter_800ExtraBold', letterSpacing: 4, textAlign: 'center', marginVertical: 6 },
-  duoShareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8 },
-  duoShareText: { color: '#7A5A36', fontSize: 13, fontFamily: 'Inter_700Bold' },
-  duoInput: {
-    borderWidth: 1.5, borderColor: '#E8D5B0', borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 16, fontFamily: 'Inter_700Bold', letterSpacing: 3,
-    textAlign: 'center', color: '#4A3423', marginBottom: 10, backgroundColor: '#FBF6EA',
-  },
-  duoJoinBtn: { backgroundColor: '#8A6240', borderRadius: 14, paddingVertical: 13, alignItems: 'center' },
-  duoJoinText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 },
   legalLink: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium' },

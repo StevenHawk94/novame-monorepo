@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { autoGrantDuoBothWays, revokeDuoOnUnpair } from '@/lib/duo-auto'
 
 export const runtime = 'edge'
 
@@ -104,6 +105,8 @@ export async function POST(request) {
         console.warn('[friends/respond] set_pairing failed (non-fatal):', pairErr.message)
       } else if (!pairRes?.error) {
         paired = true
+        // 2026-08-11: whichever side owns Plus auto-seats the other.
+        await autoGrantDuoBothWays(supabase, userId, other)
       }
       return NextResponse.json({ success: true, action, paired })
     } else {

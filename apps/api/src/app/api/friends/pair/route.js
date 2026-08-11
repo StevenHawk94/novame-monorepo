@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { autoGrantDuoBothWays, revokeDuoOnUnpair } from '@/lib/duo-auto'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
@@ -107,6 +108,8 @@ export async function POST(request) {
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 409 })
     }
+    // 2026-08-11: whichever side owns Plus auto-seats the other.
+    await autoGrantDuoBothWays(supabase, userId, friendUserId)
     return NextResponse.json({ success: true, pairedWith: friendUserId })
   } catch (err) {
     console.error('[friends/pair] unexpected:', err && err.message)
@@ -122,6 +125,9 @@ export async function DELETE(request) {
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const supabase = serviceClient()
+    // Capture the partner BEFORE the unset so the duo seat can be released.
+    const { data: pairRow } = await supabase
+      .from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
     const { data: result, error } = await supabase.rpc('unset_pairing', { p_user_id: userId })
     if (error) {
       console.error('[friends/pair] rpc error:', error.message)
@@ -129,6 +135,11 @@ export async function DELETE(request) {
     }
     if (result?.error) {
       return NextResponse.json({ error: result.error }, { status: 409 })
+    }
+    // 2026-08-11: unpair revokes the granted seat (member keeps Plus only
+    // with an active subscription of their own).
+    if (pairRow?.partner_user_id) {
+      await revokeDuoOnUnpair(supabase, userId, pairRow.partner_user_id)
     }
     return NextResponse.json({ success: true })
   } catch (err) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 import {
   decodeNotificationPayload,
   decodeTransaction,
@@ -344,6 +345,9 @@ async function handleActive(supabase, txn) {
   await supabase.from('profiles')
     .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
     .eq('id', userId)
+
+  // 2026-08-11: activation/renewal re-seats the paired partner if free.
+  if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
 
   // Update subscriptions table.
   //
