@@ -46,8 +46,8 @@ import {
 
 type AuthMode = 'login' | 'register' | 'email-login' | 'verify' | 'forgot';
 
-const TERMS_URL = 'https://novameapp.com/terms';
-const PRIVACY_URL = 'https://novameapp.com/privacy';
+const TERMS_URL = 'https://www.burrow-app.com/terms';
+const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
 
 // ---- SVG Logos (per official guidelines) ----
 

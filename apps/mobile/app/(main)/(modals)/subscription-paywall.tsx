@@ -297,7 +297,7 @@ export default function SubscriptionPaywallModal() {
               of the current period. Manage or cancel anytime in your App Store settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 10 }]}>
-              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/privacy')} hitSlop={8}>
+              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/privacy')} hitSlop={8}>
                 <Text style={styles.legalLink}>Privacy</Text>
               </Pressable>
               <Pressable onPress={() => void handleRestore()} hitSlop={8}>
@@ -305,7 +305,7 @@ export default function SubscriptionPaywallModal() {
                   {busy === 'restoring' ? 'Restoring…' : 'Restore purchases'}
                 </Text>
               </Pressable>
-              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/terms')} hitSlop={8}>
+              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/terms')} hitSlop={8}>
                 <Text style={styles.legalLink}>Terms</Text>
               </Pressable>
             </View>

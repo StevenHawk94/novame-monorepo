@@ -25,8 +25,8 @@ import { resolveAvatarSource } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import { useRef } from 'react';
 
-const PRIVACY_URL = 'https://novameapp.com/privacy';
-const TERMS_URL = 'https://novameapp.com/terms';
+const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
+const TERMS_URL = 'https://www.burrow-app.com/terms';
 
 /**
  * Settings center (design: menu.png), reached from Home's top-left hamburger.

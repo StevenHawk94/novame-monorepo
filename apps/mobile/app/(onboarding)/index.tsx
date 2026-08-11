@@ -653,10 +653,10 @@ export default function OnboardingScreen() {
               Cancel anytime in your App Store settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 8, marginTop: 8 }]}>
-              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/privacy')} hitSlop={8}>
+              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/privacy')} hitSlop={8}>
                 <Text style={styles.legalLink}>Privacy</Text>
               </Pressable>
-              <Pressable onPress={() => void Linking.openURL('https://novameapp.com/terms')} hitSlop={8}>
+              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/terms')} hitSlop={8}>
                 <Text style={styles.legalLink}>Terms</Text>
               </Pressable>
             </View>
