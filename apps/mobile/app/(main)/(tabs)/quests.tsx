@@ -131,7 +131,10 @@ export default function QuestsScreen() {
       <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.title}>7-Day Daily Plan</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>7-Day Daily Plan</Text>
+              <Image source={ICONS.weekPlan} style={styles.titleIcon} resizeMode="contain" />
+            </View>
           </View>
 
           <OffsetCard color={OFFSET} offset={4} radius={20} cardStyle={styles.planCard} style={styles.cardGap}>
@@ -209,7 +212,10 @@ export default function QuestsScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: pageBg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: titleColor }]}>Weekly Quests</Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, { color: titleColor }]}>Weekly Quests</Text>
+            <Image source={ICONS.weekPlan} style={styles.titleIcon} resizeMode="contain" />
+          </View>
           <Text style={[styles.subtitle, { color: mutedColor }]}>
             Select your main goal of the week, finish and get rewards!
           </Text>
@@ -279,7 +285,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
   header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: CREAM },
+  titleIcon: { width: 42, height: 42 },
   subtitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6 },
 
   cardGap: { marginBottom: 12 },

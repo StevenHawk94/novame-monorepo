@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
-const VALID_RANGES = new Set([7, 30, 90])
 const DIMENSIONS = [
   { key: 'mood', label: 'Mood' },
   { key: 'energy', label: 'Energy' },
@@ -165,6 +164,45 @@ function periodText(days) {
   return days === 7 ? 'this week' : days === 30 ? 'this month' : 'in the last 3 months'
 }
 
+function dateOnly(ms) {
+  return new Date(ms).toISOString().slice(0, 10)
+}
+
+function completedPatternPeriods(now, anchorDate) {
+  const anchorMs = new Date(`${anchorDate}T00:00:00Z`).getTime()
+  const today = new Date(now)
+  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  const completedCount = Math.max(0, Math.floor((todayMs - anchorMs) / (7 * 86400000)))
+  const periods = []
+  // Oldest first, every completed seven-day period. Anchoring to the
+  // first shared reflection makes the ranges continuous for this relationship
+  // (for example Jul 4-10, Jul 11-17) instead of arbitrary calendar weeks.
+  for (let index = 0; index < completedCount; index += 1) {
+    const startMs = anchorMs + index * 7 * 86400000
+    periods.push({
+      startDate: dateOnly(startMs),
+      endDate: dateOnly(startMs + 6 * 86400000),
+    })
+  }
+  return periods
+}
+
+function scorePeriod(records, startDate, endDate) {
+  const periodRows = records.filter((row) => row.date >= startDate && row.date <= endDate)
+  if (periodRows.length === 0) return null
+  const scores = {}
+  for (const { key } of DIMENSIONS) {
+    const values = periodRows
+      .map((row) => signal(key, row.text, row.sharedInteraction))
+      .filter(Boolean)
+      .map((value) => value.score)
+    scores[key] = values.length
+      ? Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10
+      : null
+  }
+  return { startDate, endDate, evidenceCount: periodRows.length, scores }
+}
+
 export async function GET(request) {
   try {
     const authHeader = request.headers.get('authorization') || ''
@@ -173,8 +211,9 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const requested = Number(searchParams.get('days') || 30)
-    const days = VALID_RANGES.has(requested) ? requested : 30
+    // Their Patterns is intentionally a seven-day product. Longer-term
+    // context is exposed only as weekly score history, never as 30/90-day tabs.
+    const days = 7
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -196,17 +235,18 @@ export async function GET(request) {
     }
 
     const now = Date.now()
-    const since = new Date(now - days * 2 * 86400000).toISOString().slice(0, 10)
+    // Full available relationship history for the calendar and score trend.
+    const since = firstReflect?.local_date || pairing.created_at.slice(0, 10)
     const [a, b] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
     const [{ data: reflects }, { data: shared }] = await Promise.all([
       supabase.from('reflects')
         .select('id, body, local_date, created_at')
         .eq('user_id', partnerId).eq('shared_to_friends', true)
-        .gte('local_date', since).order('created_at', { ascending: false }).limit(600),
+        .gte('local_date', since).order('created_at', { ascending: false }).limit(5000),
       supabase.from('shared_memory_items')
         .select('id, author_user_id, description, item_id, created_at')
         .eq('user_a', a).eq('user_b', b).eq('author_user_id', partnerId)
-        .gte('created_at', `${since}T00:00:00Z`).order('created_at', { ascending: false }).limit(1000),
+        .gte('created_at', `${since}T00:00:00Z`).order('created_at', { ascending: false }).limit(5000),
     ])
     const reflectIds = (reflects || []).map((row) => row.id)
     let memories = []
@@ -216,7 +256,7 @@ export async function GET(request) {
         .eq('user_id', partnerId)
         .gte('created_at', `${since}T00:00:00Z`)
         .order('created_at', { ascending: false })
-        .limit(1000)
+        .limit(5000)
       const allowedReflectIds = new Set(reflectIds)
       memories = (data || []).filter((memory) => allowedReflectIds.has(memory.reflect_id))
     }
@@ -305,6 +345,7 @@ export async function GET(request) {
         : []
       return {
         key, label, trend, trendLabel: trendLabel(key, trend),
+        score: currentMean == null ? null : Math.round(currentMean * 10) / 10,
         summary: systemCopy(label, trend, periodText(days)),
         evidenceCount: current.length,
         dayCount: new Set(current.map((row) => row.date)).size,
@@ -325,9 +366,18 @@ export async function GET(request) {
       : available.length > 0
         ? 'ready'
         : 'building_baseline'
+    const historyAnchor = firstReflect?.local_date || safeRecords.map((row) => row.date).sort()[0] || dateOnly(now)
+    const history = completedPatternPeriods(now, historyAnchor)
+      .map((period) => scorePeriod(safeRecords, period.startDate, period.endDate))
+      .filter(Boolean)
+    const currentStart = dateOnly(now - 6 * 86400000)
+    const currentEnd = dateOnly(now)
+    const currentScores = scorePeriod(safeRecords, currentStart, currentEnd)
+
     return NextResponse.json({
       success: true, state, days, recommendedDays, partnerUserId: partnerId,
       partnerName: profile?.display_name || 'They', summary, dimensions,
+      currentStart, currentEnd, history, currentScores,
     })
   } catch (err) {
     console.error('[friends/patterns] unexpected:', err && err.message)

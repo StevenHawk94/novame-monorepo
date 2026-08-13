@@ -9,7 +9,7 @@
  */
 import { fetchBags } from './bags-api';
 import { fetchCosmetics } from './cosmetics-api';
-import { fetchCommonItems, fetchFriendFeed, fetchFriends, fetchInsights, fetchPairing } from './friends-api';
+import { fetchFriendFeed, fetchFriends } from './friends-api';
 import { fetchQuestStatus } from './quests-api';
 import { refreshRemoteItems } from './remote-items';
 import { getHomeSceneSource } from './scenes';
@@ -31,12 +31,6 @@ export function prefetchAppData(): void {
   void fetchReflectFeed();
   void fetchFriends();
   void fetchFriendFeed();
-  void fetchPairing().then((p) => {
-    if (p.paired) {
-      void fetchCommonItems();
-      void fetchInsights();
-    }
-  });
   void fetchQuestStatus();
   void fetchCosmetics();
 }

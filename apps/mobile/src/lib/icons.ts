@@ -8,6 +8,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   // Tab bar
   Home: require('../../assets/Icons/Home.png'),
   Bags: require('../../assets/Icons/Bags.png'),
+  Memories: require('../../assets/Icons/Memories.png'),
   Quests: require('../../assets/Icons/Quests.png'),
   Friends: require('../../assets/Icons/Friends.png'),
   Me: require('../../assets/Icons/Me.png'),
@@ -51,6 +52,8 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   hangout: require('../../assets/Icons/hangout.png'),
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
+  patternCalendar: require('../../assets/Icons/pattern-calendar.png'),
+  weekPlan: require('../../assets/Icons/Week-Plan.png'),
   setting: require('../../assets/Icons/setting.png'),
   memory: require('../../assets/Icons/memory.png'),
   sharedMemories: require('../../assets/Icons/shared-memories.png'),

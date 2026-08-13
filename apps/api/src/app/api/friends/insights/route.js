@@ -28,6 +28,7 @@ export async function GET(request) {
     const userId = searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const reqDate = searchParams.get('date') || new Date().toISOString().slice(0, 10)
+    const userOpenedConnection = searchParams.get('intent') === 'view'
     if (!/^\d{4}-\d{2}-\d{2}$/.test(reqDate)) {
       return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
     }
@@ -88,6 +89,17 @@ export async function GET(request) {
         return NextResponse.json({ success: true, paired: true, insights: cached.payload, cached: true })
       }
       // fall through to regenerate (run 2) — the daily cap below still applies
+    }
+
+    // Token guard: background warm-ups and older clients may still call this
+    // route, but only an explicit Connection-page view may generate. They can
+    // read an existing daily cache without causing a model request.
+    if (!userOpenedConnection) {
+      return NextResponse.json({
+        success: true, paired: true,
+        insights: cached ? cached.payload : null,
+        cached: true, paused: true,
+      })
     }
 
     // Generation cap: 2 runs per pair member per local day.

@@ -10,7 +10,9 @@ import { syncWidgetLatestFriend } from './widget-sync';
 import { apiClient } from './api';
 import { supabase } from './supabase';
 import { storage } from './storage';
-import { kCommonItems, kConnInsights, kFriendsFeed, kFriendsStatus, kPairingStatus } from '../shared/storage/keys';
+import { kCommonItems, kFriendsFeed, kFriendsStatus, kPairingStatus } from '../shared/storage/keys';
+import { localDateKey, patchAnalysisCache, readAnalysisCache } from './connection-analysis-cache';
+import { shouldResumeAfterAbsence } from './analysis-refresh-policy';
 
 export interface FriendCard {
   userId: string;
@@ -477,11 +479,18 @@ export type InsightsResult =
   | { ok: false; error: 'plus_required' | 'consent_required' | 'network' };
 
 export function getCachedInsights(): InsightsResult | null {
-  try {
-    const raw = storage.getString(kConnInsights.name);
-    if (raw) return JSON.parse(raw) as InsightsResult;
-  } catch { /* fall through */ }
-  return null;
+  return (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
+}
+
+/** Connection is daily, and resumes only when the user actually opens it. */
+export function shouldRefreshConnectionDashboard(): boolean {
+  const cache = readAnalysisCache();
+  return cache.dashboardDate !== localDateKey()
+    || shouldResumeAfterAbsence(2, cache.dashboardFetchedAt);
+}
+
+export function markConnectionDashboardRefreshed(): void {
+  patchAnalysisCache({ dashboardDate: localDateKey(), dashboardFetchedAt: Date.now() });
 }
 
 /** 板块4 (Plus): daily AI guidance about the partner. */
@@ -491,20 +500,19 @@ export async function fetchInsights(): Promise<
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'network' };
-  const d = new Date();
-  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const date = localDateKey();
   try {
     const data = await apiClient.get<{ success?: boolean; error?: string; insights?: ConnectionInsights | null }>(
-      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}`,
+      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view`,
     );
     if (data.success) {
       const res: InsightsResult = { ok: true, insights: data.insights ?? null };
-      storage.set(kConnInsights.name, JSON.stringify(res));
+      patchAnalysisCache({ insights: res });
       return res;
     }
     if (data.error === 'plus_required' || data.error === 'consent_required') {
       const res: InsightsResult = { ok: false, error: data.error };
-      storage.set(kConnInsights.name, JSON.stringify(res));
+      patchAnalysisCache({ insights: res });
       return res;
     }
     return getCachedInsights() ?? { ok: false, error: 'network' };

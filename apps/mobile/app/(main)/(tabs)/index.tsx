@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -11,8 +11,13 @@ import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
 import { Image as ExpoImage } from 'expo-image';
 import { getHomeSceneSource } from '@/lib/scenes';
-import { getFreshBubble } from '@/lib/bubble-store';
-import { bubbleLineFor } from '@novame/domain';
+import {
+  advanceDefaultBubble,
+  getFreshBubbleState,
+  getLaunchDefaultBubble,
+  type FreshBubble,
+} from '@/lib/bubble-store';
+import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
@@ -31,16 +36,10 @@ import { CompanionSheet, type CompanionSheetRef } from '@/components/main/compan
  * hideSplashOnce() must be called by whatever screen renders first, or the
  * native splash never lifts.
  */
-function isDaytime(): boolean {
-  const h = new Date().getHours();
-  return h >= 6 && h < 18;
-}
-
-function speechFor(day: boolean, rotation: number): string {
-  // A fresh AI line from the last reflection wins; otherwise a rotating default.
-  const ai = getFreshBubble();
-  if (ai) return ai;
-  return bubbleLineFor(day, rotation);
+function visibleAiBubble(): FreshBubble | null {
+  // A cached AI line must never leak through after the account becomes Free.
+  if (getCachedSubscriptionTier() === 'free') return null;
+  return getFreshBubbleState();
 }
 
 export default function HomeScreen() {
@@ -49,22 +48,65 @@ export default function HomeScreen() {
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
   const [, setCosmeticTick] = useState(0);
-  const [bubbleRotation, setBubbleRotation] = useState(0);
-  const day = isDaytime();
+  const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
+  const [aiBubble, setAiBubble] = useState<FreshBubble | null>(visibleAiBubble);
+  const aiBubbleRef = useRef(aiBubble);
+  const [homeLayout, setHomeLayout] = useState({
+    safeHeight: 0,
+    sceneY: 0,
+    videoY: 0,
+    videoHeight: 240,
+    entriesHeight: 68,
+  });
   void companion;
 
-  useEffect(() => {
-    const interval = setInterval(() => setBubbleRotation((r) => r + 1), 8000);
-    return () => clearInterval(interval);
+  const applyAiBubble = useCallback((next: FreshBubble | null) => {
+    const previous = aiBubbleRef.current;
+    aiBubbleRef.current = next;
+    setAiBubble(next);
+    // Covers both a live timeout and returning from a long background pause.
+    if (previous && !next && Date.now() >= previous.expiresAtMs) {
+      setDefaultSpeech(advanceDefaultBubble());
+    }
   }, []);
 
-  const onLayout = useCallback(() => {
+  // A new Reflect replaces the old AI line and starts a fresh six-hour timer.
+  // If the app stays open, expiry switches to the next local-time default line.
+  useEffect(() => {
+    if (!aiBubble) return;
+    const remainingMs = aiBubble.expiresAtMs - Date.now();
+    if (remainingMs <= 0) {
+      applyAiBubble(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      applyAiBubble(null);
+    }, remainingMs);
+    return () => clearTimeout(timer);
+  }, [aiBubble, applyAiBubble]);
+
+  const onFirstPaint = useCallback(() => {
     hideSplashOnce();
   }, []);
+
+  const recordLayout = useCallback((part: Partial<typeof homeLayout>) => {
+    setHomeLayout((current) => {
+      const next = { ...current, ...part };
+      return Object.keys(part).every((key) => current[key as keyof typeof current] === next[key as keyof typeof next])
+        ? current
+        : next;
+    });
+  }, []);
+
+  const onSafeLayout = useCallback((event: LayoutChangeEvent) => {
+    onFirstPaint();
+    recordLayout({ safeHeight: event.nativeEvent.layout.height });
+  }, [onFirstPaint, recordLayout]);
 
   useFocusEffect(
     useCallback(() => {
       setCosmeticTick((t) => t + 1);
+      applyAiBubble(visibleAiBubble());
       sheetRef.current?.refresh();
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
@@ -73,7 +115,7 @@ export default function HomeScreen() {
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-    }, []),
+    }, [applyAiBubble]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -99,11 +141,16 @@ export default function HomeScreen() {
   // the gap with the window so the video never crowds Focus/Reflect.
   const { height } = useWindowDimensions();
   const scenePadTop = Math.max(60, Math.round(height * 0.14));
+  const videoBottom = homeLayout.sceneY + homeLayout.videoY + homeLayout.videoHeight;
+  const availableBelowVideo = Math.max(0, homeLayout.safeHeight - videoBottom);
+  const entriesTop = homeLayout.safeHeight > 0
+    ? videoBottom + Math.max(0, (availableBelowVideo - homeLayout.entriesHeight) / 2)
+    : undefined;
 
   return (
-    <View style={styles.root} onLayout={onLayout}>
+    <View style={styles.root} onLayout={onFirstPaint}>
       <ExpoImage source={sceneImg} style={styles.sceneBgImg} contentFit="cover" />
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>
           <Pressable onPress={() => router.push('/(main)/(modals)/me')} hitSlop={8}>
@@ -123,21 +170,38 @@ export default function HomeScreen() {
         {/* Scene: companion video at a FIXED spot; the speech bubble is
             anchored to the video's top edge and grows UPWARD as its text
             wraps, so the bunny never shifts with the line count. */}
-        <View style={[styles.scene, { paddingTop: scenePadTop }]}>
-          <View style={styles.videoSlot}>
+        <View
+          style={[styles.scene, { paddingTop: scenePadTop }]}
+          onLayout={(event) => recordLayout({ sceneY: event.nativeEvent.layout.y })}
+        >
+          <View
+            style={styles.videoSlot}
+            onLayout={(event) => recordLayout({
+              videoY: event.nativeEvent.layout.y,
+              videoHeight: event.nativeEvent.layout.height,
+            })}
+          >
             <View style={styles.bubbleWrap}>
               <View style={styles.bubble}>
-                <Text style={styles.bubbleText}>{speechFor(day, bubbleRotation)}</Text>
+                <Text style={styles.bubbleText}>{aiBubble?.line ?? defaultSpeech}</Text>
                 <View style={styles.bubbleTail} />
               </View>
             </View>
-            <CompanionVideo onPress={onPetTap} onReady={onLayout} />
+            <CompanionVideo onPress={onPetTap} onReady={onFirstPaint} />
           </View>
         </View>
 
-        {/* Permanent entries */}
-        <View style={styles.ground}>
-          <View style={styles.entries}>
+        {/* Preserve the scene's original vertical allocation while the actual
+            buttons are positioned at the midpoint between video and tab bar. */}
+        <View style={{ height: homeLayout.entriesHeight + 16 }} />
+
+        {/* Permanent entries: measured rather than bottom-anchored, so every
+            screen size gets equal visual air above and below the row. */}
+        <View style={[styles.ground, entriesTop != null ? { top: entriesTop } : styles.groundFallback]}>
+          <View
+            style={styles.entries}
+            onLayout={(event) => recordLayout({ entriesHeight: event.nativeEvent.layout.height })}
+          >
             <Pressable onPress={onFocus} style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}>
               <Text style={styles.entryText}>Focus</Text>
             </Pressable>
@@ -193,7 +257,8 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#F4E4C1',
   },
   bubbleText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#3A2E1A', textAlign: 'center', lineHeight: 24 },
-  ground: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
+  ground: { position: 'absolute', left: 20, right: 20, zIndex: 2 },
+  groundFallback: { bottom: 16 },
   entries: { flexDirection: 'row', gap: 16 },
   entryBtn: {
     flex: 1, alignItems: 'center', justifyContent: 'center',

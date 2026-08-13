@@ -15,10 +15,10 @@ import { ICONS } from '@/lib/icons';
  */
 const TABS: ReadonlyArray<{ name: string; icon: ImageSourcePropType; label: string }> = [
   { name: 'index', icon: ICONS.Home, label: 'Home' },
-  { name: 'bags', icon: ICONS.Bags, label: 'Bags' },
+  { name: 'bags', icon: ICONS.Memories, label: 'Memories' },
   { name: 'quests', icon: ICONS.Quests, label: 'Quests' },
-  { name: 'friends', icon: ICONS.Friends, label: 'Friends' },
-  { name: 'status', icon: ICONS.Me, label: 'Me' },
+  { name: 'friends', icon: ICONS.Friends, label: 'Paired' },
+  { name: 'status', icon: ICONS.friendList, label: 'Connection' },
 ];
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {

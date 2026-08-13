@@ -37,8 +37,8 @@ function fmtTime(seconds: number): string {
  * Focus (C10, v2.0 design). Pick what you're preparing for, play the guided
  * track over the full-bleed sky art, and it completes when playback finishes.
  * Pause/resume only, no seeking (the progress bar is display-only — PRD).
- * Audio keeps playing when the screen locks or backgrounds. Completing
- * credits +30 clovers (twice a day); quitting before the end credits nothing.
+ * Audio playback is foreground-only. Completing credits +30 clovers (twice a
+ * day); quitting before the end credits nothing.
  */
 export default function FocusScreen() {
   const insets = useSafeAreaInsets();
@@ -56,10 +56,10 @@ export default function FocusScreen() {
   const player = useAudioPlayer(audio?.source ?? null);
   const status = useAudioPlayerStatus(player);
 
-  // Configure background + silent-mode playback once.
+  // Keep playback available in silent mode, but stop it when the app backgrounds.
   useEffect(() => {
     void setAudioModeAsync({
-      shouldPlayInBackground: true,
+      shouldPlayInBackground: false,
       playsInSilentMode: true,
       interruptionMode: 'duckOthers',
     });

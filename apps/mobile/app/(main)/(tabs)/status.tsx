@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
@@ -14,6 +14,7 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
   getCachedCommonItems, getCachedInsights, getCachedPairing,
+  markConnectionDashboardRefreshed, shouldRefreshConnectionDashboard,
   type CommonItem, type ConnectionInsights, type PairingStatus,
 } from '@/lib/friends-api';
 import { getCachedMeStats } from '@/lib/me-stats';
@@ -88,30 +89,39 @@ export default function ConnectionDashboardScreen() {
     return cachedIns.error;
   });
   const [openItem, setOpenItem] = useState<CommonItem | null>(null);
+  const refreshInFlight = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      void fetchPairing().then((p) => {
-        setPairing(p);
-        if (p.paired) {
-          void fetchCommonItems().then(setItems);
-          void fetchInsights().then((r) => {
-            if (r.ok) {
-              setInsights(r.insights);
-              setInsightsGate('ok');
-            } else if (r.error === 'plus_required' || r.error === 'consent_required') {
-              setInsightsGate(r.error);
-              if (r.error === 'plus_required' && isPaid) {
-                // Tier cache says paid but the server disagrees — re-sync it.
-                void supabase.auth.getSession().then(({ data }) => {
-                  const uid = data.session?.user?.id;
-                  if (uid) void fetchSubscriptionTier(uid).catch(() => {});
-                });
-              }
+      if (shouldRefreshConnectionDashboard() && !refreshInFlight.current) {
+        refreshInFlight.current = true;
+        void fetchPairing().then(async (p) => {
+          setPairing(p);
+          if (!p.paired) return;
+          const commonPromise = fetchCommonItems().then(setItems);
+          if (!isPaid) {
+            setInsightsGate('plus_required');
+            await commonPromise;
+            return;
+          }
+          const [, insightResult] = await Promise.all([commonPromise, fetchInsights()]);
+          if (insightResult.ok) {
+            setInsights(insightResult.insights);
+            setInsightsGate('ok');
+          } else if (insightResult.error === 'plus_required' || insightResult.error === 'consent_required') {
+            setInsightsGate(insightResult.error);
+            if (insightResult.error === 'plus_required') {
+              // Tier cache says paid but the server disagrees — re-sync it.
+              const { data } = await supabase.auth.getSession();
+              const uid = data.session?.user?.id;
+              if (uid) void fetchSubscriptionTier(uid).catch(() => {});
             }
-          });
-        }
-      });
+          }
+        }).finally(() => {
+          markConnectionDashboardRefreshed();
+          refreshInFlight.current = false;
+        });
+      }
       void supabase.auth.getSession().then(({ data }) => {
         setMyUserId(data.session?.user?.id ?? null);
         // Same resolution as the Me page header: profiles.display_name via
@@ -125,7 +135,7 @@ export default function ConnectionDashboardScreen() {
         setMyAvatarUrl(cached?.avatarUrl ?? '');
         setMyIsDefaultAvatar(cached?.isDefaultAvatar);
       });
-    }, []),
+    }, [isPaid]),
   );
 
 

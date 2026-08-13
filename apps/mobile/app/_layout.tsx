@@ -42,6 +42,7 @@ import {
 } from '@/lib/background-resume-store';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { hideSplashOnce } from '@/lib/splash';
+import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import {
   assertAllKeysRegistered,
   purgeLegacyKeys,
@@ -118,6 +119,9 @@ Sentry.init({
 });
 
 function RootLayout() {
+  // Must run before AppState/prewarm effects can overwrite the previous-use
+  // timestamp; internally guarded so Strict Mode renders are harmless.
+  captureAnalysisLaunchInactivity();
   // Cold-start prewarm gate. Stays false until either:
   //   - All three critical fetches resolve (character state, tier, me-stats), or
   //   - PREWARM_TIMEOUT_MS elapses (safety net for slow networks).

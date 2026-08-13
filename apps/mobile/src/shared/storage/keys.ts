@@ -81,6 +81,12 @@ export const kRemoteItems = defineKey('burrow_remote_items', 'device');
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 
+/**
+ * Retired pre-release split key. Keep registered so a dev build that wrote it
+ * before the sequence moved into kBubble can still clear it safely.
+ */
+export const kBubbleSequence = defineKey('novame_bubble_sequence', 'user');
+
 /** Cached Reflect Feed (My Logs), cache-first render. */
 export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
 
