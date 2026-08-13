@@ -41,7 +41,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
   reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
   reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
-  // Connection Dashboard (unpaired teaser cards + Memories Hub pill)
+  // Connection Dashboard (unpaired teaser cards + relationship surfaces)
   friendList: require('../../assets/Icons/friend-list.png'),
   vibeMatching: require('../../assets/Icons/vibe-matching.png'),
   emotionStatus: require('../../assets/Icons/emotion-status.png'),

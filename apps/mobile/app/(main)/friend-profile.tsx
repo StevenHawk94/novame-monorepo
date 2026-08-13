@@ -75,8 +75,8 @@ export default function FriendProfileScreen() {
           onPress={() => {
             void haptics.light();
             router.push({
-              pathname: '/(main)/friend-memories' as never,
-              params: { friendUserId, friendName: name },
+              pathname: '/(main)/(tabs)/bags' as never,
+              params: { tab: 'ours' },
             } as never);
           }}
           style={({ pressed }) => [styles.memChip, pressed && { transform: [{ translateY: 2 }] }]}

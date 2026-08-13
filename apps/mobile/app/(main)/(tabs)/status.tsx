@@ -26,7 +26,7 @@ import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscrip
  * Me tab → Connection Dashboard (2026-07-24 重构, mock 1:1). The old Me page
  * (growth stages, dimension tiles) is fully removed; this tab is about the
  * ONE paired relationship:
- *   板块1  title + subtitle + Memories Hub entry (shared memory box)
+ *   板块1  title + subtitle + Their Patterns entry
  *   板块2  both members, the relationship, its duration
  *   板块3  up to 8 items BOTH recently reflected (tap → both sides' words)
  *   板块4  Plus daily AI: Emotion / Topic / Care Tips / Boundaries / Hangout
@@ -132,7 +132,7 @@ export default function ConnectionDashboardScreen() {
   const partner = pairing?.partner ?? null;
   const insets = useSafeAreaInsets();
   // Narrow-screen type hierarchy (2026-08-08): the title may auto-shrink to
-  // fit beside the Memories Hub pill, but only to 80% — and the subtitle
+  // fit beside the Their Patterns pill, but only to 80% — and the subtitle
   // steps down with it so the pair never reads the same size.
   const { width: winW } = useWindowDimensions();
   const narrow = winW < 380;
@@ -159,14 +159,13 @@ export default function ConnectionDashboardScreen() {
             if (!partner) return;
             void haptics.light();
             router.push({
-              pathname: '/(main)/friend-memories',
-              params: { friendUserId: partner.userId, friendName: partner.displayName },
+              pathname: '/(main)/their-patterns',
             } as never);
           }}
           style={st.hubPill}
         >
-          <Image source={ICONS.friendList} style={{ width: 26, height: 26 }} resizeMode="contain" />
-          <Text style={st.hubPillText}>Memories Hub</Text>
+          <MaterialIcons name="insights" size={24} color="#FFFFFF" />
+          <Text style={st.hubPillText}>Their Patterns</Text>
         </Pressable>
       </View>
 

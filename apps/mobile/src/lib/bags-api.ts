@@ -17,7 +17,7 @@ import { supabase } from './supabase';
 export interface ItemMemory {
   excerpt: string;
   rawExcerpt: string;
-  reflectId: string;
+  reflectId?: string;
   createdAt: string;
 }
 
@@ -55,6 +55,37 @@ function decorate(w: WireItem): CollectedItem {
   };
 }
 
+/** Present rows from a pair's shared memory box using the same collection
+ * shape as Bags. Repeated item ids become one tile with multiple memories. */
+export function sharedBoxToCollectedItems(
+  rows: { itemId: string; description: string; createdAt: string }[],
+): CollectedItem[] {
+  const grouped = new Map<string, WireItem>();
+  for (const row of rows) {
+    const current = grouped.get(row.itemId);
+    const memory: ItemMemory = {
+      excerpt: row.description,
+      rawExcerpt: row.description,
+      createdAt: row.createdAt,
+    };
+    if (current) {
+      current.count += 1;
+      current.memories.push(memory);
+      if (row.createdAt > current.firstSeenAt) current.firstSeenAt = row.createdAt;
+    } else {
+      grouped.set(row.itemId, {
+        itemId: row.itemId,
+        count: 1,
+        firstSeenAt: row.createdAt,
+        memories: [memory],
+      });
+    }
+  }
+  return [...grouped.values()]
+    .sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt))
+    .map(decorate);
+}
+
 export function getCachedBags(): CollectedItem[] {
   const raw = storage.getString(kBagsState.name);
   if (!raw) return [];
@@ -67,20 +98,31 @@ export function getCachedBags(): CollectedItem[] {
 
 /** Fetch collected items, refreshing the cache. Cache stores the wire shape
  *  (ids only), decorated on read, so a dictionary edit reflects immediately. */
-export async function fetchBags(): Promise<CollectedItem[]> {
+export async function fetchBags(scope: 'mine' | 'their' = 'mine'): Promise<CollectedItem[]> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return getCachedBags();
 
   try {
-    const data = await apiClient.get<{ success?: boolean; items?: WireItem[] }>(
-      `/api/bags?userId=${encodeURIComponent(userId)}`,
+    const data = await apiClient.get<{
+      success?: boolean;
+      ownerUserId?: string | null;
+      items?: WireItem[];
+    }>(
+      `/api/bags?userId=${encodeURIComponent(userId)}&scope=${scope}`,
     );
-    if (!data.success || !data.items) return getCachedBags();
-    storage.set(kBagsState.name, JSON.stringify(data.items));
+    if (!data.success || !data.items) return scope === 'their' ? [] : getCachedBags();
+
+    // Mine must belong to the signed-in account; Their must never come back
+    // with that same owner. Reject a stale/mismatched API response instead of
+    // painting it under the wrong tab.
+    if (scope === 'mine' && data.ownerUserId && data.ownerUserId !== userId) return getCachedBags();
+    if (scope === 'their' && data.ownerUserId === userId) return [];
+
+    if (scope === 'mine') storage.set(kBagsState.name, JSON.stringify(data.items));
     return data.items.map(decorate);
   } catch {
-    return getCachedBags();
+    return scope === 'their' ? [] : getCachedBags();
   }
 }
 

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'edge'
 
 /**
- * GET /api/bags?userId=xxx
+ * GET /api/bags?userId=xxx&scope=mine|their
  *
  * The Bags tab's data: the items a user has collected (user_items) and, for
  * each, its memories (item_memories -- one per match, with the excerpt and the
@@ -20,6 +20,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const scope = searchParams.get('scope') === 'their' ? 'their' : 'mine'
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
@@ -37,24 +38,64 @@ export async function GET(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    // Resolve ownership server-side. The client can choose Mine or Their but
+    // can never supply an arbitrary target user id (or accidentally ask for
+    // its own collection while painting the Their tab).
+    const readingPartner = scope === 'their'
+    let targetUserId = userId
+    if (readingPartner) {
+      const { data: pairing } = await supabase
+        .from('pairings')
+        .select('partner_user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+      if (!pairing) {
+        return NextResponse.json({ success: true, ownerUserId: null, items: [] })
+      }
+      targetUserId = pairing.partner_user_id
+    }
+
     const { data: owned, error: e1 } = await supabase
       .from('user_items')
       .select('item_id, count, first_seen_at')
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .order('first_seen_at', { ascending: false })
     if (e1) {
       console.error('[bags] user_items error:', e1.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
 
-    const { data: memories, error: e2 } = await supabase
+    const { data: memoriesRaw, error: e2 } = await supabase
       .from('item_memories')
       .select('item_id, reflect_id, raw_excerpt, refined_desc, created_at')
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false })
     if (e2) {
       console.error('[bags] memories error:', e2.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
+    }
+
+    let memories = memoriesRaw || []
+    if (readingPartner) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('share_memory_details')
+        .eq('id', targetUserId)
+        .maybeSingle()
+      if (profile?.share_memory_details === false) {
+        memories = []
+      } else {
+        const reflectIds = [...new Set(memories.map((m) => m.reflect_id).filter(Boolean))]
+        if (reflectIds.length > 0) {
+          const { data: visible } = await supabase
+            .from('reflects')
+            .select('id')
+            .in('id', reflectIds)
+            .or('shared_to_friends.neq.false,shared_to_friends.is.null')
+          const visibleIds = new Set((visible || []).map((r) => r.id))
+          memories = memories.filter((m) => visibleIds.has(m.reflect_id))
+        }
+      }
     }
 
     // Group memories by item.
@@ -76,7 +117,7 @@ export async function GET(request) {
       memories: byItem.get(it.item_id) || [],
     }))
 
-    return NextResponse.json({ success: true, items })
+    return NextResponse.json({ success: true, ownerUserId: targetUserId, items })
   } catch (err) {
     console.error('[bags] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

@@ -26,7 +26,7 @@ export type ItemSheetRef = {
  * pill on the right, then every memory as a thin-bordered row (thumbnail,
  * excerpt, Details pill). Dark round close button at the bottom.
  */
-export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
+export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>(({ items }, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
@@ -44,8 +44,8 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
   }));
 
   const item: CollectedItem | undefined = useMemo(
-    () => (itemId ? getCachedBags().find((it) => it.itemId === itemId) : undefined),
-    [itemId],
+    () => (itemId ? (items ?? getCachedBags()).find((it) => it.itemId === itemId) : undefined),
+    [itemId, items],
   );
 
   const renderBackdrop = useCallback(
@@ -96,6 +96,9 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scroll}
               >
+                {item.memories.length === 0 ? (
+                  <Text style={styles.noDetails}>Memory details aren’t available for this item.</Text>
+                ) : null}
                 {item.memories.map((m, i) => {
                   // A name-only excerpt is not a written memory (mock 2026-08-08):
                   // rows show DATE + description, never the item's own name.
@@ -106,25 +109,27 @@ export const ItemSheet = forwardRef<ItemSheetRef>((_, ref) => {
                     month: 'short', day: 'numeric', year: 'numeric',
                   });
                   return (
-                  <View key={i} style={styles.memCard}>
-                    <ItemSprite itemId={item.itemId} size={72} radius={16} />
-                    <View style={styles.memBody}>
-                      <Text style={styles.memDate}>{dateLabel}</Text>
-                      <Text
-                        style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}
-                        numberOfLines={3}
-                      >
-                        {wrote ? m.excerpt : 'You did not add any memory to this item.'}
-                      </Text>
+                    <View key={i} style={styles.memCard}>
+                      <ItemSprite itemId={item.itemId} size={72} radius={16} />
+                      <View style={styles.memBody}>
+                        <Text style={styles.memDate}>{dateLabel}</Text>
+                        <Text
+                          style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}
+                          numberOfLines={3}
+                        >
+                          {wrote ? m.excerpt : 'No memory was added to this item.'}
+                        </Text>
+                      </View>
+                      {m.reflectId ? (
+                        <Pressable
+                          onPress={() => openReflect(m.reflectId!)}
+                          style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.7 }]}
+                        >
+                          <Text style={styles.detailsText}>Details</Text>
+                          <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
+                        </Pressable>
+                      ) : null}
                     </View>
-                    <Pressable
-                      onPress={() => openReflect(m.reflectId)}
-                      style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.7 }]}
-                    >
-                      <Text style={styles.detailsText}>Details</Text>
-                      <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
-                    </Pressable>
-                  </View>
                   );
                 })}
               </BottomSheetScrollView>
@@ -180,6 +185,10 @@ const styles = StyleSheet.create({
   memExcerpt: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 23 },
   memDate: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#161311', marginBottom: 3 },
   memExcerptEmpty: { color: '#A99A85' },
+  noDetails: {
+    paddingHorizontal: 18, paddingVertical: 28, textAlign: 'center',
+    color: '#A99A85', fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium',
+  },
   // Design: solid dark-brown Details pill with white text.
   detailsBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 1,
