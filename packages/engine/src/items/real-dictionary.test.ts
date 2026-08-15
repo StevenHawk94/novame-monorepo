@@ -3,52 +3,55 @@ import { describe, expect, it } from 'vitest';
 import { matchItems } from './item-matcher';
 import { ITEM_DICTIONARY } from './dictionary';
 
-// Integrity tests for the GENERATED v3 dictionary (tools/build-items-v3.py,
-// icon_keyword_mapping_final.xlsx, 2026-07-30) — pins the phrase-priority
-// rule against real data and guards referential integrity after any regen.
-describe('real dictionary smoke (v3)', () => {
-  it('has the full 2665-item catalog', () => {
-    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(2665);
+function idForName(name: string): string {
+  const found = Object.entries(ITEM_DICTIONARY.items).find(([, item]) => item.displayName === name);
+  if (!found) throw new Error(`Missing v19 item: ${name}`);
+  return found[0];
+}
+
+describe('real dictionary smoke (v19)', () => {
+  it('has the complete 5,390-item catalog', () => {
+    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5390);
   });
 
-  it('every synonym points at an existing item', () => {
+  it('keeps every synonym and exclusion referentially valid', () => {
     for (const id of Object.values(ITEM_DICTIONARY.synonyms)) {
       expect(ITEM_DICTIONARY.items[id]).toBeDefined();
     }
-  });
-
-  it('every item carries one of the five Bags categories', () => {
-    const allowed = new Set(['Myself', 'Food & Fun', 'Stuff', 'Places', 'Nature']);
-    for (const def of Object.values(ITEM_DICTIONARY.items)) {
-      expect(allowed.has(def.bagsCategory ?? '')).toBe(true);
+    for (const [keyword, rules] of Object.entries(ITEM_DICTIONARY.exclusions ?? {})) {
+      expect(ITEM_DICTIONARY.synonyms[keyword]).toBeDefined();
+      expect(rules.length).toBeGreaterThan(0);
     }
   });
 
-  it('phrase beats word: electric guitar never also matches guitar', () => {
-    const m = matchItems('I played electric guitar today', ITEM_DICTIONARY);
-    expect(m.map((x) => x.itemId)).toEqual(['musical_instruments.electric_guitar']);
+  it('retains the three core app-facing fields', () => {
+    for (const item of Object.values(ITEM_DICTIONARY.items)) {
+      expect(item.displayName.length).toBeGreaterThan(0);
+      expect(item.keywords?.length).toBeGreaterThan(0);
+      expect(item.visualConcept?.length).toBeGreaterThan(0);
+    }
   });
 
-  it('plain guitar still matches', () => {
-    const m = matchItems('I played guitar', ITEM_DICTIONARY);
-    expect(m.map((x) => x.itemId)).toEqual(['musical_instruments.guitar']);
+  it('matches case-insensitively and can return multiple items', () => {
+    const names = matchItems('COFFEE and pizza with my cat', ITEM_DICTIONARY).map((item) => item.displayName);
+    expect(names).toContain('Coffee');
+    expect(names).toContain('Pizza');
+    expect(names).toContain('Cat');
   });
 
-  it('matching is case-insensitive', () => {
-    const m = matchItems('RAMEN for dinner', ITEM_DICTIONARY);
-    expect(m.map((x) => x.itemId)).toContain('food_drink.ramen');
+  it('applies literal AUTO_UNLESS_EXCLUDED phrases', () => {
+    expect(matchItems('I made coffee', ITEM_DICTIONARY).map((item) => item.displayName)).toContain('Coffee');
+    expect(matchItems('I bought a coffee table', ITEM_DICTIONARY).map((item) => item.displayName)).not.toContain('Coffee');
   });
 
-  it('multiple items match in one line', () => {
-    const m = matchItems('coffee and cake with my cat', ITEM_DICTIONARY);
-    const ids = m.map((x) => x.itemId);
-    expect(ids).toContain('food_drink.coffee');
-    expect(ids).toContain('food_drink.cake');
-    expect(ids).toContain('animals.cat');
+  it('routes duplicate keywords to the most direct icon only', () => {
+    expect(ITEM_DICTIONARY.synonyms['fried egg']).toBe(idForName('Fried Egg'));
+    expect(ITEM_DICTIONARY.synonyms['ultimate frisbee']).toBe(idForName('Frisbee'));
+    expect(ITEM_DICTIONARY.synonyms.surprised).toBe(idForName('Surprised'));
+    expect(ITEM_DICTIONARY.synonyms.celebrating).toBe(idForName('Celebrating'));
   });
 
-  it('emotions are matchable (guided page taps rely on them existing)', () => {
-    expect(ITEM_DICTIONARY.items['emotions_expressions.happy']).toBeDefined();
-    expect(ITEM_DICTIONARY.items['emotions_expressions.sad']).toBeDefined();
+  it('maps retired Online Shopping rules to Shopping', () => {
+    expect(ITEM_DICTIONARY.synonyms['online shopping']).toBe(idForName('Shopping'));
   });
 });

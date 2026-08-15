@@ -63,6 +63,13 @@ export async function GET(request) {
     if (!pairing) return NextResponse.json({ success: true, paired: false, insights: null })
     const partnerId = pairing.partner_user_id
     const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
+    const { data: partnerProfile } = await supabase.from('profiles')
+      .select('share_memory_details, memory_details_mode').eq('id', partnerId).maybeSingle()
+    const detailMode = partnerProfile?.memory_details_mode
+      || (partnerProfile?.share_memory_details === false ? 'none' : 'custom')
+    if (detailMode === 'none') {
+      return NextResponse.json({ success: true, paired: true, insights: null, reason: 'unavailable' })
+    }
 
     // Daily cache first. Update cadence (2026-08-09 spec): the Writer's FIRST
     // shared entry of the day triggers one refresh; later same-day entries
@@ -74,12 +81,13 @@ export async function GET(request) {
       .eq('user_a', ua).eq('user_b', ub).eq('for_date', date).eq('for_user', userId)
       .maybeSingle()
     if (cached) {
-      const { data: firstToday } = await supabase
+      let firstTodayQuery = supabase
         .from('reflects')
         .select('created_at')
         .eq('user_id', partnerId)
-        .eq('shared_to_friends', true)
         .eq('local_date', date)
+      if (detailMode === 'custom') firstTodayQuery = firstTodayQuery.eq('shared_to_friends', true)
+      const { data: firstToday } = await firstTodayQuery
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle()

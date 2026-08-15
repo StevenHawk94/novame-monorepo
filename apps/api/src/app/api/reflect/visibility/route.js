@@ -40,6 +40,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
     if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    await supabase.from('connection_insights').delete()
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
     return NextResponse.json({ success: true, visible })
   } catch (err) {
     console.error('[reflect/visibility] unexpected:', err && err.message)

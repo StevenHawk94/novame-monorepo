@@ -33,11 +33,17 @@ export interface ItemDef {
   col?: number;
   /** Placeholder glyph until sprite art lands. */
   emoji?: string;
+  /** Source v19 trigger vocabulary, retained for catalog inspection. */
+  keywords?: string[];
+  /** Source v19 drawing definition, retained with the app-facing catalog. */
+  visualConcept?: string;
 }
 
 export interface ItemDictionary {
   items: Record<string, ItemDef>;
   synonyms: Record<string, string>;
+  /** AUTO_UNLESS_EXCLUDED negative phrases, keyed by the triggering phrase. */
+  exclusions?: Record<string, string[]>;
 }
 
 export interface ItemMatch {
@@ -92,6 +98,16 @@ function maxPhraseLen(synonyms: Record<string, string>): number {
   return mx;
 }
 
+function containsPhraseAt(tokens: Token[], phrase: string, hitStart: number, hitLength: number): boolean {
+  const words = tokenize(phrase).map((token) => token.word);
+  if (words.length === 0 || words.length > tokens.length) return false;
+  for (let i = 0; i <= tokens.length - words.length; i++) {
+    const overlapsHit = i < hitStart + hitLength && i + words.length > hitStart;
+    if (overlapsHit && words.every((word, offset) => tokens[i + offset].word === word)) return true;
+  }
+  return false;
+}
+
 function titleCase(s: string): string {
   return s
     .split(' ')
@@ -111,7 +127,7 @@ function buildLabel(tokens: Token[], nounStartIdx: number, displayName: string):
 }
 
 export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
-  const { items, synonyms } = dict;
+  const { items, synonyms, exclusions = {} } = dict;
   const tokens = tokenize(text);
   const maxLen = maxPhraseLen(synonyms);
   const hits = new Map<string, { itemId: string; tokenIndex: number; label: string }>();
@@ -123,6 +139,12 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
       const phrase = tokens.slice(i, i + len).map((t) => t.word).join(' ');
       const itemId = synonyms[phrase];
       if (!itemId) continue;
+
+      const excluded = (exclusions[phrase] ?? []).some((rule) => containsPhraseAt(tokens, rule, i, len));
+      if (excluded) {
+        for (let k = i; k < i + len; k++) consumed[k] = true;
+        break;
+      }
 
       let negated = false;
       for (let j = Math.max(0, i - 3); j < i; j++) {

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,14 +8,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
 import { HowItWorksOverlay } from '@/components/main/how-it-works-overlay';
-import { BACKGROUNDS, FRIEND_ICONS } from '@/lib/icons';
+import { BACKGROUNDS, FRIEND_ICONS, ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { GridBackground } from '@/components/ui/grid-background';
+import { DateRangeCalendar } from '@/components/ui/date-range-calendar';
+import { GoodVibesPicker } from '@/components/main/good-vibes';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
   getCachedFriends, getCachedFriendFeed, getCachedPairing, fetchPairing,
   fetchSharePrivacy, setSharePrivacy, respondFriend,
-  type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest,
+  type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest, type MemoryDetailsMode,
 } from '@/lib/friends-api';
 
 /**
@@ -55,6 +58,13 @@ export default function FriendsScreen() {
   const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [howItWorks, setHowItWorks] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+  const [vibesOpen, setVibesOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState<MemoryDetailsMode>('custom');
+  const [privacySaving, setPrivacySaving] = useState(false);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
@@ -65,25 +75,30 @@ export default function FriendsScreen() {
 
   function onPrivacyGear() {
     void haptics.light();
-    void fetchSharePrivacy().then((share) => {
-      appAlert(
-        'Memory details',
-        share
-          ? 'Friends can currently read the details behind your memory items.'
-          : 'Your memory details are private — friends only see item icons.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: share ? 'Make private' : 'Share with friends',
-            onPress: () => {
-              void setSharePrivacy(!share).then((ok) => {
-                if (ok) void haptics.success();
-              });
-            },
-          },
-        ],
-      );
-    });
+    setPrivacyOpen(true);
+    void fetchSharePrivacy().then(setPrivacyMode);
+  }
+
+  async function savePrivacy() {
+    if (privacySaving) return;
+    setPrivacySaving(true);
+    const ok = await setSharePrivacy(privacyMode);
+    setPrivacySaving(false);
+    if (ok) {
+      void haptics.success();
+      setPrivacyOpen(false);
+      load();
+    } else {
+      appAlert('Could not save', 'Please check your connection and try again.');
+    }
+  }
+
+  async function showRange(start: string | null, end: string | null) {
+    if (!start) {
+      setFeed(await fetchFriendFeed());
+      return;
+    }
+    setFeed(await fetchFriendFeed({ start, end: end ?? start }));
   }
 
   async function onRespond(req: PendingRequest, action: 'accept' | 'decline') {
@@ -150,20 +165,26 @@ export default function FriendsScreen() {
         contentPosition="top"
       />
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-        {/* header: centered title, mail + gear at right */}
+        {/* paired tools: history calendar + detail-sharing settings */}
         <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>Memories Cave</Text>
+          {!paired && <Text style={styles.title} numberOfLines={1}>Paired</Text>}
           <View style={styles.headerIcons}>
-            <Pressable
-              onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}
-              style={styles.iconBtn}
-              hitSlop={6}
-            >
-              <Text style={styles.mailEmoji}>{'💌'}</Text>
-              {pendingCount > 0 && (
-                <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>
-              )}
-            </Pressable>
+            {paired ? (
+              <Pressable onPress={() => setCalendarOpen(true)} style={styles.iconBtn} hitSlop={8}>
+                <Image source={ICONS.patternCalendar} style={styles.calendarHeaderIcon} resizeMode="contain" />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}
+                style={styles.iconBtn}
+                hitSlop={6}
+              >
+                <Text style={styles.mailEmoji}>{'💌'}</Text>
+                {pendingCount > 0 && (
+                  <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>
+                )}
+              </Pressable>
+            )}
             <Pressable onPress={onPrivacyGear} style={styles.iconBtn} hitSlop={6}>
               <Image source={FRIEND_ICONS.setting} style={styles.gearIcon} resizeMode="contain" />
             </Pressable>
@@ -180,7 +201,11 @@ export default function FriendsScreen() {
                 <View style={styles.listDot}>
                   <MaterialIcons name="menu" size={13} color="#FFFFFF" />
                 </View>
-                <Text style={styles.panelTitle}>Latest memories of your paired</Text>
+                <Text style={styles.panelTitle}>Latest memories</Text>
+                <Pressable onPress={() => setVibesOpen(true)} style={styles.vibesButton}>
+                  <MaterialIcons name="favorite" size={22} color="#FF721F" />
+                  <Text style={styles.vibesButtonText}>Good Vibes</Text>
+                </Pressable>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.feedScroll}>
@@ -189,12 +214,18 @@ export default function FriendsScreen() {
                     Nothing yet today — their memories will land here.
                   </Text>
                 ) : (
-                  shownFeed.map((e) => (
+                  shownFeed.map((e, feedIndex) => (
                     <Pressable
                       key={`${e.friendUserId}:${e.reflectId}`}
                       onPress={() => onFeedRow(e)}
                       style={styles.pairCard}
                     >
+                      <GridBackground
+                        base={CARD_COLORS[feedIndex % CARD_COLORS.length].base}
+                        line={CARD_COLORS[feedIndex % CARD_COLORS.length].line}
+                        cell={22}
+                        lineWidth={1.4}
+                      />
                       <View style={styles.pairCardHeader}>
                         <UserAvatar userId={e.friendUserId} avatarUrl={e.friendAvatarUrl} isDefaultAvatar={e.friendIsDefaultAvatar} size={46} />
                         <Text style={styles.pairCardName} numberOfLines={1}>{e.friendName}</Text>
@@ -300,7 +331,78 @@ export default function FriendsScreen() {
         )}
       </SafeAreaView>
       {howItWorks && <HowItWorksOverlay onClose={() => setHowItWorks(false)} />}
+      <DateRangeCalendar
+        visible={calendarOpen}
+        start={rangeStart}
+        end={rangeEnd}
+        onChange={(start, end) => { setRangeStart(start); setRangeEnd(end); }}
+        onClose={() => setCalendarOpen(false)}
+        onDone={(start, end) => void showRange(start, end)}
+      />
+      <GoodVibesPicker visible={vibesOpen} onClose={() => setVibesOpen(false)} />
+      <PrivacySheet
+        visible={privacyOpen}
+        mode={privacyMode}
+        saving={privacySaving}
+        onMode={setPrivacyMode}
+        onClose={() => setPrivacyOpen(false)}
+        onSave={() => void savePrivacy()}
+      />
     </View>
+  );
+}
+
+const CARD_COLORS = [
+  { base: '#F8DF91', line: '#E9C76B' },
+  { base: '#EFC99B', line: '#DDAF7A' },
+  { base: '#F0C8B6', line: '#DDAE99' },
+  { base: '#DAD7A8', line: '#C2BF8B' },
+] as const;
+
+function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
+  visible: boolean;
+  mode: MemoryDetailsMode;
+  saving: boolean;
+  onMode: (mode: MemoryDetailsMode) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const choices: { mode: MemoryDetailsMode; label: string }[] = [
+    { mode: 'all', label: 'Show all details' },
+    { mode: 'none', label: 'Hide all details' },
+    { mode: 'custom', label: 'Based on each reflection setting' },
+  ];
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.privacyBackdrop}>
+        <View style={styles.privacyFrame}>
+          <View style={styles.privacyCard}>
+            <Text style={styles.privacyTitle}>Memories Details</Text>
+            <Text style={styles.privacySubtitle}>Select how you want to share your memories details</Text>
+            <View style={styles.privacyChoices}>
+              {choices.map((choice) => (
+                <Pressable
+                  key={choice.mode}
+                  onPress={() => onMode(choice.mode)}
+                  style={[styles.privacyChoice, mode === choice.mode && styles.privacyChoiceSelected]}
+                >
+                  <Text style={styles.privacyChoiceText}>{choice.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.privacyHint}>
+              If you have specific details you want to show or hide, visit My Logs to edit them one by one.
+            </Text>
+            <Pressable disabled={saving} onPress={onSave} style={[styles.privacySave, saving && { opacity: 0.55 }]}>
+              <Text style={styles.privacySaveText}>{saving ? 'Saving…' : 'Save'}</Text>
+            </Pressable>
+          </View>
+          <Pressable onPress={onClose} style={styles.privacyClose}>
+            <MaterialIcons name="close" size={34} color="#53351D" />
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -313,6 +415,7 @@ const styles = StyleSheet.create({
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   mailEmoji: { fontSize: 30 },
   gearIcon: { width: 34, height: 34 },
+  calendarHeaderIcon: { width: 38, height: 38 },
   badge: {
     position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, borderRadius: 9,
     backgroundColor: '#E5483C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
@@ -372,6 +475,12 @@ const styles = StyleSheet.create({
   panelHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   listDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#3A2E1A', alignItems: 'center', justifyContent: 'center' },
   panelTitle: { flex: 1, fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  vibesButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#53351D',
+    borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10,
+    shadowColor: '#2A1B10', shadowOpacity: 0.3, shadowRadius: 0, shadowOffset: { width: 0, height: 3 }, elevation: 2,
+  },
+  vibesButtonText: { color: '#FFF8E9', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
   listChip: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
     backgroundColor: '#4A3220', borderRadius: 15, paddingHorizontal: 13, paddingVertical: 9,
@@ -384,7 +493,8 @@ const styles = StyleSheet.create({
   feedScroll: { gap: 10, paddingBottom: 8 },
   // Paired feed card (mock 2026-08-08): header row + full wrapping tile grid.
   pairCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 12,
+    backgroundColor: '#F8DF91', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 12,
+    overflow: 'hidden',
     gap: 10,
     shadowColor: '#C9A97C', shadowOpacity: 0.5, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
@@ -412,4 +522,17 @@ const styles = StyleSheet.create({
   moreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8B7FD9' },
   timeText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
   unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#E5483C' },
+  privacyBackdrop: { flex: 1, backgroundColor: 'rgba(34,24,17,0.64)', alignItems: 'center', justifyContent: 'center', padding: 18 },
+  privacyFrame: { width: '100%', maxWidth: 500, alignItems: 'center' },
+  privacyCard: { width: '100%', backgroundColor: '#53351D', borderRadius: 30, borderWidth: 10, borderColor: '#FFC99E', padding: 24 },
+  privacyTitle: { color: '#FFFFFF', fontSize: 29, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', marginTop: 8 },
+  privacySubtitle: { color: '#FFFFFF', fontSize: 17, lineHeight: 24, fontFamily: 'Inter_700Bold', textAlign: 'center', marginTop: 24, paddingHorizontal: 12 },
+  privacyChoices: { gap: 13, marginTop: 28 },
+  privacyChoice: { minHeight: 62, borderRadius: 17, backgroundColor: '#FFFFFF', borderWidth: 5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  privacyChoiceSelected: { borderColor: '#77D94D' },
+  privacyChoiceText: { color: '#161311', fontSize: 18, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  privacyHint: { color: '#FFFFFF', fontSize: 13, lineHeight: 19, fontFamily: 'Inter_600SemiBold', fontStyle: 'italic', textAlign: 'center', marginVertical: 25, paddingHorizontal: 8 },
+  privacySave: { minHeight: 62, borderRadius: 18, backgroundColor: '#FFF8E7', alignItems: 'center', justifyContent: 'center' },
+  privacySaveText: { color: '#2A1A10', fontSize: 21, fontFamily: 'Inter_800ExtraBold' },
+  privacyClose: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginTop: 16 },
 });

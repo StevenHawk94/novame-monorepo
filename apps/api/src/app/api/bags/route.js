@@ -79,12 +79,14 @@ export async function GET(request) {
     if (readingPartner) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('share_memory_details')
+        .select('share_memory_details, memory_details_mode')
         .eq('id', targetUserId)
         .maybeSingle()
-      if (profile?.share_memory_details === false) {
+      const detailMode = profile?.memory_details_mode
+        || (profile?.share_memory_details === false ? 'none' : 'custom')
+      if (detailMode === 'none') {
         memories = []
-      } else {
+      } else if (detailMode === 'custom') {
         const reflectIds = [...new Set(memories.map((m) => m.reflect_id).filter(Boolean))]
         if (reflectIds.length > 0) {
           const { data: visible } = await supabase

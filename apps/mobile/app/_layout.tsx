@@ -41,6 +41,7 @@ import {
   useResumeOverlayVisible,
 } from '@/lib/background-resume-store';
 import { ErrorBoundary } from '@/components/main/error-boundary';
+import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import {
@@ -460,6 +461,7 @@ function RootLayout() {
               {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
               <StatusBar style="dark" />
               {resumeVisible ? <BackgroundResumeOverlay /> : null}
+              <GoodVibesInboxGate />
               <AppDialogHost />
             </ErrorBoundary>
           </ThemeProvider>

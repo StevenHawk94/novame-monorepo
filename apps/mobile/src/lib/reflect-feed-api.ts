@@ -12,7 +12,7 @@ import { supabase } from './supabase';
 
 export interface FeedDay {
   date: string;
-  reflects: { id: string; body: string }[];
+  reflects: { id: string; body: string; sharedToFriends: boolean }[];
   itemIds: string[];
   itemEmoji: string[]; // decorated
 }
@@ -40,7 +40,7 @@ export async function fetchReflectFeed(): Promise<FeedDay[]> {
   try {
     const data = await apiClient.get<{
       success?: boolean;
-      days?: { date: string; reflects: { id: string; body: string }[]; itemIds: string[] }[];
+      days?: { date: string; reflects: { id: string; body: string; sharedToFriends: boolean }[]; itemIds: string[] }[];
     }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
     if (!data.success || !data.days) return getCachedFeed();
     const days = data.days.map((d) => ({ ...d, itemEmoji: d.itemIds.map(emojiFor) }));

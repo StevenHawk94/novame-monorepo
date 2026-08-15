@@ -1,0 +1,975 @@
+{
+  "schema": "memory-items-v19-data-qa@1",
+  "items": 5390,
+  "executable_keyword_rows": 30743,
+  "unique_executable_keywords": 28648,
+  "never_auto_rows_omitted": 82,
+  "never_auto_unique_keywords": 82,
+  "never_auto_keywords_overriding_auto_rows": [
+    "shocked",
+    "stunned"
+  ],
+  "auto_unless_excluded_keywords_with_literal_rules": 4,
+  "unresolved_instructional_exclusions": 2074,
+  "unsafe_auto_unless_excluded_keywords_omitted": 2068,
+  "unsafe_keyword_samples": [
+    "a little cold",
+    "abandoned",
+    "able to adapt my thinking",
+    "abrasion",
+    "absolutely delighted",
+    "absolutely horrified",
+    "absolutely thrilled",
+    "absorbed in my thoughts",
+    "accepted",
+    "accepted as i am",
+    "accepted it reluctantly",
+    "accomplished",
+    "aching all over",
+    "aching joints",
+    "acid reflux",
+    "acted without thinking",
+    "admiring",
+    "affectionate",
+    "afraid",
+    "afternoon crash",
+    "afternoon slump",
+    "aha moment",
+    "alert",
+    "all over the place mentally",
+    "allergic reaction",
+    "allergies acting up",
+    "almost remembered",
+    "ambivalent",
+    "amused",
+    "analytical",
+    "analytical mindset",
+    "analyzing too much",
+    "angry",
+    "ankle brace",
+    "ankle hurt",
+    "ankle pain",
+    "ankle twist",
+    "annoyed",
+    "antibiotic course complete",
+    "antibiotic prescription",
+    "anxiety",
+    "anxious",
+    "apathetic",
+    "apology didn't feel genuine",
+    "apology felt fake",
+    "apology rejected",
+    "apology wasn't accepted",
+    "appetite is low",
+    "apprehensive",
+    "argument not settled",
+    "arm fatigue",
+    "arm hurt",
+    "arm pain",
+    "arms are worn out",
+    "arms feel tired",
+    "ashamed",
+    "at ease",
+    "at peace",
+    "ate enough",
+    "ate too much",
+    "attention doesn't last",
+    "attention keeps wandering",
+    "attention split everywhere",
+    "attentive",
+    "authorization approved",
+    "avoided the issue",
+    "avoiding starting",
+    "avoiding thinking about it",
+    "aware of my thinking",
+    "awe",
+    "awestruck",
+    "awkward",
+    "awkward about myself",
+    "awkward after conflict",
+    "awkward after not socializing",
+    "baby monitor",
+    "back brace",
+    "back hurt",
+    "back pain",
+    "bad night's sleep",
+    "bad timing",
+    "balance feels off",
+    "balanced physically",
+    "ballot",
+    "barely hungry",
+    "barely slept",
+    "baseball bat",
+    "bashful",
+    "bat",
+    "bear",
+    "bedtime hunger",
+    "began antibiotics",
+    "began new medication",
+    "being manipulated",
+    "bereaved",
+    "better after stretching",
+    "big appetite",
+    "big picture thinking",
+    "bittersweet",
+    "blanked out"
+  ],
+  "unresolved_instructional_exclusion_samples": [
+    {
+      "row": 317,
+      "icon": "BBQ Ribs",
+      "keyword": "ribs",
+      "rule": "Exclude body/anatomy/injury contexts such as sore ribs, broken ribs, rib pain"
+    },
+    {
+      "row": 837,
+      "icon": "Salmon",
+      "keyword": "salmon",
+      "rule": "Exclude live-fish/ocean/river/fishing contexts when clearly not food"
+    },
+    {
+      "row": 844,
+      "icon": "Shrimp",
+      "keyword": "shrimp",
+      "rule": "Exclude live-animal/ocean/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 849,
+      "icon": "Shrimp",
+      "keyword": "prawns",
+      "rule": "Exclude live-animal/ocean/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 850,
+      "icon": "Lobster",
+      "keyword": "lobster",
+      "rule": "Exclude live-animal/ocean/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 875,
+      "icon": "Oysters",
+      "keyword": "oyster",
+      "rule": "Exclude live-shellfish/ecology contexts when clearly not food"
+    },
+    {
+      "row": 876,
+      "icon": "Oysters",
+      "keyword": "oysters",
+      "rule": "Exclude live-shellfish/ecology contexts when clearly not food"
+    },
+    {
+      "row": 958,
+      "icon": "Stuffing",
+      "keyword": "stuffing",
+      "rule": "Exclude object-filling/craft/upholstery contexts when clearly not food"
+    },
+    {
+      "row": 963,
+      "icon": "Gravy",
+      "keyword": "gravy",
+      "rule": "Exclude idiomatic 'gravy train' / non-food figurative usage"
+    },
+    {
+      "row": 1005,
+      "icon": "Crawfish",
+      "keyword": "crawfish",
+      "rule": "Exclude live-animal/creek/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 1006,
+      "icon": "Crawfish",
+      "keyword": "crawdads",
+      "rule": "Exclude live-animal/creek/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 1049,
+      "icon": "Congee",
+      "keyword": "jook",
+      "rule": "Exclude names/usernames if clearly not food"
+    },
+    {
+      "row": 1076,
+      "icon": "Kimchi",
+      "keyword": "kimchi",
+      "rule": "Exclude brand/usernames if clearly not food"
+    },
+    {
+      "row": 1233,
+      "icon": "Rice and Peas",
+      "keyword": "rice and peas",
+      "rule": "Exclude clearly generic ingredient-list mentions when not referring to the dish/side"
+    },
+    {
+      "row": 1285,
+      "icon": "Collard Greens",
+      "keyword": "collards",
+      "rule": "Exclude surnames/usernames if clearly not food"
+    },
+    {
+      "row": 2023,
+      "icon": "Popcorn",
+      "keyword": "popcorn",
+      "rule": "Exclude popcorn ceiling / popcorn button / figurative non-food uses"
+    },
+    {
+      "row": 2289,
+      "icon": "Champagne",
+      "keyword": "champagne toast",
+      "rule": "Exclude ceremonial-toast context when no beverage is intended"
+    },
+    {
+      "row": 3586,
+      "icon": "Duck Eggs",
+      "keyword": "duck egg",
+      "rule": "Exclude sports-score slang when clearly non-food"
+    },
+    {
+      "row": 4143,
+      "icon": "Fitness",
+      "keyword": "flexible",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4144,
+      "icon": "Fitness",
+      "keyword": "feeling flexible",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4145,
+      "icon": "Fitness",
+      "keyword": "body feels flexible",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4146,
+      "icon": "Fitness",
+      "keyword": "inflexible",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4147,
+      "icon": "Fitness",
+      "keyword": "feeling stiff and inflexible",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4148,
+      "icon": "Fitness",
+      "keyword": "can't move freely",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4149,
+      "icon": "Fitness",
+      "keyword": "muscles feel good",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4150,
+      "icon": "Fitness",
+      "keyword": "body feels good after workout",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4151,
+      "icon": "Fitness",
+      "keyword": "recovered muscles",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4152,
+      "icon": "Fitness",
+      "keyword": "cooled down",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4153,
+      "icon": "Fitness",
+      "keyword": "body settling after workout",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4154,
+      "icon": "Fitness",
+      "keyword": "post workout cooldown",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4155,
+      "icon": "Fitness",
+      "keyword": "feeling coordinated",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4156,
+      "icon": "Fitness",
+      "keyword": "movements feel coordinated",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4157,
+      "icon": "Fitness",
+      "keyword": "body moving well",
+      "rule": "Do not infer this state solely from an activity or situation; require explicit body/energy wording."
+    },
+    {
+      "row": 4160,
+      "icon": "Fitness",
+      "keyword": "exercise",
+      "rule": "Exclude schoolwork, workbook, writing, math, and practice-question meanings unless physical training context is present."
+    },
+    {
+      "row": 4486,
+      "icon": "Baseball Bat",
+      "keyword": "baseball bat",
+      "rule": "Exclude animal bat unless baseball equipment context is explicit."
+    },
+    {
+      "row": 4613,
+      "icon": "Hockey Stick",
+      "keyword": "hockey stick",
+      "rule": "Exclude generic stick/adhere meanings unless the full object phrase is present."
+    },
+    {
+      "row": 4620,
+      "icon": "Field Hockey Stick",
+      "keyword": "field hockey stick",
+      "rule": "Exclude generic stick/adhere meanings unless the full object phrase is present."
+    },
+    {
+      "row": 4627,
+      "icon": "Lacrosse Stick",
+      "keyword": "lacrosse stick",
+      "rule": "Exclude generic stick/adhere meanings unless the full object phrase is present."
+    },
+    {
+      "row": 4642,
+      "icon": "Cricket Bat",
+      "keyword": "cricket bat",
+      "rule": "Exclude animal bat unless baseball equipment context is explicit."
+    },
+    {
+      "row": 4691,
+      "icon": "Feeling Sick",
+      "keyword": "headache",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4692,
+      "icon": "Feeling Sick",
+      "keyword": "had a headache",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4693,
+      "icon": "Feeling Sick",
+      "keyword": "my head hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4694,
+      "icon": "Feeling Sick",
+      "keyword": "migraine",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4695,
+      "icon": "Feeling Sick",
+      "keyword": "migraine episode",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4696,
+      "icon": "Feeling Sick",
+      "keyword": "had a migraine",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4697,
+      "icon": "Feeling Sick",
+      "keyword": "fever",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4698,
+      "icon": "Feeling Sick",
+      "keyword": "had a fever",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4699,
+      "icon": "Feeling Sick",
+      "keyword": "running a fever",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4701,
+      "icon": "Feeling Sick",
+      "keyword": "had chills",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4702,
+      "icon": "Feeling Sick",
+      "keyword": "shivering",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4703,
+      "icon": "Feeling Sick",
+      "keyword": "sore throat",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4704,
+      "icon": "Feeling Sick",
+      "keyword": "throat hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4705,
+      "icon": "Feeling Sick",
+      "keyword": "scratchy throat",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4706,
+      "icon": "Feeling Sick",
+      "keyword": "cough",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4707,
+      "icon": "Feeling Sick",
+      "keyword": "coughing",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4708,
+      "icon": "Feeling Sick",
+      "keyword": "had a cough",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4709,
+      "icon": "Feeling Sick",
+      "keyword": "runny nose",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4710,
+      "icon": "Feeling Sick",
+      "keyword": "nose running",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4711,
+      "icon": "Feeling Sick",
+      "keyword": "had a runny nose",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4712,
+      "icon": "Feeling Sick",
+      "keyword": "stuffy nose",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4713,
+      "icon": "Feeling Sick",
+      "keyword": "congested nose",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4714,
+      "icon": "Feeling Sick",
+      "keyword": "nose blocked",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4715,
+      "icon": "Feeling Sick",
+      "keyword": "sneezing",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4716,
+      "icon": "Feeling Sick",
+      "keyword": "sneezed a lot",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4717,
+      "icon": "Feeling Sick",
+      "keyword": "kept sneezing",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4718,
+      "icon": "Feeling Sick",
+      "keyword": "congestion",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4719,
+      "icon": "Feeling Sick",
+      "keyword": "felt congested",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4720,
+      "icon": "Feeling Sick",
+      "keyword": "sinus congestion",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4721,
+      "icon": "Feeling Sick",
+      "keyword": "sinus pressure",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4722,
+      "icon": "Feeling Sick",
+      "keyword": "sinus pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4723,
+      "icon": "Feeling Sick",
+      "keyword": "pressure in my face",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4724,
+      "icon": "Feeling Sick",
+      "keyword": "earache",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4725,
+      "icon": "Feeling Sick",
+      "keyword": "ear pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4726,
+      "icon": "Feeling Sick",
+      "keyword": "ear hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4730,
+      "icon": "Feeling Sick",
+      "keyword": "jaw pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4731,
+      "icon": "Feeling Sick",
+      "keyword": "jaw hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4732,
+      "icon": "Feeling Sick",
+      "keyword": "sore jaw",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4733,
+      "icon": "Feeling Sick",
+      "keyword": "neck pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4734,
+      "icon": "Feeling Sick",
+      "keyword": "neck hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4735,
+      "icon": "Feeling Sick",
+      "keyword": "sore neck",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4736,
+      "icon": "Feeling Sick",
+      "keyword": "back pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4737,
+      "icon": "Feeling Sick",
+      "keyword": "back hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4738,
+      "icon": "Feeling Sick",
+      "keyword": "sore back",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4739,
+      "icon": "Feeling Sick",
+      "keyword": "lower back pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4740,
+      "icon": "Feeling Sick",
+      "keyword": "low back pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4741,
+      "icon": "Feeling Sick",
+      "keyword": "lumbar pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4742,
+      "icon": "Feeling Sick",
+      "keyword": "shoulder pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4743,
+      "icon": "Feeling Sick",
+      "keyword": "shoulder hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4744,
+      "icon": "Feeling Sick",
+      "keyword": "sore shoulder",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4745,
+      "icon": "Feeling Sick",
+      "keyword": "arm pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4746,
+      "icon": "Feeling Sick",
+      "keyword": "arm hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4747,
+      "icon": "Feeling Sick",
+      "keyword": "sore arm",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4748,
+      "icon": "Feeling Sick",
+      "keyword": "elbow pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4749,
+      "icon": "Feeling Sick",
+      "keyword": "elbow hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4750,
+      "icon": "Feeling Sick",
+      "keyword": "wrist pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4751,
+      "icon": "Feeling Sick",
+      "keyword": "wrist hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4752,
+      "icon": "Feeling Sick",
+      "keyword": "sore wrist",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4753,
+      "icon": "Feeling Sick",
+      "keyword": "hand pain",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4754,
+      "icon": "Feeling Sick",
+      "keyword": "hand hurt",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    },
+    {
+      "row": 4755,
+      "icon": "Feeling Sick",
+      "keyword": "sore hand",
+      "rule": "Do not infer this concept from unrelated behavior, demographic information, or indirect clues."
+    }
+  ],
+  "cross_icon_conflicts": [
+    {
+      "keyword": "avocado toast",
+      "candidates": [
+        "Avocado Toast",
+        "Toast"
+      ],
+      "winner": "Avocado Toast",
+      "auto_active": true
+    },
+    {
+      "keyword": "boiled egg",
+      "candidates": [
+        "Eggs",
+        "Hard-Boiled Egg"
+      ],
+      "winner": "Hard-Boiled Egg",
+      "auto_active": true
+    },
+    {
+      "keyword": "celebrating",
+      "candidates": [
+        "Celebrating",
+        "Excited"
+      ],
+      "winner": "Celebrating",
+      "auto_active": true
+    },
+    {
+      "keyword": "cocktail bar",
+      "candidates": [
+        "Bar",
+        "Cocktail Bar"
+      ],
+      "winner": "Cocktail Bar",
+      "auto_active": true
+    },
+    {
+      "keyword": "composed",
+      "candidates": [
+        "Cool",
+        "Neutral"
+      ],
+      "winner": "Neutral",
+      "auto_active": true
+    },
+    {
+      "keyword": "cruise port",
+      "candidates": [
+        "Cruise Terminal",
+        "Port"
+      ],
+      "winner": "Cruise Terminal",
+      "auto_active": true
+    },
+    {
+      "keyword": "dance club",
+      "candidates": [
+        "Dance Club",
+        "Nightclub"
+      ],
+      "winner": "Dance Club",
+      "auto_active": true
+    },
+    {
+      "keyword": "date fruit",
+      "candidates": [
+        "Date Fruit",
+        "Dried Dates"
+      ],
+      "winner": "Date Fruit",
+      "auto_active": true
+    },
+    {
+      "keyword": "fatigued",
+      "candidates": [
+        "Sad",
+        "Sleepy"
+      ],
+      "winner": "Sleepy",
+      "auto_active": true
+    },
+    {
+      "keyword": "feeling surprised",
+      "candidates": [
+        "Neutral",
+        "Surprised"
+      ],
+      "winner": "Surprised",
+      "auto_active": true
+    },
+    {
+      "keyword": "felt shocked",
+      "candidates": [
+        "Neutral",
+        "Sad"
+      ],
+      "winner": "Neutral",
+      "auto_active": false
+    },
+    {
+      "keyword": "felt stunned",
+      "candidates": [
+        "Neutral",
+        "Sad"
+      ],
+      "winner": "Neutral",
+      "auto_active": false
+    },
+    {
+      "keyword": "fried egg",
+      "candidates": [
+        "Eggs",
+        "Fried Egg"
+      ],
+      "winner": "Fried Egg",
+      "auto_active": true
+    },
+    {
+      "keyword": "played ultimate",
+      "candidates": [
+        "Frisbee",
+        "Surfboard"
+      ],
+      "winner": "Frisbee",
+      "auto_active": true
+    },
+    {
+      "keyword": "scrambled eggs",
+      "candidates": [
+        "Eggs",
+        "Scrambled Eggs"
+      ],
+      "winner": "Scrambled Eggs",
+      "auto_active": true
+    },
+    {
+      "keyword": "surprised",
+      "candidates": [
+        "Neutral",
+        "Surprised"
+      ],
+      "winner": "Surprised",
+      "auto_active": true
+    },
+    {
+      "keyword": "toast with jam",
+      "candidates": [
+        "Jam",
+        "Jam Toast"
+      ],
+      "winner": "Jam Toast",
+      "auto_active": true
+    },
+    {
+      "keyword": "ultimate frisbee",
+      "candidates": [
+        "Frisbee",
+        "Surfboard"
+      ],
+      "winner": "Frisbee",
+      "auto_active": true
+    },
+    {
+      "keyword": "very tired",
+      "candidates": [
+        "Sad",
+        "Sleepy"
+      ],
+      "winner": "Sleepy",
+      "auto_active": true
+    },
+    {
+      "keyword": "vet appointment",
+      "candidates": [
+        "Medical Clinic",
+        "Veterinary Clinic"
+      ],
+      "winner": "Veterinary Clinic",
+      "auto_active": true
+    }
+  ],
+  "reflect_categories": [
+    {
+      "order": 1,
+      "key": "emotion_and_feeling",
+      "label": "Emotions & Feelings",
+      "items": 37
+    },
+    {
+      "order": 2,
+      "key": "food_drink",
+      "label": "Food & Drink",
+      "items": 1413
+    },
+    {
+      "order": 3,
+      "key": "chores_home_care",
+      "label": "Chores & Home Care",
+      "items": 705
+    },
+    {
+      "order": 4,
+      "key": "self_care_hygiene",
+      "label": "Health & Self-Care",
+      "items": 419
+    },
+    {
+      "order": 5,
+      "key": "work_productivity",
+      "label": "Work & Productivity",
+      "items": 34
+    },
+    {
+      "order": 6,
+      "key": "entertainment_leisure",
+      "label": "Entertainment & Leisure",
+      "items": 162
+    },
+    {
+      "order": 7,
+      "key": "exercise_movement",
+      "label": "Exercise & Movement",
+      "items": 194
+    },
+    {
+      "order": 8,
+      "key": "social_relationships",
+      "label": "Social & Relationships",
+      "items": 104
+    },
+    {
+      "order": 9,
+      "key": "travel_commute",
+      "label": "Travel & Getting Around",
+      "items": 196
+    },
+    {
+      "order": 10,
+      "key": "nature_outdoors",
+      "label": "Nature & Outdoors",
+      "items": 673
+    },
+    {
+      "order": 11,
+      "key": "learning_hobbies",
+      "label": "Learning & Hobbies",
+      "items": 489
+    },
+    {
+      "order": 12,
+      "key": "shopping_errands",
+      "label": "Shopping & Errands",
+      "items": 964
+    }
+  ]
+}

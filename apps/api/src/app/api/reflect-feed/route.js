@@ -40,7 +40,7 @@ export async function GET(request) {
 
     const { data: reflects } = await supabase
       .from('reflects')
-      .select('id, body, local_date, created_at')
+      .select('id, body, local_date, created_at, shared_to_friends')
       .eq('user_id', userId)
       .order('local_date', { ascending: false })
       .order('created_at', { ascending: false })
@@ -68,7 +68,7 @@ export async function GET(request) {
         byDay.set(r.local_date, { date: r.local_date, reflects: [], itemIds: [] })
       }
       const day = byDay.get(r.local_date)
-      day.reflects.push({ id: r.id, body: r.body })
+      day.reflects.push({ id: r.id, body: r.body, sharedToFriends: r.shared_to_friends !== false })
       for (const itemId of itemsByReflect[r.id] || []) day.itemIds.push(itemId)
     }
 

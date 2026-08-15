@@ -202,6 +202,7 @@ export interface FeedEntry {
   friendIsDefaultAvatar?: boolean;
   reflectId: string;
   createdAt: string;
+  localDate?: string;
   itemIds: string[];
   emoji: string[]; // decorated from the shared dictionary
   /** Present ONLY when that friend opted into sharing details (server-enforced). */
@@ -211,21 +212,23 @@ export interface FeedEntry {
 }
 
 /** The Messages list: friends' recent memories, unread first. */
-export async function fetchFriendFeed(): Promise<FeedEntry[]> {
+export async function fetchFriendFeed(range?: { start: string; end: string }): Promise<FeedEntry[]> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return [];
   try {
     const data = await apiClient.get<{ success?: boolean; feed?: Omit<FeedEntry, 'emoji'>[] }>(
-      `/api/friends/feed?userId=${encodeURIComponent(userId)}`,
+      `/api/friends/feed?userId=${encodeURIComponent(userId)}${range ? `&start=${range.start}&end=${range.end}` : ''}`,
     );
-    if (!data.success || !data.feed) return getCachedFriendFeed();
+    if (!data.success || !data.feed) return range ? [] : getCachedFriendFeed();
     const feed = data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
-    storage.set(kFriendsFeed.name, JSON.stringify(feed));
-    void syncWidgetLatestFriend(feed);
+    if (!range) {
+      storage.set(kFriendsFeed.name, JSON.stringify(feed));
+      void syncWidgetLatestFriend(feed);
+    }
     return feed;
   } catch {
-    return getCachedFriendFeed();
+    return range ? [] : getCachedFriendFeed();
   }
 }
 
@@ -243,33 +246,107 @@ export async function markFriendRead(friendUserId: string): Promise<void> {
 
 /** My detail-sharing switch (2026-08-10 ruling: default ON — users hide
  * individual reflects from the post-reflect reward screen instead). */
-export async function fetchSharePrivacy(): Promise<boolean> {
+export type MemoryDetailsMode = 'all' | 'none' | 'custom';
+
+export async function fetchSharePrivacy(): Promise<MemoryDetailsMode> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return true;
+  if (!userId) return 'custom';
   try {
-    const data = await apiClient.get<{ success?: boolean; share?: boolean }>(
+    const data = await apiClient.get<{ success?: boolean; share?: boolean; mode?: MemoryDetailsMode }>(
       `/api/friends/privacy?userId=${encodeURIComponent(userId)}`,
     );
-    return data.share !== false;
+    return data.mode ?? (data.share === false ? 'none' : 'custom');
   } catch {
-    return true;
+    return 'custom';
   }
 }
 
-export async function setSharePrivacy(share: boolean): Promise<boolean> {
+export async function setSharePrivacy(mode: MemoryDetailsMode): Promise<boolean> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return false;
   try {
     const data = await apiClient.post<{ success?: boolean }>('/api/friends/privacy', {
       userId,
-      share,
+      mode,
     });
     return !!data.success;
   } catch {
     return false;
   }
+}
+
+export const GOOD_VIBE_MESSAGES = [
+  'Love you to bits!',
+  'So grateful for you.',
+  'Always by your side.',
+  'You mean the world.',
+  'Rooting for you always!',
+  'Good things are coming.',
+  "You've got this!",
+  'Keep shining your light.',
+  'Ride or Die, No Cap',
+  'Proud of you, always.',
+  'Sending a big hug!',
+  'Thinking of you today.',
+  "Tomorrow's a fresh start.",
+  'Delulu is the Solulu.',
+  "Don't Let Idiots Ruin Your Day.",
+  'Main Character Energy Only!',
+  'More Espresso, Less Depresso.',
+  'In My Rest & Healing Era.',
+  'Slay the Day, Then Take a Nap.',
+  'Kindness is Cool, Drama is Not.',
+  'Overthinking, but Make it Cute.',
+  'Every day counts, truly.',
+  'Big wins ahead today!',
+  'Forever on Your Team!',
+  'My Favorite Notification Is You.',
+] as const;
+
+export interface GoodVibeInboxItem {
+  id: string;
+  senderUserId: string;
+  senderName: string;
+  senderAvatarUrl?: string;
+  senderIsDefaultAvatar?: boolean;
+  messageIndex: number;
+  message: string;
+  createdAt: string;
+}
+
+export async function fetchUnreadGoodVibe(): Promise<GoodVibeInboxItem | null> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return null;
+  try {
+    const result = await apiClient.get<{ success?: boolean; vibe?: GoodVibeInboxItem | null }>(
+      `/api/friends/good-vibes?userId=${encodeURIComponent(userId)}`,
+    );
+    return result.vibe ?? null;
+  } catch { return null; }
+}
+
+export async function sendGoodVibe(messageIndex: number): Promise<{ ok: boolean; error?: string }> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  try {
+    await apiClient.post('/api/friends/good-vibes', {
+      userId, messageIndex, localDate: localDateStr(),
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as { body?: { error?: string } })?.body?.error || 'network' };
+  }
+}
+
+export async function markGoodVibeRead(vibeId: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return;
+  try { await apiClient.post('/api/friends/good-vibes', { userId, action: 'read', vibeId }); } catch { /* retry next foreground */ }
 }
 
 export interface SharedBoxItem {

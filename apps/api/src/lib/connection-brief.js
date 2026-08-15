@@ -48,18 +48,19 @@ export async function generateBrief(supabase, { ua, ub, forUser, partnerId, date
   // global opt-in; item names from those reflects either way).
   const sinceDate = new Date(Date.parse(`${date}T00:00:00Z`) - LOOKBACK_DAYS * 86400000)
     .toISOString().slice(0, 10)
-  const [{ data: partnerProf }, { data: reflects }] = await Promise.all([
-    supabase.from('profiles').select('share_memory_details, display_name').eq('id', partnerId).maybeSingle(),
-    supabase
-      .from('reflects')
-      .select('id, body, local_date')
-      .eq('user_id', partnerId)
-      .eq('shared_to_friends', true)
-      .gte('local_date', sinceDate)
-      .order('created_at', { ascending: false })
-      .limit(10),
-  ])
-  const shares = !!partnerProf?.share_memory_details
+  const { data: partnerProf } = await supabase.from('profiles')
+    .select('share_memory_details, memory_details_mode, display_name').eq('id', partnerId).maybeSingle()
+  const detailMode = partnerProf?.memory_details_mode || (partnerProf?.share_memory_details === false ? 'none' : 'custom')
+  if (detailMode === 'none') return { ok: false, reason: 'no_input' }
+  let reflectsQuery = supabase.from('reflects')
+    .select('id, body, local_date')
+    .eq('user_id', partnerId)
+  if (detailMode === 'custom') reflectsQuery = reflectsQuery.eq('shared_to_friends', true)
+  const { data: reflects } = await reflectsQuery
+    .gte('local_date', sinceDate)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const shares = true
   const reflectIds = (reflects || []).map((r) => r.id)
   let itemLines = []
   if (reflectIds.length > 0) {

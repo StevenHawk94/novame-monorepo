@@ -50,6 +50,7 @@ export async function getMergedDictionary(supabase) {
 
   const items = { ...ITEM_DICTIONARY.items }
   const synonyms = { ...ITEM_DICTIONARY.synonyms }
+  const exclusions = { ...(ITEM_DICTIONARY.exclusions ?? {}) }
   for (const it of remote) {
     if (!items[it.id]) {
       items[it.id] = {
@@ -63,7 +64,7 @@ export async function getMergedDictionary(supabase) {
       if (key && !synonyms[key]) synonyms[key] = it.id
     }
   }
-  const merged = { items, synonyms }
+  const merged = { items, synonyms, exclusions }
   cache = { at: now, merged, upserted: cache.upserted }
 
   // Lazy self-healing: make sure every remote id exists in the items table

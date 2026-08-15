@@ -111,3 +111,32 @@ export const BACKGROUNDS = {
   tameEnemy: require('../../assets/Background/tame-enemy.webp'),
   visitMaster: require('../../assets/Background/visit-master.webp'),
 } as const;
+
+/** Good Vibes artwork, index-aligned with GOOD_VIBE_MESSAGES. */
+export const GOOD_VIBE_ART: readonly ImageSourcePropType[] = [
+  require('../../assets/Good Vibes/love you to bits.webp'),
+  require('../../assets/Good Vibes/so grateful for you.webp'),
+  require('../../assets/Good Vibes/always by your side.webp'),
+  require('../../assets/Good Vibes/you mean the world.webp'),
+  require('../../assets/Good Vibes/rooting for you always.webp'),
+  require('../../assets/Good Vibes/good things are coming.webp'),
+  require("../../assets/Good Vibes/you've got this.webp"),
+  require('../../assets/Good Vibes/keep shinning your light.webp'),
+  require('../../assets/Good Vibes/ride or die, no cap.webp'),
+  require('../../assets/Good Vibes/proud of you always.webp'),
+  require('../../assets/Good Vibes/sending a big hug.webp'),
+  require('../../assets/Good Vibes/thinking of you today.webp'),
+  require("../../assets/Good Vibes/tomorrow's a fresh start.webp"),
+  require('../../assets/Good Vibes/delulu is the solulu.webp'),
+  require("../../assets/Good Vibes/don't let idiots ruin your day.webp"),
+  require('../../assets/Good Vibes/main character energy only.webp'),
+  require('../../assets/Good Vibes/more expresso,less depresso.webp'),
+  require('../../assets/Good Vibes/in my rest, healing era.webp'),
+  require('../../assets/Good Vibes/slay the day then take a nap.webp'),
+  require('../../assets/Good Vibes/kindness is cool, drama is not.webp'),
+  require('../../assets/Good Vibes/overthining, but make it cute.webp'),
+  require('../../assets/Good Vibes/everyday counts, truly.webp'),
+  require('../../assets/Good Vibes/big wins ahead today.webp'),
+  require('../../assets/Good Vibes/forever on your team.webp'),
+  require('../../assets/Good Vibes/my favorite notification is you.webp'),
+];

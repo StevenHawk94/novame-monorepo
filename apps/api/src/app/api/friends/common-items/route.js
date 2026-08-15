@@ -54,9 +54,10 @@ export async function GET(request) {
     const [{ data: mine }, { data: theirs }, { data: partnerProf }] = await Promise.all([
       fetchSide(userId),
       fetchSide(partnerId),
-      supabase.from('profiles').select('share_memory_details').eq('id', partnerId).maybeSingle(),
+      supabase.from('profiles').select('share_memory_details, memory_details_mode').eq('id', partnerId).maybeSingle(),
     ])
-    const partnerShares = !!partnerProf?.share_memory_details
+    const partnerMode = partnerProf?.memory_details_mode || (partnerProf?.share_memory_details === false ? 'none' : 'custom')
+    const partnerShares = partnerMode !== 'none'
 
     // Latest memory per item on each side (rows are newest-first).
     const latestBy = (rows) => {
@@ -75,7 +76,7 @@ export async function GET(request) {
       .map((id) => theirLatest.get(id).reflect_id)
       .filter(Boolean)
     const hidden = new Set()
-    if (partnerShares && partnerReflectIds.length > 0) {
+    if (partnerMode === 'custom' && partnerReflectIds.length > 0) {
       const { data: vis } = await supabase
         .from('reflects')
         .select('id, shared_to_friends')

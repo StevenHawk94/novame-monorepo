@@ -30,6 +30,9 @@ const DICT: ItemDictionary = {
     ocean: 'nature.ocean', sea: 'nature.ocean',
     book: 'object.book', books: 'object.book',
   },
+  exclusions: {
+    coffee: ['coffee table', 'coffee-table book'],
+  },
 };
 
 function ids(text: string): string[] {
@@ -58,6 +61,19 @@ describe('matchItems: multi-word entries (rule 6)', () => {
   });
   it('matches apple pie and a separate apple', () => {
     expect(ids('apple pie and an apple')).toEqual(['food.apple', 'food.apple_pie']);
+  });
+});
+
+describe('matchItems: AUTO_UNLESS_EXCLUDED', () => {
+  it('matches the safe bare keyword', () => {
+    expect(ids('I made coffee')).toEqual(['food.coffee']);
+  });
+  it('drops the keyword inside an exclusion phrase', () => {
+    expect(ids('I bought a coffee table')).toEqual([]);
+    expect(ids('I read a coffee-table book')).toEqual(['object.book']);
+  });
+  it('still matches a separate safe occurrence in the same entry', () => {
+    expect(ids('I cleaned the coffee table and then made coffee')).toEqual(['food.coffee']);
   });
 });
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWindowDimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,9 @@ import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
 import { getCachedBags } from '@/lib/bags-api';
+import { setReflectVisibility } from '@/lib/reflect-api';
+import { appAlert } from '@/components/ui/app-dialog';
+import { haptics } from '@/lib/haptics';
 
 /**
  * Reflect detail (design 2026-07-22, 1:1): dark-brown full screen, a white
@@ -39,10 +42,38 @@ export default function ReflectDetailScreen() {
   const entry = useMemo(() => {
     for (const day of feed) {
       const r = day.reflects.find((x) => x.id === reflectId);
-      if (r) return { body: r.body, dateLabel: formatDayLabel(day.date) };
+      if (r) return { body: r.body, dateLabel: formatDayLabel(day.date), sharedToFriends: r.sharedToFriends };
     }
     return null;
   }, [feed, reflectId]);
+
+  const [detailsVisible, setDetailsVisible] = useState(true);
+  const [savingVisibility, setSavingVisibility] = useState(false);
+  useEffect(() => {
+    if (entry) setDetailsVisible(entry.sharedToFriends);
+  }, [entry]);
+
+  async function toggleVisibility() {
+    if (!reflectId || savingVisibility) return;
+    const previous = detailsVisible;
+    const next = !previous;
+    setDetailsVisible(next);
+    setSavingVisibility(true);
+    void haptics.light();
+    const ok = await setReflectVisibility(reflectId, next);
+    setSavingVisibility(false);
+    if (!ok) {
+      setDetailsVisible(previous);
+      appAlert('Could not save', 'Please check your connection and try again.');
+      return;
+    }
+    setFeed((current) => current.map((day) => ({
+      ...day,
+      reflects: day.reflects.map((reflect) => reflect.id === reflectId
+        ? { ...reflect, sharedToFriends: next }
+        : reflect),
+    })));
+  }
 
   // Items this reflection gathered, aggregated to (item, count) so a double
   // mention shows one tile with x2 rather than two x1 tiles.
@@ -87,6 +118,20 @@ export default function ReflectDetailScreen() {
             </View>
           </View>
         )}
+
+        <View style={styles.visibilityRow}>
+          <Pressable
+            disabled={savingVisibility}
+            onPress={() => void toggleVisibility()}
+            style={[styles.toggle, detailsVisible && styles.toggleOn, savingVisibility && { opacity: 0.6 }]}
+          >
+            <Text style={styles.toggleLabel}>{detailsVisible ? 'ON' : 'OFF'}</Text>
+            <View style={[styles.toggleKnob, detailsVisible && styles.toggleKnobOn]} />
+          </Pressable>
+          <Text style={styles.visibilityText}>
+            Turn off to hide all the details of these memory items from your paired person.
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Close: white circle, dark X (mock) */}
@@ -116,6 +161,14 @@ const styles = StyleSheet.create({
   memRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 4 },
   memItem: { alignItems: 'center', gap: 6 },
   memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
+
+  visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 8, paddingVertical: 8 },
+  toggle: { width: 88, height: 44, borderRadius: 22, backgroundColor: '#8C7A68', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 9 },
+  toggleOn: { backgroundColor: '#FF7C52' },
+  toggleLabel: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
+  toggleKnob: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF' },
+  toggleKnobOn: { backgroundColor: '#FFF9F1' },
+  visibilityText: { flex: 1, color: '#FFFFFF', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_700Bold' },
 
   closeWrap: { alignItems: 'center' },
   closeBtn: {

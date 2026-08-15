@@ -225,24 +225,24 @@ export async function GET(request) {
     if (!pairing) return NextResponse.json({ success: true, state: 'unpaired', days, dimensions: [] })
 
     const partnerId = pairing.partner_user_id
-    const [{ data: profile }, { data: firstReflect }] = await Promise.all([
-      supabase.from('profiles').select('display_name, share_memory_details').eq('id', partnerId).maybeSingle(),
-      supabase.from('reflects').select('local_date').eq('user_id', partnerId)
-        .eq('shared_to_friends', true).order('local_date', { ascending: true }).limit(1).maybeSingle(),
-    ])
-    if (profile?.share_memory_details === false) {
-      return NextResponse.json({ success: true, state: 'unavailable', days, dimensions: [] })
-    }
+    // Their Patterns is an independent product surface. Memory-detail sharing
+    // controls what the paired person can open/read in Memories, Connection,
+    // and the Paired feed; it must not suppress pattern generation.
+    const { data: profile } = await supabase.from('profiles')
+      .select('display_name').eq('id', partnerId).maybeSingle()
+    const firstReflectQuery = supabase.from('reflects').select('local_date').eq('user_id', partnerId)
+    const { data: firstReflect } = await firstReflectQuery
+      .order('local_date', { ascending: true }).limit(1).maybeSingle()
 
     const now = Date.now()
     // Full available relationship history for the calendar and score trend.
     const since = firstReflect?.local_date || pairing.created_at.slice(0, 10)
     const [a, b] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
+    const reflectsQuery = supabase.from('reflects')
+      .select('id, body, local_date, created_at')
+      .eq('user_id', partnerId)
     const [{ data: reflects }, { data: shared }] = await Promise.all([
-      supabase.from('reflects')
-        .select('id, body, local_date, created_at')
-        .eq('user_id', partnerId).eq('shared_to_friends', true)
-        .gte('local_date', since).order('created_at', { ascending: false }).limit(5000),
+      reflectsQuery.gte('local_date', since).order('created_at', { ascending: false }).limit(5000),
       supabase.from('shared_memory_items')
         .select('id, author_user_id, description, item_id, created_at')
         .eq('user_a', a).eq('user_b', b).eq('author_user_id', partnerId)

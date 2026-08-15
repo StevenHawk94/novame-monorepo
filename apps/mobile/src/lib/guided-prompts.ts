@@ -1,12 +1,12 @@
 /**
  * Guided Prompts (流程2) 配置与持久化 — v3 (2026-07-30).
  *
- * The chooser lists the 11 prompt-reflection categories (curated, ranked
+ * The chooser lists the 12 prompt-reflection categories (curated, ranked
  * subsets of the master catalog — generated into guided-catalog.g.ts from
  * icon_keyword_mapping_final.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
- * Object Reflect shares the same 11 categories for its library picker.
+ * Object Reflect shares the same 12 categories for its library picker.
  */
 import { PROMPT_CATEGORIES } from './guided-catalog.g';
 import { remoteIdsForPromptCategory } from './remote-items';
@@ -14,7 +14,7 @@ import { kGuidedCategories } from '../shared/storage/keys';
 import { storage } from './storage';
 
 export const GUIDED_MIN = 3;
-export const GUIDED_MAX = PROMPT_CATEGORIES.length; // all 11 selectable
+export const GUIDED_MAX = PROMPT_CATEGORIES.length; // all 12 selectable
 
 export interface GuidedCategory {
   key: string;
@@ -36,19 +36,20 @@ const META: Record<string, { emoji: string; question: string }> = {
   travel_commute: { emoji: '🚌', question: 'Where did your day take you today?' },
   nature_outdoors: { emoji: '🏞️', question: 'Did you get outside today?' },
   learning_hobbies: { emoji: '📚', question: 'What did you learn or practice today?' },
+  shopping_errands: { emoji: '🛍️', question: 'What shopping or errands did you do today?' },
 };
 
 const CONFIG: GuidedCategory[] = PROMPT_CATEGORIES.map((c) => ({
   key: c.key,
   label: c.label,
   emoji: META[c.key]?.emoji ?? '✨',
-  question: META[c.key]?.question ?? `Anything about ${c.label.toLowerCase()} today?`,
+  question: c.question || META[c.key]?.question || `Anything about ${c.label.toLowerCase()} today?`,
 }));
 
 const BY_KEY = new Map(CONFIG.map((c) => [c.key, c]));
 const ITEMS_BY_KEY = new Map(PROMPT_CATEGORIES.map((c) => [c.key, c.itemIds]));
 
-/** The 11 prompt categories, in sheet order (= chooser + page order). */
+/** The 12 prompt categories, in sheet order (= chooser + page order). */
 export function availableGuidedCategories(): GuidedCategory[] {
   return CONFIG;
 }

@@ -29,6 +29,9 @@ export async function GET(request) {
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const start = searchParams.get('start')
+    const end = searchParams.get('end')
+    const hasRange = /^\d{4}-\d{2}-\d{2}$/.test(start || '') && /^\d{4}-\d{2}-\d{2}$/.test(end || '')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const supabase = createClient(
@@ -49,19 +52,43 @@ export async function GET(request) {
     // Names + per-friend privacy in one query.
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, display_name, share_memory_details, avatar_url, is_default_avatar')
+      .select('id, display_name, share_memory_details, memory_details_mode, avatar_url, is_default_avatar')
       .in('id', friendIds)
     const profileById = new Map((profiles || []).map((p) => [p.id, p]))
 
+    // A calendar range follows each reflection's device-local day, rather
+    // than UTC created_at (otherwise late-night entries can land a day off).
+    const detailsHidden = new Set()
+    const reflectDate = new Map()
+    let rangedReflectIds = []
+    if (hasRange) {
+      const { data: rangedReflects } = await supabase.from('reflects')
+        .select('id, shared_to_friends, local_date')
+        .in('user_id', friendIds)
+        .gte('local_date', start)
+        .lte('local_date', end)
+        .limit(2000)
+      rangedReflectIds = (rangedReflects || []).map((r) => r.id)
+      for (const r of rangedReflects || []) {
+        if (r.shared_to_friends === false) detailsHidden.add(r.id)
+        reflectDate.set(r.id, r.local_date)
+      }
+      if (rangedReflectIds.length === 0) return NextResponse.json({ success: true, feed: [] })
+    }
+
     // Recent memories across all friends.
-    const since = new Date(Date.now() - FEED_DAYS * 86400000).toISOString()
-    const { data: memoriesRaw } = await supabase
+    let memoryQuery = supabase
       .from('item_memories')
       .select('user_id, item_id, reflect_id, raw_excerpt, refined_desc, created_at')
       .in('user_id', friendIds)
-      .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(MAX_ROWS)
+    if (hasRange) {
+      memoryQuery = memoryQuery.in('reflect_id', rangedReflectIds)
+    } else {
+      memoryQuery = memoryQuery.gte('created_at', new Date(Date.now() - FEED_DAYS * 86400000).toISOString())
+    }
+    const { data: memoriesRaw } = await memoryQuery
 
     // Per-reflect visibility (2026-07-24 result-page toggle): item ICONS are
     // always visible to friends; the toggle only gates the memory DETAILS.
@@ -69,14 +96,14 @@ export async function GET(request) {
     // reflect's toggle — enforced here, server-side.
     const memories = memoriesRaw || []
     const reflectIds = [...new Set(memories.map((m) => m.reflect_id))]
-    const detailsHidden = new Set()
-    if (reflectIds.length > 0) {
+    if (!hasRange && reflectIds.length > 0) {
       const { data: vis } = await supabase
         .from('reflects')
-        .select('id, shared_to_friends')
+        .select('id, shared_to_friends, local_date')
         .in('id', reflectIds)
       for (const r of vis || []) {
         if (r.shared_to_friends === false) detailsHidden.add(r.id)
+        reflectDate.set(r.id, r.local_date)
       }
     }
 
@@ -90,7 +117,9 @@ export async function GET(request) {
     // Group per (friend, reflect): one Messages entry per reflect.
     const entryByKey = new Map()
     for (const m of memories) {
-      const share = !!profileById.get(m.user_id)?.share_memory_details && !detailsHidden.has(m.reflect_id)
+      const profile = profileById.get(m.user_id)
+      const mode = profile?.memory_details_mode || (profile?.share_memory_details === false ? 'none' : 'custom')
+      const share = mode === 'all' || (mode === 'custom' && !detailsHidden.has(m.reflect_id))
       const key = `${m.user_id}:${m.reflect_id}`
       let e = entryByKey.get(key)
       if (!e) {
@@ -98,6 +127,7 @@ export async function GET(request) {
           friendUserId: m.user_id,
           reflectId: m.reflect_id,
           createdAt: m.created_at,
+          localDate: reflectDate.get(m.reflect_id) || m.created_at.slice(0, 10),
           itemIds: [],
           // Excerpts only with the owner's opt-in — never leak by shape.
           details: share ? [] : null,
@@ -117,7 +147,7 @@ export async function GET(request) {
         friendName: profileById.get(e.friendUserId)?.display_name || 'Friend',
         friendAvatarUrl: profileById.get(e.friendUserId)?.avatar_url || '',
         friendIsDefaultAvatar: profileById.get(e.friendUserId)?.is_default_avatar !== false,
-        sharesDetails: !!profileById.get(e.friendUserId)?.share_memory_details,
+        sharesDetails: (profileById.get(e.friendUserId)?.memory_details_mode || 'custom') !== 'none',
         unread: e.createdAt > (readAt.get(e.friendUserId) ?? '1970-01-01T00:00:00Z'),
       }))
       // Unread first, then newest — the design's ordering.
