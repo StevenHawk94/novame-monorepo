@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 /**
@@ -75,7 +76,7 @@ function BarChart({
   );
 }
 
-export default function AnalysisTab() {
+export default function AnalysisTab(): ReactElement {
   const [data, setData] = useState<Analysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 

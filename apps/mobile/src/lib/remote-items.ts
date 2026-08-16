@@ -19,7 +19,8 @@
  * (disk-cached). The server mirrors the same merge for text matching,
  * validation and the items-table upsert (apps/api/src/lib/remote-items.js).
  */
-import { ITEM_DICTIONARY } from '@novame/engine';
+import { ITEM_DICTIONARY, type ItemDictionary } from '@novame/engine';
+import { Image as ExpoImage } from 'expo-image';
 
 import { storage } from './storage';
 import { kRemoteItems } from '../shared/storage/keys';
@@ -33,11 +34,20 @@ export interface RemoteItem {
   bagsCategory: string;
   promptCategory?: string;
   keywords?: string[];
+  imageKey?: string;
+}
+
+export interface RemoteKeywordPatch {
+  keyword: string;
+  itemId: string;
+  safetyMode?: 'AUTO' | 'AUTO_UNLESS_EXCLUDED' | 'NEVER_AUTO';
+  exclusions?: string[];
 }
 
 interface RemoteItemsState {
-  version: number;
+  version: number | string;
   items: RemoteItem[];
+  keywordPatches: RemoteKeywordPatch[];
   fetchedAtMs: number;
 }
 
@@ -59,16 +69,32 @@ export async function refreshRemoteItems(): Promise<void> {
   try {
     const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`);
     if (!res.ok) return;
-    const data = (await res.json()) as { version?: number; items?: RemoteItem[] };
+    const data = (await res.json()) as { version?: number | string; items?: RemoteItem[]; keywordPatches?: RemoteKeywordPatch[] };
     if (!Array.isArray(data.items)) return;
+    const previous = readState();
+    if (previous && String(previous.version) === String(data.version ?? 1)) return;
     const valid = data.items.filter(
       (it) => it && typeof it.id === 'string' && typeof it.name === 'string' && it.id.length > 0,
     );
     const state: RemoteItemsState = {
       version: data.version ?? 1,
       items: valid,
+      keywordPatches: Array.isArray(data.keywordPatches) ? data.keywordPatches : [],
       fetchedAtMs: Date.now(),
     };
+    // Stage a complete version before making its rules visible. Downloads run
+    // in small batches because this function itself is launched in the
+    // background during prefetch; a failed batch keeps the previous version.
+    for (let i = 0; i < valid.length; i += 8) {
+      const results = await Promise.all(valid.slice(i, i + 8).map((item) => {
+        const key = item.imageKey;
+        const uri = key
+          ? `${R2_BASE}/${key.split('/').map(encodeURIComponent).join('/')}`
+          : `${R2_BASE}/Items/${encodeURIComponent(item.id)}.webp`;
+        return ExpoImage.prefetch(uri, 'disk');
+      }));
+      if (results.some((ok) => !ok)) return;
+    }
     storage.set(kRemoteItems.name, JSON.stringify(state));
     memo = state;
   } catch {
@@ -88,7 +114,37 @@ export function remoteItemDef(id: string): RemoteItem | null {
 
 /** R2 art URL for a remote item. */
 export function remoteImageUri(id: string): string {
+  const key = remoteItemDef(id)?.imageKey;
+  if (key) return `${R2_BASE}/${key.split('/').map(encodeURIComponent).join('/')}`;
   return `${R2_BASE}/Items/${encodeURIComponent(id)}.webp`;
+}
+
+/** Bundled + cloud items and manually-published keyword patches. */
+export function mergedItemDictionary(): ItemDictionary {
+  const state = readState();
+  if (!state) return ITEM_DICTIONARY;
+  const items: ItemDictionary['items'] = { ...ITEM_DICTIONARY.items };
+  const synonyms = { ...ITEM_DICTIONARY.synonyms };
+  const exclusions = { ...(ITEM_DICTIONARY.exclusions ?? {}) };
+  for (const item of state.items) {
+    if (!items[item.id]) items[item.id] = {
+      displayName: item.name, category: item.promptCategory ?? 'Uncategorized',
+      bagsCategory: item.bagsCategory ?? 'Stuff', rarity: 'common',
+    };
+    for (const raw of item.keywords ?? []) {
+      const keyword = raw.trim().toLowerCase();
+      if (keyword && !synonyms[keyword]) synonyms[keyword] = item.id;
+    }
+  }
+  for (const patch of state.keywordPatches ?? []) {
+    const keyword = patch.keyword?.trim().toLowerCase();
+    if (!keyword || !items[patch.itemId] || patch.safetyMode === 'NEVER_AUTO') continue;
+    if (!synonyms[keyword]) synonyms[keyword] = patch.itemId;
+    if (patch.safetyMode === 'AUTO_UNLESS_EXCLUDED' && patch.exclusions?.length) {
+      exclusions[keyword] = patch.exclusions;
+    }
+  }
+  return { items, synonyms, exclusions };
 }
 
 /** MERGED display name: bundled dictionary first, then remote, then the id. */

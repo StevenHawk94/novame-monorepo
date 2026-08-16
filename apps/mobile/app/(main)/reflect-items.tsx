@@ -15,8 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { ITEM_DICTIONARY } from '@novame/engine';
-
 import {
   getReflectStateToday,
   submitReflect,
@@ -29,6 +27,8 @@ import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS } from '../../src/lib/icons';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
+import { appAlert } from '../../src/components/ui/app-dialog';
+import { itemDisplayName } from '../../src/lib/remote-items';
 import {
   RC,
   ReflectResultView,
@@ -38,9 +38,14 @@ import {
 
 const MAX_CHARS = 5000;
 
-// v3 (2026-07-30): the library picker groups by the 11 prompt-reflection
+// v3 (2026-07-30): the library picker groups by the 12 prompt-reflection
 // categories (curated, ranked). 'all' = their union in sheet order.
-import { availableGuidedCategories, itemsForGuidedCategory } from '../../src/lib/guided-prompts';
+import {
+  availableGuidedCategories,
+  itemsForGuidedCategory,
+  MAX_ITEMS_PER_REFLECT_CATEGORY,
+  reflectCategoryForItem,
+} from '../../src/lib/guided-prompts';
 
 const PICKER_CATEGORIES = availableGuidedCategories();
 const ALL_IDS: string[] = (() => {
@@ -92,7 +97,7 @@ export default function ReflectItemsScreen() {
     const q = query.trim().toLowerCase();
     if (!q) return base;
     return base.filter((id) =>
-      (ITEM_DICTIONARY.items[id]?.displayName ?? '').toLowerCase().includes(q),
+      itemDisplayName(id).toLowerCase().includes(q),
     );
   }, [category, query]);
 
@@ -101,8 +106,17 @@ export default function ReflectItemsScreen() {
   const toggle = useCallback((id: string) => {
     setSelected((cur) => {
       const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        const itemCategory = reflectCategoryForItem(id);
+        const count = [...next].filter((itemId) => reflectCategoryForItem(itemId) === itemCategory).length;
+        if (count >= MAX_ITEMS_PER_REFLECT_CATEGORY) {
+          appAlert('8 items max', 'You can select up to 8 items in each category.');
+          return cur;
+        }
+        next.add(id);
+      }
       return next;
     });
   }, []);
@@ -178,7 +192,7 @@ export default function ReflectItemsScreen() {
                   autoFocus
                 />
               )}
-              {/* Category strip: "all" + the 11 prompt themes (emoji chips) */}
+              {/* Category strip: "all" + the 12 prompt themes (emoji chips) */}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -206,6 +220,11 @@ export default function ReflectItemsScreen() {
               <View style={styles.gridCard}>
                 <SelectableItemGrid itemIds={gridIds} selected={selected} onToggle={toggle} />
               </View>
+              <Text style={styles.selectionCount}>
+                {category === 'all'
+                  ? `${selected.size} selected · max 8 per category`
+                  : `${[...selected].filter((id) => reflectCategoryForItem(id) === category).length} / ${MAX_ITEMS_PER_REFLECT_CATEGORY} selected`}
+              </Text>
               <OffsetCard
                 color={RC.yellowDrop}
                 offset={4}
@@ -307,6 +326,10 @@ const styles = StyleSheet.create({
   catPlaceholder: { width: 26, height: 26, borderRadius: 9, backgroundColor: 'rgba(74,52,35,0.06)' },
 
   gridCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 26 },
+  selectionCount: {
+    fontSize: 13, fontFamily: 'Inter_700Bold', color: '#FFF6DE',
+    textAlign: 'center', marginTop: 8,
+  },
 
   input: {
     flex: 1, backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,

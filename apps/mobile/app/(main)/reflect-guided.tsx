@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { ITEM_DICTIONARY } from '@novame/engine';
+import { itemDisplayName } from '../../src/lib/remote-items';
 
 import {
   getReflectStateToday,
@@ -26,6 +26,8 @@ import {
   itemsForGuidedCategory,
   getGuidedSelection,
   guidedCategoryFor,
+  MAX_ITEMS_PER_REFLECT_CATEGORY,
+  reflectCategoryForItem,
   setGuidedSelection,
 } from '../../src/lib/guided-prompts';
 import { OffsetCard } from '../../src/components/ui/offset-card';
@@ -90,7 +92,7 @@ export default function ReflectGuidedScreen() {
     () =>
       [...selected].map((id) => ({
         itemId: id,
-        displayName: ITEM_DICTIONARY.items[id]?.displayName ?? id,
+        displayName: itemDisplayName(id),
       })),
     [selected],
   );
@@ -98,11 +100,20 @@ export default function ReflectGuidedScreen() {
   const toggle = useCallback((id: string) => {
     setSelected((cur) => {
       const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        const category = reflectCategoryForItem(id) ?? chosen[step];
+        const count = [...next].filter((itemId) => reflectCategoryForItem(itemId) === category).length;
+        if (count >= MAX_ITEMS_PER_REFLECT_CATEGORY) {
+          appAlert('8 items max', 'You can select up to 8 items in each category.');
+          return cur;
+        }
+        next.add(id);
+      }
       return next;
     });
-  }, []);
+  }, [chosen, step]);
 
   function toggleDraft(key: string) {
     void haptics.light();
@@ -270,6 +281,9 @@ export default function ReflectGuidedScreen() {
               <View style={styles.gridCard}>
                 <SelectableItemGrid itemIds={gridIds} selected={selected} onToggle={toggle} />
               </View>
+              <Text style={styles.categoryCount}>
+                {[...selected].filter((id) => reflectCategoryForItem(id) === chosen[step]).length} / {MAX_ITEMS_PER_REFLECT_CATEGORY} selected
+              </Text>
               <Text style={styles.passHint}>You can pass if nothing you want to select here</Text>
               <OffsetCard
                 color={RC.yellowDrop}
@@ -399,6 +413,10 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 14 },
   stepTitleLeft: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 12 },
   gridCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 26 },
+  categoryCount: {
+    fontSize: 13, fontFamily: 'Inter_700Bold', color: '#FFF6DE',
+    textAlign: 'center', marginTop: 9,
+  },
   passHint: {
     fontSize: 14, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)',
     textAlign: 'center', marginTop: 12, marginBottom: 10,

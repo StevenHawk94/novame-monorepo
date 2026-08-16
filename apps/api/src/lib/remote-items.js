@@ -29,6 +29,7 @@ export async function getMergedDictionary(supabase) {
   if (cache.merged && now - cache.at < TTL_MS) return cache.merged
 
   let remote = []
+  let keywordPatches = []
   try {
     const res = await fetch(MANIFEST_URL, { cache: 'no-store' })
     if (res.ok) {
@@ -38,12 +39,13 @@ export async function getMergedDictionary(supabase) {
           (it) => it && typeof it.id === 'string' && typeof it.name === 'string',
         )
       }
+      if (Array.isArray(data.keywordPatches)) keywordPatches = data.keywordPatches
     }
   } catch {
     // unreachable manifest → bundled-only
   }
 
-  if (remote.length === 0) {
+  if (remote.length === 0 && keywordPatches.length === 0) {
     cache = { at: now, merged: ITEM_DICTIONARY, upserted: cache.upserted }
     return ITEM_DICTIONARY
   }
@@ -55,6 +57,7 @@ export async function getMergedDictionary(supabase) {
     if (!items[it.id]) {
       items[it.id] = {
         displayName: it.name,
+        category: it.promptCategory ?? 'Uncategorized',
         bagsCategory: it.bagsCategory ?? 'Stuff',
         rarity: 'common',
       }
@@ -62,6 +65,15 @@ export async function getMergedDictionary(supabase) {
     for (const kw of Array.isArray(it.keywords) ? it.keywords : []) {
       const key = String(kw).trim().toLowerCase()
       if (key && !synonyms[key]) synonyms[key] = it.id
+    }
+  }
+  for (const patch of keywordPatches) {
+    const key = String(patch?.keyword || '').trim().toLowerCase()
+    const itemId = String(patch?.itemId || '')
+    if (!key || !items[itemId] || patch?.safetyMode === 'NEVER_AUTO') continue
+    if (!synonyms[key]) synonyms[key] = itemId
+    if (patch?.safetyMode === 'AUTO_UNLESS_EXCLUDED' && Array.isArray(patch.exclusions)) {
+      exclusions[key] = patch.exclusions.map(String).filter(Boolean)
     }
   }
   const merged = { items, synonyms, exclusions }

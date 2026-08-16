@@ -6,10 +6,12 @@ import { createClient } from '@supabase/supabase-js'
 import { promptDimension, DIMENSION_IDS } from '@novame/domain'
 import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, XP_RULES } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
+import { recordItemLearningConcepts } from '@/lib/item-learning'
 
 export const runtime = 'edge'
 
 const MAX_BODY_CHARS = 5000
+const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
 
 const DIMENSION_SYSTEM_PROMPT = `You classify a personal journal entry into growth dimensions.
 
@@ -23,7 +25,9 @@ The eight dimensions (topics, not emotions):
 - gratitude: appreciating a moment, contentment
 - connection: another person, empathy, relationships
 
-Return ONLY a JSON array of 0 to 2 dimension ids the entry most strongly reflects, most relevant first. No prose, no markdown. Example: ["awareness","connection"]. If nothing clearly fits, return [].`
+Also extract up to 3 concrete, visually drawable things or activities that are clearly present in the entry but are NOT represented by the supplied matched icon names. Use a short canonical noun phrase, never sensitive interpretation, emotion, diagnosis, person name, or private narrative.
+
+Return ONLY JSON: {"dimensions":["awareness"],"visualConcepts":["ceramic class"]}. dimensions has 0-2 ids; visualConcepts has 0-3 short phrases. No prose or markdown.`
 
 /**
  * AI dimension analysis (paid only). Returns up to two dimension ids from the
@@ -32,11 +36,11 @@ Return ONLY a JSON array of 0 to 2 dimension ids the entry most strongly reflect
  * to [], leaving the user with just the prompt dimension. The economy never
  * blocks on the AI.
  */
-async function analyzeDimensions(body, excludeDim) {
+async function analyzeDimensions(body, excludeDim, matchedIconNames) {
   try {
     const res = await callAI({
       systemInstruction: DIMENSION_SYSTEM_PROMPT,
-      userText: body,
+      userText: `Matched icon names (do not suggest these again):\n${matchedIconNames.join(', ') || '(none)'}\n\nJournal:\n${body}`,
       // 256-token thinking budget (2026-08-09): enough to weigh an ambiguous
       // entry between dimensions, while capping the reasoning spend.
       generationConfig: {
@@ -45,11 +49,16 @@ async function analyzeDimensions(body, excludeDim) {
       },
     })
     const parsed = parseAIJson(res.text)
-    if (!Array.isArray(parsed)) return []
-    return [...new Set(parsed.filter((d) => DIMENSION_IDS.includes(d) && d !== excludeDim))].slice(0, 2)
+    if (!parsed || typeof parsed !== 'object') return { dimensions: [], visualConcepts: [] }
+    const dimensions = [...new Set((Array.isArray(parsed.dimensions) ? parsed.dimensions : [])
+      .filter((d) => DIMENSION_IDS.includes(d) && d !== excludeDim))].slice(0, 2)
+    const visualConcepts = [...new Set((Array.isArray(parsed.visualConcepts) ? parsed.visualConcepts : [])
+      .filter((value) => typeof value === 'string' && value.trim())
+      .map((value) => value.trim().slice(0, 80)))].slice(0, 3)
+    return { dimensions, visualConcepts }
   } catch (err) {
     console.warn('[reflect] dimension analysis failed, degrading to prompt-only:', err && err.message)
-    return []
+    return { dimensions: [], visualConcepts: [] }
   }
 }
 
@@ -175,6 +184,10 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
     const DICT = await getMergedDictionary(supabase)
+    const removedForTyping = new Set(Array.isArray(removedItemIds)
+      ? removedItemIds.filter((x) => typeof x === 'string') : [])
+    const preliminaryMatches = mode === 'typing'
+      ? matchItems(body, DICT).filter((m) => !removedForTyping.has(m.itemId)) : []
 
     // Manual picks: [{ itemId, note? }], every id must exist in the dictionary.
     // The note (≤200 chars) becomes the memory excerpt, else the display name.
@@ -184,11 +197,21 @@ export async function POST(request) {
         return NextResponse.json({ error: 'No items selected' }, { status: 400 })
       }
       const seen = new Set()
+      const categoryCounts = new Map()
       for (const s of selectedItems.slice(0, 100)) {
         const id = typeof s?.itemId === 'string' ? s.itemId : null
         if (!id || seen.has(id)) continue
         const def = DICT.items[id]
         if (!def) return NextResponse.json({ error: 'Unknown item', itemId: id }, { status: 400 })
+        const category = def.category || 'Uncategorized'
+        const categoryCount = (categoryCounts.get(category) || 0) + 1
+        if (categoryCount > MAX_ITEMS_PER_REFLECT_CATEGORY) {
+          return NextResponse.json({
+            error: 'too_many_items_in_category', category,
+            limit: MAX_ITEMS_PER_REFLECT_CATEGORY,
+          }, { status: 400 })
+        }
+        categoryCounts.set(category, categoryCount)
         seen.add(id)
         const note = typeof s.note === 'string' ? s.note.trim().slice(0, 200) : ''
         picks.push({ itemId: id, displayName: def.displayName, rarity: def.rarity, label: note || def.displayName })
@@ -224,10 +247,15 @@ export async function POST(request) {
     // AI-bearing path at 6/hour/user (double the 3/day product limit, enough
     // headroom for retries) so a paid token can't loop it for unbounded spend.
     let aiDimensions = []
+    let learningConcepts = []
     if (isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
       const rl = await rateLimit(supabase, `reflect-ai:${userId}`, 6, 3600)
       if (rl.allowed) {
-        aiDimensions = await analyzeDimensions(body, pDim)
+        const analysis = await analyzeDimensions(
+          body, pDim, preliminaryMatches.slice(0, 20).map((match) => match.displayName),
+        )
+        aiDimensions = analysis.dimensions
+        learningConcepts = analysis.visualConcepts
       }
     }
 
@@ -274,8 +302,7 @@ export async function POST(request) {
         // prompt/items: exactly the validated picks.
         let matches
         if (mode === 'typing') {
-          const removed = new Set(Array.isArray(removedItemIds) ? removedItemIds.filter((x) => typeof x === 'string') : [])
-          matches = matchItems(body, DICT).filter((m) => !removed.has(m.itemId))
+          matches = preliminaryMatches
           // Pre-submit edit sheet: a user-typed note replaces the engine label.
           if (itemNotes && typeof itemNotes === 'object') {
             matches = matches.map((m) => {
@@ -329,6 +356,14 @@ export async function POST(request) {
         }
       } catch (itemErr) {
         console.warn('[reflect] item matching failed (non-fatal):', itemErr && itemErr.message)
+      }
+    }
+
+    if (reflectId && learningConcepts.length > 0) {
+      try {
+        await recordItemLearningConcepts(supabase, learningConcepts, DICT, matchedItems)
+      } catch (learningErr) {
+        console.warn('[reflect] item learning failed (non-fatal):', learningErr && learningErr.message)
       }
     }
 

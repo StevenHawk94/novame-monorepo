@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
+import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { fetchBags, getCachedBags, sharedBoxToCollectedItems, type CollectedItem } from '@/lib/bags-api';
 import {
   fetchPairing,
-  fetchSharedBox,
+  fetchSharedBoxWithMeta,
   getCachedPairing,
+  markSharedBoxRead,
   type PairingStatus,
 } from '@/lib/friends-api';
 import { ICONS } from '@/lib/icons';
@@ -43,6 +45,8 @@ export default function BagsScreen() {
   const [ourItems, setOurItems] = useState<CollectedItem[]>([]);
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [loaded, setLoaded] = useState(() => getCachedBags().length > 0);
+  const [oursUnread, setOursUnread] = useState(false);
+  const [oursReadThrough, setOursReadThrough] = useState(new Date(0).toISOString());
   const itemSheetRef = useRef<ItemSheetRef>(null);
 
   useFocusEffect(
@@ -56,14 +60,17 @@ export default function BagsScreen() {
         if (pair.paired && pair.partner) {
           const [theirs, shared] = await Promise.all([
             fetchBags('their'),
-            fetchSharedBox(pair.partner.userId),
+            fetchSharedBoxWithMeta(pair.partner.userId),
           ]);
           if (!active) return;
           setTheirItems(theirs);
-          setOurItems(sharedBoxToCollectedItems(shared));
+          setOurItems(sharedBoxToCollectedItems(shared.items));
+          setOursUnread(shared.hasUnreadFromPartner);
+          setOursReadThrough(shared.readThrough);
         } else {
           setTheirItems([]);
           setOurItems([]);
+          setOursUnread(false);
         }
         setLoaded(true);
       });
@@ -82,6 +89,14 @@ export default function BagsScreen() {
   useEffect(() => setVisibleCount(PAGE), [tab]);
   const paged = shown.slice(0, visibleCount);
   const partner = pairing?.paired ? pairing.partner : null;
+
+  useEffect(() => {
+    if (tab !== 'ours' || !partner || !oursUnread) return;
+    setOursUnread(false);
+    void markSharedBoxRead(partner.userId, oursReadThrough).then((ok) => {
+      if (!ok) setOursUnread(true);
+    });
+  }, [oursReadThrough, oursUnread, partner, tab]);
 
   function openSharedCreator() {
     if (!partner) return;
@@ -108,46 +123,51 @@ export default function BagsScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
-        <View style={styles.titleWrap}>
-          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
-            Memories{`\n`}Collection
-          </Text>
+      <GridBackground base="#F8DF91" line="#E9C76B" cell={22} lineWidth={1.4} />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
+          <View style={styles.titleWrap}>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              Memories Hub
+            </Text>
+          </View>
+
+          {tab === 'mine' ? (
+            <OffsetCard
+              color="#C96F2A"
+              offset={4}
+              radius={18}
+              onPress={() => router.push('/(main)/my-logs')}
+              cardStyle={styles.headerButton}
+            >
+              <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
+              <Text style={styles.headerButtonText}>My Logs</Text>
+            </OffsetCard>
+          ) : tab === 'their' ? (
+            <OffsetCard
+              color="#C96F2A"
+              offset={4}
+              radius={18}
+              onPress={() => router.push('/(main)/(tabs)/friends' as never)}
+              cardStyle={styles.headerButton}
+            >
+              <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
+              <Text style={styles.headerButtonText}>Their Logs</Text>
+            </OffsetCard>
+          ) : tab === 'ours' && partner ? (
+            <OffsetCard
+              color="#C96F2A"
+              offset={4}
+              radius={18}
+              onPress={openSharedCreator}
+              cardStyle={styles.headerButton}
+            >
+              <Text style={styles.plus}>＋</Text>
+              <Text style={styles.headerButtonText}>Create New</Text>
+            </OffsetCard>
+          ) : null}
         </View>
-
-        {tab === 'mine' ? (
-          <OffsetCard
-            color="#C96F2A"
-            offset={4}
-            radius={18}
-            onPress={() => router.push('/(main)/my-logs')}
-            cardStyle={styles.headerButton}
-          >
-            <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
-            <Text style={styles.headerButtonText}>My Logs</Text>
-          </OffsetCard>
-        ) : tab === 'ours' && partner ? (
-          <OffsetCard
-            color="#C96F2A"
-            offset={4}
-            radius={18}
-            onPress={openSharedCreator}
-            cardStyle={styles.headerButton}
-          >
-            <Text style={styles.plus}>＋</Text>
-            <Text style={styles.headerButtonText}>Create New</Text>
-          </OffsetCard>
-        ) : null}
-      </View>
-
-      <Text style={styles.collectionNote} numberOfLines={2}>
-        {tab === 'mine'
-          ? 'Memory items from your reflections'
-          : tab === 'their'
-            ? partner ? `${partner.displayName}’s memory items` : 'Your person’s memory items'
-            : 'Memory items you created together'}
-      </Text>
 
       <View style={styles.tabStrip}>
         {COLLECTION_TABS.map((entry) => {
@@ -158,7 +178,10 @@ export default function BagsScreen() {
               onPress={() => setTab(entry.key)}
               style={[styles.tab, active && styles.tabActive]}
             >
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{entry.label}</Text>
+              <View>
+                <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{entry.label}</Text>
+                {entry.key === 'ours' && oursUnread ? <View style={styles.unreadDot} /> : null}
+              </View>
             </Pressable>
           );
         })}
@@ -198,7 +221,7 @@ export default function BagsScreen() {
               style={[styles.cell, { width: cellWidth }]}
             >
               <View style={styles.itemCard}>
-                <ItemSprite itemId={item.itemId} size={tileSize} radius={18} />
+                <ItemSprite itemId={item.itemId} size={tileSize} radius={18} tileColor="transparent" />
                 {item.count > 1 ? (
                   <View style={styles.countBadge}>
                     <Text style={styles.countBadgeText}>x{item.count > 99 ? '99+' : item.count}</Text>
@@ -210,14 +233,16 @@ export default function BagsScreen() {
         />
       )}
 
-      <ItemSheet ref={itemSheetRef} items={shown} />
+        <ItemSheet ref={itemSheetRef} items={shown} />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FEF5F1', paddingHorizontal: 16 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingTop: 10, paddingBottom: 2 },
+  root: { flex: 1, backgroundColor: '#F8DF91' },
+  content: { flex: 1, paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 10 },
   headerIcon: { width: 56, height: 56 },
   titleWrap: { flex: 1 },
   title: { fontSize: 27, lineHeight: 33, fontFamily: 'Inter_800ExtraBold', color: '#4A2E17' },
@@ -228,9 +253,9 @@ const styles = StyleSheet.create({
   headerButtonIcon: { width: 24, height: 24 },
   headerButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
   plus: { color: '#FFFFFF', fontSize: 22, lineHeight: 22, fontFamily: 'Inter_700Bold' },
-  collectionNote: {
-    minHeight: 22, fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#2E2418',
-    marginTop: 8, marginBottom: 16, paddingHorizontal: 2,
+  unreadDot: {
+    position: 'absolute', right: -10, top: -4, width: 9, height: 9,
+    borderRadius: 5, backgroundColor: '#E53935',
   },
   tabStrip: {
     flexDirection: 'row', alignItems: 'center', padding: 7,
@@ -244,7 +269,7 @@ const styles = StyleSheet.create({
   gridScroll: { paddingBottom: 24 },
   cell: { alignItems: 'center', marginBottom: 10, paddingHorizontal: 3 },
   itemCard: {
-    width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: '#F4F1F8',
+    width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: 'rgba(76,51,27,0.10)',
     alignItems: 'center', justifyContent: 'center',
   },
   countBadge: {

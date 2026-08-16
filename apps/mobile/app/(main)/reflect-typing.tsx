@@ -17,7 +17,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
-import { ITEM_DICTIONARY, matchItems } from '@novame/engine';
+import { matchItems } from '@novame/engine';
 
 import {
   getReflectStateToday,
@@ -31,6 +31,7 @@ import { fetchBags } from '../../src/lib/bags-api';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
+import { mergedItemDictionary } from '../../src/lib/remote-items';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import {
@@ -103,7 +104,7 @@ export default function ReflectTypingScreen() {
   // Live match while typing: debounce 250ms, run the shared engine locally.
   useEffect(() => {
     const t = setTimeout(() => {
-      const matches = matchItems(body, ITEM_DICTIONARY);
+      const matches = matchItems(body, mergedItemDictionary());
       setLiveMatched(matches.map((m) => ({ itemId: m.itemId, displayName: m.displayName })));
     }, 250);
     return () => clearTimeout(t);

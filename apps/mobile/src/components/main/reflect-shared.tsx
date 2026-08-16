@@ -33,6 +33,7 @@ import { SpringPop } from '@/components/ui/spring-pop';
 import { FireworksBurst } from '@/components/ui/fireworks-burst';
 import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { itemDisplayName } from '@/lib/remote-items';
 
 export const RC = {
   yellow: '#F9C939',
@@ -124,7 +125,7 @@ export function SelectableItemGrid({
   const handleToggle = useCallback(
     (id: string) => {
       onToggle(id);
-      const name = ITEM_DICTIONARY.items[id]?.displayName;
+      const name = itemDisplayName(id);
       if (name) {
         setToast(name);
         if (toastTimer.current) clearTimeout(toastTimer.current);

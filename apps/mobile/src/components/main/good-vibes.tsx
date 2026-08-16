@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AppState,
   Modal,
@@ -27,9 +27,10 @@ type PickerProps = {
   visible: boolean;
   onClose: () => void;
   onSent?: () => void;
+  replyToId?: string;
 };
 
-export function GoodVibesPicker({ visible, onClose, onSent }: PickerProps) {
+export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -40,7 +41,7 @@ export function GoodVibesPicker({ visible, onClose, onSent }: PickerProps) {
   async function submit() {
     if (selected === null || sending) return;
     setSending(true);
-    const result = await sendGoodVibe(selected);
+    const result = await sendGoodVibe(selected, replyToId);
     setSending(false);
     if (result.ok) {
       void haptics.success();
@@ -106,16 +107,22 @@ export function GoodVibesPicker({ visible, onClose, onSent }: PickerProps) {
 /** Global receiver: checks at launch, foreground, and once a minute in-app. */
 export function GoodVibesInboxGate() {
   const [vibe, setVibe] = useState<GoodVibeInboxItem | null>(null);
-  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const checkingRef = useRef(false);
 
   const check = useCallback(async () => {
-    if (vibe || replyOpen) return;
-    const incoming = await fetchUnreadGoodVibe();
-    if (!incoming) return;
-    // Mark on delivery so reconnects do not repeatedly interrupt the user.
-    await markGoodVibeRead(incoming.id);
-    setVibe(incoming);
-  }, [replyOpen, vibe]);
+    // Never consume a message while iOS has the app backgrounded. Timers can
+    // briefly keep running during a state transition, but a Modal cannot be
+    // relied on to become visible there.
+    if (AppState.currentState !== 'active' || vibe || replyToId || checkingRef.current) return;
+    checkingRef.current = true;
+    try {
+      const incoming = await fetchUnreadGoodVibe();
+      if (incoming) setVibe(incoming);
+    } finally {
+      checkingRef.current = false;
+    }
+  }, [replyToId, vibe]);
 
   useEffect(() => {
     void check();
@@ -129,17 +136,35 @@ export function GoodVibesInboxGate() {
     };
   }, [check]);
 
-  function reply() {
+  function acknowledge(delivered: GoodVibeInboxItem | null) {
+    if (!delivered) return;
+    // Keep the fetch gate closed until read_at is persisted. Clearing the
+    // Modal state causes this effect to run again immediately, otherwise the
+    // same still-unread row can flash a second time during that short window.
+    checkingRef.current = true;
+    void markGoodVibeRead(delivered.id).finally(() => {
+      checkingRef.current = false;
+    });
+  }
+
+  function dismiss() {
+    const delivered = vibe;
+    acknowledge(delivered);
     setVibe(null);
-    setReplyOpen(true);
+  }
+
+  function reply() {
+    const delivered = vibe;
+    setVibe(null);
+    if (delivered?.canReply) setReplyToId(delivered.id);
   }
 
   return (
     <>
-      <Modal visible={!!vibe} transparent animationType="fade" onRequestClose={() => setVibe(null)}>
+      <Modal visible={!!vibe} transparent animationType="fade" onRequestClose={dismiss}>
         <View style={styles.backdrop}>
           <View style={styles.inboxCard}>
-            <Pressable onPress={() => setVibe(null)} hitSlop={12} style={styles.inboxClose}>
+            <Pressable onPress={dismiss} hitSlop={12} style={styles.inboxClose}>
               <MaterialIcons name="close" size={24} color="#FFF8E9" />
             </Pressable>
             {vibe && (
@@ -162,15 +187,28 @@ export function GoodVibesInboxGate() {
                     accessibilityLabel={vibe.message}
                   />
                 </View>
-                <Pressable onPress={reply} style={styles.replyButton}>
-                  <Text style={styles.replyText}>Reply</Text>
-                </Pressable>
+                {vibe.canReply && (
+                  <Pressable onPress={reply} style={styles.replyButton}>
+                    <Text style={styles.replyText}>Reply</Text>
+                  </Pressable>
+                )}
               </>
             )}
           </View>
         </View>
       </Modal>
-      <GoodVibesPicker visible={replyOpen} onClose={() => setReplyOpen(false)} />
+      <GoodVibesPicker
+        visible={!!replyToId}
+        replyToId={replyToId ?? undefined}
+        onClose={() => setReplyToId(null)}
+        onSent={() => {
+          if (replyToId) {
+            checkingRef.current = true;
+            void markGoodVibeRead(replyToId).finally(() => { checkingRef.current = false; });
+          }
+          setReplyToId(null);
+        }}
+      />
     </>
   );
 }

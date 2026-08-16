@@ -237,7 +237,7 @@ export default function FriendsScreen() {
                       {/* Every item, wrapping — no truncation (mock 2026-08-08). */}
                       <View style={styles.pairCardTiles}>
                         {e.itemIds.map((id, i) => (
-                          <ItemSprite key={`${id}:${i}`} itemId={id} size={pairTile} radius={12} />
+                          <ItemSprite key={`${id}:${i}`} itemId={id} size={pairTile} radius={12} tileColor="transparent" />
                         ))}
                       </View>
                     </Pressable>

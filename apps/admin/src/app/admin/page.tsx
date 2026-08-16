@@ -9,6 +9,7 @@ import ScenesTab from './_components/ScenesTab';
 import OrdersTab from './_components/OrdersTab';
 import PricingTab from './_components/PricingTab';
 import AnalysisTab from './_components/AnalysisTab';
+import ItemsTab from './_components/ItemsTab';
 
 type TabId =
   | 'overview'
@@ -19,6 +20,7 @@ type TabId =
   | 'pricing'
   | 'outfits'
   | 'scenes'
+  | 'items'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -29,6 +31,7 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'pricing', icon: '💰', label: 'Pricing' },
   { id: 'outfits', icon: '👕', label: 'Outfits' },
   { id: 'scenes', icon: '🗺️', label: 'Scenes' },
+  { id: 'items', icon: '🎒', label: 'Memory Items' },
 ];
 
 /**
@@ -71,6 +74,7 @@ export default function AdminDashboard() {
       {tab === 'pricing' && <PricingTab />}
       {tab === 'outfits' && <OutfitsTab />}
       {tab === 'scenes' && <ScenesTab />}
+      {tab === 'items' && <ItemsTab />}
     </>
   );
 }

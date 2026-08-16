@@ -314,6 +314,8 @@ export interface GoodVibeInboxItem {
   messageIndex: number;
   message: string;
   createdAt: string;
+  messageType: 'initial' | 'reply';
+  canReply: boolean;
 }
 
 export async function fetchUnreadGoodVibe(): Promise<GoodVibeInboxItem | null> {
@@ -322,19 +324,19 @@ export async function fetchUnreadGoodVibe(): Promise<GoodVibeInboxItem | null> {
   if (!userId) return null;
   try {
     const result = await apiClient.get<{ success?: boolean; vibe?: GoodVibeInboxItem | null }>(
-      `/api/friends/good-vibes?userId=${encodeURIComponent(userId)}`,
+      `/api/friends/good-vibes?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
     );
     return result.vibe ?? null;
   } catch { return null; }
 }
 
-export async function sendGoodVibe(messageIndex: number): Promise<{ ok: boolean; error?: string }> {
+export async function sendGoodVibe(messageIndex: number, replyToId?: string): Promise<{ ok: boolean; error?: string }> {
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user?.id;
   if (!userId) return { ok: false, error: 'network' };
   try {
     await apiClient.post('/api/friends/good-vibes', {
-      userId, messageIndex, localDate: localDateStr(),
+      userId, messageIndex, localDate: localDateStr(), replyToId,
     });
     return { ok: true };
   } catch (err) {
@@ -359,18 +361,30 @@ export interface SharedBoxItem {
   createdAt: string;
 }
 
+export interface SharedBoxResult {
+  items: SharedBoxItem[];
+  hasUnreadFromPartner: boolean;
+  readThrough: string;
+}
+
 /** The shared memory box with one friend. */
 export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxItem[]> {
+  return (await fetchSharedBoxWithMeta(friendUserId)).items;
+}
+
+export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<SharedBoxResult> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return [];
+  if (!userId) return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
   try {
     const data = await apiClient.get<{
       success?: boolean;
+      hasUnreadFromPartner?: boolean;
+      readThrough?: string;
       items?: { id: string; author_user_id: string; item_id: string; description: string; source: 'manual' | 'reflect'; created_at: string }[];
     }>(`/api/friends/box?userId=${encodeURIComponent(userId)}&friendUserId=${encodeURIComponent(friendUserId)}`);
-    if (!data.success || !data.items) return [];
-    return data.items.map((r) => ({
+    if (!data.success || !data.items) return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
+    return { items: data.items.map((r) => ({
       id: r.id,
       authorUserId: r.author_user_id,
       itemId: r.item_id,
@@ -378,10 +392,22 @@ export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxIte
       description: r.description,
       source: r.source,
       createdAt: r.created_at,
-    }));
+    })), hasUnreadFromPartner: !!data.hasUnreadFromPartner, readThrough: data.readThrough || new Date(0).toISOString() };
   } catch {
-    return [];
+    return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
   }
+}
+
+export async function markSharedBoxRead(friendUserId: string, readThrough: string): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return false;
+  try {
+    const data = await apiClient.post<{ success?: boolean }>('/api/friends/box', {
+      userId, friendUserId, action: 'read', readThrough,
+    });
+    return !!data.success;
+  } catch { return false; }
 }
 
 /** Create-flow: free text → rule-matched items land in the pair's box. */

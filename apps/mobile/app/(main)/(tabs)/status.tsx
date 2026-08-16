@@ -201,9 +201,11 @@ export default function ConnectionDashboardScreen() {
           </ScrollView>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
-          {/* 板块2: the relationship */}
-          <View style={st.relCard}>
+        <View style={{ flex: 1 }}>
+          <GridBackground />
+          <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
+            {/* 板块2: the relationship */}
+            <View style={st.relCard}>
             <View style={st.relSide}>
               <UserAvatar userId={myUserId} avatarUrl={myAvatarUrl} isDefaultAvatar={myIsDefaultAvatar} size={56} />
               <Text style={st.relName} numberOfLines={1}>{myName}</Text>
@@ -294,8 +296,9 @@ export default function ConnectionDashboardScreen() {
               </Text>
             </View>
           )}
-          <View style={{ height: 24 }} />
-        </ScrollView>
+            <View style={{ height: 24 }} />
+          </ScrollView>
+        </View>
       )}
 
       {/* 板块3 detail: both sides' latest words for one item */}

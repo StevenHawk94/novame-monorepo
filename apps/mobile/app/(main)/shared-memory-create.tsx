@@ -16,7 +16,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ITEM_DICTIONARY, matchItems } from '@novame/engine';
+import { matchItems } from '@novame/engine';
 
 import { appAlert } from '@/components/ui/app-dialog';
 import { ItemSprite } from '@/components/ui/item-sprite';
@@ -24,6 +24,7 @@ import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { createSharedMemories } from '@/lib/friends-api';
 import { haptics } from '@/lib/haptics';
 import { FRIEND_ICONS } from '@/lib/icons';
+import { mergedItemDictionary } from '@/lib/remote-items';
 
 export default function SharedMemoryCreateScreen() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function SharedMemoryCreateScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLiveMatched(matchItems(text, ITEM_DICTIONARY).map((match) => ({ itemId: match.itemId })));
+      setLiveMatched(matchItems(text, mergedItemDictionary()).map((match) => ({ itemId: match.itemId })));
     }, 250);
     return () => clearTimeout(timer);
   }, [text]);

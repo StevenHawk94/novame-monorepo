@@ -15,6 +15,7 @@ import { storage } from './storage';
 
 export const GUIDED_MIN = 3;
 export const GUIDED_MAX = PROMPT_CATEGORIES.length; // all 12 selectable
+export const MAX_ITEMS_PER_REFLECT_CATEGORY = 8;
 
 export interface GuidedCategory {
   key: string;
@@ -48,6 +49,12 @@ const CONFIG: GuidedCategory[] = PROMPT_CATEGORIES.map((c) => ({
 
 const BY_KEY = new Map(CONFIG.map((c) => [c.key, c]));
 const ITEMS_BY_KEY = new Map(PROMPT_CATEGORIES.map((c) => [c.key, c.itemIds]));
+const CATEGORY_BY_ITEM = new Map<string, string>();
+for (const category of PROMPT_CATEGORIES) {
+  for (const id of category.itemIds) {
+    if (!CATEGORY_BY_ITEM.has(id)) CATEGORY_BY_ITEM.set(id, category.key);
+  }
+}
 
 /** The 12 prompt categories, in sheet order (= chooser + page order). */
 export function availableGuidedCategories(): GuidedCategory[] {
@@ -61,6 +68,16 @@ export function itemsForGuidedCategory(key: string): string[] {
   // after the bundled list (no release needed).
   const extra = remoteIdsForPromptCategory(key).filter((id) => !base.includes(id));
   return extra.length > 0 ? [...base, ...extra] : base;
+}
+
+/** Canonical Reflect category used by both manual-pick flows for the 8 cap. */
+export function reflectCategoryForItem(id: string): string | null {
+  const bundled = CATEGORY_BY_ITEM.get(id);
+  if (bundled) return bundled;
+  for (const category of CONFIG) {
+    if (remoteIdsForPromptCategory(category.key).includes(id)) return category.key;
+  }
+  return null;
 }
 
 /** The stored picks, filtered to categories that still exist (regen-safe). */
