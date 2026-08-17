@@ -4,7 +4,7 @@ import { patchAnalysisCache, readAnalysisCache } from './connection-analysis-cac
 import { ANALYSIS_WEEK_MS, shouldResumeAfterAbsence } from './analysis-refresh-policy';
 
 export type PatternRange = 7;
-export type PatternState = 'unpaired' | 'unavailable' | 'no_moments' | 'building_baseline' | 'ready';
+export type PatternState = 'unpaired' | 'unavailable' | 'no_moments' | 'building_baseline' | 'ready_to_generate' | 'ready';
 
 export interface PatternTheme {
   topic: string;
@@ -52,6 +52,21 @@ export interface TheirPatterns {
   currentEnd?: string;
   history?: PatternScorePeriod[];
   currentScores?: PatternScorePeriod | null;
+  newRecapAvailable?: boolean;
+  availablePeriod?: { startDate: string; endDate: string; evidenceCount: number } | null;
+}
+
+export async function generateTheirPatternsRecap(
+  period: { startDate: string; endDate: string },
+): Promise<TheirPatterns | null> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return null;
+  const result = await apiClient.post<TheirPatterns>('/api/friends/patterns/generate', {
+    userId, periodStart: period.startDate, periodEnd: period.endDate,
+  });
+  patchAnalysisCache({ patterns: result, patternsFetchedAt: Date.now() });
+  return result;
 }
 
 export function getCachedTheirPatterns(): TheirPatterns | null {
@@ -63,11 +78,15 @@ export function shouldRefreshTheirPatterns(): boolean {
   const cache = readAnalysisCache();
   if (!cache.patterns) return true;
   const fetchedAt = cache.patternsFetchedAt ?? 0;
+  // This GET performs no AI work. Check cheaply every six hours so a newly
+  // completed seven-day period can offer Generate Now without waiting another
+  // whole week, while still painting the cached recap immediately.
+  const shouldCheckAvailability = Date.now() - fetchedAt >= 6 * 60 * 60 * 1000;
+  if (!shouldCheckAvailability) return false;
   const hasFullNewWeek = Date.now() - fetchedAt >= ANALYSIS_WEEK_MS;
-  if (!hasFullNewWeek) return false;
   // The absence check documents the five-day resume path; both that path and
   // normal weekly cadence remain pull-based and can run only from this page.
-  return shouldResumeAfterAbsence(5, fetchedAt) || hasFullNewWeek;
+  return shouldResumeAfterAbsence(5, fetchedAt) || hasFullNewWeek || shouldCheckAvailability;
 }
 
 export async function fetchTheirPatterns(days: PatternRange = 7): Promise<TheirPatterns | null> {

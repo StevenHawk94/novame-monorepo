@@ -2,7 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/insights-rollup",
-      "schedule": "0 0 * * *"
+      "schedule": "5 * * * *"
+    },
+    {
+      "path": "/api/cron/item-learning",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

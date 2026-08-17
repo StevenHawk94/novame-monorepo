@@ -22,11 +22,6 @@ import { supabase } from './supabase';
 
 const DAILY_LIMIT = 3;
 
-export interface DimensionHit {
-  dimension: string;
-  gems: number;
-}
-
 /** The snapshot /api/reflect returns; the client renders it directly. */
 export interface MatchedItem {
   itemId: string;
@@ -38,7 +33,6 @@ export interface MatchedItem {
 export interface ReflectSnapshot {
   reflectId: string;
   xpAwarded: number;
-  dimensionHits: DimensionHit[];
   companionXp: number;
   reflectsToday: number;
   reflectsRemaining: number;
@@ -117,7 +111,6 @@ interface WireSnapshot {
   error?: string;
   reflect_id?: string;
   xp_awarded?: number;
-  dimension_hits?: DimensionHit[];
   companion_xp?: number;
   reflects_today?: number;
   reflects_remaining?: number;
@@ -130,7 +123,6 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
   return {
     reflectId: w.reflect_id ?? '',
     xpAwarded: w.xp_awarded ?? 0,
-    dimensionHits: w.dimension_hits ?? [],
     companionXp: w.companion_xp ?? 0,
     reflectsToday: w.reflects_today ?? 0,
     reflectsRemaining: w.reflects_remaining ?? 0,
@@ -148,8 +140,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
 export async function submitReflect(params: {
   promptId: number;
   body: string;
-  /** New Lens routes here with the theme's dimension + a source tag. */
-  presetDimension?: string;
+  /** New Lens routes here with a source tag. */
   sourceKit?: 'new_lens';
   /**
    * Co-creation / 共享回忆开关: matched items also land in the shared memory
@@ -193,7 +184,6 @@ export async function submitReflect(params: {
       promptId: params.promptId,
       body,
       localDate: today,
-      presetDimension: params.presetDimension,
       sourceKit: params.sourceKit,
       friendUserId: params.friendUserId,
       mode,

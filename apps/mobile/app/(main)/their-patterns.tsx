@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { ICONS } from '@/lib/icons';
 import { getCachedSubscriptionTier } from '@/lib/subscription';
 import {
   fetchTheirPatterns,
+  generateTheirPatternsRecap,
   getCachedTheirPatterns,
   shouldRefreshTheirPatterns,
   type PatternDimension,
@@ -89,6 +90,9 @@ function ScoreChart({ periods, dimension }: { periods: PatternScorePeriod[]; dim
 
 function LockedRecapPreview({ tab, onUnlock }: { tab: PageTab; onUnlock: () => void }) {
   const isWeek = tab === 'week';
+  const { width } = useWindowDimensions();
+  const imageWidth = Math.max(1, width - 32);
+  const imageHeight = imageWidth * (isWeek ? 1050 / 500 : 1300 / 500);
   return (
     <View style={styles.lockedPreview}>
       <ScrollView
@@ -97,7 +101,7 @@ function LockedRecapPreview({ tab, onUnlock }: { tab: PageTab; onUnlock: () => v
       >
         <Image
           source={isWeek ? LOCKED_WEEK_PREVIEW : LOCKED_TRENDS_PREVIEW}
-          style={[styles.lockedPreviewImage, { aspectRatio: isWeek ? 500 / 1050 : 500 / 1300 }]}
+          style={[styles.lockedPreviewImage, { width: imageWidth, height: imageHeight }]}
           resizeMode="contain"
         />
       </ScrollView>
@@ -121,7 +125,9 @@ export default function TheirPatternsScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
   const refreshInFlight = useRef(false);
+  const promptedPeriod = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isPaid) {
@@ -143,6 +149,28 @@ export default function TheirPatternsScreen() {
     setIsPaid(getCachedSubscriptionTier() !== 'free');
     void load();
   }, [load]));
+
+  useFocusEffect(useCallback(() => {
+    const period = data?.availablePeriod;
+    if (!isPaid || !data?.newRecapAvailable || !period || generating) return;
+    const key = `${period.startDate}:${period.endDate}`;
+    if (promptedPeriod.current === key) return;
+    promptedPeriod.current = key;
+    Alert.alert(
+      'New Recap Available',
+      `${periodLabel(period)} is ready to turn into a Weekly Recap. Generate it now?`,
+      [
+        { text: 'Not Now', style: 'cancel' },
+        { text: 'Generate Now', onPress: () => {
+          setGenerating(true);
+          void generateTheirPatternsRecap(period)
+            .then((next) => { if (next) setData(next); })
+            .catch(() => Alert.alert('Couldn’t generate recap', 'Please try again in a moment.'))
+            .finally(() => setGenerating(false));
+        } },
+      ],
+    );
+  }, [data, generating, isPaid]));
 
   const openPaywall = useCallback(() => {
     void haptics.light();
@@ -171,7 +199,7 @@ export default function TheirPatternsScreen() {
       : "There aren't enough moments to show a pattern yet.";
   const showEmptyState = !data || data.state === 'unpaired' || data.state === 'unavailable';
   const history = data?.history ?? [];
-  const trendPeriods = data?.currentScores ? [...history, data.currentScores] : history;
+  const trendPeriods = history;
 
   return (
     <View style={styles.root}>
@@ -203,7 +231,7 @@ export default function TheirPatternsScreen() {
 
       <SafeAreaView style={styles.content} edges={['bottom']}>
         <View style={styles.tabStrip}>
-          {([['week', 'This Week'], ['trends', 'Score Trends']] as const).map(([key, label]) => (
+          {([['week', 'Latest'], ['trends', 'Score Trends']] as const).map(([key, label]) => (
             <Pressable
               key={key}
               onPress={() => { void haptics.light(); setTab(key); }}
@@ -282,13 +310,13 @@ export default function TheirPatternsScreen() {
                 </Pressable>
               );
             })}
-            <Text style={styles.privacyNote}>Only moments they’ve chosen to share can shape these patterns.</Text>
+            <Text style={styles.privacyNote}>Built from their eligible reflections while protecting private details.</Text>
           </ScrollView>
         ) : data ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
             <View style={styles.trendIntro}>
               <Text style={styles.trendIntroTitle}>How their patterns change</Text>
-              <Text style={styles.trendIntroText}>Weekly scores range from 1 to 5 and only use moments they chose to share.</Text>
+              <Text style={styles.trendIntroText}>Weekly scores range from 1 to 5 and use completed recap periods.</Text>
             </View>
             {data.dimensions.map((dimension) => (
               <View key={dimension.key} style={styles.chartCard}>
@@ -308,12 +336,12 @@ export default function TheirPatternsScreen() {
         <View style={styles.modalBackdrop}>
           <SafeAreaView style={styles.historySheet} edges={['bottom']}>
             <View style={styles.historyHeader}>
-              <View><Text style={styles.historyTitle}>Pattern History</Text><Text style={styles.historySubtitle}>Completed weeks with visible records</Text></View>
+              <View><Text style={styles.historyTitle}>Recap History</Text><Text style={styles.historySubtitle}>Weekly Recaps you generated</Text></View>
               <Pressable onPress={() => setHistoryOpen(false)} style={styles.modalClose}><MaterialIcons name="close" size={23} color="#FFFFFF" /></Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.historyList}>
               {history.length === 0 ? (
-                <View style={styles.historyEmpty}><Text style={styles.emptyEmoji}>📅</Text><Text style={styles.emptyTitle}>No weekly history yet</Text><Text style={styles.emptyText}>A week appears here only when it contains shared moments.</Text></View>
+                <View style={styles.historyEmpty}><Text style={styles.emptyEmoji}>📅</Text><Text style={styles.emptyTitle}>No recap history yet</Text><Text style={styles.emptyText}>Generated Weekly Recaps will appear here by date.</Text></View>
               ) : [...history].reverse().map((period) => {
                 const key = `${period.startDate}:${period.endDate}`;
                 const open = historyExpanded === key;
@@ -331,12 +359,25 @@ export default function TheirPatternsScreen() {
           </SafeAreaView>
         </View>
       </Modal>
+      <Modal visible={generating} transparent animationType="fade">
+        <View style={styles.generatingBackdrop}>
+          <View style={styles.generatingCard}>
+            <ActivityIndicator size="large" color="#7A4A3A" />
+            <Text style={styles.generatingTitle}>Creating your Weekly Recap…</Text>
+            <Text style={styles.generatingText}>This usually takes about 10–15 seconds.</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#7A4A3A' },
+  generatingBackdrop: { flex: 1, backgroundColor: 'rgba(44,27,18,0.55)', alignItems: 'center', justifyContent: 'center', padding: 28 },
+  generatingCard: { width: '100%', maxWidth: 340, borderRadius: 24, backgroundColor: '#FFF9F0', padding: 28, alignItems: 'center' },
+  generatingTitle: { marginTop: 18, fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#4C331B', textAlign: 'center' },
+  generatingText: { marginTop: 8, fontSize: 13, fontFamily: 'Inter_500Medium', color: '#806853', textAlign: 'center' },
   headerSafe: { backgroundColor: '#7A4A3A' },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A4A3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   headerButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
@@ -347,8 +388,8 @@ const styles = StyleSheet.create({
   subtitle: { color: 'rgba(255,255,255,0.84)', fontSize: 12.5, fontFamily: 'Inter_500Medium', marginTop: 2 },
   content: { flex: 1, backgroundColor: '#FDF1E8' },
   lockedPreview: { flex: 1, position: 'relative', overflow: 'hidden' },
-  lockedPreviewScroll: { paddingHorizontal: 16, paddingBottom: 32 },
-  lockedPreviewImage: { width: '100%' },
+  lockedPreviewScroll: { alignItems: 'center', paddingBottom: 32 },
+  lockedPreviewImage: { alignSelf: 'center' },
   unlockOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   unlockButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,

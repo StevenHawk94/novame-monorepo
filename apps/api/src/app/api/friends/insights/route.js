@@ -6,133 +6,51 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'edge'
 
-
-/**
- * GET /api/friends/insights?userId=...&date=YYYY-MM-DD
- *
- * Connection Dashboard 板块4 (Plus 专属): daily AI guidance about the paired
- * partner — Emotion / Topic / Care Tips / Boundaries / Hangout Ideas.
- * One AI run per pair member per day, cached in connection_insights.
- *
- * Privacy: reads ONLY what the partner already shows this user — reflects
- * with the visibility toggle on; bodies only when the partner's global
- * details opt-in is on, otherwise item names alone.
- */
 export async function GET(request) {
   try {
-    const authHeader = request.headers.get('authorization') || ''
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-    const verified = await verifyToken(token)
+    const verified = await verifyToken((request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim())
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const reqDate = searchParams.get('date') || new Date().toISOString().slice(0, 10)
-    const userOpenedConnection = searchParams.get('intent') === 'view'
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(reqDate)) {
-      return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
-    }
-    // SECURITY (2026-08-07 audit): the daily cache is keyed on `date`; a client
-    // iterating past dates forced a fresh AI call each time. Clamp to
-    // today/yesterday so the once-per-day cache can't be walked.
-    const today = new Date().toISOString().slice(0, 10)
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-    const date = reqDate === today || reqDate === yesterday ? reqDate : today
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date') || '')
+      ? searchParams.get('date') : new Date().toISOString().slice(0, 10)
+    const intentView = searchParams.get('intent') === 'view'
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } })
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    )
+    const { data: me } = await supabase.from('profiles').select('subscription_tier, ai_consent_at').eq('id', userId).maybeSingle()
+    if ((me?.subscription_tier || 'free') === 'free') return NextResponse.json({ error: 'plus_required' }, { status: 403 })
+    if (!me?.ai_consent_at) return NextResponse.json({ error: 'consent_required' }, { status: 403 })
+    if (intentView) await supabase.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', userId)
 
-    // Plus gate (server-side; the client badge is cosmetic).
-    const { data: me } = await supabase
-      .from('profiles').select('subscription_tier, ai_consent_at').eq('id', userId).maybeSingle()
-    if ((me?.subscription_tier ?? 'free') === 'free') {
-      return NextResponse.json({ error: 'plus_required' }, { status: 403 })
-    }
-    if (!me?.ai_consent_at) {
-      return NextResponse.json({ error: 'consent_required' }, { status: 403 })
-    }
-
-    const { data: pairing } = await supabase
-      .from('pairings')
-      .select('partner_user_id')
-      .eq('user_id', userId)
-      .maybeSingle()
+    const { data: pairing } = await supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
     if (!pairing) return NextResponse.json({ success: true, paired: false, insights: null })
     const partnerId = pairing.partner_user_id
     const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
-    const { data: partnerProfile } = await supabase.from('profiles')
-      .select('share_memory_details, memory_details_mode').eq('id', partnerId).maybeSingle()
-    const detailMode = partnerProfile?.memory_details_mode
-      || (partnerProfile?.share_memory_details === false ? 'none' : 'custom')
-    if (detailMode === 'none') {
-      return NextResponse.json({ success: true, paired: true, insights: null, reason: 'unavailable' })
-    }
+    const { data: partner } = await supabase.from('profiles').select('share_memory_details, memory_details_mode').eq('id', partnerId).maybeSingle()
+    const mode = partner?.memory_details_mode || (partner?.share_memory_details === false ? 'none' : 'custom')
+    if (mode === 'none') return NextResponse.json({ success: true, paired: true, insights: null, reason: 'unavailable' })
 
-    // Daily cache first. Update cadence (2026-08-09 spec): the Writer's FIRST
-    // shared entry of the day triggers one refresh; later same-day entries
-    // wait for tomorrow's consolidated run (LOOKBACK covers them). Hard cap:
-    // 2 generations per pair member per day.
-    const { data: cached } = await supabase
-      .from('connection_insights')
-      .select('payload, created_at')
-      .eq('user_a', ua).eq('user_b', ub).eq('for_date', date).eq('for_user', userId)
-      .maybeSingle()
-    if (cached) {
-      let firstTodayQuery = supabase
-        .from('reflects')
-        .select('created_at')
-        .eq('user_id', partnerId)
-        .eq('local_date', date)
-      if (detailMode === 'custom') firstTodayQuery = firstTodayQuery.eq('shared_to_friends', true)
-      const { data: firstToday } = await firstTodayQuery
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle()
-      const staleAgainstFirstEntry =
-        firstToday && new Date(firstToday.created_at) > new Date(cached.created_at)
-      if (!staleAgainstFirstEntry) {
-        return NextResponse.json({ success: true, paired: true, insights: cached.payload, cached: true })
-      }
-      // fall through to regenerate (run 2) — the daily cap below still applies
-    }
+    const { data: cached } = await supabase.from('connection_insights').select('payload, for_date, created_at')
+      .eq('user_a', ua).eq('user_b', ub).eq('for_user', userId)
+      .order('for_date', { ascending: false }).limit(1).maybeSingle()
+    const { data: inactive } = await supabase.from('reflect_ai_analyses').select('reflect_id')
+      .eq('user_id', partnerId).eq('connection_mode', 'inactive')
+      .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()).limit(1).maybeSingle()
 
-    // Token guard: background warm-ups and older clients may still call this
-    // route, but only an explicit Connection-page view may generate. They can
-    // read an existing daily cache without causing a model request.
-    if (!userOpenedConnection) {
-      return NextResponse.json({
-        success: true, paired: true,
-        insights: cached ? cached.payload : null,
-        cached: true, paused: true,
-      })
+    if (!intentView || !inactive) {
+      return NextResponse.json({ success: true, paired: true, insights: cached?.payload || null, cached: true })
     }
-
-    // Generation cap: 2 runs per pair member per local day.
-    const genGate = await rateLimit(supabase, `insights-gen:${ua}:${ub}:${userId}`, 2, 86400)
-    if (!genGate.allowed) {
-      return NextResponse.json({
-        success: true, paired: true,
-        insights: cached ? cached.payload : null,
-        cached: true,
-      })
-    }
-
+    const gate = await rateLimit(supabase, `insights-catchup:${ua}:${ub}:${userId}`, 1, 86400)
+    if (!gate.allowed) return NextResponse.json({ success: true, paired: true, insights: cached?.payload || null, cached: true })
     const result = await generateBrief(supabase, {
-      ua, ub, forUser: userId, partnerId, date,
-      cachedPayload: cached ? cached.payload : null,
+      ua, ub, forUser: userId, partnerId, date, cachedPayload: cached?.payload || null, markCaughtUp: true,
     })
-    if (!result.ok) {
-      if (result.reason === 'no_input') {
-        return NextResponse.json({ success: true, paired: true, insights: null, reason: 'no_input' })
-      }
-      return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
-    }
+    if (!result.ok) return NextResponse.json({ success: true, paired: true, insights: cached?.payload || null, cached: true })
     return NextResponse.json({ success: true, paired: true, insights: result.insights, cached: false })
   } catch (err) {
-    console.error('[friends/insights] unexpected:', err && err.message)
+    console.error('[friends/insights] unexpected:', err?.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

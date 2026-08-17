@@ -44,6 +44,7 @@ import { ErrorBoundary } from '@/components/main/error-boundary';
 import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
+import { touchActivity } from '@/lib/activity';
 import {
   assertAllKeysRegistered,
   purgeLegacyKeys,
@@ -316,6 +317,7 @@ function RootLayout() {
     const handleAppStateChange = (state: AppStateStatus) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
+        void touchActivity();
         // Gap A (Stage 6 Wisdom Insight series): when the app
         // returns from background after 30+ minutes, every cache
         // the user pulled before backgrounding is potentially

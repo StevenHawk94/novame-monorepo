@@ -26,7 +26,6 @@ export default function ReflectEntryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
     presetPrompt?: string;
-    presetDimension?: string;
     sourceKit?: string;
   }>();
   const hasPreset = typeof params.presetPrompt === 'string' && params.presetPrompt.length > 0;

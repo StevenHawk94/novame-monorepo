@@ -1,131 +1,22 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
-import { rateLimit } from '@/lib/rate-limit'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
-import { promptDimension, DIMENSION_IDS } from '@novame/domain'
-import { gemsForReflect, GEMS_PER_DIMENSION, matchItems, ITEM_DICTIONARY, XP_RULES } from '@novame/engine'
+import { matchItems, XP_RULES } from '@novame/engine'
 import { callAI, parseAIJson } from '@/lib/ai'
-import { recordItemLearningConcepts } from '@/lib/item-learning'
+import {
+  REFLECT_ANALYZER_VERSION,
+  REFLECT_COPY_VERSION,
+  runReflectAnalyzer,
+  runReflectCopy,
+} from '@/lib/reflect-ai'
+import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from '@/lib/reflect-analysis-store'
+import { recordAIUsage } from '@/lib/ai-usage'
 
 export const runtime = 'edge'
 
 const MAX_BODY_CHARS = 5000
 const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
-
-const DIMENSION_SYSTEM_PROMPT = `You classify a personal journal entry into growth dimensions.
-
-The eight dimensions (topics, not emotions):
-- expression: speaking up, sharing something usually kept private
-- awareness: noticing a pattern, self-insight, understanding why
-- momentum: starting, doing, taking action, follow-through
-- direction: clarity on what one wants, goals, what matters
-- steadiness: handling a setback, staying grounded through difficulty
-- confidence: trusting oneself, acting despite uncertainty
-- gratitude: appreciating a moment, contentment
-- connection: another person, empathy, relationships
-
-Also extract up to 3 concrete, visually drawable things or activities that are clearly present in the entry but are NOT represented by the supplied matched icon names. Use a short canonical noun phrase, never sensitive interpretation, emotion, diagnosis, person name, or private narrative.
-
-Return ONLY JSON: {"dimensions":["awareness"],"visualConcepts":["ceramic class"]}. dimensions has 0-2 ids; visualConcepts has 0-3 short phrases. No prose or markdown.`
-
-/**
- * AI dimension analysis (paid only). Returns up to two dimension ids from the
- * body, excluding the one the prompt already credits so the two AI slots add
- * breadth rather than repeat. Any failure -- model down, bad JSON -- degrades
- * to [], leaving the user with just the prompt dimension. The economy never
- * blocks on the AI.
- */
-async function analyzeDimensions(body, excludeDim, matchedIconNames) {
-  try {
-    const res = await callAI({
-      systemInstruction: DIMENSION_SYSTEM_PROMPT,
-      userText: `Matched icon names (do not suggest these again):\n${matchedIconNames.join(', ') || '(none)'}\n\nJournal:\n${body}`,
-      // 256-token thinking budget (2026-08-09): enough to weigh an ambiguous
-      // entry between dimensions, while capping the reasoning spend.
-      generationConfig: {
-        temperature: 0.3, maxOutputTokens: 500,
-        thinkingConfig: { thinkingBudget: 256 },
-      },
-    })
-    const parsed = parseAIJson(res.text)
-    if (!parsed || typeof parsed !== 'object') return { dimensions: [], visualConcepts: [] }
-    const dimensions = [...new Set((Array.isArray(parsed.dimensions) ? parsed.dimensions : [])
-      .filter((d) => DIMENSION_IDS.includes(d) && d !== excludeDim))].slice(0, 2)
-    const visualConcepts = [...new Set((Array.isArray(parsed.visualConcepts) ? parsed.visualConcepts : [])
-      .filter((value) => typeof value === 'string' && value.trim())
-      .map((value) => value.trim().slice(0, 80)))].slice(0, 3)
-    return { dimensions, visualConcepts }
-  } catch (err) {
-    console.warn('[reflect] dimension analysis failed, degrading to prompt-only:', err && err.message)
-    return { dimensions: [], visualConcepts: [] }
-  }
-}
-
-// Companion bubble: a short, warm one-liner the pet "says" on Home after a
-// reflection. First-draft placeholder prompt. Plain text (not JSON) -- one line.
-async function generateBubble(body) {
-  try {
-    const res = await callAI({
-      systemInstruction: BUBBLE_SYSTEM_PROMPT,
-      userText: body,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 200,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    })
-    const line = (res.text || '').trim().replace(/^["']|["']$/g, '')
-    if (!line || line.length > 200) return null
-    return line
-  } catch (err) {
-    console.warn('[reflect] bubble generation failed (non-fatal):', err && err.message)
-    return null
-  }
-}
-
-const BUBBLE_SYSTEM_PROMPT = `You are the user's companion pet in a personal-growth app. They just finished writing a reflection. Respond with ONE warm, short line, under 25 words, the way their companion would -- caring and specific to what they wrote, like a friend checking in. No preamble. Return ONLY the line: no quotes, no JSON, no markdown.`
-
-
-
-// Plus 回忆标题 (2026-08-09 final spec: Memory Items Title Generator).
-// One call titles every un-edited item at once; user-edited items are never
-// in the list. JSON only, keyed by item id.
-const REFINE_SYSTEM_PROMPT = `You label "memory objects" pulled from a diary entry. You get the diary text and a list of matched items (id: name). For each item, write one short title that folds in the most specific context the entry attaches to THAT item's mention -- as if labeling a keepsake from that day. Do not re-extract or invent items.
-
-Finding context -- scan around each item's mention for:
-- who it's connected to (present, made it, gave it, shared it)
-- what else was happening at the same time
-- a stated quality or sensory detail
-- an action, plan, or obligation tied to it
-- a cause or reason behind it
-- where/when, if that's the most distinctive detail
-- the entry's overall mood -- a legitimate choice when it fits (e.g. "The Fried Eggs on an Anxious Lunch"), but item-specific details take priority when they exist
-
-How much to include: rank the distinct details you find for that item by specificity and use the top 1-2. One real detail beats padding in a second; three or more means pick the best 2. A detail unique to that item (a person, a simultaneous action, an origin) always beats a generic one that fits the whole entry (overall mood). Two items may share the same context when that's all the entry gives.
-
-Short or sparse entries:
-- When the entry gives little item-specific detail, extend each title from the entry's overall emotional or situational context and the item's stated action or role. Make the title feel like a meaningful memory label instead of returning only "The <name>."
-- It is explicitly okay to reuse the same overall context across multiple item titles. Do not force artificial variety when one feeling or situation genuinely connects every item.
-- You may express a conservative relationship that is strongly supported by the wording, such as contrast ("despite feeling down"), persistence ("still exercised"), or a stated cause ("watched because I felt down"). Do not invent a person, place, event, motivation, sensory detail, or outcome that the entry does not support.
-
-Title rules:
-- No fixed template. Start with "The" + the item (or a natural reference like "Mom's ___"); let the grammar follow the content: adjective, "with ___", "while ___", "that ___", a clause about what happens next. A "mood + day" shape is welcome when the mood genuinely is the best context for that item -- just don't default to it when something more specific is available.
-- Use the entry's own wording where possible; light cleanup ok; never invent people, events, or opinions.
-- Roughly 6-15 words with one detail, up to 20 words with two. Accuracy and natural phrasing matter more than filling the maximum length.
-- Title Case; keep connectors (a, an, on, to, by, of, with, that, while) lowercase unless first.
-- If the entry says nothing about an item at all, "The <name>" plus the day's mood is a good fallback.
-
-Examples (not templates):
-Entry: "I felt unhappy today, but I ate dinner, exercised, and watched a movie."
--> dinner: "The Dinner I Still Ate on a Hard Day"
--> exercise: "The Exercise I Still Pushed Through While Feeling Down"
--> movie: "The Movie I Watched While Feeling Down"
-
-Entry: "Mom made me a sandwich before I watched a show."
--> sandwich: "Mom's Sandwich Before the Show"
-
-Return ONLY JSON: { "items": { "<itemId>": "<title>", ... } }, one entry per input item. No prose, no markdown, no reasoning.`
 
 // Plus cute story (流程2, PLACEHOLDER copy): a tiny warm story of the day
 // woven from the picked items, to share with the paired person.
@@ -152,11 +43,9 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, promptId (1-9), body (<=5000 chars), localDate (YYYY-MM-DD) }
  *
- * Computes XP and gem dimensions with the engine -- prompt dimension always,
- * plus AI analysis for paid+consented users -- then hands the numbers to the
- * submit_reflect RPC, which writes all five tables atomically under a lock and
- * returns a complete state snapshot. The client adopts that snapshot as-is;
- * this endpoint is the only place the numbers are decided (server authority).
+ * Computes XP, matches memory items, and produces the paid AI copy, then hands
+ * the submission to the submit_reflect RPC. Growth-dimension analysis and
+ * Reflect gem crediting are intentionally absent.
  */
 export async function POST(request) {
   try {
@@ -168,7 +57,7 @@ export async function POST(request) {
     }
 
     const {
-      userId, promptId, body: rawBody, localDate, presetDimension, sourceKit, friendUserId,
+      userId, promptId, body: rawBody, localDate, sourceKit, friendUserId,
       mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, wantStory,
     } = await request.json()
     if (verified.id !== userId) {
@@ -260,40 +149,8 @@ export async function POST(request) {
       }
     }
 
-    // A reflect routed in from New Lens carries an explicit dimension (the
-    // theme's) via presetDimension, overriding the prompt's own -- the user is
-    // on the free-form prompt (9) but the reflection belongs to that theme.
-    const pDim =
-      presetDimension && DIMENSION_IDS.includes(presetDimension)
-        ? presetDimension
-        : promptDimension(promptId)
     const dateStr = localDate || new Date().toISOString().slice(0, 10)
     const weekStr = isoWeek(dateStr)
-
-    // SECURITY (2026-08-07 audit): the paid Gemini call fires before the
-    // daily-gate RPC, so a rejected reflect still costs an AI call. Cap the
-    // AI-bearing path at 6/hour/user (double the 3/day product limit, enough
-    // headroom for retries) so a paid token can't loop it for unbounded spend.
-    let aiDimensions = []
-    let learningConcepts = []
-    if (isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
-      const rl = await rateLimit(supabase, `reflect-ai:${userId}`, 6, 3600)
-      if (rl.allowed) {
-        const analysis = await analyzeDimensions(
-          body, pDim, preliminaryMatches.slice(0, 20).map((match) => match.displayName),
-        )
-        aiDimensions = analysis.dimensions
-        learningConcepts = analysis.visualConcepts
-      }
-    }
-
-    const gems = gemsForReflect({
-      charCount: body.length,
-      promptDimension: pDim,
-      aiDimensions,
-      isPaid,
-    })
-    const dimensionHits = gems.credited.map((d) => ({ dimension: d, gems: GEMS_PER_DIMENSION }))
 
     // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,
     // so a successful submit is always one of the first three and pays 30.
@@ -304,7 +161,9 @@ export async function POST(request) {
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.reflect.award,
-      p_dimension_hits: dimensionHits,
+      // Growth Dimensions/Growth Gems were removed from Reflect. Keep the RPC
+      // argument for database compatibility until the RPC schema is revised.
+      p_dimension_hits: [],
       p_source_kit: sourceKit === 'new_lens' ? 'new_lens' : null,
       // Per-reflect top-right toggle (default visible); which entry made it.
       p_shared_to_friends: visibleToFriend !== false,
@@ -389,82 +248,139 @@ export async function POST(request) {
       }
     }
 
-    if (reflectId && learningConcepts.length > 0) {
-      try {
-        await recordItemLearningConcepts(supabase, learningConcepts, DICT, matchedItems)
-      } catch (learningErr) {
-        console.warn('[reflect] item learning failed (non-fatal):', learningErr && learningErr.message)
-      }
-    }
-
-    // Plus 回忆精炼 / cute story (2026-07-24). One AI call covers every item
-    // the user did NOT describe themselves -- AI never touches an edited
-    // item. Story only on the guided flow's Plus button. Best-effort.
+    // Plus AI pipeline. Typing reflections run exactly two calls in parallel:
+    // reusable analysis + private titles/bunny copy. The local admin dictionary
+    // comparison is queued by persistReflectAnalyzerResult and never blocks.
     let story = null
-    if (reflectId && isPaid && hasConsent && matchedItems.length > 0) {
-      try {
-        const noted = new Set()
-        if (mode === 'typing' && itemNotes && typeof itemNotes === 'object') {
-          for (const [k, v] of Object.entries(itemNotes)) {
-            if (typeof v === 'string' && v.trim()) noted.add(k)
-          }
-        } else if (mode !== 'typing' && Array.isArray(selectedItems)) {
-          for (const s of selectedItems) {
-            if (s && typeof s.note === 'string' && s.note.trim()) noted.add(s.itemId)
-          }
-        }
-        const targets = matchedItems.filter((m) => !noted.has(m.itemId))
-        const makeStory = wantStory === true && mode === 'prompt'
-        if (makeStory || (targets.length > 0 && body.length >= 10)) {
-          const names = matchedItems.map((m) => `${m.itemId}: ${m.displayName}`).join('\n')
-          const res = await callAI({
-            systemInstruction: makeStory ? STORY_SYSTEM_PROMPT : REFINE_SYSTEM_PROMPT,
-            userText: `Items:\n${names}\n\nJournal:\n${body || '(none)'}`,
-            // Structured short-copy task: thinking OFF (2026-08-09 cost pass)
-            // — output tokens drop ~4x with no quality loss on titles.
-            generationConfig: {
-              temperature: 0.6, maxOutputTokens: 2000,
-              thinkingConfig: { thinkingBudget: 0 },
-            },
-          })
-          const parsed = parseAIJson(res.text)
-          if (parsed && typeof parsed === 'object') {
-            if (makeStory && typeof parsed.story === 'string' && parsed.story.trim()) {
-              story = parsed.story.trim().slice(0, 600)
-            }
-            const descs = parsed.items && typeof parsed.items === 'object' ? parsed.items : {}
-            for (const t of targets) {
-              const d = typeof descs[t.itemId] === 'string' ? descs[t.itemId].trim().slice(0, 200) : ''
-              if (!d) continue
-              await supabase
-                .from('item_memories')
-                .update({ refined_desc: d })
-                .eq('user_id', userId)
-                .eq('reflect_id', reflectId)
-                .eq('item_id', t.itemId)
-              // Shared Memories uses the same Reflect pipeline. Keep the
-              // pair's Ours copy in sync with the Plus AI-refined description.
-              if (friendUserId && typeof friendUserId === 'string') {
-                await supabase
-                  .from('shared_memory_items')
-                  .update({ description: d })
-                  .eq('author_user_id', userId)
-                  .eq('reflect_id', reflectId)
-                  .eq('item_id', t.itemId)
-              }
-            }
-          }
-        }
-      } catch (refineErr) {
-        console.warn('[reflect] refine/story failed (non-fatal):', refineErr && refineErr.message)
-      }
-    }
-
-    // Companion bubble (best-effort, paid + consented -- paid + consented only;
-    // free users get the rotating default lines on Home instead).
     let bubble = null
-    if (reflectId && isPaid && hasConsent && mode === 'typing' && body.length >= 10) {
-      bubble = await generateBubble(body)
+    if (reflectId && isPaid && hasConsent) {
+      const noted = new Set()
+      if (mode === 'typing' && itemNotes && typeof itemNotes === 'object') {
+        for (const [key, value] of Object.entries(itemNotes)) {
+          if (typeof value === 'string' && value.trim()) noted.add(key)
+        }
+      } else if (mode !== 'typing' && Array.isArray(selectedItems)) {
+        for (const selected of selectedItems) {
+          if (selected && typeof selected.note === 'string' && selected.note.trim()) noted.add(selected.itemId)
+        }
+      }
+      const targets = matchedItems.filter((item) => !noted.has(item.itemId))
+
+      const applyDescriptions = async (descriptions) => {
+        for (const target of targets) {
+          const description = typeof descriptions?.[target.itemId] === 'string'
+            ? descriptions[target.itemId].trim().slice(0, 200) : ''
+          if (!description) continue
+          await supabase.from('item_memories').update({ refined_desc: description })
+            .eq('user_id', userId).eq('reflect_id', reflectId).eq('item_id', target.itemId)
+          if (friendUserId && typeof friendUserId === 'string') {
+            await supabase.from('shared_memory_items').update({ description })
+              .eq('author_user_id', userId).eq('reflect_id', reflectId).eq('item_id', target.itemId)
+          }
+        }
+      }
+
+      if (mode === 'typing' && body.trim().length >= 10) {
+        let analyzerContext = {
+          connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null,
+        }
+        try {
+          analyzerContext = await loadReflectAnalyzerContext(supabase, {
+            userId, visibleToFriend, localDate: dateStr,
+          })
+        } catch (contextErr) {
+          console.warn('[reflect] analyzer context unavailable:', contextErr && contextErr.message)
+        }
+
+        const analyzerPromise = runReflectAnalyzer({
+          journal: body,
+          matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
+          weeklyEligible: body.trim().length >= 100,
+          connectionEnabled: analyzerContext.connectionEnabled,
+          currentConnectionBoard: analyzerContext.connectionEnabled ? analyzerContext.currentBoard : null,
+        })
+        const copyPromise = runReflectCopy({
+          journal: body,
+          generateBunny: true,
+          items: targets.map((item) => ({ id: item.itemId, name: item.displayName })),
+        })
+        const [analysisResult, copyResult] = await Promise.allSettled([analyzerPromise, copyPromise])
+
+        if (analysisResult.status === 'fulfilled') {
+          await Promise.all([
+            persistReflectAnalyzerResult(supabase, {
+              reflectId, userId, localDate: dateStr,
+              reflectsToday: Number(result?.reflects_today || 1),
+              analyzer: analysisResult.value,
+              context: analyzerContext,
+              matchedItems,
+            }),
+            recordAIUsage(supabase, {
+              userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
+              result: analysisResult.value.result, latencyMs: analysisResult.value.latencyMs,
+              refId: reflectId,
+            }),
+          ])
+        } else {
+          const message = String(analysisResult.reason?.message || analysisResult.reason)
+          console.warn('[reflect] analyzer failed (non-fatal):', message)
+          await Promise.all([
+            supabase.from('reflect_ai_analyses').upsert({
+              reflect_id: reflectId, user_id: userId, local_date: dateStr,
+              prompt_version: REFLECT_ANALYZER_VERSION, weekly_eligible: false,
+              connection_eligible: analyzerContext.connectionEligible,
+              connection_mode: 'disabled', status: 'failed', error: message.slice(0, 500),
+            }, { onConflict: 'reflect_id' }),
+            recordAIUsage(supabase, {
+              userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
+              success: false, refId: reflectId, error: message,
+            }),
+          ])
+        }
+
+        if (copyResult.status === 'fulfilled') {
+          bubble = copyResult.value.data.bunnyText
+          await Promise.all([
+            applyDescriptions(copyResult.value.data.items),
+            recordAIUsage(supabase, {
+              userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+              result: copyResult.value.result, latencyMs: copyResult.value.latencyMs,
+              refId: reflectId,
+            }),
+          ])
+        } else {
+          const message = String(copyResult.reason?.message || copyResult.reason)
+          console.warn('[reflect] copy failed (non-fatal):', message)
+          await recordAIUsage(supabase, {
+            userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+            success: false, refId: reflectId, error: message,
+          })
+        }
+      } else if (wantStory === true && mode === 'prompt' && matchedItems.length > 0) {
+        try {
+          const names = matchedItems.map((item) => `${item.itemId}: ${item.displayName}`).join('\n')
+          const response = await callAI({
+            systemInstruction: STORY_SYSTEM_PROMPT,
+            userText: `Items:\n${names}\n\nJournal:\n${body || '(none)'}`,
+            generationConfig: { temperature: 0.6, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } },
+          })
+          const parsed = parseAIJson(response.text)
+          if (typeof parsed?.story === 'string' && parsed.story.trim()) story = parsed.story.trim().slice(0, 600)
+          await applyDescriptions(parsed?.items)
+        } catch (storyErr) {
+          console.warn('[reflect] story failed (non-fatal):', storyErr && storyErr.message)
+        }
+      } else if (targets.length > 0 && body.trim().length >= 10) {
+        try {
+          const copy = await runReflectCopy({
+            journal: body, generateBunny: false,
+            items: targets.map((item) => ({ id: item.itemId, name: item.displayName })),
+          })
+          await applyDescriptions(copy.data.items)
+        } catch (copyErr) {
+          console.warn('[reflect] item copy failed (non-fatal):', copyErr && copyErr.message)
+        }
+      }
     }
 
     return NextResponse.json({ success: true, ...result, matchedItems, bubble, story })

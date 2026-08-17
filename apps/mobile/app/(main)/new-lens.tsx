@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import { LENS_THEMES, LENS_THEME_BY_KEY, NEW_LENS_PROMPT } from '@novame/domain';
+import { LENS_THEMES, NEW_LENS_PROMPT } from '@novame/domain';
 import { useTheme } from '../../src/theme/use-theme';
 import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
 import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
@@ -59,12 +59,12 @@ export default function NewLensScreen() {
 
     if (res.ok || (!res.ok && res.error === 'already_done')) {
       if (response === 'different') {
-        // Route into Reflect with the theme's dimension preset.
+        // Route into Reflect with the New Lens prompt. Reflect no longer
+        // analyzes or credits growth dimensions.
         router.replace({
           pathname: '/(main)/reflect',
           params: {
             presetPrompt: NEW_LENS_PROMPT,
-            presetDimension: LENS_THEME_BY_KEY[activeTheme]?.dimension ?? activeTheme,
             sourceKit: 'new_lens',
           },
         });

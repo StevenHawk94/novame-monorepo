@@ -251,7 +251,9 @@ export default function ConnectionDashboardScreen() {
           {/* 板块4: a little bit to know */}
           <View style={st.sectionPillWrap}>
             <View style={st.sectionPill}>
-              <Text style={st.sectionPillText}>A little bit to know</Text>
+              <Text style={st.sectionPillText} numberOfLines={1}>
+                What's New With {partner.displayName}
+              </Text>
             </View>
           </View>
 
@@ -263,18 +265,20 @@ export default function ConnectionDashboardScreen() {
                 <View style={st.insightBadge}>
                   <Text style={st.insightBadgeText}>{emoji} {label}</Text>
                 </View>
-                <Image
-                  source={LOCKED_INSIGHT_PREVIEW}
-                  style={st.lockedInsightImage}
-                  resizeMode="cover"
-                />
-                <Pressable
-                  onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
-                  style={st.plusBtn}
-                >
-                  <MaterialIcons name="lock" size={17} color="#FFFFFF" />
-                  <Text style={st.copyBtnText}>Join Plus to Access Details</Text>
-                </Pressable>
+                <View style={st.lockedInsightPreview}>
+                  <Image
+                    source={LOCKED_INSIGHT_PREVIEW}
+                    style={st.lockedInsightImage}
+                    resizeMode="contain"
+                  />
+                  <Pressable
+                    onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
+                    style={st.plusBtn}
+                  >
+                    <MaterialIcons name="lock" size={17} color="#FFFFFF" />
+                    <Text style={st.copyBtnText}>Join Plus to Access Details</Text>
+                  </Pressable>
+                </View>
               </View>
             ))
           ) : insightsGate === 'consent_required' ? (
@@ -409,10 +413,14 @@ const st = StyleSheet.create({
   },
   teaserIcon: { width: 26, height: 26 },
   teaserPillText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
-  lockedInsightImage: { width: '100%', height: 112, borderRadius: 12, marginBottom: 14 },
+  lockedInsightPreview: {
+    width: '100%', aspectRatio: 500 / 300, position: 'relative',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 12,
+  },
+  lockedInsightImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   plusBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#8A6240', borderRadius: 16, paddingVertical: 14,
+    width: '88%', backgroundColor: '#8A6240', borderRadius: 16, paddingVertical: 14,
   },
 
   detailOverlay: {

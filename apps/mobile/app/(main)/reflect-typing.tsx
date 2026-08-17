@@ -68,12 +68,9 @@ export default function ReflectTypingScreen() {
 
   const params = useLocalSearchParams<{
     presetPrompt?: string;
-    presetDimension?: string;
     sourceKit?: string;
   }>();
   const presetPrompt = typeof params.presetPrompt === 'string' && params.presetPrompt ? params.presetPrompt : null;
-  const presetDimension =
-    typeof params.presetDimension === 'string' ? params.presetDimension : undefined;
   const sourceKit = params.sourceKit === 'new_lens' ? 'new_lens' : undefined;
 
   const initial = useMemo(() => getReflectStateToday(), []);
@@ -114,7 +111,7 @@ export default function ReflectTypingScreen() {
 
   const atLimit = remaining <= 0;
   const selectedPrompt = presetPrompt
-    ? { id: 9, title: 'New Lens', text: presetPrompt, dimension: null }
+    ? { id: 9, title: 'New Lens', text: presetPrompt }
     : REFLECT_PROMPTS.find((p) => p.id === promptId);
 
   function choosePrompt(id: number) {
@@ -140,7 +137,6 @@ export default function ReflectTypingScreen() {
     const res = await submitReflect({
       promptId,
       body,
-      presetDimension,
       sourceKit,
       mode: 'typing',
       removedItemIds: [...removedIds],
