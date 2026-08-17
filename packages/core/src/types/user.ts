@@ -8,9 +8,8 @@ export type User = {
   display_name?: string
   avatar_url?: string
   created_at?: string
-  wisdoms_count?: number
-  cards_count?: number
   subscription_tier?: string
+  paired?: boolean
 }
 
 export type DefaultUser = {

@@ -53,8 +53,10 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
   patternCalendar: require('../../assets/Icons/pattern-calendar.png'),
+  personalVibe: require('../../assets/Icons/personal-vibe.png'),
   weekPlan: require('../../assets/Icons/Week-Plan.png'),
   setting: require('../../assets/Icons/setting.png'),
+  privacy: require('../../assets/Icons/privacy.png'),
   memory: require('../../assets/Icons/memory.png'),
   sharedMemories: require('../../assets/Icons/shared-memories.png'),
   // Onboarding v3 (grid background + screen art)
@@ -101,6 +103,7 @@ export const FRIEND_ICONS = {
   memory: ICONS.memory,
   calendar: ICONS.calendar,
   setting: ICONS.setting,
+  privacy: ICONS.privacy,
 } as const;
 
 /** Full-bleed screen backgrounds (assets/Background). */

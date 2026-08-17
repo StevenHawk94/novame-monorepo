@@ -60,6 +60,8 @@ export default function FriendAddScreen() {
     } else {
       const msg =
         res.error === 'code_not_found' ? "That ID doesn't look right — double check with your friend."
+        : res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
+        : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
         : res.error === 'already_friends' ? "You're already friends."
         : res.error === 'already_pending' ? 'A request is already pending with them.'
         : res.error === 'cannot_add_self' ? "That's your own ID!"
@@ -84,8 +86,12 @@ export default function FriendAddScreen() {
       load();
     } else {
       const msg =
-        res.error === 'already_friends' ? "You're already friends."
+        res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
+        : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
+        : res.error === 'already_friends' ? "You're already friends."
         : res.error === 'already_pending' ? 'A request is already pending with them.'
+        : res.error === 'friend_limit_reached' ? 'Your friend slot is still in use. Refresh and try again.'
+        : res.error === 'target_friend_limit_reached' ? 'Their friend slot is full right now.'
         : 'Something went wrong. Try again.';
       appAlert('Hmm', msg);
     }

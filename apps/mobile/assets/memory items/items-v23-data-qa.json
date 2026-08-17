@@ -1,0 +1,791 @@
+{
+  "schema": "memory-items-v23-data-qa@1",
+  "items": 5390,
+  "executable_keyword_rows": 33799,
+  "unique_executable_keywords": 32813,
+  "never_auto_rows_omitted": 0,
+  "never_auto_unique_keywords": 0,
+  "never_auto_keywords_overriding_auto_rows": [],
+  "auto_unless_excluded_keywords_with_literal_rules": 323,
+  "unresolved_instructional_exclusions": 874,
+  "unsafe_auto_unless_excluded_keywords_omitted": 872,
+  "unsafe_keyword_samples": [
+    "abandoned",
+    "abrasion",
+    "absolutely delighted",
+    "absolutely thrilled",
+    "accepted",
+    "accepted as i am",
+    "accepted it reluctantly",
+    "accomplished",
+    "aching joints",
+    "acid reflux",
+    "admiring",
+    "affectionate",
+    "afraid",
+    "allergic reaction",
+    "allergies acting up",
+    "amused",
+    "angry",
+    "ankle brace",
+    "ankle hurt",
+    "ankle pain",
+    "ankle twist",
+    "annoyed",
+    "antibiotic course complete",
+    "antibiotic prescription",
+    "anxiety",
+    "anxious",
+    "apology rejected",
+    "apprehensive",
+    "argument not settled",
+    "arm hurt",
+    "arm pain",
+    "ashamed",
+    "at ease",
+    "authorization approved",
+    "awe",
+    "awestruck",
+    "awkward",
+    "awkward about myself",
+    "awkward after conflict",
+    "awkward after not socializing",
+    "baby monitor",
+    "back brace",
+    "back hurt",
+    "back pain",
+    "ballot",
+    "baseball bat",
+    "bashful",
+    "began antibiotics",
+    "began new medication",
+    "bereaved",
+    "bible",
+    "blinds",
+    "bloating",
+    "blood pressure monitor",
+    "body feels calm",
+    "body feels flexible",
+    "body feels good after workout",
+    "body feels relaxed",
+    "body feels settled",
+    "body feels strong",
+    "body finally settled down",
+    "body moving well",
+    "body part swollen",
+    "body relaxed",
+    "body settling after workout",
+    "bothered",
+    "branch",
+    "brave",
+    "breathing treatment",
+    "breathless",
+    "broke out in hives",
+    "broke out in rash",
+    "brokenhearted",
+    "bruise",
+    "bruised",
+    "burned myself",
+    "burning chest after eating",
+    "buzzing with energy",
+    "calm",
+    "can't move freely",
+    "can't wait",
+    "carefree mood",
+    "cash",
+    "cast removed",
+    "caught a cold",
+    "ceiling fan",
+    "champagne toast",
+    "changed medicine",
+    "cheerful",
+    "chest hurt",
+    "chest pain",
+    "chicken",
+    "claim approved",
+    "claim denied",
+    "cloud",
+    "cognitive overload",
+    "collards",
+    "comfy",
+    "common cold",
+    "compass"
+  ],
+  "unresolved_instructional_exclusion_samples": [
+    {
+      "row": 248,
+      "icon": "BBQ Ribs",
+      "keyword": "ribs",
+      "rule": "exclude body/anatomy/injury contexts such as sore ribs, broken ribs, rib pain"
+    },
+    {
+      "row": 464,
+      "icon": "Salmon",
+      "keyword": "salmon",
+      "rule": "exclude live-fish/ocean/river/fishing contexts when clearly not food; salmon fillet; salmon fish"
+    },
+    {
+      "row": 468,
+      "icon": "Shrimp",
+      "keyword": "shrimp",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food; shrimp raw; shrimp and grits"
+    },
+    {
+      "row": 473,
+      "icon": "Shrimp",
+      "keyword": "prawns",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 474,
+      "icon": "Lobster",
+      "keyword": "lobster",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food; lobster roll; lobster tail; lobster whole raw"
+    },
+    {
+      "row": 501,
+      "icon": "Oysters",
+      "keyword": "oyster",
+      "rule": "exclude live-shellfish/ecology contexts when clearly not food"
+    },
+    {
+      "row": 502,
+      "icon": "Oysters",
+      "keyword": "oysters",
+      "rule": "exclude live-shellfish/ecology contexts when clearly not food; oysters raw"
+    },
+    {
+      "row": 577,
+      "icon": "Stuffing",
+      "keyword": "stuffing",
+      "rule": "exclude object-filling/craft/upholstery contexts when clearly not food"
+    },
+    {
+      "row": 582,
+      "icon": "Gravy",
+      "keyword": "gravy",
+      "rule": "exclude idiomatic 'gravy train' / non-food figurative usage"
+    },
+    {
+      "row": 628,
+      "icon": "Crawfish",
+      "keyword": "crawfish",
+      "rule": "exclude live-animal/creek/aquarium/fishing contexts when clearly not food; crawfish bread; crawfish pie; crawfish raw"
+    },
+    {
+      "row": 629,
+      "icon": "Crawfish",
+      "keyword": "crawdads",
+      "rule": "exclude live-animal/creek/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 704,
+      "icon": "Congee",
+      "keyword": "jook",
+      "rule": "exclude names/usernames if clearly not food"
+    },
+    {
+      "row": 741,
+      "icon": "Kimchi",
+      "keyword": "kimchi",
+      "rule": "exclude brand/usernames if clearly not food; kimchi fried rice"
+    },
+    {
+      "row": 1074,
+      "icon": "Rice and Peas",
+      "keyword": "rice and peas",
+      "rule": "exclude clearly generic ingredient-list mentions when not referring to the dish/side"
+    },
+    {
+      "row": 1180,
+      "icon": "Collard Greens",
+      "keyword": "collards",
+      "rule": "exclude surnames/usernames if clearly not food"
+    },
+    {
+      "row": 2533,
+      "icon": "Popcorn",
+      "keyword": "popcorn",
+      "rule": "exclude popcorn ceiling / popcorn button / figurative non-food uses"
+    },
+    {
+      "row": 3080,
+      "icon": "Champagne",
+      "keyword": "champagne toast",
+      "rule": "exclude ceremonial-toast context when no beverage is intended"
+    },
+    {
+      "row": 5920,
+      "icon": "Duck Eggs",
+      "keyword": "duck egg",
+      "rule": "exclude sports-score slang when clearly non-food"
+    },
+    {
+      "row": 7092,
+      "icon": "Fitness",
+      "keyword": "flexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7093,
+      "icon": "Fitness",
+      "keyword": "feeling flexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7094,
+      "icon": "Fitness",
+      "keyword": "body feels flexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7095,
+      "icon": "Fitness",
+      "keyword": "inflexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7096,
+      "icon": "Fitness",
+      "keyword": "feeling stiff and inflexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7097,
+      "icon": "Fitness",
+      "keyword": "can't move freely",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7098,
+      "icon": "Fitness",
+      "keyword": "muscles feel good",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7099,
+      "icon": "Fitness",
+      "keyword": "body feels good after workout",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7100,
+      "icon": "Fitness",
+      "keyword": "recovered muscles",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7101,
+      "icon": "Fitness",
+      "keyword": "cooled down",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7102,
+      "icon": "Fitness",
+      "keyword": "body settling after workout",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7103,
+      "icon": "Fitness",
+      "keyword": "post workout cooldown",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7104,
+      "icon": "Fitness",
+      "keyword": "feeling coordinated",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7105,
+      "icon": "Fitness",
+      "keyword": "movements feel coordinated",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7106,
+      "icon": "Fitness",
+      "keyword": "body moving well",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7109,
+      "icon": "Fitness",
+      "keyword": "exercise",
+      "rule": "exclude schoolwork, workbook, writing, math, and practice-question meanings unless physical training context is present"
+    },
+    {
+      "row": 7351,
+      "icon": "Baseball Bat",
+      "keyword": "baseball bat",
+      "rule": "exclude animal bat unless baseball equipment context is explicit"
+    },
+    {
+      "row": 7483,
+      "icon": "Hockey Stick",
+      "keyword": "hockey stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7490,
+      "icon": "Field Hockey Stick",
+      "keyword": "field hockey stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7497,
+      "icon": "Lacrosse Stick",
+      "keyword": "lacrosse stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7512,
+      "icon": "Cricket Bat",
+      "keyword": "cricket bat",
+      "rule": "exclude animal bat unless baseball equipment context is explicit"
+    },
+    {
+      "row": 8222,
+      "icon": "Vinyl Record",
+      "keyword": "vinyl record",
+      "rule": "exclude verb record and achievement record unless physical media context is explicit"
+    },
+    {
+      "row": 8864,
+      "icon": "Bed",
+      "keyword": "light sleep",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8865,
+      "icon": "Bed",
+      "keyword": "slept lightly",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8866,
+      "icon": "Bed",
+      "keyword": "shallow sleep",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8867,
+      "icon": "Bed",
+      "keyword": "felt great waking early",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8868,
+      "icon": "Bed",
+      "keyword": "night owl mode",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 9167,
+      "icon": "Medication Bottle",
+      "keyword": "started medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9168,
+      "icon": "Medication Bottle",
+      "keyword": "began new medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9169,
+      "icon": "Medication Bottle",
+      "keyword": "started medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9170,
+      "icon": "Medication Bottle",
+      "keyword": "new prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9171,
+      "icon": "Medication Bottle",
+      "keyword": "got a prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9172,
+      "icon": "Medication Bottle",
+      "keyword": "doctor prescribed medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9173,
+      "icon": "Medication Bottle",
+      "keyword": "prescription refill",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9174,
+      "icon": "Medication Bottle",
+      "keyword": "refilled medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9175,
+      "icon": "Medication Bottle",
+      "keyword": "refilled prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9176,
+      "icon": "Medication Bottle",
+      "keyword": "medication changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9177,
+      "icon": "Medication Bottle",
+      "keyword": "changed medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9178,
+      "icon": "Medication Bottle",
+      "keyword": "doctor changed prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9179,
+      "icon": "Medication Bottle",
+      "keyword": "dose changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9180,
+      "icon": "Medication Bottle",
+      "keyword": "dosage changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9181,
+      "icon": "Medication Bottle",
+      "keyword": "medication dose adjustment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9182,
+      "icon": "Medication Bottle",
+      "keyword": "stopped medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9183,
+      "icon": "Medication Bottle",
+      "keyword": "stopped taking medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9184,
+      "icon": "Medication Bottle",
+      "keyword": "discontinued medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9185,
+      "icon": "Medication Bottle",
+      "keyword": "missed dose",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9186,
+      "icon": "Medication Bottle",
+      "keyword": "forgot medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9187,
+      "icon": "Medication Bottle",
+      "keyword": "missed my medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9188,
+      "icon": "Medication Bottle",
+      "keyword": "medication side effect",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9189,
+      "icon": "Medication Bottle",
+      "keyword": "side effects from medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9190,
+      "icon": "Medication Bottle",
+      "keyword": "medicine caused side effect",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9191,
+      "icon": "Medication Bottle",
+      "keyword": "reaction to medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9192,
+      "icon": "Medication Bottle",
+      "keyword": "medicine reaction",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9193,
+      "icon": "Medication Bottle",
+      "keyword": "drug reaction",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9194,
+      "icon": "Medication Bottle",
+      "keyword": "took over the counter medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9195,
+      "icon": "Medication Bottle",
+      "keyword": "otc medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9196,
+      "icon": "Medication Bottle",
+      "keyword": "took cold medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9197,
+      "icon": "Medication Bottle",
+      "keyword": "took pain reliever",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9198,
+      "icon": "Medication Bottle",
+      "keyword": "took pain medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9199,
+      "icon": "Medication Bottle",
+      "keyword": "took ibuprofen type medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9200,
+      "icon": "Medication Bottle",
+      "keyword": "started antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9201,
+      "icon": "Medication Bottle",
+      "keyword": "began antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9202,
+      "icon": "Medication Bottle",
+      "keyword": "antibiotic prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9203,
+      "icon": "Medication Bottle",
+      "keyword": "finished antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9204,
+      "icon": "Medication Bottle",
+      "keyword": "completed antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9205,
+      "icon": "Medication Bottle",
+      "keyword": "antibiotic course complete",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9206,
+      "icon": "Medication Bottle",
+      "keyword": "used inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9207,
+      "icon": "Medication Bottle",
+      "keyword": "took inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9208,
+      "icon": "Medication Bottle",
+      "keyword": "needed inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9209,
+      "icon": "Medication Bottle",
+      "keyword": "used epipen",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9210,
+      "icon": "Medication Bottle",
+      "keyword": "epinephrine injector used",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9211,
+      "icon": "Medication Bottle",
+      "keyword": "emergency allergy injection",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9212,
+      "icon": "Medication Bottle",
+      "keyword": "nebulizer treatment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9213,
+      "icon": "Medication Bottle",
+      "keyword": "used nebulizer",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9214,
+      "icon": "Medication Bottle",
+      "keyword": "breathing treatment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9215,
+      "icon": "Medication Bottle",
+      "keyword": "prescription not covered",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9216,
+      "icon": "Medication Bottle",
+      "keyword": "insurance denied medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9217,
+      "icon": "Medication Bottle",
+      "keyword": "medicine not covered",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12305,
+      "icon": "Medical Clinic",
+      "keyword": "prenatal appointment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12306,
+      "icon": "Medical Clinic",
+      "keyword": "prenatal checkup",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12307,
+      "icon": "Medical Clinic",
+      "keyword": "pregnancy doctor visit",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12364,
+      "icon": "Medical Clinic",
+      "keyword": "medical payment plan",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    }
+  ],
+  "cross_icon_conflicts": [],
+  "reflect_categories": [
+    {
+      "order": 1,
+      "key": "emotion_and_feeling",
+      "label": "Emotions & Feelings",
+      "items": 30
+    },
+    {
+      "order": 2,
+      "key": "food_drink",
+      "label": "Food & Drink",
+      "items": 1414
+    },
+    {
+      "order": 3,
+      "key": "chores_home_care",
+      "label": "Chores & Home Care",
+      "items": 705
+    },
+    {
+      "order": 4,
+      "key": "self_care_hygiene",
+      "label": "Health & Self-Care",
+      "items": 419
+    },
+    {
+      "order": 5,
+      "key": "work_productivity",
+      "label": "Work & Productivity",
+      "items": 34
+    },
+    {
+      "order": 6,
+      "key": "entertainment_leisure",
+      "label": "Entertainment & Leisure",
+      "items": 166
+    },
+    {
+      "order": 7,
+      "key": "exercise_movement",
+      "label": "Exercise & Movement",
+      "items": 194
+    },
+    {
+      "order": 8,
+      "key": "social_relationships",
+      "label": "Social & Relationships",
+      "items": 105
+    },
+    {
+      "order": 9,
+      "key": "travel_commute",
+      "label": "Travel & Getting Around",
+      "items": 196
+    },
+    {
+      "order": 10,
+      "key": "nature_outdoors",
+      "label": "Nature & Outdoors",
+      "items": 673
+    },
+    {
+      "order": 11,
+      "key": "learning_hobbies",
+      "label": "Learning & Hobbies",
+      "items": 489
+    },
+    {
+      "order": 12,
+      "key": "shopping_errands",
+      "label": "Shopping & Errands",
+      "items": 965
+    }
+  ]
+}

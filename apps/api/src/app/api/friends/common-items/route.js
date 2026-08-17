@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
-const WINDOW_DAYS = 60
+const WINDOW_DAYS = 7
 const MAX_ITEMS = 8
 const SCAN_ROWS = 400
 

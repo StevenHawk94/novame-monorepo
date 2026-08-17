@@ -7,12 +7,14 @@ import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { OffsetCard } from '@/components/ui/offset-card';
-import { fetchBags, getCachedBags, sharedBoxToCollectedItems, type CollectedItem } from '@/lib/bags-api';
+import { fetchBags, getCachedBags, getCachedTheirBags, sharedBoxToCollectedItems, type CollectedItem } from '@/lib/bags-api';
 import {
   fetchPairing,
   fetchSharedBoxWithMeta,
   getCachedPairing,
+  getCachedSharedBox,
   markSharedBoxRead,
+  subscribeSharedBoxChanges,
   type PairingStatus,
 } from '@/lib/friends-api';
 import { ICONS } from '@/lib/icons';
@@ -39,15 +41,30 @@ export default function BagsScreen() {
   const tileSize = Math.floor((width - 32) / numColumns) - 6;
   const cellWidth = `${100 / numColumns}%` as const;
 
+  const initialPairing = useMemo(() => getCachedPairing(), []);
+  const initialPartnerId = initialPairing?.paired ? initialPairing.partner?.userId : undefined;
+  const initialMineItems = useMemo(() => getCachedBags(), []);
+  const initialTheirItems = useMemo(() => getCachedTheirBags(initialPartnerId), [initialPartnerId]);
+  const initialSharedBox = useMemo(() => getCachedSharedBox(initialPartnerId), [initialPartnerId]);
+  const initialOurItems = useMemo(
+    () => sharedBoxToCollectedItems(initialSharedBox.items),
+    [initialSharedBox],
+  );
+
   const [tab, setTab] = useState<CollectionTab>(initialTab === 'ours' ? 'ours' : initialTab === 'their' ? 'their' : 'mine');
-  const [mineItems, setMineItems] = useState<CollectedItem[]>(() => getCachedBags());
-  const [theirItems, setTheirItems] = useState<CollectedItem[]>([]);
-  const [ourItems, setOurItems] = useState<CollectedItem[]>([]);
-  const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
-  const [loaded, setLoaded] = useState(() => getCachedBags().length > 0);
-  const [oursUnread, setOursUnread] = useState(false);
-  const [oursReadThrough, setOursReadThrough] = useState(new Date(0).toISOString());
+  const [mineItems, setMineItems] = useState<CollectedItem[]>(initialMineItems);
+  const [theirItems, setTheirItems] = useState<CollectedItem[]>(initialTheirItems);
+  const [ourItems, setOurItems] = useState<CollectedItem[]>(initialOurItems);
+  const [pairing, setPairing] = useState<PairingStatus | null>(initialPairing);
+  const [loaded, setLoaded] = useState(
+    initialPairing !== null || initialMineItems.length > 0 || initialTheirItems.length > 0 || initialOurItems.length > 0,
+  );
+  const [oursUnread, setOursUnread] = useState(initialSharedBox.hasUnreadFromPartner);
+  const [oursReadThrough, setOursReadThrough] = useState(initialSharedBox.readThrough);
+  const [oursListRevision, setOursListRevision] = useState(0);
   const itemSheetRef = useRef<ItemSheetRef>(null);
+  const listRef = useRef<FlatList<CollectedItem>>(null);
+  const sharedRefreshGeneration = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -59,12 +76,13 @@ export default function BagsScreen() {
 
         if (pair.paired && pair.partner) {
           const [theirs, shared] = await Promise.all([
-            fetchBags('their'),
+            fetchBags('their', pair.partner.userId),
             fetchSharedBoxWithMeta(pair.partner.userId),
           ]);
           if (!active) return;
           setTheirItems(theirs);
           setOurItems(sharedBoxToCollectedItems(shared.items));
+          setOursListRevision((revision) => revision + 1);
           setOursUnread(shared.hasUnreadFromPartner);
           setOursReadThrough(shared.readThrough);
         } else {
@@ -89,6 +107,24 @@ export default function BagsScreen() {
   useEffect(() => setVisibleCount(PAGE), [tab]);
   const paged = shown.slice(0, visibleCount);
   const partner = pairing?.paired ? pairing.partner : null;
+
+  useEffect(() => {
+    if (!partner) return;
+    return subscribeSharedBoxChanges((friendUserId) => {
+      if (friendUserId !== partner.userId) return;
+      const generation = ++sharedRefreshGeneration.current;
+      void fetchSharedBoxWithMeta(friendUserId).then((shared) => {
+        if (generation !== sharedRefreshGeneration.current) return;
+        setOurItems(sharedBoxToCollectedItems(shared.items));
+        setOursListRevision((revision) => revision + 1);
+        setOursUnread(shared.hasUnreadFromPartner);
+        setOursReadThrough(shared.readThrough);
+        // New rows are sorted at the head. Explicitly reset the virtualized
+        // list's retained offset so those rows cannot remain above the viewport.
+        requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
+      });
+    });
+  }, [partner]);
 
   useEffect(() => {
     if (tab !== 'ours' || !partner || !oursUnread) return;
@@ -203,7 +239,12 @@ export default function BagsScreen() {
         </View>
       ) : (
         <FlatList
-          key={numColumns}
+          ref={listRef}
+          // A multi-column VirtualizedList may retain its old row buckets when
+          // items are prepended. Re-mount only the Ours list after a server
+          // refresh so newly-created head rows cannot be represented by stale
+          // cells until the user switches tabs.
+          key={`${tab}-${numColumns}-${tab === 'ours' ? oursListRevision : 0}`}
           data={paged}
           keyExtractor={(item) => item.itemId}
           numColumns={numColumns}
@@ -250,7 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,
   },
-  headerButtonIcon: { width: 24, height: 24 },
+  headerButtonIcon: { width: 30, height: 30 },
   headerButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
   plus: { color: '#FFFFFF', fontSize: 22, lineHeight: 22, fontFamily: 'Inter_700Bold' },
   unreadDot: {

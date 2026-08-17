@@ -74,13 +74,18 @@ export async function GET(request) {
       .select('id, user_a, user_b, status, requested_by, created_at, relationship')
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
 
-    const acceptedIds = []
+    const { data: pairing } = await supabase
+      .from('pairings')
+      .select('partner_user_id')
+      .eq('user_id', userId)
+      .maybeSingle()
+    const activePartnerId = pairing?.partner_user_id || null
+    const acceptedIds = activePartnerId ? [activePartnerId] : []
     const pending = [] // requests waiting for ME to accept
     const sentRaw = [] // requests I sent, still unanswered (Add Friends page)
     for (const r of rows || []) {
       const other = r.user_a === userId ? r.user_b : r.user_a
-      if (r.status === 'accepted') acceptedIds.push(other)
-      else if (r.status === 'pending' && r.requested_by !== userId) {
+      if (r.status === 'pending' && r.requested_by !== userId) {
         pending.push({ friendshipId: r.id, userId: other, relationship: r.relationship ?? null })
       } else if (r.status === 'pending' && r.requested_by === userId) {
         sentRaw.push({ friendshipId: r.id, userId: other, createdAt: r.created_at, relationship: r.relationship ?? null })

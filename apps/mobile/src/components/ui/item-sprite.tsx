@@ -5,7 +5,7 @@
  * build time by tools/slice-item-images.py from the standardized sheets,
  * required via the generated item-images.g.ts map). Each tile decodes only
  * its own few-KB image — expo-image caches them independently, so grids
- * (Bags, Guided, Object Reflect, feeds) paint all tiles at once instead of
+ * (Memories, Guided Reflect, feeds) paint all tiles at once instead of
  * popping in sheet-by-sheet as the old whole-sheet sprite windows decoded.
  *
  * Unknown item or missing art → the item's emoji if the dictionary has

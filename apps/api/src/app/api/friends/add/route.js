@@ -4,22 +4,13 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
-// PRD benefits matrix: free users hold 1 accepted friend, paid 99. Counted
-// server-side at request time (add) AND accept time (respond) — the pair
-// could fill either side's quota between the two moments.
-async function acceptedCount(supabase, uid) {
-  const { count } = await supabase
-    .from('friendships')
-    .select('id', { count: 'exact', head: true })
-    .or(`user_a.eq.${uid},user_b.eq.${uid}`)
-    .eq('status', 'accepted')
-  return count ?? 0
-}
-
-async function friendLimitOf(supabase, uid) {
+async function activePairing(supabase, uid) {
   const { data } = await supabase
-    .from('profiles').select('subscription_tier').eq('id', uid).maybeSingle()
-  return (data?.subscription_tier ?? 'free') === 'free' ? 1 : 99
+    .from('pairings')
+    .select('partner_user_id')
+    .eq('user_id', uid)
+    .maybeSingle()
+  return data
 }
 
 
@@ -32,10 +23,14 @@ async function friendLimitOf(supabase, uid) {
  * (the Add Friends search-result card, 2026-07-24 mock). A real add carries
  * the proposed relationship (Lover / Best Friend / ... / Others) and its
  * start date; both ride on the friendship row and are copied onto the
- * pairing at accept time. Rejects self-add, an unknown code, or a pair that
- * already has a row (friends or pending).
+ * pairing at accept time. Historical accepted rows are retained and reused
+ * when former partners invite each other again.
  */
-const RELATIONSHIPS = ['Lover', 'Best Friend', 'Mom and Daughter', 'Siblings', 'Someone Special', 'Others']
+const RELATIONSHIPS = [
+  'Partner', 'Best Friend', 'Families', 'Someone Special', 'Others',
+  // Keep accepting labels stored by older app versions.
+  'Lover', 'Mom and Daughter', 'Siblings',
+]
 
 export async function POST(request) {
   try {
@@ -91,14 +86,16 @@ export async function POST(request) {
       ? relationshipSince
       : null
 
-    // Friend quota (both sides — a request that could never be accepted is
-    // clearer rejected now than pending forever).
-    if ((await acceptedCount(supabase, userId)) >= (await friendLimitOf(supabase, userId))) {
-      return NextResponse.json({ error: 'friend_limit_reached' }, { status: 403 })
-    }
-    if ((await acceptedCount(supabase, target.id)) >= (await friendLimitOf(supabase, target.id))) {
-      return NextResponse.json({ error: 'target_friend_limit_reached' }, { status: 403 })
-    }
+    // Pairings, not historical friendship rows, are the source of truth for
+    // the single active relationship. Unpairing intentionally preserves all
+    // friendship and memory data, so old accepted rows must not consume a
+    // future pairing slot.
+    const [mine, theirs] = await Promise.all([
+      activePairing(supabase, userId),
+      activePairing(supabase, target.id),
+    ])
+    if (mine) return NextResponse.json({ error: 'already_paired' }, { status: 409 })
+    if (theirs) return NextResponse.json({ error: 'target_already_paired' }, { status: 409 })
 
     // Canonical order.
     const [ua, ub] = userId < target.id ? [userId, target.id] : [target.id, userId]
@@ -110,8 +107,22 @@ export async function POST(request) {
       .eq('user_a', ua)
       .eq('user_b', ub)
       .maybeSingle()
-    if (existing) {
-      return NextResponse.json({ error: existing.status === 'accepted' ? 'already_friends' : 'already_pending' }, { status: 409 })
+    if (existing?.status === 'pending') {
+      return NextResponse.json({ error: 'already_pending' }, { status: 409 })
+    }
+    if (existing?.status === 'accepted') {
+      // Re-inviting a former pairing reuses its relationship row instead of
+      // deleting history. The recipient still has to accept the new pairing.
+      const { error: updateErr } = await supabase.from('friendships').update({
+        status: 'pending', requested_by: userId,
+        relationship: rel, relationship_since: since,
+        created_at: new Date().toISOString(),
+      }).eq('id', existing.id)
+      if (updateErr) {
+        console.error('[friends/add] reinvite error:', updateErr.message)
+        return NextResponse.json({ error: 'Failed' }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, requestedTo: target.display_name || 'Friend' })
     }
 
     const { error: insErr } = await supabase.from('friendships').insert({

@@ -9,7 +9,7 @@
 import { ITEM_DICTIONARY, type ItemRarity } from '@novame/engine';
 import { remoteItemDef } from './remote-items';
 
-import { kBagsState } from '../shared/storage/keys';
+import { kBagsState, kTheirBagsState } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
@@ -96,12 +96,33 @@ export function getCachedBags(): CollectedItem[] {
   }
 }
 
+interface TheirBagsCache {
+  ownerUserId: string | null;
+  items: WireItem[];
+}
+
+export function getCachedTheirBags(expectedOwnerUserId?: string): CollectedItem[] {
+  const raw = storage.getString(kTheirBagsState.name);
+  if (!raw) return [];
+  try {
+    const cached = JSON.parse(raw) as TheirBagsCache;
+    if (!Array.isArray(cached.items)) return [];
+    if (expectedOwnerUserId && cached.ownerUserId !== expectedOwnerUserId) return [];
+    return cached.items.map(decorate);
+  } catch {
+    return [];
+  }
+}
+
 /** Fetch collected items, refreshing the cache. Cache stores the wire shape
  *  (ids only), decorated on read, so a dictionary edit reflects immediately. */
-export async function fetchBags(scope: 'mine' | 'their' = 'mine'): Promise<CollectedItem[]> {
+export async function fetchBags(
+  scope: 'mine' | 'their' = 'mine',
+  expectedOwnerUserId?: string,
+): Promise<CollectedItem[]> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return getCachedBags();
+  if (!userId) return scope === 'their' ? getCachedTheirBags(expectedOwnerUserId) : getCachedBags();
 
   try {
     const data = await apiClient.get<{
@@ -111,18 +132,27 @@ export async function fetchBags(scope: 'mine' | 'their' = 'mine'): Promise<Colle
     }>(
       `/api/bags?userId=${encodeURIComponent(userId)}&scope=${scope}`,
     );
-    if (!data.success || !data.items) return scope === 'their' ? [] : getCachedBags();
+    if (!data.success || !data.items) return scope === 'their' ? getCachedTheirBags(expectedOwnerUserId) : getCachedBags();
 
     // Mine must belong to the signed-in account; Their must never come back
     // with that same owner. Reject a stale/mismatched API response instead of
     // painting it under the wrong tab.
     if (scope === 'mine' && data.ownerUserId && data.ownerUserId !== userId) return getCachedBags();
-    if (scope === 'their' && data.ownerUserId === userId) return [];
+    if (scope === 'their' && data.ownerUserId === userId) return getCachedTheirBags(expectedOwnerUserId);
+    if (scope === 'their' && expectedOwnerUserId && data.ownerUserId !== expectedOwnerUserId) {
+      return getCachedTheirBags(expectedOwnerUserId);
+    }
 
     if (scope === 'mine') storage.set(kBagsState.name, JSON.stringify(data.items));
+    if (scope === 'their') {
+      storage.set(kTheirBagsState.name, JSON.stringify({
+        ownerUserId: data.ownerUserId ?? null,
+        items: data.items,
+      } satisfies TheirBagsCache));
+    }
     return data.items.map(decorate);
   } catch {
-    return scope === 'their' ? [] : getCachedBags();
+    return scope === 'their' ? getCachedTheirBags(expectedOwnerUserId) : getCachedBags();
   }
 }
 

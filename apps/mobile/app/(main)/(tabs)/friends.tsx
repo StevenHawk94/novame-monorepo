@@ -68,8 +68,14 @@ export default function FriendsScreen() {
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
-    void fetchFriendFeed().then(setFeed);
-    void fetchPairing().then(setPairing);
+    void fetchPairing().then((nextPairing) => {
+      setPairing(nextPairing);
+      if (!nextPairing.paired) {
+        setFeed([]);
+        return;
+      }
+      void fetchFriendFeed().then(setFeed);
+    });
   }, []);
   useFocusEffect(load);
 
@@ -142,7 +148,7 @@ export default function FriendsScreen() {
   // feed shows only their rows once paired.
   const shownFeed = paired
     ? feed.filter((e) => e.friendUserId === pairing?.partner?.userId)
-    : feed;
+    : [];
 
   const addPill = (
     <Pressable
@@ -186,7 +192,7 @@ export default function FriendsScreen() {
               </Pressable>
             )}
             <Pressable onPress={onPrivacyGear} style={styles.iconBtn} hitSlop={6}>
-              <Image source={FRIEND_ICONS.setting} style={styles.gearIcon} resizeMode="contain" />
+              <Image source={FRIEND_ICONS.privacy} style={styles.gearIcon} resizeMode="contain" />
             </Pressable>
           </View>
         </View>
@@ -411,11 +417,11 @@ const styles = StyleSheet.create({
 
   headerRow: { height: 52, justifyContent: 'center' },
   title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center', paddingHorizontal: 110 },
-  headerIcons: { position: 'absolute', right: 14, top: 0, flexDirection: 'row', gap: 10 },
-  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  headerIcons: { position: 'absolute', right: 10, top: 0, flexDirection: 'row', gap: 6 },
+  iconBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   mailEmoji: { fontSize: 30 },
-  gearIcon: { width: 34, height: 34 },
-  calendarHeaderIcon: { width: 38, height: 38 },
+  gearIcon: { width: 44, height: 44 },
+  calendarHeaderIcon: { width: 44, height: 44 },
   badge: {
     position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, borderRadius: 9,
     backgroundColor: '#E5483C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,

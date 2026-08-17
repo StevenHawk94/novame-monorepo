@@ -69,7 +69,11 @@ async function generateBubble(body) {
     const res = await callAI({
       systemInstruction: BUBBLE_SYSTEM_PROMPT,
       userText: body,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 200 },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 200,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     })
     const line = (res.text || '').trim().replace(/^["']|["']$/g, '')
     if (!line || line.length > 200) return null
@@ -100,18 +104,26 @@ Finding context -- scan around each item's mention for:
 
 How much to include: rank the distinct details you find for that item by specificity and use the top 1-2. One real detail beats padding in a second; three or more means pick the best 2. A detail unique to that item (a person, a simultaneous action, an origin) always beats a generic one that fits the whole entry (overall mood). Two items may share the same context when that's all the entry gives.
 
+Short or sparse entries:
+- When the entry gives little item-specific detail, extend each title from the entry's overall emotional or situational context and the item's stated action or role. Make the title feel like a meaningful memory label instead of returning only "The <name>."
+- It is explicitly okay to reuse the same overall context across multiple item titles. Do not force artificial variety when one feeling or situation genuinely connects every item.
+- You may express a conservative relationship that is strongly supported by the wording, such as contrast ("despite feeling down"), persistence ("still exercised"), or a stated cause ("watched because I felt down"). Do not invent a person, place, event, motivation, sensory detail, or outcome that the entry does not support.
+
 Title rules:
 - No fixed template. Start with "The" + the item (or a natural reference like "Mom's ___"); let the grammar follow the content: adjective, "with ___", "while ___", "that ___", a clause about what happens next. A "mood + day" shape is welcome when the mood genuinely is the best context for that item -- just don't default to it when something more specific is available.
 - Use the entry's own wording where possible; light cleanup ok; never invent people, events, or opinions.
-- Roughly 4-10 words with one detail, up to 14 with two. Shorter and accurate beats longer and forced.
+- Roughly 6-15 words with one detail, up to 20 words with two. Accuracy and natural phrasing matter more than filling the maximum length.
 - Title Case; keep connectors (a, an, on, to, by, of, with, that, while) lowercase unless first.
 - If the entry says nothing about an item at all, "The <name>" plus the day's mood is a good fallback.
 
-Examples of range (not templates):
-Entry: "Feeling anxious but had lunch on time -- the sandwich was actually pretty good, had coffee with it. That Breaking Bad episode is legit. A colleague says the PowerPoint needs to be finished by tomorrow."
--> sandwich: "The Sandwich That Was Actually Pretty Good"; coffee: "The Coffee on an Anxious Lunch"; netflix: "The Legit Breaking Bad Episode"; powerpoint: "The PowerPoint That Needs to be Done by Tomorrow"
-Entry: "Mom made me a sandwich before I sat down to binge Breaking Bad -- honestly the best one in a while."
--> sandwich: "Mom's Sandwich Before Binging Breaking Bad" (3 details found; only the top 2 kept)
+Examples (not templates):
+Entry: "I felt unhappy today, but I ate dinner, exercised, and watched a movie."
+-> dinner: "The Dinner I Still Ate on a Hard Day"
+-> exercise: "The Exercise I Still Pushed Through While Feeling Down"
+-> movie: "The Movie I Watched While Feeling Down"
+
+Entry: "Mom made me a sandwich before I watched a show."
+-> sandwich: "Mom's Sandwich Before the Show"
 
 Return ONLY JSON: { "items": { "<itemId>": "<title>", ... } }, one entry per input item. No prose, no markdown, no reasoning.`
 
@@ -232,6 +244,22 @@ export async function POST(request) {
     const isPaid = (profile.subscription_tier || 'free') !== 'free'
     const hasConsent = !!profile.ai_consent_at
 
+    // Shared Memories is a Reflect path. Free members author every memory
+    // description themselves; Plus may leave notes blank for AI refinement.
+    // Enforce this server-side as well as in the UI so the old direct-create
+    // behavior cannot be recreated by a stale or modified client.
+    if (friendUserId && mode === 'typing' && !isPaid) {
+      if (preliminaryMatches.length === 0) {
+        return NextResponse.json({ error: 'No items matched' }, { status: 400 })
+      }
+      const complete = itemNotes && typeof itemNotes === 'object'
+        && preliminaryMatches.every((match) =>
+          typeof itemNotes[match.itemId] === 'string' && itemNotes[match.itemId].trim().length > 0)
+      if (!complete) {
+        return NextResponse.json({ error: 'Shared memory descriptions required' }, { status: 400 })
+      }
+    }
+
     // A reflect routed in from New Lens carries an explicit dimension (the
     // theme's) via presetDimension, overriding the prompt's own -- the user is
     // on the free-form prompt (9) but the reflection belongs to that theme.
@@ -331,15 +359,17 @@ export async function POST(request) {
           // drops its matched items into the pair's shared memory box too,
           // source 'reflect'. Only the rule-matched labels cross over -- never
           // the journal text (default-private posture). The friendship is
-          // re-checked here because friendUserId is client-supplied.
+          // re-checked here because friendUserId is client-supplied. Only the
+          // current pairing can create Ours items; historical friendships are
+          // retained but do not grant access after unpairing.
           if (friendUserId && typeof friendUserId === 'string' && friendUserId !== userId) {
             const [a, b] = userId < friendUserId ? [userId, friendUserId] : [friendUserId, userId]
-            const { data: friendship } = await supabase
-              .from('friendships')
-              .select('id')
-              .eq('user_a', a).eq('user_b', b).eq('status', 'accepted')
+            const { data: pairing } = await supabase
+              .from('pairings')
+              .select('partner_user_id')
+              .eq('user_id', userId)
               .maybeSingle()
-            if (friendship) {
+            if (pairing?.partner_user_id === friendUserId) {
               const boxRows = matches.map((m) => ({
                 user_a: a,
                 user_b: b,
@@ -412,6 +442,16 @@ export async function POST(request) {
                 .eq('user_id', userId)
                 .eq('reflect_id', reflectId)
                 .eq('item_id', t.itemId)
+              // Shared Memories uses the same Reflect pipeline. Keep the
+              // pair's Ours copy in sync with the Plus AI-refined description.
+              if (friendUserId && typeof friendUserId === 'string') {
+                await supabase
+                  .from('shared_memory_items')
+                  .update({ description: d })
+                  .eq('author_user_id', userId)
+                  .eq('reflect_id', reflectId)
+                  .eq('item_id', t.itemId)
+              }
             }
           }
         }

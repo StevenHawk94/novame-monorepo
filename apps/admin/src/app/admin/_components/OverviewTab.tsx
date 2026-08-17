@@ -8,13 +8,6 @@ import { apiClient } from '@/lib/api-client';
 type Dashboard = {
   users: number;
   activeSubs: number;
-  orders: number;
-  pendingOrders: number;
-  revenue: number;
-  wisdoms: number;
-  cards: number;
-  todayLikes: number;
-  totalUsers: number;
 };
 
 type ForceUpdateRow = {
@@ -27,21 +20,10 @@ type ForceUpdateRow = {
   created_at: string | null;
 };
 
-type Period = 'today' | '7days' | '30days' | '180days' | 'all';
-
-const PERIODS: Period[] = ['today', '7days', '30days', '180days', 'all'];
-
-export default function OverviewTab({
-  stats: initialStats,
-  loading: initLoading,
-}: {
-  stats: null;
-  loading: boolean;
-}) {
+export default function OverviewTab() {
   const router = useRouter();
-  const [period, setPeriod] = useState<Period>('all');
   const [dash, setDash] = useState<Dashboard | null>(null);
-  const [loading, setLoading] = useState(initLoading);
+  const [loading, setLoading] = useState(true);
   const [fuMinVersion, setFuMinVersion] = useState('');
   const [fuMessage, setFuMessage] = useState('');
   const [fuPlatform, setFuPlatform] = useState<'ios' | 'android' | 'all'>('all');
@@ -52,7 +34,7 @@ export default function OverviewTab({
   useEffect(() => {
     loadDash();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, []);
 
   useEffect(() => {
     loadHistory();
@@ -71,7 +53,7 @@ export default function OverviewTab({
   const loadDash = async () => {
     setLoading(true);
     try {
-      const d = await apiClient.get<{ success?: boolean; dashboard?: Dashboard; forceUpdateActive?: boolean }>(`/api/admin/stats?period=${period}`);
+      const d = await apiClient.get<{ success?: boolean; dashboard?: Dashboard; forceUpdateActive?: boolean }>('/api/admin/stats');
       if (d.success) {
         setDash(d.dashboard ?? null);
         setFuActive(!!d.forceUpdateActive);
@@ -120,23 +102,6 @@ export default function OverviewTab({
 
   return (
     <div>
-      {/* Time Filter */}
-      <div className="flex gap-2 mb-6">
-        {PERIODS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              period === p
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-black border'
-            }`}
-          >
-            {p === 'all' ? 'All Time' : p === 'today' ? 'Today' : p}
-          </button>
-        ))}
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
@@ -145,19 +110,9 @@ export default function OverviewTab({
         dash && (
           <>
             {/* Dashboard Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <StatCard icon="👥" label="Users" value={dash.users} />
               <StatCard icon="💎" label="Active Subs" value={dash.activeSubs} />
-              <StatCard icon="📦" label="Orders" value={dash.orders} />
-              <StatCard icon="⏳" label="Pending Orders" value={dash.pendingOrders} />
-              <StatCard icon="💰" label="Revenue" value={`$${dash.revenue}`} />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <StatCard icon="📚" label="Wisdoms" value={dash.wisdoms} />
-              <StatCard icon="🃏" label="User Cards" value={dash.cards} />
-              <StatCard icon="❤️" label="Today Likes" value={dash.todayLikes} />
-              <StatCard icon="👥" label="Total Users" value={dash.totalUsers} />
             </div>
 
             {/* Force Update Control */}

@@ -220,6 +220,19 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+
+    // Plus gate must live on the server as well as in the UI. Free users see
+    // only the fixed locked preview and must not start a recap calculation,
+    // including from an older client or a direct request to this endpoint.
+    const { data: viewer } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', userId)
+      .maybeSingle()
+    if ((viewer?.subscription_tier ?? 'free') === 'free') {
+      return NextResponse.json({ error: 'plus_required' }, { status: 403 })
+    }
+
     const { data: pairing } = await supabase
       .from('pairings').select('partner_user_id, created_at').eq('user_id', userId).maybeSingle()
     if (!pairing) return NextResponse.json({ success: true, state: 'unpaired', days, dimensions: [] })

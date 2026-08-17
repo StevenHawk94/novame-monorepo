@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate runtime item data from Icon_Mapping_Core_Tables_v19.xlsx."""
+"""Generate runtime item data from the v23 rules over stable v19 icon IDs."""
 
 from __future__ import annotations
 
@@ -14,12 +14,22 @@ from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "apps" / "mobile" / "assets" / "memory items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v19.xlsx"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v23.xlsx"
 DICTIONARY = ROOT / "packages" / "engine" / "src" / "items" / "dictionary.json"
 IMAGE_MAP = ROOT / "apps" / "mobile" / "src" / "lib" / "item-images.g.ts"
 GUIDED_CATALOG = ROOT / "apps" / "mobile" / "src" / "lib" / "guided-catalog.g.ts"
 MIGRATION = ROOT / "supabase" / "migrations" / "20260815000041_items_v19_catalog.sql"
-QA_PATH = SOURCE_DIR / "items-v19-data-qa.json"
+QA_PATH = SOURCE_DIR / "items-v23-data-qa.json"
+# This update intentionally changes only Icon_Mapping.keywords_mapping and
+# Keyword_Safety. Stable icon metadata, images, Reflect categories/order, and
+# the existing SQL catalog remain byte-for-byte untouched.
+KEYWORDS_ONLY = True
+# The user explicitly approved v23 category changes for these final seven
+# icons; all other icon metadata remains on the existing stable catalog.
+V23_METADATA_NAMES = {
+    "Social Media", "Video", "Music", "Messaging", "Shopping",
+    "Food Delivery", "Mobile Gaming",
+}
 
 
 CATEGORY_KEYS = {
@@ -37,31 +47,10 @@ CATEGORY_KEYS = {
     "Shopping & Errands": "shopping_errands",
 }
 
-# The workbook contains exactly 20 cross-icon executable keyword collisions.
-# Product rule: one winner only, choosing the icon whose name/visual carrier is
-# the most direct meaning of the keyword.
-CONFLICT_WINNERS = {
-    "dance club": "Dance Club",
-    "fried egg": "Fried Egg",
-    "scrambled eggs": "Scrambled Eggs",
-    "boiled egg": "Hard-Boiled Egg",
-    "avocado toast": "Avocado Toast",
-    "toast with jam": "Jam Toast",
-    "date fruit": "Date Fruit",
-    "ultimate frisbee": "Frisbee",
-    "played ultimate": "Frisbee",
-    "vet appointment": "Veterinary Clinic",
-    "cocktail bar": "Cocktail Bar",
-    "cruise port": "Cruise Terminal",
-    "very tired": "Sleepy",
-    "fatigued": "Sleepy",
-    "felt shocked": "Neutral",
-    "felt stunned": "Neutral",
-    "surprised": "Surprised",
-    "feeling surprised": "Surprised",
-    "composed": "Neutral",
-    "celebrating": "Celebrating",
-}
+# v23 resolves the 20 cross-icon executable collisions that existed in v19.
+# Keep this table explicit and empty: any future collision fails generation
+# until a product-reviewed direct carrier is added here.
+CONFLICT_WINNERS = {}
 
 # Four Keyword_Safety labels refer to retired names that are not present in
 # Icon_Mapping v19. Route them to the closest concrete carrier that does exist.
@@ -116,6 +105,7 @@ def sql(value: object) -> str:
 
 def main() -> None:
     workbook = load_workbook(WORKBOOK, read_only=True, data_only=True)
+    baseline_dictionary = json.loads(DICTIONARY.read_text(encoding="utf-8")) if KEYWORDS_ONLY else None
 
     icon_sheet = workbook["Icon_Mapping"]
     icon_rows = icon_sheet.iter_rows(values_only=True)
@@ -165,14 +155,25 @@ def main() -> None:
     runtime_items = {}
     for name, item in items_by_name.items():
         reflect = reflect_by_name[name]
-        runtime_items[item["id"]] = {
-            "displayName": name,
-            "rarity": rarity_for_frequency[reflect["frequency"]],
-            "category": reflect["category"],
-            "bagsCategory": item["category"],
-            "keywords": item["keywords"],
-            "visualConcept": item["visualConcept"],
-        }
+        if KEYWORDS_ONLY:
+            baseline = baseline_dictionary["items"].get(item["id"])
+            if not baseline or baseline.get("displayName") != name:
+                raise ValueError(f"Stable item identity changed at {item['id']}: {name!r}")
+            runtime_items[item["id"]] = {
+                **baseline,
+                "category": reflect["category"] if name in V23_METADATA_NAMES else baseline["category"],
+                "bagsCategory": item["category"] if name in V23_METADATA_NAMES else baseline.get("bagsCategory"),
+                "keywords": item["keywords"],
+            }
+        else:
+            runtime_items[item["id"]] = {
+                "displayName": name,
+                "rarity": rarity_for_frequency[reflect["frequency"]],
+                "category": reflect["category"],
+                "bagsCategory": item["category"],
+                "keywords": item["keywords"],
+                "visualConcept": item["visualConcept"],
+            }
 
     safety_sheet = workbook["Keyword_Safety"]
     safety_rows = safety_sheet.iter_rows(values_only=True)
@@ -184,6 +185,11 @@ def main() -> None:
     unresolved_exclusions = []
     executable_rows = 0
     for excel_row, row in enumerate(safety_rows, start=2):
+        # v23 keeps formatting below the populated table, which openpyxl
+        # exposes as fully empty rows. Ignore only rows with no rule content;
+        # partially populated rows must still fail validation below.
+        if not any(value is not None and str(value).strip() for value in row):
+            continue
         source_name = str(row[safety_ix["Icon_name"]]).strip()
         name = ORPHAN_ICON_REMAP.get(source_name, source_name)
         if name not in items_by_name:
@@ -268,7 +274,8 @@ def main() -> None:
             f"  {json.dumps(item['id'])}: require('../../assets/items/each/{item['id']}.webp'),"
         )
     image_lines.extend(["};", ""])
-    IMAGE_MAP.write_text("\n".join(image_lines), encoding="utf-8")
+    if not KEYWORDS_ONLY:
+        IMAGE_MAP.write_text("\n".join(image_lines), encoding="utf-8")
 
     category_sheet = workbook["Reflect_Categories"]
     category_rows = category_sheet.iter_rows(values_only=True)
@@ -305,7 +312,8 @@ def main() -> None:
         guided_lines.extend(f"    {json.dumps(item_id)}," for item_id in category["itemIds"])
         guided_lines.append("  ] },")
     guided_lines.append("];")
-    GUIDED_CATALOG.write_text("\n".join(guided_lines) + "\n", encoding="utf-8")
+    if not KEYWORDS_ONLY:
+        GUIDED_CATALOG.write_text("\n".join(guided_lines) + "\n", encoding="utf-8")
 
     migration_lines = [
         "-- Memory Items v19 catalog, GENERATED by tools/build-item-data-v19.py.",
@@ -334,10 +342,26 @@ def main() -> None:
         "  display_name = excluded.display_name, rarity = excluded.rarity, category = excluded.category;",
         "",
     ])
-    MIGRATION.write_text("\n".join(migration_lines), encoding="utf-8")
+    if not KEYWORDS_ONLY:
+        MIGRATION.write_text("\n".join(migration_lines), encoding="utf-8")
+
+    qa_categories = categories
+    if KEYWORDS_ONLY:
+        counts = defaultdict(int)
+        for runtime_item in runtime_items.values():
+            counts[runtime_item["category"]] += 1
+        qa_categories = [
+            {
+                "order": order,
+                "key": key,
+                "label": label,
+                "itemIds": [None] * counts[label],
+            }
+            for order, (label, key) in enumerate(CATEGORY_KEYS.items(), start=1)
+        ]
 
     qa = {
-        "schema": "memory-items-v19-data-qa@1",
+        "schema": "memory-items-v23-data-qa@1",
         "items": len(runtime_items),
         "executable_keyword_rows": executable_rows,
         "unique_executable_keywords": len(synonyms),
@@ -352,7 +376,7 @@ def main() -> None:
         "cross_icon_conflicts": conflict_report,
         "reflect_categories": [
             {"order": category["order"], "key": category["key"], "label": category["label"], "items": len(category["itemIds"])}
-            for category in categories
+            for category in qa_categories
         ],
     }
     QA_PATH.write_text(json.dumps(qa, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

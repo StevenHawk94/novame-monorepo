@@ -1,38 +1,29 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { matchItems, ITEM_DICTIONARY } from '@novame/engine'
 
 export const runtime = 'edge'
-
-const MAX_TEXT = 3000
 
 function pairOf(a, b) {
   return a < b ? [a, b] : [b, a]
 }
 
-async function requireAcceptedFriendship(supabase, userId, friendId) {
-  const [a, b] = pairOf(userId, friendId)
+async function requireActivePairing(supabase, userId, friendId) {
   const { data } = await supabase
-    .from('friendships')
-    .select('id')
-    .eq('user_a', a).eq('user_b', b).eq('status', 'accepted')
+    .from('pairings')
+    .select('partner_user_id')
+    .eq('user_id', userId)
     .maybeSingle()
-  return !!data
+  return data?.partner_user_id === friendId
 }
 
 /**
  * The shared memory box (PRD 6.3) — one box per friend pair.
  *
  * GET  ?userId=&friendUserId=      → the pair's items, newest first
- * POST { userId, friendUserId, text } → Create flow: the free text runs
- *      through the ITEM rule matcher (same engine as Reflect) and every hit
- *      lands in the box with its excerpt as the description. Both members
- *      can add; only accepted friends have a box at all (server-checked —
- *      a forged pair id reads as not_friends, never as an empty box).
- *
- * Plus's AI-refined descriptions arrive in a later pass; the rule-matched
- * excerpt is the baseline for every tier (PRD: 非 Plus 也匹配物品).
+ * POST action=read updates the unread cursor. Creation intentionally goes
+ * through /api/reflect so shared memories obey the same daily limit, rewards,
+ * consent, and tier rules as every other Reflect path.
  */
 export async function GET(request) {
   try {
@@ -51,8 +42,8 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
-    if (!(await requireAcceptedFriendship(supabase, userId, friendUserId))) {
-      return NextResponse.json({ error: 'not_friends' }, { status: 403 })
+    if (!(await requireActivePairing(supabase, userId, friendUserId))) {
+      return NextResponse.json({ error: 'not_paired' }, { status: 403 })
     }
 
     const [a, b] = pairOf(userId, friendUserId)
@@ -84,7 +75,7 @@ export async function POST(request) {
     const token = authHeader.replace(/^Bearer\s+/i, '').trim()
     const verified = await verifyToken(token)
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { userId, friendUserId, text, action, readThrough } = await request.json()
+    const { userId, friendUserId, action, readThrough } = await request.json()
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!friendUserId) return NextResponse.json({ error: 'Missing friendUserId' }, { status: 400 })
     const supabase = createClient(
@@ -92,8 +83,8 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
-    if (!(await requireAcceptedFriendship(supabase, userId, friendUserId))) {
-      return NextResponse.json({ error: 'not_friends' }, { status: 403 })
+    if (!(await requireActivePairing(supabase, userId, friendUserId))) {
+      return NextResponse.json({ error: 'not_paired' }, { status: 403 })
     }
 
     if (action === 'read') {
@@ -110,33 +101,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true })
     }
 
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      return NextResponse.json({ error: 'empty_text' }, { status: 400 })
-    }
-
-    const matches = matchItems(text.trim().slice(0, MAX_TEXT), ITEM_DICTIONARY)
-    if (matches.length === 0) {
-      return NextResponse.json({ success: true, created: [] })
-    }
-
-    const [a, b] = pairOf(userId, friendUserId)
-    const rows = matches.map((m) => ({
-      user_a: a,
-      user_b: b,
-      author_user_id: userId,
-      item_id: m.itemId,
-      description: m.label,
-      source: 'manual',
-    }))
-    const { data: inserted, error } = await supabase
-      .from('shared_memory_items')
-      .insert(rows)
-      .select('id, item_id, description, created_at')
-    if (error) {
-      console.error('[friends/box] insert error:', error.message)
-      return NextResponse.json({ error: 'Failed' }, { status: 500 })
-    }
-    return NextResponse.json({ success: true, created: inserted || [] })
+    return NextResponse.json({ error: 'unsupported_action' }, { status: 400 })
   } catch (err) {
     console.error('[friends/box] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

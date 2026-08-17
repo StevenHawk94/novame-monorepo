@@ -4,14 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
-const FEED_DAYS = 14
-const MAX_ROWS = 400 // hard bound; 99 friends x heavy writers stays sane
+const FEED_DAYS = 7
+const MAX_ROWS = 400
 
 /**
  * GET /api/friends/feed?userId=...
  *
- * The Messages list (PRD 6.2): every accepted friend's recent item memories,
- * grouped per reflect, newest first, with unread markers.
+ * The Paired list: the current partner's recent item memories, grouped per
+ * reflect, newest first, with unread markers. Historical friendship rows are
+ * deliberately ignored after unpairing.
  *
  * PRIVACY IS SERVER-ENFORCED: memory excerpts ride along ONLY when that
  * friend opted in (profiles.share_memory_details, default false). Otherwise
@@ -40,14 +41,13 @@ export async function GET(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // Accepted friends only.
-    const { data: rows } = await supabase
-      .from('friendships')
-      .select('user_a, user_b')
-      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
-      .eq('status', 'accepted')
-    const friendIds = (rows || []).map((r) => (r.user_a === userId ? r.user_b : r.user_a))
-    if (friendIds.length === 0) return NextResponse.json({ success: true, feed: [] })
+    const { data: pairing } = await supabase
+      .from('pairings')
+      .select('partner_user_id')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!pairing?.partner_user_id) return NextResponse.json({ success: true, feed: [] })
+    const friendIds = [pairing.partner_user_id]
 
     // Names + per-friend privacy in one query.
     const { data: profiles } = await supabase

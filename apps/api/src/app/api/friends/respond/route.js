@@ -1,26 +1,17 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { autoGrantDuoBothWays, revokeDuoOnUnpair } from '@/lib/duo-auto'
+import { autoGrantDuoBothWays } from '@/lib/duo-auto'
 
 export const runtime = 'edge'
 
-// PRD benefits matrix: free users hold 1 accepted friend, paid 99. Counted
-// server-side at request time (add) AND accept time (respond) — the pair
-// could fill either side's quota between the two moments.
-async function acceptedCount(supabase, uid) {
-  const { count } = await supabase
-    .from('friendships')
-    .select('id', { count: 'exact', head: true })
-    .or(`user_a.eq.${uid},user_b.eq.${uid}`)
-    .eq('status', 'accepted')
-  return count ?? 0
-}
-
-async function friendLimitOf(supabase, uid) {
+async function activePairing(supabase, uid) {
   const { data } = await supabase
-    .from('profiles').select('subscription_tier').eq('id', uid).maybeSingle()
-  return (data?.subscription_tier ?? 'free') === 'free' ? 1 : 99
+    .from('pairings')
+    .select('partner_user_id')
+    .eq('user_id', uid)
+    .maybeSingle()
+  return data
 }
 
 
@@ -58,7 +49,7 @@ export async function POST(request) {
 
     const { data: fr } = await supabase
       .from('friendships')
-      .select('id, user_a, user_b, status, requested_by, relationship, relationship_since')
+      .select('id, user_a, user_b, status, requested_by, relationship, relationship_since, accepted_at')
       .eq('id', friendshipId)
       .maybeSingle()
     if (!fr) {
@@ -71,15 +62,13 @@ export async function POST(request) {
     }
 
     if (action === 'accept') {
-      // Quota re-check at accept time (either side may have filled up since
-      // the request was sent).
       const other = fr.user_a === userId ? fr.user_b : fr.user_a
-      if ((await acceptedCount(supabase, userId)) >= (await friendLimitOf(supabase, userId))) {
-        return NextResponse.json({ error: 'friend_limit_reached' }, { status: 403 })
-      }
-      if ((await acceptedCount(supabase, other)) >= (await friendLimitOf(supabase, other))) {
-        return NextResponse.json({ error: 'requester_friend_limit_reached' }, { status: 403 })
-      }
+      const [mine, theirs] = await Promise.all([
+        activePairing(supabase, userId),
+        activePairing(supabase, other),
+      ])
+      if (mine) return NextResponse.json({ error: 'already_paired' }, { status: 409 })
+      if (theirs) return NextResponse.json({ error: 'requester_already_paired' }, { status: 409 })
 
       const { error } = await supabase
         .from('friendships')
@@ -90,27 +79,30 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Failed' }, { status: 500 })
       }
 
-      // 2026-07-24 pairing-first model: accepting an invitation also forms
-      // the 1:1 pairing (with the invitation's relationship), when both sides
-      // are still unpaired. Best-effort — if either is already paired the
-      // friendship simply stands as a normal friend.
-      let paired = false
       const { data: pairRes, error: pairErr } = await supabase.rpc('set_pairing', {
         p_user_id: userId,
         p_partner_id: other,
         p_relationship: fr.relationship ?? null,
         p_since: fr.relationship_since ?? null,
       })
-      if (pairErr) {
-        console.warn('[friends/respond] set_pairing failed (non-fatal):', pairErr.message)
-      } else if (!pairRes?.error) {
-        paired = true
-        // 2026-08-11: whichever side owns Plus auto-seats the other.
-        await autoGrantDuoBothWays(supabase, userId, other)
+      if (pairErr || pairRes?.error) {
+        // A concurrent accept may have filled either user's pairing between
+        // the checks above. Restore the invitation instead of leaving an
+        // accepted-but-unpaired relationship behind.
+        await supabase.from('friendships').update({ status: 'pending', accepted_at: null }).eq('id', friendshipId)
+        const reason = pairRes?.error || 'pairing_failed'
+        console.warn('[friends/respond] set_pairing failed:', pairErr?.message || reason)
+        return NextResponse.json({ error: reason }, { status: 409 })
       }
-      return NextResponse.json({ success: true, action, paired })
+      await autoGrantDuoBothWays(supabase, userId, other)
+      return NextResponse.json({ success: true, action, paired: true })
     } else {
-      const { error } = await supabase.from('friendships').delete().eq('id', friendshipId)
+      // A re-invite reuses an old accepted row. Declining that new invitation
+      // restores the historical relationship marker rather than deleting it.
+      const query = fr.accepted_at
+        ? supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId)
+        : supabase.from('friendships').delete().eq('id', friendshipId)
+      const { error } = await query
       if (error) {
         console.error('[friends/respond] decline error:', error.message)
         return NextResponse.json({ error: 'Failed' }, { status: 500 })

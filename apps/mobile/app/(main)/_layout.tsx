@@ -31,7 +31,7 @@ export default function MainLayout() {
       <Stack.Screen name="reflect" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
-      <Stack.Screen name="reflect-items" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="focus" options={{ presentation: 'fullScreenModal' }} />
     </Stack>
   );

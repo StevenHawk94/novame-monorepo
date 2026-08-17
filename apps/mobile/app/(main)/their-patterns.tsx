@@ -8,6 +8,7 @@ import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
+import { getCachedSubscriptionTier } from '@/lib/subscription';
 import {
   fetchTheirPatterns,
   getCachedTheirPatterns,
@@ -28,6 +29,9 @@ const DIMENSION_META: Record<DimensionKey, { emoji: string; color: string; line:
   connection: { emoji: '🤝', color: '#F5D1D8', line: '#BE6677' },
   enjoyment: { emoji: '✨', color: '#DDE8BD', line: '#789747' },
 };
+
+const LOCKED_WEEK_PREVIEW = require('../../assets/connection/weekly-recap-week-free.webp');
+const LOCKED_TRENDS_PREVIEW = require('../../assets/connection/weekly-recap-trends-free.webp');
 
 function trendIcon(trend: string): keyof typeof MaterialIcons.glyphMap {
   if (trend.endsWith('_up')) return 'trending-up';
@@ -83,18 +87,47 @@ function ScoreChart({ periods, dimension }: { periods: PatternScorePeriod[]; dim
   );
 }
 
+function LockedRecapPreview({ tab, onUnlock }: { tab: PageTab; onUnlock: () => void }) {
+  const isWeek = tab === 'week';
+  return (
+    <View style={styles.lockedPreview}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.lockedPreviewScroll}
+      >
+        <Image
+          source={isWeek ? LOCKED_WEEK_PREVIEW : LOCKED_TRENDS_PREVIEW}
+          style={[styles.lockedPreviewImage, { aspectRatio: isWeek ? 500 / 1050 : 500 / 1300 }]}
+          resizeMode="contain"
+        />
+      </ScrollView>
+      <View style={styles.unlockOverlay} pointerEvents="box-none">
+        <Pressable onPress={onUnlock} style={styles.unlockButton}>
+          <MaterialIcons name="lock" size={20} color="#FFFFFF" />
+          <Text style={styles.unlockButtonText}>Join Plus to Access Details</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function TheirPatternsScreen() {
   const router = useRouter();
   const cachedAtMount = getCachedTheirPatterns();
+  const [isPaid, setIsPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
   const [tab, setTab] = useState<PageTab>('week');
   const [data, setData] = useState<TheirPatterns | null>(cachedAtMount);
-  const [loading, setLoading] = useState(cachedAtMount == null);
+  const [loading, setLoading] = useState(isPaid && cachedAtMount == null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState<string | null>(null);
   const refreshInFlight = useRef(false);
 
   const load = useCallback(async () => {
+    if (!isPaid) {
+      setLoading(false);
+      return;
+    }
     if (!shouldRefreshTheirPatterns() || refreshInFlight.current) return;
     refreshInFlight.current = true;
     if (!getCachedTheirPatterns()) setLoading(true);
@@ -104,9 +137,17 @@ export default function TheirPatternsScreen() {
       setLoading(false);
       refreshInFlight.current = false;
     }
-  }, []);
+  }, [isPaid]);
 
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    setIsPaid(getCachedSubscriptionTier() !== 'free');
+    void load();
+  }, [load]));
+
+  const openPaywall = useCallback(() => {
+    void haptics.light();
+    router.push('/(main)/(modals)/subscription-paywall' as never);
+  }, [router]);
 
   function openMoment(dimension: PatternDimension, index: number) {
     const moment = dimension.related[index];
@@ -140,10 +181,21 @@ export default function TheirPatternsScreen() {
             <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
           <View style={styles.headerCopy}>
-            <Text style={styles.title}>Their Patterns</Text>
-            <Text style={styles.subtitle}>Changes across their recent moments</Text>
+            <Text style={styles.title}>Weekly Recap</Text>
+            <Text style={styles.subtitle}>A glimpse into their week.</Text>
           </View>
-          <Pressable onPress={() => { void haptics.light(); setHistoryOpen(true); }} style={styles.calendarButton} hitSlop={10}>
+          <Pressable
+            onPress={() => {
+              if (!isPaid) {
+                openPaywall();
+                return;
+              }
+              void haptics.light();
+              setHistoryOpen(true);
+            }}
+            style={styles.calendarButton}
+            hitSlop={10}
+          >
             <Image source={ICONS.patternCalendar} style={styles.calendarIcon} resizeMode="contain" />
           </Pressable>
         </View>
@@ -162,7 +214,9 @@ export default function TheirPatternsScreen() {
           ))}
         </View>
 
-        {loading ? (
+        {!isPaid ? (
+          <LockedRecapPreview tab={tab} onUnlock={openPaywall} />
+        ) : loading ? (
           <View style={styles.center}><ActivityIndicator color="#7A4A3A" /></View>
         ) : showEmptyState ? (
           <View style={styles.center}>
@@ -250,7 +304,7 @@ export default function TheirPatternsScreen() {
         ) : null}
       </SafeAreaView>
 
-      <Modal visible={historyOpen} transparent animationType="fade" onRequestClose={() => setHistoryOpen(false)}>
+      <Modal visible={isPaid && historyOpen} transparent animationType="fade" onRequestClose={() => setHistoryOpen(false)}>
         <View style={styles.modalBackdrop}>
           <SafeAreaView style={styles.historySheet} edges={['bottom']}>
             <View style={styles.historyHeader}>
@@ -286,12 +340,22 @@ const styles = StyleSheet.create({
   headerSafe: { backgroundColor: '#7A4A3A' },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#7A4A3A', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   headerButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
-  calendarButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  calendarIcon: { width: 36, height: 36 },
+  calendarButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  calendarIcon: { width: 44, height: 44 },
   headerCopy: { flex: 1 },
   title: { color: '#FFFFFF', fontSize: 24, fontFamily: 'Inter_800ExtraBold' },
   subtitle: { color: 'rgba(255,255,255,0.84)', fontSize: 12.5, fontFamily: 'Inter_500Medium', marginTop: 2 },
   content: { flex: 1, backgroundColor: '#FDF1E8' },
+  lockedPreview: { flex: 1, position: 'relative', overflow: 'hidden' },
+  lockedPreviewScroll: { paddingHorizontal: 16, paddingBottom: 32 },
+  lockedPreviewImage: { width: '100%' },
+  unlockOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  unlockButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
+    backgroundColor: '#AD7343', borderRadius: 16, paddingHorizontal: 24, paddingVertical: 17,
+    shadowColor: '#6A4028', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4,
+  },
+  unlockButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
   tabStrip: { flexDirection: 'row', margin: 16, padding: 5, borderRadius: 24, backgroundColor: '#FFF9ED', borderWidth: 1.5, borderColor: '#5B3B27' },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 18 },
   tabActive: { backgroundColor: '#503524' },

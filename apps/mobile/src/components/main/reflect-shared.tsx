@@ -191,6 +191,7 @@ export function MemoryEditSheet({
   onRemove,
   onDone,
   isPaid,
+  requireNotes = false,
 }: {
   items: { itemId: string; displayName: string }[];
   notes: Record<string, string>;
@@ -199,7 +200,11 @@ export function MemoryEditSheet({
   onRemove?: (itemId: string) => void;
   onDone: () => void;
   isPaid: boolean;
+  /** Shared Memories on Free: every kept item needs a manual description. */
+  requireNotes?: boolean;
 }) {
+  const notesComplete = !requireNotes || items.every((item) => (notes[item.itemId] ?? '').trim().length > 0);
+
   return (
     <KeyboardDismissView style={s.sheetOverlay}>
       <View style={s.sheetFrame}>
@@ -210,7 +215,9 @@ export function MemoryEditSheet({
                 {items.length} {items.length === 1 ? 'Item' : 'Items'}
               </Text>
               <Text style={s.sheetSub}>
-                {isPaid
+                {requireNotes
+                  ? 'Add a memory description for every item'
+                  : isPaid
                   ? 'Your memories will be added automatically after save.'
                   : 'Add memories manually'}
               </Text>
@@ -251,7 +258,15 @@ export function MemoryEditSheet({
             ))}
           </ScrollView>
 
-          <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={onDone} cardStyle={s.doneBtn}>
+          <OffsetCard
+            color={RC.yellowDrop}
+            offset={4}
+            radius={24}
+            onPress={onDone}
+            disabled={!notesComplete}
+            style={{ opacity: notesComplete ? 1 : 0.5 }}
+            cardStyle={s.doneBtn}
+          >
             <Text style={s.doneBtnText}>Done</Text>
           </OffsetCard>
         </View>

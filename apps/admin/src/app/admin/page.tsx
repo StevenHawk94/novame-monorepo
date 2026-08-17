@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import OverviewTab from './_components/OverviewTab';
-import DefaultUsersTab from './_components/DefaultUsersTab';
 import RealUsersTab from './_components/RealUsersTab';
 import OutfitsTab from './_components/OutfitsTab';
 import ScenesTab from './_components/ScenesTab';
@@ -14,7 +13,6 @@ import ItemsTab from './_components/ItemsTab';
 type TabId =
   | 'overview'
   | 'analysis'
-  | 'default-users'
   | 'real-users'
   | 'orders'
   | 'pricing'
@@ -25,7 +23,6 @@ type TabId =
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'analysis', icon: '📈', label: 'Analysis' },
-  { id: 'default-users', icon: '👤', label: 'Default Users' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
   { id: 'orders', icon: '📦', label: 'Orders' },
   { id: 'pricing', icon: '💰', label: 'Pricing' },
@@ -66,9 +63,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {tab === 'overview' && <OverviewTab stats={null} loading={false} />}
+      {tab === 'overview' && <OverviewTab />}
       {tab === 'analysis' && <AnalysisTab />}
-      {tab === 'default-users' && <DefaultUsersTab />}
       {tab === 'real-users' && <RealUsersTab />}
       {tab === 'orders' && <OrdersTab />}
       {tab === 'pricing' && <PricingTab />}

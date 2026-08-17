@@ -5,11 +5,11 @@ import { ITEM_DICTIONARY } from './dictionary';
 
 function idForName(name: string): string {
   const found = Object.entries(ITEM_DICTIONARY.items).find(([, item]) => item.displayName === name);
-  if (!found) throw new Error(`Missing v19 item: ${name}`);
+  if (!found) throw new Error(`Missing stable catalog item: ${name}`);
   return found[0];
 }
 
-describe('real dictionary smoke (v19)', () => {
+describe('real dictionary smoke (stable v19 icons + v23 matching rules)', () => {
   it('has the complete 5,390-item catalog', () => {
     expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5390);
   });

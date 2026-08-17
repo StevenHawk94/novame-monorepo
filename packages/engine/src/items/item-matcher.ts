@@ -33,9 +33,9 @@ export interface ItemDef {
   col?: number;
   /** Placeholder glyph until sprite art lands. */
   emoji?: string;
-  /** Source v19 trigger vocabulary, retained for catalog inspection. */
+  /** Source v23 trigger vocabulary over the stable v19 icon catalog. */
   keywords?: string[];
-  /** Source v19 drawing definition, retained with the app-facing catalog. */
+  /** Stable icon drawing definition, retained with the app-facing catalog. */
   visualConcept?: string;
 }
 

@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,7 +30,13 @@ import {
   fetchSubscriptionTier,
 } from '@/lib/subscription';
 import { fetchDuoStatus, type DuoStatus } from '@/lib/duo-api';
-import { fetchFriends } from '@/lib/friends-api';
+import {
+  fetchFriends,
+  fetchPairing,
+  getCachedPairing,
+  unsetPairing,
+  type PairingStatus,
+} from '@/lib/friends-api';
 import { fetchMeStats, getCachedMeStats } from '@/lib/me-stats';
 import { getBunnyName } from '@/lib/onboarding';
 import { resolveAvatarSource } from '@/lib/avatar';
@@ -47,6 +66,11 @@ export default function MeScreen() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isDefaultAvatar, setIsDefaultAvatar] = useState<boolean | undefined>(undefined);
   const [duo, setDuo] = useState<DuoStatus>({ asOwner: null, asMember: null });
+  const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
+  const [pairedModalStep, setPairedModalStep] = useState<'closed' | 'profile' | 'confirm'>('closed');
+  const [confirmText, setConfirmText] = useState('');
+  const [unpairing, setUnpairing] = useState(false);
+  const [unpairError, setUnpairError] = useState('');
 
   // Name + avatar come from me-stats (profiles), the same source Account
   // Management edits — so a save there shows here on the next focus.
@@ -84,6 +108,7 @@ export default function MeScreen() {
         if (uid) void fetchSubscriptionTier(uid).then((s) => setTier(s.tier)).catch(() => {});
       });
       void fetchDuoStatus().then(setDuo);
+      void fetchPairing().then(setPairing);
     }, [refreshProfile]),
   );
 
@@ -118,6 +143,54 @@ export default function MeScreen() {
       // fall through to the Friends tab, where the full add flow lives
     }
     router.push('/(main)/(tabs)/friends' as never);
+  };
+
+  const onPairedRow = () => {
+    if (!pairing?.paired || !pairing.partner) {
+      void onInviteFriends();
+      return;
+    }
+    void haptics.light();
+    setConfirmText('');
+    setUnpairError('');
+    setPairedModalStep('profile');
+  };
+
+  const closePairedModal = () => {
+    if (unpairing) return;
+    Keyboard.dismiss();
+    setConfirmText('');
+    setUnpairError('');
+    setPairedModalStep('closed');
+  };
+
+  const goBackToPairedProfile = () => {
+    if (unpairing) return;
+    Keyboard.dismiss();
+    setConfirmText('');
+    setUnpairError('');
+    setPairedModalStep('profile');
+  };
+
+  const confirmUnpair = async () => {
+    if (confirmText.trim() !== 'Confirm' || unpairing) return;
+    Keyboard.dismiss();
+    void haptics.warning();
+    setUnpairing(true);
+    setUnpairError('');
+    const ok = await unsetPairing();
+    if (!ok) {
+      setUnpairError('We could not end this pairing. Please check your connection and try again.');
+      setUnpairing(false);
+      return;
+    }
+    setPairing({ paired: false, partner: null });
+    setPairedModalStep('closed');
+    setConfirmText('');
+    setUnpairing(false);
+    void fetchDuoStatus().then(setDuo);
+    if (userId) void fetchSubscriptionTier(userId).then((status) => setTier(status.tier)).catch(() => {});
+    void haptics.success();
   };
 
   /** Design row "Rate Us on App Store": native in-app review when available. */
@@ -203,7 +276,12 @@ export default function MeScreen() {
           <View style={styles.menuCard}>
             <MenuRow emoji={'🙂'} label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
             <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }} divider />
-            <MenuRow emoji={'🐰'} label="Invite Friends" onPress={() => void onInviteFriends()} divider />
+            <MenuRow
+              emoji={pairing?.paired ? '🐇' : '🐰'}
+              label={pairing?.paired ? 'My Paired' : 'Invite Friends'}
+              onPress={onPairedRow}
+              divider
+            />
             <MenuRow emoji={'🔗'} label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
             <MenuRow emoji={'⭐'} label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
             <MenuRow emoji={'🐞'} label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
@@ -249,9 +327,137 @@ export default function MeScreen() {
         </ScrollView>
 
         <PlanBillingSheet ref={planBillingSheetRef} />
+
+        <Modal
+          visible={pairedModalStep !== 'closed'}
+          transparent
+          animationType="fade"
+          onRequestClose={pairedModalStep === 'confirm' ? goBackToPairedProfile : closePairedModal}
+        >
+          <Pressable style={styles.pairedBackdrop} onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.pairedKeyboardView}
+            >
+              <Pressable
+                style={styles.pairedModalCard}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  Keyboard.dismiss();
+                }}
+              >
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={styles.pairedModalContent}
+                >
+                {pairedModalStep === 'profile' && pairing?.partner ? (
+                  <>
+                    <Pressable onPress={closePairedModal} style={styles.pairedClose} hitSlop={8}>
+                      <MaterialIcons name="close" size={22} color="#FFFFFF" />
+                    </Pressable>
+                    <View style={styles.partnerAvatarWrap}>
+                      <Image
+                        source={resolveAvatarSource(
+                          pairing.partner.avatarUrl ?? '',
+                          pairing.partner.isDefaultAvatar,
+                          pairing.partner.userId,
+                        )}
+                        style={styles.partnerAvatar}
+                        contentFit="cover"
+                        contentPosition="center"
+                      />
+                    </View>
+                    <Text style={styles.partnerName}>{pairing.partner.displayName}</Text>
+                    {pairing.relationship ? <Text style={styles.partnerRelationship}>{pairing.relationship}</Text> : null}
+                    <View style={styles.pairedDateCard}>
+                      <MaterialIcons name="favorite" size={19} color="#B86A5B" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.pairedDateLabel}>Paired since</Text>
+                        <Text style={styles.pairedDateValue}>{formatPairedDate(pairing.pairedAt)}</Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      onPress={() => {
+                        void haptics.warning();
+                        setConfirmText('');
+                        setUnpairError('');
+                        setPairedModalStep('confirm');
+                      }}
+                      style={({ pressed }) => [styles.unpairButton, pressed && styles.pressedBtn]}
+                    >
+                      <MaterialIcons name="link-off" size={20} color="#A64235" />
+                      <Text style={styles.unpairButtonText}>Unpair</Text>
+                    </Pressable>
+                  </>
+                ) : pairedModalStep === 'confirm' && pairing?.partner ? (
+                  <>
+                    <View style={styles.warningIcon}>
+                      <MaterialIcons name="link-off" size={30} color="#A64235" />
+                    </View>
+                    <Text style={styles.confirmTitle}>Unpair from {pairing.partner.displayName}?</Text>
+                    <Text style={styles.confirmBody}>
+                      Are you sure you want to end this pairing? After unpairing, you will no longer be able to view any of their memory items, reflections, or connection information.
+                    </Text>
+                    <Text style={styles.confirmInstruction}>Type Confirm below to continue.</Text>
+                    <TextInput
+                      value={confirmText}
+                      onChangeText={setConfirmText}
+                      placeholder="Confirm"
+                      placeholderTextColor="#B3A48F"
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      editable={!unpairing}
+                      returnKeyType="done"
+                      onSubmitEditing={() => void confirmUnpair()}
+                      style={styles.confirmInput}
+                    />
+                    {unpairError ? <Text style={styles.unpairError}>{unpairError}</Text> : null}
+                    <View style={styles.confirmActions}>
+                      <Pressable
+                        onPress={goBackToPairedProfile}
+                        disabled={unpairing}
+                        style={({ pressed }) => [styles.cancelButton, pressed && styles.pressedBtn]}
+                      >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void confirmUnpair()}
+                        disabled={confirmText.trim() !== 'Confirm' || unpairing}
+                        style={({ pressed }) => [
+                          styles.confirmUnpairButton,
+                          (confirmText.trim() !== 'Confirm' || unpairing) && styles.confirmUnpairDisabled,
+                          pressed && confirmText.trim() === 'Confirm' && !unpairing && styles.pressedBtn,
+                        ]}
+                      >
+                        {unpairing ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.confirmUnpairText}>Unpair</Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  </>
+                ) : null}
+                </ScrollView>
+              </Pressable>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Modal>
       </View>
     </BottomSheetModalProvider>
   );
+}
+
+function formatPairedDate(value?: string | null): string {
+  if (!value) return 'Date unavailable';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function MenuRow({ emoji, label, onPress, divider }: {
@@ -313,6 +519,62 @@ const styles = StyleSheet.create({
   duoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E8D5B0' },
   duoTitle: { color: '#4A3423', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginBottom: 8 },
   duoBody: { color: '#6B5B44', fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19, marginBottom: 6 },
+
+  pairedBackdrop: { flex: 1, backgroundColor: 'rgba(41,27,18,0.58)' },
+  pairedKeyboardView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 28 },
+  pairedModalCard: {
+    width: '100%', maxWidth: 420, maxHeight: '92%', overflow: 'hidden',
+    backgroundColor: '#FFF8EB', borderRadius: 28,
+    shadowColor: '#2A1A10', shadowOpacity: 0.24, shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 }, elevation: 8,
+  },
+  pairedModalContent: { alignItems: 'center', padding: 24 },
+  pairedClose: {
+    alignSelf: 'flex-end', width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#4A3423', alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  partnerAvatarWrap: {
+    width: 96, height: 96, borderRadius: 48, overflow: 'hidden',
+    backgroundColor: '#F2E6CB', borderWidth: 4, borderColor: '#E8CFA5',
+  },
+  partnerAvatar: { width: '100%', height: '100%' },
+  partnerName: { marginTop: 14, color: '#34251B', fontSize: 25, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  partnerRelationship: {
+    marginTop: 7, color: '#795A42', fontSize: 14, fontFamily: 'Inter_700Bold',
+    backgroundColor: '#F2E4CE', borderRadius: 14, paddingHorizontal: 13, paddingVertical: 6,
+  },
+  pairedDateCard: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginTop: 22,
+    borderWidth: 1, borderColor: '#EDDDC4',
+  },
+  pairedDateLabel: { color: '#9A826B', fontSize: 12, fontFamily: 'Inter_600SemiBold' },
+  pairedDateValue: { color: '#423126', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginTop: 2 },
+  unpairButton: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginTop: 18, borderRadius: 17, paddingVertical: 14,
+    backgroundColor: '#FFF2EF', borderWidth: 1.5, borderColor: '#D78A7E',
+  },
+  unpairButtonText: { color: '#A64235', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  warningIcon: {
+    width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#FFE8E3', marginBottom: 15,
+  },
+  confirmTitle: { color: '#34251B', fontSize: 22, lineHeight: 28, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  confirmBody: { marginTop: 12, color: '#6F5C4B', fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', textAlign: 'center' },
+  confirmInstruction: { alignSelf: 'flex-start', marginTop: 20, color: '#4A3423', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
+  confirmInput: {
+    width: '100%', marginTop: 8, backgroundColor: '#FFFFFF', borderRadius: 15,
+    borderWidth: 1.5, borderColor: '#D9C4A5', paddingHorizontal: 15, paddingVertical: 13,
+    color: '#34251B', fontSize: 16, fontFamily: 'Inter_600SemiBold',
+  },
+  unpairError: { width: '100%', marginTop: 9, color: '#A64235', fontSize: 12.5, lineHeight: 18, fontFamily: 'Inter_600SemiBold' },
+  confirmActions: { width: '100%', flexDirection: 'row', gap: 10, marginTop: 18 },
+  cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 15, paddingVertical: 14, backgroundColor: '#EFE4D3' },
+  cancelButtonText: { color: '#594535', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  confirmUnpairButton: { flex: 1, minHeight: 49, alignItems: 'center', justifyContent: 'center', borderRadius: 15, paddingVertical: 14, backgroundColor: '#A64235' },
+  confirmUnpairDisabled: { backgroundColor: '#D8C7BE' },
+  confirmUnpairText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 },
   legalLink: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium' },

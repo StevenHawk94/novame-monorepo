@@ -6,7 +6,7 @@
  * icon_keyword_mapping_final.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
- * Object Reflect shares the same 12 categories for its library picker.
+ * Guided Reflect uses the same 12-category item library.
  */
 import { PROMPT_CATEGORIES } from './guided-catalog.g';
 import { remoteIdsForPromptCategory } from './remote-items';

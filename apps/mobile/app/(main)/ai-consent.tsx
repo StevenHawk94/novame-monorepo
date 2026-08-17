@@ -79,10 +79,10 @@ export default function AiConsentModal() {
   // for the user to return and finish the agree flow.
   const handleLearnMore = () => {
     void haptics.light();
-    void Linking.openURL('https://novameapp.com/ai-features').catch(() => {
+    void Linking.openURL('https://www.burrow-app.com/ai-features').catch(() => {
       appAlert(
         'Unable to open page',
-        'Please visit novameapp.com/ai-features in your browser.',
+        'Please visit www.burrow-app.com/ai-features in your browser.',
       );
     });
   };

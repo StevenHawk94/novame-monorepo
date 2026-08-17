@@ -10,7 +10,7 @@ import { syncWidgetLatestFriend } from './widget-sync';
 import { apiClient } from './api';
 import { supabase } from './supabase';
 import { storage } from './storage';
-import { kCommonItems, kFriendsFeed, kFriendsStatus, kPairingStatus } from '../shared/storage/keys';
+import { kCommonItems, kConnInsights, kFriendsFeed, kFriendsStatus, kPairingStatus, kSharedBoxState } from '../shared/storage/keys';
 import { localDateKey, patchAnalysisCache, readAnalysisCache } from './connection-analysis-cache';
 import { shouldResumeAfterAbsence } from './analysis-refresh-policy';
 
@@ -367,6 +367,41 @@ export interface SharedBoxResult {
   readThrough: string;
 }
 
+interface SharedBoxCache {
+  friendUserId: string;
+  result: SharedBoxResult;
+}
+
+export function getCachedSharedBox(friendUserId?: string): SharedBoxResult {
+  const empty = { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
+  const raw = storage.getString(kSharedBoxState.name);
+  if (!raw) return empty;
+  try {
+    const cached = JSON.parse(raw) as SharedBoxCache;
+    if (friendUserId && cached.friendUserId !== friendUserId) return empty;
+    if (!cached.result || !Array.isArray(cached.result.items)) return empty;
+    return cached.result;
+  } catch { return empty; }
+}
+
+type SharedBoxChangeListener = (friendUserId: string) => void;
+const sharedBoxChangeListeners = new Set<SharedBoxChangeListener>();
+
+/**
+ * The creator screen is pushed above the Memories tab, so on some Expo Router
+ * stacks the tab never actually loses focus. A small in-process signal makes
+ * the mounted Ours collection refresh immediately after a successful create
+ * instead of waiting for the user to switch tabs.
+ */
+export function subscribeSharedBoxChanges(listener: SharedBoxChangeListener): () => void {
+  sharedBoxChangeListeners.add(listener);
+  return () => sharedBoxChangeListeners.delete(listener);
+}
+
+export function notifySharedBoxChanged(friendUserId: string): void {
+  for (const listener of sharedBoxChangeListeners) listener(friendUserId);
+}
+
 /** The shared memory box with one friend. */
 export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxItem[]> {
   return (await fetchSharedBoxWithMeta(friendUserId)).items;
@@ -375,7 +410,7 @@ export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxIte
 export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<SharedBoxResult> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
-  if (!userId) return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
+  if (!userId) return getCachedSharedBox(friendUserId);
   try {
     const data = await apiClient.get<{
       success?: boolean;
@@ -383,8 +418,8 @@ export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<Shar
       readThrough?: string;
       items?: { id: string; author_user_id: string; item_id: string; description: string; source: 'manual' | 'reflect'; created_at: string }[];
     }>(`/api/friends/box?userId=${encodeURIComponent(userId)}&friendUserId=${encodeURIComponent(friendUserId)}`);
-    if (!data.success || !data.items) return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
-    return { items: data.items.map((r) => ({
+    if (!data.success || !data.items) return getCachedSharedBox(friendUserId);
+    const result: SharedBoxResult = { items: data.items.map((r) => ({
       id: r.id,
       authorUserId: r.author_user_id,
       itemId: r.item_id,
@@ -393,8 +428,10 @@ export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<Shar
       source: r.source,
       createdAt: r.created_at,
     })), hasUnreadFromPartner: !!data.hasUnreadFromPartner, readThrough: data.readThrough || new Date(0).toISOString() };
+    storage.set(kSharedBoxState.name, JSON.stringify({ friendUserId, result } satisfies SharedBoxCache));
+    return result;
   } catch {
-    return { items: [], hasUnreadFromPartner: false, readThrough: new Date(0).toISOString() };
+    return getCachedSharedBox(friendUserId);
   }
 }
 
@@ -406,27 +443,15 @@ export async function markSharedBoxRead(friendUserId: string, readThrough: strin
     const data = await apiClient.post<{ success?: boolean }>('/api/friends/box', {
       userId, friendUserId, action: 'read', readThrough,
     });
+    if (data.success) {
+      const cached = getCachedSharedBox(friendUserId);
+      storage.set(kSharedBoxState.name, JSON.stringify({
+        friendUserId,
+        result: { ...cached, hasUnreadFromPartner: false, readThrough },
+      } satisfies SharedBoxCache));
+    }
     return !!data.success;
   } catch { return false; }
-}
-
-/** Create-flow: free text → rule-matched items land in the pair's box. */
-export async function createSharedMemories(
-  friendUserId: string,
-  text: string,
-): Promise<{ ok: boolean; createdCount: number }> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, createdCount: 0 };
-  try {
-    const data = await apiClient.post<{ success?: boolean; created?: unknown[] }>(
-      '/api/friends/box',
-      { userId, friendUserId, text },
-    );
-    return { ok: !!data.success, createdCount: data.created?.length ?? 0 };
-  } catch {
-    return { ok: false, createdCount: 0 };
-  }
 }
 
 // ---- 1:1 pairing (2026-07-23 需求: 那个愿意共享生活点滴的人) ----------------
@@ -436,6 +461,7 @@ export interface PairingStatus {
   partner: { userId: string; displayName: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null;
   relationship?: string | null;
   relationshipSince?: string | null;
+  pairedAt?: string | null;
   pairedDays?: number;
 }
 
@@ -462,6 +488,7 @@ export async function fetchPairing(): Promise<PairingStatus> {
       partner: data.partner ?? null,
       relationship: data.relationship ?? null,
       relationshipSince: data.relationshipSince ?? null,
+      pairedAt: data.pairedAt ?? null,
       pairedDays: data.pairedDays ?? 0,
     };
     storage.set(kPairingStatus.name, JSON.stringify(status));
@@ -504,7 +531,14 @@ export async function unsetPairing(): Promise<boolean> {
   if (!userId) return false;
   try {
     const data = await apiClient.delete<{ success?: boolean }>('/api/friends/pair', { userId });
-    return !!data.success;
+    if (!data.success) return false;
+    storage.set(kPairingStatus.name, JSON.stringify({ paired: false, partner: null } satisfies PairingStatus));
+    storage.remove(kCommonItems.name);
+    storage.remove(kFriendsStatus.name);
+    storage.remove(kFriendsFeed.name);
+    storage.remove(kSharedBoxState.name);
+    storage.remove(kConnInsights.name);
+    return true;
   } catch {
     return false;
   }

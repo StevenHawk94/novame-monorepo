@@ -16,7 +16,7 @@ const TAN_OFFSET = '#E5B57E';
  * reflect?" over the sunset art, three ways in:
  *   Write Freely    → 流程1 typing (9-prompt second level + live match bar)
  *   Guided Prompts  → 流程2 my-days guided taps
- *   Object Reflect  → 流程3 pick items, then write the memory
+ *   Shared Memories → write a memory whose items land in the pair's Ours box
  *
  * New Lens still deep-links with a preset line — that's a typing reflect, so
  * the params forward straight to reflect-typing (this screen never shows).
@@ -56,11 +56,11 @@ export default function ReflectEntryScreen() {
       route: '/(main)/reflect-guided' as const,
     },
     {
-      key: 'items',
-      title: 'Object Reflect',
-      text: 'Attach an item to anchor your thoughts.',
+      key: 'shared',
+      title: 'Shared Memories',
+      text: 'Moments we shared together.',
       icon: ICONS.reflectEntry3,
-      route: '/(main)/reflect-items' as const,
+      route: '/(main)/shared-memory-create' as const,
     },
   ];
 

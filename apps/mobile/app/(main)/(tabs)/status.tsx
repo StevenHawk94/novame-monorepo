@@ -24,7 +24,7 @@ import { UserAvatar } from '@/components/ui/user-avatar';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
 
 /**
- * Me tab → Connection Dashboard (2026-07-24 重构, mock 1:1). The old Me page
+ * Me tab → Connection Board (2026-07-24 重构, mock 1:1). The old Me page
  * (growth stages, dimension tiles) is fully removed; this tab is about the
  * ONE paired relationship:
  *   板块1  title + subtitle + Their Patterns entry
@@ -51,15 +51,8 @@ const TEASER_PILLS = [
   { label: 'Hangout Ideas', icon: ICONS.hangout },
 ];
 
-// Free users see the insight cards with STANDARD placeholder copy behind a
-// blur — never the real content (which is not even fetched for free tiers).
-const MOCK_INSIGHTS: Record<string, string> = {
-  emotion: 'They seemed lighter today — a small win at work put a spring in their step and they kept humming that one song.',
-  topic: 'Ask them about the little café they discovered on their walk — they clearly want to tell someone about it.',
-  careTips: 'A short voice note tonight would land better than a long text. Keep it warm and easy.',
-  boundaries: 'Maybe skip the schedule talk today — it came up twice and felt heavy both times.',
-  hangoutIdeas: 'A 20-minute watch-together of that show you both dropped last month. Low effort, high laughs.',
-};
+// Fixed, pre-blurred fake copy. Free users never receive real AI insight text.
+const LOCKED_INSIGHT_PREVIEW = require('../../../assets/connection/connection-board-free.webp');
 
 
 export default function ConnectionDashboardScreen() {
@@ -76,7 +69,7 @@ export default function ConnectionDashboardScreen() {
   // launch + after purchases — industry pattern). A cached 'plus_required'
   // gate from before an upgrade is stale noise: ignore it when the tier says
   // paid, so members never flash 'Unlock Plus' while the fetch reconciles.
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const [isPaid, setIsPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
   const cachedIns = getCachedInsights();
   const [insights, setInsights] = useState<ConnectionInsights | null>(
     cachedIns?.ok ? cachedIns.insights : null,
@@ -93,35 +86,48 @@ export default function ConnectionDashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (shouldRefreshConnectionDashboard() && !refreshInFlight.current) {
-        refreshInFlight.current = true;
-        void fetchPairing().then(async (p) => {
+      // Re-read the local entitlement whenever this tab regains focus so a
+      // purchase made in the paywall unlocks the board immediately on return.
+      setIsPaid(getCachedSubscriptionTier() !== 'free');
+      const previousPartnerId = getCachedPairing()?.partner?.userId ?? null;
+      void fetchPairing().then(async (p) => {
           setPairing(p);
-          if (!p.paired) return;
-          const commonPromise = fetchCommonItems().then(setItems);
-          if (!isPaid) {
-            setInsightsGate('plus_required');
-            await commonPromise;
+          if (!p.paired) {
+            setItems([]);
+            setInsights(null);
+            setInsightsGate(null);
             return;
           }
-          const [, insightResult] = await Promise.all([commonPromise, fetchInsights()]);
-          if (insightResult.ok) {
-            setInsights(insightResult.insights);
-            setInsightsGate('ok');
-          } else if (insightResult.error === 'plus_required' || insightResult.error === 'consent_required') {
-            setInsightsGate(insightResult.error);
-            if (insightResult.error === 'plus_required') {
-              // Tier cache says paid but the server disagrees — re-sync it.
-              const { data } = await supabase.auth.getSession();
-              const uid = data.session?.user?.id;
-              if (uid) void fetchSubscriptionTier(uid).catch(() => {});
+          const partnerChanged = previousPartnerId !== p.partner?.userId;
+          if ((!partnerChanged && !shouldRefreshConnectionDashboard()) || refreshInFlight.current) return;
+          refreshInFlight.current = true;
+          try {
+            const commonPromise = fetchCommonItems().then(setItems);
+            if (!isPaid) {
+              setInsightsGate('plus_required');
+              await commonPromise;
+              return;
             }
+            const [, insightResult] = await Promise.all([commonPromise, fetchInsights()]);
+            if (insightResult.ok) {
+              setInsights(insightResult.insights);
+              setInsightsGate('ok');
+            } else if (insightResult.error === 'plus_required' || insightResult.error === 'consent_required') {
+              setInsightsGate(insightResult.error);
+              if (insightResult.error === 'plus_required') {
+                // Tier cache says paid but the server disagrees — re-sync it.
+                const { data } = await supabase.auth.getSession();
+                const uid = data.session?.user?.id;
+                if (uid) void fetchSubscriptionTier(uid).catch(() => {});
+              }
+            }
+          } finally {
+            markConnectionDashboardRefreshed();
+            refreshInFlight.current = false;
           }
-        }).finally(() => {
-          markConnectionDashboardRefreshed();
+        }).catch(() => {
           refreshInFlight.current = false;
         });
-      }
       void supabase.auth.getSession().then(({ data }) => {
         setMyUserId(data.session?.user?.id ?? null);
         // Same resolution as the Me page header: profiles.display_name via
@@ -158,9 +164,9 @@ export default function ConnectionDashboardScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.85}
           >
-            Connection Dashboard
+            Connection Board
           </Text>
-          <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>Connecting Through Daily Moments</Text>
+          <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>Everything new about them at a glance.</Text>
         </View>
         {/* Always shown (mock); display-only until a partner exists. */}
         <Pressable
@@ -174,8 +180,8 @@ export default function ConnectionDashboardScreen() {
           }}
           style={st.hubPill}
         >
-          <MaterialIcons name="insights" size={24} color="#FFFFFF" />
-          <Text style={st.hubPillText}>Their Patterns</Text>
+          <Image source={ICONS.personalVibe} style={st.hubPillIcon} resizeMode="contain" />
+          <Text style={st.hubPillText}>Weekly Recap</Text>
         </Pressable>
       </View>
 
@@ -188,7 +194,7 @@ export default function ConnectionDashboardScreen() {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={st.pairLockCard}>
               <MaterialIcons name="lock" size={56} color="#5D3A1F" />
-              <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock connection dashboard</Text>
+              <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock your connection board</Text>
               <View style={st.teaserGrid}>
                 {TEASER_PILLS.map((t) => (
                   <View key={t.label} style={st.teaserPill}>
@@ -250,16 +256,18 @@ export default function ConnectionDashboardScreen() {
           </View>
 
           {!isPaid || insightsGate === 'plus_required' ? (
-            /* Free tier: standard placeholder copy behind a blur (the real
-               insights are never fetched), one paywall button per card. */
+            /* Free tier: fixed pre-blurred artwork only (real insights are
+               never fetched), with one real paywall button per card. */
             INSIGHT_SECTIONS.map(({ key, label, emoji }) => (
               <View key={key} style={st.insightCard}>
                 <View style={st.insightBadge}>
                   <Text style={st.insightBadgeText}>{emoji} {label}</Text>
                 </View>
-                <Text style={[st.insightText, st.insightBlurred]}>
-                  “{MOCK_INSIGHTS[key] ?? ''}”
-                </Text>
+                <Image
+                  source={LOCKED_INSIGHT_PREVIEW}
+                  style={st.lockedInsightImage}
+                  resizeMode="cover"
+                />
                 <Pressable
                   onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
                   style={st.plusBtn}
@@ -335,9 +343,10 @@ const st = StyleSheet.create({
   subtitle: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
   hubPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#F0885C', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: '#F0885C', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 9,
   },
-  hubPillText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  hubPillIcon: { width: 30, height: 30 },
+  hubPillText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   scroll: { paddingHorizontal: 16, paddingTop: 16 },
 
@@ -400,12 +409,7 @@ const st = StyleSheet.create({
   },
   teaserIcon: { width: 26, height: 26 },
   teaserPillText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
-  insightBlurred: {
-    color: 'transparent',
-    textShadowColor: 'rgba(42,33,24,0.6)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 7,
-  },
+  lockedInsightImage: { width: '100%', height: 112, borderRadius: 12, marginBottom: 14 },
   plusBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#8A6240', borderRadius: 16, paddingVertical: 14,

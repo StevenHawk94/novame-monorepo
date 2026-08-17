@@ -67,6 +67,7 @@ export async function GET(request) {
       },
       relationship: row.relationship || null,
       relationshipSince: row.relationship_since || null,
+      pairedAt: row.created_at || null,
       pairedDays: days,
     })
   } catch (err) {
