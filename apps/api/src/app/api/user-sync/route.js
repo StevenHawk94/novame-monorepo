@@ -10,24 +10,6 @@ function getDisplayNameFromEmail(email) {
   return prefix.slice(0, 16)
 }
 
-// 默认头像列表（备用，主要通过数据库触发器分配）
-const DEFAULT_AVATARS = [
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_01.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_02.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_03.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_04.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_05.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_06.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_07.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_08.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_09.jpg',
-  'https://qleeohkhbrdvznbwgqad.supabase.co/storage/v1/object/public/avatars/user-defaults/avatar_10.jpg',
-]
-
-function getRandomDefaultAvatar() {
-  return DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)]
-}
-
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -83,10 +65,10 @@ export async function GET(request) {
       .eq('id', userId)
       .single()
     
-    // 如果用户 profile 不存在，创建一个（带默认头像和用户名）
+    // If the profile does not exist, create it with a default display name.
+    // Default avatar art is bundled in the app and selected deterministically
+    // from the user id; the database intentionally stores no default URL.
     if (profileError && profileError.code === 'PGRST116') {
-      const defaultAvatar = getRandomDefaultAvatar()
-      
       // 获取用户邮箱来生成默认用户名 + 直接写入 profiles.email
       const { data: authUser } = await supabase.auth.admin.getUserById(userId)
       const authEmail = authUser?.user?.email || null
@@ -104,7 +86,7 @@ export async function GET(request) {
           id: userId,
           email: authEmail,
           display_name: defaultDisplayName,
-          avatar_url: defaultAvatar,
+          avatar_url: null,
           is_default_avatar: true,
           has_completed_onboarding: false,
         })
@@ -229,25 +211,6 @@ export async function GET(request) {
       }
     }
 
-    // 如果 profile 存在但没有头像，分配一个默认头像
-    if (profile && (!profile.avatar_url || profile.avatar_url === '')) {
-      const defaultAvatar = getRandomDefaultAvatar()
-      
-      const { data: updatedProfile } = await supabase
-        .from('profiles')
-        .update({ 
-          avatar_url: defaultAvatar,
-          is_default_avatar: true,
-        })
-        .eq('id', userId)
-        .select()
-        .single()
-      
-      if (updatedProfile) {
-        profile = updatedProfile
-      }
-    }
-    
     // 2. 获取用户创建的 wisdoms (with insight card data)
     const { data: rawWisdoms, error: wisdomsError } = await supabase
       .from('wisdoms')

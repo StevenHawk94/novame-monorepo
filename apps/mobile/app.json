@@ -29,7 +29,7 @@
       "appleTeamId": "VFUC7899NP"
     },
     "android": {
-      "package": "com.novame.app",
+      "package": "com.burrow.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

@@ -3,16 +3,14 @@ import { StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Redirect } from 'expo-router';
 
-import { AssetGateError } from '@/components/main/asset-gate-error';
-import { ensureSession, getCurrentSession } from '@/lib/auth';
+import { getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
-import { ensureP0Ready } from '@/lib/download-queue';
 import { prefetchOutfitAssets } from '@/lib/outfits';
-import { ICONS } from '@/lib/icons';
-import { GridBackground } from '@/components/ui/grid-background';
+import { hideSplashOnce } from '@/lib/splash';
 
 /**
- * Entry gate. Blocks on P0 assets, then routes.
+ * Entry router. Remote assets warm in the background and never block launch;
+ * every first screen has a bundled fallback for its initial paint.
  *
  * GUEST MODE (2026-07-26): the app never forces a login. A signed-in (or
  * anonymous) session goes home; a fresh install goes to onboarding, which
@@ -21,14 +19,25 @@ import { GridBackground } from '@/components/ui/grid-background';
  * sign-in screen only appears when anonymous auth is unavailable, or via
  * "Already have an account? Log in".
  *
- * While the gate resolves it shows the splash design (bunny on the beige
- * grid) instead of a blank frame.
+ * While the local route resolves it shows the bundled full-screen splash
+ * instead of a blank frame. No remote asset download is awaited here.
  */
-type Gate = 'loading' | 'ready' | 'failed';
 type Route = 'main' | 'onboarding' | 'bootstrap' | 'signin';
 
+// Supabase normally restores the persisted session from AsyncStorage almost
+// instantly. On a few Android process restarts the auth storage lock can take
+// an unbounded amount of time, though. Never let that keep the JS splash on
+// screen forever: the bootstrap route can finish/retry auth independently.
+const SESSION_RESTORE_TIMEOUT_MS = 2000;
+
+async function getLaunchSession() {
+  return Promise.race([
+    getCurrentSession(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), SESSION_RESTORE_TIMEOUT_MS)),
+  ]);
+}
+
 export default function Index() {
-  const [gate, setGate] = useState<Gate>('loading');
   const [route, setRoute] = useState<Route | null>(null);
 
   useEffect(() => {
@@ -37,23 +46,17 @@ export default function Index() {
     // background from the very first launch — including the onboarding path.
     prefetchOutfitAssets();
     void (async () => {
-      const session = await getCurrentSession();
+      const session = await getLaunchSession();
       if (cancelled) return;
       if (session) {
         setRoute('main');
       } else if (!hasSeenIntro()) {
         setRoute('onboarding');
       } else {
-        // Returning guest without a session: quietly mint an anonymous one.
-        const ok = await ensureSession();
-        if (cancelled) return;
-        setRoute(ok ? 'bootstrap' : 'signin');
-      }
-      try {
-        await ensureP0Ready();
-        if (!cancelled) setGate('ready');
-      } catch {
-        if (!cancelled) setGate('failed');
+        // Never perform a network auth mutation while the full-screen entry
+        // splash is mounted. Bootstrap owns the bounded anonymous-session
+        // recovery and always releases its UI within a few seconds.
+        setRoute('bootstrap');
       }
     })();
     return () => {
@@ -61,12 +64,15 @@ export default function Index() {
     };
   }, []);
 
-  if (gate === 'failed') return <AssetGateError onRetry={() => setGate('loading')} />;
-  if (gate === 'loading' || route === null) {
+  if (route === null) {
     return (
-      <View style={[styles.splash, { backgroundColor: '#F8E2C1' }]}>
-        <GridBackground />
-        <ExpoImage source={ICONS.obBunnyHead} style={styles.splashBunny} contentFit="contain" />
+      <View style={styles.splash}>
+        <ExpoImage
+          source={require('../assets/splash-full.png')}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          onLoad={hideSplashOnce}
+        />
       </View>
     );
   }
@@ -77,6 +83,5 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  splashBunny: { width: 132, height: 158 },
+  splash: { flex: 1, backgroundColor: '#F8E2C1' },
 });

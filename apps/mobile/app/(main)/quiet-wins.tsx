@@ -11,10 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { QUIET_WINS, quietWinsFeedback } from '@novame/domain';
-import { useTheme } from '../../src/theme/use-theme';
-import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
+import { GridBackground } from '../../src/components/ui/grid-background';
 import { submitQuietWins } from '../../src/lib/quiet-wins-api';
 import { CloverBurst } from '../../src/components/main/clover-burst';
+import { XP_RULES } from '@novame/engine';
+import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 
 type Phase = 'pick' | 'done';
 
@@ -31,7 +32,6 @@ function shuffled<T extends { id: string }>(items: readonly T[]): T[] {
 export default function QuietWinsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
   // Kit screens use a light warm gradient-wave backdrop, so override the dark
   // theme colors with a light-on-dark-text palette for this screen.
   const kit = {
@@ -43,7 +43,6 @@ export default function QuietWinsScreen() {
     accent: '#7BB86A',
     danger: '#D9694E',
   };
-  const c = theme.colors;
 
   const items = useMemo(() => shuffled(QUIET_WINS), []);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -67,27 +66,29 @@ export default function QuietWinsScreen() {
     setSubmitting(true);
     setError(null);
     const ids = [...checked];
+    const expected = XP_RULES.quietWins.award;
+    const award = optimisticCloverAward(expected);
+    setFeedback(quietWinsFeedback(ids));
+    setXpAwarded(expected);
+    setPhase('done');
     const res = await submitQuietWins(ids);
     setSubmitting(false);
     if (res.ok) {
-      setFeedback(quietWinsFeedback(ids));
       setXpAwarded(res.snapshot.xpAwarded);
-      setPhase('done');
+      award.commit(res.snapshot.xpAwarded);
     } else if (res.error === 'already_done') {
       // Already spent today -- still show them their reflection, no double xp.
-      setFeedback(quietWinsFeedback(ids));
       setXpAwarded(0);
-      setPhase('done');
-    } else if (res.error === 'companion_not_ready') {
-      setError('Your companion isn’t set up yet.');
+      award.rollback();
     } else {
-      setError('Couldn’t save that. Check your connection and try again.');
+      setXpAwarded(0);
+      award.rollback();
     }
   }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-      <WaveBackground palette={WAVE_PALETTES.quietWins} />
+      <GridBackground base="#A8D69A" line="#91C681" cell={22} lineWidth={1.2} />
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
@@ -119,7 +120,7 @@ export default function QuietWinsScreen() {
                   <View
                     style={[
                       styles.checkCircle,
-                      on && { backgroundColor: kit.accent, borderColor: kit.accent },
+                      on && { backgroundColor: kit.accent },
                     ]}
                   >
                     {on && <Text style={styles.checkmark}>✓</Text>}
@@ -177,8 +178,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 22, textAlign: 'center' },
 
   list: { paddingBottom: 20 },
-  // Design: sticker rows — cream card, dark outline, hard offset shadow,
-  // numbered chip left, check circle right.
+  // Cream rows with a small offset shadow; selection lives in the check state.
   item: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -187,12 +187,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 14,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B',
-    shadowOpacity: 0.9,
-    shadowRadius: 0,
-    shadowOffset: { width: 2, height: 3 },
+    shadowColor: '#45643C',
+    shadowOpacity: 0.16,
+    shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 },
     elevation: 2,
   },
   numChip: {
@@ -201,7 +199,7 @@ const styles = StyleSheet.create({
   },
   numChipText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#3A2E1A' },
   checkCircle: {
-    width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#3A2E1A',
+    width: 30, height: 30, borderRadius: 15, backgroundColor: '#E9E1D3',
     alignItems: 'center', justifyContent: 'center',
   },
   checkmark: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
@@ -211,9 +209,8 @@ const styles = StyleSheet.create({
   // Design: "Confirm wins" — orange-red sticker button.
   doneBtn: {
     borderRadius: 16, paddingVertical: 17, alignItems: 'center', marginBottom: 12,
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
-    elevation: 3,
+    shadowColor: '#45643C', shadowOpacity: 0.2, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   doneBtnText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
 

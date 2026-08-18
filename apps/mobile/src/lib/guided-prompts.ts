@@ -3,14 +3,14 @@
  *
  * The chooser lists the 12 prompt-reflection categories (curated, ranked
  * subsets of the master catalog — generated into guided-catalog.g.ts from
- * icon_keyword_mapping_final.xlsx). The user picks the themes they care
+ * Icon_Mapping_Core_Tables_v25.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
  * Guided Reflect uses the same 12-category item library.
  */
 import { PROMPT_CATEGORIES } from './guided-catalog.g';
 import { remoteIdsForPromptCategory } from './remote-items';
-import { kGuidedCategories } from '../shared/storage/keys';
+import { kGuidedCategories, kGuidedFavoriteItems } from '../shared/storage/keys';
 import { storage } from './storage';
 
 export const GUIDED_MIN = 3;
@@ -22,6 +22,12 @@ export interface GuidedCategory {
   label: string;
   emoji: string;
   question: string;
+}
+
+export interface GuidedSubcategory {
+  key: string;
+  label: string;
+  itemIds: string[];
 }
 
 // One designed question per prompt category (keys = guided-catalog.g.ts).
@@ -48,10 +54,16 @@ const CONFIG: GuidedCategory[] = PROMPT_CATEGORIES.map((c) => ({
 }));
 
 const BY_KEY = new Map(CONFIG.map((c) => [c.key, c]));
-const ITEMS_BY_KEY = new Map(PROMPT_CATEGORIES.map((c) => [c.key, c.itemIds]));
+const ITEMS_BY_KEY = new Map(
+  PROMPT_CATEGORIES.map((c) => [
+    c.key,
+    c.itemIds.length > 0 ? c.itemIds : c.subcategories.flatMap((subcategory) => subcategory.itemIds),
+  ]),
+);
+const SUBCATEGORIES_BY_KEY = new Map(PROMPT_CATEGORIES.map((c) => [c.key, c.subcategories]));
 const CATEGORY_BY_ITEM = new Map<string, string>();
 for (const category of PROMPT_CATEGORIES) {
-  for (const id of category.itemIds) {
+  for (const id of ITEMS_BY_KEY.get(category.key) ?? []) {
     if (!CATEGORY_BY_ITEM.has(id)) CATEGORY_BY_ITEM.set(id, category.key);
   }
 }
@@ -68,6 +80,15 @@ export function itemsForGuidedCategory(key: string): string[] {
   // after the bundled list (no release needed).
   const extra = remoteIdsForPromptCategory(key).filter((id) => !base.includes(id));
   return extra.length > 0 ? [...base, ...extra] : base;
+}
+
+/** v25 secondary tabs in workbook order; icons stay in workbook row order. */
+export function subcategoriesForGuidedCategory(key: string): GuidedSubcategory[] {
+  const bundled = SUBCATEGORIES_BY_KEY.get(key) ?? [];
+  const categorized = new Set(bundled.flatMap((subcategory) => subcategory.itemIds));
+  const remoteExtras = remoteIdsForPromptCategory(key).filter((id) => !categorized.has(id));
+  if (remoteExtras.length === 0) return bundled;
+  return [...bundled, { key: 'more', label: 'More', itemIds: remoteExtras }];
 }
 
 /** Canonical Reflect category used by both manual-pick flows for the 8 cap. */
@@ -95,6 +116,25 @@ export function getGuidedSelection(): string[] {
 
 export function setGuidedSelection(keys: string[]): void {
   storage.set(kGuidedCategories.name, JSON.stringify(keys.slice(0, GUIDED_MAX)));
+}
+
+/** Explicit Guided Prompt selection history used by the Favorite tab. */
+export function getGuidedFavoriteItems(): string[] {
+  try {
+    const raw = storage.getString(kGuidedFavoriteItems.name);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return [...new Set(parsed.filter((id): id is string => typeof id === 'string' && id.length > 0))];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberGuidedFavoriteItems(itemIds: string[]): string[] {
+  const merged = [...new Set([...getGuidedFavoriteItems(), ...itemIds])];
+  storage.set(kGuidedFavoriteItems.name, JSON.stringify(merged));
+  return merged;
 }
 
 export function guidedCategoryFor(key: string): GuidedCategory {

@@ -11,6 +11,7 @@ import { getCachedBags } from '@/lib/bags-api';
 import { setReflectVisibility } from '@/lib/reflect-api';
 import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
+import { GridBackground } from '@/components/ui/grid-background';
 
 /**
  * Reflect detail (design 2026-07-22, 1:1): dark-brown full screen, a white
@@ -88,6 +89,7 @@ export default function ReflectDetailScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
+      <GridBackground base="#43301F" line="#59412B" cell={22} lineWidth={1.2} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Reflection card */}
         <View style={styles.card}>

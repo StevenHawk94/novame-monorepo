@@ -289,6 +289,9 @@ export const kFriendsFeed = defineKey('novame_friends_feed', 'user');
 // prompt pages, editable via the pages' Edit button.
 export const kGuidedCategories = defineKey('novame_guided_categories', 'user');
 
+/** Guided Prompt items explicitly selected in successful reflections. */
+export const kGuidedFavoriteItems = defineKey('burrow_guided_favorite_items', 'user');
+
 /** status.tsx: the eight-dimension gem totals from /api/status. A read-only
  *  shadow of user_gems; the Status screen derives stage and totals from these
  *  with the shared engine, never storing computed values. */

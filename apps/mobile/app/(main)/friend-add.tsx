@@ -13,6 +13,7 @@ import {
   type FriendsStatus,
 } from '@/lib/friends-api';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { GridBackground } from '@/components/ui/grid-background';
 
 // 2026-07-29 pairing flow (mock 3): the invitation proposes a relationship
 // and its start date.
@@ -118,6 +119,7 @@ export default function FriendAddScreen() {
 
   return (
     <View style={styles.root}>
+      <GridBackground base="#7E5233" line="#956B4C" cell={22} lineWidth={1.2} />
       {/* Vertically centered column (mock 1). */}
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
@@ -183,6 +185,7 @@ export default function FriendAddScreen() {
       {/* Search Result → relationship + since (mock 2) */}
       {found && (
         <View style={styles.modalOverlay}>
+          <GridBackground base="#7E5233" line="#956B4C" cell={22} lineWidth={1.2} />
           <View style={styles.modalCard}>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.modalTitle}>Search Result</Text>

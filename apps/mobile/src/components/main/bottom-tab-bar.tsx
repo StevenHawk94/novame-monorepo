@@ -21,8 +21,53 @@ const TABS: ReadonlyArray<{ name: string; icon: ImageSourcePropType; label: stri
   { name: 'status', icon: ICONS.friendList, label: 'Connection' },
 ];
 
+type TabBarTheme = {
+  background: string;
+  label: string;
+  activeBackground: string;
+  topBorder: string;
+};
+
+/** Each bar is a slightly lighter continuation of its screen's main color. */
+const TAB_THEMES: Record<string, TabBarTheme> = {
+  index: {
+    background: '#F0DFC0',
+    label: '#5A4A32',
+    activeBackground: '#FFF3D9',
+    topBorder: 'rgba(90,74,50,0.12)',
+  },
+  bags: {
+    background: '#FBE7A7',
+    label: '#533A23',
+    activeBackground: '#FFF4CF',
+    topBorder: 'rgba(83,58,35,0.12)',
+  },
+  quests: {
+    background: '#62472F',
+    label: '#FFFFFF',
+    activeBackground: 'rgba(255,255,255,0.16)',
+    topBorder: 'rgba(255,255,255,0.10)',
+  },
+  friends: {
+    background: '#80583B',
+    label: '#FFFFFF',
+    activeBackground: 'rgba(255,255,255,0.16)',
+    topBorder: 'rgba(255,255,255,0.10)',
+  },
+  status: {
+    background: '#936453',
+    label: '#FFFFFF',
+    activeBackground: 'rgba(255,255,255,0.16)',
+    topBorder: 'rgba(255,255,255,0.10)',
+  },
+};
+
+const FALLBACK_THEME = TAB_THEMES.index;
+
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const activeRouteName = state.routes[state.index]?.name ?? 'index';
+  const theme = TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
   const routesByName = new Map<string, (typeof state.routes)[number]>();
   state.routes.forEach((r) => routesByName.set(r.name, r));
 
@@ -44,7 +89,16 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingBottom: insets.bottom,
+          backgroundColor: theme.background,
+          borderTopColor: theme.topBorder,
+        },
+      ]}
+    >
       <View style={styles.row}>
         {TABS.map((tab) => {
           const route = routesByName.get(tab.name);
@@ -57,6 +111,8 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
               icon={tab.icon}
               label={tab.label}
               isFocused={isFocused}
+              labelColor={theme.label}
+              activeBackground={theme.activeBackground}
               onPress={() => handleTabPress(tab.name, isFocused)}
             />
           );
@@ -70,21 +126,32 @@ type TabButtonProps = {
   icon: ImageSourcePropType;
   label: string;
   isFocused: boolean;
+  labelColor: string;
+  activeBackground: string;
   onPress: () => void;
 };
 
-function TabButton({ icon, label, isFocused, onPress }: TabButtonProps): ReactNode {
+function TabButton({ icon, label, isFocused, labelColor, activeBackground, onPress }: TabButtonProps): ReactNode {
   // Focused pill wraps icon + label together with even padding (mock).
   return (
-    <Pressable onPress={onPress} style={[styles.tabBtn, isFocused && styles.tabBtnActive]}>
+    <Pressable
+      onPress={onPress}
+      style={[styles.tabBtn, isFocused && { backgroundColor: activeBackground }]}
+    >
       <Image source={icon} style={styles.tabIcon} resizeMode="contain" />
-      <Text style={styles.tabLabel}>{label}</Text>
+      <Text style={[styles.tabLabel, { color: labelColor }]}>{label}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#E8D5B0' },
+  container: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#1F140C',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -4 },
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -96,7 +163,6 @@ const styles = StyleSheet.create({
     minWidth: 66, alignItems: 'center', justifyContent: 'center', gap: 2,
     paddingVertical: 7, paddingHorizontal: 10, borderRadius: 20,
   },
-  tabBtnActive: { backgroundColor: '#F8EFDA' },
   tabIcon: { width: 40, height: 40 },
-  tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold', color: '#5A4A32' },
+  tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold' },
 });

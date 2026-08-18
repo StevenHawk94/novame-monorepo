@@ -13,6 +13,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -78,10 +79,12 @@ const GridCell = memo(function GridCell({
   id,
   on,
   onToggle,
+  size,
 }: {
   id: string;
   on: boolean;
   onToggle: (id: string) => void;
+  size: number;
 }) {
   return (
     <Pressable
@@ -89,9 +92,9 @@ const GridCell = memo(function GridCell({
         void haptics.light();
         onToggle(id);
       }}
-      style={[s.gridCell, on && s.gridCellOn]}
+      style={[s.gridCell, { width: size, height: size }, on && s.gridCellOn]}
     >
-      <ItemSprite itemId={id} size={44} radius={12} />
+      <ItemSprite itemId={id} size={Math.max(24, size - 8)} radius={11} />
       {on && (
         <View style={s.gridCheck}>
           <MaterialIcons name="check" size={12} color="#FFFFFF" />
@@ -137,11 +140,12 @@ export function SelectableItemGrid({
     },
     [onToggle],
   );
-  // Columns derive from the MEASURED container (cards pad differently per
-  // flow): cell footprint ≈ 44 sprite + 5 border/padding + 8 gap. A hardcoded
-  // 6 overflowed on narrow screens and left dead space on tablets.
+  // Product rule: every phone shows exactly six items per row. The tile size
+  // derives from the measured card width so narrow Android phones scale the
+  // sprites down instead of silently dropping to five columns.
   const [gridWidth, setGridWidth] = useState(0);
-  const numColumns = Math.max(4, Math.floor((gridWidth - 24 + 8) / (44 + 9 + 8)));
+  const numColumns = 6;
+  const cellSize = Math.max(32, Math.floor((gridWidth - 16 - 5 * 4) / numColumns));
   // Incremental loading: 100 tiles at a time — Food & Drink's 1200+ ids
   // otherwise stutter the first paint.
   const PAGE = 100;
@@ -160,7 +164,7 @@ export function SelectableItemGrid({
         onEndReached={() => setVisibleCount((c) => Math.min(c + PAGE, itemIds.length))}
         onEndReachedThreshold={0.6}
         renderItem={({ item }) => (
-          <GridCell id={item} on={selected.has(item)} onToggle={handleToggle} />
+          <GridCell id={item} on={selected.has(item)} onToggle={handleToggle} size={cellSize} />
         )}
         columnWrapperStyle={s.gridRow}
         contentContainerStyle={s.gridContent}
@@ -168,7 +172,10 @@ export function SelectableItemGrid({
         initialNumToRender={60}
         maxToRenderPerBatch={48}
         windowSize={7}
-        removeClippedSubviews
+        // Android occasionally detaches image-backed cells one frame too
+        // early while rapidly scrolling. Keep them mounted there; the list is
+        // already bounded by incremental loading/windowSize.
+        removeClippedSubviews={Platform.OS !== 'android'}
       />
       )}
       {toast !== null && (
@@ -388,9 +395,12 @@ const s = StyleSheet.create({
   },
   remaining: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)' },
 
-  gridRow: { gap: 8, paddingHorizontal: 2 },
-  gridContent: { gap: 8, padding: 12 },
-  gridCell: { borderRadius: 14, borderWidth: 2.5, borderColor: 'transparent', padding: 2 },
+  gridRow: { gap: 4, paddingHorizontal: 8 },
+  gridContent: { gap: 7, paddingVertical: 12 },
+  gridCell: {
+    borderRadius: 14, borderWidth: 2.5, borderColor: 'transparent', padding: 2,
+    alignItems: 'center', justifyContent: 'center',
+  },
   gridCellOn: { borderColor: RC.orange },
   gridCheck: {
     position: 'absolute', right: -4, top: -4, width: 18, height: 18, borderRadius: 9,

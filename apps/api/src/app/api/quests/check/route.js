@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { CLOVERS_PER_TASK, COMPLETION_BONUS, PLAN_DAYS } from '@novame/domain'
+import { CLOVERS_PER_TASK, COMPLETION_BONUS } from '@novame/domain'
 
 export const runtime = 'nodejs'
+
+function isoWeek(dateStr) {
+  const parts = dateStr.split('-').map(Number)
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
 
 /**
  * POST /api/quests/check
@@ -37,68 +47,32 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const { data: plan, error } = await supabase
-      .from('quest_plans')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .maybeSingle()
-    if (error || !plan) return NextResponse.json({ error: 'no_active_plan' }, { status: 400 })
-
     const today = localDate || new Date().toISOString().slice(0, 10)
-
-    // One check-off per calendar day.
-    if (plan.last_check_date === today) {
-      return NextResponse.json({ error: 'already_checked_today' }, { status: 409 })
-    }
-
-    const tasks = Array.isArray(plan.tasks) ? plan.tasks : []
-    if (taskIndex >= tasks.length) return NextResponse.json({ error: 'bad_index' }, { status: 400 })
-    if (tasks[taskIndex].done) return NextResponse.json({ error: 'already_done' }, { status: 409 })
-
-    // Mark done.
-    tasks[taskIndex] = { ...tasks[taskIndex], done: true, done_date: today }
-    const checkedCount = tasks.filter((t) => t.done).length
-    const allDone = checkedCount === tasks.length
-    const reward = Number(tasks[taskIndex].reward) || CLOVERS_PER_TASK
-
-    // Update the plan.
-    const patch = {
-      tasks,
-      last_check_date: today,
-      checked_count: checkedCount,
-    }
-    let bonus = 0
-    if (allDone && !plan.bonus_paid) {
-      patch.status = 'completed'
-      patch.bonus_paid = true
-      bonus = COMPLETION_BONUS
-    }
-    const { error: upErr } = await supabase.from('quest_plans').update(patch).eq('id', plan.id)
-    if (upErr) {
-      console.error('[quests/check] update error:', upErr.message)
+    const { data: result, error: rpcError } = await supabase.rpc('check_quest_task', {
+      p_user_id: userId,
+      p_task_index: taskIndex,
+      p_local_date: today,
+      p_iso_week: isoWeek(today),
+      p_default_reward: CLOVERS_PER_TASK,
+      p_completion_bonus: COMPLETION_BONUS,
+    })
+    if (rpcError) {
+      console.error('[quests/check] rpc error:', rpcError.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
-
-    // Pay clovers (reward + any completion bonus) into companions.xp.
-    const totalClovers = reward + bonus
-    const { data: comp } = await supabase
-      .from('companions')
-      .select('xp')
-      .eq('user_id', userId)
-      .maybeSingle()
-    if (comp) {
-      const newXp = (Number(comp.xp) || 0) + totalClovers
-      await supabase.from('companions').update({ xp: newXp }).eq('user_id', userId)
+    if (result?.error) {
+      const status = result.error === 'bad_index' || result.error === 'no_active_plan' ? 400 : 409
+      return NextResponse.json({ error: result.error }, { status })
     }
 
     return NextResponse.json({
       success: true,
-      reward,
-      bonus,
-      checkedCount,
-      allDone,
-      cloversEarned: totalClovers,
+      reward: result?.reward ?? 0,
+      bonus: result?.bonus ?? 0,
+      checkedCount: result?.checked_count ?? 0,
+      allDone: !!result?.all_done,
+      cloversEarned: result?.clovers_earned ?? 0,
+      balance: result?.clover_balance ?? 0,
     })
   } catch (err) {
     console.error('[quests/check] unexpected:', err && err.message)

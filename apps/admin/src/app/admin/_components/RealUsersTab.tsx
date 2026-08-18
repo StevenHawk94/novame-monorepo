@@ -105,25 +105,14 @@ export default function RealUsersTab() {
               {filtered.map((u) => (
                 <tr key={u.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                        {u.avatar_url && (
-                          <img
-                            src={u.avatar_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-medium text-black">
-                          {u.display_name || u.email?.split('@')[0]}
-                        </span>
-                        <br />
-                        <span className="text-xs text-black">
-                          {u.email || 'No email'}
-                        </span>
-                      </div>
+                    <div>
+                      <span className="font-medium text-black">
+                        {u.display_name || u.email?.split('@')[0]}
+                      </span>
+                      <br />
+                      <span className="text-xs text-black">
+                        {u.email || 'No email'}
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center">

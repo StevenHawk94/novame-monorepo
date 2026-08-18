@@ -24,6 +24,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { PRICING_TIERS } from '@novame/core';
 import { PlanBillingSheet, type PlanBillingSheetRef } from '@/components/me/plan-billing-sheet';
+import { GridBackground } from '@/components/ui/grid-background';
 import { haptics } from '@/lib/haptics';
 import {
   getCachedSubscriptionTier,
@@ -33,6 +34,7 @@ import { fetchDuoStatus, type DuoStatus } from '@/lib/duo-api';
 import {
   fetchFriends,
   fetchPairing,
+  getCachedFriends,
   getCachedPairing,
   unsetPairing,
   type PairingStatus,
@@ -109,6 +111,10 @@ export default function MeScreen() {
       });
       void fetchDuoStatus().then(setDuo);
       void fetchPairing().then(setPairing);
+      // Warm the stable invite code while the menu is visible. The row can
+      // then open the native share sheet immediately instead of waiting for
+      // the full friends/status payload (pairing, requests, feed identities).
+      void fetchFriends();
     }, [refreshProfile]),
   );
 
@@ -131,6 +137,19 @@ export default function MeScreen() {
   /** Design row "Invite Friends": share your friend code via the system sheet. */
   const onInviteFriends = async () => {
     void haptics.light();
+    const cachedCode = getCachedFriends().inviteCode;
+    if (cachedCode) {
+      // Revalidate silently; opening the system share sheet must not wait on
+      // network data that is already stable and cached locally.
+      void fetchFriends();
+      await Share.share({
+        message: `Add me on Burrow! My friend code is ${cachedCode} — let's share memory items together.`,
+      });
+      return;
+    }
+
+    // First-ever cold start only: no code exists locally yet, so fetch once.
+    // Menu focus already starts this request, making this branch uncommon.
     try {
       const status = await fetchFriends();
       if (status.inviteCode) {
@@ -214,6 +233,7 @@ export default function MeScreen() {
   return (
     <BottomSheetModalProvider>
       <View style={styles.root}>
+        <GridBackground base="#F2E6CB" line="#E3D2B2" cell={22} lineWidth={1.2} />
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
           {/* Header: brown X + avatar + name */}
           <View style={[styles.header, { paddingTop: insets.top + 12 }]}>

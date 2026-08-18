@@ -88,7 +88,7 @@ export type PurchaseOutcome =
   | { kind: 'scheduled'; productId: string }
   | { kind: 'cancelled' };
 
-// ---- Product IDs (must match Apple App Store Connect setup) ----
+// ---- Store product IDs ----
 
 export const IOS_SUBSCRIPTION_PRODUCT_IDS = [
   'novame.plus.monthly',
@@ -100,6 +100,15 @@ export const IOS_SUBSCRIPTION_PRODUCT_IDS = [
 export type IOSSubscriptionProductId =
   (typeof IOS_SUBSCRIPTION_PRODUCT_IDS)[number];
 
+// Google Play Console currently has two separate Burrow Plus subscriptions.
+// Keep this list separate because Duo exists on iOS but is not a Play product.
+export const ANDROID_SUBSCRIPTION_PRODUCT_IDS = [
+  'novame.plus.monthly',
+  'novame.plus.yearly',
+] as const;
+type SubscriptionCycle = 'monthly' | 'yearly';
+type PlanType = 'solo' | 'duo';
+
 const PRODUCT_TO_TIER: Record<IOSSubscriptionProductId, PricingTierKey> = {
   'novame.plus.monthly': 'plus',
   'novame.plus.yearly': 'plus',
@@ -108,24 +117,35 @@ const PRODUCT_TO_TIER: Record<IOSSubscriptionProductId, PricingTierKey> = {
 };
 
 /** Seat model per product: plusduo grants an extra seat to invite one member. */
-export const PRODUCT_TO_PLAN_TYPE: Record<IOSSubscriptionProductId, 'solo' | 'duo'> = {
+export const PRODUCT_TO_PLAN_TYPE: Record<IOSSubscriptionProductId, PlanType> = {
   'novame.plus.monthly': 'solo',
   'novame.plus.yearly': 'solo',
   'novame.plusduo.monthly': 'duo',
   'novame.plusduo.yearly': 'duo',
 };
 
-const PRODUCT_TO_CYCLE: Record<IOSSubscriptionProductId, 'monthly' | 'yearly'> = {
+const PRODUCT_TO_CYCLE: Record<IOSSubscriptionProductId, SubscriptionCycle> = {
   'novame.plus.monthly': 'monthly',
   'novame.plus.yearly': 'yearly',
   'novame.plusduo.monthly': 'monthly',
   'novame.plusduo.yearly': 'yearly',
 };
 
-function isKnownProductId(
-  id: string,
-): id is IOSSubscriptionProductId {
+function isIOSProductId(id: string): id is IOSSubscriptionProductId {
   return (IOS_SUBSCRIPTION_PRODUCT_IDS as readonly string[]).includes(id);
+}
+
+function getPurchaseEntitlement(purchase: Purchase): {
+  tier: PricingTierKey;
+  cycle: SubscriptionCycle;
+} | null {
+  if (isIOSProductId(purchase.productId)) {
+    return {
+      tier: PRODUCT_TO_TIER[purchase.productId],
+      cycle: PRODUCT_TO_CYCLE[purchase.productId],
+    };
+  }
+  return null;
 }
 
 // ---- Module-level state (single listener, single connection) ----
@@ -318,9 +338,75 @@ export async function cleanupIAP(): Promise<void> {
  * Optional in Stage 5.IAP.3 -- the paywall can keep using
  * PRICING_TIERS for now and switch to live prices in a follow-up.
  */
-// Play Billing needs an offerToken per sku at purchase time; harvested from
-// the last fetchProducts result (first offer of each product).
+// Play Billing needs the offer token for the selected subscription + base
+// plan. A product can expose several offers, so keying only by SKU can select
+// the wrong billing period.
 const androidOfferTokens = new Map<string, string>();
+
+type AndroidOffer = {
+  basePlanIdAndroid?: string | null;
+  displayPrice: string;
+  offerTokenAndroid?: string | null;
+  price: number;
+  pricingPhasesAndroid?: {
+    pricingPhaseList: Array<{
+      formattedPrice: string;
+      priceAmountMicros: string;
+    }>;
+  } | null;
+};
+
+function androidOfferKey(productId: string, cycle: SubscriptionCycle): string {
+  return `${productId}:${cycle}`;
+}
+
+function hasFreePhase(offer: AndroidOffer): boolean {
+  return Boolean(
+    offer.pricingPhasesAndroid?.pricingPhaseList.some(
+      (phase) => Number(phase.priceAmountMicros) === 0,
+    ),
+  );
+}
+
+function selectAndroidOffer(
+  offers: AndroidOffer[],
+  cycle: SubscriptionCycle,
+): AndroidOffer | undefined {
+  // Prefer the configured free trial when the user is eligible. Google only
+  // returns eligible offers; otherwise fall back to the active base plan.
+  return cycle === 'yearly'
+    ? offers.find(hasFreePhase) ?? offers[0]
+    : offers[0];
+}
+
+export function getSubscriptionPlanPricing(
+  products: ProductSubscription[],
+  cycle: SubscriptionCycle,
+): { displayPrice: string; price: number } | null {
+  if (Platform.OS === 'android') {
+    const product = products.find((item) => item.id === `novame.plus.${cycle}`);
+    const offers = ((product as { subscriptionOffers?: AndroidOffer[] } | undefined)
+      ?.subscriptionOffers ?? []);
+    const offer = selectAndroidOffer(offers, cycle);
+    if (!offer) return null;
+    // A trial offer's top-level display price can be $0.00. The final pricing
+    // phase is the recurring base-plan price shown on the paywall.
+    const phases = offer.pricingPhasesAndroid?.pricingPhaseList ?? [];
+    const recurring = phases[phases.length - 1];
+    return recurring
+      ? {
+          displayPrice: recurring.formattedPrice,
+          price: Number(recurring.priceAmountMicros) / 1_000_000,
+        }
+      : { displayPrice: offer.displayPrice, price: offer.price };
+  }
+
+  const product = products.find(
+    (item) => item.id === `novame.plus.${cycle}`,
+  );
+  if (!product?.displayPrice || typeof product.price !== 'number') return null;
+  return { displayPrice: product.displayPrice, price: product.price };
+}
 
 export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]> {
   if (!initialized) {
@@ -333,16 +419,19 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
   }
   try {
     const products = await fetchProducts({
-      skus: [...IOS_SUBSCRIPTION_PRODUCT_IDS],
+      skus: Platform.OS === 'android'
+        ? [...ANDROID_SUBSCRIPTION_PRODUCT_IDS]
+        : [...IOS_SUBSCRIPTION_PRODUCT_IDS],
       type: 'subs',
     });
     const list = Array.isArray(products) ? (products as ProductSubscription[]) : [];
     if (Platform.OS === 'android') {
       for (const prod of list) {
-        const offers = (prod as { subscriptionOffers?: { offerTokenAndroid?: string | null }[] })
-          .subscriptionOffers;
-        const token = offers?.[0]?.offerTokenAndroid;
-        if (token) androidOfferTokens.set(prod.id, token);
+        const offers = (prod as { subscriptionOffers?: AndroidOffer[] })
+          .subscriptionOffers ?? [];
+        const cycle = prod.id === 'novame.plus.yearly' ? 'yearly' : 'monthly';
+        const token = selectAndroidOffer(offers, cycle)?.offerTokenAndroid;
+        if (token) androidOfferTokens.set(androidOfferKey(prod.id, cycle), token);
       }
     }
     return list;
@@ -392,17 +481,25 @@ export async function purchaseSubscription(
     // Cancellation throws ErrorCode.UserCancelled.
     // Android requires the Play offer token alongside the sku; make sure
     // products (and their tokens) are loaded before the purchase call.
-    if (Platform.OS === 'android' && !androidOfferTokens.has(productId)) {
+    const cycle = PRODUCT_TO_CYCLE[productId];
+    const androidProductId = productId;
+    const offerKey = androidOfferKey(androidProductId, cycle);
+    if (Platform.OS === 'android' && !androidOfferTokens.has(offerKey)) {
       await fetchSubscriptionProducts();
     }
-    const androidOffer = androidOfferTokens.get(productId);
+    const androidOffer = androidOfferTokens.get(offerKey);
+    if (Platform.OS === 'android' && !androidOffer) {
+      throw new Error(
+        `Google Play did not return the ${cycle} plan. Confirm that ${androidProductId}/${cycle} is active and install the Play test-track build.`,
+      );
+    }
     const result = await requestPurchase({
       request: {
         ios: { sku: productId },
         android: {
-          skus: [productId],
+          skus: [androidProductId],
           ...(androidOffer
-            ? { subscriptionOffers: [{ sku: productId, offerToken: androidOffer }] }
+            ? { subscriptionOffers: [{ sku: androidProductId, offerToken: androidOffer }] }
             : {}),
         },
       },
@@ -484,7 +581,8 @@ export async function restoreSubscriptions(): Promise<{
     let highestTier: PricingTierKey | undefined;
     for (const purchase of purchases) {
       const productId = purchase.productId;
-      if (!isKnownProductId(productId)) continue;
+      const entitlement = getPurchaseEntitlement(purchase);
+      if (!entitlement) continue;
       try {
         await uploadPurchaseToServer(purchase);
       } catch (e) {
@@ -496,8 +594,7 @@ export async function restoreSubscriptions(): Promise<{
       } catch {
         /* non-fatal */
       }
-      const tier = PRODUCT_TO_TIER[productId];
-      highestTier = pickHigherTier(highestTier, tier);
+      highestTier = pickHigherTier(highestTier, entitlement.tier);
     }
 
     if (highestTier) {
@@ -515,7 +612,8 @@ export async function restoreSubscriptions(): Promise<{
 
 async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   const productId = purchase.productId;
-  if (!isKnownProductId(productId)) {
+  const entitlement = getPurchaseEntitlement(purchase);
+  if (!entitlement) {
     console.warn('[iap] unknown productId:', productId);
     return;
   }
@@ -577,8 +675,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     return;
   }
 
-  const tier = PRODUCT_TO_TIER[productId];
-  const cycle = PRODUCT_TO_CYCLE[productId];
+  const { tier, cycle } = entitlement;
 
   // Stage 6 follow-up (Me-page subscription regression): proactively
   // refresh me-stats cache rather than just invalidating it.
@@ -692,14 +789,17 @@ async function uploadPurchaseToServer(purchase: Purchase): Promise<void> {
       : null;
 
   const endpoint = Platform.OS === 'android' ? '/api/google-iap' : '/api/apple-iap';
-  const data = await apiClient.post<AppleIapResponse>(endpoint, {
-    userId,
-    transactionId: String(purchase.id),
-    productId: purchase.productId,
-    originalTransactionId: originalTxnId,
-    expiresDate: expiresIso,
-    jws,
-  });
+  const body = Platform.OS === 'android'
+    ? { userId, purchaseToken: jws }
+    : {
+        userId,
+        transactionId: String(purchase.id),
+        productId: purchase.productId,
+        originalTransactionId: originalTxnId,
+        expiresDate: expiresIso,
+        jws,
+      };
+  const data = await apiClient.post<AppleIapResponse>(endpoint, body);
 
   if (!data.success) {
     throw new Error(data.error ?? 'iap upload returned !success');

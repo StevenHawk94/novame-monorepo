@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { GridBackground } from '@/components/ui/grid-background';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
 import { fetchBags, getCachedBags } from '@/lib/bags-api';
 
@@ -78,14 +79,14 @@ export default function MyLogsScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      <GridBackground base="#5A3B2A" line="#714E3A" cell={22} lineWidth={1.2} />
       {/* Header: journal + title + By Date */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
           <MaterialIcons name="arrow-back" size={24} color="#FFF6E8" />
         </Pressable>
         <Image source={ICONS.sharedMemories} style={styles.headerIcon} resizeMode="contain" />
-        <Text style={styles.title}>Reflect Feed</Text>
-        <View style={{ flex: 1 }} />
+        <Text style={styles.title} numberOfLines={1}>Reflect Feed</Text>
         <Pressable onPress={() => setCalOpen(true)} style={styles.byDatePill}>
           <Text style={styles.byDateText} numberOfLines={1}>{pillLabel}</Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color="#4A3423" />
@@ -250,16 +251,16 @@ const calStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#5A3B2A', paddingHorizontal: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8, paddingBottom: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: 8, paddingBottom: 16 },
   back: { paddingRight: 2 },
-  headerIcon: { width: 46, height: 46 },
-  title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  headerIcon: { width: 38, height: 38 },
+  title: { flexShrink: 1, fontSize: 23, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   byDatePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 2, maxWidth: 210,
+    flexDirection: 'row', alignItems: 'center', gap: 2, maxWidth: '36%', marginLeft: 'auto',
     backgroundColor: '#FBF3DF', borderRadius: 20,
-    paddingLeft: 16, paddingRight: 10, paddingVertical: 10,
+    paddingLeft: 12, paddingRight: 8, paddingVertical: 9,
   },
-  byDateText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#4A3423' },
+  byDateText: { flexShrink: 1, fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
 
   scroll: { paddingBottom: 24, gap: 16 },
   card: { backgroundColor: '#FCF5EA', borderRadius: 24, padding: 20 },

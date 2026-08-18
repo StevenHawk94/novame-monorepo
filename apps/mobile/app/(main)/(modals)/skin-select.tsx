@@ -14,6 +14,7 @@ import {
   getCachedCosmetics,
   isUnlocked,
   purchaseCosmetic,
+  subscribeCosmetics,
   type CosmeticsState,
 } from '../../../src/lib/cosmetics-api';
 import {
@@ -55,6 +56,8 @@ export default function OutfitClosetScreen() {
   const [busy, setBusy] = useState(false);
   // Blocking "Outfits Switching" overlay while the equipped video downloads.
   const [switching, setSwitching] = useState(false);
+
+  useEffect(() => subscribeCosmetics(setCosmetics), []);
 
   useFocusEffect(
     useCallback(() => {

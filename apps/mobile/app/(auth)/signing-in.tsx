@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
 
-import { getCurrentSession } from '@/lib/auth';
+import { ensureSession, getCurrentSession } from '@/lib/auth';
 import {
   fetchSubscriptionTier,
   getCachedSubscription,
@@ -11,59 +11,33 @@ import {
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
-import { ensureP0Ready } from '@/lib/download-queue';
-import { AssetGateError } from '@/components/main/asset-gate-error';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 
-/**
- * P0 asset gate on the login path.
- *
- * Signing in is an in-app navigation that never re-runs app/index.tsx, so
- * without a gate here the user lands on Home before its assets are local.
- *
- * What changed
- * ------------
- * v1 awaited fetchCharacterState() first, purely so it could compute WHICH
- * video to gate: the clip depends on the user's willpower and mode, and the
- * SIGNED_IN handler had just cleared that cache. character-state is gone, and
- * so is the argument -- ensureP0Ready() still downloads every bucket-root
- * asset, it just no longer receives a hint about one extra file.
- *
- * This is harmless today (Phase A's Home is a placeholder with no video) and
- * NOT harmless in Phase C. When the companion returns, the first-frame video
- * depends on its sleep/fly state, and this gate has to be rebuilt around it.
- *
- * Also gone: the tab warm. It prefetched Growth, Discover and Assets, three
- * tabs that no longer exist.
- *
- * The gateFailed latch stays, and it is subtle enough to be worth stating: a
- * P0 download that completes AFTER the retry screen has appeared must not
- * silently navigate the user into Home. Only an explicit Retry, which re-runs
- * this effect, may do that.
- */
-
-
+/** Bounded auth bootstrap. Remote assets always warm in the background. */
 const MIN_DISPLAY_MS = 600;
+const SESSION_RESTORE_TIMEOUT_MS = 2000;
+const ANONYMOUS_SESSION_TIMEOUT_MS = 5000;
 
-/**
- * How long we WAIT before offering Retry -- not a hard stop. The download queue
- * never stops retrying in the background, and P0 is well under 1MB.
- */
-const P0_ASSET_TIMEOUT_MS = 30000;
+type TimedResult<T> = { status: 'resolved'; value: T } | { status: 'timeout' };
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<TimedResult<T>> {
+  return Promise.race([
+    promise.then((value) => ({ status: 'resolved' as const, value })),
+    new Promise<TimedResult<T>>((resolve) => {
+      setTimeout(() => resolve({ status: 'timeout' }), ms);
+    }),
+  ]);
+}
 
 export default function SigningInScreen() {
-  const [gateState, setGateState] = useState<'pending' | 'failed'>('pending');
-  const [retryNonce, setRetryNonce] = useState(0);
-
   useEffect(() => {
     const start = Date.now();
     let cancelled = false;
     let navigated = false;
-    let gateFailed = false;
 
     const goHome = () => {
-      if (navigated || cancelled || gateFailed) return;
+      if (navigated || cancelled) return;
       navigated = true;
       const elapsed = Date.now() - start;
       setTimeout(() => {
@@ -71,19 +45,32 @@ export default function SigningInScreen() {
       }, Math.max(0, MIN_DISPLAY_MS - elapsed));
     };
 
-    const timer = setTimeout(() => {
-      if (!cancelled && !navigated) {
-        gateFailed = true;
-        setGateState('failed');
-      }
-    }, P0_ASSET_TIMEOUT_MS);
-
     void (async () => {
-      const session = await getCurrentSession();
-      const userId = session?.user?.id;
+      const restored = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
+      let userId = restored.status === 'resolved' ? restored.value?.user?.id : null;
+
+      // A returning guest can lose the persisted anonymous session after an
+      // Android storage hiccup or OS cleanup. Re-establish it here, but keep
+      // the network attempt bounded so offline launch can never sit on the
+      // splash indefinitely.
+      if (!userId && restored.status === 'resolved') {
+        const ensured = await withTimeout(ensureSession(), ANONYMOUS_SESSION_TIMEOUT_MS);
+        if (ensured.status === 'resolved' && ensured.value) {
+          const retry = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
+          userId = retry.status === 'resolved' ? retry.value?.user?.id : null;
+        }
+      }
+
+      // A timed-out session read usually means Supabase still owns its Android
+      // storage lock. Render Home from local caches instead of trapping the
+      // user; auth initialization can finish in the background.
+      if (restored.status === 'timeout') {
+        goHome();
+        return;
+      }
+
       if (!userId) {
         navigated = true;
-        clearTimeout(timer);
         router.replace('/(auth)/sign-in');
         return;
       }
@@ -105,22 +92,16 @@ export default function SigningInScreen() {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      await ensureP0Ready();
-      if (cancelled) return;
-
-      clearTimeout(timer);
+      // Every first screen has a bundled fallback. Remote asset downloads and
+      // cache warming must never gate navigation, especially on Android cold
+      // starts with a slow or unavailable network.
       goHome();
     })();
 
     return () => {
       cancelled = true;
-      clearTimeout(timer);
     };
-  }, [retryNonce]);
-
-  if (gateState === 'failed') {
-    return <AssetGateError onRetry={() => setRetryNonce((n) => n + 1)} />;
-  }
+  }, []);
 
   return (
     <View style={styles.root}>

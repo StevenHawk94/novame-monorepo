@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 
 import { Tabs } from 'expo-router';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
 import {
@@ -31,7 +30,7 @@ export default function TabsLayout() {
   }, []);
 
   return (
-    <BottomSheetModalProvider>
+    <>
       <Tabs
         tabBar={(props) => <BottomTabBar {...props} />}
         screenOptions={{ headerShown: false }}
@@ -43,6 +42,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="status" options={{ title: 'Connection' }} />
       </Tabs>
       <RatingPromptSheet ref={ratingSheetRef} />
-    </BottomSheetModalProvider>
+    </>
   );
 }

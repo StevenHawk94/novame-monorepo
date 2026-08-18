@@ -4,13 +4,15 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { CLOVERS_PER_TASK, themesForScope, type QuestTheme } from '@novame/domain';
+import LottieView from 'lottie-react-native';
+import { CLOVERS_PER_TASK, COMPLETION_BONUS, themesForScope, type QuestTheme } from '@novame/domain';
 
 import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
+import { GridBackground } from '@/components/ui/grid-background';
 import { ConfettiBurst } from '@/components/main/confetti-burst';
 import { haptics } from '@/lib/haptics';
-import { fetchCosmetics, getCachedCosmetics } from '@/lib/cosmetics-api';
+import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import { checkTask, fetchQuestStatus, getCachedStatus, type QuestStatus } from '@/lib/quests-api';
 
 
@@ -38,7 +40,6 @@ const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
 export default function QuestsScreen() {
   const router = useRouter();
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
-  const [balance, setBalance] = useState<number>(() => getCachedCosmetics().balance);
   // Optimistic check-off (2026-08-07): the row completes instantly with
   // confetti; the server call reconciles silently in the background.
   const [confetti, setConfetti] = useState(false);
@@ -48,7 +49,6 @@ export default function QuestsScreen() {
   useFocusEffect(
     useCallback(() => {
       void fetchQuestStatus().then(setStatus);
-      void fetchCosmetics().then((s) => setBalance(s.balance));
     }, []),
   );
 
@@ -80,21 +80,21 @@ export default function QuestsScreen() {
     void haptics.success();
     setConfetti(true);
     const prevStatus = status;
-    const prevBalance = balance;
+    const finishingPlan = status.plan.checkedCount + 1 === status.plan.tasks.length;
+    const expectedAward = CLOVERS_PER_TASK + (finishingPlan ? COMPLETION_BONUS : 0);
+    const award = optimisticCloverAward(expectedAward);
     setStatus((cur) => {
       if (!cur.plan) return cur;
       const tasks = cur.plan.tasks.map((t, i) => (i === index ? { ...t, done: true } : t));
       return { ...cur, plan: { ...cur.plan, tasks, checkedToday: true, checkedCount: cur.plan.checkedCount + 1 } };
     });
-    setBalance((b) => b + CLOVERS_PER_TASK);
-
     // Background reconcile: confirm with the server, roll back on rejection.
     void (async () => {
       const res = await checkTask(index);
       checkInFlight.current = false;
       if (!res.ok) {
         setStatus(prevStatus);
-        setBalance(prevBalance);
+        award.rollback();
         if (res.error === 'already_checked_today') {
           appAlert('Come back tomorrow', 'You can complete one task per day.');
         } else {
@@ -102,7 +102,7 @@ export default function QuestsScreen() {
         }
         return;
       }
-      void fetchCosmetics().then((c) => setBalance(c.balance));
+      award.commit(res.cloversEarned);
       if (res.allDone) {
         appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
         void fetchQuestStatus().then(setStatus);
@@ -129,6 +129,7 @@ export default function QuestsScreen() {
 
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
+        <GridBackground base={BG} line="#654A31" cell={22} lineWidth={1.2} />
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <View style={styles.titleRow}>
@@ -143,7 +144,7 @@ export default function QuestsScreen() {
               <View style={styles.planTopRow}>
                 <Text style={styles.planTitle}>{p.title}</Text>
                 <View style={styles.balancePill}>
-                  <Text style={styles.balanceNum}>{balance}</Text>
+                  <Text style={styles.balanceNum}>{COMPLETION_BONUS}</Text>
                   <Image source={ICONS.Clover} style={styles.cloverSm} resizeMode="contain" />
                 </View>
               </View>
@@ -151,7 +152,7 @@ export default function QuestsScreen() {
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${pct}%` }]} />
               </View>
-              <Text style={styles.planBonus}>Complete all 7 days to earn 120 clovers</Text>
+              <Text style={styles.planBonus}>Complete all 7 days to earn {COMPLETION_BONUS} clovers</Text>
             </View>
           </OffsetCard>
 
@@ -196,7 +197,20 @@ export default function QuestsScreen() {
           <Text style={styles.editHint}>You can edit your plan anytime.</Text>
           <View style={{ height: 24 }} />
         </ScrollView>
-        {confetti && <ConfettiBurst onDone={() => setConfetti(false)} />}
+        {confetti && (
+          <View style={styles.celebration} pointerEvents="none">
+            <ConfettiBurst />
+            <LottieView
+              source={require('../../../assets/animations/Confetti.lottie')}
+              autoPlay
+              loop={false}
+              resizeMode="contain"
+              style={styles.confettiLottie}
+              onAnimationFinish={() => setConfetti(false)}
+              onAnimationFailure={() => setConfetti(false)}
+            />
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -210,6 +224,7 @@ export default function QuestsScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: pageBg }]} edges={['top']}>
+      <GridBackground base={BG} line="#654A31" cell={22} lineWidth={1.2} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
@@ -283,6 +298,13 @@ const INK = '#4A3423';
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
+  celebration: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confettiLottie: { width: 320, height: 320 },
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
   header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },

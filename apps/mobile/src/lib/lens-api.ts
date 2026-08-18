@@ -29,7 +29,7 @@ export interface LensCard {
 export type LensError = 'already_done' | 'companion_not_ready' | 'network';
 
 export type LensSubmitResult =
-  | { ok: true; response: 'resonates' | 'different'; companionXp: number }
+  | { ok: true; response: 'resonates' | 'different'; companionXp: number; xpAwarded: number }
   | { ok: false; error: LensError };
 
 interface CachedState {
@@ -133,6 +133,7 @@ export async function submitLens(
       success?: boolean;
       error?: string;
       companion_xp?: number;
+      xp_awarded?: number;
     }>('/api/lens/complete', {
       userId,
       theme,
@@ -156,8 +157,12 @@ export async function submitLens(
     // Success: mark done, and pre-fetch the now-next card for tomorrow.
     markDoneToday();
     void prefetchNext(userId, theme);
-
-    return { ok: true, response, companionXp: data.companion_xp ?? 0 };
+    return {
+      ok: true,
+      response,
+      companionXp: data.companion_xp ?? 0,
+      xpAwarded: data.xp_awarded ?? 0,
+    };
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
       markDoneToday();

@@ -22,5 +22,8 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.unstable_enableSymlinks = true;
 config.resolver.unstable_enablePackageExports = true;
+if (!config.resolver.assetExts.includes('lottie')) {
+  config.resolver.assetExts.push('lottie');
+}
 
 module.exports = config;

@@ -61,30 +61,33 @@ export default function BagsScreen() {
   );
   const [oursUnread, setOursUnread] = useState(initialSharedBox.hasUnreadFromPartner);
   const [oursReadThrough, setOursReadThrough] = useState(initialSharedBox.readThrough);
-  const [oursListRevision, setOursListRevision] = useState(0);
   const itemSheetRef = useRef<ItemSheetRef>(null);
-  const listRef = useRef<FlatList<CollectedItem>>(null);
+  const listRef = useRef<FlatList<CollectedItem[]>>(null);
   const sharedRefreshGeneration = useRef(0);
+  const screenRefreshGeneration = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      const screenGeneration = ++screenRefreshGeneration.current;
       void Promise.all([fetchBags(), fetchPairing()]).then(async ([mine, pair]) => {
-        if (!active) return;
+        if (!active || screenGeneration !== screenRefreshGeneration.current) return;
         setMineItems(mine);
         setPairing(pair);
 
         if (pair.paired && pair.partner) {
+          const sharedGeneration = ++sharedRefreshGeneration.current;
           const [theirs, shared] = await Promise.all([
             fetchBags('their', pair.partner.userId),
             fetchSharedBoxWithMeta(pair.partner.userId),
           ]);
-          if (!active) return;
+          if (!active || screenGeneration !== screenRefreshGeneration.current) return;
           setTheirItems(theirs);
-          setOurItems(sharedBoxToCollectedItems(shared.items));
-          setOursListRevision((revision) => revision + 1);
-          setOursUnread(shared.hasUnreadFromPartner);
-          setOursReadThrough(shared.readThrough);
+          if (sharedGeneration === sharedRefreshGeneration.current) {
+            setOurItems(sharedBoxToCollectedItems(shared.items));
+            setOursUnread(shared.hasUnreadFromPartner);
+            setOursReadThrough(shared.readThrough);
+          }
         } else {
           setTheirItems([]);
           setOurItems([]);
@@ -106,6 +109,17 @@ export default function BagsScreen() {
   const [visibleCount, setVisibleCount] = useState(PAGE);
   useEffect(() => setVisibleCount(PAGE), [tab]);
   const paged = shown.slice(0, visibleCount);
+  // Render explicit rows instead of FlatList's numColumns mode. When new
+  // items are prepended, numColumns can briefly reuse stale row buckets and
+  // hide displaced cells until a remount. Row keys include every item id, so
+  // any changed grouping is reconciled immediately for Mine / Their / Ours.
+  const rows = useMemo(() => {
+    const result: CollectedItem[][] = [];
+    for (let index = 0; index < paged.length; index += numColumns) {
+      result.push(paged.slice(index, index + numColumns));
+    }
+    return result;
+  }, [numColumns, paged]);
   const partner = pairing?.paired ? pairing.partner : null;
 
   useEffect(() => {
@@ -116,7 +130,6 @@ export default function BagsScreen() {
       void fetchSharedBoxWithMeta(friendUserId).then((shared) => {
         if (generation !== sharedRefreshGeneration.current) return;
         setOurItems(sharedBoxToCollectedItems(shared.items));
-        setOursListRevision((revision) => revision + 1);
         setOursUnread(shared.hasUnreadFromPartner);
         setOursReadThrough(shared.readThrough);
         // New rows are sorted at the head. Explicitly reset the virtualized
@@ -240,36 +253,35 @@ export default function BagsScreen() {
       ) : (
         <FlatList
           ref={listRef}
-          // A multi-column VirtualizedList may retain its old row buckets when
-          // items are prepended. Re-mount only the Ours list after a server
-          // refresh so newly-created head rows cannot be represented by stale
-          // cells until the user switches tabs.
-          key={`${tab}-${numColumns}-${tab === 'ours' ? oursListRevision : 0}`}
-          data={paged}
-          keyExtractor={(item) => item.itemId}
-          numColumns={numColumns}
+          key={`${tab}-${numColumns}`}
+          data={rows}
+          keyExtractor={(row) => row.map((item) => item.itemId).join('|')}
           contentContainerStyle={styles.gridScroll}
           showsVerticalScrollIndicator={false}
           onEndReached={() => setVisibleCount((count) => Math.min(count + PAGE, shown.length))}
           onEndReachedThreshold={0.6}
-          initialNumToRender={40}
-          maxToRenderPerBatch={40}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
           windowSize={7}
-          removeClippedSubviews
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => itemSheetRef.current?.present(item.itemId)}
-              style={[styles.cell, { width: cellWidth }]}
-            >
-              <View style={styles.itemCard}>
-                <ItemSprite itemId={item.itemId} size={tileSize} radius={18} tileColor="transparent" />
-                {item.count > 1 ? (
-                  <View style={styles.countBadge}>
-                    <Text style={styles.countBadgeText}>x{item.count > 99 ? '99+' : item.count}</Text>
+          renderItem={({ item: row }) => (
+            <View style={styles.gridRow}>
+              {row.map((item) => (
+                <Pressable
+                  key={item.itemId}
+                  onPress={() => itemSheetRef.current?.present(item.itemId)}
+                  style={[styles.cell, { width: cellWidth }]}
+                >
+                  <View style={styles.itemCard}>
+                    <ItemSprite itemId={item.itemId} size={tileSize} radius={18} tileColor="transparent" />
+                    {item.count > 1 ? (
+                      <View style={styles.countBadge}>
+                        <Text style={styles.countBadgeText}>x{item.count > 99 ? '99+' : item.count}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                ) : null}
-              </View>
-            </Pressable>
+                </Pressable>
+              ))}
+            </View>
           )}
         />
       )}
@@ -308,6 +320,7 @@ const styles = StyleSheet.create({
   tabLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#8A6B3F' },
   tabLabelActive: { color: '#FFF6DE' },
   gridScroll: { paddingBottom: 24 },
+  gridRow: { flexDirection: 'row', width: '100%' },
   cell: { alignItems: 'center', marginBottom: 10, paddingHorizontal: 3 },
   itemCard: {
     width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: 'rgba(76,51,27,0.10)',

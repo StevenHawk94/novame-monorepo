@@ -31,19 +31,25 @@ function getSupabase() {
 }
 
 const SUB_TO_TIER = {
-  novame_plus:    'plus',
-  novame_plusduo: 'plus',
+  'novame.plus.monthly':    'plus',
+  'novame.plus.yearly':     'plus',
+  'novame.plusduo.monthly': 'plus',
+  'novame.plusduo.yearly':  'plus',
 }
 
 // Google subscription ID → seat model (duo grants one extra seat)
 const SUB_TO_PLAN_TYPE = {
-  novame_plus:    'solo',
-  novame_plusduo: 'duo',
+  'novame.plus.monthly':    'solo',
+  'novame.plus.yearly':     'solo',
+  'novame.plusduo.monthly': 'duo',
+  'novame.plusduo.yearly':  'duo',
 }
 
-const BASEPLAN_TO_CYCLE = {
-  monthly: 'monthly',
-  yearly:  'yearly',
+const SUB_TO_CYCLE = {
+  'novame.plus.monthly':    'monthly',
+  'novame.plus.yearly':     'yearly',
+  'novame.plusduo.monthly': 'monthly',
+  'novame.plusduo.yearly':  'yearly',
 }
 
 // Notification types: https://developer.android.com/google/play/billing/rtdn-reference#sub
@@ -70,10 +76,13 @@ const ACTIVATE_TYPES = new Set([1, 2, 4, 7]) // RECOVERED, RENEWED, PURCHASED, R
 // Which notification types revoke the entitlement immediately
 const REVOKE_TYPES = new Set([12, 13]) // REVOKED, EXPIRED
 
+const PACKAGE_NAME = 'com.burrow.app'
+
 // ─── Google API auth (same logic as google-iap route) ──────────────────────
 
 async function getGoogleAccessToken() {
   const keyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY
+    || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
   if (!keyJson) return null
   try {
     const key = JSON.parse(keyJson)
@@ -155,7 +164,11 @@ export async function POST(request) {
 
     const { notificationType, purchaseToken, subscriptionId } = subNotif
     const typeName = NOTIFICATION_TYPES[notificationType] || `UNKNOWN(${notificationType})`
-    const pkg = decoded.packageName || 'com.novame.app'
+    const pkg = decoded.packageName || PACKAGE_NAME
+    if (pkg !== PACKAGE_NAME) {
+      console.warn('[Google webhook] Ignoring notification for unexpected package:', pkg)
+      return NextResponse.json({ received: true })
+    }
 
     console.log(`[Google webhook] ${typeName} — subscriptionId=${subscriptionId}`)
 
@@ -223,7 +236,7 @@ export async function POST(request) {
     const userId = sub.user_id
 
     const googleBasePlanId = lineItem?.offerDetails?.basePlanId || null
-    const billingCycle = BASEPLAN_TO_CYCLE[googleBasePlanId] || sub.billing_cycle || 'monthly'
+    const billingCycle = SUB_TO_CYCLE[subscriptionId] || sub.billing_cycle || 'monthly'
     const expiryTime = lineItem?.expiryTime || null
 
     // ── Route by notification type ──────────────────────────────────────────

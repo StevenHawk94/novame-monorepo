@@ -9,7 +9,7 @@ function idForName(name: string): string {
   return found[0];
 }
 
-describe('real dictionary smoke (stable v19 icons + v23 matching rules)', () => {
+describe('real dictionary smoke (stable v19 icons + v25 matching rules)', () => {
   it('has the complete 5,390-item catalog', () => {
     expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5390);
   });

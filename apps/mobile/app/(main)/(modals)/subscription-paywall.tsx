@@ -9,6 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import {
   fetchSubscriptionProducts,
+  getSubscriptionPlanPricing,
   initIAP,
   purchaseSubscription,
   restoreSubscriptions,
@@ -64,9 +65,8 @@ export default function SubscriptionPaywallModal() {
       try {
         await initIAP();
         const products = await fetchSubscriptionProducts();
-        const byId = new Map(products.map((p) => [p.id, p]));
-        const yearly = byId.get('novame.plus.yearly');
-        const monthly = byId.get('novame.plus.monthly');
+        const yearly = getSubscriptionPlanPricing(products, 'yearly');
+        const monthly = getSubscriptionPlanPricing(products, 'monthly');
         if (yearly?.displayPrice) setPriceYearly(yearly.displayPrice);
         if (monthly?.displayPrice) setPriceMonthly(monthly.displayPrice);
         const num = (v: unknown) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')));
@@ -154,7 +154,12 @@ export default function SubscriptionPaywallModal() {
           },
         ]);
       } else {
-        appAlert('Nothing to Restore', 'We did not find any prior subscription on this Apple ID.');
+        appAlert(
+          'Nothing to Restore',
+          Platform.OS === 'android'
+            ? 'We did not find any prior subscription on this Google Play account.'
+            : 'We did not find any prior subscription on this Apple ID.',
+        );
       }
     } catch (e) {
       setBusy('idle');
@@ -294,7 +299,8 @@ export default function SubscriptionPaywallModal() {
                 ? 'Burrow Plus Yearly: $69.99 per 12 months after a 3-day free trial. '
                 : 'Burrow Plus Monthly: $6.99 per month. '}
               Subscription auto-renews unless cancelled at least 24 hours before the end
-              of the current period. Manage or cancel anytime in your App Store settings.
+              of the current period. Manage or cancel anytime in your{' '}
+              {Platform.OS === 'android' ? 'Google Play' : 'App Store'} settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 10 }]}>
               <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/privacy')} hitSlop={8}>

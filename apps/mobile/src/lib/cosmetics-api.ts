@@ -21,6 +21,10 @@ export interface CosmeticsState {
   unlocks: CosmeticUnlock[];
 }
 
+type CosmeticsListener = (state: CosmeticsState) => void;
+const listeners = new Set<CosmeticsListener>();
+let cacheRevision = 0;
+
 export function getCachedCosmetics(): CosmeticsState {
   const raw = storage.getString(kCosmeticUnlocks.name);
   if (!raw) return { balance: 0, unlocks: [] };
@@ -34,9 +38,69 @@ export function getCachedCosmetics(): CosmeticsState {
 
 function write(s: CosmeticsState): void {
   storage.set(kCosmeticUnlocks.name, JSON.stringify(s));
+  cacheRevision += 1;
+  for (const listener of listeners) listener(s);
+}
+
+/** Subscribe to immediate balance/unlock changes without waiting for a refetch. */
+export function subscribeCosmetics(listener: CosmeticsListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** Apply a server-confirmed Clover award to the cache and every visible total. */
+export function awardCachedClovers(amount: number): void {
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  const cur = getCachedCosmetics();
+  write({ ...cur, balance: Math.max(0, Math.min(99999, cur.balance + Math.floor(amount))) });
+}
+
+/** Server confirmed an award: update instantly, then silently verify it. */
+export function confirmCloverAward(amount: number): void {
+  awardCachedClovers(amount);
+  void fetchCosmetics();
+}
+
+/**
+ * Paint an award immediately, then reconcile it when the background request
+ * completes. Concurrent awards are safe because commit/rollback apply deltas
+ * against the latest cache rather than restoring an old snapshot.
+ */
+export function optimisticCloverAward(expectedAmount: number): {
+  commit: (actualAmount?: number) => void;
+  rollback: () => void;
+} {
+  const expected = Math.max(0, Math.floor(expectedAmount));
+  let settled = false;
+  awardCachedClovers(expected);
+
+  const adjust = (delta: number) => {
+    if (delta === 0) return;
+    const cur = getCachedCosmetics();
+    write({ ...cur, balance: Math.max(0, Math.min(99999, cur.balance + delta)) });
+  };
+
+  return {
+    commit(actualAmount = expected) {
+      if (settled) return;
+      settled = true;
+      const actual = Math.max(0, Math.floor(actualAmount));
+      adjust(actual - expected);
+      void fetchCosmetics();
+    },
+    rollback() {
+      if (settled) return;
+      settled = true;
+      adjust(-expected);
+      void fetchCosmetics();
+    },
+  };
 }
 
 export async function fetchCosmetics(): Promise<CosmeticsState> {
+  const revisionAtStart = cacheRevision;
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return getCachedCosmetics();
@@ -46,6 +110,9 @@ export async function fetchCosmetics(): Promise<CosmeticsState> {
     );
     if (!data.success) return getCachedCosmetics();
     const state: CosmeticsState = { balance: data.balance ?? 0, unlocks: data.unlocks ?? [] };
+    // Do not let an older in-flight refresh overwrite a newer optimistic
+    // award. That award starts its own post-confirmation reconciliation.
+    if (revisionAtStart !== cacheRevision) return getCachedCosmetics();
     write(state);
     return state;
   } catch {

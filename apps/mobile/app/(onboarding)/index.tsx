@@ -10,7 +10,6 @@ import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
-import { DEFAULT_AVATARS } from '../../src/lib/avatar';
 import {
   markIntroSeen,
   setBunnyName,
@@ -98,15 +97,17 @@ const INSIGHT_PILLS = [
   { label: 'Hangout Ideas', icon: ICONS.hangout },
 ];
 
-// Ob5's tappable sample reflection (2026-08-10 mock: Jimmy's card) — real
-// ids from the current dictionary; each note reads like a keepsake label.
+// Ob5's tappable sample reflection (Jimmy's card). Keep these IDs on the
+// current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
+// art and render as empty tiles.
+const SAMPLE_AVATAR = require('../../assets/profile/default-3.webp');
 const SAMPLE_DAY: { itemId: string; note: string }[] = [
-  { itemId: 'actions_activities.baking', note: 'Baked an apple pie from scratch' },
-  { itemId: 'actions_activities.movie', note: 'A cozy movie night in' },
-  { itemId: 'bathroom_personal_care.toilet', note: 'Finally deep-cleaned the bathroom' },
-  { itemId: 'food_drink.avocado', note: 'Perfectly ripe avocado at breakfast' },
-  { itemId: 'food_drink.banh_mi', note: 'Grabbed a banh mi for lunch' },
-  { itemId: 'tools_hardware.workbench', note: 'An afternoon tinkering at the workbench' },
+  { itemId: 'memory.0005_baking', note: 'Baked an apple pie from scratch' },
+  { itemId: 'memory.1363_movie_theater', note: 'A cozy movie night in' },
+  { itemId: 'memory.2851_toilet', note: 'Finally deep-cleaned the bathroom' },
+  { itemId: 'memory.0896_avocado', note: 'Perfectly ripe avocado at breakfast' },
+  { itemId: 'memory.0132_banh_mi', note: 'Grabbed a banh mi for lunch' },
+  { itemId: 'memory.4095_workbench', note: 'An afternoon tinkering at the workbench' },
 ];
 
 type Step =
@@ -443,7 +444,7 @@ export default function OnboardingScreen() {
                 then the six tappable items. */}
             <View style={styles.sampleCard}>
               <View style={styles.sampleHeader}>
-                <ExpoImage source={DEFAULT_AVATARS[2]} style={styles.sampleAvatar} contentFit="cover" />
+                <ExpoImage source={SAMPLE_AVATAR} style={styles.sampleAvatar} contentFit="cover" />
                 <Text style={styles.sampleName}>Jimmy</Text>
                 <Text style={styles.sampleTime}>10h ago</Text>
               </View>

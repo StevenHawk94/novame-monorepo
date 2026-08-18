@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -43,6 +43,7 @@ function timeAgo(iso: string): string {
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
   const { width, height } = useWindowDimensions();
   const maxTiles = width < 400 ? 3 : 4;
@@ -65,6 +66,7 @@ export default function FriendsScreen() {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [privacyMode, setPrivacyMode] = useState<MemoryDetailsMode>('custom');
   const [privacySaving, setPrivacySaving] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
@@ -107,15 +109,21 @@ export default function FriendsScreen() {
     setFeed(await fetchFriendFeed({ start, end: end ?? start }));
   }
 
-  async function onRespond(req: PendingRequest, action: 'accept' | 'decline') {
+  async function onAccept(req: PendingRequest) {
+    if (acceptingId) return;
+    setAcceptingId(req.friendshipId);
     void haptics.medium();
-    const res = await respondFriend(req.friendshipId, action);
+    const res = await respondFriend(req.friendshipId);
     if (res.ok) {
-      if (action === 'accept') void haptics.success();
+      void haptics.success();
       load();
-    } else if (res.error === 'friend_limit_reached') {
-      appAlert('Slots full', 'Your friend slots are full. Burrow Plus holds 99.');
+    } else if (res.error === 'already_paired' || res.error === 'requester_already_paired') {
+      appAlert('Pairing unavailable', 'One of you is already paired. Refresh to see the latest status.');
+      load();
+    } else {
+      appAlert('Could not accept', 'Please check your connection and try again.');
     }
+    setAcceptingId(null);
   }
 
 
@@ -172,23 +180,11 @@ export default function FriendsScreen() {
       />
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* paired tools: history calendar + detail-sharing settings */}
-        <View style={styles.headerRow}>
-          {!paired && <Text style={styles.title} numberOfLines={1}>Paired</Text>}
+        <View style={[styles.headerRow, !paired && styles.headerRowOverlay, !paired && { top: insets.top }]}>
           <View style={styles.headerIcons}>
-            {paired ? (
+            {paired && (
               <Pressable onPress={() => setCalendarOpen(true)} style={styles.iconBtn} hitSlop={8}>
                 <Image source={ICONS.patternCalendar} style={styles.calendarHeaderIcon} resizeMode="contain" />
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => { void haptics.light(); router.push('/(main)/friend-add' as never); }}
-                style={styles.iconBtn}
-                hitSlop={6}
-              >
-                <Text style={styles.mailEmoji}>{'💌'}</Text>
-                {pendingCount > 0 && (
-                  <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>
-                )}
               </Pressable>
             )}
             <Pressable onPress={onPrivacyGear} style={styles.iconBtn} hitSlop={6}>
@@ -266,11 +262,12 @@ export default function FriendsScreen() {
                       <Text style={styles.pendingName} numberOfLines={1}>{req.displayName}</Text>
                       <Text style={styles.pendingRel} numberOfLines={1}>{req.relationship ?? 'Wants to pair'}</Text>
                     </View>
-                    <Pressable onPress={() => void onRespond(req, 'decline')} style={styles.ignoreBtn}>
-                      <Text style={styles.ignoreText}>Ignore</Text>
-                    </Pressable>
-                    <Pressable onPress={() => void onRespond(req, 'accept')} style={styles.acceptBtn}>
-                      <Text style={styles.acceptText}>Accept</Text>
+                    <Pressable
+                      onPress={() => void onAccept(req)}
+                      disabled={acceptingId !== null}
+                      style={[styles.acceptBtn, acceptingId !== null && styles.acceptBtnDisabled]}
+                    >
+                      <Text style={styles.acceptText}>{acceptingId === req.friendshipId ? 'Accepting…' : 'Accept'}</Text>
                     </Pressable>
                   </View>
                 ))}
@@ -416,17 +413,11 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#6B4226' },
 
   headerRow: { height: 52, justifyContent: 'center' },
-  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center', paddingHorizontal: 110 },
+  headerRowOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 2 },
   headerIcons: { position: 'absolute', right: 10, top: 0, flexDirection: 'row', gap: 6 },
   iconBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  mailEmoji: { fontSize: 30 },
   gearIcon: { width: 44, height: 44 },
   calendarHeaderIcon: { width: 44, height: 44 },
-  badge: {
-    position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#E5483C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
-  },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontFamily: 'Inter_800ExtraBold' },
 
   addPill: {
     flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center',
@@ -438,7 +429,7 @@ const styles = StyleSheet.create({
   addPillText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   pillUnderTitle: { marginTop: 6 },
 
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22, paddingBottom: 60 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
   emptyInvite: {
     fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',
     textAlign: 'center', lineHeight: 27,
@@ -469,9 +460,8 @@ const styles = StyleSheet.create({
   },
   pendingName: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   pendingRel: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#6B5A45', marginTop: 2 },
-  ignoreBtn: { flexShrink: 1, backgroundColor: '#F5EBD3', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
-  ignoreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#6B5A45' },
-  acceptBtn: { flexShrink: 1, backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  acceptBtn: { flexShrink: 0, minWidth: 92, alignItems: 'center', backgroundColor: '#2E8B57', borderRadius: 14, paddingHorizontal: 18, paddingVertical: 11 },
+  acceptBtnDisabled: { opacity: 0.55 },
   acceptText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   panel: {

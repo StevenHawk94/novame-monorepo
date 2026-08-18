@@ -15,6 +15,7 @@
 import { ApiError } from '@novame/api-client';
 
 import { apiClient } from './api';
+import { confirmCloverAward } from './cosmetics-api';
 
 import { kReflectShareDefaults, kReflectState } from '../shared/storage/keys';
 import { storage } from './storage';
@@ -211,6 +212,7 @@ export async function submitReflect(params: {
       reflectsToday: snapshot.reflectsToday,
       lastSnapshot: snapshot,
     });
+    confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
   } catch (e) {
     // ApiError with a 409 carries the daily-limit body; other codes are network.

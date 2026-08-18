@@ -172,19 +172,19 @@ export async function previewFriend(
 
 export async function respondFriend(
   friendshipId: string,
-  action: 'accept' | 'decline',
 ): Promise<{ ok: boolean; error?: string }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
   try {
     const data = await apiClient.post<{ success?: boolean; error?: string }>(
-      '/api/friends/respond', { userId, friendshipId, action },
+      '/api/friends/respond', { userId, friendshipId, action: 'accept' },
     );
     if (data.error) return { ok: false, error: data.error };
     return { ok: true };
-  } catch {
-    return { ok: false, error: 'network' };
+  } catch (err) {
+    const error = (err as { body?: { error?: string } })?.body?.error;
+    return { ok: false, error: error || 'network' };
   }
 }
 
@@ -386,6 +386,8 @@ export function getCachedSharedBox(friendUserId?: string): SharedBoxResult {
 
 type SharedBoxChangeListener = (friendUserId: string) => void;
 const sharedBoxChangeListeners = new Set<SharedBoxChangeListener>();
+let sharedBoxFetchGeneration = 0;
+let sharedBoxAppliedGeneration = 0;
 
 /**
  * The creator screen is pushed above the Memories tab, so on some Expo Router
@@ -408,6 +410,7 @@ export async function fetchSharedBox(friendUserId: string): Promise<SharedBoxIte
 }
 
 export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<SharedBoxResult> {
+  const generation = ++sharedBoxFetchGeneration;
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return getCachedSharedBox(friendUserId);
@@ -428,7 +431,9 @@ export async function fetchSharedBoxWithMeta(friendUserId: string): Promise<Shar
       source: r.source,
       createdAt: r.created_at,
     })), hasUnreadFromPartner: !!data.hasUnreadFromPartner, readThrough: data.readThrough || new Date(0).toISOString() };
+    if (generation < sharedBoxAppliedGeneration) return getCachedSharedBox(friendUserId);
     storage.set(kSharedBoxState.name, JSON.stringify({ friendUserId, result } satisfies SharedBoxCache));
+    sharedBoxAppliedGeneration = generation;
     return result;
   } catch {
     return getCachedSharedBox(friendUserId);

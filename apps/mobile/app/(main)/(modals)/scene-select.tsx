@@ -23,6 +23,7 @@ import {
   getCachedCosmetics,
   isUnlocked,
   purchaseCosmetic,
+  subscribeCosmetics,
   type CosmeticsState,
 } from '../../../src/lib/cosmetics-api';
 
@@ -44,6 +45,8 @@ export default function SceneSelectScreen() {
   const [current, setCurrent] = useState<string>(() => getSelectedScene());
   const [busy, setBusy] = useState(false);
   const [switching, setSwitching] = useState(false);
+
+  useEffect(() => subscribeCosmetics(setCosmetics), []);
 
   useFocusEffect(
     useCallback(() => {

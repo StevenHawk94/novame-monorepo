@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate runtime item data from the v23 rules over stable v19 icon IDs."""
+"""Generate runtime item data from the v25 rules over stable v19 icon IDs."""
 
 from __future__ import annotations
 
@@ -14,22 +14,17 @@ from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "apps" / "mobile" / "assets" / "memory items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v23.xlsx"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v25.xlsx"
 DICTIONARY = ROOT / "packages" / "engine" / "src" / "items" / "dictionary.json"
 IMAGE_MAP = ROOT / "apps" / "mobile" / "src" / "lib" / "item-images.g.ts"
 GUIDED_CATALOG = ROOT / "apps" / "mobile" / "src" / "lib" / "guided-catalog.g.ts"
 MIGRATION = ROOT / "supabase" / "migrations" / "20260815000041_items_v19_catalog.sql"
-QA_PATH = SOURCE_DIR / "items-v23-data-qa.json"
-# This update intentionally changes only Icon_Mapping.keywords_mapping and
-# Keyword_Safety. Stable icon metadata, images, Reflect categories/order, and
-# the existing SQL catalog remain byte-for-byte untouched.
-KEYWORDS_ONLY = True
-# The user explicitly approved v23 category changes for these final seven
-# icons; all other icon metadata remains on the existing stable catalog.
-V23_METADATA_NAMES = {
-    "Social Media", "Video", "Music", "Messaging", "Shopping",
-    "Food Delivery", "Mobile Gaming",
-}
+QA_PATH = SOURCE_DIR / "items-v25-data-qa.json"
+# v25 keeps all 5,390 icon identities and bundled images stable. It updates
+# rules + category metadata and adds Guided Prompt subcategories. Never rewrite
+# already-shipped image requires or an already-executed SQL migration here.
+WRITE_IMAGE_MAP = False
+WRITE_SQL_CATALOG = False
 
 
 CATEGORY_KEYS = {
@@ -47,7 +42,7 @@ CATEGORY_KEYS = {
     "Shopping & Errands": "shopping_errands",
 }
 
-# v23 resolves the 20 cross-icon executable collisions that existed in v19.
+# v25 preserves the resolved cross-icon executable collisions from v23.
 # Keep this table explicit and empty: any future collision fails generation
 # until a product-reviewed direct carrier is added here.
 CONFLICT_WINNERS = {}
@@ -105,7 +100,7 @@ def sql(value: object) -> str:
 
 def main() -> None:
     workbook = load_workbook(WORKBOOK, read_only=True, data_only=True)
-    baseline_dictionary = json.loads(DICTIONARY.read_text(encoding="utf-8")) if KEYWORDS_ONLY else None
+    baseline_dictionary = json.loads(DICTIONARY.read_text(encoding="utf-8"))
 
     icon_sheet = workbook["Icon_Mapping"]
     icon_rows = icon_sheet.iter_rows(values_only=True)
@@ -155,25 +150,17 @@ def main() -> None:
     runtime_items = {}
     for name, item in items_by_name.items():
         reflect = reflect_by_name[name]
-        if KEYWORDS_ONLY:
-            baseline = baseline_dictionary["items"].get(item["id"])
-            if not baseline or baseline.get("displayName") != name:
-                raise ValueError(f"Stable item identity changed at {item['id']}: {name!r}")
-            runtime_items[item["id"]] = {
-                **baseline,
-                "category": reflect["category"] if name in V23_METADATA_NAMES else baseline["category"],
-                "bagsCategory": item["category"] if name in V23_METADATA_NAMES else baseline.get("bagsCategory"),
-                "keywords": item["keywords"],
-            }
-        else:
-            runtime_items[item["id"]] = {
-                "displayName": name,
-                "rarity": rarity_for_frequency[reflect["frequency"]],
-                "category": reflect["category"],
-                "bagsCategory": item["category"],
-                "keywords": item["keywords"],
-                "visualConcept": item["visualConcept"],
-            }
+        baseline = baseline_dictionary["items"].get(item["id"]) if baseline_dictionary else None
+        if baseline_dictionary and (not baseline or baseline.get("displayName") != name):
+            raise ValueError(f"Stable item identity changed at {item['id']}: {name!r}")
+        runtime_items[item["id"]] = {
+            "displayName": name,
+            "rarity": rarity_for_frequency[reflect["frequency"]],
+            "category": reflect["category"],
+            "bagsCategory": item["category"],
+            "keywords": item["keywords"],
+            "visualConcept": item["visualConcept"],
+        }
 
     safety_sheet = workbook["Keyword_Safety"]
     safety_rows = safety_sheet.iter_rows(values_only=True)
@@ -185,7 +172,7 @@ def main() -> None:
     unresolved_exclusions = []
     executable_rows = 0
     for excel_row, row in enumerate(safety_rows, start=2):
-        # v23 keeps formatting below the populated table, which openpyxl
+        # The workbook keeps formatting below the populated table, which openpyxl
         # exposes as fully empty rows. Ignore only rows with no rule content;
         # partially populated rows must still fail validation below.
         if not any(value is not None and str(value).strip() for value in row):
@@ -274,7 +261,7 @@ def main() -> None:
             f"  {json.dumps(item['id'])}: require('../../assets/items/each/{item['id']}.webp'),"
         )
     image_lines.extend(["};", ""])
-    if not KEYWORDS_ONLY:
+    if WRITE_IMAGE_MAP:
         IMAGE_MAP.write_text("\n".join(image_lines), encoding="utf-8")
 
     category_sheet = workbook["Reflect_Categories"]
@@ -298,22 +285,72 @@ def main() -> None:
     if len(categories) != 12 or sum(len(category["itemIds"]) for category in categories) != 5390:
         raise ValueError("Reflect category generation is incomplete")
 
+    # v25 Guided Prompt secondary tabs. First appearance determines tab order;
+    # row order determines icon order. Categories intentionally absent from the
+    # sheet render their original full grid with no empty tab bar.
+    subcategory_sheet = workbook["Reflect_Subcategory_Map"]
+    subcategory_rows = subcategory_sheet.iter_rows(values_only=True)
+    subcategory_headers = next(subcategory_rows)
+    subcategory_ix = {name: index for index, name in enumerate(subcategory_headers) if name}
+    subcategories = defaultdict(dict)
+    subcategory_seen_icons = set()
+    for excel_row, row in enumerate(subcategory_rows, start=2):
+        if not any(value is not None and str(value).strip() for value in row):
+            continue
+        main_label = str(row[subcategory_ix["Main_Category"]] or "").strip()
+        secondary_label = str(row[subcategory_ix["Secondary_Category"]] or "").strip()
+        name = str(row[subcategory_ix["Icon_name"]] or "").strip()
+        if main_label not in CATEGORY_KEYS or not secondary_label or name not in items_by_name:
+            raise ValueError(f"Invalid Reflect_Subcategory_Map row {excel_row}")
+        if name in subcategory_seen_icons:
+            raise ValueError(f"Duplicate subcategory icon at row {excel_row}: {name}")
+        if reflect_by_name[name]["category"] != main_label:
+            raise ValueError(
+                f"Subcategory row {excel_row} puts {name!r} in {main_label!r}, "
+                f"but Reflect_Icon_Map uses {reflect_by_name[name]['category']!r}"
+            )
+        subcategory_seen_icons.add(name)
+        subcategories[main_label].setdefault(secondary_label, []).append(items_by_name[name]["id"])
+
+    for category in categories:
+        category["subcategories"] = [
+            {"key": slugify(label), "label": label, "itemIds": item_ids}
+            for label, item_ids in subcategories.get(category["label"], {}).items()
+        ]
+        mapped = sum(len(subcategory["itemIds"]) for subcategory in category["subcategories"])
+        if category["subcategories"] and mapped != len(category["itemIds"]):
+            raise ValueError(
+                f"Subcategory coverage mismatch for {category['label']}: {mapped} vs {len(category['itemIds'])}"
+            )
+
     guided_lines = [
         "/** GENERATED by tools/build-item-data-v19.py — DO NOT EDIT. */",
-        "export interface PromptCategoryDef { key: string; label: string; question: string; itemIds: string[] }",
+        "export interface PromptSubcategoryDef { key: string; label: string; itemIds: string[] }",
+        "export interface PromptCategoryDef { key: string; label: string; question: string; itemIds: string[]; subcategories: PromptSubcategoryDef[] }",
         "",
         "export const PROMPT_CATEGORIES: PromptCategoryDef[] = [",
     ]
     for category in categories:
+        # Subcategorized groups already contain every id in workbook order.
+        # Avoid bundling the same ~5k strings twice; guided-prompts.ts derives
+        # the complete first-level list by flattening these groups.
+        bundled_item_ids = [] if category["subcategories"] else category["itemIds"]
         guided_lines.append(
             "  { key: %s, label: %s, question: %s, itemIds: ["
             % (json.dumps(category["key"]), json.dumps(category["label"]), json.dumps(category["question"]))
         )
-        guided_lines.extend(f"    {json.dumps(item_id)}," for item_id in category["itemIds"])
+        guided_lines.extend(f"    {json.dumps(item_id)}," for item_id in bundled_item_ids)
+        guided_lines.append("  ], subcategories: [")
+        for subcategory in category["subcategories"]:
+            guided_lines.append(
+                "    { key: %s, label: %s, itemIds: ["
+                % (json.dumps(subcategory["key"]), json.dumps(subcategory["label"]))
+            )
+            guided_lines.extend(f"      {json.dumps(item_id)}," for item_id in subcategory["itemIds"])
+            guided_lines.append("    ] },")
         guided_lines.append("  ] },")
     guided_lines.append("];")
-    if not KEYWORDS_ONLY:
-        GUIDED_CATALOG.write_text("\n".join(guided_lines) + "\n", encoding="utf-8")
+    GUIDED_CATALOG.write_text("\n".join(guided_lines) + "\n", encoding="utf-8")
 
     migration_lines = [
         "-- Memory Items v19 catalog, GENERATED by tools/build-item-data-v19.py.",
@@ -342,26 +379,11 @@ def main() -> None:
         "  display_name = excluded.display_name, rarity = excluded.rarity, category = excluded.category;",
         "",
     ])
-    if not KEYWORDS_ONLY:
+    if WRITE_SQL_CATALOG:
         MIGRATION.write_text("\n".join(migration_lines), encoding="utf-8")
 
-    qa_categories = categories
-    if KEYWORDS_ONLY:
-        counts = defaultdict(int)
-        for runtime_item in runtime_items.values():
-            counts[runtime_item["category"]] += 1
-        qa_categories = [
-            {
-                "order": order,
-                "key": key,
-                "label": label,
-                "itemIds": [None] * counts[label],
-            }
-            for order, (label, key) in enumerate(CATEGORY_KEYS.items(), start=1)
-        ]
-
     qa = {
-        "schema": "memory-items-v23-data-qa@1",
+        "schema": "memory-items-v25-data-qa@1",
         "items": len(runtime_items),
         "executable_keyword_rows": executable_rows,
         "unique_executable_keywords": len(synonyms),
@@ -375,8 +397,15 @@ def main() -> None:
         "unresolved_instructional_exclusion_samples": unresolved_exclusions[:100],
         "cross_icon_conflicts": conflict_report,
         "reflect_categories": [
-            {"order": category["order"], "key": category["key"], "label": category["label"], "items": len(category["itemIds"])}
-            for category in qa_categories
+            {
+                "order": category["order"], "key": category["key"], "label": category["label"],
+                "items": len(category["itemIds"]),
+                "subcategories": [
+                    {"key": subcategory["key"], "label": subcategory["label"], "items": len(subcategory["itemIds"])}
+                    for subcategory in category.get("subcategories", [])
+                ],
+            }
+            for category in categories
         ],
     }
     QA_PATH.write_text(json.dumps(qa, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

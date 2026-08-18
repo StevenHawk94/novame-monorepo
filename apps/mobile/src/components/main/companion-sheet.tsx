@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
 import { getCachedStatus } from '@/lib/true-north-api';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
-import { getCachedCosmetics, fetchCosmetics } from '@/lib/cosmetics-api';
+import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
 
 export type CompanionSheetRef = {
   present: () => void;
@@ -64,11 +64,6 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  // The sheet's visible height at the single 90% snap: the modal container is
-  // full-screen, so the sheet top sits at screenH*0.1. An explicit height is
-  // required — flex:1 on the sheet root resolves to content height,
-  // which silently disables the inner ScrollView (viewport == content).
-  const sheetH = screenH * 0.9;
   const sheetRef = useRef<BottomSheetModal>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
@@ -98,6 +93,8 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
 
+  useEffect(() => subscribeCosmetics((state) => setBalance(state.balance)), []);
+
   const trueNorthAvail = useMemo(() => {
     const dow = (new Date().getDay() + 6) % 7;
     const days = 7 - dow;
@@ -120,6 +117,10 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   function openKit(row: KitRow) {
     if (!row.route) return;
     void haptics.medium();
+    // The sheet is now portalled above the whole root navigator so it also
+    // covers the custom tab bar. Dismiss it before pushing a tool route;
+    // otherwise the correctly elevated sheet would remain above that route.
+    sheetRef.current?.dismiss();
     router.push(row.route as never);
   }
 
@@ -136,11 +137,15 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
       enableHandlePanningGesture={false}
       enableOverDrag={false}
     >
-      <View style={[styles.outer, { height: sheetH, width: '100%' }]}>
+      <View style={styles.outer}>
         <GridBackground />
         {/* Inset peach card with the brown outline (mock). */}
         <View style={styles.inner}>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <ScrollView
+            style={styles.kitScroll}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scroll}
+          >
             <View style={styles.header}>
               <View style={styles.cloverPill}>
                 <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
@@ -169,13 +174,15 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
               </Pressable>
             ))}
           </ScrollView>
-          <Pressable
-            onPress={() => sheetRef.current?.dismiss()}
-            style={[styles.closeBtn, { bottom: insets.bottom + 6 }]}
-            hitSlop={8}
-          >
-            <MaterialIcons name="close" size={26} color="#FFFFFF" />
-          </Pressable>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+            <Pressable
+              onPress={() => sheetRef.current?.dismiss()}
+              style={styles.closeBtn}
+              hitSlop={8}
+            >
+              <MaterialIcons name="close" size={26} color="#FFFFFF" />
+            </Pressable>
+          </View>
         </View>
       </View>
     </BottomSheetModal>
@@ -186,15 +193,19 @@ CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
   sheetBg: { backgroundColor: 'transparent', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
-  outer: { borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', padding: 14 },
+  outer: {
+    flex: 1, width: '100%', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    overflow: 'hidden', paddingTop: 14, paddingHorizontal: 14,
+  },
   // Inset peach panel with the brown outline over the grid ground (mock).
   inner: {
-    flex: 1, borderRadius: 30,
+    flex: 1, borderTopLeftRadius: 30, borderTopRightRadius: 30,
     backgroundColor: '#F9D9B2',
     borderWidth: 2.5, borderColor: '#A9714B',
     overflow: 'hidden',
   },
-  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 110 },
+  kitScroll: { flex: 1 },
+  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cloverPill: {
     flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#FFFFFF',
@@ -218,10 +229,14 @@ const styles = StyleSheet.create({
   kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },
   kitCardPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
   kitIcon: { width: 44, height: 44 },
-  kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A' },
-  kitDesc: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#8A7A6A', marginTop: 2 },
+  kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A', flexShrink: 1 },
+  kitDesc: {
+    fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: '#8A7A6A',
+    marginTop: 2, flexShrink: 1,
+  },
+  footer: { alignItems: 'center', paddingTop: 8, backgroundColor: '#F9D9B2' },
   closeBtn: {
-    position: 'absolute', alignSelf: 'center', width: 54, height: 54, borderRadius: 27,
+    width: 54, height: 54, borderRadius: 27,
     backgroundColor: '#5C3A24', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
     elevation: 5,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
@@ -15,7 +15,7 @@ import {
   type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
-import { fetchBags } from '../../src/lib/bags-api';
+import { fetchBags, getCachedBags } from '../../src/lib/bags-api';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS } from '../../src/lib/icons';
@@ -23,12 +23,15 @@ import {
   GUIDED_MAX,
   GUIDED_MIN,
   availableGuidedCategories,
+  getGuidedFavoriteItems,
   itemsForGuidedCategory,
   getGuidedSelection,
   guidedCategoryFor,
   MAX_ITEMS_PER_REFLECT_CATEGORY,
   reflectCategoryForItem,
+  rememberGuidedFavoriteItems,
   setGuidedSelection,
+  subcategoriesForGuidedCategory,
 } from '../../src/lib/guided-prompts';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
@@ -41,6 +44,8 @@ import {
 } from '../../src/components/main/reflect-shared';
 
 const MAX_CHARS = 5000;
+const FAVORITE_TAB = 'favorite';
+const FAVORITE_THRESHOLD = 30;
 
 /**
  * 流程2 — Guided Prompts (2026-07-24 v2): the FIRST run opens the category
@@ -73,9 +78,17 @@ export default function ReflectGuidedScreen() {
   const [error, setError] = useState<ReflectError | null>(null);
   const [result, setResult] = useState<ReflectSnapshot | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
+  const [historicalItemIds, setHistoricalItemIds] = useState<string[]>(() => {
+    const explicitHistory = getGuidedFavoriteItems();
+    // Existing installs predate explicit selection history. Seed them once
+    // from Mine so familiar items do not disappear immediately after upgrade.
+    return explicitHistory.length > 0 ? explicitHistory : getCachedBags().map((item) => item.itemId);
+  });
+  const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
   const isPaid = getCachedSubscriptionTier() !== 'free';
 
   const phaseRef = useRef(phase);
+  const subcategoryScrollRef = useRef<ScrollView>(null);
   phaseRef.current = phase;
   useFocusEffect(
     useCallback(() => {
@@ -84,9 +97,35 @@ export default function ReflectGuidedScreen() {
   );
 
   const stepDef = guidedCategoryFor(chosen[step] ?? '');
-  const gridIds = useMemo(
-    () => (chosen[step] ? itemsForGuidedCategory(chosen[step]) : []),
+  const stepSubcategories = useMemo(
+    () => (chosen[step] ? subcategoriesForGuidedCategory(chosen[step]) : []),
     [chosen, step],
+  );
+  const favoriteIds = useMemo(
+    () => [...new Set([...historicalItemIds, ...selected])],
+    [historicalItemIds, selected],
+  );
+  const showFavorite = favoriteIds.length > FAVORITE_THRESHOLD;
+
+  useEffect(() => {
+    setActiveSubcategory(showFavorite ? FAVORITE_TAB : stepSubcategories[0]?.key ?? null);
+    const frame = requestAnimationFrame(() => {
+      subcategoryScrollRef.current?.scrollTo({ x: 0, animated: false });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [chosen, step, showFavorite, stepSubcategories]);
+
+  const gridIds = useMemo(
+    () => {
+      if (!chosen[step]) return [];
+      if (activeSubcategory === FAVORITE_TAB && showFavorite) return favoriteIds;
+      if (activeSubcategory) {
+        return stepSubcategories.find((subcategory) => subcategory.key === activeSubcategory)?.itemIds
+          ?? itemsForGuidedCategory(chosen[step]);
+      }
+      return itemsForGuidedCategory(chosen[step]);
+    },
+    [activeSubcategory, chosen, favoriteIds, showFavorite, step, stepSubcategories],
   );
   const selectedList = useMemo(
     () =>
@@ -157,15 +196,8 @@ export default function ReflectGuidedScreen() {
     }
   }
 
-  async function onSubmit(wantStory: boolean) {
+  async function onSubmit() {
     if (submitting || selected.size === 0) return;
-    if (wantStory && !isPaid) {
-      appAlert('A Plus feature', 'Cute stories come with Burrow Plus.', [
-        { text: 'Not now', style: 'cancel' },
-        { text: 'See Plus', onPress: () => router.push('/(main)/(modals)/subscription-paywall' as never) },
-      ]);
-      return;
-    }
     setSubmitting(true);
     setError(null);
     const res = await submitReflect({
@@ -176,10 +208,11 @@ export default function ReflectGuidedScreen() {
         itemId: id,
         note: notes[id]?.trim() || undefined,
       })),
-      wantStory,
+      wantStory: false,
     });
     setSubmitting(false);
     if (res.ok) {
+      setHistoricalItemIds(rememberGuidedFavoriteItems([...historicalItemIds, ...selected]));
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
       void fetchReflectFeed();
@@ -278,8 +311,43 @@ export default function ReflectGuidedScreen() {
           ) : phase === 'steps' ? (
             <View style={{ flex: 1 }}>
               <Text style={styles.stepTitle}>{stepDef.question}</Text>
+              {(showFavorite || stepSubcategories.length > 0) && (
+                <ScrollView
+                  ref={subcategoryScrollRef}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.subcategoryScroller}
+                  contentContainerStyle={styles.subcategoryRow}
+                >
+                  {showFavorite && (
+                    <Pressable
+                      onPress={() => { void haptics.light(); setActiveSubcategory(FAVORITE_TAB); }}
+                      style={[styles.subcategoryTab, activeSubcategory === FAVORITE_TAB && styles.subcategoryTabOn]}
+                    >
+                      <Text style={[styles.subcategoryText, activeSubcategory === FAVORITE_TAB && styles.subcategoryTextOn]}>Favorite</Text>
+                    </Pressable>
+                  )}
+                  {stepSubcategories.map((subcategory) => {
+                    const active = activeSubcategory === subcategory.key;
+                    return (
+                      <Pressable
+                        key={subcategory.key}
+                        onPress={() => { void haptics.light(); setActiveSubcategory(subcategory.key); }}
+                        style={[styles.subcategoryTab, active && styles.subcategoryTabOn]}
+                      >
+                        <Text style={[styles.subcategoryText, active && styles.subcategoryTextOn]}>{subcategory.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
               <View style={styles.gridCard}>
-                <SelectableItemGrid itemIds={gridIds} selected={selected} onToggle={toggle} />
+                <SelectableItemGrid
+                  key={`${chosen[step] ?? 'none'}:${activeSubcategory ?? 'all'}`}
+                  itemIds={gridIds}
+                  selected={selected}
+                  onToggle={toggle}
+                />
               </View>
               <Text style={styles.categoryCount}>
                 {[...selected].filter((id) => reflectCategoryForItem(id) === chosen[step]).length} / {MAX_ITEMS_PER_REFLECT_CATEGORY} selected
@@ -335,28 +403,14 @@ export default function ReflectGuidedScreen() {
                 color={RC.yellowDrop}
                 offset={4}
                 radius={24}
-                onPress={() => void onSubmit(false)}
+                onPress={() => void onSubmit()}
                 disabled={submitting || selected.size === 0}
-                style={{ marginTop: 16, opacity: submitting || selected.size === 0 ? 0.55 : 1 }}
+                style={{ marginTop: 16, marginBottom: insets.bottom + 12, opacity: submitting || selected.size === 0 ? 0.55 : 1 }}
                 cardStyle={styles.yellowBtn}
               >
                 {submitting ? <ActivityIndicator color={RC.ink} /> : (
                   <Text style={styles.yellowBtnText}>Save Reflection</Text>
                 )}
-              </OffsetCard>
-              <OffsetCard
-                color={RC.orangeDrop}
-                offset={4}
-                radius={24}
-                onPress={() => void onSubmit(true)}
-                disabled={submitting || selected.size === 0}
-                style={{ marginTop: 12, marginBottom: insets.bottom + 12, opacity: submitting || selected.size === 0 ? 0.55 : 1 }}
-                cardStyle={styles.orangeBtn}
-              >
-                <Text style={styles.orangeBtnText}>Save and create a cute story for my day</Text>
-                <View style={styles.plusBadge}>
-                  <Text style={styles.plusBadgeText}>PLUS</Text>
-                </View>
               </OffsetCard>
             </View>
           ) : (
@@ -398,12 +452,15 @@ const styles = StyleSheet.create({
   chooseHint: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2A2118', marginBottom: 10, paddingHorizontal: 2 },
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   pill: {
-    width: '48%', flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 26, paddingVertical: 14, paddingHorizontal: 14,
+    width: '48%', flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#FFFFFF', borderRadius: 26, paddingVertical: 14, paddingHorizontal: 10,
   },
   pillOn: { backgroundColor: '#8A5F3F' },
-  pillEmoji: { fontSize: 20 },
-  pillText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#161311', flexShrink: 1 },
+  pillEmoji: { fontSize: 18 },
+  pillText: {
+    flex: 1, flexShrink: 1, fontSize: 14, lineHeight: 19,
+    fontFamily: 'Inter_700Bold', color: '#161311',
+  },
   pillTextOn: { color: '#FFFFFF' },
   chooseFootnote: {
     fontSize: 13.5, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)',
@@ -411,6 +468,15 @@ const styles = StyleSheet.create({
   },
 
   stepTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 14 },
+  subcategoryScroller: { flexGrow: 0, marginHorizontal: -18, marginBottom: 14 },
+  subcategoryRow: { paddingHorizontal: 18, gap: 12 },
+  subcategoryTab: {
+    minHeight: 48, minWidth: 116, paddingHorizontal: 20, paddingVertical: 13,
+    borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
+  },
+  subcategoryTabOn: { backgroundColor: '#53351D' },
+  subcategoryText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#161311' },
+  subcategoryTextOn: { color: '#FFFFFF' },
   stepTitleLeft: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', marginBottom: 12 },
   gridCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 26 },
   categoryCount: {
@@ -432,7 +498,7 @@ const styles = StyleSheet.create({
 
   matchLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginTop: 12, marginBottom: 8 },
   matchBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, maxHeight: 56,
+    flexDirection: 'row', alignItems: 'center', gap: 8, height: 72,
     backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 10, paddingLeft: 12, paddingRight: 10,
   },
   matchRow: { gap: 8, alignItems: 'center', flexGrow: 1, justifyContent: 'center' },
@@ -443,14 +509,6 @@ const styles = StyleSheet.create({
 
   yellowBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },
   yellowBtnText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },
-  orangeBtn: {
-    backgroundColor: RC.orange, alignItems: 'center', justifyContent: 'center',
-    flexDirection: 'row', gap: 8, paddingVertical: 15, paddingHorizontal: 12,
-  },
-  orangeBtnText: { fontSize: 15.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', flexShrink: 1 },
-  plusBadge: { backgroundColor: '#43301F', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  plusBadgeText: { fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
   restTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   restBody: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', textAlign: 'center', lineHeight: 24 },

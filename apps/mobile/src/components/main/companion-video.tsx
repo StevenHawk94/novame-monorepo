@@ -1,15 +1,23 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { AppState, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Platform, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { Image as ExpoImage } from 'expo-image';
 
-import { getEquippedOutfitKey, resolveEquippedOutfitVideo } from '../../lib/outfits';
+import {
+  fetchOutfitCatalog,
+  getCachedOutfitCatalog,
+  getEquippedOutfitKey,
+  outfitAssetUrl,
+  resolveEquippedOutfitVideo,
+} from '../../lib/outfits';
+import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
 
 /**
- * Home companion video. Plays the bundled default.mov (transparent HEVC/alpha)
- * on a loop, muted. Unlike VideoCharacter (which streams outfit/state clips from
- * R2), this is the single local companion clip for the Home scene -- lightweight,
- * offline, no asset-cache. Tapping opens the interaction sheet.
+ * Home companion animation. iOS uses transparent HEVC/alpha video; Android
+ * uses animated WebP because Media3 does not composite VP9 alpha. Outfit clips
+ * are cached locally on both platforms in their native format. Tapping opens
+ * the interaction sheet.
  *
  * THE VIDEO MUST NEVER SIT PAUSED (product requirement). Three things can stop
  * a muted looping player, and none of them resume it by themselves:
@@ -25,14 +33,70 @@ import { getEquippedOutfitKey, resolveEquippedOutfitVideo } from '../../lib/outf
  *   - playingChange watchdog: any unexpected stop -> play() again shortly
  *   - screen focus: navigating back to Home always resumes
  *
- * The .mov carries an alpha channel so the companion sits directly on the
+ * Both formats carry an alpha channel so the companion sits directly on the
  * scene backdrop with no visible video box.
  */
-const DEFAULT_SOURCE = require('../../../assets/videos/default.mov');
 const WATCHDOG_DELAY_MS = 300;
 
-export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onReady?: () => void }) {
-  const player = useVideoPlayer(DEFAULT_SOURCE, (p) => {
+type Props = { onPress?: () => void; onReady?: () => void };
+
+function AndroidCompanion({ onPress, onReady }: Props) {
+  const [source, setSource] = useState<number | { uri: string }>(DEFAULT_COMPANION_VIDEO);
+
+  const syncSource = useCallback(() => {
+    const key = getEquippedOutfitKey();
+    if (!key) {
+      setSource(DEFAULT_COMPANION_VIDEO);
+      return;
+    }
+
+    const useAnimatedSource = (resolved: Awaited<ReturnType<typeof resolveEquippedOutfitVideo>>) => {
+      if (!resolved || getEquippedOutfitKey() !== resolved.key) return;
+      setSource({ uri: resolved.uri });
+    };
+
+    const cached = getCachedOutfitCatalog().find((outfit) => outfit.key === key);
+    if (cached) {
+      // Show the transparent worn preview immediately while the animated WebP
+      // is being resolved from disk (or downloaded on first launch).
+      setSource({ uri: outfitAssetUrl(cached.bunny) });
+      void resolveEquippedOutfitVideo().then(useAnimatedSource);
+      return;
+    }
+
+    void fetchOutfitCatalog().then((catalog) => {
+      const currentKey = getEquippedOutfitKey();
+      const outfit = catalog.find((entry) => entry.key === currentKey);
+      if (outfit) setSource({ uri: outfitAssetUrl(outfit.bunny) });
+      return resolveEquippedOutfitVideo();
+    }).then(useAnimatedSource);
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    syncSource();
+  }, [syncSource]));
+
+  return (
+    <Pressable
+      style={styles.touchTarget}
+      onPress={onPress}
+      hitSlop={20}
+      accessibilityRole="button"
+      accessibilityLabel="Open companion"
+    >
+      <ExpoImage
+        source={source}
+        style={styles.video}
+        contentFit="contain"
+        autoplay
+        onLoad={onReady}
+      />
+    </Pressable>
+  );
+}
+
+function AppleCompanionVideo({ onPress, onReady }: Props) {
+  const player = useVideoPlayer(DEFAULT_COMPANION_VIDEO, (p) => {
     p.loop = true;
     p.muted = true;
     p.audioMixingMode = 'mixWithOthers';
@@ -87,7 +151,7 @@ export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onR
   }, [safePlay]);
 
   // Outfit swap (2026-07-30): when an outfit is equipped in the Bunny Closet,
-  // Home plays its transparent .mov instead of the default. The clip is
+  // Home plays its platform-specific transparent video instead of the default. The clip is
   // downloaded to the local cache first (outfits.ts) so the loop never
   // stutters; until it's ready — or when nothing is equipped — the bundled
   // default keeps playing. replaceAsync swaps without remounting the player,
@@ -100,7 +164,7 @@ export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onR
       loadedOutfitKey.current = null;
       void (async () => {
         try {
-          await player.replaceAsync(DEFAULT_SOURCE);
+          await player.replaceAsync(DEFAULT_COMPANION_VIDEO);
           player.play();
         } catch { /* released */ }
       })();
@@ -129,6 +193,7 @@ export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onR
     }, [safePlay, syncOutfitVideo]),
   );
 
+  // Keep the established iOS render/touch hierarchy unchanged.
   return (
     <Pressable onPress={onPress} hitSlop={20}>
       <VideoView
@@ -142,6 +207,13 @@ export function CompanionVideo({ onPress, onReady }: { onPress?: () => void; onR
   );
 }
 
+export function CompanionVideo(props: Props) {
+  return Platform.OS === 'android'
+    ? <AndroidCompanion {...props} />
+    : <AppleCompanionVideo {...props} />;
+}
+
 const styles = StyleSheet.create({
+  touchTarget: { width: 240, height: 240 },
   video: { width: 240, height: 240, backgroundColor: 'transparent' },
 });

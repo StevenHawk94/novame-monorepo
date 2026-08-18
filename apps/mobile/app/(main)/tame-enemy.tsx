@@ -12,8 +12,7 @@ import {
   XP_RULES,
 } from '@novame/engine';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
-import { useTheme } from '../../src/theme/use-theme';
-import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
+import { GridBackground } from '../../src/components/ui/grid-background';
 import { haptics } from '../../src/lib/haptics';
 import { Image as ExpoImage } from 'expo-image';
 
@@ -23,6 +22,7 @@ import {
 } from '../../src/lib/tame-enemy-api';
 import { MONSTER_ART } from '../../src/lib/monster-images';
 import { POINT_ICONS, deckFor, type TameCard } from '../../src/lib/tame-cards';
+import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 
 type Phase = 'select' | 'prep' | 'battle' | 'done';
 
@@ -40,14 +40,11 @@ type Phase = 'select' | 'prep' | 'battle' | 'done';
 export default function TameEnemyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
-  const c = theme.colors;
   const kit = {
     text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
     card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
     accent: '#E0912F', danger: '#D9694E', secret: '#B57BC9',
   };
-  void c;
 
   const [phase, setPhase] = useState<Phase>('select');
   // Cache-first (2026-07-30): the grid renders instantly from the cached (or
@@ -57,7 +54,6 @@ export default function TameEnemyScreen() {
   const [doneToday, setDoneToday] = useState(cached.doneToday);
   const [perEnemyDaily, setPerEnemyDaily] = useState(cached.perEnemyDaily);
   const [battlePoints, setBattlePoints] = useState(cached.battlePoints);
-  const [firstTime, setFirstTime] = useState(false);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [hp, setHp] = useState(MONSTER_HP);
   const [maxHp, setMaxHp] = useState(MONSTER_HP);
@@ -109,7 +105,6 @@ export default function TameEnemyScreen() {
         setDoneToday(r.doneToday);
         setPerEnemyDaily(r.perEnemyDaily);
         setBattlePoints(r.battlePoints);
-        setFirstTime(r.monsters.every((m) => !m.tamedBefore));
       });
     }, []),
   );
@@ -165,11 +160,17 @@ export default function TameEnemyScreen() {
     // (milestone bonus, server-declined reward) in the background.
     setReward(XP_RULES.tameEnemy.award);
     setMilestoneBonus(0);
-    markTameEnemyDoneToday();
     setPhase('done');
+    const award = optimisticCloverAward(XP_RULES.tameEnemy.award);
     void submitTame({ monsterId: active.id, skillsUsed: usedCardIds, hits: hits + 1 }).then((res) => {
       setReward(res.ok ? (res.xpAwarded ?? null) : null);
       setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
+      if (res.ok) {
+        markTameEnemyDoneToday();
+        award.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
+      } else {
+        award.rollback();
+      }
     });
   }
 
@@ -184,7 +185,7 @@ export default function TameEnemyScreen() {
   if (phase === 'select') {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <WaveBackground palette={WAVE_PALETTES.tameEnemy} />
+        <GridBackground base="#F0B87E" line="#DFA367" cell={22} lineWidth={1.2} />
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
@@ -194,15 +195,8 @@ export default function TameEnemyScreen() {
           <Text style={styles.titleBannerSub}>Pick what's closest — we'll figure out the rest together.</Text>
         </View>
 
-        {firstTime && (
-          <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.border }]}>
-            <Text style={[styles.hintText, { color: kit.textSub }]}>
-              Your skills come from your own reflections — the more you write, the more ways you'll have to respond.
-            </Text>
-          </View>
-        )}
         {doneToday && (
-          <View style={[styles.hintBar, { backgroundColor: kit.card, borderColor: kit.accent }]}>
+          <View style={[styles.hintBar, { backgroundColor: kit.card }]}>
             <Text style={[styles.hintText, { color: kit.accent }]}>
               {perEnemyDaily
                 ? "All eight tamed today — that's the full sweep. Back tomorrow!"
@@ -219,7 +213,7 @@ export default function TameEnemyScreen() {
               <Pressable
                 key={m.id}
                 onPress={() => (locked ? undefined : startBattle(m))}
-                style={[styles.monsterCell, { backgroundColor: kit.card, borderColor: kit.border, opacity: locked ? 0.5 : 1 }]}
+                style={[styles.monsterCell, { backgroundColor: kit.card, opacity: locked ? 0.5 : 1 }]}
               >
                 {MONSTER_ART[m.id] ? (
                   <ExpoImage source={MONSTER_ART[m.id].normal} style={styles.monsterImg} contentFit="contain" />
@@ -254,11 +248,11 @@ export default function TameEnemyScreen() {
     }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
+        <GridBackground base="#F6E7C8" line="#E8D2A8" cell={22} lineWidth={1.2} />
         <ScrollView contentContainerStyle={styles.prepScroll} showsVerticalScrollIndicator={false}>
         {/* name bubble with a tail pointing at the monster (mock) */}
         <View style={styles.prepNameBubble}>
           <Text style={styles.prepNameText}>{active.name}</Text>
-          <View style={styles.prepNameTail} />
         </View>
 
         {MONSTER_ART[active.id] ? (
@@ -329,6 +323,7 @@ export default function TameEnemyScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
+          <GridBackground base="transparent" line="rgba(255,255,255,0.08)" cell={22} lineWidth={1} />
           <View style={styles.monsterBubble}>
             <Text
               style={styles.monsterBubbleText}
@@ -413,6 +408,7 @@ export default function TameEnemyScreen() {
   if (phase === 'done' && active) {
     return (
       <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
+        <GridBackground base="#2A2140" line="#3B3154" cell={22} lineWidth={1.1} />
         <ScrollView contentContainerStyle={styles.centerRoot} showsVerticalScrollIndicator={false}>
         <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
         <Text style={styles.victoryTitle}>VICTORY!</Text>
@@ -455,11 +451,11 @@ const styles = StyleSheet.create({
   h1: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', marginTop: 4 },
   sub: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: 6, marginBottom: 16 },
 
-  hintBar: { borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#5A4A2B', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  hintBar: { borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#6B452A', shadowOpacity: 0.14, shadowRadius: 1, shadowOffset: { width: 1, height: 2 }, elevation: 1 },
   hintText: { fontSize: 13, fontFamily: 'Inter_500Medium', lineHeight: 19 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 32 },
-  monsterCell: { width: '48%', borderRadius: 20, padding: 18, marginBottom: 14, alignItems: 'center', shadowColor: '#5A4A2B', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  monsterCell: { width: '48%', borderRadius: 20, padding: 18, marginBottom: 14, alignItems: 'center', shadowColor: '#6B452A', shadowOpacity: 0.16, shadowRadius: 1, shadowOffset: { width: 1, height: 2 }, elevation: 2 },
   monsterEmoji: { fontSize: 40, marginBottom: 8 },
   monsterImg: { width: 92, height: 92, marginBottom: 8 },
   monsterName: { fontSize: 15, fontFamily: 'Inter_700Bold', textAlign: 'center' },
@@ -468,15 +464,13 @@ const styles = StyleSheet.create({
   tamedBadgeText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
 
   prepRoot: { flex: 1, backgroundColor: '#F6E7C8' },
-  prepScroll: { flexGrow: 1, paddingHorizontal: 20, alignItems: 'center' },
+  prepScroll: {
+    flexGrow: 1, paddingHorizontal: 20, paddingVertical: 24,
+    alignItems: 'center', justifyContent: 'center',
+  },
   prepNameBubble: {
     backgroundColor: '#EFD9A8', borderRadius: 18, paddingHorizontal: 26, paddingVertical: 13,
     marginBottom: 22,
-  },
-  prepNameTail: {
-    position: 'absolute', bottom: -11, left: '38%',
-    width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 12, borderTopWidth: 13,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#EFD9A8',
   },
   prepNameText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
   prepEmoji: { fontSize: 96 },
@@ -500,8 +494,10 @@ const styles = StyleSheet.create({
   claimedText: { fontSize: 10.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', letterSpacing: 0.4 },
   prepStatsBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', marginTop: 18,
-    backgroundColor: '#FBF2DE', borderRadius: 16, borderWidth: 1.5, borderColor: '#E0CBA0',
+    backgroundColor: '#FBF2DE', borderRadius: 16,
     paddingVertical: 14, paddingHorizontal: 14,
+    shadowColor: '#6B452A', shadowOpacity: 0.14, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 1,
   },
   prepStatIcon: { width: 34, height: 34 },
   prepStatTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
@@ -512,15 +508,16 @@ const styles = StyleSheet.create({
   startTamingBtn: {
     marginTop: 14, backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16,
     alignItems: 'center', alignSelf: 'stretch',
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
-    elevation: 3,
+    shadowColor: '#6B452A', shadowOpacity: 0.2, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   startTamingText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   prepClose: {
     marginTop: 14, width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#FFFFFF', borderWidth: 2.5, borderColor: '#2B2B2B',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#6B452A', shadowOpacity: 0.18, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   prepCloseX: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   beginBtn: { paddingHorizontal: 48, paddingVertical: 18, borderRadius: 18, shadowColor: '#5A4A2B', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
@@ -608,9 +605,8 @@ const styles = StyleSheet.create({
   milestoneText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#F7CE46', marginTop: 4 },
   confirmBtn: {
     backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 64,
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
-    elevation: 4,
+    shadowColor: '#151021', shadowOpacity: 0.22, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   confirmText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
 

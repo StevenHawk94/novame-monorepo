@@ -4,30 +4,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { LENS_THEMES, NEW_LENS_PROMPT } from '@novame/domain';
-import { useTheme } from '../../src/theme/use-theme';
-import { WaveBackground, WAVE_PALETTES } from '../../src/components/main/wave-background';
+import { GridBackground } from '../../src/components/ui/grid-background';
 import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
+import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 
 type Phase = 'theme' | 'card' | 'loading' | 'done';
 
 export default function NewLensScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { theme } = useTheme();
   const kit = {
     text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
     card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
     accent: '#D98E3C', danger: '#D9694E',
   };
-  const c = theme.colors;
 
   const [phase, setPhase] = useState<Phase>('theme');
   const [activeTheme, setActiveTheme] = useState<string | null>(null);
   const [card, setCard] = useState<LensCard | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reward, setReward] = useState(0);
 
   // Design: two-step — tap a capsule to select it, then "Spark Me" fetches
   // the card (was a one-tap instant fetch before the mock landed).
@@ -50,37 +49,38 @@ export default function NewLensScreen() {
     }
   }
 
-  async function respond(response: 'resonates' | 'different') {
+  function respond(response: 'resonates' | 'different') {
     if (!card || !activeTheme || submitting) return;
     setSubmitting(true);
     setError(null);
-    const res = await submitLens(activeTheme, card, response);
-    setSubmitting(false);
-
-    if (res.ok || (!res.ok && res.error === 'already_done')) {
-      if (response === 'different') {
-        // Route into Reflect with the New Lens prompt. Reflect no longer
-        // analyzes or credits growth dimensions.
-        router.replace({
-          pathname: '/(main)/reflect',
-          params: {
-            presetPrompt: NEW_LENS_PROMPT,
-            sourceKit: 'new_lens',
-          },
-        });
-        return;
-      }
+    const expected = XP_RULES.newLens.award;
+    const award = optimisticCloverAward(expected);
+    setReward(expected);
+    if (response === 'resonates') {
       setPhase('done');
-    } else if (res.error === 'companion_not_ready') {
-      setError('Your companion isn’t set up yet.');
     } else {
-      setError('Couldn’t save that. Try again.');
+      // Route immediately; saving and Clover reconciliation continue silently.
+      router.replace({
+        pathname: '/(main)/reflect',
+        params: { presetPrompt: NEW_LENS_PROMPT, sourceKit: 'new_lens' },
+      });
     }
+
+    void submitLens(activeTheme, card, response).then((res) => {
+      setSubmitting(false);
+      if (res.ok) {
+        setReward(res.xpAwarded);
+        award.commit(res.xpAwarded);
+      } else {
+        setReward(0);
+        award.rollback();
+      }
+    });
   }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-      <WaveBackground palette={WAVE_PALETTES.newLens} />
+      <GridBackground base="#F3C98F" line="#E8B875" cell={22} lineWidth={1.2} />
       <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
@@ -177,7 +177,7 @@ export default function NewLensScreen() {
 
       {phase === 'done' && (
         <View style={styles.center}>
-          <CloverBurst amount={XP_RULES.newLens.award} />
+          {reward > 0 && <CloverBurst amount={reward} />}
           <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           <Pressable
             onPress={() => router.back()}
@@ -201,27 +201,32 @@ const styles = StyleSheet.create({
   title: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', lineHeight: 34, marginBottom: 8 },
   sub: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 21, marginBottom: 26 },
   capsules: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  capsule: { borderWidth: 2, borderColor: 'transparent', borderRadius: 22, paddingHorizontal: 20, paddingVertical: 18, marginBottom: 14, shadowColor: '#5A4A2B', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
-  capsuleOn: { borderColor: '#2B2B2B', shadowOpacity: 0.9, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, shadowColor: '#2B2B2B' },
+  capsule: {
+    borderRadius: 22, paddingHorizontal: 20, paddingVertical: 18, marginBottom: 14,
+    shadowColor: '#6B4A2D', shadowOpacity: 0.16, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
+  },
+  capsuleOn: { backgroundColor: '#FFF0D3', shadowOpacity: 0.24 },
   capsuleText: { fontSize: 15, fontFamily: 'Inter_500Medium' },
   capsuleTextOn: { fontFamily: 'Inter_700Bold' },
   // Design: orange "Spark Me" sticker button pinned at the bottom.
   sparkBtn: {
     backgroundColor: '#F0885C', borderRadius: 16, paddingVertical: 17,
     alignItems: 'center', alignSelf: 'center', minWidth: 220,
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
-    elevation: 3,
+    shadowColor: '#6B3F25', shadowOpacity: 0.2, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   sparkText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
 
   cardWrap: { flex: 1, paddingTop: 8 },
   cardScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 12 },
   cardArt: { fontSize: 44, textAlign: 'center', marginBottom: -14, zIndex: 1 },
-  // Design: cream knowledge card with a dark outline.
+  // Cream knowledge card with a small offset shadow and no hard outline.
   knowledgeCard: {
-    backgroundColor: '#FDF6E5', borderRadius: 24, borderWidth: 2, borderColor: '#2B2B2B',
+    backgroundColor: '#FDF6E5', borderRadius: 24,
     paddingVertical: 40, paddingHorizontal: 22,
+    shadowColor: '#6B4A2D', shadowOpacity: 0.15, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   cardHeadline: { fontSize: 26, fontFamily: 'Inter_700Bold', lineHeight: 34, marginBottom: 20, textAlign: 'center' },
   cardBody: { fontSize: 17, fontFamily: 'Inter_400Regular', lineHeight: 27, textAlign: 'center' },
@@ -229,9 +234,8 @@ const styles = StyleSheet.create({
   responseRowSafe: {},
   responseBtn: {
     flex: 1, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#2B2B2B',
-    shadowColor: '#2B2B2B', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 2, height: 3 },
-    elevation: 3,
+    shadowColor: '#6B3F25', shadowOpacity: 0.2, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
   responseDifferent: { backgroundColor: '#F0885C' },
   responseResonates: { backgroundColor: '#F7CE46' },

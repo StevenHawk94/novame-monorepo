@@ -39,6 +39,15 @@ interface WireItem {
   memories: ItemMemory[];
 }
 
+// Reflect completion and the Memories focus effect can request the same
+// collection at nearly the same time. Only the newest-started request may
+// replace the cache; otherwise a slower stale response can temporarily remove
+// the items that a newer response already added.
+let mineFetchGeneration = 0;
+let theirFetchGeneration = 0;
+let mineAppliedGeneration = 0;
+let theirAppliedGeneration = 0;
+
 /** Join a server item with its dictionary display info. Unknown ids (dictionary
  *  edited since) fall back to a generic label so nothing crashes. */
 function decorate(w: WireItem): CollectedItem {
@@ -120,6 +129,7 @@ export async function fetchBags(
   scope: 'mine' | 'their' = 'mine',
   expectedOwnerUserId?: string,
 ): Promise<CollectedItem[]> {
+  const generation = scope === 'mine' ? ++mineFetchGeneration : ++theirFetchGeneration;
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return scope === 'their' ? getCachedTheirBags(expectedOwnerUserId) : getCachedBags();
@@ -143,12 +153,21 @@ export async function fetchBags(
       return getCachedTheirBags(expectedOwnerUserId);
     }
 
-    if (scope === 'mine') storage.set(kBagsState.name, JSON.stringify(data.items));
+    const latestApplied = scope === 'mine' ? mineAppliedGeneration : theirAppliedGeneration;
+    if (generation < latestApplied) {
+      return scope === 'their' ? getCachedTheirBags(expectedOwnerUserId) : getCachedBags();
+    }
+
+    if (scope === 'mine') {
+      storage.set(kBagsState.name, JSON.stringify(data.items));
+      mineAppliedGeneration = generation;
+    }
     if (scope === 'their') {
       storage.set(kTheirBagsState.name, JSON.stringify({
         ownerUserId: data.ownerUserId ?? null,
         items: data.items,
       } satisfies TheirBagsCache));
+      theirAppliedGeneration = generation;
     }
     return data.items.map(decorate);
   } catch {

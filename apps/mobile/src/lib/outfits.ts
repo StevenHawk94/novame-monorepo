@@ -9,14 +9,17 @@
  * Asset trio per outfit (R2 keys, spaces intact — URLs are encoded here):
  *   Outfits/<Name>.webp        closet grid thumb
  *   Outfits/<Name>-Bunny.webp  worn preview shown on the closet's top scene
- *   Character Videos/<Name>.mov transparent loop for Home (downloaded to the
- *                               local cache first so looping never stutters)
+ *   Character Videos/<Name>.mov         iOS transparent loop for Home
+ *   Character Videos-Android/<Name>.webp Android animated-alpha loop for Home
+ * Both video formats are downloaded to a platform-specific local cache first,
+ * and a device never downloads the other platform's format.
  *
  * Equip is local-first MMKV like skins (cosmetics-store.ts); ownership stays
  * server-authoritative via cosmetic_unlocks type 'outfit'.
  */
 import * as FileSystem from 'expo-file-system/legacy';
 import { Image as ExpoImage } from 'expo-image';
+import { Platform } from 'react-native';
 
 import { kEquippedOutfit, kOutfitCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
@@ -81,10 +84,25 @@ export function setEquippedOutfitKey(key: string | null): void {
 
 // ---- home video cache ----
 // The loop must never stutter, so Home only ever plays local files: the
-// remote .mov is downloaded once into the app cache and referenced by key.
+// remote platform-specific video is downloaded once into the app cache.
+
+const VIDEO_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios';
+const VIDEO_EXTENSION = Platform.OS === 'android' ? 'webp' : 'mov';
+
+/**
+ * The manifest's `video` field remains the canonical iOS object key so old and
+ * newly published catalogs stay compatible. Android mirrors the same basename
+ * in its own R2 folder with a .webp extension.
+ */
+function outfitVideoObjectKey(outfit: OutfitDef): string {
+  if (Platform.OS !== 'android') return outfit.video;
+  const filename = outfit.video.split('/').pop() || `${outfit.name}.mov`;
+  const basename = filename.replace(/\.mov$/i, '');
+  return `Character Videos-Android/${basename}.webp`;
+}
 
 function videoCachePath(key: string): string {
-  return `${FileSystem.cacheDirectory}outfit-video-${key}.mov`;
+  return `${FileSystem.cacheDirectory}outfit-video-${VIDEO_PLATFORM}-${key}.${VIDEO_EXTENSION}`;
 }
 
 /** Local file URI if the outfit's video is already cached, else null. */
@@ -104,14 +122,15 @@ const inflight = new Map<string, Promise<string | null>>();
  * failure). Concurrent callers share one download.
  */
 export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | null> {
-  const existing = inflight.get(outfit.key);
+  const inflightKey = `${VIDEO_PLATFORM}:${outfit.key}`;
+  const existing = inflight.get(inflightKey);
   if (existing) return existing;
   const p = (async () => {
     const cached = await getCachedOutfitVideoUri(outfit.key);
     if (cached) return cached;
     try {
       const res = await FileSystem.downloadAsync(
-        outfitAssetUrl(outfit.video),
+        outfitAssetUrl(outfitVideoObjectKey(outfit)),
         videoCachePath(outfit.key),
       );
       if (res.status === 200) return res.uri;
@@ -120,10 +139,10 @@ export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | nul
     } catch {
       return null;
     } finally {
-      inflight.delete(outfit.key);
+      inflight.delete(inflightKey);
     }
   })();
-  inflight.set(outfit.key, p);
+  inflight.set(inflightKey, p);
   return p;
 }
 

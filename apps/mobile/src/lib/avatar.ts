@@ -1,5 +1,5 @@
 /**
- * Default profile avatars (assets/profile/default-1..4.png).
+ * Default profile avatars (assets/profile/default-1..4.webp).
  *
  * Every user is "randomly" assigned one of the four portraits — the pick
  * is a deterministic hash of their userId, so the assignment is stable
@@ -13,10 +13,10 @@
  */
 
 export const DEFAULT_AVATARS = [
-  require('../../assets/profile/default-1.png'),
-  require('../../assets/profile/default-2.png'),
-  require('../../assets/profile/default-3.png'),
-  require('../../assets/profile/default-4.png'),
+  require('../../assets/profile/default-1.webp'),
+  require('../../assets/profile/default-2.webp'),
+  require('../../assets/profile/default-3.webp'),
+  require('../../assets/profile/default-4.webp'),
 ] as const;
 
 export function getDefaultAvatar(userId: string | null | undefined): number {

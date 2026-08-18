@@ -19,16 +19,16 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 const TILE = 40;
 const TILE_GAP = 6;
 
-// Pool of meaningful, style-diverse sample moments (all ids exist in the v3
+// Pool of meaningful, style-diverse sample moments (all ids exist in the v25
 // catalog). Rows slice this pool with different lengths so the sheet shows
 // short days and packed days side by side.
 const POOL = [
-  'nature_weather.sunset', 'nature_weather.beach', 'food_drink.ramen', 'actions_activities.movie',
-  'food_drink.cake', 'plants.wildflower', 'animals.cat', 'musical_instruments.guitar',
-  'food_drink.coffee', 'stationery_office.book', 'actions_activities.camping', 'nature_weather.rainbow',
-  'food_drink.ice_cream', 'actions_activities.picnic', 'animals.dog', 'actions_activities.baking',
-  'food_drink.sushi', 'actions_activities.hiking', 'emotions_expressions.happy', 'actions_activities.swimming',
-  'food_drink.pizza',
+  'memory.1998_sunset_point', 'memory.1880_beach', 'memory.0050_ramen', 'memory.1363_movie_theater',
+  'memory.0427_cupcake', 'memory.3668_wildflowers', 'memory.3748_cat', 'memory.3144_guitar',
+  'memory.0002_coffee', 'memory.0006_book', 'memory.1405_tent', 'memory.3703_rainbow',
+  'memory.0455_ice_cream', 'memory.1403_picnic', 'memory.3747_dog', 'memory.0005_baking',
+  'memory.0062_sushi', 'memory.1298_hiking', 'memory.5355_happy', 'memory.1307_swimming',
+  'memory.0003_pizza',
 ];
 
 const ROW_META = [
@@ -41,9 +41,9 @@ const ROW_META = [
 const ROW_SIZES = [16, 7, 3];
 
 const DETAILS: { itemId: string; text: string }[] = [
-  { itemId: 'food_drink.ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
-  { itemId: 'actions_activities.movie', text: 'Then we watched a silly rom-com. You would have hated it. I loved it.' },
-  { itemId: 'nature_weather.sunset', text: 'The sky went full peach tonight. Took a mental photo for you.' },
+  { itemId: 'memory.0050_ramen', text: 'Late-night ramen run! Wish you were here to steal my egg like always.' },
+  { itemId: 'memory.1363_movie_theater', text: 'Then we watched a silly rom-com. You would have hated it. I loved it.' },
+  { itemId: 'memory.1998_sunset_point', text: 'The sky went full peach tonight. Took a mental photo for you.' },
 ];
 
 const TEASERS = [

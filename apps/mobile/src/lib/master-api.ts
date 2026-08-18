@@ -4,6 +4,7 @@
  */
 import { kMasterState } from '../shared/storage/keys';
 import { apiClient } from './api';
+import { confirmCloverAward } from './cosmetics-api';
 import { storage } from './storage';
 import { supabase } from './supabase';
 
@@ -73,16 +74,20 @@ export async function fetchMasterStatus(): Promise<MasterStatus> {
 }
 
 export async function askMaster(question: string): Promise<
-  { ok: true; response: MasterResponse } | { ok: false; error: string; nextAvailableAt?: string }
+  { ok: true; response: MasterResponse; xpAwarded: number } | { ok: false; error: string; nextAvailableAt?: string }
 > {
   const userId = await uid();
   if (!userId) return { ok: false, error: 'no_session' };
   try {
     const data = await apiClient.post<{
-      success?: boolean; error?: string; response?: MasterResponse; nextAvailableAt?: string;
+      success?: boolean; error?: string; response?: MasterResponse; nextAvailableAt?: string; xpAwarded?: number;
     }>('/api/master/ask', { userId, question });
     if (data.error) return { ok: false, error: data.error, nextAvailableAt: data.nextAvailableAt };
-    if (data.success && data.response) return { ok: true, response: data.response };
+    if (data.success && data.response) {
+      const xpAwarded = data.xpAwarded ?? 0;
+      confirmCloverAward(xpAwarded);
+      return { ok: true, response: data.response, xpAwarded };
+    }
     return { ok: false, error: 'unknown' };
   } catch {
     return { ok: false, error: 'network' };

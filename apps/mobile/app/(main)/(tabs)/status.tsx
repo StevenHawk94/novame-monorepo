@@ -191,7 +191,10 @@ export default function ConnectionDashboardScreen() {
         <View style={{ flex: 1 }}>
           <GridBackground />
           {/* Display-only until paired: no tap targets anywhere (mock v2). */}
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={st.unpairedScroll}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={st.pairLockCard}>
               <MaterialIcons name="lock" size={56} color="#5D3A1F" />
               <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock your connection board</Text>
@@ -353,6 +356,7 @@ const st = StyleSheet.create({
   hubPillText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   scroll: { paddingHorizontal: 16, paddingTop: 16 },
+  unpairedScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20 },
 
   relCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF6E4',
@@ -392,7 +396,7 @@ const st = StyleSheet.create({
   copyBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   pairLockCard: {
-    marginHorizontal: 18, marginTop: 20, borderRadius: 32,
+    marginHorizontal: 18, borderRadius: 32,
     backgroundColor: '#FBF3DF', alignItems: 'center', justifyContent: 'center',
     gap: 22, paddingVertical: 32, paddingHorizontal: 20,
   },

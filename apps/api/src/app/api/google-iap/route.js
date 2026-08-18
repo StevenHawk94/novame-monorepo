@@ -19,30 +19,31 @@ export const runtime = 'nodejs'
  * account, and the authoritative productId + expiry come from Google's
  * response. Missing env config -> 503 (route disabled), invalid token -> 401.
  *
- * Env:
- *   GOOGLE_PLAY_SA_EMAIL        service account email
- *   GOOGLE_PLAY_SA_PRIVATE_KEY  service account PEM key ("\n" escapes ok)
+ * Env (preferred):
+ *   GOOGLE_PLAY_SERVICE_ACCOUNT_KEY  complete service-account JSON
+ * Legacy split env is also accepted:
+ *   GOOGLE_PLAY_SA_EMAIL / GOOGLE_PLAY_SA_PRIVATE_KEY
  */
 
-const PACKAGE_NAME = 'com.novame.app'
+const PACKAGE_NAME = 'com.burrow.app'
 
-const PRODUCT_TO_TIER = {
-  'novame.plus.monthly':    'plus',
-  'novame.plus.yearly':     'plus',
+const SUBSCRIPTION_TO_TIER = {
+  'novame.plus.monthly': 'plus',
+  'novame.plus.yearly': 'plus',
   'novame.plusduo.monthly': 'plus',
-  'novame.plusduo.yearly':  'plus',
+  'novame.plusduo.yearly': 'plus',
 }
-const PRODUCT_TO_CYCLE = {
-  'novame.plus.monthly':    'monthly',
-  'novame.plus.yearly':     'yearly',
+const SUBSCRIPTION_TO_CYCLE = {
+  'novame.plus.monthly': 'monthly',
+  'novame.plus.yearly': 'yearly',
   'novame.plusduo.monthly': 'monthly',
-  'novame.plusduo.yearly':  'yearly',
+  'novame.plusduo.yearly': 'yearly',
 }
-const PRODUCT_TO_PLAN_TYPE = {
-  'novame.plus.monthly':    'solo',
-  'novame.plus.yearly':     'solo',
+const SUBSCRIPTION_TO_PLAN_TYPE = {
+  'novame.plus.monthly': 'solo',
+  'novame.plus.yearly': 'solo',
   'novame.plusduo.monthly': 'duo',
-  'novame.plusduo.yearly':  'duo',
+  'novame.plusduo.yearly': 'duo',
 }
 
 const ACTIVE_STATES = new Set([
@@ -84,6 +85,24 @@ async function getAccessToken(email, privateKey) {
   return data.access_token
 }
 
+function getServiceAccountCredentials() {
+  const keyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY
+    || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
+  if (keyJson) {
+    try {
+      const key = JSON.parse(keyJson)
+      if (key.client_email && key.private_key) {
+        return { email: key.client_email, privateKey: key.private_key }
+      }
+    } catch (error) {
+      console.error('[google-iap] invalid GOOGLE_PLAY_SERVICE_ACCOUNT_KEY JSON:', error.message)
+    }
+  }
+  const email = process.env.GOOGLE_PLAY_SA_EMAIL
+  const privateKey = process.env.GOOGLE_PLAY_SA_PRIVATE_KEY
+  return email && privateKey ? { email, privateKey } : null
+}
+
 export async function POST(request) {
   try {
     const authHeader = request.headers.get('authorization') || ''
@@ -104,9 +123,8 @@ export async function POST(request) {
       )
     }
 
-    const saEmail = process.env.GOOGLE_PLAY_SA_EMAIL
-    const saKey = process.env.GOOGLE_PLAY_SA_PRIVATE_KEY
-    if (!saEmail || !saKey) {
+    const credentials = getServiceAccountCredentials()
+    if (!credentials) {
       console.error('[google-iap] service account env not configured')
       return NextResponse.json(
         { success: false, error: 'Play verification not configured' },
@@ -117,7 +135,7 @@ export async function POST(request) {
     // ── Verify with Google (authoritative product + expiry) ──
     let sub
     try {
-      const accessToken = await getAccessToken(saEmail, saKey)
+      const accessToken = await getAccessToken(credentials.email, credentials.privateKey)
       const res = await fetch(
         `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`,
         { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -148,15 +166,16 @@ export async function POST(request) {
 
     const line = Array.isArray(sub.lineItems) ? sub.lineItems[0] : null
     const productId = line?.productId
-    const tier = PRODUCT_TO_TIER[productId]
+    const basePlanId = line?.offerDetails?.basePlanId
+    const tier = SUBSCRIPTION_TO_TIER[productId]
     if (!tier) {
       return NextResponse.json(
         { success: false, error: `Unknown productId: ${productId}` },
         { status: 400 }
       )
     }
-    const billingCycle = PRODUCT_TO_CYCLE[productId] || 'monthly'
-    const planType = PRODUCT_TO_PLAN_TYPE[productId] || 'solo'
+    const billingCycle = SUBSCRIPTION_TO_CYCLE[productId]
+    const planType = SUBSCRIPTION_TO_PLAN_TYPE[productId]
     const periodEnd = line?.expiryTime
       ? new Date(line.expiryTime).toISOString()
       : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
@@ -210,6 +229,7 @@ export async function POST(request) {
         current_period_end: periodEnd,
         google_purchase_token: purchaseToken,
         google_product_id: productId,
+        google_base_plan_id: basePlanId,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
     if (subErr) {

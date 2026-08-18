@@ -5,25 +5,16 @@ import { autoGrantDuoBothWays } from '@/lib/duo-auto'
 
 export const runtime = 'edge'
 
-async function activePairing(supabase, uid) {
-  const { data } = await supabase
-    .from('pairings')
-    .select('partner_user_id')
-    .eq('user_id', uid)
-    .maybeSingle()
-  return data
-}
-
-
 /**
  * POST /api/friends/respond
  *
  * Body: { userId, friendshipId, action: 'accept' | 'decline' }
  *
  * Responds to a pending request. Only the user who did NOT request it can
- * accept/decline (they're user_a or user_b but not requested_by). Accept sets
- * status accepted + accepted_at; decline deletes the row so the pair can try
- * again later.
+ * accept/decline (they're user_a or user_b but not requested_by). The current
+ * UI exposes Accept only. Accept is one atomic database operation: establish
+ * the exclusive pair and ignore every other pending request involving either
+ * member. Decline remains for backwards compatibility with older clients.
  */
 export async function POST(request) {
   try {
@@ -63,39 +54,20 @@ export async function POST(request) {
 
     if (action === 'accept') {
       const other = fr.user_a === userId ? fr.user_b : fr.user_a
-      const [mine, theirs] = await Promise.all([
-        activePairing(supabase, userId),
-        activePairing(supabase, other),
-      ])
-      if (mine) return NextResponse.json({ error: 'already_paired' }, { status: 409 })
-      if (theirs) return NextResponse.json({ error: 'requester_already_paired' }, { status: 409 })
-
-      const { error } = await supabase
-        .from('friendships')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', friendshipId)
-      if (error) {
-        console.error('[friends/respond] accept error:', error.message)
-        return NextResponse.json({ error: 'Failed' }, { status: 500 })
-      }
-
-      const { data: pairRes, error: pairErr } = await supabase.rpc('set_pairing', {
+      const { data: pairRes, error: pairErr } = await supabase.rpc('accept_pairing_invitation', {
         p_user_id: userId,
-        p_partner_id: other,
-        p_relationship: fr.relationship ?? null,
-        p_since: fr.relationship_since ?? null,
+        p_friendship_id: friendshipId,
       })
       if (pairErr || pairRes?.error) {
-        // A concurrent accept may have filled either user's pairing between
-        // the checks above. Restore the invitation instead of leaving an
-        // accepted-but-unpaired relationship behind.
-        await supabase.from('friendships').update({ status: 'pending', accepted_at: null }).eq('id', friendshipId)
         const reason = pairRes?.error || 'pairing_failed'
-        console.warn('[friends/respond] set_pairing failed:', pairErr?.message || reason)
+        console.warn('[friends/respond] accept pairing failed:', pairErr?.message || reason)
         return NextResponse.json({ error: reason }, { status: 409 })
       }
       await autoGrantDuoBothWays(supabase, userId, other)
-      return NextResponse.json({ success: true, action, paired: true })
+      return NextResponse.json({
+        success: true, action, paired: true,
+        ignoredCount: Number(pairRes?.ignored_count || 0),
+      })
     } else {
       // A re-invite reuses an old accepted row. Declining that new invitation
       // restores the historical relationship marker rather than deleting it.

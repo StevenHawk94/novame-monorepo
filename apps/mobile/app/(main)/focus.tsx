@@ -9,6 +9,7 @@ import { FOCUS_SCENES, type FocusScene } from '@novame/domain';
 import { haptics } from '../../src/lib/haptics';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { submitFocus } from '../../src/lib/focus-api';
+import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { OffsetCard } from '../../src/components/ui/offset-card';
@@ -48,6 +49,7 @@ export default function FocusScreen() {
   const [scene, setScene] = useState<FocusScene | null>(null);
   const [isPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
   const [completed, setCompleted] = useState(false);
+  const [reward, setReward] = useState(0);
   const creditedRef = useRef(false);
 
   // One player for the whole screen; the source resolves async when a scene
@@ -73,8 +75,21 @@ export default function FocusScreen() {
     if (status.didJustFinish) {
       creditedRef.current = true;
       setCompleted(true);
+      setReward(XP_RULES.focus.award);
       void haptics.medium();
-      if (scene) void submitFocus({ sceneId: scene.id, trackIndex: audio?.index ?? 1 });
+      if (scene) {
+        const award = optimisticCloverAward(XP_RULES.focus.award);
+        void submitFocus({ sceneId: scene.id, trackIndex: audio?.index ?? 1 }).then((result) => {
+          if (result.ok) {
+            const actual = result.xpAwarded ?? 0;
+            setReward(actual);
+            award.commit(actual);
+          } else {
+            setReward(0);
+            award.rollback();
+          }
+        });
+      }
     }
   }, [status.didJustFinish, phase, scene]);
 
@@ -84,6 +99,7 @@ export default function FocusScreen() {
       void haptics.medium();
       creditedRef.current = false;
       setCompleted(false);
+      setReward(0);
       setScene(s);
       setPhase('play');
       void getFocusVoiceSource(s.id).then((resolved) => {
@@ -174,7 +190,7 @@ export default function FocusScreen() {
         <View style={[styles.playBottom, { paddingBottom: insets.bottom + 24 }]}>
           {completed ? (
             <View style={styles.doneBlock}>
-              <CloverBurst amount={XP_RULES.focus.award} />
+              {reward > 0 && <CloverBurst amount={reward} />}
               <MaterialIcons name="check-circle" size={64} color="#FFFFFF" />
               <Text style={styles.doneText}>Done. Carry that with you.</Text>
               <Pressable onPress={() => router.back()} style={styles.doneBtn}>

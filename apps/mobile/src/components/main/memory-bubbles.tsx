@@ -33,6 +33,7 @@ import { XP_RULES } from '@novame/engine';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { markPopped, submitBubblePop, type MemoryBubble } from '@/lib/home-bubbles';
+import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
 const BUBBLE_SIZE = 84;
@@ -67,9 +68,10 @@ export function MemoryBubbles({ bubbles, onPopped }: Props) {
   const handlePopFinished = useCallback(
     (bubble: MemoryBubble, pos: { left: number; top: number }) => {
       markPopped(bubble.id);
-      // Server-authoritative +5 (idempotent, capped). Fire-and-forget: the
-      // pop already happened visually; the balance shows it on next refresh.
-      void submitBubblePop(bubble);
+      // Paint +5 immediately; the idempotent server claim silently confirms
+      // or rolls it back (already popped, daily cap, or network failure).
+      const award = optimisticCloverAward(XP_RULES.bubble.award);
+      void submitBubblePop(bubble).then((actual) => award.commit(actual));
       setRewards((cur) => [...cur, { id: bubble.id, ...pos }]);
       onPopped(bubble.id);
       // A card only when there IS a memory (written / AI) — else just the pop.

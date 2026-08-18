@@ -16,7 +16,7 @@ export async function GET() {
 
     const [{ data: profiles, error }, { data: pairings, error: pairingsError }] = await Promise.all([
       supabase.from('profiles')
-        .select('id, email, display_name, avatar_url, created_at, subscription_tier')
+        .select('id, email, display_name, created_at, subscription_tier')
         .order('created_at', { ascending: false }),
       supabase.from('pairings').select('user_id'),
     ])
