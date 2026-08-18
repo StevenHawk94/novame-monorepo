@@ -303,6 +303,13 @@ export const kStatusGems = defineKey('novame_status_gems', 'user');
  *  entry an extra time, which the RPC then rejects. */
 export const kQuietWinsState = defineKey('novame_quiet_wins_state', 'user');
 
+/** Small Wins feedback version cursors, keyed by selection range or single item
+ * id. Each bank advances independently and loops naturally. */
+export const kQuietWinsFeedbackSequence = defineKey(
+  'burrow_quiet_wins_feedback_sequence',
+  'user',
+);
+
 /** new-lens.tsx: today's completion flag + the pre-fetched next card per theme.
  *  Shape: { date, done, nextCards: { [theme]: card } }. The done flag hides the
  *  Home entry once used (resets next day); nextCards is the "cache the next card

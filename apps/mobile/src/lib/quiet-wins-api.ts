@@ -15,7 +15,10 @@ import { ApiError } from '@novame/api-client';
 
 import { apiClient } from './api';
 
-import { kQuietWinsState } from '../shared/storage/keys';
+import {
+  kQuietWinsFeedbackSequence,
+  kQuietWinsState,
+} from '../shared/storage/keys';
 import { storage } from './storage';
 import { supabase } from './supabase';
 
@@ -58,6 +61,34 @@ export function isQuietWinsDoneToday(): boolean {
 
 function markDoneToday(): void {
   storage.set(kQuietWinsState.name, JSON.stringify({ date: localDateStr(), done: true }));
+}
+
+function feedbackBankKey(checkedIds: string[]): string {
+  const count = checkedIds.length;
+  if (count === 0) return 'zero';
+  if (count === 1) return `single:${checkedIds[0]}`;
+  if (count <= 6) return 'two-to-six';
+  if (count <= 10) return 'seven-to-ten';
+  return 'eleven-to-sixteen';
+}
+
+/** Return the next version index for this feedback bank and advance its cursor. */
+export function consumeQuietWinsFeedbackSequence(checkedIds: string[]): number {
+  const raw = storage.getString(kQuietWinsFeedbackSequence.name);
+  let sequences: Record<string, number> = {};
+  if (raw) {
+    try {
+      sequences = JSON.parse(raw) as Record<string, number>;
+    } catch {
+      sequences = {};
+    }
+  }
+  const key = feedbackBankKey(checkedIds);
+  const stored = sequences[key];
+  const current = Number.isFinite(stored) && stored >= 0 ? Math.floor(stored) : 0;
+  sequences[key] = current + 1;
+  storage.set(kQuietWinsFeedbackSequence.name, JSON.stringify(sequences));
+  return current;
 }
 
 /** __DEV__ helper: clear the local completion flag so the Home entry reappears. */

@@ -10,6 +10,8 @@ import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
+import { ItemSheet, type ItemSheetRef } from '../../src/components/main/item-sheet';
+import type { CollectedItem } from '../../src/lib/bags-api';
 import {
   markIntroSeen,
   setBunnyName,
@@ -29,10 +31,9 @@ import {
 } from '../../src/lib/iap';
 
 /**
- * Onboarding v3 (2026-07-26 mocks 1:1) — the Burrow story flow on the beige
- * grid: hook → who/what-blocks questions (ob4's line answers ob3's choice) →
- * how-it-works pages → creator's words → the two-people paywall (Try for
- * Free → plans) → Name Your Bunny → done. GUEST MODE: finishing creates an
+ * Burrow story flow on the beige grid: hook → who/what-blocks questions →
+ * branch feedback → how-it-works pages → creator's words → the two-people
+ * paywall → plans → Name Your Bunny → done. GUEST MODE: finishing creates an
  * ANONYMOUS session (no forced sign-in); Connect Your Account only appears
  * after a successful purchase, and is skippable there too.
  */
@@ -42,49 +43,25 @@ const BTN = '#4A3220';
 
 const WHO_OPTIONS = [
   { key: 'partner', icon: ICONS.obWhoPartner, label: 'Partner' },
+  { key: 'parent', icon: ICONS.obWhoFamily, label: 'Parent' },
+  { key: 'child', icon: ICONS.obWhoFamily, label: 'Child' },
   { key: 'bestie', icon: ICONS.obWhoFriends, label: 'Best friend' },
-  { key: 'family', icon: ICONS.obWhoFamily, label: 'Family member' },
   { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
 ];
 
 const BLOCKER_OPTIONS = [
-  { key: 'A', label: 'Life gets busy' },
-  { key: 'B', label: 'You live far apart' },
-  { key: 'C', label: "You don't want to bother them" },
-  { key: 'D', label: "You don't know what to talk about" },
+  { key: 'A', label: 'Our days get busy' },
+  { key: 'B', label: 'We live far apart' },
+  { key: 'C', label: 'I don’t want to overwhelm them' },
+  { key: 'D', label: 'I’m not always sure what to say' },
 ];
 
-// Ob3 inline feedback ↔ the picked blocker (2026-08-09 产品口径).
 const BLOCKER_FEEDBACK: Record<string, string> = {
-  A: 'Sometimes caring is easy. Finding the time is the hard part.',
-  B: "Distance changes where you are, but it doesn't have to change how close you feel.",
-  C: "Caring about someone shouldn't feel like adding pressure to their day.",
-  D: "Sometimes the hardest part isn't caring — it's knowing where to start.",
+  A: 'It’s easy to care deeply and still miss the little things.\n\nBy the time you finally talk, the small moments that made up the day are often already gone.',
+  B: 'Distance doesn’t only separate places. It separates everyday moments.\n\nYou hear the big updates, but miss the tiny details that make you feel part of their life.',
+  C: 'You shouldn’t have to choose between checking in and giving them space.\n\nSometimes the gentlest connection begins with letting them share when it feels right.',
+  D: 'Closeness doesn’t always need a big conversation.\n\nSometimes one small glimpse into their day is enough to make talking feel natural again.',
 };
-
-// Ob4 — branched "I'm fine" screen (2026-08-09): each blocker gets its own
-// title + body; every branch closes on the same subtitle so all four paths
-// land into Ob5's reflection mockup.
-const IMFINE_BRANCH: Record<string, { title: string; body: string }> = {
-  A: {
-    title: 'Tired of hearing "I\'m fine" when you\'re both just too busy to really talk?',
-    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're squeezing in a quick reply between meetings.",
-  },
-  B: {
-    title: 'Tired of hearing "I\'m fine" on a call that barely covers the basics?',
-    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're catching up in a rushed, scheduled call.",
-  },
-  C: {
-    title: 'Tired of getting "I\'m fine" because you didn\'t want to ask twice?',
-    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're worried about being a bother by asking.",
-  },
-  D: {
-    title: 'Tired of hearing "I\'m fine" because neither of you knew where to start?',
-    body: "The truth is, people are only 100% honest when they're talking to themselves — not when they're trying to find the right thing to say.",
-  },
-};
-const IMFINE_SUBTITLE =
-  'What if you could turn the honesty of their day into something you could actually see?';
 
 // Ob8's insight teasers — the SAME six pills the Connection tab shows while
 // unpaired (status.tsx TEASER_PILLS), so the promise matches the product.
@@ -101,22 +78,40 @@ const INSIGHT_PILLS = [
 // current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
 // art and render as empty tiles.
 const SAMPLE_AVATAR = require('../../assets/profile/default-3.webp');
-const SAMPLE_DAY: { itemId: string; note: string }[] = [
-  { itemId: 'memory.0005_baking', note: 'Baked an apple pie from scratch' },
-  { itemId: 'memory.1363_movie_theater', note: 'A cozy movie night in' },
-  { itemId: 'memory.2851_toilet', note: 'Finally deep-cleaned the bathroom' },
-  { itemId: 'memory.0896_avocado', note: 'Perfectly ripe avocado at breakfast' },
-  { itemId: 'memory.0132_banh_mi', note: 'Grabbed a banh mi for lunch' },
-  { itemId: 'memory.4095_workbench', note: 'An afternoon tinkering at the workbench' },
+const SAMPLE_DAY = [
+  { itemId: 'memory.0896_avocado', displayName: 'Avocado', category: 'Food & Drink', note: 'Started the morning with avocado toast before a busy day.' },
+  { itemId: 'memory.0132_banh_mi', displayName: 'Banh Mi', category: 'Food & Drink', note: 'Picked up a banh mi for a quick lunch between errands.' },
+  { itemId: 'memory.4095_workbench', displayName: 'Workbench', category: 'Chores & Home Care', note: 'Spent the afternoon fixing a small project at the workbench.' },
+  { itemId: 'memory.2851_toilet', displayName: 'Toilet', category: 'Chores & Home Care', note: 'Finally finished the bathroom clean-up I had been putting off.' },
+  { itemId: 'memory.0005_baking', displayName: 'Baking', category: 'Food & Drink', note: 'Baked something sweet after dinner and saved a piece for tomorrow.' },
+  { itemId: 'memory.1363_movie_theater', displayName: 'Movie Theater', category: 'Entertainment & Leisure', note: 'Ended the day with a cozy movie and finally slowed down.' },
 ];
 
+const SAMPLE_ITEMS: CollectedItem[] = SAMPLE_DAY.map((sample, index) => {
+  const createdAt = new Date(Date.now() - (SAMPLE_DAY.length - index) * 60 * 60 * 1000).toISOString();
+  return {
+    itemId: sample.itemId,
+    displayName: sample.displayName,
+    rarity: 'common',
+    emoji: '📦',
+    category: sample.category,
+    count: 1,
+    firstSeenAt: createdAt,
+    memories: [{
+      excerpt: sample.note,
+      rawExcerpt: sample.note,
+      createdAt,
+    }],
+  };
+});
+
 type Step =
-  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imfine' | 'honesty' | 'imagine'
+  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imagine'
   | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
   | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'someone', 'who', 'blocker', 'feedback', 'imfine', 'honesty', 'imagine',
+  'start', 'someone', 'who', 'blocker', 'feedback', 'imagine',
   'how', 'space', 'insights', 'boundaries', 'creator',
   'paywall', 'plans', 'name',
 ];
@@ -127,7 +122,7 @@ export default function OnboardingScreen() {
   const [idx, setIdx] = useState(0);
   const [who, setWho] = useState<string | null>(null);
   const [blocker, setBlocker] = useState<string | null>(null);
-  const [tappedSample, setTappedSample] = useState<string | null>(null);
+  const sampleSheetRef = useRef<ItemSheetRef>(null);
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [purchasing, setPurchasing] = useState(false);
   const [purchased, setPurchased] = useState(false);
@@ -344,8 +339,8 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <ExpoImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
-            <Text style={styles.h1}>Stay close to the{'\n'}people who matter.</Text>
-            <Text style={styles.h2}>By collecting memories together.</Text>
+            <Text style={styles.h1}>Stay close to the people who matter.</Text>
+            <Text style={styles.h2}>Even when life gets busy.</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Start" onPress={next} />
           </ScrollView>
@@ -356,21 +351,21 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <ExpoImage source={ICONS.obQuestion} style={styles.qmarkIcon} contentFit="contain" />
             <Text style={styles.h1}>
-              Is there someone you wish you could be closer to?
+              Is there someone you wish you felt closer to?
             </Text>
             <Text style={[styles.body, { marginTop: 22 }]}>
-              If there is, you already know you care deeply, but life doesn&apos;t always let you be
-              there for the little things.
+              Someone you care about deeply, even when life makes it hard to stay part of the
+              little things.
             </Text>
             <View style={{ flex: 1 }} />
-            <Btn label="Yes, I have someone like this" onPress={next} />
+            <Btn label="Yes, someone comes to mind" onPress={next} />
           </ScrollView>
         )}
 
         {step === 'who' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1, minHeight: 24 }} />
-            <Text style={[styles.h1, { marginBottom: 26 }]}>Who is this person to you?</Text>
+            <Text style={[styles.h1, { marginBottom: 26 }]}>Who came to mind?</Text>
             {WHO_OPTIONS.map((o) => (
               <Pressable
                 key={o.key}
@@ -389,7 +384,7 @@ export default function OnboardingScreen() {
         {step === 'blocker' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1, minHeight: 24 }} />
-            <Text style={[styles.h1, { marginBottom: 26 }]}>What makes it harder to stay close?</Text>
+            <Text style={[styles.h1, { marginBottom: 26 }]}>What tends to get in the way?</Text>
             {BLOCKER_OPTIONS.map((o) => (
               <Pressable
                 key={o.key}
@@ -410,27 +405,9 @@ export default function OnboardingScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
             </View>
-            <View style={{ flex: 1 }} />
-            <Btn label="Continue" onPress={next} />
-          </ScrollView>
-        )}
-
-        {step === 'imfine' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>{IMFINE_BRANCH[blocker ?? 'A'].title}</Text>
-            <View style={[styles.card, { marginTop: 26 }]}>
-              <Text style={styles.body}>{IMFINE_BRANCH[blocker ?? 'A'].body}</Text>
-            </View>
-            <View style={{ flex: 1 }} />
-            <Btn label="Continue" onPress={next} />
-          </ScrollView>
-        )}
-
-        {step === 'honesty' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>{IMFINE_SUBTITLE}</Text>
+            <Text style={[styles.h3, { marginTop: 30 }]}>
+              What if those little moments had somewhere to go?
+            </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -439,7 +416,11 @@ export default function OnboardingScreen() {
         {step === 'imagine' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>Imagine getting this reflection from that person.</Text>
+            <Text style={styles.h1}>Imagine opening a little window into their day.</Text>
+            <Text style={[styles.body, { marginTop: 18 }]}>
+              No pressure to start a conversation. Just something real you can notice, remember,
+              or reach out about.
+            </Text>
             {/* Mock 2026-08-10: Jimmy's reflection card — avatar + name + time,
                 then the six tappable items. */}
             <View style={styles.sampleCard}>
@@ -452,20 +433,16 @@ export default function OnboardingScreen() {
                 {SAMPLE_DAY.map((s) => (
                   <Pressable
                     key={s.itemId}
-                    onPress={() => { void haptics.light(); setTappedSample(s.itemId); }}
+                    onPress={() => { void haptics.light(); sampleSheetRef.current?.present(s.itemId); }}
                   >
                     <ItemSprite itemId={s.itemId} size={44} radius={12} />
                   </Pressable>
                 ))}
               </View>
-              <Text style={styles.sampleHint}>
-                {tappedSample
-                  ? SAMPLE_DAY.find((s) => s.itemId === tappedSample)?.note
-                  : 'Tap to see details'}
-              </Text>
+              <Text style={styles.sampleHint}>Tap an item to see its memory</Text>
             </View>
-            <Text style={[styles.h3, { marginTop: 30 }]}>
-              Can you tell what their day was like without a single text?
+            <Text style={[styles.privacySmall, { marginTop: 18 }]}>
+              They choose what becomes part of your shared space.
             </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
@@ -475,16 +452,16 @@ export default function OnboardingScreen() {
         {step === 'how' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>That&apos;s how it works.</Text>
+            <Text style={styles.h1}>A few minutes of reflection becomes something you can share.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Simply reflect on your day. Your thoughts, feelings, and experiences become adorable
-              memory items.
-            </Text>
-            <Text style={[styles.body, { marginTop: 14 }]}>
-              Creating a private space between you and that special person.
+              Reflect on your thoughts, feelings, and everyday moments. Burrow turns the parts you
+              choose into adorable memory items, creating a shared space that grows with both of you.
             </Text>
             {/* expo-image plays and loops animated GIFs natively. */}
             <ExpoImage source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
+            <Text style={[styles.privacySmall, { marginTop: 16 }]}>
+              Reflect privately. Share selectively. Stay connected naturally.
+            </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -493,12 +470,13 @@ export default function OnboardingScreen() {
         {step === 'space' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>A private space where your lives naturally connect.</Text>
+            <Text style={styles.h1}>A shared space where your lives naturally meet.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Add a widget and catch small glimpses of their day, right from your homescreen.
+              Add the widget to your Home Screen and see the latest moments they&apos;ve chosen to share.
             </Text>
             <Text style={[styles.body, { marginTop: 14 }]}>
-              Reach out when they need you. Give them space when they don&apos;t.
+              Small glimpses into each other&apos;s lives, so you can reach out with more understanding,
+              or simply let them know you&apos;re there.
             </Text>
             <ExpoImage source={ICONS.obWidgetPhone} style={styles.widgetPhone} contentFit="contain" />
             <View style={{ flex: 1 }} />
@@ -509,11 +487,10 @@ export default function OnboardingScreen() {
         {step === 'insights' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>
-              Understand them a little better, every day, with AI-powered connection insights.
-            </Text>
+            <Text style={styles.h1}>Notice the patterns that are easy to miss.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Gentle insights that help you know when, and how, to show up.
+              Gentle, private insights help you understand what has been bringing them energy,
+              weighing on them, or helping them feel connected.
             </Text>
             <View style={styles.insightGrid}>
               {INSIGHT_PILLS.map((t) => (
@@ -523,6 +500,9 @@ export default function OnboardingScreen() {
                 </View>
               ))}
             </View>
+            <Text style={[styles.privacySmall, { marginTop: 16 }]}>
+              Not judgments. Just thoughtful clues for showing up with care.
+            </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -531,13 +511,15 @@ export default function OnboardingScreen() {
         {step === 'boundaries' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>Your moments.{'\n'}Your boundaries.</Text>
+            <Text style={styles.h1}>Close doesn&apos;t have to mean exposed.</Text>
             <View style={[styles.card, { marginTop: 26, paddingVertical: 34 }]}>
               <Text style={styles.cardBodyBold}>
-                Choose what to show.{'\n'}Choose what stays private.
+                Your reflections begin privately.{'\n'}
+                You decide what enters your shared space.{'\n'}
+                You can change or remove what you share at any time.
               </Text>
               <Text style={[styles.cardBodyBold, { marginTop: 18 }]}>
-                Your connection should feel{'\n'}comfortable for both of you.
+                Your moments. Your boundaries. Your choice.
               </Text>
             </View>
             <View style={{ flex: 1 }} />
@@ -551,21 +533,24 @@ export default function OnboardingScreen() {
             <View>
               <View style={styles.card}>
                 <ExpoImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
-                <Text style={[styles.h3, { marginBottom: 14 }]}>Words from the app creator</Text>
+                <Text style={[styles.h3, { marginBottom: 14 }]}>I built Burrow for my mom.</Text>
                 <Text style={styles.creatorBody}>
-                  I built this to stay connected with my mom. We live thousands of miles apart, we
-                  talk every month, but with a busy work life, I couldn&apos;t stay close to her
-                  day-to-day.
+                  We live thousands of miles apart. We talked about once a month, and with work
+                  moving so quickly, I felt like I was missing the small parts of her life, not the
+                  big updates, but the everyday moments that make you feel close to someone.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  Now, every time I open the app, I know what she ate, where she went, how
-                  she&apos;s really doing — and she knows mine — without either of us needing to
-                  carve out time for a call.
+                  Now we each take a few minutes to reflect. When I open Burrow, I might see what
+                  made her smile, what she cooked, or what kind of day she had. She sees little
+                  pieces of my life too.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  She loves it too. It lets her see my life in a way that feels light and fun, not
-                  like one more thing to manage. Everything I&apos;ve built into this app started as
-                  something I wanted for the two of us.
+                  Neither of us has to schedule another call or come up with the perfect thing to
+                  say. We simply feel more present in each other&apos;s lives.
+                </Text>
+                <Text style={[styles.creatorBody, { marginTop: 14 }]}>
+                  Everything in Burrow began with one question:{'\n'}
+                  How can two people stay close without asking more from each other?
                 </Text>
               </View>
             </View>
@@ -581,10 +566,9 @@ export default function OnboardingScreen() {
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
               <View style={{ flex: 1, minHeight: 56 }} />
-              <Text style={styles.h1}>One Subscription for{'\n'}Two People.</Text>
+              <Text style={styles.h1}>Feel closer through the little things.</Text>
               <Text style={[styles.body, { marginTop: 14 }]}>
-                90% of users feel closer to their person. Not because they talk more, because they
-                talk better.
+                One subscription creates a private space for two.
               </Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
@@ -593,10 +577,10 @@ export default function OnboardingScreen() {
                   <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
                 </View>
                 {[
-                  'Build memories with barely any effort.',
-                  'Connection insights that respect your boundaries.',
-                  'Daily tools that help you feel grounded and ready.',
-                  'Stay close and connected, naturally.',
+                  'Turn reflections into shared memories',
+                  'See gentle connection insights',
+                  'Stay present without adding pressure',
+                  'Keep full control of what you share',
                 ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -606,8 +590,14 @@ export default function OnboardingScreen() {
                   </View>
                 ))}
               </View>
+              <Text style={[styles.body, { marginTop: 18 }]}>
+                Invite your person and start your Burrow together.
+              </Text>
+              <Text style={[styles.partnerIncluded, { marginTop: 8 }]}>
+                Your person won&apos;t need to pay again.
+              </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
-              <Btn label="Try for Free" onPress={onTryFree} />
+              <Btn label="Start Our Burrow" onPress={onTryFree} />
             </View>
           </ScrollView>
         )}
@@ -644,7 +634,7 @@ export default function OnboardingScreen() {
               </View>
             </Pressable>
             <View style={{ flex: 1 }} />
-            <Btn label="Start My Plan" onPress={() => void onStartPlan()} busy={purchasing} />
+            <Btn label="Start Our Burrow" onPress={() => void onStartPlan()} busy={purchasing} />
             {/* Apple 3.1.2: subscription terms + working legal links. */}
             <Text style={styles.disclosure}>
               {plan === 'yearly'
@@ -670,7 +660,7 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1, minHeight: 24 }} />
               <Text style={styles.h1}>Name your bunny.</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
-                They&apos;ll be your reflection and connection guide along the way.
+                They&apos;ll help you reflect, remember, and stay close to your person.
               </Text>
               <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput
@@ -780,6 +770,7 @@ export default function OnboardingScreen() {
           </KeyboardAvoidingView>
         )}
       </View>
+      <ItemSheet ref={sampleSheetRef} items={SAMPLE_ITEMS} />
     </View>
   );
 }
@@ -792,6 +783,14 @@ const styles = StyleSheet.create({
   h2: { fontSize: 19, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center', marginTop: 14 },
   h3: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   body: { fontSize: 17, lineHeight: 25, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center' },
+  privacySmall: {
+    fontSize: 13.5, lineHeight: 20, fontFamily: 'Inter_600SemiBold',
+    color: '#6B5B44', textAlign: 'center',
+  },
+  partnerIncluded: {
+    fontSize: 14.5, lineHeight: 21, fontFamily: 'Inter_800ExtraBold',
+    color: INK, textAlign: 'center',
+  },
   qmarkIcon: { width: 94, height: 94, alignSelf: 'center', marginBottom: 24 },
 
   iconsGrid: { width: '100%', height: 320, marginBottom: 28 },

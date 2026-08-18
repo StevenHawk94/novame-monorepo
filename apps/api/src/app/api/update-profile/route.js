@@ -107,7 +107,7 @@ export async function POST(request) {
     }
     
     // Onboarding funnel answers (2026-08-10 analytics) — whitelisted keys only.
-    if (['partner', 'bestie', 'family', 'special'].includes(onboardingWho)) {
+    if (['partner', 'parent', 'child', 'bestie', 'special'].includes(onboardingWho)) {
       updateData.onboarding_who = onboardingWho
     }
     if (['A', 'B', 'C', 'D'].includes(onboardingBlocker)) {

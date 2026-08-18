@@ -12,7 +12,10 @@ import { useRouter } from 'expo-router';
 
 import { QUIET_WINS, quietWinsFeedback } from '@novame/domain';
 import { GridBackground } from '../../src/components/ui/grid-background';
-import { submitQuietWins } from '../../src/lib/quiet-wins-api';
+import {
+  consumeQuietWinsFeedbackSequence,
+  submitQuietWins,
+} from '../../src/lib/quiet-wins-api';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
@@ -68,7 +71,8 @@ export default function QuietWinsScreen() {
     const ids = [...checked];
     const expected = XP_RULES.quietWins.award;
     const award = optimisticCloverAward(expected);
-    setFeedback(quietWinsFeedback(ids));
+    const feedbackSequence = consumeQuietWinsFeedbackSequence(ids);
+    setFeedback(quietWinsFeedback(ids, feedbackSequence));
     setXpAwarded(expected);
     setPhase('done');
     const res = await submitQuietWins(ids);

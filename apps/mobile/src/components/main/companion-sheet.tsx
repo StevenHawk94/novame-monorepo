@@ -103,11 +103,11 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 
   const kits: KitRow[] = useMemo(() => {
     return [
-      { key: 'new_lens', label: 'New Lens', desc: 'See something you concern in a different way', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
-      { key: 'true_north', label: 'True North', desc: 'Find out what actually matters to you right now', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
-      { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today, even if you missed it', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
-      { key: 'tame_enemy', label: 'Tame Enemy', desc: 'Quick release of your fear by taming them', icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
-      { key: 'visit_master', label: 'Visit Master', desc: 'Seek answers from the smart mind master', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
+      { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today, even if you missed it.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
+      { key: 'new_lens', label: 'New Lens', desc: 'Feeling stuck? A different angle might help.', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
+      { key: 'true_north', label: 'True North', desc: 'See what truly deserves your energy right now.', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
+      { key: 'tame_enemy', label: 'Tame Enemy', desc: "That voice working against you? Let's tame it.", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
+      { key: 'visit_master', label: 'Visit Master', desc: 'Need a straight answer? Ask the Bunny Master.', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
     ];
   }, [doneState, trueNorthAvail]);
 
@@ -159,7 +159,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.hangout}>Hey, What do you need from me?</Text>
+            <Text style={styles.hangout}>Got something on your mind?</Text>
             {visibleKits.map((kit) => (
               <Pressable
                 key={kit.key}

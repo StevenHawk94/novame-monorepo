@@ -7,8 +7,8 @@ import { apiClient } from '@/lib/api-client';
 /**
  * Analysis tab — onboarding funnel answers as bar charts.
  *
- * Two questions from the intro flow (Ob2 "Who is this person to you?" and
- * Ob3 "What makes it harder to stay close?"), one horizontal bar per
+ * Two questions from the intro flow (Ob3 "Who came to mind?" and
+ * Ob4 "What tends to get in the way?"), one horizontal bar per
  * option with count + share. Data: /api/admin/onboarding-analysis, which
  * counts profiles.onboarding_who / onboarding_blocker.
  */
@@ -21,16 +21,17 @@ type Analysis = {
 
 const WHO_LABELS: [string, string][] = [
   ['partner', 'Partner'],
+  ['parent', 'Parent'],
+  ['child', 'Child'],
   ['bestie', 'Best friend'],
-  ['family', 'Family member'],
   ['special', 'Someone special'],
 ];
 
 const BLOCKER_LABELS: [string, string][] = [
-  ['A', 'Life gets busy'],
-  ['B', 'You live far apart'],
-  ['C', "You don't want to bother them"],
-  ['D', "You don't know what to talk about"],
+  ['A', 'Our days get busy'],
+  ['B', 'We live far apart'],
+  ['C', 'I don’t want to overwhelm them'],
+  ['D', 'I’m not always sure what to say'],
 ];
 
 const BAR_COLORS = ['bg-amber-500', 'bg-orange-500', 'bg-rose-400', 'bg-violet-400'];
@@ -102,12 +103,12 @@ export default function AnalysisTab(): ReactElement {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <BarChart
-          title="Ob2 · Who is this person to you?"
+          title="Ob3 · Who came to mind?"
           labels={WHO_LABELS}
           counts={data.who}
         />
         <BarChart
-          title="Ob3 · What makes it harder to stay close?"
+          title="Ob4 · What tends to get in the way?"
           labels={BLOCKER_LABELS}
           counts={data.blocker}
         />

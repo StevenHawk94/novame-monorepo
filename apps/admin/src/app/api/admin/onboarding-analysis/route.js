@@ -8,7 +8,7 @@ function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } })
 }
 
-const WHO_KEYS = ['partner', 'bestie', 'family', 'special']
+const WHO_KEYS = ['partner', 'parent', 'child', 'bestie', 'special']
 const BLOCKER_KEYS = ['A', 'B', 'C', 'D']
 
 /**
