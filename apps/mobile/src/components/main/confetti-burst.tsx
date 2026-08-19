@@ -1,5 +1,5 @@
 /**
- * Full-screen confetti celebration (~1.8s): small colored pieces launch from
+ * Full-screen confetti celebration (~3s): small colored pieces launch from
  * the upper third, tumble down with drift and spin, fade near the floor,
  * then onDone fires so the parent can unmount. Brand palette, pointerEvents
  * none — it never blocks the tap that triggered it.
@@ -17,7 +17,8 @@ import Animated, {
 
 const COLORS = ['#F2A03D', '#7BB661', '#D9694E', '#F2C14E', '#8A6240', '#FFF6E8', '#6BA3D6'];
 const PIECES = 26;
-const DURATION = 1800;
+const DURATION = 2600;
+const MAX_DELAY = 350;
 
 type PieceSpec = {
   x: number;
@@ -75,7 +76,7 @@ export function ConfettiBurst({ onDone }: { onDone?: () => void }) {
     () =>
       Array.from({ length: PIECES }, (_, i) => ({
         x: Math.random() * width,
-        delay: Math.random() * 250,
+        delay: Math.random() * MAX_DELAY,
         fall: height * (0.55 + Math.random() * 0.45),
         drift: (Math.random() - 0.5) * 140,
         spin: (Math.random() - 0.5) * 720,

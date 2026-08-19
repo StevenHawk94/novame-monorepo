@@ -160,8 +160,9 @@ export default function ReflectTypingScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
-      {/* 输入界面统一 50% 黑色遮罩（设计要求）；pick 页保持原色 */}
-      {phase !== 'pick' && <View style={styles.scrim} />}
+      {/* Only the Reflect-method entry stays unshaded. Every page inside this
+          flow uses the same scrim so white labels remain readable. */}
+      <View pointerEvents="none" style={styles.scrim} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (

@@ -1,17 +1,11 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  type BottomSheetBackdropProps,
-} from '@gorhom/bottom-sheet';
 import type { ImageSourcePropType } from 'react-native';
 
 import { haptics } from '@/lib/haptics';
-import { getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { isQuietWinsDoneToday } from '@/lib/quiet-wins-api';
 import { isNewLensDoneToday } from '@/lib/lens-api';
 import { isTameEnemyDoneToday } from '@/lib/tame-enemy-api';
@@ -64,32 +58,21 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const sheetRef = useRef<BottomSheetModal>(null);
-  const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
+  const [visible, setVisible] = useState(false);
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
-  const snapPoints = useMemo(() => ['90%'], []);
 
   useImperativeHandle(ref, () => ({
     present: () => {
-      setCompanion(getCachedCompanion());
       setDoneState(readDoneState());
       setBalance(getCachedCosmetics().balance);
       void fetchCosmetics().then((c) => setBalance(c.balance));
-      sheetRef.current?.present();
+      setVisible(true);
     },
-    dismiss: () => sheetRef.current?.dismiss(),
+    dismiss: () => setVisible(false),
     refresh: () => {
-      setCompanion(getCachedCompanion());
       setDoneState(readDoneState());
     },
   }));
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.5} />
-    ),
-    [],
-  );
 
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
 
@@ -103,7 +86,7 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
 
   const kits: KitRow[] = useMemo(() => {
     return [
-      { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today, even if you missed it.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
+      { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
       { key: 'new_lens', label: 'New Lens', desc: 'Feeling stuck? A different angle might help.', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
       { key: 'true_north', label: 'True North', desc: 'See what truly deserves your energy right now.', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
       { key: 'tame_enemy', label: 'Tame Enemy', desc: "That voice working against you? Let's tame it.", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
@@ -117,85 +100,94 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   function openKit(row: KitRow) {
     if (!row.route) return;
     void haptics.medium();
-    // The sheet is now portalled above the whole root navigator so it also
-    // covers the custom tab bar. Dismiss it before pushing a tool route;
-    // otherwise the correctly elevated sheet would remain above that route.
-    sheetRef.current?.dismiss();
+    setVisible(false);
     router.push(row.route as never);
   }
 
 
   return (
-    <BottomSheetModal
-      ref={sheetRef}
-      snapPoints={snapPoints}
-      enableDynamicSizing={false}
-      backdropComponent={renderBackdrop}
-      handleComponent={null}
-      backgroundStyle={styles.sheetBg}
-      enableContentPanningGesture={false}
-      enableHandlePanningGesture={false}
-      enableOverDrag={false}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      hardwareAccelerated
+      onRequestClose={() => setVisible(false)}
     >
-      <View style={styles.outer}>
-        <GridBackground />
-        {/* Inset peach card with the brown outline (mock). */}
-        <View style={styles.inner}>
-          <ScrollView
-            style={styles.kitScroll}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scroll}
-          >
-            <View style={styles.header}>
-              <View style={styles.cloverPill}>
-                <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
-                <Text style={styles.cloverBalance}>{balance}</Text>
-              </View>
-            </View>
-            <View style={styles.portraitWrap}>
-              <Image
-                source={ICONS.interact}
-                style={[styles.portrait, screenH < 700 && { width: 110, height: 110 }]}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.hangout}>Got something on your mind?</Text>
-            {visibleKits.map((kit) => (
-              <Pressable
-                key={kit.key}
-                onPress={() => openKit(kit)}
-                style={({ pressed }) => [styles.kitCard, pressed && styles.kitCardPressed]}
+      <View style={styles.modalRoot}>
+        <Pressable style={styles.backdrop} onPress={() => setVisible(false)} />
+        <View style={[styles.sheet, { height: screenH * 0.9 }]}>
+          <View style={styles.outer}>
+            <GridBackground />
+            {/* One continuous peach panel reaches the physical screen bottom.
+                Safe-area padding only positions the close button/content. */}
+            <View style={styles.inner}>
+              <ScrollView
+                style={styles.kitScroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.scroll,
+                  { paddingBottom: Math.max(insets.bottom, 8) + 74 },
+                ]}
               >
-                <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.kitLabel}>{kit.label}</Text>
-                  <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+                <View style={styles.header}>
+                  <View style={styles.cloverPill}>
+                    <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
+                    <Text style={styles.cloverBalance}>{balance}</Text>
+                  </View>
                 </View>
+                <View style={styles.portraitWrap}>
+                  <Image
+                    source={ICONS.interact}
+                    style={[styles.portrait, screenH < 700 && { width: 110, height: 110 }]}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text style={styles.hangout}>Got something on your mind?</Text>
+                {visibleKits.map((kit) => (
+                  <Pressable
+                    key={kit.key}
+                    onPress={() => openKit(kit)}
+                    style={({ pressed }) => [styles.kitCard, pressed && styles.kitCardPressed]}
+                  >
+                    <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.kitLabel}>{kit.label}</Text>
+                      <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <Pressable
+                onPress={() => setVisible(false)}
+                style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
+                hitSlop={8}
+              >
+                <MaterialIcons name="close" size={26} color="#FFFFFF" />
               </Pressable>
-            ))}
-          </ScrollView>
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-            <Pressable
-              onPress={() => sheetRef.current?.dismiss()}
-              style={styles.closeBtn}
-              hitSlop={8}
-            >
-              <MaterialIcons name="close" size={26} color="#FFFFFF" />
-            </Pressable>
+            </View>
           </View>
         </View>
       </View>
-    </BottomSheetModal>
+    </Modal>
   );
 });
 
 CompanionSheet.displayName = 'CompanionSheet';
 
 const styles = StyleSheet.create({
-  sheetBg: { backgroundColor: 'transparent', borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  sheet: {
+    width: '100%',
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
   outer: {
     flex: 1, width: '100%', borderTopLeftRadius: 28, borderTopRightRadius: 28,
     overflow: 'hidden', paddingTop: 14, paddingHorizontal: 14,
+    backgroundColor: '#F9DCB8',
   },
   // Inset peach panel with the brown outline over the grid ground (mock).
   inner: {
@@ -234,8 +226,8 @@ const styles = StyleSheet.create({
     fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: '#8A7A6A',
     marginTop: 2, flexShrink: 1,
   },
-  footer: { alignItems: 'center', paddingTop: 8, backgroundColor: '#F9D9B2' },
   closeBtn: {
+    position: 'absolute', left: '50%', marginLeft: -27, zIndex: 3,
     width: 54, height: 54, borderRadius: 27,
     backgroundColor: '#5C3A24', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },

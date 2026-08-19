@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = 
   write_own: { icon: ICONS.ThemeWriteOwn, color: '#7BB661' },
 };
 const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
+const CELEBRATION_DURATION_MS = 3200;
 
 /**
  * Weekly Quests (design 2026-07-23: mock layout on the app's dark-brown
@@ -51,6 +52,15 @@ export default function QuestsScreen() {
       void fetchQuestStatus().then(setStatus);
     }, []),
   );
+
+  // Confetti.lottie is ~1.37s while the handmade shower runs for nearly 3s.
+  // Keep the shared overlay mounted until both animations have fully played;
+  // Lottie's finish callback must not remove the still-falling confetti.
+  useEffect(() => {
+    if (!confetti) return;
+    const timer = setTimeout(() => setConfetti(false), CELEBRATION_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [confetti]);
 
   const themes = useMemo(() => themesForScope('self'), []);
   const custom = themes.find((t) => t.isCustom);
@@ -206,8 +216,6 @@ export default function QuestsScreen() {
               loop={false}
               resizeMode="contain"
               style={styles.confettiLottie}
-              onAnimationFinish={() => setConfetti(false)}
-              onAnimationFailure={() => setConfetti(false)}
             />
           </View>
         )}

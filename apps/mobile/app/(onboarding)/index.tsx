@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,8 +10,6 @@ import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
-import { ItemSheet, type ItemSheetRef } from '../../src/components/main/item-sheet';
-import type { CollectedItem } from '../../src/lib/bags-api';
 import {
   markIntroSeen,
   setBunnyName,
@@ -42,10 +40,10 @@ const CARD = '#FFF4E3';
 const BTN = '#4A3220';
 
 const WHO_OPTIONS = [
-  { key: 'partner', icon: ICONS.obWhoPartner, label: 'Partner' },
-  { key: 'parent', icon: ICONS.obWhoFamily, label: 'Parent' },
-  { key: 'child', icon: ICONS.obWhoFamily, label: 'Child' },
-  { key: 'bestie', icon: ICONS.obWhoFriends, label: 'Best friend' },
+  { key: 'partner', icon: ICONS.obWhoPartner, label: 'My partner' },
+  { key: 'parent', icon: ICONS.obWhoMomDad, label: 'My mom or dad' },
+  { key: 'child', icon: ICONS.obWhoSonDaughter, label: 'My son or daughter' },
+  { key: 'bestie', icon: ICONS.obWhoFriends, label: 'My best friend' },
   { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
 ];
 
@@ -56,11 +54,23 @@ const BLOCKER_OPTIONS = [
   { key: 'D', label: 'I’m not always sure what to say' },
 ];
 
-const BLOCKER_FEEDBACK: Record<string, string> = {
-  A: 'It’s easy to care deeply and still miss the little things.\n\nBy the time you finally talk, the small moments that made up the day are often already gone.',
-  B: 'Distance doesn’t only separate places. It separates everyday moments.\n\nYou hear the big updates, but miss the tiny details that make you feel part of their life.',
-  C: 'You shouldn’t have to choose between checking in and giving them space.\n\nSometimes the gentlest connection begins with letting them share when it feels right.',
-  D: 'Closeness doesn’t always need a big conversation.\n\nSometimes one small glimpse into their day is enough to make talking feel natural again.',
+const BLOCKER_FEEDBACK: Record<string, { title: string; body: string }> = {
+  A: {
+    title: 'It’s easy to care deeply and still miss the little things.',
+    body: 'By the time you finally talk, the small moments that made up the day are often already gone.',
+  },
+  B: {
+    title: 'Distance doesn’t only separate places. It separates everyday moments.',
+    body: 'You hear the big updates, but miss the little moments that make you feel part of their life.',
+  },
+  C: {
+    title: 'You shouldn’t have to choose between checking in and giving them space.',
+    body: 'Sometimes the gentlest connection begins with small moments they can share in their own time.',
+  },
+  D: {
+    title: 'Closeness doesn’t always need a big conversation.',
+    body: 'Sometimes the little moments from their day are all it takes to make talking feel natural again.',
+  },
 };
 
 // Ob8's insight teasers — the SAME six pills the Connection tab shows while
@@ -74,7 +84,7 @@ const INSIGHT_PILLS = [
   { label: 'Hangout Ideas', icon: ICONS.hangout },
 ];
 
-// Ob5's tappable sample reflection (Jimmy's card). Keep these IDs on the
+// Ob5's tappable sample reflection (Mom's card). Keep these IDs on the
 // current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
 // art and render as empty tiles.
 const SAMPLE_AVATAR = require('../../assets/profile/default-3.webp');
@@ -86,24 +96,6 @@ const SAMPLE_DAY = [
   { itemId: 'memory.0005_baking', displayName: 'Baking', category: 'Food & Drink', note: 'Baked something sweet after dinner and saved a piece for tomorrow.' },
   { itemId: 'memory.1363_movie_theater', displayName: 'Movie Theater', category: 'Entertainment & Leisure', note: 'Ended the day with a cozy movie and finally slowed down.' },
 ];
-
-const SAMPLE_ITEMS: CollectedItem[] = SAMPLE_DAY.map((sample, index) => {
-  const createdAt = new Date(Date.now() - (SAMPLE_DAY.length - index) * 60 * 60 * 1000).toISOString();
-  return {
-    itemId: sample.itemId,
-    displayName: sample.displayName,
-    rarity: 'common',
-    emoji: '📦',
-    category: sample.category,
-    count: 1,
-    firstSeenAt: createdAt,
-    memories: [{
-      excerpt: sample.note,
-      rawExcerpt: sample.note,
-      createdAt,
-    }],
-  };
-});
 
 type Step =
   | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imagine'
@@ -122,7 +114,7 @@ export default function OnboardingScreen() {
   const [idx, setIdx] = useState(0);
   const [who, setWho] = useState<string | null>(null);
   const [blocker, setBlocker] = useState<string | null>(null);
-  const sampleSheetRef = useRef<ItemSheetRef>(null);
+  const [sampleDetailsOpen, setSampleDetailsOpen] = useState(false);
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [purchasing, setPurchasing] = useState(false);
   const [purchased, setPurchased] = useState(false);
@@ -339,7 +331,7 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <ExpoImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
-            <Text style={styles.h1}>Stay close to the people who matter.</Text>
+            <Text style={styles.heroTitle}>{'Stay close to the\npeople who matter.'}</Text>
             <Text style={styles.h2}>Even when life gets busy.</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Start" onPress={next} />
@@ -391,7 +383,7 @@ export default function OnboardingScreen() {
                 onPress={() => { void haptics.light(); setBlocker(o.key); }}
                 style={[styles.optionRow, styles.optionRowCenter, blocker === o.key && styles.optionRowOn]}
               >
-                <Text style={styles.optionText}>{o.label}</Text>
+                <Text style={[styles.optionText, styles.blockerOptionText]}>{o.label}</Text>
               </Pressable>
             ))}
             <View style={{ flex: 1 }} />
@@ -402,13 +394,23 @@ export default function OnboardingScreen() {
         {step === 'feedback' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{BLOCKER_FEEDBACK[blocker ?? 'A']}</Text>
-            </View>
-            <Text style={[styles.h3, { marginTop: 30 }]}>
-              What if those little moments had somewhere to go?
+            <Text style={styles.feedbackTitle}>
+              {BLOCKER_FEEDBACK[blocker ?? 'A'].title}
             </Text>
-            <View style={{ flex: 1 }} />
+            <Text style={styles.feedbackBody}>
+              {BLOCKER_FEEDBACK[blocker ?? 'A'].body}
+            </Text>
+            <View style={{ flex: 0.8 }} />
+            <View style={styles.feedbackPromptWrap}>
+              <View style={styles.feedbackPromptBubble}>
+                <Text style={styles.feedbackPromptText}>
+                  What if those little moments had somewhere to go?
+                </Text>
+              </View>
+              <View style={styles.feedbackPromptTail} />
+              <ExpoImage source={ICONS.obBunnyHead} style={styles.feedbackLogo} contentFit="contain" />
+            </View>
+            <View style={{ height: 24 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         )}
@@ -421,26 +423,26 @@ export default function OnboardingScreen() {
               No pressure to start a conversation. Just something real you can notice, remember,
               or reach out about.
             </Text>
-            {/* Mock 2026-08-10: Jimmy's reflection card — avatar + name + time,
-                then the six tappable items. */}
-            <View style={styles.sampleCard}>
+            {/* Mom's reflection card — the whole window opens the six
+                memory details together, matching the real Paired feed. */}
+            <Pressable
+              onPress={() => { void haptics.light(); setSampleDetailsOpen(true); }}
+              style={({ pressed }) => [styles.sampleCard, pressed && styles.sampleCardPressed]}
+            >
               <View style={styles.sampleHeader}>
                 <ExpoImage source={SAMPLE_AVATAR} style={styles.sampleAvatar} contentFit="cover" />
-                <Text style={styles.sampleName}>Jimmy</Text>
+                <Text style={styles.sampleName}>Mom</Text>
                 <Text style={styles.sampleTime}>10h ago</Text>
               </View>
               <View style={styles.sampleRow}>
                 {SAMPLE_DAY.map((s) => (
-                  <Pressable
-                    key={s.itemId}
-                    onPress={() => { void haptics.light(); sampleSheetRef.current?.present(s.itemId); }}
-                  >
+                  <View key={s.itemId} pointerEvents="none">
                     <ItemSprite itemId={s.itemId} size={44} radius={12} />
-                  </Pressable>
+                  </View>
                 ))}
               </View>
-              <Text style={styles.sampleHint}>Tap an item to see its memory</Text>
-            </View>
+              <Text style={styles.sampleHint}>Tap to see their memory details.</Text>
+            </Pressable>
             <Text style={[styles.privacySmall, { marginTop: 18 }]}>
               They choose what becomes part of your shared space.
             </Text>
@@ -474,11 +476,10 @@ export default function OnboardingScreen() {
             <Text style={[styles.body, { marginTop: 20 }]}>
               Add the widget to your Home Screen and see the latest moments they&apos;ve chosen to share.
             </Text>
-            <Text style={[styles.body, { marginTop: 14 }]}>
-              Small glimpses into each other&apos;s lives, so you can reach out with more understanding,
-              or simply let them know you&apos;re there.
-            </Text>
             <ExpoImage source={ICONS.obWidgetPhone} style={styles.widgetPhone} contentFit="contain" />
+            <Text style={styles.spaceCaption}>
+              So you can reach out with more understanding, or simply let them know you&apos;re there.
+            </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -512,16 +513,23 @@ export default function OnboardingScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Close doesn&apos;t have to mean exposed.</Text>
-            <View style={[styles.card, { marginTop: 26, paddingVertical: 34 }]}>
-              <Text style={styles.cardBodyBold}>
-                Your reflections begin privately.{'\n'}
-                You decide what enters your shared space.{'\n'}
-                You can change or remove what you share at any time.
-              </Text>
-              <Text style={[styles.cardBodyBold, { marginTop: 18 }]}>
-                Your moments. Your boundaries. Your choice.
-              </Text>
+            <Text style={styles.boundaryIntro}>
+              Your reflections begin privately.{'\n'}
+              You decide what enters your shared space.
+            </Text>
+            <View style={styles.boundaryVisualWrap}>
+              <ExpoImage
+                source={ICONS.obPrivacyPanel}
+                style={styles.boundaryVisual}
+                contentFit="contain"
+              />
+              <ExpoImage
+                source={ICONS.privacy}
+                style={styles.boundaryPrivacyIcon}
+                contentFit="contain"
+              />
             </View>
+            <Text style={styles.boundaryFooter}>Your moments. Your boundaries. Your choice.</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -770,7 +778,48 @@ export default function OnboardingScreen() {
           </KeyboardAvoidingView>
         )}
       </View>
-      <ItemSheet ref={sampleSheetRef} items={SAMPLE_ITEMS} />
+      <Modal
+        visible={sampleDetailsOpen}
+        transparent
+        statusBarTranslucent
+        navigationBarTranslucent
+        animationType="slide"
+        onRequestClose={() => setSampleDetailsOpen(false)}
+      >
+        <View style={styles.sampleDetailOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setSampleDetailsOpen(false)}
+            accessibilityLabel="Close memory details"
+          />
+          <View style={[styles.sampleDetailSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={styles.sampleDetailHeader}>
+              <ExpoImage source={SAMPLE_AVATAR} style={styles.sampleDetailAvatar} contentFit="cover" />
+              <Text style={styles.sampleDetailName} numberOfLines={1}>Mom</Text>
+              <Text style={styles.sampleDetailTime}>10h ago</Text>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.sampleDetailScroll}
+            >
+              {SAMPLE_DAY.map((sample) => (
+                <View key={sample.itemId} style={styles.sampleDetailCard}>
+                  <ItemSprite itemId={sample.itemId} size={72} radius={14} />
+                  <Text style={styles.sampleDetailText}>{sample.note}</Text>
+                </View>
+              ))}
+            </ScrollView>
+            <Pressable
+              onPress={() => { void haptics.light(); setSampleDetailsOpen(false); }}
+              style={styles.sampleDetailClose}
+              hitSlop={10}
+              accessibilityLabel="Close memory details"
+            >
+              <MaterialIcons name="close" size={28} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -780,6 +829,7 @@ const styles = StyleSheet.create({
   center: { flexGrow: 1, alignItems: 'stretch' },
 
   h1: { fontSize: 30, lineHeight: 40, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
+  heroTitle: { fontSize: 32, lineHeight: 42, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   h2: { fontSize: 19, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center', marginTop: 14 },
   h3: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   body: { fontSize: 17, lineHeight: 25, fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center' },
@@ -799,12 +849,57 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 22, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   cardBodyBold: { fontSize: 17, lineHeight: 26, fontFamily: 'Inter_700Bold', color: '#2B2318', textAlign: 'center' },
 
+  feedbackTitle: {
+    fontSize: 30, lineHeight: 39, fontFamily: 'Inter_800ExtraBold',
+    color: INK, textAlign: 'center',
+  },
+  feedbackBody: {
+    marginTop: 24, fontSize: 16, lineHeight: 23, fontFamily: 'Inter_500Medium',
+    color: '#2B2318', textAlign: 'center',
+  },
+  feedbackPromptWrap: { alignItems: 'center' },
+  feedbackPromptBubble: {
+    width: '78%', minHeight: 76, borderRadius: 32,
+    backgroundColor: '#8C5948',
+    paddingHorizontal: 22, paddingVertical: 16,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  feedbackPromptText: {
+    fontSize: 16, lineHeight: 21, fontFamily: 'Inter_800ExtraBold',
+    color: '#FFFFFF', textAlign: 'center',
+  },
+  feedbackPromptTail: {
+    width: 0, height: 0, marginTop: -1,
+    borderLeftWidth: 15, borderRightWidth: 15, borderTopWidth: 22,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#8C5948',
+  },
+  feedbackLogo: { width: 72, height: 72, marginTop: 2 },
+
+  boundaryIntro: {
+    marginTop: 38, fontSize: 17, lineHeight: 26,
+    fontFamily: 'Inter_500Medium', color: '#2B2318', textAlign: 'center',
+  },
+  boundaryVisualWrap: {
+    width: '100%', alignSelf: 'center', marginTop: 58,
+    position: 'relative', justifyContent: 'center',
+  },
+  boundaryVisual: { width: '100%', aspectRatio: 700 / 180 },
+  boundaryPrivacyIcon: {
+    position: 'absolute', width: 58, height: 58,
+    top: -29, left: '50%', marginLeft: -29,
+  },
+  boundaryFooter: {
+    marginTop: 34, fontSize: 14.5, lineHeight: 21,
+    fontFamily: 'Inter_500Medium', color: '#2B2318', textAlign: 'center',
+  },
+
   optionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     backgroundColor: '#FFFCF4', borderRadius: 28, paddingVertical: 22, paddingHorizontal: 24,
     marginBottom: 16, borderWidth: 2.5, borderColor: 'transparent',
   },
   optionRowCenter: { justifyContent: 'center' },
+  blockerOptionText: { width: '100%', textAlign: 'center' },
   optionRowOn: { borderColor: BTN },
   optionEmoji: { fontSize: 24 },
   optionIcon: { width: 48, height: 48 },
@@ -813,14 +908,45 @@ const styles = StyleSheet.create({
   optionText: { fontSize: 19, fontFamily: 'Inter_700Bold', color: '#161311' },
 
   sampleCard: { backgroundColor: '#FFFDF8', borderRadius: 24, padding: 18, marginTop: 26 },
+  sampleCardPressed: { transform: [{ translateY: 2 }], opacity: 0.96 },
   sampleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   sampleAvatar: { width: 38, height: 38, borderRadius: 19 },
   sampleName: { flex: 1, fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   sampleTime: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
   sampleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' },
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
+  sampleDetailOverlay: {
+    flex: 1, justifyContent: 'flex-end',
+  },
+  sampleDetailSheet: {
+    height: '90%', backgroundColor: '#FBF7EE',
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    paddingTop: 18, paddingHorizontal: 18,
+  },
+  sampleDetailHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  sampleDetailAvatar: { width: 46, height: 46, borderRadius: 23 },
+  sampleDetailName: { flex: 1, fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
+  sampleDetailTime: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
+  sampleDetailClose: {
+    width: 56, height: 56, borderRadius: 28, backgroundColor: '#4A3220',
+    alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: 12,
+  },
+  sampleDetailScroll: { gap: 14, paddingBottom: 12 },
+  sampleDetailCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 22,
+    borderWidth: 1.5, borderColor: '#E5C8B8', padding: 16,
+  },
+  sampleDetailText: {
+    flex: 1, fontSize: 16, lineHeight: 24,
+    fontFamily: 'Inter_500Medium', color: '#1B1B1B',
+  },
 
-  widgetPhone: { width: '100%', aspectRatio: 540 / 500, marginTop: 26 },
+  widgetPhone: { width: '90%', alignSelf: 'center', aspectRatio: 540 / 500, marginTop: 26 },
+  spaceCaption: {
+    marginTop: 12, fontSize: 14, lineHeight: 20,
+    fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center',
+  },
   howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
   // Same visual system as the Connection tab's unpaired teaser pills.
   insightGrid: {

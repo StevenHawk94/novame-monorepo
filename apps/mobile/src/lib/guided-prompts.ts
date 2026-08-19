@@ -3,7 +3,7 @@
  *
  * The chooser lists the 12 prompt-reflection categories (curated, ranked
  * subsets of the master catalog — generated into guided-catalog.g.ts from
- * Icon_Mapping_Core_Tables_v25.xlsx). The user picks the themes they care
+ * Icon_Mapping_Core_Tables_v26.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
  * Guided Reflect uses the same 12-category item library.
@@ -82,7 +82,7 @@ export function itemsForGuidedCategory(key: string): string[] {
   return extra.length > 0 ? [...base, ...extra] : base;
 }
 
-/** v25 secondary tabs in workbook order; icons stay in workbook row order. */
+/** v26 secondary tabs in workbook order; icons stay in workbook row order. */
 export function subcategoriesForGuidedCategory(key: string): GuidedSubcategory[] {
   const bundled = SUBCATEGORIES_BY_KEY.get(key) ?? [];
   const categorized = new Set(bundled.flatMap((subcategory) => subcategory.itemIds));
@@ -118,21 +118,52 @@ export function setGuidedSelection(keys: string[]): void {
   storage.set(kGuidedCategories.name, JSON.stringify(keys.slice(0, GUIDED_MAX)));
 }
 
-/** Explicit Guided Prompt selection history used by the Favorite tab. */
-export function getGuidedFavoriteItems(): string[] {
+export type GuidedFavoriteItemsByCategory = Record<string, string[]>;
+
+function groupFavoriteItems(itemIds: string[]): GuidedFavoriteItemsByCategory {
+  const grouped: GuidedFavoriteItemsByCategory = {};
+  for (const id of new Set(itemIds)) {
+    const category = reflectCategoryForItem(id);
+    if (!category) continue;
+    (grouped[category] ??= []).push(id);
+  }
+  return grouped;
+}
+
+/** Explicit Guided Prompt selection history, isolated by prompt category. */
+export function getGuidedFavoriteItems(): GuidedFavoriteItemsByCategory {
   try {
     const raw = storage.getString(kGuidedFavoriteItems.name);
-    if (!raw) return [];
+    if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return [...new Set(parsed.filter((id): id is string => typeof id === 'string' && id.length > 0))];
+    // Migrate the pre-category array format in memory. It is written back in
+    // the grouped format after the next successful Guided reflection.
+    if (Array.isArray(parsed)) {
+      return groupFavoriteItems(
+        parsed.filter((id): id is string => typeof id === 'string' && id.length > 0),
+      );
+    }
+    if (!parsed || typeof parsed !== 'object') return {};
+    const grouped: GuidedFavoriteItemsByCategory = {};
+    for (const [category, ids] of Object.entries(parsed)) {
+      if (!BY_KEY.has(category) || !Array.isArray(ids)) continue;
+      grouped[category] = [...new Set(ids.filter(
+        (id): id is string =>
+          typeof id === 'string' && id.length > 0 && reflectCategoryForItem(id) === category,
+      ))];
+    }
+    return grouped;
   } catch {
-    return [];
+    return {};
   }
 }
 
-export function rememberGuidedFavoriteItems(itemIds: string[]): string[] {
-  const merged = [...new Set([...getGuidedFavoriteItems(), ...itemIds])];
+export function rememberGuidedFavoriteItems(itemIds: string[]): GuidedFavoriteItemsByCategory {
+  const existing = getGuidedFavoriteItems();
+  const merged = groupFavoriteItems([
+    ...Object.values(existing).flat(),
+    ...itemIds,
+  ]);
   storage.set(kGuidedFavoriteItems.name, JSON.stringify(merged));
   return merged;
 }

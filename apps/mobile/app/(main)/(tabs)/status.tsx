@@ -11,6 +11,7 @@ import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { OffsetCard } from '@/components/ui/offset-card';
 import {
   fetchCommonItems, fetchInsights, fetchPairing,
   getCachedCommonItems, getCachedInsights, getCachedPairing,
@@ -169,7 +170,10 @@ export default function ConnectionDashboardScreen() {
           <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>Everything new about them at a glance.</Text>
         </View>
         {/* Always shown (mock); display-only until a partner exists. */}
-        <Pressable
+        <OffsetCard
+          color="#C96F2A"
+          offset={4}
+          radius={20}
           disabled={!partner}
           onPress={() => {
             if (!partner) return;
@@ -178,11 +182,11 @@ export default function ConnectionDashboardScreen() {
               pathname: '/(main)/their-patterns',
             } as never);
           }}
-          style={st.hubPill}
+          cardStyle={st.hubPill}
         >
           <Image source={ICONS.personalVibe} style={st.hubPillIcon} resizeMode="contain" />
           <Text style={st.hubPillText}>Weekly Recap</Text>
-        </Pressable>
+        </OffsetCard>
       </View>
 
       {!pairing || !partner ? (

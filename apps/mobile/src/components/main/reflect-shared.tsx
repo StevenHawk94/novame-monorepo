@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { MaterialIcons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 
 import { ITEM_DICTIONARY } from '@novame/engine';
 
@@ -31,8 +32,6 @@ import { ICONS } from '@/lib/icons';
 import { setReflectVisibility, type ReflectSnapshot } from '@/lib/reflect-api';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
-import { FireworksBurst } from '@/components/ui/fireworks-burst';
-import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { itemDisplayName } from '@/lib/remote-items';
 
@@ -313,13 +312,20 @@ export function ReflectResultView({
 
   return (
     <View style={s.resultWrap}>
-      <FireworksBurst />
-      <ConfettiBurst />
-      <ScrollView contentContainerStyle={s.resultScroll} showsVerticalScrollIndicator={false}>
+      <View pointerEvents="none" style={s.reflectCelebration}>
+        <LottieView
+          source={require('../../../assets/animations/reflect.lottie')}
+          autoPlay
+          loop={false}
+          resizeMode="contain"
+          style={s.reflectCelebrationLottie}
+        />
+      </View>
+      <ScrollView style={s.resultScroller} contentContainerStyle={s.resultScroll} showsVerticalScrollIndicator={false}>
         <Text style={s.resultEmoji}>{'🎉'}</Text>
         <Text style={s.resultTitle}>Reflection Done</Text>
 
-        <SpringPop>
+        <SpringPop boundedBounce>
           <View style={s.cloverCard}>
             <Image source={ICONS.Clover} style={{ width: 34, height: 34 }} resizeMode="contain" />
             <Text style={s.cloverAmount}>+{result.xpAwarded}</Text>
@@ -327,7 +333,7 @@ export function ReflectResultView({
           </View>
         </SpringPop>
 
-        <SpringPop delay={140}>
+        <SpringPop delay={140} boundedBounce>
           <View style={s.itemsCard}>
             <View style={s.itemsCardHeader}>
               <Image source={ICONS.memory} style={{ width: 28, height: 28 }} resizeMode="contain" />
@@ -350,7 +356,7 @@ export function ReflectResultView({
         </SpringPop>
 
         {result.story ? (
-          <SpringPop delay={240}>
+          <SpringPop delay={240} boundedBounce>
             <View style={s.storyCard}>
               <Text style={s.storyTitle}>{'✨ A little story of your day'}</Text>
               <Text style={s.storyBody}>{result.story}</Text>
@@ -434,7 +440,19 @@ const s = StyleSheet.create({
   doneBtnText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },
 
   resultWrap: { flex: 1 },
-  resultScroll: { alignItems: 'stretch', gap: 14, paddingBottom: 16, paddingTop: 8 },
+  reflectCelebration: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reflectCelebrationLottie: { width: '100%', height: '100%' },
+  resultScroller: { flex: 1 },
+  resultScroll: {
+    flexGrow: 1, justifyContent: 'center', alignItems: 'stretch', gap: 14,
+    paddingVertical: 16,
+  },
   resultEmoji: { fontSize: 40, textAlign: 'center' },
   resultTitle: {
     fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',

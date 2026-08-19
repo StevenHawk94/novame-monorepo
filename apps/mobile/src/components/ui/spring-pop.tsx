@@ -9,24 +9,44 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 type Props = {
   delay?: number;
+  clampOvershoot?: boolean;
+  boundedBounce?: boolean;
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 };
 
-export function SpringPop({ delay = 0, style, children }: Props) {
-  const scale = useSharedValue(0.3);
+export function SpringPop({
+  delay = 0,
+  clampOvershoot = false,
+  boundedBounce = false,
+  style,
+  children,
+}: Props) {
+  const scale = useSharedValue(boundedBounce ? 0 : 0.3);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withDelay(delay, withSpring(1, { damping: 11, stiffness: 170, mass: 0.8 }));
+    scale.value = withDelay(
+      delay,
+      boundedBounce
+        ? withSequence(
+            withTiming(1, { duration: 210 }),
+            withTiming(0.9, { duration: 100 }),
+            withTiming(1, { duration: 140 }),
+          )
+        : withSpring(1, {
+            damping: 11, stiffness: 170, mass: 0.8, overshootClamping: clampOvershoot,
+          }),
+    );
     opacity.value = withDelay(delay, withTiming(1, { duration: 180 }));
-  }, [scale, opacity, delay]);
+  }, [scale, opacity, delay, clampOvershoot, boundedBounce]);
 
   const anim = useAnimatedStyle(() => ({
     opacity: opacity.value,

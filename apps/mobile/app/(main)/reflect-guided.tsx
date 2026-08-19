@@ -78,12 +78,21 @@ export default function ReflectGuidedScreen() {
   const [error, setError] = useState<ReflectError | null>(null);
   const [result, setResult] = useState<ReflectSnapshot | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
-  const [historicalItemIds, setHistoricalItemIds] = useState<string[]>(() => {
+  // Freeze Favorite eligibility and contents when this Guided flow opens.
+  // Selections made during this run are persisted on submit, but become
+  // visible only the next time the user opens Guided Prompt.
+  const favoriteItemsAtOpen = useMemo(() => {
     const explicitHistory = getGuidedFavoriteItems();
+    const hasExplicitHistory = Object.values(explicitHistory).some((ids) => ids.length > 0);
     // Existing installs predate explicit selection history. Seed them once
     // from Mine so familiar items do not disappear immediately after upgrade.
-    return explicitHistory.length > 0 ? explicitHistory : getCachedBags().map((item) => item.itemId);
-  });
+    if (hasExplicitHistory) return explicitHistory;
+    return getCachedBags().reduce<Record<string, string[]>>((grouped, item) => {
+      const category = reflectCategoryForItem(item.itemId);
+      if (category) (grouped[category] ??= []).push(item.itemId);
+      return grouped;
+    }, {});
+  }, []);
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
   const isPaid = getCachedSubscriptionTier() !== 'free';
 
@@ -102,8 +111,8 @@ export default function ReflectGuidedScreen() {
     [chosen, step],
   );
   const favoriteIds = useMemo(
-    () => [...new Set([...historicalItemIds, ...selected])],
-    [historicalItemIds, selected],
+    () => [...new Set(favoriteItemsAtOpen[chosen[step] ?? ''] ?? [])],
+    [chosen, favoriteItemsAtOpen, step],
   );
   const showFavorite = favoriteIds.length > FAVORITE_THRESHOLD;
 
@@ -212,7 +221,10 @@ export default function ReflectGuidedScreen() {
     });
     setSubmitting(false);
     if (res.ok) {
-      setHistoricalItemIds(rememberGuidedFavoriteItems([...historicalItemIds, ...selected]));
+      rememberGuidedFavoriteItems([
+        ...Object.values(favoriteItemsAtOpen).flat(),
+        ...selected,
+      ]);
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
       void fetchReflectFeed();
@@ -245,7 +257,7 @@ export default function ReflectGuidedScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
-      {phase !== 'choose' && <View style={styles.scrim} />}
+      <View pointerEvents="none" style={styles.scrim} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (

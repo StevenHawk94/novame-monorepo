@@ -163,7 +163,7 @@ export default function SharedMemoryCreateScreen() {
   return (
     <View style={styles.screen}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
-      <View style={styles.scrim} />
+      <View pointerEvents="none" style={styles.scrim} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && <ReflectTopBar remaining={remaining} onBack={() => router.back()} />}

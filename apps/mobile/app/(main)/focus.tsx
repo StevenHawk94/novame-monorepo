@@ -170,6 +170,9 @@ export default function FocusScreen() {
                 </OffsetCard>
               );
             })}
+            <Text style={styles.rewardNote}>
+              You&apos;ll get a reward after completing a session, and a new session will be available the next day.
+            </Text>
           </ScrollView>
         </View>
       </ImageBackground>
@@ -244,6 +247,10 @@ const styles = StyleSheet.create({
   sub: { fontSize: 15, fontFamily: 'Inter_500Medium', color: GREEN, marginTop: 8, marginBottom: 18, lineHeight: 21 },
 
   list: { paddingBottom: 32, gap: 6 },
+  rewardNote: {
+    marginTop: 12, paddingHorizontal: 10, textAlign: 'center',
+    fontSize: 12.5, lineHeight: 18, fontFamily: 'Inter_500Medium', color: GREEN,
+  },
   sceneCard: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 16, paddingHorizontal: 20, gap: 12,

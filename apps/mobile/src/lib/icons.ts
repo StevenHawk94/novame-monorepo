@@ -52,7 +52,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   hangout: require('../../assets/Icons/hangout.png'),
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
-  patternCalendar: require('../../assets/Icons/pattern-calendar.png'),
   personalVibe: require('../../assets/Icons/personal-vibe.png'),
   weekPlan: require('../../assets/Icons/Week-Plan.png'),
   setting: require('../../assets/Icons/setting.png'),
@@ -62,7 +61,8 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   // Onboarding v3 (grid background + screen art)
   obWhoPartner: require('../../assets/Icons/ob2-partner.png'),
   obWhoFriends: require('../../assets/Icons/ob2-friends.png'),
-  obWhoFamily: require('../../assets/Icons/ob2-family.png'),
+  obWhoMomDad: require('../../assets/Icons/Mom-Dad.png'),
+  obWhoSonDaughter: require('../../assets/Icons/Son-Daughter.png'),
   obWhoSpecial: require('../../assets/Icons/ob2-special.png'),
   obCreatorBubble: require('../../assets/Icons/ob-12.png'),
   obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
@@ -70,6 +70,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obQuestion: require('../../assets/onboarding/ob-2.png'),
   obWidgetPhone: require('../../assets/onboarding/ob-7.png'),
   obHowItWorksGif: require('../../assets/onboarding/ob-6.gif'),
+  obPrivacyPanel: require('../../assets/onboarding/ob-9.webp'),
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 

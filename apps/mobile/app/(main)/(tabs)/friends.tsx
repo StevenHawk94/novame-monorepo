@@ -13,6 +13,7 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { GridBackground } from '@/components/ui/grid-background';
 import { DateRangeCalendar } from '@/components/ui/date-range-calendar';
+import { OffsetCard } from '@/components/ui/offset-card';
 import { GoodVibesPicker } from '@/components/main/good-vibes';
 import {
   fetchFriends, fetchFriendFeed, markFriendRead,
@@ -184,7 +185,7 @@ export default function FriendsScreen() {
           <View style={styles.headerIcons}>
             {paired && (
               <Pressable onPress={() => setCalendarOpen(true)} style={styles.iconBtn} hitSlop={8}>
-                <Image source={ICONS.patternCalendar} style={styles.calendarHeaderIcon} resizeMode="contain" />
+                <Image source={ICONS.calendar} style={styles.calendarHeaderIcon} resizeMode="contain" />
               </Pressable>
             )}
             <Pressable onPress={onPrivacyGear} style={styles.iconBtn} hitSlop={6}>
@@ -204,10 +205,19 @@ export default function FriendsScreen() {
                   <MaterialIcons name="menu" size={13} color="#FFFFFF" />
                 </View>
                 <Text style={styles.panelTitle}>Latest memories</Text>
-                <Pressable onPress={() => setVibesOpen(true)} style={styles.vibesButton}>
+                <OffsetCard
+                  color="#C9A97C"
+                  offset={4}
+                  radius={18}
+                  onPress={() => {
+                    void haptics.light();
+                    setVibesOpen(true);
+                  }}
+                  cardStyle={styles.vibesButton}
+                >
                   <MaterialIcons name="favorite" size={22} color="#FF721F" />
                   <Text style={styles.vibesButtonText}>Good Vibes</Text>
-                </Pressable>
+                </OffsetCard>
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.feedScroll}>
@@ -474,7 +484,6 @@ const styles = StyleSheet.create({
   vibesButton: {
     flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#53351D',
     borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10,
-    shadowColor: '#2A1B10', shadowOpacity: 0.3, shadowRadius: 0, shadowOffset: { width: 0, height: 3 }, elevation: 2,
   },
   vibesButtonText: { color: '#FFF8E9', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
   listChip: {

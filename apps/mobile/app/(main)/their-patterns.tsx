@@ -224,7 +224,7 @@ export default function TheirPatternsScreen() {
             style={styles.calendarButton}
             hitSlop={10}
           >
-            <Image source={ICONS.patternCalendar} style={styles.calendarIcon} resizeMode="contain" />
+            <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
           </Pressable>
         </View>
       </SafeAreaView>

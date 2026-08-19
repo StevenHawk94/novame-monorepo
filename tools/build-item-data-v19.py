@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate runtime item data from the v25 rules over stable v19 icon IDs."""
+"""Generate runtime item data from the v26 rules over stable v19 icon IDs."""
 
 from __future__ import annotations
 
@@ -14,13 +14,13 @@ from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "apps" / "mobile" / "assets" / "memory items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v25.xlsx"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v26.xlsx"
 DICTIONARY = ROOT / "packages" / "engine" / "src" / "items" / "dictionary.json"
 IMAGE_MAP = ROOT / "apps" / "mobile" / "src" / "lib" / "item-images.g.ts"
 GUIDED_CATALOG = ROOT / "apps" / "mobile" / "src" / "lib" / "guided-catalog.g.ts"
 MIGRATION = ROOT / "supabase" / "migrations" / "20260815000041_items_v19_catalog.sql"
-QA_PATH = SOURCE_DIR / "items-v25-data-qa.json"
-# v25 keeps all 5,390 icon identities and bundled images stable. It updates
+QA_PATH = SOURCE_DIR / "items-v26-data-qa.json"
+# v26 keeps all 5,390 icon identities and bundled images stable. It updates
 # rules + category metadata and adds Guided Prompt subcategories. Never rewrite
 # already-shipped image requires or an already-executed SQL migration here.
 WRITE_IMAGE_MAP = False
@@ -42,10 +42,24 @@ CATEGORY_KEYS = {
     "Shopping & Errands": "shopping_errands",
 }
 
-# v25 preserves the resolved cross-icon executable collisions from v23.
-# Keep this table explicit and empty: any future collision fails generation
-# until a product-reviewed direct carrier is added here.
-CONFLICT_WINNERS = {}
+# Cross-icon executable collisions must resolve to one deterministic, concrete
+# carrier. Keep this explicit so future workbook changes fail generation until
+# each ambiguity has been product-reviewed.
+CONFLICT_WINNERS = {
+    "caught in the rain": "Rain Cloud",
+    "console gaming": "Game Console",
+    "did my nails": "Nail Care",
+    "hit snooze": "Digital Alarm Clock",
+    "listened to an audiobook": "Book",
+    "painted my nails": "Nail Polish",
+    "played checkers": "Board Game",
+    "played chess": "Chess Set",
+    "played dominoes": "Board Game",
+    "played mahjong": "Mahjong Set",
+    "ran on the treadmill": "Treadmill",
+    "set my alarm": "Digital Alarm Clock",
+    "wore my retainer": "Dental Retainer",
+}
 
 # Four Keyword_Safety labels refer to retired names that are not present in
 # Icon_Mapping v19. Route them to the closest concrete carrier that does exist.
@@ -285,7 +299,7 @@ def main() -> None:
     if len(categories) != 12 or sum(len(category["itemIds"]) for category in categories) != 5390:
         raise ValueError("Reflect category generation is incomplete")
 
-    # v25 Guided Prompt secondary tabs. First appearance determines tab order;
+    # v26 Guided Prompt secondary tabs. First appearance determines tab order;
     # row order determines icon order. Categories intentionally absent from the
     # sheet render their original full grid with no empty tab bar.
     subcategory_sheet = workbook["Reflect_Subcategory_Map"]
@@ -383,7 +397,7 @@ def main() -> None:
         MIGRATION.write_text("\n".join(migration_lines), encoding="utf-8")
 
     qa = {
-        "schema": "memory-items-v25-data-qa@1",
+        "schema": "memory-items-v26-data-qa@1",
         "items": len(runtime_items),
         "executable_keyword_rows": executable_rows,
         "unique_executable_keywords": len(synonyms),

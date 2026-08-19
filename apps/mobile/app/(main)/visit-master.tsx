@@ -83,11 +83,12 @@ export default function VisitMasterScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.root}>
           <ExpoImage
-          source={BACKGROUNDS.visitMaster}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          contentPosition="top"
-        />
+            source={BACKGROUNDS.visitMaster}
+            style={styles.sceneBackground}
+            contentFit="contain"
+            contentPosition="bottom"
+            pointerEvents="none"
+          />
 
           {/* top bar: close + history */}
           <View style={[styles.topBar, { top: insets.top + 8 }]}>
@@ -107,7 +108,7 @@ export default function VisitMasterScreen() {
           </View>
 
           {/* speech bubble */}
-          <View style={[styles.bubble, { marginTop: insets.top + 78 }]}>
+          <View style={styles.bubble}>
             <Text style={styles.bubbleText}>{bubbleText}</Text>
             <View style={styles.bubbleTail} />
           </View>
@@ -176,9 +177,10 @@ export default function VisitMasterScreen() {
       <View style={styles.root}>
         <ExpoImage
           source={BACKGROUNDS.visitMaster}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          contentPosition="top"
+          style={styles.sceneBackground}
+          contentFit="contain"
+          contentPosition="bottom"
+          pointerEvents="none"
         />
         <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
           <View style={styles.card}>
@@ -202,9 +204,10 @@ export default function VisitMasterScreen() {
       <View style={styles.root}>
         <ExpoImage
           source={BACKGROUNDS.visitMaster}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          contentPosition="top"
+          style={styles.sceneBackground}
+          contentFit="contain"
+          contentPosition="bottom"
+          pointerEvents="none"
         />
         <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
           <View style={styles.card}>
@@ -286,7 +289,17 @@ function formatDate(iso: string): string {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#3E5C43' },
+  root: { flex: 1, backgroundColor: '#3E5C43', overflow: 'hidden' },
+  // The artwork is 785×2004. Fit by width and anchor to the bottom so its
+  // left/right edges always meet the screen; compact screens crop only the top.
+  sceneBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    aspectRatio: 785 / 2004,
+  },
 
   topBar: {
     position: 'absolute', left: 16, right: 16, zIndex: 2,
@@ -299,7 +312,8 @@ const styles = StyleSheet.create({
   historyIcon: { width: 46, height: 46 },
 
   bubble: {
-    marginHorizontal: 24, backgroundColor: '#FBF3DF', borderRadius: 24,
+    position: 'absolute', left: 24, right: 24, bottom: '50%', marginBottom: 10,
+    backgroundColor: '#FBF3DF', borderRadius: 24,
     paddingHorizontal: 22, paddingVertical: 18,
   },
   bubbleText: {

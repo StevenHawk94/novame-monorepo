@@ -70,7 +70,10 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
           </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.messageGrid}
+            contentContainerStyle={[
+              styles.messageGrid,
+              selected !== null && styles.messageGridWithSend,
+            ]}
           >
             {GOOD_VIBE_MESSAGES.map((message, index) => {
               const active = selected === index;
@@ -91,13 +94,15 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
               );
             })}
           </ScrollView>
-          <Pressable
-            disabled={selected === null || sending}
-            onPress={() => void submit()}
-            style={[styles.sendButton, (selected === null || sending) && styles.sendButtonDisabled]}
-          >
-            <Text style={styles.sendText}>{sending ? 'Sending…' : 'Send'}</Text>
-          </Pressable>
+          {selected !== null && (
+            <Pressable
+              disabled={sending}
+              onPress={() => void submit()}
+              style={[styles.sendButton, sending && styles.sendButtonDisabled]}
+            >
+              <Text style={styles.sendText}>{sending ? 'Sending…' : 'Send'}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </Modal>
@@ -234,6 +239,7 @@ const styles = StyleSheet.create({
   modalTitle: { color: '#FFF8E9', fontSize: 25, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
   closeIcon: { position: 'absolute', right: 0, top: 3, width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
   messageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingVertical: 18 },
+  messageGridWithSend: { paddingBottom: 94 },
   messageCard: {
     width: '48%',
     minHeight: 176,
@@ -250,7 +256,13 @@ const styles = StyleSheet.create({
   messageCardSelected: { borderColor: '#FF7A32', backgroundColor: '#FFF1D4' },
   messageArtwork: { width: '100%', height: 104 },
   messageText: { color: '#24180F', fontSize: 15, lineHeight: 20, textAlign: 'center', fontFamily: 'Inter_700Bold' },
-  sendButton: { minHeight: 58, borderRadius: 20, backgroundColor: '#FFDC91', alignItems: 'center', justifyContent: 'center' },
+  sendButton: {
+    position: 'absolute', left: 20, right: 20, bottom: 20, zIndex: 3,
+    minHeight: 58, borderRadius: 20, backgroundColor: '#FFDC91',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#2A170A', shadowOpacity: 0.28, shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 }, elevation: 6,
+  },
   sendButtonDisabled: { opacity: 0.45 },
   sendText: { color: '#4C2E16', fontSize: 22, fontFamily: 'Inter_800ExtraBold' },
   inboxCard: { width: '100%', maxWidth: 480, borderRadius: 34, backgroundColor: '#53351D', padding: 28, alignItems: 'center' },
