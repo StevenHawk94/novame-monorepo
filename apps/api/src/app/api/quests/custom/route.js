@@ -47,6 +47,65 @@ function normalizeTasks(parsed) {
 }
 
 /**
+ * GET /api/quests/custom?userId=...
+ *
+ * Read-only cache lookup. This endpoint never calls AI; it exists so reopening
+ * Custom Goal can restore the previous successful candidates for 24 hours.
+ */
+export async function GET(request) {
+  try {
+    const authHeader = request.headers.get('authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+    const verified = await verifyToken(token)
+    if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const userId = new URL(request.url).searchParams.get('userId') || ''
+    if (!userId || verified.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
+    const nowIso = new Date().toISOString()
+
+    await supabase
+      .from('quest_custom_generations')
+      .delete()
+      .eq('user_id', userId)
+      .lte('expires_at', nowIso)
+
+    const { data: cached, error } = await supabase
+      .from('quest_custom_generations')
+      .select('status, tasks, generated_at, expires_at')
+      .eq('user_id', userId)
+      .gt('expires_at', nowIso)
+      .maybeSingle()
+
+    if (error) {
+      console.error('[quests/custom] cache lookup failed:', error.message)
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    }
+    if (cached?.status === 'ready' && Array.isArray(cached.tasks) && cached.tasks.length > 0) {
+      return NextResponse.json({
+        success: true,
+        tasks: cached.tasks,
+        cached: true,
+        generatedAt: cached.generated_at,
+        expiresAt: cached.expires_at,
+      })
+    }
+
+    return NextResponse.json({ success: true, tasks: null, cached: false })
+  } catch (err) {
+    console.error('[quests/custom] cache lookup unexpected:', err && err.message)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}
+
+/**
  * POST /api/quests/custom
  *
  * Body: { userId, goal }

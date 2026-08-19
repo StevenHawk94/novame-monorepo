@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
@@ -32,6 +32,8 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
   const { height: screenH } = useWindowDimensions();
   const sheetH = screenH * 0.82;
   const sheetRef = useRef<BottomSheetModal>(null);
+  const pendingReflectIdRef = useRef<string | null>(null);
+  const reopenAfterDetailsRef = useRef(false);
   const [itemId, setItemId] = useState<string | null>(null);
   const snapPoints = useMemo(() => ['82%'], []);
 
@@ -55,9 +57,33 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
     [],
   );
 
+  const handleSheetDismiss = useCallback(() => {
+    const reflectId = pendingReflectIdRef.current;
+    if (!reflectId) return;
+
+    // The root BottomSheet portal must finish closing before a Stack route is
+    // pushed. Otherwise the route is mounted underneath the still-open sheet.
+    pendingReflectIdRef.current = null;
+    router.push({ pathname: '/(main)/reflect-detail', params: { reflectId } });
+  }, [router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!reopenAfterDetailsRef.current) return undefined;
+
+      // Returning from reflection details should reveal the item list the user
+      // came from, while keeping that list in the root portal above the tab bar.
+      reopenAfterDetailsRef.current = false;
+      const frame = requestAnimationFrame(() => sheetRef.current?.present());
+      return () => cancelAnimationFrame(frame);
+    }, []),
+  );
+
   function openReflect(reflectId: string) {
     void haptics.light();
-    router.push({ pathname: '/(main)/reflect-detail', params: { reflectId } });
+    pendingReflectIdRef.current = reflectId;
+    reopenAfterDetailsRef.current = true;
+    sheetRef.current?.dismiss();
   }
 
   return (
@@ -71,6 +97,7 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
       enableContentPanningGesture={false}
       enableHandlePanningGesture={false}
       enableOverDrag={false}
+      onDismiss={handleSheetDismiss}
     >
       <BottomSheetView style={[styles.content, { height: sheetH }]}>
         <View style={styles.innerCard}>

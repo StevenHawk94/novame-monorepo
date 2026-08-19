@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 
 import { getCurrentSession } from '@/lib/auth';
@@ -19,9 +19,8 @@ import { hideResumeOverlay } from '@/lib/background-resume-store';
  * -- it caps how long a bad network may strand the user behind a purple
  * rectangle.
  */
-// Mirrors the current native splash (grid ground + bunny head on beige) so
-// the resume flash reads as one continuous screen.
-const SPLASH = require('../../../assets/splash-full.png');
+const FULL_SPLASH = require('../../../assets/splash-full.png');
+const ANDROID_SPLASH_ICON = require('../../../assets/splash-icon.png');
 const RESUME_TIMEOUT_MS = 8000;
 
 export function BackgroundResumeOverlay() {
@@ -57,12 +56,26 @@ export function BackgroundResumeOverlay() {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.root}>
-        <ExpoImage source={SPLASH} style={StyleSheet.absoluteFill} contentFit="cover" />
+        {Platform.OS === 'android' ? (
+          <ExpoImage
+            source={ANDROID_SPLASH_ICON}
+            style={styles.androidIcon}
+            contentFit="contain"
+          />
+        ) : (
+          <ExpoImage source={FULL_SPLASH} style={StyleSheet.absoluteFill} contentFit="cover" />
+        )}
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8E2C1' },
+  root: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8E2C1',
+  },
+  androidIcon: { width: 220, height: 220 },
 });

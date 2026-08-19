@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Redirect } from 'expo-router';
 
@@ -19,8 +19,10 @@ import { hideSplashOnce } from '@/lib/splash';
  * sign-in screen only appears when anonymous auth is unavailable, or via
  * "Already have an account? Log in".
  *
- * While the local route resolves it shows the bundled full-screen splash
- * instead of a blank frame. No remote asset download is awaited here.
+ * While the local route resolves, iOS shows the bundled full-screen splash.
+ * Android keeps its native solid-colour + centred-icon splash visible until
+ * the destination paints, avoiding a second full-screen splash transition.
+ * No remote asset download is awaited here.
  */
 type Route = 'main' | 'onboarding' | 'bootstrap' | 'signin';
 
@@ -65,6 +67,12 @@ export default function Index() {
   }, []);
 
   if (route === null) {
+    if (Platform.OS === 'android') {
+      // Do not hide the Android native splash here. The destination screen
+      // owns the hand-off via hideSplashOnce() after its first real frame.
+      return <View style={styles.splash} />;
+    }
+
     return (
       <View style={styles.splash}>
         <ExpoImage

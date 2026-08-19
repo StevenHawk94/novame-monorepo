@@ -96,6 +96,9 @@ export const kCosmeticUnlocks = defineKey('novame_cosmetic_unlocks', 'user');
 /** Active quest plan status (cache-first). */
 export const kQuestStatus = defineKey('novame_quest_status', 'user');
 
+/** Successful Custom Goal candidates, mirrored from the server's 24h cache. */
+export const kQuestCustomGeneration = defineKey('burrow_quest_custom_generation', 'user');
+
 /** character-state.ts: STORAGE_KEY */
 export const kCharacterState = defineKey('novame_character_state', 'user');
 

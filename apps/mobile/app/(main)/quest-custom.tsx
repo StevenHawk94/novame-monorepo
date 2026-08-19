@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { haptics } from '@/lib/haptics';
 import { OffsetCard } from '@/components/ui/offset-card';
-import { generateCustomTasks } from '@/lib/quests-api';
+import { fetchCachedCustomTasks, generateCustomTasks } from '@/lib/quests-api';
 
 // Quests family theme (2026-07-23): dark-brown ground, white offset cards.
 const BG = '#4C331B';
@@ -33,6 +33,29 @@ export default function QuestCustomScreen() {
   const router = useRouter();
   const [goal, setGoal] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void fetchCachedCustomTasks().then((tasks) => {
+      if (!active) return;
+      if (tasks?.length) {
+        router.replace({
+          pathname: '/(main)/quest-pick',
+          params: {
+            themeKey: 'custom',
+            title: 'My Custom Plan',
+            tasksJson: JSON.stringify(tasks),
+          },
+        });
+        return;
+      }
+      setRestoring(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const canGenerate = goal.trim().length >= 4 && !generating;
 
@@ -77,6 +100,15 @@ export default function QuestCustomScreen() {
     appAlert(
       res.error === 'ai_unavailable' ? 'The planner is busy' : 'Something went wrong',
       'Please try again in a moment.',
+    );
+  }
+
+  if (restoring) {
+    return (
+      <View style={[styles.root, styles.restoring, { paddingTop: insets.top + 12 }]}>
+        <ActivityIndicator color={CREAM} />
+        <Text style={styles.restoringText}>Checking your latest plan…</Text>
+      </View>
     );
   }
 
@@ -130,6 +162,8 @@ export default function QuestCustomScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
+  restoring: { alignItems: 'center', justifyContent: 'center', gap: 12 },
+  restoringText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED },
   header: { paddingHorizontal: 4, paddingBottom: 12 },
   title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: CREAM },
   sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6, lineHeight: 20 },

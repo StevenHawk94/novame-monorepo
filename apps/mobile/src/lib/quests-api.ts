@@ -4,7 +4,7 @@
  * 7-day checklist. Plan creation / check-off / custom AI generation land in
  * later steps.
  */
-import { kQuestStatus } from '../shared/storage/keys';
+import { kQuestCustomGeneration, kQuestStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
@@ -122,6 +122,72 @@ export type CustomTasksResult =
   | { ok: true; tasks: string[] }
   | { ok: false; error: 'plus_required' | 'ai_unavailable' | 'generation_in_progress' | 'network' };
 
+interface CachedCustomGeneration {
+  tasks: string[];
+  expiresAt: string;
+}
+
+function readCachedCustomTasks(): string[] | null {
+  const raw = storage.getString(kQuestCustomGeneration.name);
+  if (!raw) return null;
+  try {
+    const cached = JSON.parse(raw) as CachedCustomGeneration;
+    if (
+      !Array.isArray(cached.tasks) ||
+      cached.tasks.length === 0 ||
+      !cached.tasks.every((task) => typeof task === 'string') ||
+      !cached.expiresAt ||
+      new Date(cached.expiresAt).getTime() <= Date.now()
+    ) {
+      storage.remove(kQuestCustomGeneration.name);
+      return null;
+    }
+    return cached.tasks;
+  } catch {
+    storage.remove(kQuestCustomGeneration.name);
+    return null;
+  }
+}
+
+function cacheCustomTasks(tasks: string[], expiresAt?: string): void {
+  const validExpiry = expiresAt && Number.isFinite(new Date(expiresAt).getTime())
+    ? expiresAt
+    : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  storage.set(
+    kQuestCustomGeneration.name,
+    JSON.stringify({ tasks, expiresAt: validExpiry } satisfies CachedCustomGeneration),
+  );
+}
+
+/**
+ * Restore an already-generated Custom Goal without invoking AI. Local MMKV is
+ * checked first; the GET endpoint then recovers the same server result after a
+ * reinstall or on another device. A cache miss intentionally returns null.
+ */
+export async function fetchCachedCustomTasks(): Promise<string[] | null> {
+  const local = readCachedCustomTasks();
+  if (local) return local;
+
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return null;
+  try {
+    const data = await apiClient.get<{
+      success?: boolean;
+      tasks?: string[] | null;
+      expiresAt?: string;
+    }>(`/api/quests/custom?userId=${encodeURIComponent(userId)}`);
+    if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0) {
+      cacheCustomTasks(data.tasks, data.expiresAt);
+      return data.tasks;
+    }
+  } catch {
+    // A restore failure must not block the form. POST still enforces the
+    // server-side generation lock/cache, so retrying cannot spend extra AI.
+  }
+  return null;
+}
+
 /**
  * AI custom plan (Plus): turn a free-text goal into ~20 candidate daily tasks.
  * The server gates on subscription_tier and answers 'not_paid' for free users;
@@ -132,11 +198,17 @@ export async function generateCustomTasks(goal: string): Promise<CustomTasksResu
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'network' };
   try {
-    const data = await apiClient.post<{ success?: boolean; error?: string; tasks?: string[] }>(
+    const data = await apiClient.post<{
+      success?: boolean;
+      error?: string;
+      tasks?: string[];
+      expiresAt?: string;
+    }>(
       '/api/quests/custom',
       { userId, goal },
     );
     if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0) {
+      cacheCustomTasks(data.tasks, data.expiresAt);
       return { ok: true, tasks: data.tasks };
     }
     if (data.error === 'not_paid') return { ok: false, error: 'plus_required' };
