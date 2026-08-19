@@ -1,5 +1,5 @@
 /**
- * Visit Master (Kit 5). Paid-only consultation with a 48h cooldown. Produces no
+ * Visit Master (Kit 5). Paid-only consultation with a 72h cooldown. Produces no
  * skill / xp / items -- it's a sage's counsel, isolated from the Skills system.
  */
 import { kMasterState } from '../shared/storage/keys';

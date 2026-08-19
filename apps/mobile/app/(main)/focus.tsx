@@ -13,6 +13,7 @@ import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { OffsetCard } from '../../src/components/ui/offset-card';
+import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
 import {
   FOCUS_VOICE_BUNDLED, getFocusVoiceSource, onFocusVoiceListened, type FocusVoiceSource,
 } from '../../src/lib/focus-voice';
@@ -51,6 +52,7 @@ export default function FocusScreen() {
   const [completed, setCompleted] = useState(false);
   const [reward, setReward] = useState(0);
   const creditedRef = useRef(false);
+  const selectScrollOffsetRef = useRef(0);
 
   // One player for the whole screen; the source resolves async when a scene
   // starts (bundled track 1, prefetched cache file, or an R2 stream).
@@ -132,101 +134,113 @@ export default function FocusScreen() {
   // ---- SELECT (design: "What are you preparing for?") ----
   if (phase === 'select') {
     return (
-      <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
-        <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
-          <Pressable onPress={() => router.back()} style={styles.backDark} hitSlop={12}>
-            <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.h1}>What are you preparing for?</Text>
-          <Text style={styles.sub}>Get your mind clear, focused, and ready in just 3 minutes.</Text>
+      <SwipeDownToDismiss
+        onDismiss={() => router.back()}
+        canStart={() => selectScrollOffsetRef.current <= 1}
+      >
+        <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
+          <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
+            <Pressable onPress={() => router.back()} style={styles.backDark} hitSlop={12}>
+              <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.h1}>What are you preparing for?</Text>
+            <Text style={styles.sub}>Get your mind clear, focused, and ready in just 3 minutes.</Text>
 
-          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-            {FOCUS_SCENES.map((s) => {
-              const locked = !s.free && !isPaid;
-              // Every scene has a bundled track 1 now — no more 'Soon' gating.
-              const noTrack = !FOCUS_VOICE_BUNDLED[s.id];
-              return (
-                <OffsetCard
-                  key={s.id}
-                  color={TEAL_OFFSET}
-                  offset={4}
-                  radius={26}
-                  onPress={() => startScene(s)}
-                  disabled={locked || noTrack}
-                  cardStyle={styles.sceneCard}
-                >
-                  <View style={styles.sceneText}>
-                    <View style={styles.sceneTitleRow}>
-                      <Text style={styles.sceneTitle}>{s.title}</Text>
-                      {locked && (
-                        <View style={styles.plusBadge}>
-                          <Text style={styles.plusBadgeText}>Plus</Text>
-                        </View>
-                      )}
+            <ScrollView
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator={false}
+              onScroll={(event) => { selectScrollOffsetRef.current = event.nativeEvent.contentOffset.y; }}
+              scrollEventThrottle={16}
+            >
+              {FOCUS_SCENES.map((s) => {
+                const locked = !s.free && !isPaid;
+                // Every scene has a bundled track 1 now — no more 'Soon' gating.
+                const noTrack = !FOCUS_VOICE_BUNDLED[s.id];
+                return (
+                  <OffsetCard
+                    key={s.id}
+                    color={TEAL_OFFSET}
+                    offset={4}
+                    radius={26}
+                    onPress={() => startScene(s)}
+                    disabled={locked || noTrack}
+                    cardStyle={styles.sceneCard}
+                  >
+                    <View style={styles.sceneText}>
+                      <View style={styles.sceneTitleRow}>
+                        <Text style={styles.sceneTitle}>{s.title}</Text>
+                        {locked && (
+                          <View style={styles.plusBadge}>
+                            <Text style={styles.plusBadgeText}>Plus</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.sceneSub}>{s.subtitle}</Text>
                     </View>
-                    <Text style={styles.sceneSub}>{s.subtitle}</Text>
-                  </View>
-                  <Image source={FOCUS_SCENE_ICONS[s.id]} style={styles.sceneIcon} resizeMode="contain" />
-                </OffsetCard>
-              );
-            })}
-            <Text style={styles.rewardNote}>
-              You&apos;ll get a reward after completing a session, and a new session will be available the next day.
-            </Text>
-          </ScrollView>
-        </View>
-      </ImageBackground>
+                    <Image source={FOCUS_SCENE_ICONS[s.id]} style={styles.sceneIcon} resizeMode="contain" />
+                  </OffsetCard>
+                );
+              })}
+              <Text style={styles.rewardNote}>
+                You&apos;ll get a reward after completing a session, and a new session will be available the next day.
+              </Text>
+            </ScrollView>
+          </View>
+        </ImageBackground>
+      </SwipeDownToDismiss>
     );
   }
 
   // ---- PLAY (design: full sky, bottom-anchored info + round pause) ----
   const progress = status.duration > 0 ? status.currentTime / status.duration : 0;
   return (
-    <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
-      {/* 50% black scrim so white text/controls read over the art. */}
-      <View style={styles.scrim} pointerEvents="none" />
-      <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
-        <Pressable onPress={exit} style={styles.backLight} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={22} color={GREEN} />
-        </Pressable>
+    <SwipeDownToDismiss enabled={false} onDismiss={() => router.back()}>
+      <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
+        {/* 50% black scrim so white text/controls read over the art. */}
+        <View style={styles.scrim} pointerEvents="none" />
+        <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
+          <Pressable onPress={exit} style={styles.backLight} hitSlop={12}>
+            <MaterialIcons name="arrow-back" size={22} color={GREEN} />
+          </Pressable>
 
-        <View style={[styles.playBottom, { paddingBottom: insets.bottom + 24 }]}>
-          {completed ? (
-            <View style={styles.doneBlock}>
-              {reward > 0 && <CloverBurst amount={reward} />}
-              <MaterialIcons name="check-circle" size={64} color="#FFFFFF" />
-              <Text style={styles.doneText}>Done. Carry that with you.</Text>
-              <Pressable onPress={() => router.back()} style={styles.doneBtn}>
-                <Text style={styles.doneBtnText}>Finish</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <Text style={styles.playTitle}>{scene?.title} #{audio?.index ?? 1}</Text>
-              <Text style={styles.playSub}>{scene?.subtitle}</Text>
-
-              {/* Display-only progress with times, per the mock. */}
-              <View style={styles.progRow}>
-                <Text style={styles.progTime}>{fmtTime(status.currentTime)}</Text>
-                <View style={styles.progTrack}>
-                  <View style={[styles.progFill, { width: `${progress * 100}%` }]} />
-                  <View style={[styles.progDot, { left: `${progress * 100}%` }]} />
-                </View>
-                <Text style={styles.progTime}>{fmtTime(status.duration)}</Text>
+          <View style={[styles.playBottom, { paddingBottom: insets.bottom + 24 }]}>
+            {completed ? (
+              <View style={styles.doneBlock}>
+                {reward > 0 && <CloverBurst amount={reward} />}
+                <MaterialIcons name="check-circle" size={64} color="#FFFFFF" />
+                <Text style={styles.doneText}>Done. Carry that with you.</Text>
+                <Pressable onPress={() => router.back()} style={styles.doneBtn}>
+                  <Text style={styles.doneBtnText}>Finish</Text>
+                </Pressable>
               </View>
+            ) : (
+              <>
+                <Text style={styles.playTitle}>{scene?.title} #{audio?.index ?? 1}</Text>
+                <Text style={styles.playSub}>{scene?.subtitle}</Text>
 
-              <Pressable
-                onPress={() => (status.playing ? player.pause() : player.play())}
-                style={styles.playBtn}
-                hitSlop={8}
-              >
-                <MaterialIcons name={status.playing ? 'pause' : 'play-arrow'} size={34} color={GREEN} />
-              </Pressable>
-            </>
-          )}
+                {/* Display-only progress with times, per the mock. */}
+                <View style={styles.progRow}>
+                  <Text style={styles.progTime}>{fmtTime(status.currentTime)}</Text>
+                  <View style={styles.progTrack}>
+                    <View style={[styles.progFill, { width: `${progress * 100}%` }]} />
+                    <View style={[styles.progDot, { left: `${progress * 100}%` }]} />
+                  </View>
+                  <Text style={styles.progTime}>{fmtTime(status.duration)}</Text>
+                </View>
+
+                <Pressable
+                  onPress={() => (status.playing ? player.pause() : player.play())}
+                  style={styles.playBtn}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name={status.playing ? 'pause' : 'play-arrow'} size={34} color={GREEN} />
+                </Pressable>
+              </>
+            )}
+          </View>
         </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
+    </SwipeDownToDismiss>
   );
 }
 

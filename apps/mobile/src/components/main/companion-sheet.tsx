@@ -1,6 +1,6 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ImageSourcePropType } from 'react-native';
@@ -13,12 +13,7 @@ import { getCachedStatus } from '@/lib/true-north-api';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
-
-export type CompanionSheetRef = {
-  present: () => void;
-  dismiss: () => void;
-  refresh: () => void;
-};
+import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
 
 interface KitRow {
   key: string;
@@ -29,6 +24,8 @@ interface KitRow {
   done?: boolean;
   daily?: boolean;
   availText?: string;
+  badge?: string;
+  disabled?: boolean;
 }
 
 interface DoneState {
@@ -54,29 +51,28 @@ function readDoneState(): DoneState {
  * Daily Kits drop out once done and return next day; permanent Kits (True
  * North weekly, Visit Master) always show.
  */
-export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
+export function CompanionSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const [visible, setVisible] = useState(false);
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
-
-  useImperativeHandle(ref, () => ({
-    present: () => {
-      setDoneState(readDoneState());
-      setBalance(getCachedCosmetics().balance);
-      void fetchCosmetics().then((c) => setBalance(c.balance));
-      setVisible(true);
-    },
-    dismiss: () => setVisible(false),
-    refresh: () => {
-      setDoneState(readDoneState());
-    },
-  }));
-
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
+  const [masterStatus, setMasterStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
 
   useEffect(() => subscribeCosmetics((state) => setBalance(state.balance)), []);
+
+  // The sheet is now a real route beneath Kit routes. Returning from a Kit
+  // focuses this still-mounted screen, so its scroll/state never flashes away
+  // while completion and currency can refresh quietly in place.
+  useFocusEffect(
+    useCallback(() => {
+      setDoneState(readDoneState());
+      setBalance(getCachedCosmetics().balance);
+      void fetchCosmetics().then((state) => setBalance(state.balance));
+      setMasterStatus(getCachedMasterStatus());
+      void fetchMasterStatus().then(setMasterStatus);
+    }, []),
+  );
 
   const trueNorthAvail = useMemo(() => {
     const dow = (new Date().getDay() + 6) % 7;
@@ -85,38 +81,39 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
   }, []);
 
   const kits: KitRow[] = useMemo(() => {
+    const masterCoolingDown = masterStatus.isPaid && !masterStatus.available;
+    const remainingHours = masterStatus.nextAvailableAt
+      ? Math.max(1, Math.ceil((new Date(masterStatus.nextAvailableAt).getTime() - Date.now()) / 3_600_000))
+      : 72;
     return [
       { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
       { key: 'new_lens', label: 'New Lens', desc: 'Feeling stuck? A different angle might help.', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
       { key: 'true_north', label: 'True North', desc: 'See what truly deserves your energy right now.', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
       { key: 'tame_enemy', label: 'Tame Enemy', desc: "That voice working against you? Let's tame it.", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
-      { key: 'visit_master', label: 'Visit Master', desc: 'Need a straight answer? Ask the Bunny Master.', icon: ICONS.VisitMaster, route: '/(main)/visit-master' },
+      {
+        key: 'visit_master', label: 'Visit Master',
+        desc: masterCoolingDown
+          ? 'The Master has set out in search of wisdom.'
+          : 'Need a sharper read on it? Ask the bunny master.',
+        icon: ICONS.VisitMaster, route: '/(main)/visit-master',
+        badge: masterCoolingDown ? `Back in ${remainingHours}h` : undefined,
+        disabled: masterCoolingDown,
+      },
     ];
-  }, [doneState, trueNorthAvail]);
+  }, [doneState, masterStatus, trueNorthAvail]);
 
   // Daily Kits vanish once done; permanent Kits always show.
   const visibleKits = kits.filter((k) => !(k.daily && k.done));
 
   function openKit(row: KitRow) {
-    if (!row.route) return;
+    if (!row.route || row.disabled) return;
     void haptics.medium();
-    setVisible(false);
     router.push(row.route as never);
   }
 
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      statusBarTranslucent
-      navigationBarTranslucent
-      hardwareAccelerated
-      onRequestClose={() => setVisible(false)}
-    >
       <View style={styles.modalRoot}>
-        <Pressable style={styles.backdrop} onPress={() => setVisible(false)} />
+        <Pressable style={styles.backdrop} onPress={() => router.back()} />
         <View style={[styles.sheet, { height: screenH * 0.9 }]}>
           <View style={styles.outer}>
             <GridBackground />
@@ -149,18 +146,26 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
                   <Pressable
                     key={kit.key}
                     onPress={() => openKit(kit)}
-                    style={({ pressed }) => [styles.kitCard, pressed && styles.kitCardPressed]}
+                    disabled={kit.disabled}
+                    style={({ pressed }) => [
+                      styles.kitCard,
+                      kit.disabled && styles.kitCardDisabled,
+                      pressed && !kit.disabled && styles.kitCardPressed,
+                    ]}
                   >
                     <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.kitLabel}>{kit.label}</Text>
+                      <View style={styles.kitTitleRow}>
+                        <Text style={styles.kitLabel}>{kit.label}</Text>
+                        {!!kit.badge && <Text style={styles.kitBadge}>{kit.badge}</Text>}
+                      </View>
                       <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
                     </View>
                   </Pressable>
                 ))}
               </ScrollView>
               <Pressable
-                onPress={() => setVisible(false)}
+                onPress={() => router.back()}
                 style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
                 hitSlop={8}
               >
@@ -170,11 +175,8 @@ export const CompanionSheet = forwardRef<CompanionSheetRef>((_, ref) => {
           </View>
         </View>
       </View>
-    </Modal>
   );
-});
-
-CompanionSheet.displayName = 'CompanionSheet';
+}
 
 const styles = StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
@@ -219,9 +221,16 @@ const styles = StyleSheet.create({
   hangout: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#4A2E1A', textAlign: 'center', marginTop: 12, marginBottom: 16 },
   kitList: { gap: 12, paddingBottom: 8 },
   kitCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 15, marginBottom: 13, shadowColor: '#5A3A1B', shadowOpacity: 0.25, shadowRadius: 0, shadowOffset: { width: 2, height: 3 }, elevation: 3 },
+  kitCardDisabled: { backgroundColor: '#D9D9D9', shadowOpacity: 0.18 },
   kitCardPressed: { transform: [{ translateX: 1 }, { translateY: 2 }], shadowOffset: { width: 1, height: 1 } },
   kitIcon: { width: 44, height: 44 },
+  kitTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   kitLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2A2A', flexShrink: 1 },
+  kitBadge: {
+    flexShrink: 0, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 5,
+    borderRadius: 8, backgroundColor: '#74432D', color: '#FFFFFF',
+    fontSize: 12.5, fontFamily: 'Inter_700Bold',
+  },
   kitDesc: {
     fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: '#8A7A6A',
     marginTop: 2, flexShrink: 1,

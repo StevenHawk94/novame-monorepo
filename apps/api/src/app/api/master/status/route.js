@@ -4,14 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
-const COOLDOWN_MS = 48 * 60 * 60 * 1000 // 48h
+const COOLDOWN_MS = 72 * 60 * 60 * 1000 // 72h
 
 /**
  * GET /api/master/status?userId=xxx
  *
  * Visit Master gate + history. Paid-only: free users get a paywall prompt, no
- * forest. Access is a 48h cooldown derived from the latest visit's created_at
- * -- after a visit the Master is "away travelling" until 48h pass. Also returns
+ * forest. Access is a 72h cooldown derived from the latest visit's created_at
+ * -- after a visit the Master is "away travelling" until 72h pass. Also returns
  * the visit history (date + question excerpt) for the history screen.
  */
 export async function GET(request) {

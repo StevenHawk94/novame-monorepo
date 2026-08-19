@@ -23,9 +23,15 @@ type CollectionTab = 'mine' | 'their' | 'ours';
 
 const COLLECTION_TABS: { key: CollectionTab; label: string }[] = [
   { key: 'mine', label: 'Mine' },
-  { key: 'their', label: 'Their' },
+  { key: 'their', label: 'Theirs' },
   { key: 'ours', label: 'Ours' },
 ];
+
+const TAB_GRID: Record<CollectionTab, { base: string; line: string }> = {
+  mine: { base: '#F8DF91', line: '#E9C76B' },
+  their: { base: '#DDEFF7', line: '#B9DDEA' },
+  ours: { base: '#F7DFE7', line: '#EABFCC' },
+};
 
 /**
  * Bags is one collection split by ownership:
@@ -65,6 +71,11 @@ export default function BagsScreen() {
   const listRef = useRef<FlatList<CollectedItem[]>>(null);
   const sharedRefreshGeneration = useRef(0);
   const screenRefreshGeneration = useRef(0);
+
+  const selectCollectionTab = useCallback((nextTab: CollectionTab) => {
+    setTab(nextTab);
+    router.setParams({ tab: nextTab });
+  }, [router]);
 
   useFocusEffect(
     useCallback(() => {
@@ -148,7 +159,10 @@ export default function BagsScreen() {
   }, [oursReadThrough, oursUnread, partner, tab]);
 
   function openSharedCreator() {
-    if (!partner) return;
+    if (!partner) {
+      router.push('/(main)/(tabs)/friends' as never);
+      return;
+    }
     router.push({
       pathname: '/(main)/shared-memory-create',
       params: {
@@ -158,21 +172,22 @@ export default function BagsScreen() {
   }
 
   function emptyCopy(): string {
-    if (tab !== 'mine' && !partner) {
-      return 'Pair with someone on Connection to see your collections together.';
-    }
+    if (tab === 'mine') return 'Start reflecting and collecting the little things in your days.';
     if (tab === 'their') {
-      return `${partner?.displayName || 'Your person'} hasn’t collected any memory items yet.`;
+      return partner
+        ? "They haven't reflect anything yet."
+        : 'Pair with someone now and start seeing their little moments.';
     }
-    if (tab === 'ours') {
-      return 'Nothing here yet — create a shared memory together.';
-    }
-    return 'Write reflections to start collecting the little things in your days.';
+    return partner
+      ? 'No shared memories available, create now.'
+      : 'Pair with someone now and start creating items with shared memories.';
   }
 
+  const gridColors = TAB_GRID[tab];
+
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <GridBackground base="#F8DF91" line="#E9C76B" cell={22} lineWidth={1.4} />
+    <SafeAreaView style={[styles.root, { backgroundColor: gridColors.base }]} edges={['top']}>
+      <GridBackground base={gridColors.base} line={gridColors.line} cell={22} lineWidth={1.4} />
       <View style={styles.content}>
         <View style={styles.header}>
           <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
@@ -204,7 +219,7 @@ export default function BagsScreen() {
               <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
               <Text style={styles.headerButtonText}>Their Logs</Text>
             </OffsetCard>
-          ) : tab === 'ours' && partner ? (
+          ) : tab === 'ours' ? (
             <OffsetCard
               color="#C96F2A"
               offset={4}
@@ -212,8 +227,8 @@ export default function BagsScreen() {
               onPress={openSharedCreator}
               cardStyle={styles.headerButton}
             >
-              <Text style={styles.plus}>＋</Text>
-              <Text style={styles.headerButtonText}>Create New</Text>
+              <Image source={ICONS.add} style={styles.headerButtonIcon} resizeMode="contain" />
+              <Text style={styles.headerButtonText}>Create</Text>
             </OffsetCard>
           ) : null}
         </View>
@@ -224,7 +239,7 @@ export default function BagsScreen() {
           return (
             <Pressable
               key={entry.key}
-              onPress={() => setTab(entry.key)}
+              onPress={() => selectCollectionTab(entry.key)}
               style={[styles.tab, active && styles.tabActive]}
             >
               <View>
@@ -242,13 +257,7 @@ export default function BagsScreen() {
         </View>
       ) : shown.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>{tab === 'ours' ? '🎁' : '🎒'}</Text>
           <Text style={styles.emptyText}>{emptyCopy()}</Text>
-          {tab === 'ours' && partner ? (
-            <Pressable onPress={openSharedCreator} style={styles.emptyCreateButton}>
-              <Text style={styles.emptyCreateText}>Create New</Text>
-            </Pressable>
-          ) : null}
         </View>
       ) : (
         <FlatList
@@ -301,11 +310,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 27, lineHeight: 33, fontFamily: 'Inter_800ExtraBold', color: '#4A2E17' },
   headerButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,
+    minHeight: 56, backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,
   },
   headerButtonIcon: { width: 30, height: 30 },
   headerButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
-  plus: { color: '#FFFFFF', fontSize: 22, lineHeight: 22, fontFamily: 'Inter_700Bold' },
   unreadDot: {
     position: 'absolute', right: -10, top: -4, width: 9, height: 9,
     borderRadius: 5, backgroundColor: '#E53935',
@@ -332,14 +340,8 @@ const styles = StyleSheet.create({
   },
   countBadgeText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'Inter_800ExtraBold' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
-  emptyEmoji: { fontSize: 44 },
   emptyText: {
     fontSize: 15, fontFamily: 'Inter_500Medium', color: '#9A8770',
     textAlign: 'center', lineHeight: 22,
   },
-  emptyCreateButton: {
-    marginTop: 4, backgroundColor: '#F0913D', borderRadius: 16,
-    paddingHorizontal: 24, paddingVertical: 12,
-  },
-  emptyCreateText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
 });

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,17 +21,22 @@ type Phase = 'ask' | 'waiting' | 'reply' | 'history' | 'detail';
  * pill at the bottom (send.png), history scroll at top-right. Free users see
  * "Join Plus to access this feature." in the pill and tap into the paywall.
  * Reply / History / Detail render as cream cards over the same scene with a
- * round close button. 48h cooldown text lives in the bubble.
+ * round close button. A completed visit starts a 72h cooldown.
  */
 export default function VisitMasterScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  // `screen` remains stable while Android's adjustResize changes the app
+  // window for the keyboard. The artwork and speech bubble therefore stay put.
+  const screen = useMemo(() => Dimensions.get('screen'), []);
 
   const [phase, setPhase] = useState<Phase>('ask');
   const [status, setStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
   const [question, setQuestion] = useState('');
   const [reply, setReply] = useState<MasterResponse | null>(null);
   const [detail, setDetail] = useState<{ question: string; response: MasterResponse } | null>(null);
+  const [bubbleHeight, setBubbleHeight] = useState(92);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const load = useCallback(() => {
     void fetchMasterStatus().then(setStatus);
@@ -76,15 +81,17 @@ export default function VisitMasterScreen() {
       : 'Ask me any question that has been troubling you the most, I will give you some wisdom that can rewire your mind.';
 
   const canAsk = status.isPaid && status.available;
+  const sceneTop = screen.height - screen.width * (2004 / 785);
+  // Centre the bubble inside the second fifth from the top (20–40%).
+  const bubbleTop = screen.height * 0.3 - bubbleHeight / 2;
 
   // ── ASK (the scene) ──
   if (phase === 'ask' || phase === 'waiting') {
     return (
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.root}>
+      <View style={styles.root}>
           <ExpoImage
             source={BACKGROUNDS.visitMaster}
-            style={styles.sceneBackground}
+            style={[styles.sceneBackground, { top: sceneTop }]}
             contentFit="contain"
             contentPosition="bottom"
             pointerEvents="none"
@@ -107,55 +114,61 @@ export default function VisitMasterScreen() {
             </Pressable>
           </View>
 
-          {/* speech bubble */}
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{bubbleText}</Text>
-            <View style={styles.bubbleTail} />
-          </View>
+          {/* The prompt yields the scene to the question as soon as typing begins. */}
+          {phase === 'ask' && !inputFocused && (
+            <View
+              style={[styles.bubble, { top: bubbleTop }]}
+              onLayout={(event) => setBubbleHeight(event.nativeEvent.layout.height)}
+            >
+              <Text style={styles.bubbleText}>{bubbleText}</Text>
+              <View style={styles.bubbleTail} />
+            </View>
+          )}
 
           <View style={{ flex: 1 }} />
 
-          {/* waiting spinner floats above the pill while the Master thinks */}
+          {/* Waiting is a single, unmistakable state in the middle of the scene. */}
           {phase === 'waiting' && (
-            <View style={styles.waitingWrap}>
-              <ActivityIndicator color="#FFF6E8" />
-              <Text style={styles.waitingText}>The Master is looking at this from a few angles…</Text>
-            </View>
+            <MasterReadingMessage />
           )}
 
-          {/* ask pill */}
-          {!status.isPaid ? (
-            <Pressable
-              onPress={() => { void haptics.warning(); router.push('/(main)/(modals)/subscription-paywall'); }}
-              style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}
-            >
-              <Text style={styles.lockedText}>Join Plus to access this feature.</Text>
-              <MaterialIcons name="lock" size={22} color="#8A7A63" />
-            </Pressable>
-          ) : (
-            <View style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}>
-              <TextInput
-                value={question}
-                onChangeText={setQuestion}
-                placeholder="What's been on your mind?"
-                placeholderTextColor="#8A7A63"
-                editable={canAsk && phase === 'ask'}
-                multiline
-                maxLength={1000}
-                style={styles.askInput}
-              />
+          {/* Only the composer follows the keyboard. The scene never moves. */}
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            {!status.isPaid ? (
               <Pressable
-                onPress={onAsk}
-                disabled={!canAsk || phase !== 'ask' || question.trim().length === 0}
-                hitSlop={8}
-                style={{ opacity: !canAsk || question.trim().length === 0 ? 0.45 : 1 }}
+                onPress={() => { void haptics.warning(); router.push('/(main)/(modals)/subscription-paywall'); }}
+                style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}
               >
-                <Image source={ICONS.send} style={styles.sendIcon} resizeMode="contain" />
+                <Text style={styles.lockedText}>Join Plus to access this feature.</Text>
+                <MaterialIcons name="lock" size={22} color="#8A7A63" />
               </Pressable>
-            </View>
-          )}
+            ) : phase === 'ask' ? (
+              <View style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}>
+                <TextInput
+                  value={question}
+                  onChangeText={setQuestion}
+                  placeholder="What's been on your mind?"
+                  placeholderTextColor="#8A7A63"
+                  editable={canAsk && phase === 'ask'}
+                  multiline
+                  maxLength={1000}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  textAlignVertical="top"
+                  style={styles.askInput}
+                />
+                <Pressable
+                  onPress={onAsk}
+                  disabled={!canAsk || phase !== 'ask' || question.trim().length === 0}
+                  hitSlop={8}
+                  style={{ opacity: !canAsk || question.trim().length === 0 ? 0.45 : 1 }}
+                >
+                  <Image source={ICONS.send} style={styles.sendIcon} resizeMode="contain" />
+                </Pressable>
+              </View>
+            ) : null}
+          </KeyboardAvoidingView>
         </View>
-      </KeyboardAvoidingView>
     );
   }
 
@@ -177,14 +190,13 @@ export default function VisitMasterScreen() {
       <View style={styles.root}>
         <ExpoImage
           source={BACKGROUNDS.visitMaster}
-          style={styles.sceneBackground}
+          style={[styles.sceneBackground, { top: sceneTop }]}
           contentFit="contain"
           contentPosition="bottom"
           pointerEvents="none"
         />
         <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
           <View style={styles.card}>
-            <Image source={ICONS.VisitMaster} style={styles.cardMasterIcon} resizeMode="contain" />
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.cardScroll}>
               {isDetail && <Text style={styles.detailQ}>"{detail!.question}"</Text>}
               <ReplyBody reply={body} />
@@ -204,21 +216,20 @@ export default function VisitMasterScreen() {
       <View style={styles.root}>
         <ExpoImage
           source={BACKGROUNDS.visitMaster}
-          style={styles.sceneBackground}
+          style={[styles.sceneBackground, { top: sceneTop }]}
           contentFit="contain"
           contentPosition="bottom"
           pointerEvents="none"
         />
-        <View style={[styles.cardWrap, { paddingTop: insets.top + 34, paddingBottom: insets.bottom + 40 }]}>
-          <View style={styles.card}>
+        <View style={[styles.historyWrap, { top: screen.height * 0.25, height: screen.height * 0.5 }]}>
+          <View style={[styles.card, styles.historyCard]}>
             <View style={styles.historyTitleRow}>
-              <Image source={ICONS.visitMasterHistory} style={styles.historyTitleIcon} resizeMode="contain" />
               <Text style={styles.historyTitle}>History Visit</Text>
             </View>
             {status.history.length === 0 ? (
-              <Text style={styles.historyEmpty}>
-                Nothing here yet — your first conversation with the Master will show up here.
-              </Text>
+              <View style={styles.historyEmptyWrap}>
+                <Text style={styles.historyEmpty}>Nothing here yet.</Text>
+              </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.historyScroll}>
                 {status.history.map((v) => (
@@ -244,13 +255,32 @@ export default function VisitMasterScreen() {
   return null;
 }
 
+function MasterReadingMessage() {
+  const [dotCount, setDotCount] = useState(3);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDotCount((count) => (count >= 6 ? 3 : count + 1));
+    }, 420);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <View style={styles.waitingWrap}>
+      <Text style={styles.waitingText}>
+        The Master is reading between the lines{'.'.repeat(dotCount)}
+      </Text>
+    </View>
+  );
+}
+
 function ReplyBody({ reply }: { reply: MasterResponse }) {
   // New contract: four sections with the Master's own chapter titles.
   if (reply.sections && reply.sections.length > 0) {
     return (
-      <View style={{ gap: 18 }}>
+      <View style={{ gap: 24 }}>
         {reply.sections.map((sec, i) => (
-          <View key={i} style={{ gap: 6 }}>
+          <View key={i} style={{ gap: 11 }}>
             <Text style={styles.sectionTitle}>{sec.header}</Text>
             <Text style={i === reply.sections!.length - 1 ? styles.reflectQ : styles.insight}>
               {sec.text}
@@ -296,7 +326,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
     width: '100%',
     aspectRatio: 785 / 2004,
   },
@@ -312,7 +341,7 @@ const styles = StyleSheet.create({
   historyIcon: { width: 46, height: 46 },
 
   bubble: {
-    position: 'absolute', left: 24, right: 24, bottom: '50%', marginBottom: 10,
+    position: 'absolute', left: 24, right: 24,
     backgroundColor: '#FBF3DF', borderRadius: 24,
     paddingHorizontal: 22, paddingVertical: 18,
   },
@@ -326,32 +355,38 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#FBF3DF',
   },
 
-  waitingWrap: { alignItems: 'center', gap: 8, marginBottom: 14, paddingHorizontal: 32 },
+  waitingWrap: {
+    position: 'absolute', top: '50%', left: 24, right: 24,
+    transform: [{ translateY: -52 }], minHeight: 104,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 28, paddingVertical: 20,
+    backgroundColor: '#FBF3DF', borderRadius: 24,
+    borderWidth: 1.5, borderColor: '#2B2B2B',
+  },
   waitingText: {
-    fontSize: 13.5, fontFamily: 'Inter_600SemiBold', color: '#FFF6E8', textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 },
+    fontSize: 18, lineHeight: 25, fontFamily: 'Inter_700Bold', color: '#2B2B2B', textAlign: 'center',
   },
 
   askPill: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     marginHorizontal: 20, backgroundColor: '#FBF6EA', borderRadius: 26,
     borderWidth: 2.5, borderColor: '#2B2B2B',
-    paddingHorizontal: 18, paddingVertical: 12, minHeight: 62,
+    paddingHorizontal: 18, paddingVertical: 14, minHeight: 186,
   },
   askInput: {
     flex: 1, fontSize: 17, fontFamily: 'Inter_700Bold', color: '#2B2B2B',
-    maxHeight: 110, paddingVertical: 4,
+    minHeight: 150, maxHeight: 210, paddingTop: 4, paddingBottom: 4,
   },
   lockedText: { flex: 1, fontSize: 16.5, fontFamily: 'Inter_700Bold', color: '#8A7A63' },
   sendIcon: { width: 36, height: 36 },
 
   cardWrap: { flex: 1, paddingHorizontal: 16 },
+  historyWrap: { position: 'absolute', left: 16, right: 16 },
   card: {
     flex: 1, backgroundColor: '#FBF3DF', borderRadius: 30,
     borderWidth: 2.5, borderColor: '#2B2B2B', overflow: 'hidden',
   },
-  cardMasterIcon: { width: 64, height: 64, alignSelf: 'center', marginTop: -6 },
-  cardScroll: { paddingHorizontal: 22, paddingTop: 10, paddingBottom: 80 },
+  cardScroll: { paddingHorizontal: 22, paddingTop: 26, paddingBottom: 80 },
   cardClose: {
     position: 'absolute', bottom: 8, alignSelf: 'center',
     width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF',
@@ -360,19 +395,20 @@ const styles = StyleSheet.create({
 
   quote: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', lineHeight: 27 },
   insight: { fontSize: 15.5, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 24 },
-  sectionTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', marginBottom: -8 },
+  sectionTitle: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   reflectQ: { fontSize: 16, fontFamily: 'Inter_600SemiBold', color: '#2B2B2B', lineHeight: 24, fontStyle: 'italic' },
   detailQ: { fontSize: 15, fontFamily: 'Inter_500Medium', fontStyle: 'italic', color: '#6B5A45', lineHeight: 22, marginBottom: 16 },
 
   historyTitleRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingTop: 20, paddingBottom: 14,
   },
-  historyTitleIcon: { width: 40, height: 40 },
   historyTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
+  historyCard: { flex: 1 },
+  historyEmptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 54 },
   historyEmpty: {
     fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63',
-    textAlign: 'center', lineHeight: 21, paddingHorizontal: 28, paddingTop: 30,
+    textAlign: 'center', lineHeight: 21, paddingHorizontal: 28,
   },
   historyScroll: { paddingHorizontal: 16, paddingBottom: 80, gap: 14 },
   historyRow: {

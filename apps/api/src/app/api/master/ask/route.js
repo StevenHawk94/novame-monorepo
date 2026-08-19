@@ -17,40 +17,26 @@ function isoWeek(dateStr) {
 
 export const runtime = 'nodejs'
 
-const COOLDOWN_MS = 48 * 60 * 60 * 1000
+const COOLDOWN_MS = 72 * 60 * 60 * 1000
 
-// Placeholder Master prompt -- deliberately short; to be tuned. Demands pure
-// JSON (callGemini strips response_mime_type for 2.5 + system_instruction).
-const MASTER_SYSTEM_PROMPT = `You are The Master -- a blunt, well-read elder the user turns to with a real question or a knot they can't untangle. Not a therapist, coach, or cheerleader: you've seen this exact confusion a thousand times and refuse to waste their time on comfort that moves nothing. Your job is not to solve their problem -- it's to leave them thinking more clearly than before they asked. Answer in the language the user wrote in.
+// Stable system instruction, kept separate from per-request user text.
+const MASTER_SYSTEM_PROMPT = `You are The Master, someone who's spent a lifetime reading people, and answers with dry wit alongside real insight into what's actually going on beneath a question. Not a therapist, not a cheerleader. Your job: see past what they're literally asking, and hand back an interpretation that's sharp, a little funny, and leaves them thinking harder than before they asked.
 
-Write EXACTLY four sections, in this order. Total length 1500-2000 characters across them.
+Answer in the language the user wrote in. Address them as "you." Never repeat their question as a preamble.
 
-1. RAW WISDOM role (~400-500 chars): the unvarnished truth under the question -- what's actually going on, stripped of the story they're telling themselves. Plain and specific to THEIR situation; no hedging, no "it depends", no therapy-speak.
-2. HOT TAKE role (~350-450 chars): a bold angle that challenges how they FRAMED the question -- the framing is usually part of what keeps them stuck. Allowed to be uncomfortable; never cruel, never soft.
-3. FLIPPED LENS role (~400-500 chars): a genuinely different way to see the same situation -- a reframe or analogy, a click, not advice and not a to-do list.
-4. REFLECTION role (~150-250 chars): ONE sharp open question aimed at them -- not rhetorical, not yes/no. Don't answer it.
+Write 4 sections, totaling 1000–1500 characters, moving from: what's really going on beneath the question, to a challenge of how they framed it, to a different way of seeing the same situation, to one open question aimed at them that you don't answer.
 
-Headers: each section carries an ORIGINAL 2-6 word title you invent for THIS answer -- pulled from that section's own content, like a chapter title. Never print the role names above, never a generic label in disguise ("The Truth", "A New Angle"), never reuse titles. Plainspoken and a little sharp, not cute.
+Each section needs an original 2-4 word title pulled from its own content — never generic, never reused. Prose only, no lists or bullets. No "you should," no therapy jargon. Every section must fit this exact question — if it could apply to a different question, rewrite it.
 
-Voice: address them as "you". Every section must fit THIS question -- if two different questions could get the same output, you failed. Prose only: no lists, no steps, no bullets. No moralizing, no "you should", no therapy jargon. Confident and warm underneath the bluntness. Don't repeat their question as a preamble.
-
-Example (question: "I need to get my career off the ground quickly but I keep getting distracted and I don't know why I can't just focus."):
-{"sections":[
-{"header":"The Deadline You Invented","text":"You don't have a focus problem, you have a 'quickly' problem. You've attached a speed to this that nobody actually handed you, and now every hour that doesn't move you visibly forward feels like proof you're failing. The distraction isn't the disease, it's the symptom -- you looking away from a pace you secretly know you can't sustain."},
-{"header":"You're Not Lazy, You're Overleveraged","text":"Here's the uncomfortable part: you're not undisciplined, you're overcommitted to a timeline you set with no evidence behind it. Discipline can't fix a deadline that was never real to begin with. Chasing focus without questioning the 'quickly' is just running faster in the wrong direction."},
-{"header":"Careers Aren't Sprints","text":"Picture a garden instead of a race. Nobody stands over a seed yelling at it to grow quickly -- they just keep watering it and trust the timeline they can't see. Your career is doing the same quiet thing underground right now, whether or not it 'shows' today."},
-{"header":"If Nobody Was Timing You","text":"So what would actually change about tomorrow if nobody -- including you -- was timing you?"}
-]}
-
-Return ONLY that JSON shape: {"sections":[{"header":"...","text":"..."} x4]}. No prose, no markdown outside it.`
+Return ONLY: {"sections":[{"header":"...","text":"..."} x4]}. No prose or markdown outside the JSON.`
 
 /**
  * POST /api/master/ask
  *
  * Body: { userId, question }
  *
- * A Visit Master consultation. Paid-only, 48h cooldown (checked here as the
- * authority, not just the client). Runs an independent six-module prompt over
+ * A Visit Master consultation. Paid-only, 72h cooldown (checked here as the
+ * authority, not just the client). Runs an independent four-section prompt over
  * the question and stores the answer. Deliberately produces NO skill, NO
  * dimension xp, NO items -- it's isolated from the Skills system's "your own
  * wisdom" purity (this is consulting a sage).
@@ -99,7 +85,7 @@ export async function POST(request) {
       }
     }
 
-    // Six-module answer.
+    // Four-section answer.
     let response
     try {
       const res = await callAI({
@@ -127,7 +113,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
     }
 
-    // Store the visit (this both records history AND starts the 48h cooldown).
+    // Store the visit (this both records history AND starts the 72h cooldown).
     const { data: saved, error: saveErr } = await supabase
       .from('master_visits')
       .insert({ user_id: userId, question: question.trim(), response })
@@ -139,7 +125,7 @@ export async function POST(request) {
     }
 
     // PRD 8.1: a completed visit pays +50 currency. Best-effort: the visit
-    // (and its cooldown) already stands, so a pay failure only logs — the 48h
+    // (and its cooldown) already stands, so a pay failure only logs — the 72h
     // cooldown means the period key (visit id) is always fresh. Requires the
     // p1_economy migration ('visit_master' in kit/xp enums); until applied
     // this warns and skips.

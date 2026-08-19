@@ -21,7 +21,6 @@ import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
-import { CompanionSheet, type CompanionSheetRef } from '@/components/main/companion-sheet';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -44,7 +43,6 @@ function visibleAiBubble(): FreshBubble | null {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const sheetRef = useRef<CompanionSheetRef>(null);
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
   const [, setCosmeticTick] = useState(0);
@@ -107,7 +105,6 @@ export default function HomeScreen() {
     useCallback(() => {
       setCosmeticTick((t) => t + 1);
       applyAiBubble(visibleAiBubble());
-      sheetRef.current?.refresh();
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
@@ -133,7 +130,7 @@ export default function HomeScreen() {
   };
   const onPetTap = () => {
     void haptics.medium();
-    sheetRef.current?.present();
+    router.push('/(main)/companion-sheet');
   };
 
   const sceneImg = getHomeSceneSource();
@@ -216,7 +213,6 @@ export default function HomeScreen() {
             top bar, and Focus/Reflect stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
 
-        <CompanionSheet ref={sheetRef} />
       </SafeAreaView>
     </View>
   );

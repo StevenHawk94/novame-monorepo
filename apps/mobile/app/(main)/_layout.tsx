@@ -5,14 +5,14 @@ import { Stack } from 'expo-router';
  *
  * useStudyClaimDetector() went with the willpower system (D5).
  *
- * reflect and focus inherit the fullScreenModal presentation that record had,
- * for the reason record had it: it is the only iOS presentation that actually
- * disables the downward dismiss gesture. `gestureEnabled: false` on a plain
- * 'modal' yields a rubber-band bounce (react-native-screens #1410), and
- * expo-router ignores `presentation` on a screen inside a nested layout
- * (#37680) -- which is why these two files sit directly under (main)/ rather
- * than in (modals)/. Losing an unpublished reflection to a stray swipe is not
- * a recoverable error.
+ * Focus/Reflect entry pickers are transparent stack layers so their explicit
+ * swipe-down interaction reveals Home beneath them. Their input/session child
+ * routes remain fullScreenModal and do not mount that gesture; losing an
+ * unpublished reflection to a stray swipe is not recoverable.
+ *
+ * The companion sheet also lives in this stack instead of a React Native
+ * Modal. Kit routes can therefore slide over it and pop back to the exact
+ * still-mounted sheet without a close/reopen flash.
  */
 export default function MainLayout() {
   return (
@@ -28,11 +28,41 @@ export default function MainLayout() {
         name="ai-consent"
         options={{ presentation: 'transparentModal', animation: 'fade' }}
       />
-      <Stack.Screen name="reflect" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen
+        name="companion-sheet"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
+      <Stack.Screen name="quiet-wins" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+      <Stack.Screen name="new-lens" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+      <Stack.Screen name="true-north" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+      <Stack.Screen name="tame-enemy" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+      <Stack.Screen name="visit-master" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+      <Stack.Screen
+        name="reflect"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
       <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal' }} />
-      <Stack.Screen name="focus" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen
+        name="focus"
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
     </Stack>
   );
 }

@@ -62,12 +62,31 @@ const TAB_THEMES: Record<string, TabBarTheme> = {
   },
 };
 
+const BAG_COLLECTION_THEMES: Record<'their' | 'ours', TabBarTheme> = {
+  their: {
+    background: '#EAF6FA',
+    label: '#45616D',
+    activeBackground: '#F7FCFE',
+    topBorder: 'rgba(69,97,109,0.12)',
+  },
+  ours: {
+    background: '#FBEAF0',
+    label: '#674A54',
+    activeBackground: '#FFF6F9',
+    topBorder: 'rgba(103,74,84,0.12)',
+  },
+};
+
 const FALLBACK_THEME = TAB_THEMES.index;
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const activeRouteName = state.routes[state.index]?.name ?? 'index';
-  const theme = TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
+  const activeRoute = state.routes[state.index];
+  const activeRouteName = activeRoute?.name ?? 'index';
+  const collectionTab = (activeRoute?.params as { tab?: string } | undefined)?.tab;
+  const theme = activeRouteName === 'bags' && (collectionTab === 'their' || collectionTab === 'ours')
+    ? BAG_COLLECTION_THEMES[collectionTab]
+    : TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
   const routesByName = new Map<string, (typeof state.routes)[number]>();
   state.routes.forEach((r) => routesByName.set(r.name, r));
 

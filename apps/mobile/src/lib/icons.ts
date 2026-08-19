@@ -57,6 +57,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   setting: require('../../assets/Icons/setting.png'),
   privacy: require('../../assets/Icons/privacy.png'),
   memory: require('../../assets/Icons/memory.png'),
+  add: require('../../assets/Icons/add.png'),
   sharedMemories: require('../../assets/Icons/shared-memories.png'),
   // Onboarding v3 (grid background + screen art)
   obWhoPartner: require('../../assets/Icons/ob2-partner.png'),

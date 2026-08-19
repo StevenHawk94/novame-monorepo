@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
 import { OffsetCard } from '../../src/components/ui/offset-card';
+import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
 
 const TAN_OFFSET = '#E5B57E';
 
@@ -64,36 +65,38 @@ export default function ReflectEntryScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
-      <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
-      <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backCircle} hitSlop={10}>
-          <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
-        </Pressable>
-        <Text style={styles.lead}>How would you like to reflect?</Text>
-        <Text style={styles.leadSub}>Pick a way.</Text>
-        {ways.map((w) => (
-          <OffsetCard
-            key={w.key}
-            color={TAN_OFFSET}
-            offset={4}
-            radius={30}
-            onPress={() => {
-              void haptics.light();
-              router.push(w.route as never);
-            }}
-            cardStyle={styles.wayCard}
-            style={{ marginBottom: 18 }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.wayTitle}>{w.title}</Text>
-              <Text style={styles.wayText}>{w.text}</Text>
-            </View>
-            <ExpoImage source={w.icon} style={styles.wayIcon} contentFit="contain" />
-          </OffsetCard>
-        ))}
+    <SwipeDownToDismiss onDismiss={() => router.back()}>
+      <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
+        <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
+          <Pressable onPress={() => router.back()} style={styles.backCircle} hitSlop={10}>
+            <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
+          </Pressable>
+          <Text style={styles.lead}>How would you like to reflect?</Text>
+          <Text style={styles.leadSub}>Pick a way.</Text>
+          {ways.map((w) => (
+            <OffsetCard
+              key={w.key}
+              color={TAN_OFFSET}
+              offset={4}
+              radius={30}
+              onPress={() => {
+                void haptics.light();
+                router.push(w.route as never);
+              }}
+              cardStyle={styles.wayCard}
+              style={{ marginBottom: 18 }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.wayTitle}>{w.title}</Text>
+                <Text style={styles.wayText}>{w.text}</Text>
+              </View>
+              <ExpoImage source={w.icon} style={styles.wayIcon} contentFit="contain" />
+            </OffsetCard>
+          ))}
+        </View>
       </View>
-    </View>
+    </SwipeDownToDismiss>
   );
 }
 
