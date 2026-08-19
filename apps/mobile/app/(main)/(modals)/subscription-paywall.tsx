@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -46,9 +46,10 @@ type Phase = 'benefits' | 'plans';
 
 export default function SubscriptionPaywallModal() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ phase?: string }>();
   const isPaid = (getCachedSubscription()?.tier ?? 'free') !== 'free';
 
-  const [phase, setPhase] = useState<Phase>('benefits');
+  const [phase, setPhase] = useState<Phase>(params.phase === 'plans' ? 'plans' : 'benefits');
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>('idle');
   const [priceYearly, setPriceYearly] = useState<string | null>(null);
@@ -215,18 +216,16 @@ export default function SubscriptionPaywallModal() {
         {phase === 'benefits' ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={{ flex: 1, minHeight: '100%' }}>
-              <Text style={[styles.h1, { marginTop: 62 }]}>One Subscription for Two People.</Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                Store your memories, and theirs.{'\n'}Then connection happens naturally.
-              </Text>
+              <Text style={[styles.h1, { marginTop: 62 }]}>Feel closer through the little things.</Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>Burrow Plus</Text>
                 {[
-                  'Build memories with barely any effort.',
-                  'Connection insights that respect your boundaries.',
-                  'Daily tools that help you feel grounded and ready.',
-                  'Stay close and connected, naturally.',
+                  'Turn reflections into shared memories',
+                  'See gentle connection insights',
+                  'Stay present without adding pressure',
+                  'Keep full control of what you share',
+                  'Access to all plus features',
                 ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -236,12 +235,15 @@ export default function SubscriptionPaywallModal() {
                   </View>
                 ))}
               </View>
+              <Text style={[styles.body, styles.subscriptionNote]}>
+                One Plus subscription unlocks the full experience for both of you.
+              </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Pressable
                 onPress={() => { void haptics.medium(); setPhase('plans'); }}
                 style={({ pressed }) => [styles.cta, { opacity: pressed ? 0.85 : 1 }]}
               >
-                <Text style={styles.ctaText}>Try for Free</Text>
+                <Text style={styles.ctaText}>Start Free Trial</Text>
               </Pressable>
               <Pressable onPress={() => void handleRestore()} style={styles.restoreBtn} hitSlop={8}>
                 {busy === 'restoring' ? (
@@ -254,7 +256,11 @@ export default function SubscriptionPaywallModal() {
           </ScrollView>
         ) : (
           <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { marginTop: 62, marginBottom: 26 }]}>Choose your plan</Text>
+            <Text style={[styles.h1, { marginTop: 62 }]}>Choose your plan</Text>
+            <Text style={styles.planSubtitle}>
+              Link their account to yours in the app, and they’ll{`\n`}
+              get access to all Plus features too.
+            </Text>
             <Pressable
               onPress={() => { void haptics.light(); setPlan('yearly'); }}
               style={[styles.planCard, plan === 'yearly' && styles.planCardOn]}
@@ -289,7 +295,9 @@ export default function SubscriptionPaywallModal() {
               {busy === 'purchasing' ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.ctaText}>{isPaid ? 'Manage Subscription' : 'Start My Plan'}</Text>
+                <Text style={styles.ctaText}>
+                  {isPaid ? 'Manage Subscription' : plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
+                </Text>
               )}
             </Pressable>
             {/* Apple 3.1.2: price-per-period, auto-renew and trial terms on the
@@ -337,6 +345,12 @@ const styles = StyleSheet.create({
   legalLink: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#6B5B44', textDecorationLine: 'underline' },
   h1: { fontSize: 27, lineHeight: 36, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   body: { fontSize: 16.5, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center' },
+  subscriptionNote: { marginTop: 18, fontSize: 13.5, lineHeight: 20, paddingHorizontal: 12 },
+  planSubtitle: {
+    marginTop: 8, marginBottom: 26, paddingHorizontal: 10,
+    fontSize: 13.5, lineHeight: 19, fontFamily: 'Inter_500Medium',
+    color: '#3A2E1A', textAlign: 'center',
+  },
 
   plusCard: { backgroundColor: 'rgba(90,64,40,0.85)', borderRadius: 26, padding: 20, marginTop: 44 },
   lockImg: { width: 62, height: 62, alignSelf: 'center', marginTop: -52, marginBottom: 4 },

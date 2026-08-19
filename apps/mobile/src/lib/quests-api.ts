@@ -120,7 +120,7 @@ export async function checkTask(taskIndex: number): Promise<CheckResult> {
 
 export type CustomTasksResult =
   | { ok: true; tasks: string[] }
-  | { ok: false; error: 'plus_required' | 'ai_unavailable' | 'network' };
+  | { ok: false; error: 'plus_required' | 'ai_unavailable' | 'generation_in_progress' | 'network' };
 
 /**
  * AI custom plan (Plus): turn a free-text goal into ~20 candidate daily tasks.
@@ -141,6 +141,7 @@ export async function generateCustomTasks(goal: string): Promise<CustomTasksResu
     }
     if (data.error === 'not_paid') return { ok: false, error: 'plus_required' };
     if (data.error === 'ai_unavailable') return { ok: false, error: 'ai_unavailable' };
+    if (data.error === 'generation_in_progress') return { ok: false, error: 'generation_in_progress' };
     return { ok: false, error: 'network' };
   } catch (e) {
     // ApiError carries the HTTP body for non-2xx; a 403 not_paid lands here.
@@ -151,6 +152,7 @@ export async function generateCustomTasks(goal: string): Promise<CustomTasksResu
       return { ok: false, error: 'plus_required' };
     }
     if (bodyStr.includes('ai_unavailable')) return { ok: false, error: 'ai_unavailable' };
+    if (bodyStr.includes('generation_in_progress')) return { ok: false, error: 'generation_in_progress' };
     return { ok: false, error: 'network' };
   }
 }

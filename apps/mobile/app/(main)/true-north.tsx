@@ -25,10 +25,38 @@ import {
 
 type Phase = 'intro' | 'rank' | 'reveal';
 
-function randomSample<T>(items: readonly T[], count: number): T[] {
+function currentLocalWeekSeed(): string {
+  const today = new Date();
+  const mondayOffset = (today.getDay() + 6) % 7;
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset);
+  return [monday.getFullYear(), monday.getMonth() + 1, monday.getDate()].join('-');
+}
+
+function hashSeed(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function stableRandom(seed: number): () => number {
+  let value = seed;
+  return () => {
+    value += 0x6d2b79f5;
+    let mixed = value;
+    mixed = Math.imul(mixed ^ (mixed >>> 15), mixed | 1);
+    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
+    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function stableSample<T>(items: readonly T[], count: number, seed: string): T[] {
   const shuffled = [...items];
+  const random = stableRandom(hashSeed(seed));
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled.slice(0, count);
@@ -238,10 +266,16 @@ function Reveal({
 }) {
   void lastRanking; // the mock drops the week-over-week comparison
   void c;
-  // Keep the reveal concise: randomly surface five points from each of the
-  // top-two dimensions. The sample stays stable for this mounted result page.
+  // Keep the reveal concise: surface five points from each top-two dimension.
+  // The week + complete ranking seed freezes the result for the entire weekly
+  // period, while a newly ranked week receives a fresh combination.
   const focusPoints = useMemo(
-    () => ranking.slice(0, 2).flatMap((dim) => randomSample(TRUE_NORTH_FOCUS_POINTS[dim], 5)),
+    () => {
+      const resultSeed = `${currentLocalWeekSeed()}:${ranking.join(',')}`;
+      return ranking.slice(0, 2).flatMap((dim) =>
+        stableSample(TRUE_NORTH_FOCUS_POINTS[dim], 5, `${resultSeed}:${dim}`),
+      );
+    },
     [ranking],
   );
   const bottom = ranking[ranking.length - 1];

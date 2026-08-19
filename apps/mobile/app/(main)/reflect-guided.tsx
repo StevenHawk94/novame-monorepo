@@ -378,10 +378,10 @@ export default function ReflectGuidedScreen() {
             </View>
           ) : phase === 'note' ? (
             <View style={{ flex: 1 }}>
-              <Text style={styles.stepTitleLeft}>Anything you want to say? (Optional)</Text>
+              <Text style={styles.stepTitleLeft}>Tell us about the moments behind your picks.</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Add Note…"
+                placeholder="Enter here..."
                 placeholderTextColor="#B7AEA6"
                 value={note}
                 onChangeText={(t) => setNote(t.slice(0, MAX_CHARS))}

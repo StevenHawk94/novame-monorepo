@@ -32,25 +32,25 @@ export interface GuidedSubcategory {
 
 // One designed question per prompt category (keys = guided-catalog.g.ts).
 const META: Record<string, { emoji: string; question: string }> = {
-  emotion_and_feeling: { emoji: '💛', question: 'How do you feel today?' },
-  food_drink: { emoji: '🍜', question: 'What did you eat & drink today?' },
-  chores_home_care: { emoji: '🧹', question: 'Which chores did you get done today?' },
-  self_care_hygiene: { emoji: '🛁', question: 'How did you care for yourself today?' },
-  work_productivity: { emoji: '💼', question: 'What did you work on today?' },
-  entertainment_leisure: { emoji: '🎮', question: 'What did you do for fun today?' },
-  exercise_movement: { emoji: '🏃', question: 'How did you move today?' },
-  social_relationships: { emoji: '👥', question: 'Who did you spend time with today?' },
-  travel_commute: { emoji: '🚌', question: 'Where did your day take you today?' },
-  nature_outdoors: { emoji: '🏞️', question: 'Did you get outside today?' },
-  learning_hobbies: { emoji: '📚', question: 'What did you learn or practice today?' },
-  shopping_errands: { emoji: '🛍️', question: 'What shopping or errands did you do today?' },
+  emotion_and_feeling: { emoji: '💛', question: 'Which feelings or inner states showed up today?' },
+  food_drink: { emoji: '🍜', question: 'What was part of eating, drinking, or cooking today?' },
+  chores_home_care: { emoji: '🧹', question: 'What was part of taking care of home today?' },
+  self_care_hygiene: { emoji: '🛁', question: 'What was part of caring for your body or health today?' },
+  work_productivity: { emoji: '💼', question: 'What was part of your work or progress today?' },
+  entertainment_leisure: { emoji: '🎮', question: 'What was part of your free time today?' },
+  exercise_movement: { emoji: '🏃', question: 'What was part of your movement or exercise today?' },
+  social_relationships: { emoji: '👥', question: 'What was part of connecting with others today?' },
+  travel_commute: { emoji: '🚌', question: 'What was part of going places today?' },
+  nature_outdoors: { emoji: '🏞️', question: 'What was part of your time outdoors today?' },
+  learning_hobbies: { emoji: '📚', question: 'What was part of learning, making, or practicing today?' },
+  shopping_errands: { emoji: '🛍️', question: 'What was part of shopping or running errands today?' },
 };
 
 const CONFIG: GuidedCategory[] = PROMPT_CATEGORIES.map((c) => ({
   key: c.key,
   label: c.label,
   emoji: META[c.key]?.emoji ?? '✨',
-  question: c.question || META[c.key]?.question || `Anything about ${c.label.toLowerCase()} today?`,
+  question: META[c.key]?.question || c.question || `Anything about ${c.label.toLowerCase()} today?`,
 }));
 
 const BY_KEY = new Map(CONFIG.map((c) => [c.key, c]));

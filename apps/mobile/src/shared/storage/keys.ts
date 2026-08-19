@@ -206,6 +206,9 @@ export const kQuotaExhausted = defineKey('novame_quota_exhausted', 'user');
 /** LEAKED. publish-count.ts: PUBLISH_COUNT_KEY. */
 export const kPublishCount = defineKey('novame_publish_count', 'user');
 
+/** Lifetime claimed reflections used only for the Free reflection paywall cadence. */
+export const kReflectionPaywallCount = defineKey('burrow_reflection_paywall_count', 'user');
+
 /** LEAKED. task-completion-count.ts: TASK_COMPLETION_COUNT_KEY. */
 export const kTaskCompletionCount = defineKey('novame_task_completion_count', 'user');
 

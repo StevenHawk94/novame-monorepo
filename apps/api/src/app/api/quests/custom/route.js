@@ -6,12 +6,44 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-// Simple first-pass prompt (tune later, like the Master prompt). Asks for a flat
-// JSON object with a `tasks` array so parseAIJson stays robust.
-const CUSTOM_PLAN_PROMPT = `You help someone build a personal 7-day self-improvement plan. Given their goal, generate exactly 20 short, concrete, doable daily tasks -- each a single action they could finish in one day. Keep each under 12 words, imperative voice (e.g. "Do 20 push-ups", "Read 10 pages"). No numbering, no duplicates, no vague tasks.
+const CUSTOM_PLAN_PROMPT = `You create a practical 7-day action plan to help someone make progress toward their stated goal.
 
-Return ONLY a JSON object, no markdown, no prose outside it:
+Based only on the user’s clearly stated goal, generate exactly 20 distinct, concrete actions they can complete during the next seven days. The actions should collectively move the user meaningfully toward that goal, with a realistic mix of preparation, execution, practice, review, and follow-through when relevant.
+
+Requirements:
+- Each task must be one specific, finishable action that can be completed in a single day.
+- Use imperative voice.
+- Keep every task under 12 words.
+- Make tasks measurable whenever possible, using clear quantities, durations, or outputs.
+- Avoid vague or generic actions such as “stay motivated,” “work harder,” “be consistent,” or “improve yourself.”
+- Do not repeat tasks or create near-duplicates.
+- Do not invent goals, circumstances, tools, or resources the user did not mention.
+- Do not include explanations, categories, dates, or numbering.
+
+Return ONLY valid JSON:
 { "tasks": ["task one", "task two"] }`
+
+const CACHE_HOURS = 24
+const GENERATION_LOCK_MINUTES = 5
+
+function normalizeTasks(parsed) {
+  const arr = Array.isArray(parsed) ? parsed : parsed?.tasks
+  if (!Array.isArray(arr)) return null
+
+  const seen = new Set()
+  const tasks = []
+  for (const value of arr) {
+    if (typeof value !== 'string') continue
+    const task = value.trim().replace(/\s+/g, ' ').slice(0, 120)
+    if (!task) continue
+    const key = task.toLocaleLowerCase('en-US')
+    if (seen.has(key)) continue
+    seen.add(key)
+    tasks.push(task)
+  }
+
+  return tasks.length === 20 ? tasks : null
+}
 
 /**
  * POST /api/quests/custom
@@ -49,11 +81,87 @@ export async function POST(request) {
       return NextResponse.json({ error: 'not_paid' }, { status: 403 })
     }
 
-    // SECURITY (2026-08-07 audit): largest AI call in the app (3k tokens) with
-    // no cooldown — cap at 10/hour/user so a paid token can't loop it.
-    const rl = await rateLimit(supabase, `quest-custom:${userId}`, 10, 3600)
+    const now = new Date()
+    const nowIso = now.toISOString()
+
+    // Expired results and abandoned generation locks are disposable. Clearing
+    // them here avoids needing a scheduled cleanup job.
+    await supabase
+      .from('quest_custom_generations')
+      .delete()
+      .eq('user_id', userId)
+      .lte('expires_at', nowIso)
+
+    const { data: cached } = await supabase
+      .from('quest_custom_generations')
+      .select('status, tasks, generated_at, expires_at')
+      .eq('user_id', userId)
+      .gt('expires_at', nowIso)
+      .maybeSingle()
+
+    if (cached?.status === 'ready' && Array.isArray(cached.tasks) && cached.tasks.length > 0) {
+      return NextResponse.json({
+        success: true,
+        tasks: cached.tasks,
+        cached: true,
+        generatedAt: cached.generated_at,
+        expiresAt: cached.expires_at,
+      })
+    }
+    if (cached?.status === 'generating') {
+      return NextResponse.json({ error: 'generation_in_progress' }, { status: 409 })
+    }
+    if (cached?.status === 'failed') {
+      return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
+    }
+
+    // Secondary abuse backstop for failed AI attempts. Successful generations
+    // are protected by the 24-hour database cache below.
+    const rl = await rateLimit(supabase, `quest-custom:${userId}`, 3, 3600)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
+
+    // Claim the user's one generation slot before calling AI. The user_id
+    // primary key prevents two devices/requests from spending tokens together.
+    const generationToken = crypto.randomUUID()
+    const lockExpiresAt = new Date(now.getTime() + GENERATION_LOCK_MINUTES * 60 * 1000).toISOString()
+    const { error: claimError } = await supabase
+      .from('quest_custom_generations')
+      .insert({
+        user_id: userId,
+        goal: goal.trim().slice(0, 500),
+        status: 'generating',
+        generation_token: generationToken,
+        expires_at: lockExpiresAt,
+      })
+
+    if (claimError) {
+      if (claimError.code !== '23505') {
+        console.error('[quests/custom] failed to claim generation slot:', claimError.message)
+        return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+      }
+      // Another request won the race. Return its completed result when
+      // available; otherwise tell the client that generation is still active.
+      const { data: raced } = await supabase
+        .from('quest_custom_generations')
+        .select('status, tasks, generated_at, expires_at')
+        .eq('user_id', userId)
+        .gt('expires_at', nowIso)
+        .maybeSingle()
+      if (raced?.status === 'ready' && Array.isArray(raced.tasks)) {
+        return NextResponse.json({
+          success: true,
+          tasks: raced.tasks,
+          cached: true,
+          generatedAt: raced.generated_at,
+          expiresAt: raced.expires_at,
+        })
+      }
+      if (raced?.status === 'failed') {
+        return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
+      }
+      return NextResponse.json({ error: 'generation_in_progress' }, { status: 409 })
     }
 
     // Generate candidate tasks.
@@ -62,25 +170,63 @@ export async function POST(request) {
       const res = await callAI({
         systemInstruction: CUSTOM_PLAN_PROMPT,
         userText: `My goal: ${goal.trim().slice(0, 500)}`,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 3000 },
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1200,
+          response_mime_type: 'application/json',
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       })
       const parsed = parseAIJson(res.text)
-      const arr = Array.isArray(parsed) ? parsed : parsed?.tasks
-      if (Array.isArray(arr)) {
-        tasks = arr
-          .filter((t) => typeof t === 'string' && t.trim().length > 0)
-          .map((t) => t.trim().slice(0, 120))
-          .slice(0, 20)
-      }
+      tasks = normalizeTasks(parsed)
     } catch (e) {
       console.warn('[quests/custom] AI failed:', e && e.message)
     }
 
     if (!tasks || tasks.length === 0) {
+      const failedAt = new Date()
+      await supabase
+        .from('quest_custom_generations')
+        .update({
+          status: 'failed',
+          generated_at: failedAt.toISOString(),
+          expires_at: new Date(failedAt.getTime() + CACHE_HOURS * 60 * 60 * 1000).toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('generation_token', generationToken)
       return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
     }
 
-    return NextResponse.json({ success: true, tasks })
+    const generatedAt = new Date()
+    const expiresAt = new Date(generatedAt.getTime() + CACHE_HOURS * 60 * 60 * 1000)
+    const { error: saveError } = await supabase
+      .from('quest_custom_generations')
+      .update({
+        tasks,
+        status: 'ready',
+        generated_at: generatedAt.toISOString(),
+        expires_at: expiresAt.toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('generation_token', generationToken)
+
+    if (saveError) {
+      console.error('[quests/custom] failed to save generation:', saveError.message)
+      await supabase
+        .from('quest_custom_generations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('generation_token', generationToken)
+      return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      tasks,
+      cached: false,
+      generatedAt: generatedAt.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    })
   } catch (err) {
     console.error('[quests/custom] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

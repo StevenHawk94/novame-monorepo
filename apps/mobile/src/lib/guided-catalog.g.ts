@@ -3,7 +3,7 @@ export interface PromptSubcategoryDef { key: string; label: string; itemIds: str
 export interface PromptCategoryDef { key: string; label: string; question: string; itemIds: string[]; subcategories: PromptSubcategoryDef[] }
 
 export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
-  { key: "emotion_and_feeling", label: "Emotions & Feelings", question: "How did you feel today? What emotion or inner state stayed with you?", itemIds: [
+  { key: "emotion_and_feeling", label: "Emotions & Feelings", question: "Which feelings or inner states showed up today?", itemIds: [
     "memory.5355_happy",
     "memory.5356_calm",
     "memory.5357_cool",
@@ -36,7 +36,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
     "memory.5384_silly",
   ], subcategories: [
   ] },
-  { key: "food_drink", label: "Food & Drink", question: "What did you eat, drink, cook, or enjoy today?", itemIds: [
+  { key: "food_drink", label: "Food & Drink", question: "What was part of eating, drinking, or cooking today?", itemIds: [
   ], subcategories: [
     { key: "fruit", label: "Fruit", itemIds: [
       "memory.0755_raisins",
@@ -1556,7 +1556,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.1870_cat_cafe",
     ] },
   ] },
-  { key: "chores_home_care", label: "Chores & Home Care", question: "What did you take care of at home or in daily life today?", itemIds: [
+  { key: "chores_home_care", label: "Chores & Home Care", question: "What was part of taking care of home today?", itemIds: [
   ], subcategories: [
     { key: "home_spaces_household_items", label: "Home Spaces & Household Items", itemIds: [
       "memory.1421_bed",
@@ -2248,7 +2248,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.4347_pencil_grip",
     ] },
   ] },
-  { key: "self_care_hygiene", label: "Health & Self-Care", question: "How did you care for your body, health, or wellbeing today?", itemIds: [
+  { key: "self_care_hygiene", label: "Health & Self-Care", question: "What was part of caring for your body or health today?", itemIds: [
   ], subcategories: [
     { key: "physical_health_recovery", label: "Physical Health & Recovery", itemIds: [
       "memory.2367_pill_organizer",
@@ -2708,7 +2708,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.4558_window_security_film",
     ] },
   ] },
-  { key: "work_productivity", label: "Work & Productivity", question: "What did you work on, accomplish, or move forward today?", itemIds: [
+  { key: "work_productivity", label: "Work & Productivity", question: "What was part of your work or progress today?", itemIds: [
     "memory.1462_home_office",
     "memory.1540_office",
     "memory.1541_workplace",
@@ -3009,7 +3009,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
     "memory.5234_rebar_tier",
   ], subcategories: [
   ] },
-  { key: "entertainment_leisure", label: "Entertainment & Leisure", question: "What did you watch, play, enjoy, or do for fun today?", itemIds: [
+  { key: "entertainment_leisure", label: "Entertainment & Leisure", question: "What was part of your free time today?", itemIds: [
   ], subcategories: [
     { key: "movies_tv_streaming", label: "Movies, TV & Streaming", itemIds: [
       "memory.1362_television",
@@ -3260,7 +3260,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.4742_new_year_s_ball_drop_ornament",
     ] },
   ] },
-  { key: "exercise_movement", label: "Exercise & Movement", question: "How did you move your body or exercise today?", itemIds: [
+  { key: "exercise_movement", label: "Exercise & Movement", question: "What was part of your movement or exercise today?", itemIds: [
   ], subcategories: [
     { key: "fitness_gym", label: "Fitness & Gym", itemIds: [
       "memory.1299_fitness",
@@ -3526,7 +3526,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.3298_flying_disc",
     ] },
   ] },
-  { key: "social_relationships", label: "Social & Relationships", question: "Who did you connect with or care about today?", itemIds: [
+  { key: "social_relationships", label: "Social & Relationships", question: "What was part of connecting with others today?", itemIds: [
   ], subcategories: [
     { key: "love_close_relationships", label: "Love & Close Relationships", itemIds: [
       "memory.1417_hugging",
@@ -3665,7 +3665,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.5046_medicine_wheel",
     ] },
   ] },
-  { key: "travel_commute", label: "Travel & Getting Around", question: "Where did you go, or how did you get around today?", itemIds: [
+  { key: "travel_commute", label: "Travel & Getting Around", question: "What was part of going places today?", itemIds: [
   ], subcategories: [
     { key: "driving_cars", label: "Driving & Cars", itemIds: [
       "memory.1439_car",
@@ -4041,7 +4041,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.4148_rfid_passport_sleeve",
     ] },
   ] },
-  { key: "nature_outdoors", label: "Nature & Outdoors", question: "What did you notice or spend time with outdoors?", itemIds: [
+  { key: "nature_outdoors", label: "Nature & Outdoors", question: "What was part of your time outdoors today?", itemIds: [
   ], subcategories: [
     { key: "animals_wildlife", label: "Animals & Wildlife", itemIds: [
       "memory.3719_bear",
@@ -4696,7 +4696,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.3702_iceberg",
     ] },
   ] },
-  { key: "learning_hobbies", label: "Learning & Hobbies", question: "What did you learn, make, practice, or explore today?", itemIds: [
+  { key: "learning_hobbies", label: "Learning & Hobbies", question: "What was part of learning, making, or practicing today?", itemIds: [
   ], subcategories: [
     { key: "school_study", label: "School & Study", itemIds: [
       "memory.1361_exam",
@@ -5112,7 +5112,7 @@ export const PROMPT_CATEGORIES: PromptCategoryDef[] = [
       "memory.3118_rock_collection",
     ] },
   ] },
-  { key: "shopping_errands", label: "Shopping & Errands", question: "What did you buy, pick up, manage, or take care of outside home?", itemIds: [
+  { key: "shopping_errands", label: "Shopping & Errands", question: "What was part of shopping or running errands today?", itemIds: [
   ], subcategories: [
     { key: "clothing_accessories", label: "Clothing & Accessories", itemIds: [
       "memory.2385_t_shirt",

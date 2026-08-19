@@ -171,6 +171,20 @@ export default function BagsScreen() {
     });
   }
 
+  const headerButtonLabel = tab === 'mine' ? 'My Logs' : tab === 'their' ? 'Their Logs' : 'Create';
+
+  function openHeaderDestination() {
+    if (tab === 'mine') {
+      router.push('/(main)/my-logs');
+      return;
+    }
+    if (tab === 'their') {
+      router.push('/(main)/(tabs)/friends' as never);
+      return;
+    }
+    openSharedCreator();
+  }
+
   function emptyCopy(): string {
     if (tab === 'mine') return 'Start reflecting and collecting the little things in your days.';
     if (tab === 'their') {
@@ -197,40 +211,27 @@ export default function BagsScreen() {
             </Text>
           </View>
 
-          {tab === 'mine' ? (
-            <OffsetCard
-              color="#C96F2A"
-              offset={4}
-              radius={18}
-              onPress={() => router.push('/(main)/my-logs')}
-              cardStyle={styles.headerButton}
-            >
-              <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
-              <Text style={styles.headerButtonText}>My Logs</Text>
-            </OffsetCard>
-          ) : tab === 'their' ? (
-            <OffsetCard
-              color="#C96F2A"
-              offset={4}
-              radius={18}
-              onPress={() => router.push('/(main)/(tabs)/friends' as never)}
-              cardStyle={styles.headerButton}
-            >
-              <Image source={ICONS.sharedMemories} style={styles.headerButtonIcon} resizeMode="contain" />
-              <Text style={styles.headerButtonText}>Their Logs</Text>
-            </OffsetCard>
-          ) : tab === 'ours' ? (
-            <OffsetCard
-              color="#C96F2A"
-              offset={4}
-              radius={18}
-              onPress={openSharedCreator}
-              cardStyle={styles.headerButton}
-            >
-              <Image source={ICONS.add} style={styles.headerButtonIcon} resizeMode="contain" />
-              <Text style={styles.headerButtonText}>Create</Text>
-            </OffsetCard>
-          ) : null}
+          <OffsetCard
+            color="#C96F2A"
+            offset={4}
+            radius={18}
+            onPress={openHeaderDestination}
+            cardStyle={styles.headerButton}
+          >
+            <View style={styles.headerButtonIconSlot}>
+              <Image
+                source={ICONS.sharedMemories}
+                style={[styles.headerButtonIcon, tab === 'ours' && styles.headerButtonIconHidden]}
+                resizeMode="contain"
+              />
+              <Image
+                source={ICONS.add}
+                style={[styles.headerButtonIcon, tab !== 'ours' && styles.headerButtonIconHidden]}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.headerButtonText}>{headerButtonLabel}</Text>
+          </OffsetCard>
         </View>
 
       <View style={styles.tabStrip}>
@@ -312,7 +313,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     minHeight: 56, backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,
   },
-  headerButtonIcon: { width: 30, height: 30 },
+  headerButtonIconSlot: { width: 30, height: 30 },
+  headerButtonIcon: { position: 'absolute', width: 30, height: 30 },
+  headerButtonIconHidden: { opacity: 0 },
   headerButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_700Bold' },
   unreadDot: {
     position: 'absolute', right: -10, top: -4, width: 9, height: 9,

@@ -67,6 +67,13 @@ export default function QuestCustomScreen() {
       );
       return;
     }
+    if (res.error === 'generation_in_progress') {
+      appAlert(
+        'Your plan is being created',
+        'Please wait a moment, then tap Generate again to see the same result.',
+      );
+      return;
+    }
     appAlert(
       res.error === 'ai_unavailable' ? 'The planner is busy' : 'Something went wrong',
       'Please try again in a moment.',

@@ -575,9 +575,6 @@ export default function OnboardingScreen() {
               </Pressable>
               <View style={{ flex: 1, minHeight: 56 }} />
               <Text style={styles.h1}>Feel closer through the little things.</Text>
-              <Text style={[styles.body, { marginTop: 14 }]}>
-                One subscription creates a private space for two.
-              </Text>
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
                 <View style={styles.plusTitleRow}>
@@ -589,6 +586,7 @@ export default function OnboardingScreen() {
                   'See gentle connection insights',
                   'Stay present without adding pressure',
                   'Keep full control of what you share',
+                  'Access to all plus features',
                 ].map((t) => (
                   <View key={t} style={styles.benefitRow}>
                     <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -598,14 +596,11 @@ export default function OnboardingScreen() {
                   </View>
                 ))}
               </View>
-              <Text style={[styles.body, { marginTop: 18 }]}>
-                Invite your person and start your Burrow together.
-              </Text>
-              <Text style={[styles.partnerIncluded, { marginTop: 8 }]}>
-                Your person won&apos;t need to pay again.
+              <Text style={[styles.privacySmall, { marginTop: 18 }]}>
+                One Plus subscription unlocks the full experience for both of you.
               </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
-              <Btn label="Start Our Burrow" onPress={onTryFree} />
+              <Btn label="Start Free Trial" onPress={onTryFree} />
             </View>
           </ScrollView>
         )}
@@ -615,7 +610,11 @@ export default function OnboardingScreen() {
             <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
               <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
-            <Text style={[styles.h1, { marginTop: 46, marginBottom: 26 }]}>Choose your plan</Text>
+            <Text style={[styles.h1, { marginTop: 46 }]}>Choose your plan</Text>
+            <Text style={[styles.privacySmall, { marginTop: 8, marginBottom: 26 }]}>
+              Link their account to yours in the app, and they’ll{`\n`}
+              get access to all Plus features too.
+            </Text>
             <Pressable
               onPress={() => { void haptics.light(); setPlan('yearly'); }}
               style={[styles.planCard, plan === 'yearly' && styles.planCardOn]}
@@ -642,7 +641,11 @@ export default function OnboardingScreen() {
               </View>
             </Pressable>
             <View style={{ flex: 1 }} />
-            <Btn label="Start Our Burrow" onPress={() => void onStartPlan()} busy={purchasing} />
+            <Btn
+              label={plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
+              onPress={() => void onStartPlan()}
+              busy={purchasing}
+            />
             {/* Apple 3.1.2: subscription terms + working legal links. */}
             <Text style={styles.disclosure}>
               {plan === 'yearly'
@@ -836,10 +839,6 @@ const styles = StyleSheet.create({
   privacySmall: {
     fontSize: 13.5, lineHeight: 20, fontFamily: 'Inter_600SemiBold',
     color: '#6B5B44', textAlign: 'center',
-  },
-  partnerIncluded: {
-    fontSize: 14.5, lineHeight: 21, fontFamily: 'Inter_800ExtraBold',
-    color: INK, textAlign: 'center',
   },
   qmarkIcon: { width: 94, height: 94, alignSelf: 'center', marginBottom: 24 },
 

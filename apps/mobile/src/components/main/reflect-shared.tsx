@@ -24,6 +24,7 @@ import {
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import { router } from 'expo-router';
 
 import { ITEM_DICTIONARY } from '@novame/engine';
 
@@ -34,6 +35,11 @@ import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { itemDisplayName } from '@/lib/remote-items';
+import { getCachedSubscriptionTier } from '@/lib/subscription';
+import {
+  incrementReflectionPaywallCount,
+  shouldShowReflectionPaywall,
+} from '@/lib/reflection-paywall-count';
 
 export const RC = {
   yellow: '#F9C939',
@@ -292,6 +298,7 @@ export function ReflectResultView({
 }) {
   // 结果页 toggle：默认开（paired 可见细节）；关掉只藏细节、物品仍可见。
   const [detailsVisible, setDetailsVisible] = useState(true);
+  const claimedRef = useRef(false);
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const it of result.matchedItems) map.set(it.itemId, (map.get(it.itemId) ?? 0) + 1);
@@ -306,8 +313,18 @@ export function ReflectResultView({
   }
 
   function onClaim() {
+    if (claimedRef.current) return;
+    claimedRef.current = true;
     void haptics.medium();
+    const isFree = getCachedSubscriptionTier() === 'free';
+    const claimCount = isFree ? incrementReflectionPaywallCount() : 0;
+    const showReflectionPaywall = isFree && shouldShowReflectionPaywall(claimCount);
     onFinished();
+    if (showReflectionPaywall) {
+      setTimeout(() => {
+        router.push('/(main)/(modals)/reflection-plus-paywall' as never);
+      }, 1000);
+    }
   }
 
   return (

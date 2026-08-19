@@ -3,7 +3,6 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -166,14 +165,6 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
               color="#8A6240"
             />
           </View>
-          <View style={styles.planFeatures}>
-            {tierInfo.features.map((f, i) => (
-              <View key={i} style={styles.planFeatureRow}>
-                <MaterialIcons name="check-circle" size={16} color="#8A6240" />
-                <Text style={styles.planFeatureText}>{f}</Text>
-              </View>
-            ))}
-          </View>
         </View>
 
         {/* Upgrade Plan */}
@@ -261,8 +252,7 @@ const styles = StyleSheet.create({
   planCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    alignItems: 'center',
   },
   currentPlanLabel: {
     color: '#8A6240',
@@ -276,9 +266,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
   },
-  planFeatures: { gap: 10 },
-  planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  planFeatureText: { color: '#3E3229', fontSize: 14, fontWeight: '500' },
   statLabel: {
     color: '#8A7A63',
     fontSize: 12,
