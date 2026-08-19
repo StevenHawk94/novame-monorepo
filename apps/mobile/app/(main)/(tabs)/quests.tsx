@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -29,6 +29,10 @@ const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = 
 };
 const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
 const CELEBRATION_DURATION_MS = 3200;
+const QUEST_CELEBRATION_SOURCE = Platform.select({
+  android: require('../../../assets/animations/Confetti.json'),
+  default: require('../../../assets/animations/Confetti.lottie'),
+});
 
 /**
  * Weekly Quests (design 2026-07-23: mock layout on the app's dark-brown
@@ -211,7 +215,7 @@ export default function QuestsScreen() {
           <View style={styles.celebration} pointerEvents="none">
             <ConfettiBurst />
             <LottieView
-              source={require('../../../assets/animations/Confetti.lottie')}
+              source={QUEST_CELEBRATION_SOURCE}
               autoPlay
               loop={false}
               resizeMode="contain"

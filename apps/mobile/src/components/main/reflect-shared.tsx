@@ -41,6 +41,11 @@ import {
   shouldShowReflectionPaywall,
 } from '@/lib/reflection-paywall-count';
 
+const REFLECT_CELEBRATION_SOURCE = Platform.select({
+  android: require('../../../assets/animations/reflect.json'),
+  default: require('../../../assets/animations/reflect.lottie'),
+});
+
 export const RC = {
   yellow: '#F9C939',
   yellowDrop: '#E8A33C',
@@ -331,7 +336,7 @@ export function ReflectResultView({
     <View style={s.resultWrap}>
       <View pointerEvents="none" style={s.reflectCelebration}>
         <LottieView
-          source={require('../../../assets/animations/reflect.lottie')}
+          source={REFLECT_CELEBRATION_SOURCE}
           autoPlay
           loop={false}
           resizeMode="contain"

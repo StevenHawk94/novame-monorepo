@@ -25,6 +25,7 @@ Return ONLY valid JSON:
 
 const CACHE_HOURS = 24
 const GENERATION_LOCK_MINUTES = 5
+const FAILURE_CACHE_MINUTES = 1
 
 function normalizeTasks(parsed) {
   const arr = Array.isArray(parsed) ? parsed : parsed?.tasks
@@ -112,7 +113,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'generation_in_progress' }, { status: 409 })
     }
     if (cached?.status === 'failed') {
-      return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
+      const failedAt = new Date(cached.generated_at).getTime()
+      const failureCooldownMs = FAILURE_CACHE_MINUTES * 60 * 1000
+      if (Number.isFinite(failedAt) && now.getTime() - failedAt < failureCooldownMs) {
+        return NextResponse.json({ error: 'ai_unavailable' }, { status: 503 })
+      }
+
+      // Also clear failures written by older deployments whose expires_at was
+      // incorrectly set to 24 hours, so they do not keep users locked out.
+      await supabase
+        .from('quest_custom_generations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('status', 'failed')
     }
 
     // Secondary abuse backstop for failed AI attempts. Successful generations
@@ -190,7 +203,12 @@ export async function POST(request) {
         .update({
           status: 'failed',
           generated_at: failedAt.toISOString(),
-          expires_at: new Date(failedAt.getTime() + CACHE_HOURS * 60 * 60 * 1000).toISOString(),
+          // Failures are transient and must not consume the user's daily
+          // generation slot. Keep a short cooldown to prevent rapid retries;
+          // only a successful result is cached for the full 24 hours.
+          expires_at: new Date(
+            failedAt.getTime() + FAILURE_CACHE_MINUTES * 60 * 1000,
+          ).toISOString(),
         })
         .eq('user_id', userId)
         .eq('generation_token', generationToken)

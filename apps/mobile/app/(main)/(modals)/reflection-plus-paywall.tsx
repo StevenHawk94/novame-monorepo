@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GridBackground } from '@/components/ui/grid-background';
 import { haptics } from '@/lib/haptics';
+import { ICONS } from '@/lib/icons';
 
 const PARK_ICON = require('../../../assets/items/each/memory.1486_park.webp');
 
@@ -50,8 +51,12 @@ export default function ReflectionPlusPaywallModal() {
         </Text>
 
         <View style={styles.compareCard}>
-          <View style={styles.lockBadge}>
-            <MaterialIcons name="lock-open" size={23} color={INK} />
+          <View pointerEvents="none" style={styles.lockAnchor}>
+            <ExpoImage
+              source={ICONS.obPaywallUnlock}
+              style={styles.lockImage}
+              contentFit="contain"
+            />
           </View>
           <View style={styles.columns}>
             <View style={styles.column}>
@@ -120,12 +125,10 @@ const styles = StyleSheet.create({
     borderRadius: 18, paddingHorizontal: 14, paddingTop: 34, paddingBottom: 16,
     marginTop: 58,
   },
-  lockBadge: {
-    position: 'absolute', top: -25, left: '50%', marginLeft: -25,
-    width: 50, height: 50, borderRadius: 25, backgroundColor: '#FF9D62',
-    borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center',
-    transform: [{ rotate: '-8deg' }],
+  lockAnchor: {
+    position: 'absolute', top: -31, left: 0, right: 0, alignItems: 'center',
   },
+  lockImage: { width: 62, height: 62 },
   columns: { flexDirection: 'row', gap: 14 },
   column: { flex: 1, alignItems: 'center' },
   freeBadge: { backgroundColor: CREAM, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 4 },

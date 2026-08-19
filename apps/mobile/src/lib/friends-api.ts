@@ -13,6 +13,7 @@ import { storage } from './storage';
 import { kCommonItems, kConnInsights, kFriendsFeed, kFriendsStatus, kPairingStatus, kSharedBoxState } from '../shared/storage/keys';
 import { localDateKey, patchAnalysisCache, readAnalysisCache } from './connection-analysis-cache';
 import { shouldResumeAfterAbsence } from './analysis-refresh-policy';
+import { fetchSubscriptionTier } from './subscription';
 
 export interface FriendCard {
   userId: string;
@@ -181,6 +182,10 @@ export async function respondFriend(
       '/api/friends/respond', { userId, friendshipId, action: 'accept' },
     );
     if (data.error) return { ok: false, error: data.error };
+    // Pair acceptance can grant this free account its partner's Duo seat.
+    // Refresh the local entitlement before returning so every screen opened
+    // immediately afterwards sees Plus without requiring an app restart.
+    await fetchSubscriptionTier(userId).catch(() => null);
     return { ok: true };
   } catch (err) {
     const error = (err as { body?: { error?: string } })?.body?.error;

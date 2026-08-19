@@ -87,11 +87,33 @@ export default function ConnectionDashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Re-read the local entitlement whenever this tab regains focus so a
-      // purchase made in the paywall unlocks the board immediately on return.
-      setIsPaid(getCachedSubscriptionTier() !== 'free');
+      let active = true;
+      // Paint from cache immediately, then reconcile pairing + entitlement
+      // together. Pair acceptance may have just granted a Duo seat, so the
+      // local tier alone is not authoritative enough for this focus pass.
+      const cachedPaid = getCachedSubscriptionTier() !== 'free';
+      setIsPaid(cachedPaid);
       const previousPartnerId = getCachedPairing()?.partner?.userId ?? null;
-      void fetchPairing().then(async (p) => {
+      void (async () => {
+        const [{ data }, p] = await Promise.all([
+          supabase.auth.getSession(),
+          fetchPairing(),
+        ]);
+        if (!active) return;
+
+        let paid = cachedPaid;
+        const uid = data.session?.user?.id;
+        if (uid) {
+          try {
+            const freshSubscription = await fetchSubscriptionTier(uid);
+            paid = freshSubscription.tier !== 'free';
+          } catch {
+            // Keep the cache-first state when the background sync is offline.
+          }
+        }
+        if (!active) return;
+        setIsPaid(paid);
+
           setPairing(p);
           if (!p.paired) {
             setItems([]);
@@ -100,11 +122,12 @@ export default function ConnectionDashboardScreen() {
             return;
           }
           const partnerChanged = previousPartnerId !== p.partner?.userId;
-          if ((!partnerChanged && !shouldRefreshConnectionDashboard()) || refreshInFlight.current) return;
+          const entitlementChanged = paid !== cachedPaid;
+          if ((!partnerChanged && !entitlementChanged && !shouldRefreshConnectionDashboard()) || refreshInFlight.current) return;
           refreshInFlight.current = true;
           try {
             const commonPromise = fetchCommonItems().then(setItems);
-            if (!isPaid) {
+            if (!paid) {
               setInsightsGate('plus_required');
               await commonPromise;
               return;
@@ -126,7 +149,7 @@ export default function ConnectionDashboardScreen() {
             markConnectionDashboardRefreshed();
             refreshInFlight.current = false;
           }
-        }).catch(() => {
+      })().catch(() => {
           refreshInFlight.current = false;
         });
       void supabase.auth.getSession().then(({ data }) => {
@@ -142,7 +165,10 @@ export default function ConnectionDashboardScreen() {
         setMyAvatarUrl(cached?.avatarUrl ?? '');
         setMyIsDefaultAvatar(cached?.isDefaultAvatar);
       });
-    }, [isPaid]),
+      return () => {
+        active = false;
+      };
+    }, []),
   );
 
 

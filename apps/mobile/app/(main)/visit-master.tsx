@@ -143,7 +143,13 @@ export default function VisitMasterScreen() {
                 <MaterialIcons name="lock" size={22} color="#8A7A63" />
               </Pressable>
             ) : phase === 'ask' ? (
-              <View style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}>
+              <View
+                style={[
+                  styles.askPill,
+                  inputFocused ? styles.askPillFocused : styles.askPillResting,
+                  { marginBottom: insets.bottom + 18 },
+                ]}
+              >
                 <TextInput
                   value={question}
                   onChangeText={setQuestion}
@@ -154,8 +160,11 @@ export default function VisitMasterScreen() {
                   maxLength={1000}
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
-                  textAlignVertical="top"
-                  style={styles.askInput}
+                  textAlignVertical={inputFocused ? 'top' : 'center'}
+                  style={[
+                    styles.askInput,
+                    inputFocused ? styles.askInputFocused : styles.askInputResting,
+                  ]}
                 />
                 <Pressable
                   onPress={onAsk}
@@ -371,12 +380,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     marginHorizontal: 20, backgroundColor: '#FBF6EA', borderRadius: 26,
     borderWidth: 2.5, borderColor: '#2B2B2B',
-    paddingHorizontal: 18, paddingVertical: 14, minHeight: 186,
+    paddingHorizontal: 18,
   },
+  askPillResting: { minHeight: 62, paddingVertical: 9 },
+  askPillFocused: { minHeight: 186, paddingVertical: 14 },
   askInput: {
     flex: 1, fontSize: 17, fontFamily: 'Inter_700Bold', color: '#2B2B2B',
-    minHeight: 150, maxHeight: 210, paddingTop: 4, paddingBottom: 4,
+    paddingTop: 4, paddingBottom: 4,
   },
+  askInputResting: { minHeight: 40, maxHeight: 44 },
+  askInputFocused: { minHeight: 150, maxHeight: 210 },
   lockedText: { flex: 1, fontSize: 16.5, fontFamily: 'Inter_700Bold', color: '#8A7A63' },
   sendIcon: { width: 36, height: 36 },
 

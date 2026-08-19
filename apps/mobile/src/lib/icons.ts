@@ -34,7 +34,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   ThemeWriteOwn: require('../../assets/Icons/custom.png'),
   // Misc
   interact: require('../../assets/Icons/interact.png'),
-  Clover: require('../../assets/Icons/clover.png'),
+  Clover: require('../../assets/Icons/clovers.png'),
   Clovers: require('../../assets/Icons/clovers.png'),
   send: require('../../assets/Icons/send.png'),
   visitMasterHistory: require('../../assets/Icons/visit-master-history.png'),

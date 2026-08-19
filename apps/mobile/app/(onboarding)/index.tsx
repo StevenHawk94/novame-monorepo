@@ -456,8 +456,8 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>A few minutes of reflection becomes something you can share.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Reflect on your thoughts, feelings, and everyday moments. Burrow turns the parts you
-              choose into adorable memory items, creating a shared space that grows with both of you.
+              Burrow turns the parts you choose into adorable memory items, creating a shared space
+              that grows with both of you.
             </Text>
             {/* expo-image plays and loops animated GIFs natively. */}
             <ExpoImage source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
