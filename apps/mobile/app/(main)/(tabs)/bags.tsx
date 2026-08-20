@@ -7,17 +7,29 @@ import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { OffsetCard } from '@/components/ui/offset-card';
-import { fetchBags, getCachedBags, getCachedTheirBags, sharedBoxToCollectedItems, type CollectedItem } from '@/lib/bags-api';
+import {
+  fetchMoreBags,
+  getCachedBags,
+  getCachedTheirBags,
+  isBagsHistoryComplete,
+  refreshBagsIfStale,
+  sharedBoxToCollectedItems,
+  type CollectedItem,
+} from '@/lib/bags-api';
 import {
   fetchPairing,
+  fetchMoreSharedBox,
   fetchSharedBoxWithMeta,
   getCachedPairing,
   getCachedSharedBox,
+  isPairingCacheStale,
+  isSharedBoxCacheStale,
   markSharedBoxRead,
   subscribeSharedBoxChanges,
   type PairingStatus,
 } from '@/lib/friends-api';
 import { ICONS } from '@/lib/icons';
+import { refreshRemoteItems } from '@/lib/remote-items';
 
 type CollectionTab = 'mine' | 'their' | 'ours';
 
@@ -32,6 +44,8 @@ const TAB_GRID: Record<CollectionTab, { base: string; line: string }> = {
   their: { base: '#DDEFF7', line: '#B9DDEA' },
   ours: { base: '#F7DFE7', line: '#EABFCC' },
 };
+
+const COLLECTION_PAGE_SIZE = 100;
 
 /**
  * Bags is one collection split by ownership:
@@ -67,10 +81,31 @@ export default function BagsScreen() {
   );
   const [oursUnread, setOursUnread] = useState(initialSharedBox.hasUnreadFromPartner);
   const [oursReadThrough, setOursReadThrough] = useState(initialSharedBox.readThrough);
+  const [oursHistoryComplete, setOursHistoryComplete] = useState(initialSharedBox.historyComplete);
+  const [mineHistoryComplete, setMineHistoryComplete] = useState(() => isBagsHistoryComplete('mine'));
+  const [theirHistoryComplete, setTheirHistoryComplete] = useState(() => isBagsHistoryComplete('their', initialPartnerId));
+  const [mineLoadingMore, setMineLoadingMore] = useState(false);
+  const [theirLoadingMore, setTheirLoadingMore] = useState(false);
+  const [oursLoadingMore, setOursLoadingMore] = useState(false);
   const itemSheetRef = useRef<ItemSheetRef>(null);
   const listRef = useRef<FlatList<CollectedItem[]>>(null);
   const sharedRefreshGeneration = useRef(0);
   const screenRefreshGeneration = useRef(0);
+  const ourItemsRef = useRef(initialOurItems);
+
+  const applyOurItems = useCallback((items: ReturnType<typeof getCachedSharedBox>['items']) => {
+    const next = sharedBoxToCollectedItems(items);
+    const currentIds = new Set(ourItemsRef.current.map((item) => item.itemId));
+    const newlyVisible = next.reduce((count, item) => count + (currentIds.has(item.itemId) ? 0 : 1), 0);
+    ourItemsRef.current = next;
+    setOurItems(next);
+    // Keep every tile that was already visible in view when new unique items
+    // are prepended. Otherwise slice(0, 100) makes the same number of old tail
+    // tiles appear to have been overwritten until another pagination event.
+    if (newlyVisible > 0) {
+      setVisibleCount((count) => Math.min(next.length, Math.max(COLLECTION_PAGE_SIZE, count + newlyVisible)));
+    }
+  }, []);
 
   const selectCollectionTab = useCallback((nextTab: CollectionTab) => {
     setTab(nextTab);
@@ -81,33 +116,65 @@ export default function BagsScreen() {
     useCallback(() => {
       let active = true;
       const screenGeneration = ++screenRefreshGeneration.current;
-      void Promise.all([fetchBags(), fetchPairing()]).then(async ([mine, pair]) => {
+      // Six-hour TTL is evaluated lazily here; rendering always uses the local
+      // bundled + cached dictionary first.
+      void refreshRemoteItems();
+      // Repaint persistent snapshots first. Network work only runs when the
+      // corresponding snapshot is stale, so revisiting this tab is instant.
+      const cachedPair = getCachedPairing();
+      setMineItems(getCachedBags());
+      setMineHistoryComplete(isBagsHistoryComplete('mine'));
+      if (cachedPair) setPairing(cachedPair);
+      if (cachedPair?.paired && cachedPair.partner) {
+        setTheirItems(getCachedTheirBags(cachedPair.partner.userId));
+        setTheirHistoryComplete(isBagsHistoryComplete('their', cachedPair.partner.userId));
+        const cachedShared = getCachedSharedBox(cachedPair.partner.userId);
+        applyOurItems(cachedShared.items);
+        setOursUnread(cachedShared.hasUnreadFromPartner);
+        setOursReadThrough(cachedShared.readThrough);
+        setOursHistoryComplete(cachedShared.historyComplete);
+      }
+      setLoaded(true);
+
+      const pairPromise = cachedPair && !isPairingCacheStale()
+        ? Promise.resolve(cachedPair)
+        : fetchPairing();
+      void Promise.all([refreshBagsIfStale(), pairPromise]).then(async ([mine, pair]) => {
         if (!active || screenGeneration !== screenRefreshGeneration.current) return;
         setMineItems(mine);
+        setMineHistoryComplete(isBagsHistoryComplete('mine'));
         setPairing(pair);
 
         if (pair.paired && pair.partner) {
           const sharedGeneration = ++sharedRefreshGeneration.current;
+          const cachedShared = getCachedSharedBox(pair.partner.userId);
           const [theirs, shared] = await Promise.all([
-            fetchBags('their', pair.partner.userId),
-            fetchSharedBoxWithMeta(pair.partner.userId),
+            refreshBagsIfStale('their', pair.partner.userId),
+            isSharedBoxCacheStale(pair.partner.userId)
+              ? fetchSharedBoxWithMeta(pair.partner.userId)
+              : Promise.resolve(cachedShared),
           ]);
           if (!active || screenGeneration !== screenRefreshGeneration.current) return;
           setTheirItems(theirs);
+          setTheirHistoryComplete(isBagsHistoryComplete('their', pair.partner.userId));
           if (sharedGeneration === sharedRefreshGeneration.current) {
-            setOurItems(sharedBoxToCollectedItems(shared.items));
+            applyOurItems(shared.items);
             setOursUnread(shared.hasUnreadFromPartner);
             setOursReadThrough(shared.readThrough);
+            setOursHistoryComplete(shared.historyComplete);
           }
         } else {
           setTheirItems([]);
+          setTheirHistoryComplete(true);
+          ourItemsRef.current = [];
           setOurItems([]);
           setOursUnread(false);
+          setOursHistoryComplete(true);
         }
         setLoaded(true);
       });
       return () => { active = false; };
-    }, []),
+    }, [applyOurItems]),
   );
 
   const shown = useMemo(() => {
@@ -116,14 +183,13 @@ export default function BagsScreen() {
     return mineItems;
   }, [mineItems, ourItems, tab, theirItems]);
 
-  const PAGE = 100;
-  const [visibleCount, setVisibleCount] = useState(PAGE);
-  useEffect(() => setVisibleCount(PAGE), [tab]);
+  const [visibleCount, setVisibleCount] = useState(COLLECTION_PAGE_SIZE);
+  useEffect(() => setVisibleCount(COLLECTION_PAGE_SIZE), [tab]);
   const paged = shown.slice(0, visibleCount);
   // Render explicit rows instead of FlatList's numColumns mode. When new
   // items are prepended, numColumns can briefly reuse stale row buckets and
-  // hide displaced cells until a remount. Row keys include every item id, so
-  // any changed grouping is reconciled immediately for Mine / Their / Ours.
+  // hide displaced cells until a remount. Stable row-position keys keep the
+  // virtualized containers mounted while React reconciles each tile by id.
   const rows = useMemo(() => {
     const result: CollectedItem[][] = [];
     for (let index = 0; index < paged.length; index += numColumns) {
@@ -133,22 +199,72 @@ export default function BagsScreen() {
   }, [numColumns, paged]);
   const partner = pairing?.paired ? pairing.partner : null;
 
+  const loadMore = useCallback(() => {
+    if (visibleCount < shown.length) {
+      setVisibleCount((count) => Math.min(count + COLLECTION_PAGE_SIZE, shown.length));
+      return;
+    }
+    if (tab === 'mine') {
+      if (mineHistoryComplete || mineLoadingMore) return;
+      setMineLoadingMore(true);
+      void fetchMoreBags('mine').then((items) => {
+        setMineItems(items);
+        setMineHistoryComplete(isBagsHistoryComplete('mine'));
+        setVisibleCount((count) => Math.min(items.length, count + COLLECTION_PAGE_SIZE));
+      }).finally(() => setMineLoadingMore(false));
+      return;
+    }
+    if (tab === 'their') {
+      if (!partner || theirHistoryComplete || theirLoadingMore) return;
+      setTheirLoadingMore(true);
+      void fetchMoreBags('their', partner.userId).then((items) => {
+        setTheirItems(items);
+        setTheirHistoryComplete(isBagsHistoryComplete('their', partner.userId));
+        setVisibleCount((count) => Math.min(items.length, count + COLLECTION_PAGE_SIZE));
+      }).finally(() => setTheirLoadingMore(false));
+      return;
+    }
+    if (!partner || oursHistoryComplete || oursLoadingMore) return;
+    setOursLoadingMore(true);
+    void fetchMoreSharedBox(partner.userId).then((shared) => {
+      applyOurItems(shared.items);
+      setOursHistoryComplete(shared.historyComplete);
+      setOursReadThrough(shared.readThrough);
+      setVisibleCount((count) => Math.min(sharedBoxToCollectedItems(shared.items).length, count + COLLECTION_PAGE_SIZE));
+    }).finally(() => setOursLoadingMore(false));
+  }, [
+    applyOurItems,
+    mineHistoryComplete,
+    mineLoadingMore,
+    oursHistoryComplete,
+    oursLoadingMore,
+    partner,
+    shown.length,
+    tab,
+    theirHistoryComplete,
+    theirLoadingMore,
+    visibleCount,
+  ]);
+
   useEffect(() => {
     if (!partner) return;
-    return subscribeSharedBoxChanges((friendUserId) => {
-      if (friendUserId !== partner.userId) return;
+    return subscribeSharedBoxChanges((change) => {
+      if (change.friendUserId !== partner.userId) return;
+      // Paint the optimistic cache synchronously before any network request.
+      applyOurItems(getCachedSharedBox(change.friendUserId).items);
       const generation = ++sharedRefreshGeneration.current;
-      void fetchSharedBoxWithMeta(friendUserId).then((shared) => {
+      void fetchSharedBoxWithMeta(change.friendUserId).then((shared) => {
         if (generation !== sharedRefreshGeneration.current) return;
-        setOurItems(sharedBoxToCollectedItems(shared.items));
+        applyOurItems(shared.items);
         setOursUnread(shared.hasUnreadFromPartner);
         setOursReadThrough(shared.readThrough);
+        setOursHistoryComplete(shared.historyComplete);
         // New rows are sorted at the head. Explicitly reset the virtualized
         // list's retained offset so those rows cannot remain above the viewport.
         requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
       });
     });
-  }, [partner]);
+  }, [applyOurItems, partner]);
 
   useEffect(() => {
     if (tab !== 'ours' || !partner || !oursUnread) return;
@@ -265,10 +381,10 @@ export default function BagsScreen() {
           ref={listRef}
           key={`${tab}-${numColumns}`}
           data={rows}
-          keyExtractor={(row) => row.map((item) => item.itemId).join('|')}
+          keyExtractor={(_, index) => `${tab}-row-${index}`}
           contentContainerStyle={styles.gridScroll}
           showsVerticalScrollIndicator={false}
-          onEndReached={() => setVisibleCount((count) => Math.min(count + PAGE, shown.length))}
+          onEndReached={loadMore}
           onEndReachedThreshold={0.6}
           initialNumToRender={12}
           maxToRenderPerBatch={12}
@@ -293,10 +409,22 @@ export default function BagsScreen() {
               ))}
             </View>
           )}
+          ListFooterComponent={
+            (tab === 'mine' && mineLoadingMore)
+              || (tab === 'their' && theirLoadingMore)
+              || (tab === 'ours' && oursLoadingMore)
+              ? <ActivityIndicator color="#8A6240" />
+              : null
+          }
         />
       )}
 
-        <ItemSheet ref={itemSheetRef} items={shown} />
+        <ItemSheet
+          ref={itemSheetRef}
+          items={shown}
+          scope={tab}
+          expectedOwnerUserId={partner?.userId}
+        />
       </View>
     </SafeAreaView>
   );

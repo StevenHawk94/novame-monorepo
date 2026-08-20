@@ -28,7 +28,8 @@ const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = 
   write_own: { icon: ICONS.ThemeWriteOwn, color: '#7BB661' },
 };
 const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
-const CELEBRATION_DURATION_MS = 3200;
+const LOTTIE_FALLBACK_MS = 1800;
+const CONFETTI_FALLBACK_MS = 3200;
 const QUEST_CELEBRATION_SOURCE = Platform.select({
   android: require('../../../assets/animations/Confetti.json'),
   default: require('../../../assets/animations/Confetti.lottie'),
@@ -47,7 +48,8 @@ export default function QuestsScreen() {
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   // Optimistic check-off (2026-08-07): the row completes instantly with
   // confetti; the server call reconciles silently in the background.
-  const [confetti, setConfetti] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showLottie, setShowLottie] = useState(false);
   const checkInFlight = useRef(false);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
@@ -57,14 +59,20 @@ export default function QuestsScreen() {
     }, []),
   );
 
-  // Confetti.lottie is ~1.37s while the handmade shower runs for nearly 3s.
-  // Keep the shared overlay mounted until both animations have fully played;
-  // Lottie's finish callback must not remove the still-falling confetti.
+  // The two celebration layers have different durations. Each one unmounts as
+  // soon as its own animation finishes; these timers are only safety fallbacks
+  // for devices that fail to deliver an animation completion callback.
   useEffect(() => {
-    if (!confetti) return;
-    const timer = setTimeout(() => setConfetti(false), CELEBRATION_DURATION_MS);
+    if (!showConfetti) return;
+    const timer = setTimeout(() => setShowConfetti(false), CONFETTI_FALLBACK_MS);
     return () => clearTimeout(timer);
-  }, [confetti]);
+  }, [showConfetti]);
+
+  useEffect(() => {
+    if (!showLottie) return;
+    const timer = setTimeout(() => setShowLottie(false), LOTTIE_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [showLottie]);
 
   const themes = useMemo(() => themesForScope('self'), []);
   const custom = themes.find((t) => t.isCustom);
@@ -92,7 +100,8 @@ export default function QuestsScreen() {
 
     // Optimistic: complete the row NOW — confetti, haptic, +clovers.
     void haptics.success();
-    setConfetti(true);
+    setShowConfetti(true);
+    setShowLottie(true);
     const prevStatus = status;
     const finishingPlan = status.plan.checkedCount + 1 === status.plan.tasks.length;
     const expectedAward = CLOVERS_PER_TASK + (finishingPlan ? COMPLETION_BONUS : 0);
@@ -119,7 +128,7 @@ export default function QuestsScreen() {
       award.commit(res.cloversEarned);
       if (res.allDone) {
         appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
-        void fetchQuestStatus().then(setStatus);
+        void fetchQuestStatus({ force: true }).then(setStatus);
         return;
       }
       // Align the count with the server's authoritative value.
@@ -211,16 +220,19 @@ export default function QuestsScreen() {
           <Text style={styles.editHint}>You can edit your plan anytime.</Text>
           <View style={{ height: 24 }} />
         </ScrollView>
-        {confetti && (
+        {(showConfetti || showLottie) && (
           <View style={styles.celebration} pointerEvents="none">
-            <ConfettiBurst />
-            <LottieView
-              source={QUEST_CELEBRATION_SOURCE}
-              autoPlay
-              loop={false}
-              resizeMode="contain"
-              style={styles.confettiLottie}
-            />
+            {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
+            {showLottie && (
+              <LottieView
+                source={QUEST_CELEBRATION_SOURCE}
+                autoPlay
+                loop={false}
+                resizeMode="contain"
+                onAnimationFinish={() => setShowLottie(false)}
+                style={styles.confettiLottie}
+              />
+            )}
           </View>
         )}
       </SafeAreaView>

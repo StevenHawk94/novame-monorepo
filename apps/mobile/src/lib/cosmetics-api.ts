@@ -21,23 +21,54 @@ export interface CosmeticsState {
   unlocks: CosmeticUnlock[];
 }
 
+interface CosmeticsCache {
+  state: CosmeticsState;
+  fetchedAtMs: number;
+}
+
 type CosmeticsListener = (state: CosmeticsState) => void;
 const listeners = new Set<CosmeticsListener>();
+const COSMETICS_TTL_MS = 6 * 60 * 60 * 1000;
 let cacheRevision = 0;
+let fetchInflight: Promise<CosmeticsState> | null = null;
 
-export function getCachedCosmetics(): CosmeticsState {
+function readCache(): CosmeticsCache | null {
   const raw = storage.getString(kCosmeticUnlocks.name);
-  if (!raw) return { balance: 0, unlocks: [] };
+  if (!raw) return null;
   try {
-    const p = JSON.parse(raw) as Partial<CosmeticsState>;
-    return { balance: p.balance ?? 0, unlocks: p.unlocks ?? [] };
+    const parsed = JSON.parse(raw) as Partial<CosmeticsCache & CosmeticsState>;
+    if (parsed.state) {
+      return {
+        state: {
+          balance: parsed.state.balance ?? 0,
+          unlocks: parsed.state.unlocks ?? [],
+        },
+        fetchedAtMs: parsed.fetchedAtMs ?? 0,
+      };
+    }
+    // Backward-compatible migration from the previous raw CosmeticsState.
+    return {
+      state: { balance: parsed.balance ?? 0, unlocks: parsed.unlocks ?? [] },
+      fetchedAtMs: 0,
+    };
   } catch {
-    return { balance: 0, unlocks: [] };
+    return null;
   }
 }
 
-function write(s: CosmeticsState): void {
-  storage.set(kCosmeticUnlocks.name, JSON.stringify(s));
+export function getCachedCosmetics(): CosmeticsState {
+  return readCache()?.state ?? { balance: 0, unlocks: [] };
+}
+
+function write(s: CosmeticsState, options?: { markFresh?: boolean }): void {
+  const previousFetchedAtMs = readCache()?.fetchedAtMs ?? 0;
+  const next: CosmeticsCache = {
+    state: s,
+    // Optimistic writes do not pretend a server read just happened. A
+    // confirmed purchase or an actual GET may mark the whole resource fresh.
+    fetchedAtMs: options?.markFresh ? Date.now() : previousFetchedAtMs,
+  };
+  storage.set(kCosmeticUnlocks.name, JSON.stringify(next));
   cacheRevision += 1;
   for (const listener of listeners) listener(s);
 }
@@ -60,7 +91,7 @@ export function awardCachedClovers(amount: number): void {
 /** Server confirmed an award: update instantly, then silently verify it. */
 export function confirmCloverAward(amount: number): void {
   awardCachedClovers(amount);
-  void fetchCosmetics();
+  void fetchCosmetics({ force: true });
 }
 
 /**
@@ -88,36 +119,47 @@ export function optimisticCloverAward(expectedAmount: number): {
       settled = true;
       const actual = Math.max(0, Math.floor(actualAmount));
       adjust(actual - expected);
-      void fetchCosmetics();
+      void fetchCosmetics({ force: true });
     },
     rollback() {
       if (settled) return;
       settled = true;
       adjust(-expected);
-      void fetchCosmetics();
+      void fetchCosmetics({ force: true });
     },
   };
 }
 
-export async function fetchCosmetics(): Promise<CosmeticsState> {
-  const revisionAtStart = cacheRevision;
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return getCachedCosmetics();
-  try {
-    const data = await apiClient.get<{ success?: boolean; balance?: number; unlocks?: CosmeticUnlock[] }>(
-      `/api/cosmetics/unlocks?userId=${encodeURIComponent(userId)}`,
-    );
-    if (!data.success) return getCachedCosmetics();
-    const state: CosmeticsState = { balance: data.balance ?? 0, unlocks: data.unlocks ?? [] };
-    // Do not let an older in-flight refresh overwrite a newer optimistic
-    // award. That award starts its own post-confirmation reconciliation.
-    if (revisionAtStart !== cacheRevision) return getCachedCosmetics();
-    write(state);
-    return state;
-  } catch {
-    return getCachedCosmetics();
+export function fetchCosmetics(options?: { force?: boolean }): Promise<CosmeticsState> {
+  const cached = readCache();
+  if (!options?.force && cached && Date.now() - cached.fetchedAtMs < COSMETICS_TTL_MS) {
+    return Promise.resolve(cached.state);
   }
+  if (fetchInflight) return fetchInflight;
+
+  fetchInflight = (async () => {
+    const revisionAtStart = cacheRevision;
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return getCachedCosmetics();
+    try {
+      const data = await apiClient.get<{ success?: boolean; balance?: number; unlocks?: CosmeticUnlock[] }>(
+        `/api/cosmetics/unlocks?userId=${encodeURIComponent(userId)}`,
+      );
+      if (!data.success) return getCachedCosmetics();
+      const state: CosmeticsState = { balance: data.balance ?? 0, unlocks: data.unlocks ?? [] };
+      // Do not let an older in-flight refresh overwrite a newer optimistic
+      // award. The optimistic write remains stale and will retry on next use.
+      if (revisionAtStart !== cacheRevision) return getCachedCosmetics();
+      write(state, { markFresh: true });
+      return state;
+    } catch {
+      return getCachedCosmetics();
+    } finally {
+      fetchInflight = null;
+    }
+  })();
+  return fetchInflight;
 }
 
 export function isUnlocked(state: CosmeticsState, type: 'skin' | 'scene' | 'outfit', id: string): boolean {
@@ -140,7 +182,10 @@ export async function purchaseCosmetic(type: 'skin' | 'scene' | 'outfit', id: st
     );
     if (data.success) {
       const cur = getCachedCosmetics();
-      write({ balance: data.balance ?? cur.balance, unlocks: [...cur.unlocks, { type, id }] });
+      write(
+        { balance: data.balance ?? cur.balance, unlocks: [...cur.unlocks, { type, id }] },
+        { markFresh: true },
+      );
       return { ok: true, balance: data.balance ?? 0 };
     }
     const err = data.error;

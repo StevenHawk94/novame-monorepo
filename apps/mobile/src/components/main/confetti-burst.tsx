@@ -86,11 +86,15 @@ export function ConfettiBurst({ onDone }: { onDone?: () => void }) {
       })),
     [width, height],
   );
+  const lastPieceIndex = pieces.reduce(
+    (latest, piece, index) => (piece.delay > pieces[latest].delay ? index : latest),
+    0,
+  );
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {pieces.map((spec, i) => (
-        <Piece key={i} spec={spec} onLast={i === pieces.length - 1 ? onDone : undefined} />
+        <Piece key={i} spec={spec} onLast={i === lastPieceIndex ? onDone : undefined} />
       ))}
     </View>
   );

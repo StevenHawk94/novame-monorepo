@@ -34,13 +34,6 @@ const DIMENSION_META: Record<DimensionKey, { emoji: string; color: string; line:
 const LOCKED_WEEK_PREVIEW = require('../../assets/connection/weekly-recap-week-free.webp');
 const LOCKED_TRENDS_PREVIEW = require('../../assets/connection/weekly-recap-trends-free.webp');
 
-function trendIcon(trend: string): keyof typeof MaterialIcons.glyphMap {
-  if (trend.endsWith('_up')) return 'trending-up';
-  if (trend.endsWith('_down')) return 'trending-down';
-  if (trend === 'same') return 'trending-flat';
-  return 'more-horiz';
-}
-
 function shortDate(value: string): string {
   return new Date(`${value}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -276,10 +269,6 @@ export default function TheirPatternsScreen() {
                   <View style={styles.dimensionBody}>
                     <View style={styles.dimensionTop}>
                       <Text style={styles.dimensionName}>{dimension.label}</Text>
-                      <View style={styles.trendPill}>
-                        <MaterialIcons name={trendIcon(dimension.trend)} size={17} color="#69452F" />
-                        <Text style={styles.trendText}>{dimension.trendLabel}</Text>
-                      </View>
                     </View>
                     <Text style={styles.dimensionSummary}>{dimension.summary}</Text>
                     {open ? (
@@ -418,8 +407,6 @@ const styles = StyleSheet.create({
   dimensionBody: { flex: 1 },
   dimensionTop: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   dimensionName: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#30231A' },
-  trendPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F3E2D2', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  trendText: { fontSize: 11.5, fontFamily: 'Inter_700Bold', color: '#69452F' },
   dimensionSummary: { marginTop: 7, fontSize: 13.5, lineHeight: 20, fontFamily: 'Inter_500Medium', color: '#6F5A48' },
   detail: { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: '#E9D8CB' },
   evidenceText: { fontSize: 12.5, lineHeight: 19, fontFamily: 'Inter_600SemiBold', color: '#765E4B' },

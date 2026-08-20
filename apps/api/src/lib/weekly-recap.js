@@ -57,7 +57,7 @@ export function weeklyResponse(context) {
   const previous = context.generated.at(-2) || null
   const dimensions = WEEKLY_DIMENSIONS.map((key) => ({
     key, label: LABELS[key], trend: trend(latest?.scores?.[key], previous?.scores?.[key]),
-    trendLabel: 'Compared with the previous recap', score: latest?.scores?.[key] ?? null,
+    trendLabel: '', score: latest?.scores?.[key] ?? null,
     summary: latest?.payload?.dimensions?.[key]?.summary || 'A clearer picture will appear as more reflections are recorded.',
     evidenceCount: latest?.evidence_count || 0, dayCount: 0, themes: [], related: [],
   }))

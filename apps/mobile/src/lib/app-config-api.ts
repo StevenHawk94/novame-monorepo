@@ -9,7 +9,7 @@ import { storage } from './storage';
  * Edit path: admin POST /api/admin/app-config (Stage A4, not yet wired).
  *
  * Mobile cache policy (per design Q3 = a + c):
- *   - Startup: lazy fetch on first read, populate MMKV.
+ *   - Lazy: a consumer calls fetchAppConfig(); fresh cache returns instantly.
  *   - Display (product-detail / assets-view / payment-stub): read cache.
  *   - 1-hour TTL: refetch in background when expired.
  *   - payment-stub force-refresh: bypass TTL right before checkout so the
@@ -126,7 +126,6 @@ export function getCachedConfig(): AppConfig {
 
 /**
  * Returns true when cache is older than TTL_MS, missing, or corrupt.
- * Used by callers to decide whether to fire fetchAppConfig().
  */
 export function isCacheStale(): boolean {
   const record = readCacheRecord();
@@ -145,11 +144,11 @@ export function isCacheStale(): boolean {
  *     network. Used by the payment-stub strict-refresh path right
  *     before showing the final price + creating the order.
  *
- *     When false (default), this function still hits the network
- *     unconditionally -- TTL is the caller's concern via isCacheStale().
- *     The flag is a future-proofing slot in case we add a same-flight
- *     dedupe later.
+ *     When false (default), a fresh cached result is returned immediately.
+ *     Concurrent stale reads share one request.
  */
+let fetchInFlight: Promise<FetchResult> | null = null;
+
 export async function fetchAppConfig(options?: {
   noCache?: boolean;
 }): Promise<FetchResult> {
@@ -160,50 +159,57 @@ export async function fetchAppConfig(options?: {
     error?: string;
   };
 
-  try {
-    const data = await apiClient.get<WireResponse>('/api/app-config');
-    if (!data.success || !data.config) {
-      return { kind: 'error', message: data.error || 'Failed to load config' };
-    }
-
-    // Defensive merge: any missing key falls back to DEFAULT_CONFIG.
-    // This means a partial server response (corrupt single row, etc)
-    // never poisons the local cache with NaN/undefined.
-    const merged: AppConfig = {
-      printed_book_price:
-        typeof data.config.printed_book_price === 'number'
-          ? data.config.printed_book_price
-          : DEFAULT_CONFIG.printed_book_price,
-      wisdom_cards_price:
-        typeof data.config.wisdom_cards_price === 'number'
-          ? data.config.wisdom_cards_price
-          : DEFAULT_CONFIG.wisdom_cards_price,
-      shipping_fee:
-        typeof data.config.shipping_fee === 'number'
-          ? data.config.shipping_fee
-          : DEFAULT_CONFIG.shipping_fee,
-      book_unlock_words:
-        typeof data.config.book_unlock_words === 'number'
-          ? data.config.book_unlock_words
-          : DEFAULT_CONFIG.book_unlock_words,
-      cards_unlock_count:
-        typeof data.config.cards_unlock_count === 'number'
-          ? data.config.cards_unlock_count
-          : DEFAULT_CONFIG.cards_unlock_count,
-    };
-
-    writeCacheRecord(merged, data.updatedAt ?? null);
-    // Touch options to suppress unused-var warnings until we wire dedupe.
-    if (options?.noCache) {
-      // explicit no-op -- the function unconditionally fetches today
-    }
-    return { kind: 'success', config: merged, updatedAt: data.updatedAt ?? null };
-  } catch (e) {
-    return {
-      kind: 'error',
-      message: e instanceof Error ? e.message : 'Network error',
-    };
+  const cached = readCacheRecord();
+  if (!options?.noCache && cached && Date.now() - cached.fetchedAt <= TTL_MS) {
+    return { kind: 'success', config: cached.config, updatedAt: cached.updatedAt };
   }
+  if (fetchInFlight) return fetchInFlight;
+
+  fetchInFlight = (async () => {
+    try {
+      const data = await apiClient.get<WireResponse>('/api/app-config');
+      if (!data.success || !data.config) {
+        return { kind: 'error', message: data.error || 'Failed to load config' };
+      }
+
+      // Defensive merge: any missing key falls back to DEFAULT_CONFIG.
+      // This means a partial server response (corrupt single row, etc)
+      // never poisons the local cache with NaN/undefined.
+      const merged: AppConfig = {
+        printed_book_price:
+          typeof data.config.printed_book_price === 'number'
+            ? data.config.printed_book_price
+            : DEFAULT_CONFIG.printed_book_price,
+        wisdom_cards_price:
+          typeof data.config.wisdom_cards_price === 'number'
+            ? data.config.wisdom_cards_price
+            : DEFAULT_CONFIG.wisdom_cards_price,
+        shipping_fee:
+          typeof data.config.shipping_fee === 'number'
+            ? data.config.shipping_fee
+            : DEFAULT_CONFIG.shipping_fee,
+        book_unlock_words:
+          typeof data.config.book_unlock_words === 'number'
+            ? data.config.book_unlock_words
+            : DEFAULT_CONFIG.book_unlock_words,
+        cards_unlock_count:
+          typeof data.config.cards_unlock_count === 'number'
+            ? data.config.cards_unlock_count
+            : DEFAULT_CONFIG.cards_unlock_count,
+      };
+
+      writeCacheRecord(merged, data.updatedAt ?? null);
+      return { kind: 'success', config: merged, updatedAt: data.updatedAt ?? null };
+    } catch (e) {
+      return {
+        kind: 'error',
+        message: e instanceof Error ? e.message : 'Network error',
+      };
+    } finally {
+      fetchInFlight = null;
+    }
+  })();
+  return fetchInFlight;
 }
 
 /**

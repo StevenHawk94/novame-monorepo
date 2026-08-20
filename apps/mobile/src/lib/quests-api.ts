@@ -33,36 +33,70 @@ export interface QuestStatus {
   plan?: ActiveQuestPlan;
 }
 
+interface QuestStatusCache {
+  state: QuestStatus;
+  fetchedAtMs: number;
+  localDate: string;
+}
+
+const QUEST_STATUS_TTL_MS = 15 * 60 * 1000;
+let statusInflight: Promise<QuestStatus> | null = null;
+
 function todayLocal(): string {
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
-export function getCachedStatus(): QuestStatus {
+function readStatusCache(): QuestStatusCache | null {
   const raw = storage.getString(kQuestStatus.name);
-  if (!raw) return { active: false };
+  if (!raw) return null;
   try {
-    return JSON.parse(raw) as QuestStatus;
+    const parsed = JSON.parse(raw) as QuestStatusCache | QuestStatus;
+    if ('state' in parsed && parsed.state) return parsed as QuestStatusCache;
+    // Backward-compatible migration from the previous raw QuestStatus cache.
+    return { state: parsed as QuestStatus, fetchedAtMs: 0, localDate: '' };
   } catch {
-    return { active: false };
+    return null;
   }
 }
 
-export async function fetchQuestStatus(): Promise<QuestStatus> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return getCachedStatus();
-  try {
-    const data = await apiClient.get<{ success?: boolean; active?: boolean; plan?: ActiveQuestPlan }>(
-      `/api/quests/status?userId=${encodeURIComponent(userId)}&localDate=${todayLocal()}`,
-    );
-    if (!data.success) return getCachedStatus();
-    const state: QuestStatus = { active: !!data.active, plan: data.plan };
-    storage.set(kQuestStatus.name, JSON.stringify(state));
-    return state;
-  } catch {
-    return getCachedStatus();
+export function getCachedStatus(): QuestStatus {
+  return readStatusCache()?.state ?? { active: false };
+}
+
+export function fetchQuestStatus(options?: { force?: boolean }): Promise<QuestStatus> {
+  const cached = readStatusCache();
+  const localDate = todayLocal();
+  if (
+    !options?.force &&
+    cached &&
+    cached.localDate === localDate &&
+    Date.now() - cached.fetchedAtMs < QUEST_STATUS_TTL_MS
+  ) {
+    return Promise.resolve(cached.state);
   }
+  if (statusInflight) return statusInflight;
+
+  statusInflight = (async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return getCachedStatus();
+    try {
+      const data = await apiClient.get<{ success?: boolean; active?: boolean; plan?: ActiveQuestPlan }>(
+        `/api/quests/status?userId=${encodeURIComponent(userId)}&localDate=${localDate}`,
+      );
+      if (!data.success) return getCachedStatus();
+      const state: QuestStatus = { active: !!data.active, plan: data.plan };
+      const next: QuestStatusCache = { state, fetchedAtMs: Date.now(), localDate };
+      storage.set(kQuestStatus.name, JSON.stringify(next));
+      return state;
+    } catch {
+      return getCachedStatus();
+    } finally {
+      statusInflight = null;
+    }
+  })();
+  return statusInflight;
 }
 
 

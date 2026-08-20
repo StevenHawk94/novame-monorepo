@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
+import { refreshRemoteItems } from '../../src/lib/remote-items';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
 
@@ -30,6 +31,12 @@ export default function ReflectEntryScreen() {
     sourceKit?: string;
   }>();
   const hasPreset = typeof params.presetPrompt === 'string' && params.presetPrompt.length > 0;
+
+  useEffect(() => {
+    // Cloud additions are only checked when the user enters an item-consuming
+    // feature. Cached rules and art remain available immediately.
+    void refreshRemoteItems();
+  }, []);
 
   useEffect(() => {
     if (hasPreset) {

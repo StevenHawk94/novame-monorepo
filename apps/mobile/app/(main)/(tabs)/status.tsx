@@ -142,7 +142,7 @@ export default function ConnectionDashboardScreen() {
                 // Tier cache says paid but the server disagrees — re-sync it.
                 const { data } = await supabase.auth.getSession();
                 const uid = data.session?.user?.id;
-                if (uid) void fetchSubscriptionTier(uid).catch(() => {});
+                if (uid) void fetchSubscriptionTier(uid, { force: true }).catch(() => {});
               }
             }
           } finally {
@@ -179,6 +179,10 @@ export default function ConnectionDashboardScreen() {
   // steps down with it so the pair never reads the same size.
   const { width: winW } = useWindowDimensions();
   const narrow = winW < 380;
+  const hasInsights = !!insights && INSIGHT_SECTIONS.some(({ key }) => {
+    const value = insights[key];
+    return typeof value === 'string' && value.trim().length > 0;
+  });
 
   return (
     <View style={st.root}>
@@ -259,16 +263,16 @@ export default function ConnectionDashboardScreen() {
             </View>
           </View>
 
-          {/* 板块3: latest items both reflect */}
+          {/* 板块3: recent moments both people have reflected */}
           <View style={st.sectionPillWrap}>
             <View style={st.sectionPill}>
-              <Text style={st.sectionPillText}>Latest Items Both Reflect</Text>
+              <Text style={st.sectionPillText}>Vibe Matching Moments</Text>
             </View>
           </View>
           <View style={st.itemsCard}>
             {items.length === 0 ? (
               <Text style={st.itemsEmpty}>
-                Nothing in common yet — keep reflecting, the overlap will appear here.
+                Keep reflecting, and vibe matching moments{`\n`}will be displayed here.
               </Text>
             ) : (
               <View style={st.itemsGrid}>
@@ -285,7 +289,7 @@ export default function ConnectionDashboardScreen() {
           <View style={st.sectionPillWrap}>
             <View style={st.sectionPill}>
               <Text style={st.sectionPillText} numberOfLines={1}>
-                What's New With {partner.displayName}
+                What's new with {partner.displayName}
               </Text>
             </View>
           </View>
@@ -319,9 +323,9 @@ export default function ConnectionDashboardScreen() {
               <MaterialIcons name="privacy-tip" size={22} color="#8A5F3F" />
               <Text style={st.lockText}>Turn on AI features in settings to unlock daily guidance.</Text>
             </View>
-          ) : insights ? (
+          ) : hasInsights ? (
             INSIGHT_SECTIONS.map(({ key, label, emoji }) => {
-              const text = insights[key];
+              const text = insights?.[key];
               if (!text) return null;
               return (
                 <View key={key} style={st.insightCard}>
@@ -333,11 +337,10 @@ export default function ConnectionDashboardScreen() {
               );
             })
           ) : (
-            <View style={st.lockCard}>
-              <MaterialIcons name="hourglass-empty" size={22} color="#8A5F3F" />
-              <Text style={st.lockText}>
-                {partner.displayName} hasn't reflected yet — these cards fill in
-                the moment their first reflect lands.
+            <View style={st.emptyInsightCard}>
+              <Image source={ICONS.connectionNew} style={st.emptyInsightIcon} resizeMode="contain" />
+              <Text style={st.emptyInsightText}>
+                {partner.displayName} hasn't reflected anything yet. Once they do, the connection insight will show up here.
               </Text>
             </View>
           )}
@@ -402,7 +405,7 @@ const st = StyleSheet.create({
   sectionPill: { backgroundColor: '#7A4A3A', borderRadius: 18, paddingHorizontal: 20, paddingVertical: 11 },
   sectionPillText: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
-  itemsCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16 },
+  itemsCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16, minHeight: 90, justifyContent: 'center' },
   itemsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   itemsEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A6240', textAlign: 'center', lineHeight: 21 },
 
@@ -411,6 +414,17 @@ const st = StyleSheet.create({
     backgroundColor: '#FFF6E4', borderRadius: 22, padding: 18, marginBottom: 14,
   },
   lockText: { flex: 1, fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#5A4432', lineHeight: 21 },
+
+  emptyInsightCard: {
+    minHeight: 260, backgroundColor: '#FFF6E4', borderRadius: 22,
+    paddingHorizontal: 28, paddingVertical: 34, marginBottom: 14,
+    alignItems: 'center', justifyContent: 'center', gap: 18,
+  },
+  emptyInsightIcon: { width: 48, height: 48 },
+  emptyInsightText: {
+    maxWidth: 300, fontSize: 14, fontFamily: 'Inter_500Medium',
+    color: '#2A2118', lineHeight: 21, textAlign: 'center',
+  },
 
   insightCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16, marginBottom: 14 },
   insightBadge: {

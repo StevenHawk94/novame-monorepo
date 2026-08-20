@@ -208,7 +208,7 @@ export default function MeScreen() {
     setConfirmText('');
     setUnpairing(false);
     void fetchDuoStatus().then(setDuo);
-    if (userId) void fetchSubscriptionTier(userId).then((status) => setTier(status.tier)).catch(() => {});
+    if (userId) void fetchSubscriptionTier(userId, { force: true }).then((status) => setTier(status.tier)).catch(() => {});
     void haptics.success();
   };
 

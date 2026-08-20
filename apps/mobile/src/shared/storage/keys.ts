@@ -78,6 +78,9 @@ export const kConnInsights = defineKey('burrow_conn_insights', 'user');
 /** OTA items manifest (R2 Items/items-manifest.json) — global content. */
 export const kRemoteItems = defineKey('burrow_remote_items', 'device');
 
+/** Shared R2 video/scene manifest. Refreshed lazily with its own 6h TTL. */
+export const kR2VideoManifest = defineKey('burrow_r2_video_manifest', 'device');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 
@@ -391,6 +394,8 @@ export const kRatingPromptUserExpressed = defineKey(
 
 /** asset-cache.ts: STORAGE_KEY_MANIFEST. Card art and video are user-agnostic. */
 export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
+/** asset-cache.ts: independent six-hour freshness timestamp for the R2 manifest. */
+export const kAssetManifestFetchedAt = defineKey('asset-manifest:fetched-at', 'device');
 
 /**
  * seek-questions-cache.ts: STORAGE_KEY_PREFIX, read as `keyForFilter(filter)`.

@@ -1,5 +1,6 @@
 import { storage } from './storage';
-import { refreshMeStats } from './me-stats';
+import { fetchMeStats } from './me-stats';
+import { prefetchAppData } from './prefetch';
 
 /**
  * Foreground refresh after a long background.
@@ -35,8 +36,11 @@ export function markRefreshedNow(): void {
 
 /** Fire-and-forget safe: never throws. */
 export async function refreshAllCaches(userId: string): Promise<void> {
-  // Leaderboard removed in v2.0 (design drops the Home trophy entry); only
-  // me-stats remains until Phase B's createResource() replaces this module.
-  await Promise.allSettled([refreshMeStats(userId)]);
+  // Foregrounding is a valid lazy trigger, not a command to invalidate every
+  // cache. Each resource below applies its own TTL and singleflight policy.
+  // This keeps the UI cache-first and avoids refreshing low-frequency data
+  // merely because a high-frequency resource became stale.
+  prefetchAppData();
+  await Promise.allSettled([fetchMeStats(userId)]);
   markRefreshedNow();
 }

@@ -12,43 +12,79 @@ import { supabase } from './supabase';
 
 export interface FeedDay {
   date: string;
-  reflects: { id: string; body: string; sharedToFriends: boolean }[];
+  reflects: { id: string; body: string; sharedToFriends: boolean; itemIds: string[] }[];
   itemIds: string[];
   itemEmoji: string[]; // decorated
 }
+
+interface ReflectFeedCache {
+  days: FeedDay[];
+  fetchedAtMs: number;
+}
+
+const REFLECT_FEED_TTL_MS = 15 * 60 * 1000;
+let feedInflight: Promise<FeedDay[]> | null = null;
 
 function emojiFor(itemId: string): string {
   return ITEM_DICTIONARY.items[itemId]?.emoji ?? '✨';
 }
 
-/** Cached feed for cache-first render (returns [] if none). */
-export function getCachedFeed(): FeedDay[] {
+function readCache(): ReflectFeedCache | null {
   const raw = storage.getString(kReflectFeed.name);
-  if (!raw) return [];
+  if (!raw) return null;
   try {
-    return JSON.parse(raw) as FeedDay[];
+    const parsed = JSON.parse(raw) as ReflectFeedCache | FeedDay[];
+    if (Array.isArray(parsed)) return { days: parsed, fetchedAtMs: 0 };
+    if (Array.isArray(parsed.days)) return parsed;
+    return null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-export async function fetchReflectFeed(): Promise<FeedDay[]> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return getCachedFeed();
+/** Cached feed for cache-first render (returns [] if none). */
+export function getCachedFeed(): FeedDay[] {
+  return readCache()?.days ?? [];
+}
 
-  try {
-    const data = await apiClient.get<{
-      success?: boolean;
-      days?: { date: string; reflects: { id: string; body: string; sharedToFriends: boolean }[]; itemIds: string[] }[];
-    }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
-    if (!data.success || !data.days) return getCachedFeed();
-    const days = data.days.map((d) => ({ ...d, itemEmoji: d.itemIds.map(emojiFor) }));
-    storage.set(kReflectFeed.name, JSON.stringify(days));
-    return days;
-  } catch {
-    return getCachedFeed();
+export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay[]> {
+  const cached = readCache();
+  if (!options?.force && cached && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
+    return Promise.resolve(cached.days);
   }
+  if (feedInflight) return feedInflight;
+
+  feedInflight = (async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return getCachedFeed();
+    try {
+      const data = await apiClient.get<{
+        success?: boolean;
+        days?: {
+          date: string;
+          reflects: { id: string; body: string; sharedToFriends: boolean; itemIds?: string[] }[];
+          itemIds: string[];
+        }[];
+      }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
+      if (!data.success || !data.days) return getCachedFeed();
+      const days = data.days.map((d) => ({
+        ...d,
+        reflects: d.reflects.map((reflect) => ({ ...reflect, itemIds: reflect.itemIds ?? [] })),
+        itemEmoji: d.itemIds.map(emojiFor),
+      }));
+      storage.set(
+        kReflectFeed.name,
+        JSON.stringify({ days, fetchedAtMs: Date.now() } satisfies ReflectFeedCache),
+      );
+      return days;
+    } catch {
+      return getCachedFeed();
+    } finally {
+      feedInflight = null;
+    }
+  })();
+  return feedInflight;
 }
 
 /** A day label like "Jul 12" from a YYYY-MM-DD string. */

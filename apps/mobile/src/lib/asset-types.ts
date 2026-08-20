@@ -103,6 +103,9 @@ export type AssetManifest = {
    * default to [] to keep backward compatibility.
    */
   productAssets?: ProductAssetManifestEntry[];
+  /** Dynamic cosmetics catalogs share this manifest to avoid duplicate GETs. */
+  outfits?: unknown[];
+  scenes?: unknown[];
 };
 
 /**

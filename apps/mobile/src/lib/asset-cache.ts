@@ -62,6 +62,11 @@ const CACHE_SUBDIR = 'cache';
 
 /** MMKV key for cached manifest. */
 const STORAGE_KEY_MANIFEST = 'asset-manifest:cached';
+const STORAGE_KEY_MANIFEST_FETCHED_AT = 'asset-manifest:fetched-at';
+const MANIFEST_TTL_MS = 6 * 60 * 60 * 1000;
+const MANIFEST_RETRY_MS = 5 * 60 * 1000;
+let manifestFetchInFlight: Promise<AssetManifest> | null = null;
+let lastManifestAttemptAt = 0;
 
 // ---- internal helpers ----
 
@@ -84,19 +89,48 @@ function getCacheDir(): Directory {
  * Throws on network error or invalid JSON. Caller should handle errors
  * and fall back to cached manifest.
  */
-export async function fetchManifestFromR2(): Promise<AssetManifest> {
-  const response = await fetch(MANIFEST_URL, {
-    // Bypass HTTP cache to always get fresh manifest from R2.
-    cache: 'no-store',
-  });
-  if (!response.ok) {
-    throw new Error(`Manifest fetch failed: HTTP ${response.status}`);
+export async function fetchManifestFromR2(options?: { force?: boolean }): Promise<AssetManifest> {
+  const cached = getCachedManifest();
+  const fetchedAt = Number(storage.getString(STORAGE_KEY_MANIFEST_FETCHED_AT) ?? 0);
+  if (
+    !options?.force
+    && cached
+    && Number.isFinite(fetchedAt)
+    && Date.now() - fetchedAt < MANIFEST_TTL_MS
+  ) {
+    return cached;
   }
-  const data = (await response.json()) as AssetManifest;
-  if (data.version !== 'v1') {
-    throw new Error(`Manifest version mismatch: expected v1, got ${data.version}`);
+  if (
+    !options?.force
+    && cached
+    && Date.now() - lastManifestAttemptAt < MANIFEST_RETRY_MS
+  ) {
+    return cached;
   }
-  return data;
+  if (manifestFetchInFlight) return manifestFetchInFlight;
+
+  lastManifestAttemptAt = Date.now();
+  manifestFetchInFlight = (async () => {
+    try {
+      const bucket = Math.floor(Date.now() / MANIFEST_TTL_MS);
+      const response = await fetch(`${MANIFEST_URL}?v=${bucket}`);
+      if (!response.ok) {
+        throw new Error(`Manifest fetch failed: HTTP ${response.status}`);
+      }
+      const data = (await response.json()) as AssetManifest;
+      if (data.version !== 'v1') {
+        throw new Error(`Manifest version mismatch: expected v1, got ${data.version}`);
+      }
+      setCachedManifest(data);
+      return data;
+    } catch (error) {
+      if (cached) return cached;
+      throw error;
+    } finally {
+      manifestFetchInFlight = null;
+    }
+  })();
+  return manifestFetchInFlight;
 }
 
 /**
@@ -129,6 +163,7 @@ export function getCachedManifest(): AssetManifest | null {
  */
 export function setCachedManifest(manifest: AssetManifest): void {
   storage.set(STORAGE_KEY_MANIFEST, JSON.stringify(manifest));
+  storage.set(STORAGE_KEY_MANIFEST_FETCHED_AT, String(Date.now()));
 }
 
 // ---- per-asset cache ops ----

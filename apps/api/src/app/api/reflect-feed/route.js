@@ -68,8 +68,14 @@ export async function GET(request) {
         byDay.set(r.local_date, { date: r.local_date, reflects: [], itemIds: [] })
       }
       const day = byDay.get(r.local_date)
-      day.reflects.push({ id: r.id, body: r.body, sharedToFriends: r.shared_to_friends !== false })
-      for (const itemId of itemsByReflect[r.id] || []) day.itemIds.push(itemId)
+      const reflectionItemIds = itemsByReflect[r.id] || []
+      day.reflects.push({
+        id: r.id,
+        body: r.body,
+        sharedToFriends: r.shared_to_friends !== false,
+        itemIds: reflectionItemIds,
+      })
+      for (const itemId of reflectionItemIds) day.itemIds.push(itemId)
     }
 
     const days = [...byDay.values()].slice(0, 30)

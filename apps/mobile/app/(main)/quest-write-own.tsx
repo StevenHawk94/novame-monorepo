@@ -47,7 +47,7 @@ export default function QuestWriteOwnScreen() {
     setSubmitting(true);
     const res = await startPlan('write_own', 'My Own Plan', tasks.map((t) => t.trim()));
     if (res.ok) {
-      await fetchQuestStatus();
+      await fetchQuestStatus({ force: true });
       router.back();
       return;
     }

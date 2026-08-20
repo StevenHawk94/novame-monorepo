@@ -29,6 +29,8 @@ import type { PricingTierKey } from '@novame/core';
  */
 
 const STORAGE_KEY = 'novame_me_stats';
+const ME_STATS_TTL_MS = 30 * 60 * 1000;
+const fetchesInFlight = new Map<string, Promise<CachedMeStats>>();
 
 // ---- defaults ----
 
@@ -144,35 +146,56 @@ export function clearCachedMeStats(): void {
  * typically by also calling fetchMeStats() in fire-and-forget.
  */
 export function invalidateMeStats(): void {
-  storage.remove(STORAGE_KEY);
+  const cached = getCachedMeStats();
+  if (cached) setCachedMeStats({ ...cached, lastFetchedAtMs: 0 });
 }
 
 // ---- server fetch ----
 
-export async function fetchMeStats(userId: string): Promise<CachedMeStats> {
-  const data = await apiClient.get<MeStatsResponse>(
-    `/api/me-stats?userId=${encodeURIComponent(userId)}`,
-  );
-  if (!data.success) {
-    throw new Error('me-stats GET returned non-success');
+export async function fetchMeStats(
+  userId: string,
+  options?: { force?: boolean },
+): Promise<CachedMeStats> {
+  const cached = getCachedMeStats();
+  if (
+    !options?.force
+    && cached
+    && Date.now() - cached.lastFetchedAtMs < ME_STATS_TTL_MS
+  ) {
+    return cached;
   }
-  const next: CachedMeStats = {
-    totalWords: data.stats.totalWords,
-    totalCards: data.stats.totalCards,
-    peopleImpacted: data.stats.peopleImpacted,
-    totalExp: data.stats.totalExp,
-    betterSelfScore: data.stats.betterSelfScore,
-    usedThisMonth: data.stats.usedThisMonth,
-    monthlyAnalyses: data.stats.monthlyAnalyses,
-    planTier: data.stats.planTier,
-    planName: data.stats.planName,
-    displayName: data.profile.displayName,
-    avatarUrl: data.profile.avatarUrl,
-    isDefaultAvatar: data.profile.isDefaultAvatar !== false,
-    lastFetchedAtMs: Date.now(),
-  };
-  setCachedMeStats(next);
-  return next;
+  const existing = fetchesInFlight.get(userId);
+  if (existing) return existing;
+
+  const request = (async () => {
+    const data = await apiClient.get<MeStatsResponse>(
+      `/api/me-stats?userId=${encodeURIComponent(userId)}`,
+    );
+    if (!data.success) {
+      throw new Error('me-stats GET returned non-success');
+    }
+    const next: CachedMeStats = {
+      totalWords: data.stats.totalWords,
+      totalCards: data.stats.totalCards,
+      peopleImpacted: data.stats.peopleImpacted,
+      totalExp: data.stats.totalExp,
+      betterSelfScore: data.stats.betterSelfScore,
+      usedThisMonth: data.stats.usedThisMonth,
+      monthlyAnalyses: data.stats.monthlyAnalyses,
+      planTier: data.stats.planTier,
+      planName: data.stats.planName,
+      displayName: data.profile.displayName,
+      avatarUrl: data.profile.avatarUrl,
+      isDefaultAvatar: data.profile.isDefaultAvatar !== false,
+      lastFetchedAtMs: Date.now(),
+    };
+    setCachedMeStats(next);
+    return next;
+  })().finally(() => {
+    fetchesInFlight.delete(userId);
+  });
+  fetchesInFlight.set(userId, request);
+  return request;
 }
 
 /**
@@ -187,9 +210,8 @@ export async function fetchMeStats(userId: string): Promise<CachedMeStats> {
  * fire-and-forget safe: never throws.
  */
 export async function refreshMeStats(userId: string): Promise<void> {
-  storage.remove(STORAGE_KEY);
   try {
-    await fetchMeStats(userId);
+    await fetchMeStats(userId, { force: true });
   } catch (e) {
     console.warn('[refreshMeStats]', e);
   }

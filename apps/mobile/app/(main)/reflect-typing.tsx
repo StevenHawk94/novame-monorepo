@@ -27,7 +27,7 @@ import {
 } from '../../src/lib/reflect-api';
 import { setReflectBubble } from '../../src/lib/bubble-store';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
-import { fetchBags } from '../../src/lib/bags-api';
+import { cacheReflectItems, fetchBags } from '../../src/lib/bags-api';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
@@ -144,10 +144,11 @@ export default function ReflectTypingScreen() {
     });
     setSubmitting(false);
     if (res.ok) {
+      cacheReflectItems(res.snapshot);
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
       if (res.snapshot.bubble) setReflectBubble(res.snapshot.bubble);
-      void fetchReflectFeed();
+      void fetchReflectFeed({ force: true });
       void fetchBags();
       void haptics.success();
       setPhase('result');

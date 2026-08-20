@@ -15,7 +15,7 @@ import {
   type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
-import { fetchBags, getCachedBags } from '../../src/lib/bags-api';
+import { cacheReflectItems, fetchBags, getCachedBags } from '../../src/lib/bags-api';
 import { getCachedSubscriptionTier } from '../../src/lib/subscription';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS } from '../../src/lib/icons';
@@ -221,13 +221,14 @@ export default function ReflectGuidedScreen() {
     });
     setSubmitting(false);
     if (res.ok) {
+      cacheReflectItems(res.snapshot);
       rememberGuidedFavoriteItems([
         ...Object.values(favoriteItemsAtOpen).flat(),
         ...selected,
       ]);
       setResult(res.snapshot);
       setRemaining(res.snapshot.reflectsRemaining);
-      void fetchReflectFeed();
+      void fetchReflectFeed({ force: true });
       void fetchBags();
       void haptics.success();
       setPhase('result');

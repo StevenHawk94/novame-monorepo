@@ -25,21 +25,10 @@ import { initIAP, cleanupIAP } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
 import { fetchAppConfig } from '@/lib/app-config-api';
-import {
-  markRefreshedNow,
-  shouldRefreshAll,
-} from '@/lib/cache-refresh-all';
-import { fetchManifestFromR2, setCachedManifest } from '@/lib/asset-cache';
-import { startDownloadQueue } from '@/lib/download-queue';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
 import { checkForceUpdate } from '@/lib/force-update';
 import { ForceUpdateGate } from '@/components/main/force-update-gate';
-import { BackgroundResumeOverlay } from '@/components/main/background-resume-overlay';
 import { AppDialogHost } from '@/components/ui/app-dialog';
-import {
-  showResumeOverlay,
-  useResumeOverlayVisible,
-} from '@/lib/background-resume-store';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
@@ -143,10 +132,6 @@ function RootLayout() {
   // resolves required=true (installed version < server min_version, platform
   // matches), we overlay an unescapable full-screen update screen.
   const [forceUpdate, setForceUpdate] = useState<{ message: string | null } | null>(null);
-  // Background-resume overlay visibility (long-background return). Hook must
-  // be above the `if (!isReady) return null` early return per the rules of
-  // hooks. The overlay itself runs the claim pre-settle + cache refresh.
-  const resumeVisible = useResumeOverlayVisible();
   useEffect(() => {
     let active = true;
     void checkForceUpdate().then((res) => {
@@ -197,23 +182,14 @@ function RootLayout() {
       });
   }, []);
 
-  // Cold-start prewarm. Runs once on mount, independent of the
-  // auth-state-change effect below. Promise.allSettled (not all)
-  // so one slow / failing fetch doesn't drag the others. The
-  // timeout race guarantees splash hide within PREWARM_TIMEOUT_MS
-  // even if all fetches hang.
+  // Cold start restores the local session, then renders immediately. Remote
+  // caches refresh in the background under their own lazy TTLs, so a slow
+  // network can never hold the native splash screen open.
   useEffect(() => {
     let cancelled = false;
 
     const finish = () => {
       if (!cancelled) {
-        // Q-16.3 = P: stamp the global refresh timestamp now that
-        // cold-start prewarm has run (or timed out). This prevents
-        // the first AppState 'active' tick after cold start from
-        // immediately re-running an 8-cache refresh; the prewarm
-        // already covered the 4 most UI-critical caches, the rest
-        // will fill on first tab focus.
-        markRefreshedNow();
         setIsReady(true);
       }
     };
@@ -229,38 +205,10 @@ function RootLayout() {
       try {
         const session = await getCurrentSession();
         const userId = session?.user?.id;
-        // app_config is a public GET (no userId needed) and powers
-        // pricing / unlock-threshold UI everywhere. We fire it in
-        // both branches (signed-in and sessionless) so the prewarm
-        // gate consistently waits on it. Result is reactive: pages
-        // that read getCachedConfig() will reflect the latest values
-        // after this fetch lands (via their own useState mirror).
-        const configFetch = fetchAppConfig();
-        // Manifest staleness hardening: refresh the asset manifest as
-        // part of the gated prewarm so the cached manifest carries
-        // current `dir` values before any card/video renders. Best-
-        // effort: on failure we keep the existing cache, and
-        // getCachedManifest's dir guard prevents serving a pre-
-        // migration manifest. Tiny JSON, bounded by PREWARM_TIMEOUT_MS.
-        const manifestFetch = fetchManifestFromR2()
-          .then(setCachedManifest)
-          .catch(() => {});
+        void fetchAppConfig();
         if (userId) {
-          // Three caches the home tab + me page read on first render.
-          // allSettled: missing data falls back to local cache or
-          // sensible defaults, doesn't block navigation.
-          await Promise.allSettled([
-            fetchSubscriptionTier(userId),
-            fetchMeStats(userId),
-            configFetch,
-            manifestFetch,
-          ]);
-        } else {
-          // Sessionless cold start (onboarding incomplete or signed
-          // out): still wait on the config fetch so the (onboarding)
-          // / (auth) flows see fresh thresholds. The 3s timeout cap
-          // protects against slow network.
-          await Promise.allSettled([configFetch, manifestFetch]);
+          void fetchSubscriptionTier(userId).catch(() => {});
+          void fetchMeStats(userId).catch(() => {});
         }
       } catch (e) {
         console.warn('[layout] cold-start prewarm error:', e);
@@ -274,16 +222,6 @@ function RootLayout() {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, []);
-
-  // P1: start the priority download queue on mount. enqueues P0
-  // (bucket-root assets) first, then chains P1 (cards art ->
-  // chars-video -> product details) in the background at concurrency 3.
-  // Fire-and-forget + idempotent; never delays splash hide. Replaces the
-  // old fillProductAssets() fire-and-forget — productAssets are now
-  // downloaded by the queue (P0: book/cards-cover; P1: product details).
-  useEffect(() => {
-    startDownloadQueue();
   }, []);
 
   // Hide the native splash once we're ready. Separate effect from
@@ -318,28 +256,6 @@ function RootLayout() {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
         void touchActivity();
-        // Gap A (Stage 6 Wisdom Insight series): when the app
-        // returns from background after 30+ minutes, every cache
-        // the user pulled before backgrounding is potentially
-        // stale. Fire a silent global refresh so any tab the user
-        // opens next reads hot data. Fire-and-forget; no UI
-        // loading per Q-A2 = (iii) decision. 30-min threshold +
-        // user-must-be-signed-in gate are inside shouldRefreshAll
-        // and the getCurrentSession check below.
-        if (shouldRefreshAll()) {
-          // Long background return (>= 30-min staleness window). Show the
-          // resume overlay, which runs the study-claim pre-settle AND
-          // refreshAllCaches behind a launch-style screen, then hides
-          // itself -- so the user lands on fresh data with the claim modal
-          // (if any) ready, instead of a silent refresh + an in-Home
-          // "Wrapping up..." spinner. The overlay only shows for a signed-
-          // in user; if there's no session it self-finishes immediately.
-          // (Cold start does NOT reach here as a refresh: prewarm stamps
-          // markRefreshedNow, so the first 'active' tick sees fresh data
-          // and shouldRefreshAll() is false -- cold start uses the native
-          // splash gate in app/index.tsx instead.)
-          showResumeOverlay();
-        }
       } else {
         supabase.auth.stopAutoRefresh();
       }
@@ -390,8 +306,6 @@ function RootLayout() {
         // from a fresh onboarding completion. Errors are logged and
         // swallowed inside syncOnboardingIfPending so navigation never
         // blocks. Stage 3.5 (B40) deferred this from 3.4 step 5.
-        if (session?.user?.id) {
-        }
         // Stage 5.WR.2 (Bug 2 fix): route through signing-in screen
         // so it can prewarm character-state / subscription / me-stats
         // before home renders. Avoids the "Loading..." speech bubble
@@ -462,7 +376,6 @@ function RootLayout() {
               />
               {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
               <StatusBar style="dark" />
-              {resumeVisible ? <BackgroundResumeOverlay /> : null}
               <GoodVibesInboxGate />
               <AppDialogHost />
             </ErrorBoundary>

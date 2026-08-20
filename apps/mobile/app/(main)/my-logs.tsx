@@ -8,7 +8,6 @@ import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { GridBackground } from '@/components/ui/grid-background';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
-import { fetchBags, getCachedBags } from '@/lib/bags-api';
 
 /**
  * My Logs -- the Reflect Feed (design 2026-07-22, 1:1): journal icon +
@@ -31,24 +30,11 @@ export default function MyLogsScreen() {
         setFeed(f);
         setLoaded(true);
       });
-      void fetchBags();
     }, []),
   );
 
-  // Flatten day-grouped feed into individual reflect cards (each keeps its
-  // day label + the day's gathered emoji).
-  // Each reflection shows only the items IT gathered -- resolved precisely by
-  // walking cached bags for memories whose reflectId matches this reflection,
-  // not the day's aggregate (which would repeat every item on every card).
-  const bags = getCachedBags();
-  function itemsForReflect(reflectId: string): string[] {
-    const out: string[] = [];
-    for (const item of bags) {
-      const n = item.memories.filter((m) => m.reflectId === reflectId).length;
-      for (let i = 0; i < n; i++) out.push(item.itemId);
-    }
-    return out;
-  }
+  // Each feed row carries its own item ids. Logs therefore stay independent
+  // from the much larger paginated Memories cache.
   // Calendar filter (2026-08-08): tap By Date → pick one day or a range.
   const [calOpen, setCalOpen] = useState(false);
   const [selStart, setSelStart] = useState<string | null>(null);
@@ -61,7 +47,7 @@ export default function MyLogsScreen() {
         body: r.body,
         date: day.date,
         dateLabel: formatDayLabel(day.date),
-        items: itemsForReflect(r.id),
+        items: r.itemIds,
       })),
     )
     .filter((e) => {

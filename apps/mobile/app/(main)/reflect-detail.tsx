@@ -7,7 +7,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
-import { getCachedBags } from '@/lib/bags-api';
 import { setReflectVisibility } from '@/lib/reflect-api';
 import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
@@ -43,7 +42,12 @@ export default function ReflectDetailScreen() {
   const entry = useMemo(() => {
     for (const day of feed) {
       const r = day.reflects.find((x) => x.id === reflectId);
-      if (r) return { body: r.body, dateLabel: formatDayLabel(day.date), sharedToFriends: r.sharedToFriends };
+      if (r) return {
+        body: r.body,
+        dateLabel: formatDayLabel(day.date),
+        sharedToFriends: r.sharedToFriends,
+        itemIds: r.itemIds,
+      };
     }
     return null;
   }, [feed, reflectId]);
@@ -79,13 +83,12 @@ export default function ReflectDetailScreen() {
   // Items this reflection gathered, aggregated to (item, count) so a double
   // mention shows one tile with x2 rather than two x1 tiles.
   const gathered = useMemo(() => {
-    const out: { itemId: string; count: number }[] = [];
-    for (const item of getCachedBags()) {
-      const times = item.memories.filter((m) => m.reflectId === reflectId).length;
-      if (times > 0) out.push({ itemId: item.itemId, count: times });
+    const counts = new Map<string, number>();
+    for (const itemId of entry?.itemIds ?? []) {
+      counts.set(itemId, (counts.get(itemId) ?? 0) + 1);
     }
-    return out;
-  }, [reflectId]);
+    return [...counts].map(([itemId, count]) => ({ itemId, count }));
+  }, [entry?.itemIds]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 12 }]}>

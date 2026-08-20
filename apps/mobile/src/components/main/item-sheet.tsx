@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,7 +12,13 @@ import {
 } from '@gorhom/bottom-sheet';
 
 import { haptics } from '@/lib/haptics';
-import { getCachedBags, type CollectedItem } from '@/lib/bags-api';
+import {
+  fetchItemMemories,
+  fetchMoreItemMemories,
+  getCachedBags,
+  getCachedTheirBags,
+  type CollectedItem,
+} from '@/lib/bags-api';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
 export type ItemSheetRef = {
@@ -26,7 +32,17 @@ export type ItemSheetRef = {
  * pill on the right, then every memory as a thin-bordered row (thumbnail,
  * excerpt, Details pill). Dark round close button at the bottom.
  */
-export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>(({ items }, ref) => {
+type ItemSheetProps = {
+  items?: CollectedItem[];
+  scope?: 'mine' | 'their' | 'ours';
+  expectedOwnerUserId?: string;
+};
+
+export const ItemSheet = forwardRef<ItemSheetRef, ItemSheetProps>(({
+  items,
+  scope = 'mine',
+  expectedOwnerUserId,
+}, ref) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
@@ -35,20 +51,55 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
   const pendingReflectIdRef = useRef<string | null>(null);
   const reopenAfterDetailsRef = useRef(false);
   const [itemId, setItemId] = useState<string | null>(null);
+  const activeItemIdRef = useRef<string | null>(null);
+  const itemsRef = useRef(items);
+  const [item, setItem] = useState<CollectedItem | undefined>();
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingMoreDetails, setLoadingMoreDetails] = useState(false);
   const snapPoints = useMemo(() => ['82%'], []);
+
+  useEffect(() => {
+    itemsRef.current = items;
+    if (!activeItemIdRef.current) return;
+    const updated = items?.find((candidate) => candidate.itemId === activeItemIdRef.current);
+    if (updated && scope === 'ours') setItem(updated);
+  }, [items, scope]);
+
+  const readImmediateItem = useCallback((id: string) => {
+    const supplied = itemsRef.current?.find((candidate) => candidate.itemId === id);
+    if (supplied) return supplied;
+    return scope === 'their'
+      ? getCachedTheirBags(expectedOwnerUserId).find((candidate) => candidate.itemId === id)
+      : getCachedBags().find((candidate) => candidate.itemId === id);
+  }, [expectedOwnerUserId, scope]);
 
   useImperativeHandle(ref, () => ({
     present: (id: string) => {
+      activeItemIdRef.current = id;
       setItemId(id);
+      setItem(readImmediateItem(id));
       sheetRef.current?.present();
+      if (scope !== 'ours') {
+        setLoadingDetails(true);
+        void fetchItemMemories(scope, id, expectedOwnerUserId).then((fresh) => {
+          if (fresh && activeItemIdRef.current === id) setItem(fresh);
+        }).finally(() => {
+          if (activeItemIdRef.current === id) setLoadingDetails(false);
+        });
+      }
     },
     dismiss: () => sheetRef.current?.dismiss(),
-  }));
+  }), [expectedOwnerUserId, readImmediateItem, scope]);
 
-  const item: CollectedItem | undefined = useMemo(
-    () => (itemId ? (items ?? getCachedBags()).find((it) => it.itemId === itemId) : undefined),
-    [itemId, items],
-  );
+  const loadMoreDetails = useCallback(() => {
+    if (!itemId || scope === 'ours' || item?.memoriesComplete || loadingMoreDetails) return;
+    setLoadingMoreDetails(true);
+    void fetchMoreItemMemories(scope, itemId, expectedOwnerUserId).then((fresh) => {
+      if (fresh && activeItemIdRef.current === itemId) setItem(fresh);
+    }).finally(() => {
+      if (activeItemIdRef.current === itemId) setLoadingMoreDetails(false);
+    });
+  }, [expectedOwnerUserId, item?.memoriesComplete, itemId, loadingMoreDetails, scope]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -59,7 +110,12 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
 
   const handleSheetDismiss = useCallback(() => {
     const reflectId = pendingReflectIdRef.current;
-    if (!reflectId) return;
+    if (!reflectId) {
+      activeItemIdRef.current = null;
+      setLoadingDetails(false);
+      setLoadingMoreDetails(false);
+      return;
+    }
 
     // The root BottomSheet portal must finish closing before a Stack route is
     // pushed. Otherwise the route is mounted underneath the still-open sheet.
@@ -106,9 +162,15 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
               {/* Header: name + memory count left, Recent pill right */}
               <View style={styles.header}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{item.displayName}</Text>
+                  <Text
+                    style={styles.name}
+                    numberOfLines={3}
+                    maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
+                  >
+                    {item.displayName}
+                  </Text>
                   <Text style={styles.memCount}>
-                    {item.memories.length} {item.memories.length === 1 ? 'Memory' : 'Memories'}
+                    {item.count} {item.count === 1 ? 'Memory' : 'Memories'}
                   </Text>
                 </View>
                 <View style={styles.recentPill}>
@@ -122,8 +184,17 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
                 style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scroll}
+                onScroll={({ nativeEvent }) => {
+                  const remaining = nativeEvent.contentSize.height
+                    - nativeEvent.layoutMeasurement.height
+                    - nativeEvent.contentOffset.y;
+                  if (remaining < 160) loadMoreDetails();
+                }}
               >
-                {item.memories.length === 0 ? (
+                {item.memories.length === 0 && loadingDetails ? (
+                  <ActivityIndicator style={styles.detailsLoader} color="#8A6240" />
+                ) : null}
+                {item.memories.length === 0 && !loadingDetails ? (
                   <Text style={styles.noDetails}>Memory details aren’t available for this item.</Text>
                 ) : null}
                 {item.memories.map((m, i) => {
@@ -159,6 +230,17 @@ export const ItemSheet = forwardRef<ItemSheetRef, { items?: CollectedItem[] }>((
                     </View>
                   );
                 })}
+                {loadingMoreDetails ? (
+                  <ActivityIndicator style={styles.detailsLoader} color="#8A6240" />
+                ) : null}
+                {scope !== 'ours' && !item.memoriesComplete && !loadingMoreDetails ? (
+                  <Pressable
+                    onPress={loadMoreDetails}
+                    style={({ pressed }) => [styles.loadMoreButton, pressed && { opacity: 0.72 }]}
+                  >
+                    <Text style={styles.loadMoreText}>Load older memories</Text>
+                  </Pressable>
+                ) : null}
               </BottomSheetScrollView>
             </>
           )}
@@ -192,7 +274,12 @@ const styles = StyleSheet.create({
   },
 
   header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
-  name: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  name: {
+    fontSize: Platform.OS === 'android' ? 24 : 30,
+    lineHeight: Platform.OS === 'android' ? 29 : 36,
+    fontFamily: 'Inter_800ExtraBold',
+    color: '#161311',
+  },
   memCount: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#8A6240', marginTop: 6 },
   recentPill: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
@@ -216,6 +303,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18, paddingVertical: 28, textAlign: 'center',
     color: '#A99A85', fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium',
   },
+  detailsLoader: { marginVertical: 22 },
+  loadMoreButton: {
+    alignSelf: 'center', borderRadius: 18, backgroundColor: '#EAD6BD',
+    paddingHorizontal: 18, paddingVertical: 11, marginTop: 2,
+  },
+  loadMoreText: { color: '#4A3423', fontSize: 14, fontFamily: 'Inter_700Bold' },
   // Design: solid dark-brown Details pill with white text.
   detailsBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 1,

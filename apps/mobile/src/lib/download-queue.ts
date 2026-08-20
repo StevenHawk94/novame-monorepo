@@ -104,7 +104,12 @@ let p0Promise: Promise<void> | null = null;
 /** Returns the cached manifest, fetching+caching once if absent. */
 async function ensureManifest(): Promise<AssetManifest | null> {
   const cached = getCachedManifest();
-  if (cached) return cached;
+  if (cached) {
+    // Lazy SWR: callers continue with cache immediately; the shared manifest
+    // module decides whether its independent six-hour TTL needs a GET.
+    void fetchManifestFromR2().catch(() => {});
+    return cached;
+  }
   try {
     const fresh = await fetchManifestFromR2();
     setCachedManifest(fresh);

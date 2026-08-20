@@ -13,11 +13,12 @@
  *                  "promptCategory": "Food & Drink",
  *                  "keywords": ["boba", "bubble tea"] } ] }
  *
- * The app refreshes the manifest at launch (prefetch) into device-scoped
- * MMKV; every consumer then reads the MERGED view: bundled dictionary first,
- * remote additions second. Images render straight from R2 through expo-image
- * (disk-cached). The server mirrors the same merge for text matching,
- * validation and the items-table upsert (apps/api/src/lib/remote-items.js).
+ * The app refreshes the manifest lazily when a Memories or Reflect feature is
+ * opened. Every consumer reads the MERGED view immediately from device cache:
+ * bundled dictionary first, remote additions second. Images render from R2
+ * through expo-image (disk-cached). The server mirrors the same merge for text
+ * matching, validation and the items-table upsert
+ * (apps/api/src/lib/remote-items.js).
  */
 import { ITEM_DICTIONARY, type ItemDictionary } from '@novame/engine';
 import { Image as ExpoImage } from 'expo-image';
@@ -27,6 +28,8 @@ import { kRemoteItems } from '../shared/storage/keys';
 
 const R2_BASE = 'https://media.novameapp.com';
 const MANIFEST_URL = `${R2_BASE}/Items/items-manifest.json`;
+const REMOTE_ITEMS_TTL_MS = 6 * 60 * 60 * 1000;
+const REMOTE_ITEMS_RETRY_MS = 5 * 60 * 1000;
 
 export interface RemoteItem {
   id: string;
@@ -49,9 +52,11 @@ interface RemoteItemsState {
   items: RemoteItem[];
   keywordPatches: RemoteKeywordPatch[];
   fetchedAtMs: number;
+  lastAttemptAtMs?: number;
 }
 
 let memo: RemoteItemsState | null | undefined;
+let refreshInflight: Promise<void> | null = null;
 
 function readState(): RemoteItemsState | null {
   if (memo !== undefined) return memo;
@@ -64,42 +69,79 @@ function readState(): RemoteItemsState | null {
   return memo;
 }
 
-/** Fetch + persist the manifest (launch/prefetch; failures keep the cache). */
-export async function refreshRemoteItems(): Promise<void> {
-  try {
-    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`);
-    if (!res.ok) return;
-    const data = (await res.json()) as { version?: number | string; items?: RemoteItem[]; keywordPatches?: RemoteKeywordPatch[] };
-    if (!Array.isArray(data.items)) return;
-    const previous = readState();
-    if (previous && String(previous.version) === String(data.version ?? 1)) return;
-    const valid = data.items.filter(
-      (it) => it && typeof it.id === 'string' && typeof it.name === 'string' && it.id.length > 0,
-    );
-    const state: RemoteItemsState = {
-      version: data.version ?? 1,
-      items: valid,
-      keywordPatches: Array.isArray(data.keywordPatches) ? data.keywordPatches : [],
-      fetchedAtMs: Date.now(),
-    };
-    // Stage a complete version before making its rules visible. Downloads run
-    // in small batches because this function itself is launched in the
-    // background during prefetch; a failed batch keeps the previous version.
-    for (let i = 0; i < valid.length; i += 8) {
-      const results = await Promise.all(valid.slice(i, i + 8).map((item) => {
-        const key = item.imageKey;
-        const uri = key
-          ? `${R2_BASE}/${key.split('/').map(encodeURIComponent).join('/')}`
-          : `${R2_BASE}/Items/${encodeURIComponent(item.id)}.webp`;
-        return ExpoImage.prefetch(uri, 'disk');
-      }));
-      if (results.some((ok) => !ok)) return;
-    }
-    storage.set(kRemoteItems.name, JSON.stringify(state));
-    memo = state;
-  } catch {
-    // offline — cached manifest keeps serving
+/** Lazy six-hour refresh; concurrent consumers share one request. */
+export function refreshRemoteItems(options?: { force?: boolean }): Promise<void> {
+  const previous = readState();
+  const now = Date.now();
+  if (!options?.force && previous && now - previous.fetchedAtMs < REMOTE_ITEMS_TTL_MS) {
+    return Promise.resolve();
   }
+  if (
+    !options?.force
+    && previous?.lastAttemptAtMs
+    && now - previous.lastAttemptAtMs < REMOTE_ITEMS_RETRY_MS
+  ) {
+    return Promise.resolve();
+  }
+  if (refreshInflight) return refreshInflight;
+  refreshInflight = (async () => {
+    const attempted: RemoteItemsState = {
+      version: previous?.version ?? 0,
+      items: previous?.items ?? [],
+      keywordPatches: previous?.keywordPatches ?? [],
+      fetchedAtMs: previous?.fetchedAtMs ?? 0,
+      lastAttemptAtMs: now,
+    };
+    storage.set(kRemoteItems.name, JSON.stringify(attempted));
+    memo = attempted;
+    try {
+      const bucket = Math.floor(now / REMOTE_ITEMS_TTL_MS);
+      const res = await fetch(`${MANIFEST_URL}?v=${bucket}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        version?: number | string;
+        items?: RemoteItem[];
+        keywordPatches?: RemoteKeywordPatch[];
+      };
+      if (!Array.isArray(data.items)) return;
+      if (previous && String(previous.version) === String(data.version ?? 1)) {
+        const refreshed = { ...previous, fetchedAtMs: Date.now(), lastAttemptAtMs: now };
+        storage.set(kRemoteItems.name, JSON.stringify(refreshed));
+        memo = refreshed;
+        return;
+      }
+      const valid = data.items.filter(
+        (it) => it && typeof it.id === 'string' && typeof it.name === 'string' && it.id.length > 0,
+      );
+      const state: RemoteItemsState = {
+        version: data.version ?? 1,
+        items: valid,
+        keywordPatches: Array.isArray(data.keywordPatches) ? data.keywordPatches : [],
+        fetchedAtMs: Date.now(),
+        lastAttemptAtMs: now,
+      };
+      // Stage a complete version before making its rules visible. Downloads run
+      // in small batches in the background; a failed batch keeps the previous
+      // complete version.
+      for (let i = 0; i < valid.length; i += 8) {
+        const results = await Promise.all(valid.slice(i, i + 8).map((item) => {
+          const key = item.imageKey;
+          const uri = key
+            ? `${R2_BASE}/${key.split('/').map(encodeURIComponent).join('/')}`
+            : `${R2_BASE}/Items/${encodeURIComponent(item.id)}.webp`;
+          return ExpoImage.prefetch(uri, 'disk');
+        }));
+        if (results.some((ok) => !ok)) return;
+      }
+      storage.set(kRemoteItems.name, JSON.stringify(state));
+      memo = state;
+    } catch {
+      // offline — cached manifest keeps serving
+    } finally {
+      refreshInflight = null;
+    }
+  })();
+  return refreshInflight;
 }
 
 /** All remote additions (empty until the first manifest lands). */

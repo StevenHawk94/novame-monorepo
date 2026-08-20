@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
+const DEFAULT_PAGE_SIZE = 100
+const MAX_PAGE_SIZE = 100
+
 function pairOf(a, b) {
   return a < b ? [a, b] : [b, a]
 }
@@ -34,6 +37,15 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const friendUserId = searchParams.get('friendUserId')
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '', 10)
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(MAX_PAGE_SIZE, Math.max(1, requestedLimit))
+      : DEFAULT_PAGE_SIZE
+    const requestedBefore = searchParams.get('beforeCreatedAt')
+    const beforeCreatedAt = requestedBefore && Number.isFinite(Date.parse(requestedBefore))
+      ? requestedBefore
+      : null
+    const beforeId = searchParams.get('beforeId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!friendUserId) return NextResponse.json({ error: 'Missing friendUserId' }, { status: 400 })
 
@@ -47,22 +59,49 @@ export async function GET(request) {
     }
 
     const [a, b] = pairOf(userId, friendUserId)
-    const [{ data }, { data: cursor }] = await Promise.all([
-      supabase.from('shared_memory_items')
+    let itemsQuery = supabase.from('shared_memory_items')
         .select('id, author_user_id, item_id, description, source, created_at')
         .eq('user_a', a).eq('user_b', b)
         .order('created_at', { ascending: false })
-        .limit(200),
+        .order('id', { ascending: false })
+        // Fetch one extra row so the client knows whether another page exists.
+        .limit(limit + 1)
+    if (beforeCreatedAt && beforeId) {
+      itemsQuery = itemsQuery.or(
+        `created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeId})`,
+      )
+    } else if (beforeCreatedAt) {
+      // Keep old clients functional while new clients use the stable composite
+      // cursor below. The overlap is de-duplicated by immutable row id.
+      itemsQuery = itemsQuery.lte('created_at', beforeCreatedAt)
+    }
+
+    const [{ data, error: itemsError }, { data: cursor, error: cursorError }] = await Promise.all([
+      itemsQuery,
       supabase.from('shared_memory_reads').select('read_at')
         .eq('user_id', userId).eq('partner_user_id', friendUserId).maybeSingle(),
     ])
+    if (itemsError) throw itemsError
+    if (cursorError) throw cursorError
+
+    const rows = data || []
+    const page = rows.slice(0, limit)
+    const hasMore = rows.length > limit
     const readAt = cursor?.read_at ? Date.parse(cursor.read_at) : 0
-    const hasUnreadFromPartner = (data || []).some((item) =>
+    const hasUnreadFromPartner = page.some((item) =>
       item.author_user_id === friendUserId && Date.parse(item.created_at) > readAt)
-    const readThrough = (data || []).reduce((latest, item) =>
+    const readThrough = page.reduce((latest, item) =>
       Date.parse(item.created_at) > Date.parse(latest) ? item.created_at : latest,
     cursor?.read_at || '1970-01-01T00:00:00.000Z')
-    return NextResponse.json({ success: true, items: data || [], hasUnreadFromPartner, readThrough })
+    return NextResponse.json({
+      success: true,
+      items: page,
+      hasMore,
+      nextBeforeCreatedAt: hasMore ? page[page.length - 1]?.created_at || null : null,
+      nextBeforeId: hasMore ? page[page.length - 1]?.id || null : null,
+      hasUnreadFromPartner,
+      readThrough,
+    })
   } catch (err) {
     console.error('[friends/box] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

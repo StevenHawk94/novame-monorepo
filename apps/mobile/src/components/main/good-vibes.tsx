@@ -15,6 +15,7 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { haptics } from '@/lib/haptics';
 import { GOOD_VIBE_ART } from '@/lib/icons';
+import { supabase } from '@/lib/supabase';
 import {
   GOOD_VIBE_MESSAGES,
   fetchUnreadGoodVibe,
@@ -109,7 +110,11 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
   );
 }
 
-/** Global receiver: checks at launch, foreground, and once a minute in-app. */
+/**
+ * Global receiver: read once at launch/foreground, then react to the recipient's
+ * database events. This keeps in-app delivery immediate without a permanent
+ * minute-by-minute network poll.
+ */
 export function GoodVibesInboxGate() {
   const [vibe, setVibe] = useState<GoodVibeInboxItem | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
@@ -134,10 +139,31 @@ export function GoodVibesInboxGate() {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') void check();
     });
-    const timer = setInterval(() => void check(), 60_000);
+
+    let disposed = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth.getSession().then(({ data }) => {
+      const userId = data.session?.user.id;
+      if (disposed || !userId) return;
+      channel = supabase
+        .channel(`good-vibes-inbox:${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'good_vibes',
+            filter: `recipient_user_id=eq.${userId}`,
+          },
+          () => { void check(); },
+        )
+        .subscribe();
+    });
+
     return () => {
+      disposed = true;
       subscription.remove();
-      clearInterval(timer);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [check]);
 

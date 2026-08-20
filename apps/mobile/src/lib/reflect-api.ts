@@ -31,6 +31,15 @@ export interface MatchedItem {
   label: string;
 }
 
+export interface SharedReflectItem {
+  id: string;
+  authorUserId: string;
+  itemId: string;
+  description: string;
+  source: 'manual' | 'reflect';
+  createdAt: string;
+}
+
 export interface ReflectSnapshot {
   reflectId: string;
   xpAwarded: number;
@@ -38,6 +47,8 @@ export interface ReflectSnapshot {
   reflectsToday: number;
   reflectsRemaining: number;
   matchedItems: MatchedItem[];
+  /** Shared Memories created by this submission, ready for optimistic merge. */
+  sharedItems: SharedReflectItem[];
   bubble: string | null;
   /** Plus 流程2 cute story, when requested. */
   story: string | null;
@@ -116,6 +127,14 @@ interface WireSnapshot {
   reflects_today?: number;
   reflects_remaining?: number;
   matchedItems?: MatchedItem[];
+  sharedItems?: {
+    id: string;
+    author_user_id: string;
+    item_id: string;
+    description: string;
+    source: 'manual' | 'reflect';
+    created_at: string;
+  }[];
   bubble?: string | null;
   story?: string | null;
 }
@@ -128,6 +147,14 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     reflectsToday: w.reflects_today ?? 0,
     reflectsRemaining: w.reflects_remaining ?? 0,
     matchedItems: w.matchedItems ?? [],
+    sharedItems: (w.sharedItems ?? []).map((item) => ({
+      id: item.id,
+      authorUserId: item.author_user_id,
+      itemId: item.item_id,
+      description: item.description,
+      source: item.source,
+      createdAt: item.created_at,
+    })),
     bubble: w.bubble ?? null,
     story: w.story ?? null,
   };

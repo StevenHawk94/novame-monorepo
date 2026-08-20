@@ -97,6 +97,11 @@ export default function VisitMasterScreen() {
             pointerEvents="none"
           />
 
+          <KeyboardAvoidingView
+            style={styles.keyboardLayer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+
           {/* top bar: close + history */}
           <View style={[styles.topBar, { top: insets.top + 8 }]}>
             <Pressable
@@ -120,7 +125,7 @@ export default function VisitMasterScreen() {
               style={[styles.bubble, { top: bubbleTop }]}
               onLayout={(event) => setBubbleHeight(event.nativeEvent.layout.height)}
             >
-              <Text style={styles.bubbleText}>{bubbleText}</Text>
+              <Text maxFontSizeMultiplier={1.15} style={styles.bubbleText}>{bubbleText}</Text>
               <View style={styles.bubbleTail} />
             </View>
           )}
@@ -132,14 +137,15 @@ export default function VisitMasterScreen() {
             <MasterReadingMessage />
           )}
 
-          {/* Only the composer follows the keyboard. The scene never moves. */}
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          {/* The keyboard layer resizes; the absolute artwork behind it never moves. */}
             {!status.isPaid ? (
               <Pressable
                 onPress={() => { void haptics.warning(); router.push('/(main)/(modals)/subscription-paywall'); }}
                 style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}
               >
-                <Text style={styles.lockedText}>Join Plus to access this feature.</Text>
+                <Text maxFontSizeMultiplier={1.15} style={styles.lockedText}>
+                  Join Plus to access this feature.
+                </Text>
                 <MaterialIcons name="lock" size={22} color="#8A7A63" />
               </Pressable>
             ) : phase === 'ask' ? (
@@ -150,27 +156,40 @@ export default function VisitMasterScreen() {
                   { marginBottom: insets.bottom + 18 },
                 ]}
               >
-                <TextInput
-                  value={question}
-                  onChangeText={setQuestion}
-                  placeholder="What's been on your mind?"
-                  placeholderTextColor="#8A7A63"
-                  editable={canAsk && phase === 'ask'}
-                  multiline
-                  maxLength={1000}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  textAlignVertical={inputFocused ? 'top' : 'center'}
-                  style={[
-                    styles.askInput,
-                    inputFocused ? styles.askInputFocused : styles.askInputResting,
-                  ]}
-                />
+                <View style={styles.askInputWrap}>
+                  {!inputFocused && question.length === 0 ? (
+                    <View pointerEvents="none" style={styles.askPlaceholderWrap}>
+                      <Text maxFontSizeMultiplier={1.15} style={styles.askPlaceholder}>
+                        What's been on your mind?
+                      </Text>
+                    </View>
+                  ) : null}
+                  <TextInput
+                    value={question}
+                    onChangeText={setQuestion}
+                    placeholder={inputFocused ? "What's been on your mind?" : undefined}
+                    placeholderTextColor="#8A7A63"
+                    editable={canAsk && phase === 'ask'}
+                    multiline
+                    maxLength={1000}
+                    maxFontSizeMultiplier={1.15}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    textAlignVertical={inputFocused ? 'top' : 'center'}
+                    style={[
+                      styles.askInput,
+                      inputFocused ? styles.askInputFocused : styles.askInputResting,
+                    ]}
+                  />
+                </View>
                 <Pressable
                   onPress={onAsk}
                   disabled={!canAsk || phase !== 'ask' || question.trim().length === 0}
                   hitSlop={8}
-                  style={{ opacity: !canAsk || question.trim().length === 0 ? 0.45 : 1 }}
+                  style={[
+                    styles.sendButton,
+                    { opacity: !canAsk || question.trim().length === 0 ? 0.45 : 1 },
+                  ]}
                 >
                   <Image source={ICONS.send} style={styles.sendIcon} resizeMode="contain" />
                 </Pressable>
@@ -338,6 +357,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 785 / 2004,
   },
+  keyboardLayer: { flex: 1 },
 
   topBar: {
     position: 'absolute', left: 16, right: 16, zIndex: 2,
@@ -355,8 +375,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22, paddingVertical: 18,
   },
   bubbleText: {
-    fontSize: 16.5, fontFamily: 'Inter_700Bold', color: '#2B2B2B',
-    textAlign: 'center', lineHeight: 25,
+    // 20% smaller than the previous 16.5 / 25 treatment.
+    fontSize: 13.2, fontFamily: 'Inter_700Bold', color: '#2B2B2B',
+    textAlign: 'center', lineHeight: 20, includeFontPadding: false,
   },
   bubbleTail: {
     position: 'absolute', bottom: -13, alignSelf: 'center',
@@ -382,15 +403,29 @@ const styles = StyleSheet.create({
     borderWidth: 2.5, borderColor: '#2B2B2B',
     paddingHorizontal: 18,
   },
-  askPillResting: { minHeight: 62, paddingVertical: 9 },
-  askPillFocused: { minHeight: 186, paddingVertical: 14 },
-  askInput: {
-    flex: 1, fontSize: 17, fontFamily: 'Inter_700Bold', color: '#2B2B2B',
-    paddingTop: 4, paddingBottom: 4,
+  askPillResting: { height: 62, paddingVertical: 0 },
+  askPillFocused: { height: 186, paddingVertical: 14 },
+  askInputWrap: { flex: 1, alignSelf: 'stretch', justifyContent: 'center' },
+  askPlaceholderWrap: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
   },
-  askInputResting: { minHeight: 40, maxHeight: 44 },
-  askInputFocused: { minHeight: 150, maxHeight: 210 },
-  lockedText: { flex: 1, fontSize: 16.5, fontFamily: 'Inter_700Bold', color: '#8A7A63' },
+  askPlaceholder: {
+    fontSize: 15, lineHeight: 21, fontFamily: 'Inter_700Bold', color: '#8A7A63',
+    includeFontPadding: false,
+  },
+  askInput: {
+    flex: 1, fontSize: 15, lineHeight: 21,
+    fontFamily: 'Inter_700Bold', color: '#2B2B2B',
+    paddingHorizontal: 0, includeFontPadding: false,
+  },
+  askInputResting: { height: 44, paddingTop: 0, paddingBottom: 0 },
+  askInputFocused: { height: 150, paddingTop: 8, paddingBottom: 8 },
+  lockedText: {
+    flex: 1, fontSize: 14.5, lineHeight: 20,
+    fontFamily: 'Inter_700Bold', color: '#8A7A63', includeFontPadding: false,
+  },
+  sendButton: { flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   sendIcon: { width: 36, height: 36 },
 
   cardWrap: { flex: 1, paddingHorizontal: 16 },

@@ -119,7 +119,7 @@ export default function QuestPickScreen() {
     const picked = selected.map((id) => byId.get(id)).filter((t): t is string => !!t);
     const res = await startPlan(themeKey ?? 'custom', planTitle, picked);
     if (res.ok) {
-      await fetchQuestStatus();
+      await fetchQuestStatus({ force: true });
       router.back();
       return;
     }

@@ -14,9 +14,9 @@
 import { kSceneCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
 import { getSelectedScene } from './cosmetics-store';
+import { fetchManifestFromR2 } from './asset-cache';
 
 const R2_BASE = 'https://media.novameapp.com';
-const MANIFEST_URL = `${R2_BASE}/video-manifest.json`;
 
 export const DEFAULT_SCENE_KEY = 'mushroom-wood';
 
@@ -48,12 +48,12 @@ export function getCachedSceneCatalog(): SceneDef[] {
   }
 }
 
-export async function fetchSceneCatalog(): Promise<SceneDef[]> {
+export async function fetchSceneCatalog(options?: { force?: boolean }): Promise<SceneDef[]> {
   try {
-    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`);
-    if (!res.ok) return getCachedSceneCatalog();
-    const manifest = (await res.json()) as { scenes?: SceneDef[] };
-    const scenes = Array.isArray(manifest.scenes) ? manifest.scenes : [];
+    const manifest = await fetchManifestFromR2(options);
+    const scenes = Array.isArray(manifest?.scenes)
+      ? manifest.scenes as SceneDef[]
+      : [];
     if (scenes.length > 0) storage.set(kSceneCatalog.name, JSON.stringify(scenes));
     return scenes.length > 0 ? scenes : getCachedSceneCatalog();
   } catch {

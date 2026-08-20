@@ -18,15 +18,13 @@
  * server-authoritative via cosmetic_unlocks type 'outfit'.
  */
 import * as FileSystem from 'expo-file-system/legacy';
-import { Image as ExpoImage } from 'expo-image';
 import { Platform } from 'react-native';
 
 import { kEquippedOutfit, kOutfitCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
-import { fetchSceneCatalog, sceneAssetUrl } from './scenes';
+import { fetchManifestFromR2 } from './asset-cache';
 
 const R2_BASE = 'https://media.novameapp.com';
-const MANIFEST_URL = `${R2_BASE}/video-manifest.json`;
 
 export interface OutfitDef {
   key: string;
@@ -56,14 +54,12 @@ export function getCachedOutfitCatalog(): OutfitDef[] {
   }
 }
 
-export async function fetchOutfitCatalog(): Promise<OutfitDef[]> {
+export async function fetchOutfitCatalog(options?: { force?: boolean }): Promise<OutfitDef[]> {
   try {
-    // Cache-bust: the CDN may hold the manifest for minutes; a fresh catalog
-    // matters right after the admin publishes a new outfit.
-    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`);
-    if (!res.ok) return getCachedOutfitCatalog();
-    const manifest = (await res.json()) as { outfits?: OutfitDef[] };
-    const outfits = Array.isArray(manifest.outfits) ? manifest.outfits : [];
+    const manifest = await fetchManifestFromR2(options);
+    const outfits = Array.isArray(manifest?.outfits)
+      ? manifest.outfits as OutfitDef[]
+      : [];
     if (outfits.length > 0) storage.set(kOutfitCatalog.name, JSON.stringify(outfits));
     return outfits.length > 0 ? outfits : getCachedOutfitCatalog();
   } catch {
@@ -144,48 +140,6 @@ export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | nul
   })();
   inflight.set(inflightKey, p);
   return p;
-}
-
-/**
- * Background prefetch, kicked off once per launch from the entry gate
- * (covers onboarding and normal starts alike). Order matches perceived
- * urgency (2026-07-30):
- *   1. all closet images in parallel (~200KB total — thumbs + worn shots)
- *   2. videos sequentially, free outfits before Plus ones
- * so by the time a user opens the closet and switches, the wait modal is
- * a blink instead of a download.
- */
-let prefetchStarted = false;
-
-export function prefetchOutfitAssets(): void {
-  if (prefetchStarted) return;
-  prefetchStarted = true;
-  void (async () => {
-    try {
-      const catalog = await fetchOutfitCatalog();
-      // Scene art rides along: thumbs + full backgrounds are all small webp.
-      const scenes = await fetchSceneCatalog();
-      await Promise.all([
-        ...catalog.flatMap((o) => [
-          ExpoImage.prefetch(outfitAssetUrl(o.thumb)).catch(() => false),
-          ExpoImage.prefetch(outfitAssetUrl(o.bunny)).catch(() => false),
-        ]),
-        ...scenes.flatMap((s) => [
-          ExpoImage.prefetch(sceneAssetUrl(s.thumb)).catch(() => false),
-          ExpoImage.prefetch(sceneAssetUrl(s.image)).catch(() => false),
-        ]),
-      ]);
-      const ordered = [
-        ...catalog.filter((o) => !o.plusOnly),
-        ...catalog.filter((o) => o.plusOnly),
-      ];
-      for (const o of ordered) {
-        await ensureOutfitVideoCached(o);
-      }
-    } catch {
-      // Best-effort warmup; on-demand download covers whatever is missing.
-    }
-  })();
 }
 
 /**

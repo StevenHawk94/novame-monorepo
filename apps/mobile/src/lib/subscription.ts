@@ -33,6 +33,8 @@ import type { PricingTierKey } from '@novame/core';
  */
 
 const STORAGE_KEY = 'novame_subscription';
+const SUBSCRIPTION_TTL_MS = 5 * 60 * 1000;
+const fetchesInFlight = new Map<string, Promise<CachedSubscription>>();
 
 // ---- types ----
 
@@ -113,20 +115,38 @@ export function clearCachedSubscription(): void {
  */
 export async function fetchSubscriptionTier(
   userId: string,
+  options?: { force?: boolean },
 ): Promise<CachedSubscription> {
-  const data = await apiClient.get<UserSyncSubscriptionShape>(
-    `/api/user-sync?userId=${encodeURIComponent(userId)}`,
-  );
-  if (!data.success) {
-    throw new Error('user-sync GET returned non-success');
+  const cached = getCachedSubscription();
+  if (
+    !options?.force
+    && cached
+    && Date.now() - cached.lastFetchedAtMs < SUBSCRIPTION_TTL_MS
+  ) {
+    return cached;
   }
-  const tier = data.data.subscriptionTier ?? 'free';
-  const next: CachedSubscription = {
-    tier,
-    lastFetchedAtMs: Date.now(),
-  };
-  setCachedSubscription(next);
-  return next;
+  const existing = fetchesInFlight.get(userId);
+  if (existing) return existing;
+
+  const request = (async () => {
+    const data = await apiClient.get<UserSyncSubscriptionShape>(
+      `/api/user-sync?userId=${encodeURIComponent(userId)}`,
+    );
+    if (!data.success) {
+      throw new Error('user-sync GET returned non-success');
+    }
+    const tier = data.data.subscriptionTier ?? 'free';
+    const next: CachedSubscription = {
+      tier,
+      lastFetchedAtMs: Date.now(),
+    };
+    setCachedSubscription(next);
+    return next;
+  })().finally(() => {
+    fetchesInFlight.delete(userId);
+  });
+  fetchesInFlight.set(userId, request);
+  return request;
 }
 
 /**

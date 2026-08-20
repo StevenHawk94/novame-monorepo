@@ -15,6 +15,8 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
 import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
 
+const COMPANION_PANEL_BG = '#F9D9B2';
+
 interface KitRow {
   key: string;
   label: string;
@@ -114,63 +116,65 @@ export function CompanionSheet() {
   return (
       <View style={styles.modalRoot}>
         <Pressable style={styles.backdrop} onPress={() => router.back()} />
-        <View style={[styles.sheet, { height: screenH * 0.9 }]}>
+        <View style={styles.sheet}>
           <View style={styles.outer}>
             <GridBackground />
             {/* One continuous peach panel reaches the physical screen bottom.
                 Safe-area padding only positions the close button/content. */}
-            <View style={styles.inner}>
-              <ScrollView
-                style={styles.kitScroll}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.scroll,
-                  { paddingBottom: Math.max(insets.bottom, 8) + 74 },
-                ]}
-              >
-                <View style={styles.header}>
-                  <View style={styles.cloverPill}>
-                    <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
-                    <Text style={styles.cloverBalance}>{balance}</Text>
-                  </View>
-                </View>
-                <View style={styles.portraitWrap}>
-                  <Image
-                    source={ICONS.interact}
-                    style={[styles.portrait, screenH < 700 && { width: 110, height: 110 }]}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text style={styles.hangout}>Got something on your mind?</Text>
-                {visibleKits.map((kit) => (
-                  <Pressable
-                    key={kit.key}
-                    onPress={() => openKit(kit)}
-                    disabled={kit.disabled}
-                    style={({ pressed }) => [
-                      styles.kitCard,
-                      kit.disabled && styles.kitCardDisabled,
-                      pressed && !kit.disabled && styles.kitCardPressed,
-                    ]}
-                  >
-                    <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.kitTitleRow}>
-                        <Text style={styles.kitLabel}>{kit.label}</Text>
-                        {!!kit.badge && <Text style={styles.kitBadge}>{kit.badge}</Text>}
-                      </View>
-                      <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+            <View style={styles.innerFrame}>
+              <View style={styles.innerSurface}>
+                <ScrollView
+                  style={styles.kitScroll}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={[
+                    styles.scroll,
+                    { paddingBottom: Math.max(insets.bottom, 8) + 74 },
+                  ]}
+                >
+                  <View style={styles.header}>
+                    <View style={styles.cloverPill}>
+                      <Image source={ICONS.Clover} style={styles.cloverIcon} resizeMode="contain" />
+                      <Text style={styles.cloverBalance}>{balance}</Text>
                     </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-              <Pressable
-                onPress={() => router.back()}
-                style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
-                hitSlop={8}
-              >
-                <MaterialIcons name="close" size={26} color="#FFFFFF" />
-              </Pressable>
+                  </View>
+                  <View style={styles.portraitWrap}>
+                    <Image
+                      source={ICONS.interact}
+                      style={[styles.portrait, screenH < 700 && { width: 110, height: 110 }]}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text style={styles.hangout}>Got something on your mind?</Text>
+                  {visibleKits.map((kit) => (
+                    <Pressable
+                      key={kit.key}
+                      onPress={() => openKit(kit)}
+                      disabled={kit.disabled}
+                      style={({ pressed }) => [
+                        styles.kitCard,
+                        kit.disabled && styles.kitCardDisabled,
+                        pressed && !kit.disabled && styles.kitCardPressed,
+                      ]}
+                    >
+                      <Image source={kit.icon} style={styles.kitIcon} resizeMode="contain" />
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.kitTitleRow}>
+                          <Text style={styles.kitLabel}>{kit.label}</Text>
+                          {!!kit.badge && <Text style={styles.kitBadge}>{kit.badge}</Text>}
+                        </View>
+                        <Text style={styles.kitDesc}>{kit.availText && kit.done ? kit.availText : kit.desc}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                <Pressable
+                  onPress={() => router.back()}
+                  style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name="close" size={26} color="#FFFFFF" />
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
@@ -180,26 +184,38 @@ export function CompanionSheet() {
 
 const styles = StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  // Keep the outside area interactive for tap-to-close without dimming Home.
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   sheet: {
-    width: '100%',
+    position: 'absolute', bottom: 0, width: '100%', height: '90%',
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    overflow: 'hidden',
+    overflow: 'hidden', backgroundColor: '#F9DCB8',
   },
   outer: {
     flex: 1, width: '100%', borderTopLeftRadius: 28, borderTopRightRadius: 28,
     overflow: 'hidden', paddingTop: 14, paddingHorizontal: 14,
     backgroundColor: '#F9DCB8',
   },
-  // Inset peach panel with the brown outline over the grid ground (mock).
-  inner: {
+  // The border and clipped content are separate layers. A native ScrollView
+  // with an opaque background can otherwise paint over a parent's rounded
+  // border corners on iOS. The frame's fixed inset is the border, so its width
+  // remains uniform on every edge and cannot be covered by scrolling content.
+  innerFrame: {
     flex: 1, borderTopLeftRadius: 30, borderTopRightRadius: 30,
-    backgroundColor: '#F9D9B2',
-    borderWidth: 2.5, borderColor: '#A9714B',
+    backgroundColor: '#A9714B', padding: 3,
     overflow: 'hidden',
   },
-  kitScroll: { flex: 1 },
-  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  innerSurface: {
+    flex: 1, borderTopLeftRadius: 27, borderTopRightRadius: 27,
+    backgroundColor: COMPANION_PANEL_BG,
+    overflow: 'hidden',
+  },
+  kitScroll: { flex: 1, backgroundColor: 'transparent' },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
+    backgroundColor: 'transparent',
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cloverPill: {
     flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: '#FFFFFF',

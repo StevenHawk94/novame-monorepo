@@ -181,6 +181,7 @@ export async function POST(request) {
     // Additive and best-effort -- a failure here never affects the reflect,
     // which already succeeded above. Runs only on a real reflect (has an id).
     let matchedItems = []
+    let sharedItems = []
     const reflectId = result?.reflect_id
     if (reflectId) {
       try {
@@ -238,8 +239,12 @@ export async function POST(request) {
                 source: 'reflect',
                 reflect_id: reflectId,
               }))
-              const { error: boxErr } = await supabase.from('shared_memory_items').insert(boxRows)
+              const { data: insertedBoxRows, error: boxErr } = await supabase
+                .from('shared_memory_items')
+                .insert(boxRows)
+                .select('id, author_user_id, item_id, description, source, created_at')
               if (boxErr) console.warn('[reflect] co-create box insert failed (non-fatal):', boxErr.message)
+              else sharedItems = insertedBoxRows || []
             }
           }
         }
@@ -383,7 +388,20 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, bubble, story })
+    // AI refinement may have updated the descriptions after the insert. Return
+    // the final shared rows so the mounted Ours collection can merge them
+    // immediately instead of replacing its full cache with a racing refetch.
+    if (sharedItems.length > 0 && reflectId) {
+      const { data: finalSharedItems } = await supabase
+        .from('shared_memory_items')
+        .select('id, author_user_id, item_id, description, source, created_at')
+        .eq('author_user_id', userId)
+        .eq('reflect_id', reflectId)
+        .order('created_at', { ascending: false })
+      if (finalSharedItems) sharedItems = finalSharedItems
+    }
+
+    return NextResponse.json({ success: true, ...result, matchedItems, sharedItems, bubble, story })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

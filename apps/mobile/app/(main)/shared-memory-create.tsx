@@ -153,8 +153,11 @@ export default function SharedMemoryCreateScreen() {
     setResult(response.snapshot);
     setRemaining(response.snapshot.reflectsRemaining);
     if (response.snapshot.bubble) setReflectBubble(response.snapshot.bubble);
-    notifySharedBoxChanged(friendUserId);
-    void fetchReflectFeed();
+    notifySharedBoxChanged(friendUserId, response.snapshot.sharedItems.map((item) => ({
+      ...item,
+      emoji: '',
+    })));
+    void fetchReflectFeed({ force: true });
     void fetchBags();
     void haptics.success();
     setPhase('result');

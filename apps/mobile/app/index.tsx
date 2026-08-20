@@ -5,7 +5,6 @@ import { Redirect } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
-import { prefetchOutfitAssets } from '@/lib/outfits';
 import { hideSplashOnce } from '@/lib/splash';
 
 /**
@@ -44,9 +43,6 @@ export default function Index() {
 
   useEffect(() => {
     let cancelled = false;
-    // Warm the Bunny Closet (images then videos, free before Plus) in the
-    // background from the very first launch — including the onboarding path.
-    prefetchOutfitAssets();
     void (async () => {
       const session = await getLaunchSession();
       if (cancelled) return;
