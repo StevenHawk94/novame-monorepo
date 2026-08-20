@@ -27,9 +27,9 @@ import { PlanBillingSheet, type PlanBillingSheetRef } from '@/components/me/plan
 import { GridBackground } from '@/components/ui/grid-background';
 import { haptics } from '@/lib/haptics';
 import {
-  getCachedSubscriptionTier,
   fetchSubscriptionTier,
 } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { fetchDuoStatus, type DuoStatus } from '@/lib/duo-api';
 import {
   fetchFriends,
@@ -62,7 +62,7 @@ const TERMS_URL = 'https://www.burrow-app.com/terms';
 export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);
-  const [tier, setTier] = useState(() => getCachedSubscriptionTier());
+  const tier = useSubscriptionTier();
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -107,7 +107,7 @@ export default function MeScreen() {
       refreshProfile();
       void supabase.auth.getSession().then(({ data }) => {
         const uid = data.session?.user?.id;
-        if (uid) void fetchSubscriptionTier(uid).then((s) => setTier(s.tier)).catch(() => {});
+        if (uid) void fetchSubscriptionTier(uid).catch(() => {});
       });
       void fetchDuoStatus().then(setDuo);
       void fetchPairing().then(setPairing);
@@ -208,7 +208,7 @@ export default function MeScreen() {
     setConfirmText('');
     setUnpairing(false);
     void fetchDuoStatus().then(setDuo);
-    if (userId) void fetchSubscriptionTier(userId, { force: true }).then((status) => setTier(status.tier)).catch(() => {});
+    if (userId) void fetchSubscriptionTier(userId, { force: true }).catch(() => {});
     void haptics.success();
   };
 

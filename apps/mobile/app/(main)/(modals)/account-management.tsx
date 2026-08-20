@@ -16,9 +16,9 @@ import { resolveAvatarSource } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import {
   deleteAccount,
+  requestAccountReauthentication,
   updateDisplayName,
   updateEmail,
-  updatePassword,
   uploadAvatar,
 } from '@/lib/account-api';
 import {
@@ -32,7 +32,7 @@ import { clearCachedSubscription } from '@/lib/subscription';
 /**
  * Account Management overlay -- Stage 3.10.2 C1.
  *
- * 4-section accordion (Profile Image / Display Name / Email / Password)
+ * 3-section accordion (Profile Image / Display Name / Email)
  * + Danger Zone (Delete Account). Each section opens independently and
  * has its own Save action and inline status message.
  *
@@ -54,7 +54,7 @@ import { clearCachedSubscription } from '@/lib/subscription';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
-type Section = 'avatar' | 'name' | 'email' | 'password' | null;
+type Section = 'avatar' | 'name' | 'email' | null;
 
 type Status =
   | { kind: 'idle' }
@@ -89,8 +89,7 @@ export default function AccountManagementModal() {
   // Section-local input state
   const [nameInput, setNameInput] = useState<string>('');
   const [emailInput, setEmailInput] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [reauthCode, setReauthCode] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -123,16 +122,13 @@ export default function AccountManagementModal() {
   const toggleSection = (id: Exclude<Section, null>) => {
     void haptics.light();
     setStatus({ kind: 'idle' });
+    setReauthCode('');
     if (openSection === id) {
       setOpenSection(null);
       return;
     }
     if (id === 'name') setNameInput(displayName);
     if (id === 'email') setEmailInput(email);
-    if (id === 'password') {
-      setNewPassword('');
-      setConfirmPassword('');
-    }
     setOpenSection(id);
   };
 
@@ -242,21 +238,14 @@ export default function AccountManagementModal() {
 
   // ---- Email save ----
 
-  const handleSaveEmail = async () => {
-    if (!userId || busy) return;
-    if (!emailInput.includes('@')) {
-      setStatus({ kind: 'error', text: 'Please enter a valid email.' });
-      return;
-    }
+  const handleSendSecurityCode = async () => {
+    if (busy) return;
     setBusy(true);
     void haptics.medium();
-    const res = await updateEmail(userId, emailInput.trim());
+    const res = await requestAccountReauthentication();
     setBusy(false);
     if (res.kind === 'success') {
-      setStatus({
-        kind: 'success',
-        text: `Verification email sent to ${emailInput.trim()}.`,
-      });
+      setStatus({ kind: 'success', text: 'Security code sent to your current email.' });
       void haptics.success();
     } else {
       setStatus({ kind: 'error', text: res.message });
@@ -264,28 +253,27 @@ export default function AccountManagementModal() {
     }
   };
 
-  // ---- Password save ----
-
-  const handleSavePassword = async () => {
+  const handleSaveEmail = async () => {
     if (!userId || busy) return;
-    if (newPassword.length < 8) {
-      setStatus({ kind: 'error', text: 'Password must be at least 8 characters.' });
+    if (!emailInput.includes('@')) {
+      setStatus({ kind: 'error', text: 'Please enter a valid email.' });
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setStatus({ kind: 'error', text: "Passwords don't match." });
+    if (reauthCode.trim().length < 6) {
+      setStatus({ kind: 'error', text: 'Enter the security code sent to your current email.' });
       return;
     }
     setBusy(true);
     void haptics.medium();
-    const res = await updatePassword(userId, newPassword);
+    const res = await updateEmail(userId, emailInput.trim(), reauthCode.trim());
     setBusy(false);
     if (res.kind === 'success') {
-      setStatus({ kind: 'success', text: 'Password updated.' });
+      setStatus({
+        kind: 'success',
+        text: `Verification email sent to ${emailInput.trim()}.`,
+      });
       void haptics.success();
-      setNewPassword('');
-      setConfirmPassword('');
-      setOpenSection(null);
+      setReauthCode('');
     } else {
       setStatus({ kind: 'error', text: res.message });
       void haptics.error();
@@ -345,8 +333,8 @@ export default function AccountManagementModal() {
 
   return (
     <View style={styles.root}>
-      {/* iOS: automaticallyAdjustKeyboardInsets keeps the password fields
-          above the keyboard; Android relies on the KAV 'height' behavior. */}
+      {/* iOS automatically adjusts form fields above the keyboard; Android
+          relies on the KAV 'height' behavior. */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? undefined : 'height'}
@@ -479,38 +467,19 @@ export default function AccountManagementModal() {
               style={styles.input}
             />
             <Text style={styles.helperText}>
-              A verification email will be sent to confirm the change.
+              Confirm with a security code sent to your current email. The new email must also be verified.
             </Text>
-            <PrimaryBtn label="Send Verification" busy={busy} onPress={handleSaveEmail} />
-          </View>
-        ) : null}
-
-        {/* Password */}
-        <SectionHeader
-          label="Password"
-          summary={'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
-          open={openSection === 'password'}
-          onPress={() => toggleSection('password')}
-        />
-        {openSection === 'password' ? (
-          <View style={styles.sectionBody}>
+            <PrimaryBtn label="Send Security Code" busy={busy} onPress={handleSendSecurityCode} />
             <TextInput
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholder="New password (min 8)"
+              value={reauthCode}
+              onChangeText={(text) => setReauthCode(text.replace(/\D/g, '').slice(0, 8))}
+              placeholder="Security code"
               placeholderTextColor="#B8A588"
-              secureTextEntry
-              style={styles.input}
-            />
-            <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm password"
-              placeholderTextColor="#B8A588"
-              secureTextEntry
+              keyboardType="number-pad"
+              autoCapitalize="none"
               style={[styles.input, { marginTop: 12 }]}
             />
-            <PrimaryBtn label="Change Password" busy={busy} onPress={handleSavePassword} />
+            <PrimaryBtn label="Send Verification" busy={busy} onPress={handleSaveEmail} />
           </View>
         ) : null}
 

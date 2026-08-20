@@ -96,9 +96,9 @@ export function CompanionSheet() {
         key: 'visit_master', label: 'Visit Master',
         desc: masterCoolingDown
           ? 'The Master has set out in search of wisdom.'
-          : 'Need a sharper read on it? Ask the bunny master.',
+          : 'Need a sharper read? Ask the bunny master.',
         icon: ICONS.VisitMaster, route: '/(main)/visit-master',
-        badge: masterCoolingDown ? `Back in ${remainingHours}h` : undefined,
+        badge: masterCoolingDown ? `Back in ${remainingHours}h` : !masterStatus.isPaid ? 'Plus' : undefined,
         disabled: masterCoolingDown,
       },
     ];

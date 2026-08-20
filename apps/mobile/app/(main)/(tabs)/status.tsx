@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
@@ -23,6 +23,7 @@ import { getBunnyName } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 /**
  * Me tab → Connection Board (2026-07-24 重构, mock 1:1). The old Me page
@@ -71,6 +72,7 @@ export default function ConnectionDashboardScreen() {
   // gate from before an upgrade is stale noise: ignore it when the tier says
   // paid, so members never flash 'Unlock Plus' while the fetch reconciles.
   const [isPaid, setIsPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
+  const liveTier = useSubscriptionTier();
   const cachedIns = getCachedInsights();
   const [insights, setInsights] = useState<ConnectionInsights | null>(
     cachedIns?.ok ? cachedIns.insights : null,
@@ -84,6 +86,10 @@ export default function ConnectionDashboardScreen() {
   });
   const [openItem, setOpenItem] = useState<CommonItem | null>(null);
   const refreshInFlight = useRef(false);
+
+  useEffect(() => {
+    setIsPaid(liveTier !== 'free');
+  }, [liveTier]);
 
   useFocusEffect(
     useCallback(() => {

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { decodeTransaction } from 'app-store-server-api'
-import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 
 // A2: nodejs runtime required -- app-store-server-api's decodeTransaction
 // uses Node crypto for X.509 cert-chain validation (not available on Edge),
@@ -162,6 +161,16 @@ export async function POST(request) {
         { status: 401 }
       )
     }
+    // New purchases attach the authenticated NovaMe UUID as StoreKit's
+    // appAccountToken. Restores of historical purchases may not contain it,
+    // but when Apple supplies it a different account must never claim it.
+    if (verifiedTxn.appAccountToken && String(verifiedTxn.appAccountToken).toLowerCase() !== String(userId).toLowerCase()) {
+      console.warn('[apple-iap] rejected: appAccountToken belongs to another user')
+      return NextResponse.json(
+        { success: false, error: 'Purchase belongs to another account' },
+        { status: 409 }
+      )
+    }
     // Re-derive authoritative fields from Apple's signed data; the
     // client-supplied values are now ignored (overwritten).
     productId = verifiedTxn.productId
@@ -189,103 +198,31 @@ export async function POST(request) {
       ? new Date(expiresDate).toISOString()
       : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
 
-    // ── Update profiles.subscription_tier ──
-    //
-    // Stage 6.IAPFix: destructure { error } and surface failures.
-    // The pre-fix code awaited the update without checking error,
-    // so RLS rejections / row-not-found / type mismatches all
-    // silently succeeded -- mobile saw tier upgrade but DB never
-    // changed. Same silent-fail family as Stage 6.WisdomFix-S1
-    // (the wisdom_card DB save).
-    const { error: profileErr } = await supabase
-      .from('profiles')
-      .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-    if (profileErr) {
-      console.error('[apple-iap] profile update error:', profileErr.message)
+    const planType = PRODUCT_TO_PLAN_TYPE[productId] || 'solo'
+    const { data: applied, error: applyErr } = await supabase.rpc('apply_store_subscription', {
+      p_user_id: userId,
+      p_store: 'apple',
+      p_plan: tier,
+      p_plan_type: planType,
+      p_billing_cycle: billingCycle,
+      p_period_end: periodEnd,
+      p_apple_transaction_id: String(transactionId),
+      p_apple_original_transaction_id: String(originalTransactionId || transactionId),
+      p_apple_product_id: productId,
+    })
+    if (applyErr) {
+      console.error('[apple-iap] atomic subscription apply failed:', applyErr.message)
       return NextResponse.json(
-        { success: false, error: 'Failed to update profile tier: ' + profileErr.message },
+        { success: false, error: 'Failed to activate subscription' },
         { status: 500 }
       )
     }
-
-    // 2026-08-11: a fresh own-Plus auto-seats the paired partner.
-    if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
-
-    // ── Upsert subscriptions table (atomic) ──
-    //
-    // Stage 6.IAPFix: switched from select-then-update/insert
-    // two-step to supabase upsert() with onConflict='user_id'.
-    // The two-step had two flaws:
-    //   1. Race window: concurrent purchase callbacks could both
-    //      see "no existing row" and both try to insert.
-    //   2. Silent error fall-through: neither branch destructured
-    //      error, so DB schema mismatch or RLS rejection passed.
-    //
-    // Stage 6.IAPFix also requires the subscriptions table to
-    // have apple_transaction_id / apple_original_transaction_id /
-    // apple_product_id columns -- added in the corresponding
-    // schema migration (see commit message for the ALTER TABLE).
-    // QuotaFix: current_period_start is a STABLE billing-period anchor, NOT the
-    // upload time. A cold-start restore / unfinished-transaction re-report of an
-    // already-active subscription must NOT reset it -- resetting it zeroes the
-    // per-period quota counter on every relaunch (= unlimited usage). Advance it
-    // only for a brand-new subscription or a genuine renewal (incoming expiry
-    // moves past the stored period end). Matches Apple's per-transaction
-    // purchaseDate model + Stripe's billing_cycle_anchor (preserve, don't reset).
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('current_period_start, current_period_end, status, plan')
-      .eq('user_id', userId)
-      .maybeSingle()
-    const isSamePeriod =
-      existingSub &&
-      existingSub.status === 'active' &&
-      // QuotaFix-2: only preserve the period anchor within the SAME tier.
-      // A genuine tier change (e.g. basic -> pro upgrade) must reset the
-      // quota window to now, otherwise the prior tier's usage keeps
-      // counting against the new, higher limit (e.g. 11/15 -> 11/30
-      // instead of 0/30). Same-tier reactivation/restore still preserves.
-      existingSub.plan === tier &&
-      existingSub.current_period_start &&
-      existingSub.current_period_end &&
-      new Date(periodEnd).getTime() <= new Date(existingSub.current_period_end).getTime()
-    const periodStart = isSamePeriod
-      ? existingSub.current_period_start
-      : new Date().toISOString()
-
-    const planType = PRODUCT_TO_PLAN_TYPE[productId] || 'solo'
-    const subRow = {
-      user_id: userId,
-      plan: tier,
-      plan_type: planType,
-      status: 'active',
-      billing_cycle: billingCycle,
-      current_period_start: periodStart,
-      current_period_end: periodEnd,
-      apple_transaction_id: String(transactionId),
-      apple_original_transaction_id: String(originalTransactionId || transactionId),
-      apple_product_id: productId,
-      // Clear any pending changes from a previously-scheduled
-      // downgrade/crossgrade that this purchase supersedes.
-      pending_plan: null,
-      pending_billing_cycle: null,
-      updated_at: new Date().toISOString(),
-    }
-
-    const { error: subErr } = await supabase
-      .from('subscriptions')
-      .upsert(subRow, { onConflict: 'user_id' })
-
-    if (subErr) {
-      console.error('[apple-iap] subscription upsert error:', subErr.message)
-      // We already updated profiles.subscription_tier above; the
-      // user is now in a half-state (profile says paid, no
-      // subscription row). Surfacing the error lets the mobile
-      // client retry — the next retry's upsert is idempotent.
+    if (!applied?.success) {
+      const conflict = applied?.error === 'credential_owned_by_another_user'
+      console.warn('[apple-iap] subscription rejected:', applied?.error)
       return NextResponse.json(
-        { success: false, error: 'Failed to save subscription: ' + subErr.message },
-        { status: 500 }
+        { success: false, error: conflict ? 'Purchase belongs to another account' : 'Failed to activate subscription' },
+        { status: conflict ? 409 : 500 }
       )
     }
 
@@ -326,6 +263,6 @@ export async function POST(request) {
     })
   } catch (error) {
     console.error('[apple-iap] Error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 })
   }
 }

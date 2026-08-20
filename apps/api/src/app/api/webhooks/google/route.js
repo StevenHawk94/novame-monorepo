@@ -1,319 +1,286 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 
 export const runtime = 'edge'
 
-/**
- * POST /api/webhooks/google
- *
- * Receives Google Play Real-Time Developer Notifications (RTDN) via Pub/Sub.
- *
- * Setup (one-time, done in Google Cloud + Play Console):
- * 1. Enable Cloud Pub/Sub API in the GCP project
- * 2. Create a Pub/Sub topic; add google-play-developer-notifications@system.gserviceaccount.com
- *    as a Publisher on the topic
- * 3. Create a push subscription on the topic that POSTs to THIS URL
- *    (https://api.soulsayit.com/api/webhooks/google)
- * 4. Paste the topic full name in Play Console → Monetize → Monetization setup → RTDN
- *
- * Note: RTDN payloads only contain { subscriptionId, purchaseToken } in the new model.
- * To learn the basePlanId / expiry / state we must call purchases.subscriptionsv2.get.
- *
- * Docs: https://developer.android.com/google/play/billing/rtdn-reference
- */
+/** Google Play RTDN push endpoint. The notification is only a wake-up signal;
+ * every entitlement decision below is re-derived from subscriptionsv2.get. */
+
+const PACKAGE_NAME = 'com.burrow.app'
+const SUB_TO_TIER = {
+  'novame.plus.monthly': 'plus',
+  'novame.plus.yearly': 'plus',
+  'novame.plusduo.monthly': 'plus',
+  'novame.plusduo.yearly': 'plus',
+}
+const SUB_TO_PLAN_TYPE = {
+  'novame.plus.monthly': 'solo',
+  'novame.plus.yearly': 'solo',
+  'novame.plusduo.monthly': 'duo',
+  'novame.plusduo.yearly': 'duo',
+}
+const SUB_TO_CYCLE = {
+  'novame.plus.monthly': 'monthly',
+  'novame.plus.yearly': 'yearly',
+  'novame.plusduo.monthly': 'monthly',
+  'novame.plusduo.yearly': 'yearly',
+}
+const ACTIVE_STATES = new Set([
+  'SUBSCRIPTION_STATE_ACTIVE',
+  'SUBSCRIPTION_STATE_IN_GRACE_PERIOD',
+])
 
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } },
   )
 }
-
-const SUB_TO_TIER = {
-  'novame.plus.monthly':    'plus',
-  'novame.plus.yearly':     'plus',
-  'novame.plusduo.monthly': 'plus',
-  'novame.plusduo.yearly':  'plus',
-}
-
-// Google subscription ID → seat model (duo grants one extra seat)
-const SUB_TO_PLAN_TYPE = {
-  'novame.plus.monthly':    'solo',
-  'novame.plus.yearly':     'solo',
-  'novame.plusduo.monthly': 'duo',
-  'novame.plusduo.yearly':  'duo',
-}
-
-const SUB_TO_CYCLE = {
-  'novame.plus.monthly':    'monthly',
-  'novame.plus.yearly':     'yearly',
-  'novame.plusduo.monthly': 'monthly',
-  'novame.plusduo.yearly':  'yearly',
-}
-
-// Notification types: https://developer.android.com/google/play/billing/rtdn-reference#sub
-const NOTIFICATION_TYPES = {
-  1:  'RECOVERED',
-  2:  'RENEWED',
-  3:  'CANCELED',              // voluntary cancel — access remains until expiryTime
-  4:  'PURCHASED',
-  5:  'ON_HOLD',
-  6:  'IN_GRACE_PERIOD',
-  7:  'RESTARTED',
-  8:  'PRICE_CHANGE_CONFIRMED',
-  9:  'DEFERRED',
-  10: 'PAUSED',
-  11: 'PAUSE_SCHEDULE_CHANGED',
-  12: 'REVOKED',               // refund — revoke entitlement immediately
-  13: 'EXPIRED',
-  20: 'PENDING_PURCHASE_CANCELED',
-}
-
-// Which notification types grant / renew the entitlement
-const ACTIVATE_TYPES = new Set([1, 2, 4, 7]) // RECOVERED, RENEWED, PURCHASED, RESTARTED
-
-// Which notification types revoke the entitlement immediately
-const REVOKE_TYPES = new Set([12, 13]) // REVOKED, EXPIRED
-
-const PACKAGE_NAME = 'com.burrow.app'
-
-// ─── Google API auth (same logic as google-iap route) ──────────────────────
 
 async function getGoogleAccessToken() {
   const keyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY
     || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
-  if (!keyJson) return null
-  try {
-    const key = JSON.parse(keyJson)
-    const now = Math.floor(Date.now() / 1000)
-    const header = { alg: 'RS256', typ: 'JWT' }
-    const claim = {
-      iss: key.client_email,
-      scope: 'https://www.googleapis.com/auth/androidpublisher',
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }
-    const b64url = obj => btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-    const signInput = `${b64url(header)}.${b64url(claim)}`
-    const pemBody = key.private_key
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\s/g, '')
-    const keyData = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
-    const cryptoKey = await crypto.subtle.importKey('pkcs8', keyData,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
-    const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey,
-      new TextEncoder().encode(signInput))
-    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-    const jwt = `${signInput}.${sigB64}`
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-    })
-    const tokenData = await tokenRes.json()
-    return tokenData.access_token || null
-  } catch (e) {
-    console.error('[Google webhook] Failed to get access token:', e)
-    return null
-  }
+  if (!keyJson) throw new Error('Google Play service account is not configured')
+
+  const key = JSON.parse(keyJson)
+  const now = Math.floor(Date.now() / 1000)
+  const encode = value => btoa(JSON.stringify(value))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const header = encode({ alg: 'RS256', typ: 'JWT' })
+  const claim = encode({
+    iss: key.client_email,
+    scope: 'https://www.googleapis.com/auth/androidpublisher',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  })
+  const signInput = `${header}.${claim}`
+  const pemBody = key.private_key
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '')
+  const keyData = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', keyData,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign'],
+  )
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signInput),
+  )
+  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: `${signInput}.${sig}`,
+    }),
+  })
+  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${tokenRes.status}`)
+  const tokenData = await tokenRes.json()
+  if (!tokenData.access_token) throw new Error('Google OAuth response missing access_token')
+  return tokenData.access_token
 }
 
-async function fetchSubscription(accessToken, packageName, purchaseToken) {
-  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptionsv2/tokens/${purchaseToken}`
+async function fetchSubscription(accessToken, purchaseToken) {
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
-  if (!res.ok) return null
-  return await res.json()
+  if (!res.ok) throw new Error(`subscriptionsv2.get failed: ${res.status}`)
+  return res.json()
 }
 
-// ─── Handler ───────────────────────────────────────────────────────────────
+async function acknowledgeSubscription(accessToken, productId, purchaseToken) {
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  })
+  if (!res.ok) throw new Error(`Google acknowledgement failed: ${res.status}`)
+}
+
+function selectCurrentLineItem(subscription) {
+  const known = (Array.isArray(subscription?.lineItems) ? subscription.lineItems : [])
+    .filter(line => SUB_TO_TIER[line?.productId])
+  if (!known.length) return null
+  return known.sort((a, b) => {
+    const aExpiry = a?.expiryTime ? new Date(a.expiryTime).getTime() : 0
+    const bExpiry = b?.expiryTime ? new Date(b.expiryTime).getTime() : 0
+    return bExpiry - aExpiry
+  })[0]
+}
+
+function isUuid(value) {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+async function ownerForCredential(supabase, credential) {
+  if (!credential) return null
+  const { data, error } = await supabase
+    .from('store_credential_bindings')
+    .select('user_id')
+    .eq('store', 'google')
+    .eq('credential', credential)
+    .maybeSingle()
+  if (error) throw new Error(`credential lookup failed: ${error.message}`)
+  return data?.user_id || null
+}
+
+async function resolveUserId(supabase, purchaseToken, linkedPurchaseToken, subscription) {
+  const tokenOwner = await ownerForCredential(supabase, purchaseToken)
+  const linkedOwner = await ownerForCredential(supabase, linkedPurchaseToken)
+  if (tokenOwner && linkedOwner && tokenOwner !== linkedOwner) {
+    throw new Error('new and linked Google tokens have different owners')
+  }
+
+  const profileId = subscription?.externalAccountIdentifiers?.obfuscatedExternalProfileId
+  const externalUserId = isUuid(profileId) ? profileId : null
+  const knownOwner = tokenOwner || linkedOwner
+  if (knownOwner && externalUserId && knownOwner !== externalUserId) {
+    throw new Error('Google external profile identifier does not match token owner')
+  }
+  if (knownOwner) return knownOwner
+
+  // Out-of-app re-subscriptions can arrive before the client. New builds attach
+  // the opaque NovaMe UUID as obfuscatedProfileId so RTDN can bind safely.
+  if (externalUserId) {
+    const { data, error } = await supabase
+      .from('profiles').select('id').eq('id', externalUserId).maybeSingle()
+    if (error) throw new Error(`profile lookup failed: ${error.message}`)
+    if (data?.id) return data.id
+  }
+  return null
+}
 
 export async function POST(request) {
   try {
     const body = await request.json()
-
-    // Google Pub/Sub wraps payload: { message: { data: "base64..." } }
     const messageData = body?.message?.data
     if (!messageData) {
-      console.warn('[Google webhook] No message data')
-      return NextResponse.json({ received: true })
+      return NextResponse.json({ received: false, error: 'Missing message data' }, { status: 400 })
     }
 
     let decoded
     try {
       decoded = JSON.parse(atob(messageData))
-    } catch (e) {
-      console.error('[Google webhook] Failed to decode message:', e)
-      return NextResponse.json({ received: true })
+    } catch (error) {
+      console.warn('[Google webhook] invalid Pub/Sub payload:', error.message)
+      return NextResponse.json({ received: false, error: 'Invalid payload' }, { status: 400 })
     }
 
-    // Three notification types: subscriptionNotification, oneTimeProductNotification, testNotification
     if (decoded.testNotification) {
-      console.log('[Google webhook] Test notification received — OK')
-      return NextResponse.json({ received: true })
+      return NextResponse.json({ received: true, test: true })
+    }
+    if (!decoded.subscriptionNotification) {
+      return NextResponse.json({ received: true, ignored: true })
+    }
+    if (decoded.packageName !== PACKAGE_NAME) {
+      return NextResponse.json({ received: false, error: 'Unexpected package' }, { status: 400 })
     }
 
-    const subNotif = decoded.subscriptionNotification
-    if (!subNotif) {
-      console.log('[Google webhook] Non-subscription notification, ignoring')
-      return NextResponse.json({ received: true })
+    const { purchaseToken } = decoded.subscriptionNotification
+    if (!purchaseToken || typeof purchaseToken !== 'string') {
+      return NextResponse.json({ received: false, error: 'Missing purchase token' }, { status: 400 })
     }
 
-    const { notificationType, purchaseToken, subscriptionId } = subNotif
-    const typeName = NOTIFICATION_TYPES[notificationType] || `UNKNOWN(${notificationType})`
-    const pkg = decoded.packageName || PACKAGE_NAME
-    if (pkg !== PACKAGE_NAME) {
-      console.warn('[Google webhook] Ignoring notification for unexpected package:', pkg)
-      return NextResponse.json({ received: true })
-    }
-
-    console.log(`[Google webhook] ${typeName} — subscriptionId=${subscriptionId}`)
-
-    const tier = SUB_TO_TIER[subscriptionId]
-    if (!tier) {
-      console.warn('[Google webhook] Unknown subscriptionId:', subscriptionId)
-      return NextResponse.json({ received: true })
-    }
-
-    const supabase = getSupabase()
-
-    // Call subscriptionsv2.get for authoritative state FIRST — we need linkedPurchaseToken
-    // to resolve upgrade scenarios (where the new purchaseToken is brand new and doesn't
-    // yet exist in our DB, but the OLD token does).
-    let lineItem = null
-    let subscriptionState = null
-    let autoRenewEnabled = null
-    let linkedPurchaseToken = null
     const accessToken = await getGoogleAccessToken()
-    if (accessToken) {
-      const subData = await fetchSubscription(accessToken, pkg, purchaseToken)
-      if (subData) {
-        subscriptionState = subData.subscriptionState
-        lineItem = Array.isArray(subData.lineItems) ? subData.lineItems[0] : null
-        autoRenewEnabled = lineItem?.autoRenewingPlan?.autoRenewEnabled ?? null
-        // linkedPurchaseToken points to the OLD subscription this one replaces
-        // (upgrade/downgrade-apply/resubscribe scenarios)
-        linkedPurchaseToken = subData.linkedPurchaseToken || null
+    const subscription = await fetchSubscription(accessToken, purchaseToken)
+    const line = selectCurrentLineItem(subscription)
+    if (!line) {
+      console.warn('[Google webhook] no supported product in authoritative line items')
+      return NextResponse.json({ received: true, ignored: true })
+    }
+
+    const productId = line.productId
+    const tier = SUB_TO_TIER[productId]
+    const billingCycle = SUB_TO_CYCLE[productId]
+    const planType = SUB_TO_PLAN_TYPE[productId]
+    const periodEnd = line.expiryTime ? new Date(line.expiryTime).toISOString() : null
+    const supabase = getSupabase()
+    const userId = await resolveUserId(
+      supabase,
+      purchaseToken,
+      subscription.linkedPurchaseToken || null,
+      subscription,
+    )
+    if (!userId) {
+      // Retry: the in-app verification path may bind the token shortly after
+      // this RTDN arrives. Returning 200 here would permanently lose the event.
+      throw new Error('Google purchase token is not bound to a NovaMe user')
+    }
+
+    if (ACTIVE_STATES.has(subscription.subscriptionState)) {
+      if (!periodEnd) throw new Error('Active Google subscription missing expiryTime')
+      const { data: applied, error: applyErr } = await supabase.rpc('apply_store_subscription', {
+        p_user_id: userId,
+        p_store: 'google',
+        p_plan: tier,
+        p_plan_type: planType,
+        p_billing_cycle: billingCycle,
+        p_period_end: periodEnd,
+        p_google_purchase_token: purchaseToken,
+        p_google_product_id: productId,
+        p_google_base_plan_id: line?.offerDetails?.basePlanId || null,
+        p_google_auto_renewing: line?.autoRenewingPlan?.autoRenewEnabled ?? null,
+      })
+      if (applyErr) throw new Error(`atomic subscription apply failed: ${applyErr.message}`)
+      if (!applied?.success) throw new Error(`subscription apply rejected: ${applied?.error || 'unknown'}`)
+
+      if (subscription.acknowledgementState === 'ACKNOWLEDGEMENT_STATE_PENDING') {
+        await acknowledgeSubscription(accessToken, productId, purchaseToken)
       }
-    }
-
-    // Find the user by purchase token.
-    // Preferred: the new token matches an existing row (client-side /api/google-iap
-    //            already wrote it). This is the normal case for PURCHASED events.
-    // Fallback:  the new token isn't in the DB yet, but linkedPurchaseToken is —
-    //            happens when RTDN arrives before our client-side verification,
-    //            or for upgrade events where Play issues the new token directly.
-    let { data: sub } = await supabase
-      .from('subscriptions')
-      .select('user_id, plan, billing_cycle')
-      .eq('google_purchase_token', purchaseToken)
-      .single()
-
-    if (!sub?.user_id && linkedPurchaseToken) {
-      console.log(`[Google webhook] New token not yet in DB; trying linkedPurchaseToken=${linkedPurchaseToken.slice(0, 12)}…`)
-      const { data: oldSub } = await supabase
-        .from('subscriptions')
-        .select('user_id, plan, billing_cycle')
-        .eq('google_purchase_token', linkedPurchaseToken)
-        .single()
-      if (oldSub?.user_id) {
-        sub = oldSub
-        // Migrate the row to the new token — we now own this subscription under the new token
-        await supabase.from('subscriptions')
-          .update({ google_purchase_token: purchaseToken, updated_at: new Date().toISOString() })
-          .eq('user_id', oldSub.user_id)
-        console.log(`[Google webhook] Migrated user ${oldSub.user_id} to new token via linkedPurchaseToken`)
-      }
-    }
-
-    if (!sub?.user_id) {
-      console.warn('[Google webhook] No user found for purchaseToken or linkedPurchaseToken — dropping')
-      return NextResponse.json({ received: true })
-    }
-    const userId = sub.user_id
-
-    const googleBasePlanId = lineItem?.offerDetails?.basePlanId || null
-    const billingCycle = SUB_TO_CYCLE[subscriptionId] || sub.billing_cycle || 'monthly'
-    const expiryTime = lineItem?.expiryTime || null
-
-    // ── Route by notification type ──────────────────────────────────────────
-
-    if (ACTIVATE_TYPES.has(notificationType)) {
-      const periodEnd = expiryTime
-        ? new Date(expiryTime).toISOString()
-        : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
-
-      await supabase.from('profiles')
-        .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-
-      // 2026-08-11: activation/renewal re-seats the paired partner if free.
-      if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
-
-      await supabase.from('subscriptions')
-        .update({
-          plan: tier,
-          status: 'active',
-          billing_cycle: billingCycle,
-          current_period_end: periodEnd,
-          google_product_id: subscriptionId,           // sync in case of upgrade
-          google_base_plan_id: googleBasePlanId,
-          google_auto_renewing: autoRenewEnabled,
-          // The deferred change (if any) has now taken effect — clear pending fields
-          pending_plan: null,
-          pending_billing_cycle: null,
-          pending_product_id: null,
-          pending_base_plan_id: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-
-      console.log(`[Google webhook] Activated ${tier}/${billingCycle} for user ${userId}${linkedPurchaseToken ? ' (replaced old sub)' : ''}`)
-    } else if (notificationType === 3) {
-      // CANCELED — user initiated cancel, access remains until expiryTime
-      await supabase.from('subscriptions')
-        .update({
-          status: 'cancelled',
-          google_auto_renewing: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-      console.log(`[Google webhook] Cancelled for user ${userId} — access continues until period end`)
-    } else if (notificationType === 5 || notificationType === 6) {
-      // ON_HOLD (5) or IN_GRACE_PERIOD (6)
-      await supabase.from('subscriptions')
-        .update({
-          status: notificationType === 5 ? 'on_hold' : 'grace_period',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-      console.log(`[Google webhook] ${typeName} for user ${userId}`)
-    } else if (REVOKE_TYPES.has(notificationType)) {
-      // REVOKED (12) or EXPIRED (13) — downgrade to free immediately
-      await supabase.from('profiles')
-        .update({ subscription_tier: 'free', updated_at: new Date().toISOString() })
-        .eq('id', userId)
-      await supabase.from('subscriptions')
-        .update({
-          plan: 'free',
-          status: notificationType === 12 ? 'revoked' : 'expired',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-      console.log(`[Google webhook] ${typeName} — user ${userId} downgraded to free`)
+    } else if (
+      subscription.subscriptionState === 'SUBSCRIPTION_STATE_PENDING'
+      || subscription.subscriptionState === 'SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED'
+    ) {
+      // A pending replacement can point at a still-valid linked subscription.
+      // It grants nothing, but must not revoke that existing entitlement.
+      console.log(`[Google webhook] ${subscription.subscriptionState} — no entitlement change for user ${userId}`)
+    } else if (subscription.subscriptionState === 'SUBSCRIPTION_STATE_CANCELED' && periodEnd && new Date(periodEnd).getTime() > Date.now()) {
+      const { error } = await supabase.from('subscriptions').update({
+        status: 'cancelled',
+        google_auto_renewing: false,
+        current_period_end: periodEnd,
+        updated_at: new Date().toISOString(),
+      }).eq('user_id', userId)
+      if (error) throw new Error(`cancellation update failed: ${error.message}`)
+    } else if (
+      subscription.subscriptionState === 'SUBSCRIPTION_STATE_ON_HOLD'
+      || subscription.subscriptionState === 'SUBSCRIPTION_STATE_PAUSED'
+      || subscription.subscriptionState === 'SUBSCRIPTION_STATE_EXPIRED'
+      || subscription.subscriptionState === 'SUBSCRIPTION_STATE_CANCELED'
+    ) {
+      const status = subscription.subscriptionState === 'SUBSCRIPTION_STATE_ON_HOLD'
+        ? 'on_hold'
+        : subscription.subscriptionState === 'SUBSCRIPTION_STATE_PAUSED'
+          ? 'paused'
+          : 'expired'
+      const { data: expired, error: expireErr } = await supabase.rpc('expire_store_subscription', {
+        p_user_id: userId,
+        p_status: status,
+        p_event_period_end: periodEnd,
+      })
+      if (expireErr) throw new Error(`entitlement revoke failed: ${expireErr.message}`)
+      if (!expired?.success) throw new Error(`entitlement revoke rejected: ${expired?.error || 'unknown'}`)
     } else {
-      console.log(`[Google webhook] Unhandled type ${typeName} for user ${userId}`)
+      throw new Error(`Unsupported Google subscription state: ${subscription.subscriptionState}`)
     }
 
-    // Always return 200 so Google doesn't retry
+    console.log(`[Google webhook] reconciled ${subscription.subscriptionState} for user ${userId}`)
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('[Google webhook] Error:', error)
-    // Still return 200 — avoid retry storms; log and move on
-    return NextResponse.json({ received: true })
+    console.error('[Google webhook] processing failed:', error)
+    // Pub/Sub retries every non-2xx delivery. Processing is idempotent, so a
+    // transient Google/Supabase outage cannot permanently drop an entitlement.
+    return NextResponse.json({ received: false, error: 'Processing failed' }, { status: 500 })
   }
 }
 

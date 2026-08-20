@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { supabase } from './supabase';
 
 /**
  * Account-related mutation wrappers — Stage 3.10.2 (C1).
@@ -6,7 +7,7 @@ import { apiClient } from './api';
  * Thin typed facade over four server endpoints used by the Account
  * Management overlay:
  *   POST /api/upload-avatar     (multipart, has Vision SafeSearch)
- *   POST /api/update-profile    (display_name | newEmail | newPassword)
+ *   POST /api/update-profile    (display_name and onboarding profile fields)
  *   POST /api/delete-account    (cascading delete, server-side)
  *
  * Why a wrapper layer:
@@ -116,15 +117,37 @@ export function reportOnboardingChoices(
 export function updateEmail(
   userId: string,
   newEmail: string,
+  nonce: string,
 ): Promise<UpdateResult> {
-  return postUpdate({ userId, newEmail });
+  return updateAuthUser(userId, { email: newEmail, nonce }, 'Verification email sent');
 }
 
-export function updatePassword(
+export async function requestAccountReauthentication(): Promise<UpdateResult> {
+  try {
+    const { error } = await supabase.auth.reauthenticate();
+    if (error) return { kind: 'error', message: error.message };
+    return { kind: 'success', message: 'Verification code sent' };
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : 'Could not send verification code' };
+  }
+}
+
+async function updateAuthUser(
   userId: string,
-  newPassword: string,
+  attributes: { email: string; nonce: string },
+  successMessage: string,
 ): Promise<UpdateResult> {
-  return postUpdate({ userId, newPassword });
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData.session?.user?.id !== userId) {
+      return { kind: 'error', message: 'Please sign in again' };
+    }
+    const { error } = await supabase.auth.updateUser(attributes);
+    if (error) return { kind: 'error', message: error.message };
+    return { kind: 'success', message: successMessage };
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : 'Update failed' };
+  }
 }
 
 // ---- delete account ----

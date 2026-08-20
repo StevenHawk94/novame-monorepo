@@ -13,8 +13,10 @@ import { supabase } from '@/lib/supabase';
 import { storage } from '@/lib/storage';
 import { kConnectedAccount } from '@/shared/storage/keys';
 import {
-  connectProviderOrSignIn, isAlreadyBoundError,
-  sendLoginEmailOtp, verifyEmailChangeOtp, verifyLoginEmailOtp,
+  connectProviderOrSignIn,
+  sendPasswordlessEmailOtp,
+  verifyPasswordlessEmailOtp,
+  type PasswordlessEmailMode,
 } from '@/lib/auth';
 
 /**
@@ -32,7 +34,7 @@ export default function ConnectAccountScreen() {
   const [emailPhase, setEmailPhase] = useState<'enter' | 'verify'>('enter');
   // 'change' binds the address to this account; 'login' recovers the old
   // account the address already belongs to (smart-connect fallback).
-  const [emailMode, setEmailMode] = useState<'change' | 'login'>('change');
+  const [emailMode, setEmailMode] = useState<PasswordlessEmailMode>('change');
   const [busy, setBusy] = useState(false);
   // Cache-first: paint the bound state instantly from the stored value; the
   // getUser() fetch below only reconciles (and updates the cache).
@@ -92,27 +94,13 @@ export default function ConnectAccountScreen() {
     if (!addr.includes('@') || busy) return;
     void haptics.light();
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ email: addr });
-    if (!error) {
-      setBusy(false);
-      setEmailMode('change');
-      setEmailPhase('verify'); // Supabase mailed the 6-digit binding code
-      return;
-    }
-    if (!isAlreadyBoundError(error.message)) {
-      setBusy(false);
-      appAlert('Could not connect', error.message);
-      return;
-    }
-    // The address already has an account — send a LOGIN code instead and
-    // recover it (smart-connect fallback).
-    const login = await sendLoginEmailOtp(addr);
+    const result = await sendPasswordlessEmailOtp(addr);
     setBusy(false);
-    if (!login.ok) {
-      appAlert('Could not connect', login.error ?? 'Please try again.');
+    if (!result.ok || !result.mode) {
+      appAlert('Could not connect', result.error ?? 'Please try again.');
       return;
     }
-    setEmailMode('login');
+    setEmailMode(result.mode);
     setEmailPhase('verify');
   }
 
@@ -121,9 +109,7 @@ export default function ConnectAccountScreen() {
     if (token.length !== 6 || busy) return;
     void haptics.light();
     setBusy(true);
-    const res = emailMode === 'change'
-      ? await verifyEmailChangeOtp(email.trim(), token)
-      : await verifyLoginEmailOtp(email.trim(), token);
+    const res = await verifyPasswordlessEmailOtp(email.trim(), token, emailMode);
     setBusy(false);
     if (!res.ok) {
       appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');

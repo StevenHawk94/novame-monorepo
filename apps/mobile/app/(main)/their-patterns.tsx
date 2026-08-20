@@ -8,7 +8,7 @@ import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
-import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import {
   fetchTheirPatterns,
   generateTheirPatternsRecap,
@@ -111,7 +111,7 @@ function LockedRecapPreview({ tab, onUnlock }: { tab: PageTab; onUnlock: () => v
 export default function TheirPatternsScreen() {
   const router = useRouter();
   const cachedAtMount = getCachedTheirPatterns();
-  const [isPaid, setIsPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
+  const isPaid = useSubscriptionTier() !== 'free';
   const [tab, setTab] = useState<PageTab>('week');
   const [data, setData] = useState<TheirPatterns | null>(cachedAtMount);
   const [loading, setLoading] = useState(isPaid && cachedAtMount == null);
@@ -139,7 +139,6 @@ export default function TheirPatternsScreen() {
   }, [isPaid]);
 
   useFocusEffect(useCallback(() => {
-    setIsPaid(getCachedSubscriptionTier() !== 'free');
     void load();
   }, [load]));
 

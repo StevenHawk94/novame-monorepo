@@ -33,6 +33,7 @@
  * lines) -- we only call it.
  */
 import { Platform } from 'react-native';
+import * as Crypto from 'expo-crypto';
 import {
   initConnection,
   endConnection,
@@ -493,11 +494,22 @@ export async function purchaseSubscription(
         `Google Play did not return the ${cycle} plan. Confirm that ${androidProductId}/${cycle} is active and install the Play test-track build.`,
       );
     }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const purchaseUserId = sessionData.session?.user?.id;
+    if (!purchaseUserId) {
+      throw new Error('Sign in before starting a purchase');
+    }
+    const googleAccountId = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `novame:${purchaseUserId}`,
+    );
     const result = await requestPurchase({
       request: {
-        ios: { sku: productId },
+        ios: { sku: productId, appAccountToken: purchaseUserId },
         android: {
           skus: [androidProductId],
+          obfuscatedAccountId: googleAccountId,
+          obfuscatedProfileId: purchaseUserId,
           ...(androidOffer
             ? { subscriptionOffers: [{ sku: androidProductId, offerToken: androidOffer }] }
             : {}),

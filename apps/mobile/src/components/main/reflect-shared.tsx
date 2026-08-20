@@ -35,7 +35,7 @@ import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { itemDisplayName } from '@/lib/remote-items';
-import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import {
   incrementReflectionPaywallCount,
   shouldShowReflectionPaywall,
@@ -301,6 +301,7 @@ export function ReflectResultView({
   result: ReflectSnapshot;
   onFinished: () => void;
 }) {
+  const tier = useSubscriptionTier();
   // 结果页 toggle：默认开（paired 可见细节）；关掉只藏细节、物品仍可见。
   const [detailsVisible, setDetailsVisible] = useState(true);
   const claimedRef = useRef(false);
@@ -321,7 +322,7 @@ export function ReflectResultView({
     if (claimedRef.current) return;
     claimedRef.current = true;
     void haptics.medium();
-    const isFree = getCachedSubscriptionTier() === 'free';
+    const isFree = tier === 'free';
     const claimCount = isFree ? incrementReflectionPaywallCount() : 0;
     const showReflectionPaywall = isFree && shouldShowReflectionPaywall(claimCount);
     onFinished();

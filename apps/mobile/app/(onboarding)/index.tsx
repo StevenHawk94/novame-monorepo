@@ -17,8 +17,9 @@ import {
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
 import {
-  connectProviderOrSignIn, isAlreadyBoundError, sendLoginEmailOtp,
-  verifyEmailChangeOtp, verifyLoginEmailOtp, ensureSession,
+  connectProviderOrSignIn, ensureSession,
+  sendPasswordlessEmailOtp, verifyPasswordlessEmailOtp,
+  type PasswordlessEmailMode,
 } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import { reportOnboardingChoices, updateDisplayName } from '../../src/lib/account-api';
@@ -124,7 +125,7 @@ export default function OnboardingScreen() {
   const [linking, setLinking] = useState(false);
   const [linkCode, setLinkCode] = useState('');
   const [linkPhase, setLinkPhase] = useState<'enter' | 'verify'>('enter');
-  const [linkMode, setLinkMode] = useState<'change' | 'login'>('change');
+  const [linkMode, setLinkMode] = useState<PasswordlessEmailMode>('change');
   // Store-localized prices (industry standard: StoreKit's displayPrice is the
   // truth per storefront/currency). The design-stub strings only show while
   // products haven't loaded (dev/simulator without StoreKit config).
@@ -264,26 +265,13 @@ export default function OnboardingScreen() {
     const email = linkEmail.trim();
     if (!email.includes('@') || linking) return;
     setLinking(true);
-    const { error } = await supabase.auth.updateUser({ email });
-    if (!error) {
-      setLinking(false);
-      setLinkMode('change');
-      setLinkPhase('verify'); // Supabase mailed the 6-digit binding code
-      return;
-    }
-    if (!isAlreadyBoundError(error.message)) {
-      setLinking(false);
-      appAlert('Could not connect', 'You can connect your account anytime from settings.');
-      return;
-    }
-    // Returning user: the address already has an account — log back in.
-    const login = await sendLoginEmailOtp(email);
+    const result = await sendPasswordlessEmailOtp(email);
     setLinking(false);
-    if (!login.ok) {
-      appAlert('Could not connect', login.error ?? 'Please try again.');
+    if (!result.ok || !result.mode) {
+      appAlert('Could not connect', result.error ?? 'You can connect your account anytime from settings.');
       return;
     }
-    setLinkMode('login');
+    setLinkMode(result.mode);
     setLinkPhase('verify');
   }
 
@@ -291,9 +279,7 @@ export default function OnboardingScreen() {
     const token = linkCode.trim();
     if (token.length !== 6 || linking) return;
     setLinking(true);
-    const res = linkMode === 'change'
-      ? await verifyEmailChangeOtp(linkEmail.trim(), token)
-      : await verifyLoginEmailOtp(linkEmail.trim(), token);
+    const res = await verifyPasswordlessEmailOtp(linkEmail.trim(), token, linkMode);
     setLinking(false);
     if (!res.ok) {
       appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 import crypto from 'node:crypto'
 
 // nodejs runtime: RS256 service-account JWT signing uses node crypto.
@@ -53,6 +52,34 @@ const ACTIVE_STATES = new Set([
 
 function b64url(buf) {
   return Buffer.from(buf).toString('base64url')
+}
+
+function obfuscatedAccountId(userId) {
+  return crypto.createHash('sha256').update(`novame:${userId}`).digest('hex')
+}
+
+function selectCurrentLineItem(sub) {
+  const known = (Array.isArray(sub?.lineItems) ? sub.lineItems : [])
+    .filter(line => SUBSCRIPTION_TO_TIER[line?.productId])
+  if (!known.length) return null
+  return known.sort((a, b) => {
+    const aExpiry = a?.expiryTime ? new Date(a.expiryTime).getTime() : 0
+    const bExpiry = b?.expiryTime ? new Date(b.expiryTime).getTime() : 0
+    return bExpiry - aExpiry
+  })[0]
+}
+
+async function acknowledgeSubscription(accessToken, productId, purchaseToken) {
+  const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  })
+  if (!res.ok) throw new Error(`Google acknowledgement failed: ${res.status}`)
 }
 
 /** Service-account OAuth token via a self-signed RS256 JWT grant. */
@@ -134,8 +161,9 @@ export async function POST(request) {
 
     // ── Verify with Google (authoritative product + expiry) ──
     let sub
+    let accessToken
     try {
-      const accessToken = await getAccessToken(credentials.email, credentials.privateKey)
+      accessToken = await getAccessToken(credentials.email, credentials.privateKey)
       const res = await fetch(
         `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`,
         { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -164,7 +192,20 @@ export async function POST(request) {
       )
     }
 
-    const line = Array.isArray(sub.lineItems) ? sub.lineItems[0] : null
+    const externalIds = sub.externalAccountIdentifiers || {}
+    const expectedAccountId = obfuscatedAccountId(userId)
+    if (
+      (externalIds.obfuscatedExternalAccountId && externalIds.obfuscatedExternalAccountId !== expectedAccountId)
+      || (externalIds.obfuscatedExternalProfileId && externalIds.obfuscatedExternalProfileId !== userId)
+    ) {
+      console.warn('[google-iap] rejected: Play account identifiers belong to another user')
+      return NextResponse.json(
+        { success: false, error: 'Purchase belongs to another account' },
+        { status: 409 }
+      )
+    }
+
+    const line = selectCurrentLineItem(sub)
     const productId = line?.productId
     const basePlanId = line?.offerDetails?.basePlanId
     const tier = SUBSCRIPTION_TO_TIER[productId]
@@ -185,59 +226,68 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
     )
 
-    const { error: profileErr } = await supabase
-      .from('profiles')
-      .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-    if (profileErr) {
-      console.error('[google-iap] profile update error:', profileErr.message)
+    if (sub.linkedPurchaseToken) {
+      const { data: linkedBinding, error: linkedErr } = await supabase
+        .from('store_credential_bindings')
+        .select('user_id')
+        .eq('store', 'google')
+        .eq('credential', sub.linkedPurchaseToken)
+        .maybeSingle()
+      if (linkedErr) {
+        console.error('[google-iap] linked token lookup failed:', linkedErr.message)
+        return NextResponse.json({ success: false, error: 'Verification failed' }, { status: 500 })
+      }
+      if (linkedBinding?.user_id && linkedBinding.user_id !== userId) {
+        console.warn('[google-iap] rejected: linked token belongs to another user')
+        return NextResponse.json(
+          { success: false, error: 'Purchase belongs to another account' },
+          { status: 409 }
+        )
+      }
+    }
+
+    const autoRenewEnabled = line?.autoRenewingPlan?.autoRenewEnabled ?? null
+    const { data: applied, error: applyErr } = await supabase.rpc('apply_store_subscription', {
+      p_user_id: userId,
+      p_store: 'google',
+      p_plan: tier,
+      p_plan_type: planType,
+      p_billing_cycle: billingCycle,
+      p_period_end: periodEnd,
+      p_google_purchase_token: purchaseToken,
+      p_google_product_id: productId,
+      p_google_base_plan_id: basePlanId,
+      p_google_auto_renewing: autoRenewEnabled,
+    })
+    if (applyErr) {
+      console.error('[google-iap] atomic subscription apply failed:', applyErr.message)
       return NextResponse.json(
-        { success: false, error: 'Failed to update profile tier' },
+        { success: false, error: 'Failed to activate subscription' },
         { status: 500 }
       )
     }
-
-    // 2026-08-11: a fresh own-Plus auto-seats the paired partner.
-    if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
-
-    // Preserve the billing-period anchor on re-reports of the same period
-    // (same QuotaFix rule as apple-iap: resetting it would refill quotas).
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('current_period_start, current_period_end, status, plan')
-      .eq('user_id', userId)
-      .maybeSingle()
-    const isSamePeriod =
-      existingSub &&
-      existingSub.status === 'active' &&
-      existingSub.plan === tier &&
-      existingSub.current_period_end &&
-      new Date(periodEnd) <= new Date(existingSub.current_period_end)
-    const periodStart = isSamePeriod
-      ? existingSub.current_period_start
-      : new Date().toISOString()
-
-    const { error: subErr } = await supabase
-      .from('subscriptions')
-      .upsert({
-        user_id: userId,
-        plan: tier,
-        plan_type: planType,
-        status: 'active',
-        billing_cycle: billingCycle,
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
-        google_purchase_token: purchaseToken,
-        google_product_id: productId,
-        google_base_plan_id: basePlanId,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
-    if (subErr) {
-      console.error('[google-iap] subscription upsert error:', subErr.message)
+    if (!applied?.success) {
+      const conflict = applied?.error === 'credential_owned_by_another_user'
+      console.warn('[google-iap] subscription rejected:', applied?.error)
       return NextResponse.json(
-        { success: false, error: 'Failed to record subscription' },
-        { status: 500 }
+        { success: false, error: conflict ? 'Purchase belongs to another account' : 'Failed to activate subscription' },
+        { status: conflict ? 409 : 500 }
       )
+    }
+
+    // The mobile finishTransaction path also acknowledges, but the backend is
+    // authoritative and covers restores/out-of-app completion. Only PURCHASED
+    // subscriptions are acknowledged; retries are safe and idempotent.
+    if (sub.acknowledgementState === 'ACKNOWLEDGEMENT_STATE_PENDING') {
+      try {
+        await acknowledgeSubscription(accessToken, productId, purchaseToken)
+      } catch (ackError) {
+        console.error('[google-iap] acknowledgement failed:', ackError.message)
+        return NextResponse.json(
+          { success: false, error: 'Purchase recorded but acknowledgement is pending' },
+          { status: 502 }
+        )
+      }
     }
 
     return NextResponse.json({ success: true, tier, billingCycle, periodEnd })

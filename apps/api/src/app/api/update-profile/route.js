@@ -58,37 +58,14 @@ export async function POST(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle email change via admin API
-    if (newEmail) {
-      try {
-        const { error } = await supabase.auth.admin.updateUserById(userId, {
-          email: newEmail,
-        })
-        if (error) {
-          return Response.json({ error: error.message }, { status: 400 })
-        }
-        return Response.json({ success: true, message: 'Verification email sent' })
-      } catch (e) {
-        return Response.json({ error: 'Failed to update email: ' + e.message }, { status: 500 })
-      }
-    }
-
-    // Handle password change via admin API
-    if (newPassword) {
-      if (newPassword.length < 8) {
-        return Response.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
-      }
-      try {
-        const { error } = await supabase.auth.admin.updateUserById(userId, {
-          password: newPassword,
-        })
-        if (error) {
-          return Response.json({ error: error.message }, { status: 400 })
-        }
-        return Response.json({ success: true, message: 'Password updated' })
-      } catch (e) {
-        return Response.json({ error: 'Failed to update password: ' + e.message }, { status: 500 })
-      }
+    // Sensitive auth fields must go through the user-scoped Supabase Auth
+    // reauthentication flow. Never use service-role updateUserById here: a
+    // stolen ordinary access token would otherwise become account takeover.
+    if (newEmail || newPassword) {
+      return Response.json(
+        { error: 'Secure reauthentication is required' },
+        { status: 410 }
+      )
     }
     
     // 构建更新数据
@@ -146,7 +123,7 @@ export async function POST(request) {
       }
     }
     
-    console.log('Updating profile for user:', userId, updateData)
+    console.log('[update-profile] updating whitelisted fields for user:', userId, Object.keys(updateData))
     
     // 更新 profile
     const { data, error } = await supabase

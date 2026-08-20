@@ -8,7 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
 import { ICONS } from '../../../src/lib/icons';
-import { getCachedSubscriptionTier } from '../../../src/lib/subscription';
+import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
 import {
   fetchCosmetics,
   getCachedCosmetics,
@@ -47,7 +47,7 @@ const DEFAULT_BUNNY = require('../../../assets/Background/Default.webp');
 export default function OutfitClosetScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const isPaid = useSubscriptionTier() !== 'free';
 
   const [catalog, setCatalog] = useState<OutfitDef[]>(() => getCachedOutfitCatalog());
   const [cosmetics, setCosmetics] = useState<CosmeticsState>(() => getCachedCosmetics());

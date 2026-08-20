@@ -23,6 +23,11 @@ import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
+import {
+  resumeSubscriptionRealtime,
+  startSubscriptionRealtime,
+  stopSubscriptionRealtime,
+} from '@/lib/subscription-realtime';
 import { fetchMeStats } from '@/lib/me-stats';
 import { fetchAppConfig } from '@/lib/app-config-api';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
@@ -265,8 +270,10 @@ function RootLayout() {
         supabase.auth.startAutoRefresh();
         void touchActivity();
         void checkContentVersionInBackground();
+        void resumeSubscriptionRealtime();
       } else {
         supabase.auth.stopAutoRefresh();
+        void stopSubscriptionRealtime();
       }
     };
     // Run once on mount to set the initial state correctly.
@@ -310,6 +317,7 @@ function RootLayout() {
         // novame_onboarding_state. Anything else is a key that outlived its
         // owner.
         debugAccountKeysRemaining('SIGNED_IN');
+        if (session?.user?.id) void startSubscriptionRealtime(session.user.id);
 
         // Fire-and-forget onboarding sync if there is pending mmkv data
         // from a fresh onboarding completion. Errors are logged and
@@ -321,6 +329,7 @@ function RootLayout() {
         // and missing Me page header on first frame after sign-in.
         router.replace('/(auth)/signing-in');
       } else if (event === 'SIGNED_OUT') {
+        void stopSubscriptionRealtime();
         // Stage 5.IAP.5 (Bug #5): clear all per-user MMKV caches so
         // the next user (or fresh sign-in) does not see stale data
         // from the previous user. Per Supabase official guidance for
@@ -355,6 +364,7 @@ function RootLayout() {
     return () => {
       appStateSub.remove();
       authSub.unsubscribe();
+      void stopSubscriptionRealtime();
       void cleanupIAP();
     };
   }, []);

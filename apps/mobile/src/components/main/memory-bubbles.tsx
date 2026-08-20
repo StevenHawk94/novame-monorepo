@@ -26,6 +26,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 
 import { Image } from 'react-native';
 import { XP_RULES } from '@novame/engine';
@@ -172,14 +173,69 @@ function FloatingBubble({
   return (
     <Animated.View style={[styles.bubbleWrap, { left, top }, animStyle]}>
       <Pressable onPress={onPress} hitSlop={6} style={styles.bubble}>
-        <View style={styles.fogRing} />
-        <View style={styles.shineLarge} />
-        <View style={styles.shineSmall} />
-        <View style={styles.shineLeft} />
         <ItemSprite itemId={bubble.itemId} size={48} radius={12} tileColor="transparent" />
+        <BubbleShell />
       </Pressable>
-      <View pointerEvents="none" style={styles.fogHalo} />
     </Animated.View>
+  );
+}
+
+/**
+ * Static transparent soap-bubble chrome. The centre has no fill: the Home
+ * artwork and the item remain untouched, while concentric neutral highlights
+ * reproduce the SCSS inset rim and the small upper-left reflection.
+ */
+function BubbleShell() {
+  return (
+    <Svg
+      pointerEvents="none"
+      width={BUBBLE_SIZE}
+      height={BUBBLE_SIZE}
+      viewBox={`0 0 ${BUBBLE_SIZE} ${BUBBLE_SIZE}`}
+      style={styles.bubbleShell}
+    >
+      <Defs>
+        <RadialGradient id="bubble-edge" cx="50%" cy="46%" r="52%">
+          <Stop offset="72%" stopColor="#FFFFFF" stopOpacity={0} />
+          <Stop offset="88%" stopColor="#FFFFFF" stopOpacity={0.08} />
+          <Stop offset="97%" stopColor="#FFFFFF" stopOpacity={0.32} />
+          <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.7} />
+        </RadialGradient>
+        <LinearGradient id="bubble-rim" x1="12%" y1="8%" x2="88%" y2="94%">
+          <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.9} />
+          <Stop offset="42%" stopColor="#FFFFFF" stopOpacity={0.42} />
+          <Stop offset="72%" stopColor="#FFFFFF" stopOpacity={0.58} />
+          <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.92} />
+        </LinearGradient>
+      </Defs>
+      <Circle cx="42" cy="42" r="40" fill="url(#bubble-edge)" />
+      <Circle
+        cx="42"
+        cy="42"
+        r="39.25"
+        fill="none"
+        stroke="url(#bubble-rim)"
+        strokeWidth="1.5"
+      />
+      <Circle
+        cx="42"
+        cy="42"
+        r="37.75"
+        fill="none"
+        stroke="#FFFFFF"
+        strokeOpacity={0.18}
+        strokeWidth="2.5"
+      />
+      <Ellipse
+        cx="25"
+        cy="20"
+        rx="8.5"
+        ry="3.25"
+        fill="#FFFFFF"
+        fillOpacity={0.96}
+        transform="rotate(-45 25 20)"
+      />
+    </Svg>
   );
 }
 
@@ -213,60 +269,12 @@ const styles = StyleSheet.create({
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,
     borderRadius: BUBBLE_SIZE / 2,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.75)',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  // Two white glints, upper-right, like the design's soap bubbles.
-  shineLarge: {
-    position: 'absolute',
-    top: 10,
-    right: 14,
-    width: 22,
-    height: 8,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    transform: [{ rotate: '-28deg' }],
-  },
-  shineSmall: {
-    position: 'absolute',
-    top: 22,
-    right: 9,
-    width: 10,
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    transform: [{ rotate: '-28deg' }],
-  },
-  bubbleEmoji: { fontSize: 34 },
-  // Frosted rim (mock 2026-08-08): a wide translucent band inside the edge +
-  // a soft halo just outside fake the fogged-glass look without blur support.
-  fogRing: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BUBBLE_SIZE / 2,
-    borderWidth: 7,
-    borderColor: 'rgba(255,255,255,0.28)',
-  },
-  fogHalo: {
-    position: 'absolute',
-    top: -3, left: -3, right: -3, bottom: -3,
-    borderRadius: (BUBBLE_SIZE + 6) / 2,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.28)',
-  },
-  shineLeft: {
-    position: 'absolute',
-    bottom: 16,
-    left: 10,
-    width: 12,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    transform: [{ rotate: '30deg' }],
-  },
+  bubbleShell: { ...StyleSheet.absoluteFillObject },
   rewardWrap: {
     position: 'absolute',
     width: BUBBLE_SIZE,

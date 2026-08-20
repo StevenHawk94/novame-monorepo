@@ -42,7 +42,7 @@ import {
   type ReflectError,
   type ReflectSnapshot,
 } from '@/lib/reflect-api';
-import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
   daily_limit: "You've reflected 3 times today. Rest up — come back tomorrow.",
@@ -73,7 +73,7 @@ export default function SharedMemoryCreateScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [result, setResult] = useState<ReflectSnapshot | null>(null);
   const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const isPaid = useSubscriptionTier() !== 'free';
 
   useEffect(() => {
     if (routeFriendId) {

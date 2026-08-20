@@ -8,7 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
 import { ICONS } from '../../../src/lib/icons';
-import { getCachedSubscriptionTier } from '../../../src/lib/subscription';
+import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
 import { getSelectedScene, setSelectedScene } from '../../../src/lib/cosmetics-store';
 import {
   DEFAULT_SCENE_KEY,
@@ -38,7 +38,7 @@ import {
 export default function SceneSelectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const isPaid = useSubscriptionTier() !== 'free';
 
   const [catalog, setCatalog] = useState<SceneDef[]>(() => getCachedSceneCatalog());
   const [cosmetics, setCosmetics] = useState<CosmeticsState>(() => getCachedCosmetics());
@@ -55,31 +55,54 @@ export default function SceneSelectScreen() {
     }, []),
   );
 
-  // Warm the grid thumbs AND the full backgrounds (the 'prefetched at
-  // launch' claim was never true — switching used to download the 1-2MB art
-  // on the spot behind the Switching modal). Browsing time covers the
-  // downloads; an already-cached switch then resolves instantly.
+  // Thumbs are tiny and can warm together. Full-size scenes are intentionally
+  // limited to the current/owned set and warmed one at a time (current first),
+  // so opening Maps never starts sixteen large competing downloads.
   useEffect(() => {
-    for (const s of catalog) {
-      void ExpoImage.prefetch(sceneAssetUrl(s.thumb));
-      if (s.image) void ExpoImage.prefetch(sceneAssetUrl(s.image));
+    const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb));
+    if (thumbUrls.length > 0) {
+      void ExpoImage.prefetch(thumbUrls, { cachePolicy: 'disk' });
     }
-  }, [catalog]);
+
+    const fullUrls = catalog
+      .filter((scene) => scene.key === current || isUnlocked(cosmetics, 'scene', scene.key))
+      .sort((a, b) => Number(b.key === current) - Number(a.key === current))
+      .map((scene) => sceneAssetUrl(scene.image));
+    let cancelled = false;
+    void (async () => {
+      for (const url of fullUrls) {
+        if (cancelled) return;
+        await ExpoImage.prefetch(url, { cachePolicy: 'memory-disk' });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [catalog, cosmetics, current]);
 
   const isCurrent = (key: string) =>
     current === key || (key === DEFAULT_SCENE_KEY && /^scene\d+$/.test(current));
   const owned = (s: SceneDef) => isUnlocked(cosmetics, 'scene', s.key);
 
-  /** Switch scene: make sure the big background is cached, then go Home. */
+  /** Switch scene: cached art returns immediately; only a cache miss blocks. */
   async function useScene(key: string, imageUrl: string | null) {
     setSelectedScene(key);
     setCurrent(key);
     if (imageUrl) {
-      setSwitching(true);
+      let cachedPath: string | null = null;
       try {
-        await ExpoImage.prefetch(imageUrl);
-      } catch { /* falls back to on-demand load on Home */ }
-      setSwitching(false);
+        cachedPath = await ExpoImage.getCachePathAsync(imageUrl);
+      } catch { /* a failed cache lookup is handled as a cache miss */ }
+
+      if (cachedPath) {
+        // Do not hold the user in the modal. This disk hit also warms the
+        // decoded memory entry while Home is coming back into focus.
+        void ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' });
+      } else {
+        setSwitching(true);
+        try {
+          await ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' });
+        } catch { /* falls back to on-demand load on Home */ }
+        setSwitching(false);
+      }
     }
     void haptics.success();
     router.back();

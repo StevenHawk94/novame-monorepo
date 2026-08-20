@@ -17,7 +17,7 @@ import {
   getLaunchDefaultBubble,
   type FreshBubble,
 } from '@/lib/bubble-store';
-import { getCachedSubscriptionTier } from '@/lib/subscription';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
@@ -36,19 +36,20 @@ import { AnnouncementGate } from '@/components/main/announcement-gate';
  * hideSplashOnce() must be called by whatever screen renders first, or the
  * native splash never lifts.
  */
-function visibleAiBubble(): FreshBubble | null {
+function visibleAiBubble(isPaid: boolean): FreshBubble | null {
   // A cached AI line must never leak through after the account becomes Free.
-  if (getCachedSubscriptionTier() === 'free') return null;
+  if (!isPaid) return null;
   return getFreshBubbleState();
 }
 
 export default function HomeScreen() {
   const router = useRouter();
+  const isPaid = useSubscriptionTier() !== 'free';
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
   const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
-  const [aiBubble, setAiBubble] = useState<FreshBubble | null>(visibleAiBubble);
+  const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(isPaid));
   const aiBubbleRef = useRef(aiBubble);
   const openingEntryRef = useRef(false);
   const [homeLayout, setHomeLayout] = useState({
@@ -69,6 +70,10 @@ export default function HomeScreen() {
       setDefaultSpeech(advanceDefaultBubble());
     }
   }, []);
+
+  useEffect(() => {
+    applyAiBubble(visibleAiBubble(isPaid));
+  }, [applyAiBubble, isPaid]);
 
   // A new Reflect replaces the old AI line and starts a fresh six-hour timer.
   // If the app stays open, expiry switches to the next local-time default line.
@@ -110,7 +115,7 @@ export default function HomeScreen() {
       // stacking duplicate transparent-modal routes.
       openingEntryRef.current = false;
       setCosmeticTick((t) => t + 1);
-      applyAiBubble(visibleAiBubble());
+      applyAiBubble(visibleAiBubble(isPaid));
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
@@ -118,7 +123,7 @@ export default function HomeScreen() {
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-    }, [applyAiBubble]),
+    }, [applyAiBubble, isPaid]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -156,7 +161,13 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root} onLayout={onFirstPaint}>
-      <ExpoImage source={sceneImg} style={styles.sceneBgImg} contentFit="cover" />
+      <ExpoImage
+        source={sceneImg}
+        style={styles.sceneBgImg}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="high"
+      />
       <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>
@@ -261,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bubble: {
-    backgroundColor: '#F4E4C1', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
+    backgroundColor: 'rgba(244, 228, 193, 0.8)', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
     maxWidth: 330,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
     elevation: 4,
@@ -269,9 +280,9 @@ const styles = StyleSheet.create({
   bubbleTail: {
     position: 'absolute', bottom: -10, alignSelf: 'center',
     width: 0, height: 0, borderLeftWidth: 11, borderRightWidth: 11, borderTopWidth: 12,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#F4E4C1',
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'rgba(244, 228, 193, 0.8)',
   },
-  bubbleText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#3A2E1A', textAlign: 'center', lineHeight: 24 },
+  bubbleText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#3A2E1A', textAlign: 'center', lineHeight: 23 },
   ground: { position: 'absolute', left: 20, right: 20, zIndex: 2 },
   groundFallback: { bottom: 16 },
   entries: { flexDirection: 'row', gap: 16 },

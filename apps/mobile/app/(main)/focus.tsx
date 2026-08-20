@@ -7,7 +7,7 @@ import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-au
 
 import { FOCUS_SCENES, type FocusScene } from '@novame/domain';
 import { haptics } from '../../src/lib/haptics';
-import { getCachedSubscriptionTier } from '../../src/lib/subscription';
+import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { submitFocus } from '../../src/lib/focus-api';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
@@ -48,7 +48,7 @@ export default function FocusScreen() {
 
   const [phase, setPhase] = useState<Phase>('select');
   const [scene, setScene] = useState<FocusScene | null>(null);
-  const [isPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
+  const isPaid = useSubscriptionTier() !== 'free';
   const [completed, setCompleted] = useState(false);
   const [reward, setReward] = useState(0);
   const creditedRef = useRef(false);

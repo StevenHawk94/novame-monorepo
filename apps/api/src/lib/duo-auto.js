@@ -13,118 +13,43 @@
  */
 
 /**
- * If `ownerId` holds their OWN Plus and their paired partner is free,
- * seat the partner on the Duo plan. Safe to call repeatedly; every exit
- * path is a no-op. Never throws.
+ * Reconcile the effective entitlement of an owner and their paired partner.
+ * The database RPC holds both user locks and changes the seat + profile tiers
+ * in one transaction. Callers deliberately receive failures so pairing and
+ * payment routes cannot report success after a silent partial grant.
  */
 export async function autoGrantDuoToPartner(supabase, ownerId) {
-  try {
-    // A seated member's Plus is borrowed — they can't grant it onward.
-    const { data: seatedAsMember } = await supabase
-      .from('duo_memberships')
-      .select('id')
-      .eq('member_id', ownerId)
-      .eq('status', 'claimed')
-      .maybeSingle()
-    if (seatedAsMember) return
-
-    const { data: me } = await supabase
-      .from('profiles').select('subscription_tier').eq('id', ownerId).maybeSingle()
-    if (me?.subscription_tier !== 'plus') return
-
-    const { data: pairing } = await supabase
-      .from('pairings').select('partner_user_id').eq('user_id', ownerId).maybeSingle()
-    const partnerId = pairing?.partner_user_id
-    if (!partnerId) return
-
-    // Partner who bought their own Plus keeps it; the seat stays open.
-    const { data: partner } = await supabase
-      .from('profiles').select('subscription_tier').eq('id', partnerId).maybeSingle()
-    if (!partner || partner.subscription_tier === 'plus') return
-
-    // Owner's duo row: reuse, or create. A seat already claimed by a third
-    // party (legacy invite code) is respected — nothing to grant.
-    const { data: duo } = await supabase
-      .from('duo_memberships')
-      .select('id, member_id, status')
-      .eq('owner_id', ownerId)
-      .maybeSingle()
-    if (duo?.member_id && duo.member_id !== partnerId) return
-
-    const now = new Date().toISOString()
-    if (duo) {
-      const { error } = await supabase
-        .from('duo_memberships')
-        .update({ member_id: partnerId, status: 'claimed', claimed_at: now })
-        .eq('id', duo.id)
-      if (error) return
-    } else {
-      const { error } = await supabase
-        .from('duo_memberships')
-        .insert({ owner_id: ownerId, member_id: partnerId, status: 'claimed', claimed_at: now, invite_code: autoCode() })
-      if (error) return
-    }
-
-    await supabase
-      .from('profiles')
-      .update({ subscription_tier: 'plus', updated_at: now })
-      .eq('id', partnerId)
-    console.log(`[duo-auto] granted Plus to partner ${partnerId} of owner ${ownerId}`)
-  } catch (err) {
-    console.warn('[duo-auto] grant failed (non-fatal):', err && err.message)
-  }
+  const { data: pairing, error: pairingError } = await supabase
+    .from('pairings')
+    .select('partner_user_id')
+    .eq('user_id', ownerId)
+    .maybeSingle()
+  if (pairingError) throw new Error(`pair lookup failed: ${pairingError.message}`)
+  if (!pairing?.partner_user_id) return { success: true, paired: false }
+  return autoGrantDuoBothWays(supabase, ownerId, pairing.partner_user_id)
 }
 
 /** Both directions of a fresh pairing — whichever side owns Plus grants. */
 export async function autoGrantDuoBothWays(supabase, aId, bId) {
-  await autoGrantDuoToPartner(supabase, aId)
-  await autoGrantDuoToPartner(supabase, bId)
+  const { data, error } = await supabase.rpc('sync_pair_plus_entitlements', {
+    p_user_a: aId,
+    p_user_b: bId,
+  })
+  if (error) throw new Error(`pair entitlement sync failed: ${error.message}`)
+  if (!data?.success) throw new Error(`pair entitlement sync failed: ${data?.error || 'unknown'}`)
+  return data
 }
 
 /**
  * Pairing dissolved between `aId` and `bId`: release any seat granted
- * between them and revoke the member's borrowed Plus — unless the member
- * has since bought their own subscription. Never throws.
+ * between them and recompute both users from independently owned purchases.
  */
 export async function revokeDuoOnUnpair(supabase, aId, bId) {
-  try {
-    const { data: rows } = await supabase
-      .from('duo_memberships')
-      .select('id, owner_id, member_id')
-      .eq('status', 'claimed')
-      .or(`and(owner_id.eq.${aId},member_id.eq.${bId}),and(owner_id.eq.${bId},member_id.eq.${aId})`)
-    const duo = rows?.[0]
-    if (!duo) return
-
-    const now = new Date().toISOString()
-    await supabase
-      .from('duo_memberships')
-      .update({ member_id: null, status: 'pending', claimed_at: null })
-      .eq('id', duo.id)
-
-    // Member keeps Plus only if they own an active subscription themselves.
-    const { data: ownSub } = await supabase
-      .from('subscriptions')
-      .select('current_period_end, status')
-      .eq('user_id', duo.member_id)
-      .maybeSingle()
-    const ownActive = ownSub?.current_period_end
-      && new Date(ownSub.current_period_end).getTime() > Date.now()
-    if (!ownActive) {
-      await supabase
-        .from('profiles')
-        .update({ subscription_tier: 'free', updated_at: now })
-        .eq('id', duo.member_id)
-    }
-    console.log(`[duo-auto] released seat of owner ${duo.owner_id} on unpair`)
-  } catch (err) {
-    console.warn('[duo-auto] revoke failed (non-fatal):', err && err.message)
-  }
-}
-
-function autoCode() {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
-  return code
+  const { data, error } = await supabase.rpc('release_pair_plus_entitlements', {
+    p_user_a: aId,
+    p_user_b: bId,
+  })
+  if (error) throw new Error(`pair entitlement release failed: ${error.message}`)
+  if (!data?.success) throw new Error(`pair entitlement release failed: ${data?.error || 'unknown'}`)
+  return data
 }

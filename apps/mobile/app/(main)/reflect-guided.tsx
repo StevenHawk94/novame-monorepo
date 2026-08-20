@@ -16,7 +16,7 @@ import {
 } from '../../src/lib/reflect-api';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags, getCachedBags } from '../../src/lib/bags-api';
-import { getCachedSubscriptionTier } from '../../src/lib/subscription';
+import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS } from '../../src/lib/icons';
 import {
@@ -94,7 +94,7 @@ export default function ReflectGuidedScreen() {
     }, {});
   }, []);
   const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const isPaid = useSubscriptionTier() !== 'free';
 
   const phaseRef = useRef(phase);
   const subcategoryScrollRef = useRef<ScrollView>(null);

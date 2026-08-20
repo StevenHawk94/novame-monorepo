@@ -13,8 +13,7 @@ import { supabase } from './supabase';
 /**
  * Authentication wrappers around Supabase auth.
  *
- * Stage 3.4 covers Email password (this file). Apple Sign-In and Google
- * Sign-In are added in stage 3.4.F / 3.4.G as separate exports.
+ * Authentication is passwordless: Apple, Google, or a six-digit email OTP.
  *
  * All functions return a discriminated result `{ data, error }` instead
  * of throwing — caller decides between Alert / inline error / silent retry.
@@ -26,113 +25,16 @@ import { supabase } from './supabase';
 
 // ---- types ----
 
-export type SignInResult = {
-  data: { session: Session | null; user: User | null };
-  error: AuthError | null;
-};
-
-export type SignUpResult = {
-  data: { session: Session | null; user: User | null };
-  error: AuthError | null;
-  /**
-   * True when sign-up succeeded but session is null because Supabase requires
-   * email verification. Caller should show "check your inbox" message.
-   */
-  needsEmailConfirmation: boolean;
-};
-
 export type SignOutResult = {
   error: AuthError | null;
 };
-
-export type ResetPasswordResult = {
-  error: AuthError | null;
-};
-
-// ---- email + password ----
-
-/**
- * Signs in an existing user with email and password.
- *
- * Returns the session on success. Caller checks `result.error` for
- * specific failure messages (wrong password, user not found, rate limit).
- */
-export async function signInWithEmail(
-  email: string,
-  password: string,
-): Promise<SignInResult> {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  return { data, error };
-}
-
-/**
- * Signs up a new user with email and password.
- *
- * If Supabase project has email confirmation enabled (default), the
- * returned session will be null and the user must click a link in their
- * email before they can sign in. `needsEmailConfirmation` indicates this.
- *
- * If email confirmation is disabled (test environments), session will be
- * non-null and the user is signed in immediately.
- */
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-): Promise<SignUpResult> {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  const needsEmailConfirmation = !error && data.session === null && data.user !== null;
-  return { data, error, needsEmailConfirmation };
-}
-
-/**
- * Sends a password reset email. Supabase will email the user a link.
- *
- * NOTE: The redirect target on the link must be configured in the
- * Supabase dashboard (Authentication > URL Configuration). For mobile,
- * the redirect should be the app's deep-link scheme (novame://).
- * Stage 3.4.E (deep link handling) will wire this up — until then the
- * link will open in the browser and require the user to copy a token.
- */
-export async function sendPasswordReset(email: string): Promise<ResetPasswordResult> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
-  return { error };
-}
-
-/**
- * Verifies a 6-digit OTP code sent to the user's email after sign-up.
- *
- * Supabase sends the OTP automatically when signUp is called (default
- * behavior when "Confirm email" is enabled in the Supabase dashboard).
- * The user enters this code in the app to complete sign-up; on success,
- * onAuthStateChange fires SIGNED_IN with a fresh session.
- *
- * Type 'signup' = OTP for sign-up confirmation.
- * Other types ('email_change' / 'magiclink') not used in this codebase.
- */
-export async function verifyEmailOtp(
-  email: string,
-  token: string,
-): Promise<SignInResult> {
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: 'signup',
-  });
-  return { data, error };
-}
 
 /**
  * Confirms an email-change 6-digit code (Connect Account flow: an anonymous
  * user attaches an email via updateUser({email}), Supabase mails the code,
  * this verifies it and completes the binding).
  */
-export async function verifyEmailChangeOtp(
+async function verifyEmailChangeOtp(
   email: string,
   token: string,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -430,7 +332,7 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
  *
  * Requires "Anonymous sign-ins" to be ENABLED in Supabase Auth settings.
  * Returns false when no session could be established (feature off / offline)
- * — the caller falls back to the classic sign-in screen.
+ * — the caller falls back to the standalone passwordless recovery screen.
  */
 export async function ensureSession(): Promise<boolean> {
   const existing = await getCurrentSession();
@@ -508,7 +410,7 @@ export async function linkIdentityWithProvider(
  * config) must NOT fall through: an id-token sign-in would silently mint
  * a fresh user and orphan the guest\u2019s data.
  */
-export function isAlreadyBoundError(msg?: string): boolean {
+function isAlreadyBoundError(msg?: string): boolean {
   if (!msg) return false;
   const m = msg.toLowerCase();
   return m.includes('already') && (m.includes('linked') || m.includes('registered') || m.includes('exists') || m.includes('in use'));
@@ -528,22 +430,85 @@ export type ConnectResult =
 export async function connectProviderOrSignIn(
   provider: 'apple' | 'google',
 ): Promise<ConnectResult> {
+  const signIn = async (): Promise<ConnectResult> => {
+    const res = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
+    if (res.kind === 'success') return { ok: true, mode: 'signedIn' };
+    if (res.kind === 'cancelled') return { ok: false, cancelled: true };
+    return {
+      ok: false,
+      error: res.kind === 'error' ? res.message : 'Sign-in is not available on this device.',
+    };
+  };
+
+  // The standalone auth route can be opened without a session. Linking only
+  // applies to the guest flow; without an anonymous user this is a normal
+  // passwordless sign-in/sign-up.
+  const session = await getCurrentSession();
+  const isAnonymous = (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
+  if (!isAnonymous) return signIn();
+
   const link = await linkIdentityWithProvider(provider);
   if (link.ok) return { ok: true, mode: 'linked' };
   if (link.cancelled) return { ok: false, cancelled: true };
   if (!isAlreadyBoundError(link.error)) return { ok: false, error: link.error };
+  return signIn();
+}
 
-  const res = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
-  if (res.kind === 'success') return { ok: true, mode: 'signedIn' };
-  if (res.kind === 'cancelled') return { ok: false, cancelled: true };
-  return {
-    ok: false,
-    error: res.kind === 'error' ? res.message : 'Sign-in is not available on this device.',
-  };
+export type PasswordlessEmailMode = 'change' | 'login';
+
+/**
+ * Starts the unified email OTP flow.
+ * - anonymous session: bind the address to this exact user; if it already
+ *   belongs to an account, send a login code to recover that account.
+ * - no/non-anonymous session: one OTP signs in an existing address or creates
+ *   a new account. No password credential is created.
+ */
+export async function sendPasswordlessEmailOtp(
+  email: string,
+): Promise<{ ok: boolean; mode?: PasswordlessEmailMode; error?: string }> {
+  const session = await getCurrentSession();
+  const isAnonymous = (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
+
+  if (isAnonymous) {
+    const { error } = await supabase.auth.updateUser({ email });
+    if (!error) return { ok: true, mode: 'change' };
+    if (!isAlreadyBoundError(error.message)) return { ok: false, error: error.message };
+    const login = await sendLoginEmailOtp(email);
+    return login.ok
+      ? { ok: true, mode: 'login' }
+      : { ok: false, error: login.error };
+  }
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true },
+  });
+  return error
+    ? { ok: false, error: error.message }
+    : { ok: true, mode: 'login' };
+}
+
+export async function verifyPasswordlessEmailOtp(
+  email: string,
+  token: string,
+  mode: PasswordlessEmailMode,
+): Promise<{ ok: boolean; error?: string }> {
+  return mode === 'change'
+    ? verifyEmailChangeOtp(email, token)
+    : verifyLoginEmailOtp(email, token);
+}
+
+export async function resendPasswordlessEmailOtp(
+  email: string,
+  mode: PasswordlessEmailMode,
+): Promise<{ ok: boolean; error?: string }> {
+  if (mode === 'login') return sendLoginEmailOtp(email);
+  const { error } = await supabase.auth.resend({ type: 'email_change', email });
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 /** Login-code request for the email fallback (existing accounts only). */
-export async function sendLoginEmailOtp(email: string): Promise<{ ok: boolean; error?: string }> {
+async function sendLoginEmailOtp(email: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { shouldCreateUser: false },
@@ -552,7 +517,7 @@ export async function sendLoginEmailOtp(email: string): Promise<{ ok: boolean; e
 }
 
 /** Confirms a login code (verifyOtp type email) \u2014 restores the old account. */
-export async function verifyLoginEmailOtp(
+async function verifyLoginEmailOtp(
   email: string,
   token: string,
 ): Promise<{ ok: boolean; error?: string }> {

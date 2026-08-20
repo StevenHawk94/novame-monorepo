@@ -35,6 +35,7 @@ import type { PricingTierKey } from '@novame/core';
 const STORAGE_KEY = 'novame_subscription';
 const SUBSCRIPTION_TTL_MS = 5 * 60 * 1000;
 const fetchesInFlight = new Map<string, Promise<CachedSubscription>>();
+const tierListeners = new Set<() => void>();
 
 // ---- types ----
 
@@ -87,7 +88,18 @@ export function getCachedSubscriptionTier(): PricingTierKey {
  * Persists subscription state to MMKV cache.
  */
 export function setCachedSubscription(state: CachedSubscription): void {
+  const previousTier = getCachedSubscription()?.tier;
   storage.set(STORAGE_KEY, JSON.stringify(state));
+  if (previousTier !== state.tier) {
+    for (const listener of tierListeners) listener();
+  }
+}
+
+/** Subscribe only to effective entitlement changes. This does not alter the
+ * existing cache TTL, fetch policy, storage key, or page-data caches. */
+export function subscribeToSubscriptionTier(listener: () => void): () => void {
+  tierListeners.add(listener);
+  return () => tierListeners.delete(listener);
 }
 
 /**

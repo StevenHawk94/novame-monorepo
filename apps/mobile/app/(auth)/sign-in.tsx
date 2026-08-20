@@ -19,16 +19,15 @@ import { haptics } from '@/lib/haptics';
 import { useResponsive, useTextStyle } from '@/hooks/use-responsive';
 
 import {
-  sendPasswordReset,
-  signInWithApple,
-  signInWithEmail,
-  signInWithGoogle,
-  signUpWithEmail,
-  verifyEmailOtp,
+  connectProviderOrSignIn,
+  resendPasswordlessEmailOtp,
+  sendPasswordlessEmailOtp,
+  verifyPasswordlessEmailOtp,
+  type PasswordlessEmailMode,
 } from '@/lib/auth';
 
 /**
- * AuthPage — 5-mode state machine.
+ * Passwordless account entry/recovery.
  *
  * Stage 3.5.bugfix (2025-11-XX): Sign in with Apple / Continue with
  * Google buttons restyled to match official platform guidelines:
@@ -41,10 +40,12 @@ import {
  * Logos are SVG components rendered inline via react-native-svg
  * (already a peer dep in Expo SDK 54). No new asset files needed.
  *
- * Mode flow: login / register / email-login / verify / forgot
+ * Mode flow: login / email / verify. Email OTP signs in an existing account
+ * or creates one; when an anonymous session exists it binds first so the
+ * guest's data stays on the same user id.
  */
 
-type AuthMode = 'login' | 'register' | 'email-login' | 'verify' | 'forgot';
+type AuthMode = 'login' | 'email' | 'verify';
 
 const TERMS_URL = 'https://www.burrow-app.com/terms';
 const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
@@ -93,9 +94,8 @@ export default function AuthScreen() {
   const styles = useMemo(() => makeStyles(scale, t), [scale, t]);
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [emailMode, setEmailMode] = useState<PasswordlessEmailMode>('login');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
@@ -117,35 +117,26 @@ export default function AuthScreen() {
 
   // ---- handlers ----
 
-  const handleSignUp = async () => {
+  const handleSendEmailCode = async () => {
     void haptics.light();
     clearMessages();
-    if (!email.trim() || !password) {
-      setErrorMsg('Email and password are required.');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords don't match.");
+    const address = email.trim();
+    if (!address.includes('@')) {
+      setErrorMsg('Enter a valid email address.');
       return;
     }
     setLoading(true);
-    const { error, needsEmailConfirmation } = await signUpWithEmail(
-      email.trim(),
-      password,
-    );
+    const result = await sendPasswordlessEmailOtp(address);
     setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
+    if (!result.ok || !result.mode) {
+      setErrorMsg(result.error ?? 'Could not send a verification code.');
       return;
     }
-    if (needsEmailConfirmation) {
-      setInfoMsg('Check your email for a 6-digit code.');
-      goTo('verify');
-    }
+    setEmail(address);
+    setEmailMode(result.mode);
+    setOtpCode('');
+    goTo('verify');
+    setInfoMsg('Check your email for a 6-digit code.');
   };
 
   const handleVerifyOtp = async () => {
@@ -156,77 +147,38 @@ export default function AuthScreen() {
       return;
     }
     setLoading(true);
-    const { error } = await verifyEmailOtp(email.trim(), otpCode);
+    const result = await verifyPasswordlessEmailOtp(email.trim(), otpCode, emailMode);
     setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
+    if (!result.ok) {
+      setErrorMsg(result.error ?? 'The verification code is invalid or expired.');
       return;
     }
+    router.replace('/(auth)/signing-in');
   };
 
-  const handleEmailSignIn = async () => {
-    void haptics.light();
+  const handleResendEmailCode = async () => {
     clearMessages();
-    if (!email.trim() || !password) {
-      setErrorMsg('Email and password are required.');
-      return;
-    }
     setLoading(true);
-    const { error } = await signInWithEmail(email.trim(), password);
+    const result = await resendPasswordlessEmailOtp(email.trim(), emailMode);
     setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
+    if (!result.ok) {
+      setErrorMsg(result.error ?? 'Could not resend the verification code.');
       return;
     }
+    setOtpCode('');
+    setInfoMsg('A new 6-digit code was sent.');
   };
 
-  const handleForgotPassword = async () => {
-    void haptics.light();
-    clearMessages();
-    if (!email.trim()) {
-      setErrorMsg('Enter your email address.');
-      return;
-    }
-    setLoading(true);
-    const { error } = await sendPasswordReset(email.trim());
-    setLoading(false);
-    if (error) {
-      setErrorMsg(error.message);
-      return;
-    }
-    setInfoMsg('Reset link sent. Check your inbox.');
-  };
-
-  const handleAppleSignIn = async () => {
+  const handleProvider = async (provider: 'apple' | 'google') => {
     clearMessages();
     setLoading(true);
-    const result = await signInWithApple();
+    const result = await connectProviderOrSignIn(provider);
     setLoading(false);
-    if (result.kind === 'cancelled') return;
-    if (result.kind === 'unsupported') {
-      setErrorMsg('Sign in with Apple is not available on this device.');
+    if (!result.ok && !result.cancelled) {
+      setErrorMsg(result.error ?? `Could not continue with ${provider === 'apple' ? 'Apple' : 'Google'}.`);
       return;
     }
-    if (result.kind === 'error') {
-      setErrorMsg(result.message);
-      return;
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    clearMessages();
-    setLoading(true);
-    const result = await signInWithGoogle();
-    setLoading(false);
-    if (result.kind === 'cancelled') return;
-    if (result.kind === 'unsupported') {
-      setErrorMsg('Sign in with Google is not available on this device.');
-      return;
-    }
-    if (result.kind === 'error') {
-      setErrorMsg(result.message);
-      return;
-    }
+    if (result.ok) router.replace('/(auth)/signing-in');
   };
 
   // ---- shared visual fragments ----
@@ -285,7 +237,7 @@ export default function AuthScreen() {
                   loading && styles.btnDisabled,
                 ]}
                 disabled={loading}
-                onPress={handleAppleSignIn}
+                onPress={() => void handleProvider('apple')}
               >
                 <View style={styles.btnIcon}>
                   <AppleLogo size={18} />
@@ -305,7 +257,7 @@ export default function AuthScreen() {
                   loading && styles.btnDisabled,
                 ]}
                 disabled={loading}
-                onPress={handleGoogleSignIn}
+                onPress={() => void handleProvider('google')}
               >
                 <View style={styles.btnIcon}>
                   <GoogleLogo size={18} />
@@ -318,19 +270,12 @@ export default function AuthScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.btn, styles.btnPrimary]}
-                onPress={() => { void haptics.light(); goTo('register'); }}
+                onPress={() => { void haptics.light(); goTo('email'); }}
               >
                 <Text style={styles.btnPrimaryText}>Continue with Email</Text>
               </TouchableOpacity>
             </View>
           </View>
-          <Pressable
-            onPress={() => { void haptics.light(); goTo('email-login'); }}
-            style={styles.bottomLinkRow}
-          >
-            <Text style={styles.dimText}>Already have an account? </Text>
-            <Text style={styles.boldLinkText}>Log in</Text>
-          </Pressable>
         </View>
         {__DEV__ && (
           <Pressable
@@ -348,13 +293,16 @@ export default function AuthScreen() {
     );
   }
 
-  if (mode === 'register') {
+  if (mode === 'email') {
     return (
       <SafeAreaView style={styles.container}>
       <KeyboardDismissView style={{ flex: 1 }}>
         <View style={styles.body}>
           <Branding />
-          <Text style={styles.formTitle}>Create account</Text>
+          <Text style={styles.formTitle}>Continue with email</Text>
+          <Text style={styles.subheadlineSmall}>
+            We&apos;ll send a 6-digit code. No password needed.
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Email address"
@@ -365,44 +313,17 @@ export default function AuthScreen() {
             keyboardType="email-address"
             editable={!loading}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password (min 6 characters)"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
-            secureTextEntry
-            editable={!loading}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm password"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            autoCapitalize="none"
-            secureTextEntry
-            editable={!loading}
-          />
           <Messages />
           <Pressable
             style={[styles.btn, styles.btnPrimary, loading && styles.btnDisabled]}
             disabled={loading}
-            onPress={handleSignUp}
+            onPress={() => void handleSendEmailCode()}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.btnPrimaryText}>Create Account</Text>
+              <Text style={styles.btnPrimaryText}>Send Code</Text>
             )}
-          </Pressable>
-          <Pressable
-            onPress={() => { void haptics.light(); goTo('email-login'); }}
-            style={styles.bottomLinkRow}
-          >
-            <Text style={styles.dimText}>Already have an account? </Text>
-            <Text style={styles.boldLinkText}>Sign In</Text>
           </Pressable>
           <Pressable onPress={() => { void haptics.light(); goTo('login'); }} style={styles.backLink}>
             <Text style={styles.linkText}>Back</Text>
@@ -414,71 +335,11 @@ export default function AuthScreen() {
     );
   }
 
-  if (mode === 'email-login') {
-    return (
-      <SafeAreaView style={styles.container}>
-      <KeyboardDismissView style={{ flex: 1 }}>
-        <View style={styles.body}>
-          <Branding />
-          <Text style={styles.formTitle}>Sign in</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Email address"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            editable={!loading}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
-            secureTextEntry
-            editable={!loading}
-          />
-          <Pressable onPress={() => { void haptics.light(); goTo('forgot'); }} style={styles.forgotLinkRow}>
-            <Text style={styles.linkText}>Forgot password?</Text>
-          </Pressable>
-          <Messages />
-          <Pressable
-            style={[styles.btn, styles.btnPrimary, loading && styles.btnDisabled]}
-            disabled={loading}
-            onPress={handleEmailSignIn}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.btnPrimaryText}>Sign In</Text>
-            )}
-          </Pressable>
-          <Pressable
-            onPress={() => { void haptics.light(); goTo('register'); }}
-            style={styles.bottomLinkRow}
-          >
-            <Text style={styles.dimText}>Don&apos;t have an account? </Text>
-            <Text style={styles.boldLinkText}>Sign Up</Text>
-          </Pressable>
-          <Pressable onPress={() => { void haptics.light(); goTo('login'); }} style={styles.backLink}>
-            <Text style={styles.linkText}>Back</Text>
-          </Pressable>
-        </View>
-        <Footer />
-      </KeyboardDismissView>
-    </SafeAreaView>
-    );
-  }
-
-  if (mode === 'verify') {
-    return (
-      <SafeAreaView style={styles.container}>
+  return (
+      <SafeAreaView style={styles.container} onLayout={hideSplashOnce}>
       <KeyboardDismissView style={{ flex: 1 }}>
         <Pressable
-          onPress={() => { void haptics.light(); goTo('register'); }}
+          onPress={() => { void haptics.light(); goTo('email'); }}
           hitSlop={12}
           style={({ pressed }) => [styles.topBackButton, pressed && { opacity: 0.6 }]}
         >
@@ -488,24 +349,24 @@ export default function AuthScreen() {
           <Branding />
           <Text style={styles.formTitle}>Verify email</Text>
           <Text style={styles.subheadlineSmall}>
-            We sent a 6-digit code to {email}. Enter it below to finish creating
-            your account.
+            We sent a 6-digit code to {email}. Enter it below to continue.
           </Text>
           <TextInput
             style={[styles.input, styles.otpInput]}
             placeholder="------"
             placeholderTextColor="rgba(255,255,255,0.4)"
             value={otpCode}
-            onChangeText={setOtpCode}
+            onChangeText={(text) => setOtpCode(text.replace(/\D/g, '').slice(0, 6))}
             keyboardType="number-pad"
+            autoFocus
             maxLength={6}
             editable={!loading}
           />
           <Messages />
           <Pressable
             style={[styles.btn, styles.btnPrimary, loading && styles.btnDisabled]}
-            disabled={loading}
-            onPress={handleVerifyOtp}
+            disabled={loading || otpCode.length !== 6}
+            onPress={() => void handleVerifyOtp()}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
@@ -513,52 +374,16 @@ export default function AuthScreen() {
               <Text style={styles.btnPrimaryText}>Verify</Text>
             )}
           </Pressable>
-
+          <Pressable
+            onPress={() => void handleResendEmailCode()}
+            disabled={loading}
+            style={styles.backLink}
+          >
+            <Text style={styles.linkText}>Resend code</Text>
+          </Pressable>
         </View>
         <Footer />
       </KeyboardDismissView>
-    </SafeAreaView>
-    );
-  }
-
-  // mode === 'forgot'
-  return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardDismissView style={{ flex: 1 }}>
-      <View style={styles.body}>
-        <Branding />
-        <Text style={styles.formTitle}>Reset password</Text>
-        <Text style={styles.subheadlineSmall}>
-          Enter your email and we&apos;ll send you a link to reset your password.
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email address"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-        />
-        <Messages />
-        <Pressable
-          style={[styles.btn, styles.btnPrimary, loading && styles.btnDisabled]}
-          disabled={loading}
-          onPress={handleForgotPassword}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.btnPrimaryText}>Send Reset Link</Text>
-          )}
-        </Pressable>
-        <Pressable onPress={() => { void haptics.light(); goTo('email-login'); }} style={styles.backLink}>
-          <Text style={styles.linkText}>Back</Text>
-        </Pressable>
-      </View>
-      <Footer />
-    </KeyboardDismissView>
     </SafeAreaView>
   );
 }
@@ -691,16 +516,6 @@ function makeStyles(
   btnDisabled: {
     opacity: 0.5,
   },
-  bottomLinkRow: {
-    marginTop: scale(24),
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  forgotLinkRow: {
-    marginBottom: scale(16),
-    alignSelf: 'flex-start',
-  },
   topBackButton: {
     position: 'absolute',
     top: 56,
@@ -717,17 +532,6 @@ function makeStyles(
   backLink: {
     marginTop: scale(16),
     alignItems: 'center',
-  },
-  dimText: {
-    color: 'rgba(255,255,255,0.4)',
-    ...t.footnote,
-    fontFamily: 'Inter_400Regular',
-  },
-  boldLinkText: {
-    color: '#FFFFFF',
-    ...t.footnote,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
   },
   linkText: {
     color: '#C084FC',

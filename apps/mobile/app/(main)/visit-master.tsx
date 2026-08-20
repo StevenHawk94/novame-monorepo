@@ -141,7 +141,7 @@ export default function VisitMasterScreen() {
             {!status.isPaid ? (
               <Pressable
                 onPress={() => { void haptics.warning(); router.push('/(main)/(modals)/subscription-paywall'); }}
-                style={[styles.askPill, { marginBottom: insets.bottom + 18 }]}
+                style={[styles.askPill, styles.askPillResting, { marginBottom: insets.bottom + 18 }]}
               >
                 <Text maxFontSizeMultiplier={1.15} style={styles.lockedText}>
                   Join Plus to access this feature.

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { autoGrantDuoToPartner } from '@/lib/duo-auto'
 import {
   decodeNotificationPayload,
   decodeTransaction,
@@ -22,18 +21,17 @@ export const runtime = 'nodejs'
  * POST /api/webhooks/apple
  *
  * Receives App Store Server Notifications v2 from Apple.
- * Apple sends signed JWS payloads — we decode the payload to get
- * the notification type and transaction info, then update the DB.
+ * Apple sends signed JWS payloads. Both the outer notification and inner
+ * transaction payload are certificate-chain/signature verified before use.
  *
  * Apple docs: https://developer.apple.com/documentation/appstoreservernotifications
  *
  * Setup: paste this URL in App Store Connect → App Information →
  *   App Store Server Notifications → Production Server URL
  *
- * Note: We trust the payload for tier/expiry updates.
- * For production with high-value transactions, add full JWS signature
- * verification using Apple's public keys from /api/v1/certificates.
  */
+
+const EXPECTED_BUNDLE_ID = 'com.novame.app'
 
 function getSupabase() {
   return createClient(
@@ -121,7 +119,7 @@ export async function POST(request) {
         notification = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
       } catch (decodeErr) {
         console.error('[Apple webhook] Fallback decode failed:', decodeErr.message)
-        return NextResponse.json({ received: true, error: 'Decode failed' })
+        return NextResponse.json({ received: false, error: 'Decode failed' }, { status: 400 })
       }
     } else {
       // Normal path: verify signature, cert chain, and Apple Root CA.
@@ -129,23 +127,20 @@ export async function POST(request) {
         notification = await decodeNotificationPayload(signedPayload)
       } catch (verifyErr) {
         console.error('[Apple webhook] SIGNATURE VERIFICATION FAILED:', verifyErr.message, '— rejecting payload. If this is a legitimate Apple notification, check whether Apple has rotated certificates (see Oct 2025 incident) and consider setting WEBHOOK_VERIFY_DISABLED=true as an emergency measure.')
-        // Return 200 not 401: returning 4xx/5xx causes Apple to
-        // retry up to 5 times over 3 days, amplifying load if our
-        // verification is misconfigured. Return 200 + log so legit
-        // notifications get dropped silently (worse than retry,
-        // but bounded) while we investigate.
-        return NextResponse.json({ received: true, error: 'Signature verification failed' })
+        return NextResponse.json(
+          { received: false, error: 'Signature verification failed' },
+          { status: 401 }
+        )
       }
     }
 
     // Check bundle ID — defense against cross-app notification spoofing.
     // Notification structure differs between data-bearing and summary
     // notifications; both have bundleId in their data/summary subfield.
-    const expectedBundleId = 'com.novame.app'
     const actualBundleId = notification.data?.bundleId || notification.summary?.bundleId
-    if (actualBundleId && actualBundleId !== expectedBundleId) {
-      console.warn('[Apple webhook] Bundle ID mismatch — expected', expectedBundleId, 'got', actualBundleId, '— ignoring notification')
-      return NextResponse.json({ received: true })
+    if (actualBundleId && actualBundleId !== EXPECTED_BUNDLE_ID) {
+      console.warn('[Apple webhook] Bundle ID mismatch — expected', EXPECTED_BUNDLE_ID, 'got', actualBundleId, '— ignoring notification')
+      return NextResponse.json({ received: false, error: 'Bundle ID mismatch' }, { status: 400 })
     }
 
     const notificationType = notification.notificationType   // e.g. "DID_RENEW"
@@ -215,14 +210,21 @@ export async function POST(request) {
       // ── New purchase or re-subscribe ──────────────────────────────────────
       case 'SUBSCRIBED':
       case 'DID_RENEW': {
-        if (!transactionInfo) break
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
         await handleActive(supabase, transactionInfo)
         break
       }
 
       // ── Renewal recovered after billing retry ─────────────────────────────
       case 'DID_RECOVER': {
-        if (!transactionInfo) break
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
+        await handleActive(supabase, transactionInfo)
+        break
+      }
+
+      // ── Apple reversed a previously granted refund ────────────────────────
+      case 'REFUND_REVERSED': {
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
         await handleActive(supabase, transactionInfo)
         break
       }
@@ -238,22 +240,28 @@ export async function POST(request) {
 
       // ── Subscription expired (user cancelled + period ended) ──────────────
       case 'EXPIRED': {
-        if (!transactionInfo) break
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
         await handleExpired(supabase, transactionInfo)
         break
       }
 
       // ── Refund granted ────────────────────────────────────────────────────
       case 'REFUND': {
-        if (!transactionInfo) break
-        await handleExpired(supabase, transactionInfo)
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
+        await handleExpired(supabase, transactionInfo, 'revoked')
+        break
+      }
+
+      case 'REVOKE': {
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
+        await handleExpired(supabase, transactionInfo, 'revoked')
         break
       }
 
       // ── Grace period started (billing failed, Apple is retrying) ──────────
       case 'GRACE_PERIOD_EXPIRED': {
         // Billing failed and grace period ended — downgrade
-        if (!transactionInfo) break
+        if (!transactionInfo) throw new Error('Missing verified transaction info')
         await handleExpired(supabase, transactionInfo)
         break
       }
@@ -263,13 +271,14 @@ export async function POST(request) {
         console.log('[Apple webhook] Unhandled type:', notificationType)
     }
 
-    // Always return 200 so Apple doesn't retry
     return NextResponse.json({ received: true })
 
   } catch (error) {
     console.error('[Apple webhook] Error:', error)
-    // Return 200 anyway — returning 4xx/5xx causes Apple to retry repeatedly
-    return NextResponse.json({ received: true, error: error.message })
+    // A non-2xx response is intentional: App Store Server Notifications V2
+    // retries transient processing failures instead of silently losing a
+    // renewal/refund/expiry entitlement update.
+    return NextResponse.json({ received: false, error: 'Processing failed' }, { status: 500 })
   }
 }
 
@@ -277,13 +286,16 @@ export async function POST(request) {
  * Activate or renew a subscription in the DB.
  */
 async function handleActive(supabase, txn) {
+  if (txn.bundleId !== EXPECTED_BUNDLE_ID) {
+    throw new Error('Apple transaction bundleId mismatch')
+  }
   const productId   = txn.productId
   const tier        = PRODUCT_TO_TIER[productId]
   const billingCycle = PRODUCT_TO_CYCLE[productId] || 'monthly'
 
   if (!tier) {
     console.warn('[Apple webhook] Unknown productId:', productId)
-    return
+    throw new Error(`unknown Apple productId: ${productId}`)
   }
 
   // Find user by apple_original_transaction_id stored during first purchase.
@@ -306,13 +318,13 @@ async function handleActive(supabase, txn) {
 
   if (subErr) {
     console.error('[Apple webhook] subscriptions lookup error for originalTxnId=' + originalId + ':', subErr.message)
-    return
+    throw new Error(`subscriptions lookup failed: ${subErr.message}`)
   }
 
   const userId = sub?.user_id
   if (!userId) {
     console.warn('[Apple webhook] No user has originalTransactionId=' + originalId + ' on file. This is normal for renewals on subscriptions purchased before this server saved apple_* columns; the user will need to re-purchase or restore. After Stage 6.IAPFix all new purchases write apple_* via apple-iap, so this warning should not recur for purchases post-deploy.')
-    return
+    throw new Error(`unbound originalTransactionId: ${originalId}`)
   }
 
   const expiresDate = txn.expiresDate
@@ -332,48 +344,19 @@ async function handleActive(supabase, txn) {
     console.warn(`[Apple webhook] stale activation ignored for user ${userId} (incoming expiry ${expiresDate} < stored end ${sub.current_period_end})`)
     return
   }
-  // Advance current_period_start ONLY for a genuinely new period (expiry
-  // moves past the stored end). A duplicate/retried event for the SAME period
-  // preserves the existing start so the per-period quota window is not reset
-  // (mirrors the apple-iap isSamePeriod guard).
-  const isNewPeriod = !storedEndMs || incomingExpiryMs > storedEndMs
-  const periodStart = (isNewPeriod || !sub?.current_period_start)
-    ? new Date().toISOString()
-    : sub.current_period_start
-
-  // Update profiles.subscription_tier
-  await supabase.from('profiles')
-    .update({ subscription_tier: tier, updated_at: new Date().toISOString() })
-    .eq('id', userId)
-
-  // 2026-08-11: activation/renewal re-seats the paired partner if free.
-  if (tier === 'plus') await autoGrantDuoToPartner(supabase, userId)
-
-  // Update subscriptions table.
-  //
-  // Stage 6.QuotaFix: current_period_start is now refreshed on every
-  // renewal (previously this update block only touched
-  // current_period_end, leaving period_start frozen at the original
-  // upgrade timestamp -- which made the quota counter window grow
-  // unbounded over time instead of resetting each billing cycle).
-  //
-  // We use new Date() (webhook arrival time) as a close-enough proxy
-  // for the true Apple renewal time. In normal operation this is
-  // accurate to within seconds; under webhook retry it could drift
-  // by minutes. For a higher-fidelity timestamp we would parse
-  // txn.purchaseDate from the JWS payload, but the seconds-to-minutes
-  // approximation is fine for a monthly/yearly quota window.
-  await supabase.from('subscriptions')
-    .update({
-      plan:                 tier,
-      status:               'active',
-      billing_cycle:        billingCycle,
-      apple_product_id:     productId,
-      current_period_start: periodStart,
-      current_period_end:   expiresDate,
-      updated_at:           new Date().toISOString(),
-    })
-    .eq('user_id', userId)
+  const { data: applied, error: applyErr } = await supabase.rpc('apply_store_subscription', {
+    p_user_id: userId,
+    p_store: 'apple',
+    p_plan: tier,
+    p_plan_type: PRODUCT_TO_PLAN_TYPE[productId] || 'solo',
+    p_billing_cycle: billingCycle,
+    p_period_end: expiresDate,
+    p_apple_transaction_id: String(txn.transactionId),
+    p_apple_original_transaction_id: originalId,
+    p_apple_product_id: productId,
+  })
+  if (applyErr) throw new Error(`atomic subscription apply failed: ${applyErr.message}`)
+  if (!applied?.success) throw new Error(`subscription apply rejected: ${applied?.error || 'unknown'}`)
 
   console.log(`[Apple webhook] Activated ${tier} for user ${userId} until ${expiresDate}`)
 }
@@ -381,7 +364,10 @@ async function handleActive(supabase, txn) {
 /**
  * Downgrade user to free when subscription expires or is refunded.
  */
-async function handleExpired(supabase, txn) {
+async function handleExpired(supabase, txn, terminalStatus = 'expired') {
+  if (txn.bundleId !== EXPECTED_BUNDLE_ID) {
+    throw new Error('Apple transaction bundleId mismatch')
+  }
   // Stage 6.IAPFix: same diagnostic improvement as handleActive.
   // Note: an unfound expired notification is more concerning than
   // an unfound activation, because failing to process it leaves
@@ -401,13 +387,13 @@ async function handleExpired(supabase, txn) {
 
   if (subErr) {
     console.error('[Apple webhook] expired-lookup error for originalTxnId=' + originalId + ':', subErr.message)
-    return
+    throw new Error(`expired subscription lookup failed: ${subErr.message}`)
   }
 
   const userId = sub?.user_id
   if (!userId) {
     console.warn('[Apple webhook] EXPIRED for unknown originalTxnId=' + originalId + ' — user not downgraded. Possible causes: (a) purchase pre-dates apple_* schema columns, (b) webhook signature spoofing (backlog: implement JWS verification).')
-    return
+    throw new Error(`unbound expired originalTransactionId: ${originalId}`)
   }
 
   // #3 (out-of-order guard): a stale EXPIRED that arrives AFTER a newer
@@ -421,38 +407,15 @@ async function handleExpired(supabase, txn) {
     return
   }
 
-  await supabase.from('profiles')
-    .update({ subscription_tier: 'free', updated_at: new Date().toISOString() })
-    .eq('id', userId)
-
-  await supabase.from('subscriptions')
-    .update({
-      plan:       'free',
-      status:     'expired',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-
-  console.log(`[Apple webhook] Expired — user ${userId} downgraded to free`)
-
-  // Duo: if this owner shared Plus with a member, the member's Plus follows the
-  // owner. When the owner's subscription expires, the member lapses too (a
-  // member can't hold their own Plus while seated, so no conflict check needed).
-  const { data: duo } = await supabase
-    .from('duo_memberships')
-    .select('id, member_id')
-    .eq('owner_id', userId)
-    .eq('status', 'claimed')
-    .maybeSingle()
-  if (duo && duo.member_id) {
-    await supabase.from('profiles')
-      .update({ subscription_tier: 'free', updated_at: new Date().toISOString() })
-      .eq('id', duo.member_id)
-    await supabase.from('duo_memberships')
-      .update({ status: 'revoked' })
-      .eq('id', duo.id)
-    console.log(`[Apple webhook] Duo member ${duo.member_id} lapsed with owner ${userId}`)
-  }
+  const eventEnd = incomingExpiryMs ? new Date(incomingExpiryMs).toISOString() : null
+  const { data: expired, error: expireErr } = await supabase.rpc('expire_store_subscription', {
+    p_user_id: userId,
+    p_status: terminalStatus,
+    p_event_period_end: eventEnd,
+  })
+  if (expireErr) throw new Error(`atomic expiration failed: ${expireErr.message}`)
+  if (!expired?.success) throw new Error(`expiration rejected: ${expired?.error || 'unknown'}`)
+  console.log(`[Apple webhook] Expired — user ${userId} entitlement reconciled`)
 }
 
 /**

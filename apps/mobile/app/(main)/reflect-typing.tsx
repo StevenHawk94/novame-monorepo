@@ -28,7 +28,7 @@ import {
 import { setReflectBubble } from '../../src/lib/bubble-store';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags } from '../../src/lib/bags-api';
-import { getCachedSubscriptionTier } from '../../src/lib/subscription';
+import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
 import { mergedItemDictionary } from '../../src/lib/remote-items';
@@ -86,7 +86,7 @@ export default function ReflectTypingScreen() {
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [editOpen, setEditOpen] = useState(false);
-  const isPaid = getCachedSubscriptionTier() !== 'free';
+  const isPaid = useSubscriptionTier() !== 'free';
 
   const phaseRef = useRef(phase);
   phaseRef.current = phase;

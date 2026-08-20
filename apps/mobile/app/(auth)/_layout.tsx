@@ -1,10 +1,7 @@
 import { Stack } from 'expo-router';
 
 /**
- * Auth flow layout placeholder.
- *
- * Stage 3 will add screens: sign-in, sign-up, magic-link callback,
- * password reset, etc.
+ * Passwordless authentication and session-bootstrap routes.
  */
 export default function AuthLayout() {
   return (
