@@ -56,7 +56,7 @@ interface RemoteItemsState {
 }
 
 let memo: RemoteItemsState | null | undefined;
-let refreshInflight: Promise<void> | null = null;
+let refreshInflight: Promise<boolean> | null = null;
 
 function readState(): RemoteItemsState | null {
   if (memo !== undefined) return memo;
@@ -70,18 +70,18 @@ function readState(): RemoteItemsState | null {
 }
 
 /** Lazy six-hour refresh; concurrent consumers share one request. */
-export function refreshRemoteItems(options?: { force?: boolean }): Promise<void> {
+export function refreshRemoteItems(options?: { force?: boolean }): Promise<boolean> {
   const previous = readState();
   const now = Date.now();
   if (!options?.force && previous && now - previous.fetchedAtMs < REMOTE_ITEMS_TTL_MS) {
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
   if (
     !options?.force
     && previous?.lastAttemptAtMs
     && now - previous.lastAttemptAtMs < REMOTE_ITEMS_RETRY_MS
   ) {
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
   if (refreshInflight) return refreshInflight;
   refreshInflight = (async () => {
@@ -95,20 +95,22 @@ export function refreshRemoteItems(options?: { force?: boolean }): Promise<void>
     storage.set(kRemoteItems.name, JSON.stringify(attempted));
     memo = attempted;
     try {
-      const bucket = Math.floor(now / REMOTE_ITEMS_TTL_MS);
-      const res = await fetch(`${MANIFEST_URL}?v=${bucket}`);
-      if (!res.ok) return;
+      const version = options?.force ? now : Math.floor(now / REMOTE_ITEMS_TTL_MS);
+      const res = await fetch(`${MANIFEST_URL}?v=${version}`, {
+        cache: options?.force ? 'no-store' : 'default',
+      });
+      if (!res.ok) return false;
       const data = (await res.json()) as {
         version?: number | string;
         items?: RemoteItem[];
         keywordPatches?: RemoteKeywordPatch[];
       };
-      if (!Array.isArray(data.items)) return;
+      if (!Array.isArray(data.items)) return false;
       if (previous && String(previous.version) === String(data.version ?? 1)) {
         const refreshed = { ...previous, fetchedAtMs: Date.now(), lastAttemptAtMs: now };
         storage.set(kRemoteItems.name, JSON.stringify(refreshed));
         memo = refreshed;
-        return;
+        return true;
       }
       const valid = data.items.filter(
         (it) => it && typeof it.id === 'string' && typeof it.name === 'string' && it.id.length > 0,
@@ -131,12 +133,14 @@ export function refreshRemoteItems(options?: { force?: boolean }): Promise<void>
             : `${R2_BASE}/Items/${encodeURIComponent(item.id)}.webp`;
           return ExpoImage.prefetch(uri, 'disk');
         }));
-        if (results.some((ok) => !ok)) return;
+        if (results.some((ok) => !ok)) return false;
       }
       storage.set(kRemoteItems.name, JSON.stringify(state));
       memo = state;
+      return true;
     } catch {
       // offline — cached manifest keeps serving
+      return false;
     } finally {
       refreshInflight = null;
     }

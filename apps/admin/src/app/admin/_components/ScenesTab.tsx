@@ -12,7 +12,8 @@ import { apiClient, ApiError } from '@/lib/api-client';
  *   <Stem>.webp (home background) / <Stem>-Small.webp (grid thumb).
  * Presign → browser PUTs both straight to R2 → commit verifies + merges the
  * manifest. New scenes append at the end; the app grid renders left-to-right
- * in publish order. Live in the app immediately — no release.
+ * in publish order. No app release is needed; existing devices refresh the
+ * shared catalog lazily within 6 hours.
  */
 
 type SceneRow = {
@@ -117,7 +118,7 @@ export default function ScenesTab() {
       setImage(null);
       setThumb(null);
       setPlusOnly(false);
-      alert('Scene published — live in the app now.');
+      alert('Scene published. Existing devices will pick it up on their next catalog refresh (within 6 hours).');
       void load();
     } catch (e) {
       setPhase(null);
@@ -146,7 +147,8 @@ export default function ScenesTab() {
           One combo = 2 webp files named after the scene: Stem.webp (home
           background) + Stem-Small.webp (grid thumb); spaces in the name become
           dashes. New scenes append to the end of the app grid (left-to-right).
-          Publishing updates the R2 manifest — live instantly, no release.
+          Publishing needs no app release; existing devices refresh the shared
+          catalog lazily within 6 hours.
         </p>
       </div>
 

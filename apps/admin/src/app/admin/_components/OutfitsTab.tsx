@@ -8,14 +8,14 @@ import { apiClient, ApiError } from '@/lib/api-client';
  * OutfitsTab — Bunny Closet catalog management (2026-07-30).
  *
  * Lists the outfits currently in R2's video-manifest and publishes new ones.
- * Publishing = one 3-asset combo per outfit, all named after the display name:
+ * Publishing = one 4-asset combo per outfit, all named after the display name:
  *   <Name>.webp (closet thumb) / <Name>-Bunny.webp (worn preview) /
- *   <Name>.mov (transparent Home loop video).
+ *   <Name>.mov (iOS transparent Home loop) / <Name>.webp (Android loop).
  *
- * Upload flow: presign → browser PUTs the 3 files straight to R2 (videos are
- * too big for the serverless body limit) → commit verifies all 3 landed and
+ * Upload flow: presign → browser PUTs the 4 files straight to R2 (videos are
+ * too big for the serverless body limit) → commit verifies all 4 landed and
  * merges the manifest entry. The mobile app reads the manifest at runtime, so
- * a published outfit is live in the app immediately — no app release.
+ * publishing needs no app release; existing devices refresh lazily within 6h.
  */
 
 type OutfitRow = {
@@ -26,12 +26,13 @@ type OutfitRow = {
   thumbUrl: string;
   bunnyUrl: string;
   videoUrl: string;
+  androidVideoUrl: string;
 };
 
 type GetResponse = { success: boolean; outfits?: OutfitRow[]; error?: string };
 type PresignResponse = {
   success: boolean;
-  uploads?: Record<'thumb' | 'bunny' | 'video', { url: string; contentType: string }>;
+  uploads?: Record<'thumb' | 'bunny' | 'video' | 'androidVideo', { url: string; contentType: string }>;
   error?: string;
 };
 type CommitResponse = { success: boolean; error?: string };
@@ -55,6 +56,7 @@ export default function OutfitsTab() {
   const [thumb, setThumb] = useState<File | null>(null);
   const [bunny, setBunny] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
+  const [androidVideo, setAndroidVideo] = useState<File | null>(null);
   const [phase, setPhase] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,10 +79,13 @@ export default function OutfitsTab() {
     if (!name.trim()) return 'Enter the outfit name.';
     const p = Number(price);
     if (!Number.isInteger(p) || p <= 0) return 'Price must be a positive integer.';
-    if (!thumb || !bunny || !video) return 'Pick all three files.';
+    if (!thumb || !bunny || !video || !androidVideo) return 'Pick all four files.';
     if (!thumb.name.endsWith('.webp') || thumb.size > MAX_IMAGE_BYTES) return 'Thumb must be .webp ≤ 2MB.';
     if (!bunny.name.endsWith('.webp') || bunny.size > MAX_IMAGE_BYTES) return 'Bunny preview must be .webp ≤ 2MB.';
-    if (!video.name.endsWith('.mov') || video.size > MAX_VIDEO_BYTES) return 'Video must be .mov ≤ 100MB.';
+    if (!video.name.toLowerCase().endsWith('.mov') || video.size > MAX_VIDEO_BYTES) return 'iOS video must be .mov ≤ 100MB.';
+    if (!androidVideo.name.toLowerCase().endsWith('.webp') || androidVideo.size > MAX_VIDEO_BYTES) {
+      return 'Android animation must be .webp ≤ 100MB.';
+    }
     return null;
   };
 
@@ -97,10 +102,11 @@ export default function OutfitsTab() {
       });
       if (!pre.success || !pre.uploads) throw new Error(pre.error || 'presign failed');
 
-      const files: ['thumb' | 'bunny' | 'video', File][] = [
+      const files: ['thumb' | 'bunny' | 'video' | 'androidVideo', File][] = [
         ['thumb', thumb as File],
         ['bunny', bunny as File],
         ['video', video as File],
+        ['androidVideo', androidVideo as File],
       ];
       for (const [kind, file] of files) {
         setPhase(`Uploading ${kind} (${(file.size / 1024 / 1024).toFixed(1)}MB)…`);
@@ -126,8 +132,9 @@ export default function OutfitsTab() {
       setThumb(null);
       setBunny(null);
       setVideo(null);
+      setAndroidVideo(null);
       setPlusOnly(false);
-      alert('Outfit published — live in the app now.');
+      alert('Outfit published. Existing devices will pick it up on their next catalog refresh (within 6 hours).');
       void load();
     } catch (e) {
       setPhase(null);
@@ -153,9 +160,10 @@ export default function OutfitsTab() {
       <div className="mb-6">
         <h2 className="text-xl font-bold text-black">Bunny Closet Outfits</h2>
         <p className="text-sm text-gray-500 mt-1">
-          One combo = 3 files named after the outfit: Name.webp (closet thumb),
-          Name-Bunny.webp (worn preview), Name.mov (transparent Home loop).
-          Publishing updates the R2 manifest — live in the app instantly, no release.
+          One combo = 4 files named after the outfit: Name.webp (closet thumb),
+          Name-Bunny.webp (worn preview), Name.mov (iOS transparent Home loop),
+          and Name.webp (Android animated WebP). Publishing needs no app release;
+          existing devices refresh the catalog lazily within 6 hours.
         </p>
       </div>
 
@@ -185,10 +193,16 @@ export default function OutfitsTab() {
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <FilePick label="Closet thumb (Name.webp)" accept=".webp" file={thumb} onPick={setThumb} />
           <FilePick label="Worn preview (Name-Bunny.webp)" accept=".webp" file={bunny} onPick={setBunny} />
-          <FilePick label="Home video (Name.mov)" accept=".mov,video/quicktime" file={video} onPick={setVideo} />
+          <FilePick label="iOS Home video (Name.mov)" accept=".mov,video/quicktime" file={video} onPick={setVideo} />
+          <FilePick
+            label="Android Home animation (Name.webp)"
+            accept=".webp,image/webp"
+            file={androidVideo}
+            onPick={setAndroidVideo}
+          />
         </div>
 
         <button
@@ -218,9 +232,14 @@ export default function OutfitsTab() {
                 )}
               </div>
               <div className="text-sm text-green-700 font-semibold">🍀 {o.price}</div>
-              <a href={o.videoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">
-                video
-              </a>
+              <div className="flex gap-2">
+                <a href={o.videoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">
+                  iOS MOV
+                </a>
+                <a href={o.androidVideoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">
+                  Android WebP
+                </a>
+              </div>
             </div>
             <button onClick={() => void remove(o)} className="text-xs text-red-600 border border-red-300 rounded px-2 py-1">
               Remove

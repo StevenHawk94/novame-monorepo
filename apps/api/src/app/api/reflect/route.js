@@ -3,7 +3,6 @@ import { verifyToken } from '@/lib/auth-guard'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
 import { matchItems, XP_RULES } from '@novame/engine'
-import { callAI, parseAIJson } from '@/lib/ai'
 import {
   REFLECT_ANALYZER_VERSION,
   REFLECT_COPY_VERSION,
@@ -17,15 +16,6 @@ export const runtime = 'edge'
 
 const MAX_BODY_CHARS = 5000
 const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
-
-// Plus cute story (流程2, PLACEHOLDER copy): a tiny warm story of the day
-// woven from the picked items, to share with the paired person.
-const STORY_SYSTEM_PROMPT = `You write a tiny, cute story (3-5 sentences, max 90 words) about someone's day, woven from the items they picked and any note they left. Warm, playful, second person ("you"), no emoji spam (one or two is fine).
-
-Also write one short caption per item (max 12 words) that matches the story.
-
-Return ONLY JSON: { "story": "<the story>", "items": { "<itemId>": "<caption>", ... } }. No prose, no markdown.`
-
 
 /** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
 function isoWeek(dateStr) {
@@ -58,7 +48,7 @@ export async function POST(request) {
 
     const {
       userId, promptId, body: rawBody, localDate, sourceKit, friendUserId,
-      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, wantStory,
+      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes,
     } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -256,7 +246,6 @@ export async function POST(request) {
     // Plus AI pipeline. Typing reflections run exactly two calls in parallel:
     // reusable analysis + private titles/bunny copy. The local admin dictionary
     // comparison is queued by persistReflectAnalyzerResult and never blocks.
-    let story = null
     let bubble = null
     if (reflectId && isPaid && hasConsent) {
       const noted = new Set()
@@ -361,20 +350,6 @@ export async function POST(request) {
             success: false, refId: reflectId, error: message,
           })
         }
-      } else if (wantStory === true && mode === 'prompt' && matchedItems.length > 0) {
-        try {
-          const names = matchedItems.map((item) => `${item.itemId}: ${item.displayName}`).join('\n')
-          const response = await callAI({
-            systemInstruction: STORY_SYSTEM_PROMPT,
-            userText: `Items:\n${names}\n\nJournal:\n${body || '(none)'}`,
-            generationConfig: { temperature: 0.6, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } },
-          })
-          const parsed = parseAIJson(response.text)
-          if (typeof parsed?.story === 'string' && parsed.story.trim()) story = parsed.story.trim().slice(0, 600)
-          await applyDescriptions(parsed?.items)
-        } catch (storyErr) {
-          console.warn('[reflect] story failed (non-fatal):', storyErr && storyErr.message)
-        }
       } else if (targets.length > 0 && body.trim().length >= 10) {
         try {
           const copy = await runReflectCopy({
@@ -401,7 +376,7 @@ export async function POST(request) {
       if (finalSharedItems) sharedItems = finalSharedItems
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, sharedItems, bubble, story })
+    return NextResponse.json({ success: true, ...result, matchedItems, sharedItems, bubble })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

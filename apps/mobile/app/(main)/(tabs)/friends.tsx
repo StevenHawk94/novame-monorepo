@@ -220,11 +220,23 @@ export default function FriendsScreen() {
                 </OffsetCard>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.feedScroll}>
+              <ScrollView
+                style={styles.feedList}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.feedScroll,
+                  shownFeed.length === 0 && styles.emptyFeedScroll,
+                ]}
+              >
                 {shownFeed.length === 0 ? (
-                  <Text style={styles.emptyFeedText}>
-                    Nothing yet today — their memories will land here.
-                  </Text>
+                  <View style={styles.emptyFeed}>
+                    <Image
+                      source={ICONS.reflectJournalling}
+                      style={styles.emptyFeedIcon}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.emptyFeedText}>Your person do not reflect anything yet.</Text>
+                  </View>
                 ) : (
                   shownFeed.map((e, feedIndex) => (
                     <Pressable
@@ -495,7 +507,11 @@ const styles = StyleSheet.create({
   listChipIcon: { width: 26, height: 26 },
   listChipText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
 
+  feedList: { flex: 1 },
   feedScroll: { gap: 10, paddingBottom: 8 },
+  emptyFeedScroll: { flexGrow: 1, justifyContent: 'center' },
+  emptyFeed: { alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 24 },
+  emptyFeedIcon: { width: 76, height: 76 },
   // Paired feed card (mock 2026-08-08): header row + full wrapping tile grid.
   pairCard: {
     backgroundColor: '#F8DF91', borderRadius: 22, paddingVertical: 12, paddingHorizontal: 12,
@@ -509,8 +525,8 @@ const styles = StyleSheet.create({
   pairCardTimeCol: { alignItems: 'flex-end', gap: 5 },
   pairCardTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' },
   emptyFeedText: {
-    fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A7A63',
-    textAlign: 'center', lineHeight: 21, paddingVertical: 28, paddingHorizontal: 14,
+    fontSize: 14, fontFamily: 'Inter_700Bold', color: '#1F1A16',
+    textAlign: 'center', lineHeight: 21,
   },
   feedRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

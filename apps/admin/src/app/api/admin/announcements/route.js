@@ -38,10 +38,13 @@ export async function POST(request) {
 
   try {
     const body = await request.json()
-    const { title, content, type, target_users, end_at } = body
+    const { title, content, image_url, type, target_users, end_at } = body
 
-    if (!title?.trim() || !content?.trim()) {
-      return Response.json({ error: '缺少标题或内容' }, { status: 400 })
+    if (!title?.trim() || !content?.trim() || !image_url?.trim()) {
+      return Response.json({ error: '缺少标题、图片或内容' }, { status: 400 })
+    }
+    if (!/^https:\/\//i.test(image_url.trim())) {
+      return Response.json({ error: '公告图片地址无效' }, { status: 400 })
     }
 
     const supabase = getSupabase()
@@ -51,6 +54,7 @@ export async function POST(request) {
       .insert({
         title,
         content,
+        image_url: image_url.trim(),
         type: type || 'info',
         target_users: target_users || 'all',
         is_active: true,

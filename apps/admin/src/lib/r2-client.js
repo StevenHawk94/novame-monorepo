@@ -79,13 +79,14 @@ export function getPublicUrl() {
  *
  * Returns the public URL of the uploaded asset.
  */
-export async function r2PutObject({ key, body, contentType }) {
+export async function r2PutObject({ key, body, contentType, cacheControl }) {
   const client = getR2Client();
   const cmd = new PutObjectCommand({
     Bucket: getBucketName(),
     Key: key,
     Body: body,
     ContentType: contentType || 'application/octet-stream',
+    ...(cacheControl ? { CacheControl: cacheControl } : {}),
   });
   await client.send(cmd);
   return `${getPublicUrl()}/${key}`;
@@ -195,4 +196,38 @@ export async function r2PutManifest(manifest) {
     body,
     contentType: 'application/json',
   });
+  await r2BumpContentVersion('assets');
+}
+
+const CONTENT_VERSION_KEY = 'content-version.json';
+
+/**
+ * Bump the tiny public version pointer consumed on app launch. The pointer is
+ * deliberately no-store: clients only download large manifests/assets when
+ * one of these two values changes.
+ */
+export async function r2BumpContentVersion(kind) {
+  let current = {};
+  try {
+    current = JSON.parse(
+      new TextDecoder().decode(await r2GetObjectBytes(CONTENT_VERSION_KEY)),
+    );
+  } catch {
+    // First publish: create the pointer from scratch.
+  }
+  const stamp = String(Date.now());
+  const next = {
+    itemsVersion: String(current.itemsVersion || '0'),
+    assetsVersion: String(current.assetsVersion || '0'),
+    updatedAt: new Date().toISOString(),
+  };
+  if (kind === 'items') next.itemsVersion = stamp;
+  if (kind === 'assets') next.assetsVersion = stamp;
+  await r2PutObject({
+    key: CONTENT_VERSION_KEY,
+    body: new TextEncoder().encode(JSON.stringify(next)),
+    contentType: 'application/json',
+    cacheControl: 'no-store, max-age=0',
+  });
+  return next;
 }

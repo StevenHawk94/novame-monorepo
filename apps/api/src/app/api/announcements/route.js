@@ -29,11 +29,6 @@ export async function GET(request) {
     // was trusted from the query string, letting any anon caller
     // see paid-tier marketing content.
     //
-    // No live mobile caller right now (announcement display is
-    // not yet wired up in app), so adding the guard is safe.
-    // When the announcement UI is implemented, it will go through
-    // apiClient which attaches the token automatically.
-    //
     // We also no longer trust query userTier -- we look up the
     // user's tier from the profiles row using the verified user.id
     // so attackers cannot promote themselves to see paid-only
@@ -71,6 +66,7 @@ export async function GET(request) {
       .from('app_announcements')
       .select('*')
       .eq('is_active', true)
+      .not('image_url', 'is', null)
       .lte('start_at', now)
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })

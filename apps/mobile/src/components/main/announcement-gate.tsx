@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions } from 'react-native';
+import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 
 import { getCurrentSession } from '@/lib/auth';
 import {
-  fetchUnreadAnnouncement,
+  clearPreparedAnnouncement,
   markAnnouncementRead,
+  prepareUnreadAnnouncement,
   type Announcement,
 } from '@/lib/announcements-api';
 import {
@@ -33,8 +35,9 @@ const THROTTLE_MS = 10 * 60 * 1000; // Q1b = 10 min between foreground checks
  */
 export function AnnouncementGate() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [announcementUserId, setAnnouncementUserId] = useState<string | null>(null);
   const lastCheckRef = useRef(0);
-  // Long admin messages scroll instead of pushing "Got it" off short screens.
+  // Long admin messages scroll instead of pushing the CTA off short screens.
   const { height: winHeight } = useWindowDimensions();
 
   const check = useCallback(async () => {
@@ -45,12 +48,12 @@ export function AnnouncementGate() {
     const userId = session?.user?.id;
     if (!userId) return;
 
-    // Advance the throttle only once we actually have a user, so a
-    // signed-out moment does not burn the window.
-    lastCheckRef.current = now;
-
-    const next = await fetchUnreadAnnouncement(userId);
+    const next = await prepareUnreadAnnouncement(userId);
     if (next) {
+      // Only a fully prepared announcement consumes the throttle window. A
+      // slow/failed image remains eligible for the next foreground retry.
+      lastCheckRef.current = now;
+      setAnnouncementUserId(userId);
       setAnnouncement(next);
       // Coordinator (announcement > claim > skin): request a slot; do NOT
       // mark read here. markRead fires only when we actually become the
@@ -63,22 +66,11 @@ export function AnnouncementGate() {
   const active = useActiveModalSlot();
   const isActive = active === 'announcement';
 
-  // Mark read the instant we actually display (active + have content) -- Q2
-  // "read on display" semantics, now coordinated so it never fires while
-  // queued behind a higher-priority modal (none exists above announcement,
-  // but this keeps the rule uniform and correct if priorities change).
   const announcementId = announcement?.id;
   useEffect(() => {
-    if (!isActive || !announcementId) return;
-    let cancelled = false;
-    void getCurrentSession().then((session) => {
-      const userId = session?.user?.id;
-      if (!cancelled && userId) void markAnnouncementRead(userId, announcementId);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive, announcementId]);
+    if (!isActive || !announcementId || !announcementUserId) return;
+    void markAnnouncementRead(announcementUserId, announcementId);
+  }, [isActive, announcementId, announcementUserId]);
 
   // Release the slot when this gate unmounts (e.g. user navigates away from
   // Home) so a stuck request never blocks claim/skin.
@@ -98,7 +90,11 @@ export function AnnouncementGate() {
   if (!announcement || !isActive) return null;
 
   const close = () => {
+    if (announcementUserId && announcementId) {
+      clearPreparedAnnouncement(announcementUserId, announcementId);
+    }
     setAnnouncement(null);
+    setAnnouncementUserId(null);
     releaseModalSlot('announcement');
   };
 
@@ -109,25 +105,27 @@ export function AnnouncementGate() {
       animationType="fade"
       onRequestClose={close}
     >
-      <Pressable style={styles.backdrop} onPress={close}>
+      <View style={styles.backdrop}>
         <Pressable style={styles.card} onPress={() => {}}>
-          <Image
-            source={require('../../../assets/adaptive-icon.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
           <Text style={styles.title}>{announcement.title}</Text>
           <ScrollView
-            style={{ maxHeight: winHeight * 0.45, alignSelf: 'stretch' }}
+            style={{ maxHeight: winHeight * 0.62, alignSelf: 'stretch' }}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            <ExpoImage
+              source={{ uri: announcement.image_url! }}
+              style={styles.image}
+              contentFit="contain"
+              cachePolicy="disk"
+            />
             <Text style={styles.body}>{announcement.content}</Text>
           </ScrollView>
           <Pressable style={styles.button} onPress={close}>
-            <Text style={styles.buttonText}>Got it</Text>
+            <Text style={styles.buttonText}>Start Today</Text>
           </Pressable>
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
@@ -135,49 +133,59 @@ export function AnnouncementGate() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15, 8, 35, 0.6)',
+    backgroundColor: 'rgba(15, 8, 5, 0.64)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 20,
   },
   card: {
     width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#4A3423',
-    borderRadius: 24,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    maxWidth: 390,
+    maxHeight: '90%',
+    backgroundColor: '#6E3F2C',
+    borderRadius: 28,
+    paddingTop: 30,
+    paddingBottom: 22,
+    paddingHorizontal: 18,
     alignItems: 'center',
-  },
-  icon: {
-    width: 64,
-    height: 64,
-    marginBottom: 14,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    marginBottom: 14,
+    marginBottom: 18,
+    paddingHorizontal: 8,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  image: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 18,
+    backgroundColor: '#F9EDD4',
+    marginBottom: 22,
   },
   body: {
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 15,
-    lineHeight: 23,
+    color: '#FFFFFF',
+    fontSize: 17,
+    lineHeight: 24,
+    fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 8,
   },
   button: {
-    backgroundColor: '#C96F2A',
-    borderRadius: 999,
+    backgroundColor: '#FFF4D8',
+    borderRadius: 18,
     paddingVertical: 15,
     alignItems: 'center',
     alignSelf: 'stretch',
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#4A2F1E',
+    fontSize: 17,
     fontFamily: 'Inter_700Bold',
   },
 });

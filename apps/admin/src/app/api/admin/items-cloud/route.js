@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/auth/require-admin'
-import { r2GetObjectBytes, r2HeadObject, r2PutObject } from '@/lib/r2-client'
+import { r2BumpContentVersion, r2GetObjectBytes, r2HeadObject, r2PutObject } from '@/lib/r2-client'
 
 export const runtime = 'nodejs'
 const KEY = 'Items/items-manifest.json'
@@ -30,6 +30,7 @@ async function publish(next, reason) {
   const manifest = { ...next, version, publishedAt: new Date().toISOString(), history }
   await r2PutObject({ key: `Items/versions/${version}.json`, body: bytes(manifest), contentType: 'application/json' })
   await r2PutObject({ key: KEY, body: bytes(manifest), contentType: 'application/json' })
+  await r2BumpContentVersion('items')
   return manifest
 }
 

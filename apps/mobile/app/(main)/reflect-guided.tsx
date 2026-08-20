@@ -217,7 +217,6 @@ export default function ReflectGuidedScreen() {
         itemId: id,
         note: notes[id]?.trim() || undefined,
       })),
-      wantStory: false,
     });
     setSubmitting(false);
     if (res.ok) {

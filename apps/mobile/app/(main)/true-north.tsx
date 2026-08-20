@@ -16,6 +16,7 @@ import { GridBackground } from '../../src/components/ui/grid-background';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { SpringPop } from '../../src/components/ui/spring-pop';
 import {
   fetchStatus,
   getCachedStatus,
@@ -288,10 +289,15 @@ function Reveal({
 
   // Podium card, extracted so the 2-1-3 layout below stays readable.
   const podium = (rank: number) => (
-    <View style={[styles.podiumCard, rank === 0 && styles.podiumCardFirst]}>
+    <SpringPop
+      animate={showReward}
+      boundedBounce
+      delay={rank * 110}
+      style={[styles.podiumCard, rank === 0 && styles.podiumCardFirst]}
+    >
       <Image source={medals[rank]} style={styles.podiumMedal} resizeMode="contain" />
       <Text style={styles.podiumPhrase}>{TRUE_NORTH_PHRASES[ranking[rank]]}</Text>
-    </View>
+    </SpringPop>
   );
 
   return (
@@ -299,21 +305,27 @@ function Reveal({
       {/* Design: brown banner headline */}
       <View style={styles.revealBanner}>
         <Text style={styles.revealBannerText}>
-          The True North direction of your life at the moment
+          The true north direction of your life at the moment
         </Text>
       </View>
 
-      {showReward && <CloverBurst amount={XP_RULES.trueNorth.award} />}
+      {showReward && (
+        <View pointerEvents="none" style={styles.revealReward}>
+          <CloverBurst amount={XP_RULES.trueNorth.award} />
+        </View>
+      )}
 
       {/* Podium: #1 raised center, #2 left, #3 right */}
-      <View style={styles.podiumFirstRow}>{podium(0)}</View>
-      <View style={styles.podiumRow}>
-        {podium(1)}
-        {podium(2)}
+      <View style={styles.podiumBlock}>
+        <View style={styles.podiumFirstRow}>{podium(0)}</View>
+        <View style={styles.podiumRow}>
+          {podium(1)}
+          {podium(2)}
+        </View>
       </View>
 
       {/* What matters most — five points from each top-two dimension */}
-      <View style={styles.revealCard}>
+      <SpringPop animate={showReward} boundedBounce delay={330} style={styles.revealCard}>
         <View style={styles.revealCardHeader}>
           <Text style={styles.revealCardEmoji}>{'🎯'}</Text>
           <Text style={styles.revealCardTitle}>What matters to you most:</Text>
@@ -321,10 +333,10 @@ function Reveal({
         {focusPoints.map((line, index) => (
           <Text key={`${index}:${line}`} style={styles.bullet}>{'•'}  {line}</Text>
         ))}
-      </View>
+      </SpringPop>
 
       {/* What to release — the last-ranked dimension */}
-      <View style={styles.revealCard}>
+      <SpringPop animate={showReward} boundedBounce delay={440} style={styles.revealCard}>
         <View style={styles.revealCardHeader}>
           <Text style={styles.revealCardEmoji}>{'🍃'}</Text>
           <Text style={styles.revealCardTitle}>What you should forgive and forget</Text>
@@ -332,7 +344,7 @@ function Reveal({
         {TRUE_NORTH_RELEASE_POINTS[bottom].map((line) => (
           <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
         ))}
-      </View>
+      </SpringPop>
 
       <Pressable onPress={onDone} style={styles.revealClose} hitSlop={10}>
         <Text style={styles.revealCloseX}>✕</Text>
@@ -362,9 +374,14 @@ const styles = StyleSheet.create({
   rankBadgeText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
   rankPhrase: { flex: 1, fontSize: 16, fontFamily: 'Inter_600SemiBold' },
 
-  revealScroll: { paddingVertical: 16, paddingBottom: 40, gap: 26 },
+  // Compress the complete result flow by about 10% so every section moves up
+  // together while preserving the same visual rhythm throughout the page.
+  revealScroll: { paddingVertical: 14, paddingBottom: 36, gap: 23 },
   revealBanner: { backgroundColor: '#4A3220', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18 },
   revealBannerText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', lineHeight: 22 },
+  // Reward toast is decorative and must not create a temporary layout gap.
+  revealReward: { position: 'absolute', top: 70, left: 0, right: 0, zIndex: 5, alignItems: 'center' },
+  podiumBlock: { gap: 23 },
   podiumFirstRow: { alignItems: 'center' },
   podiumRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   podiumCard: {

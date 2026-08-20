@@ -14,15 +14,16 @@ export const runtime = 'nodejs';
  *
  * The outfit catalog lives in R2's video-manifest.json under `outfits`; the
  * mobile app reads it at runtime, so publishing here goes live without an
- * app release. Each outfit is a 3-asset trio at fixed keys derived from the
+ * app release. Each outfit is a 4-asset set at fixed keys derived from the
  * display name:
  *   Outfits/<Name>.webp          closet grid thumb
  *   Outfits/<Name>-Bunny.webp    worn preview
- *   Character Videos/<Name>.mov  transparent Home loop
+ *   Character Videos/<Name>.mov  iOS transparent Home loop
+ *   Character Videos-Android/<Name>.webp Android animated-alpha Home loop
  *
- * Upload flow (see ./presign): browser PUTs the three files straight to R2
+ * Upload flow (see ./presign): browser PUTs the four files straight to R2
  * with presigned URLs (videos exceed Vercel's body limit), then POSTs here
- * to verify all three landed and merge the catalog entry into the manifest.
+ * to verify all four landed and merge the catalog entry into the manifest.
  *
  * GET    → { outfits: [entry + publicUrls + video size] }
  * POST   → body { name, price, plusOnly } — verify assets, upsert entry
@@ -36,11 +37,19 @@ function assetKeysFor(name) {
     thumb: `Outfits/${name}.webp`,
     bunny: `Outfits/${name}-Bunny.webp`,
     video: `Character Videos/${name}.mov`,
+    androidVideo: `Character Videos-Android/${name}.webp`,
   };
 }
 
 function encodeKey(key) {
   return key.split('/').map(encodeURIComponent).join('/');
+}
+
+function androidVideoKeyFor(outfit) {
+  if (outfit.androidVideo) return outfit.androidVideo;
+  const filename = String(outfit.video || `${outfit.name}.mov`).split('/').pop();
+  const basename = (filename || outfit.name).replace(/\.mov$/i, '');
+  return `Character Videos-Android/${basename}.webp`;
 }
 
 export async function GET() {
@@ -54,6 +63,7 @@ export async function GET() {
       thumbUrl: `${base}/${encodeKey(o.thumb)}`,
       bunnyUrl: `${base}/${encodeKey(o.bunny)}`,
       videoUrl: `${base}/${encodeKey(o.video)}`,
+      androidVideoUrl: `${base}/${encodeKey(androidVideoKeyFor(o))}`,
     }));
     return NextResponse.json({ success: true, outfits });
   } catch (e) {
@@ -76,14 +86,15 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Invalid price' }, { status: 400 });
     }
 
-    // All three assets must exist before the catalog points at them.
+    // All four assets must exist before the catalog points at them.
     const keys = assetKeysFor(trimmed);
     const heads = await Promise.all([
       r2HeadObject(keys.thumb),
       r2HeadObject(keys.bunny),
       r2HeadObject(keys.video),
+      r2HeadObject(keys.androidVideo),
     ]);
-    const missing = ['thumb', 'bunny', 'video'].filter((_, i) => !heads[i]);
+    const missing = ['thumb', 'bunny', 'video', 'androidVideo'].filter((_, i) => !heads[i]);
     if (missing.length > 0) {
       return NextResponse.json(
         { success: false, error: `Assets not uploaded yet: ${missing.join(', ')}` },

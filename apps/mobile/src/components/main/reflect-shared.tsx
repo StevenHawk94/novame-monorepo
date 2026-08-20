@@ -377,14 +377,6 @@ export function ReflectResultView({
           </View>
         </SpringPop>
 
-        {result.story ? (
-          <SpringPop delay={240} boundedBounce>
-            <View style={s.storyCard}>
-              <Text style={s.storyTitle}>{'✨ A little story of your day'}</Text>
-              <Text style={s.storyBody}>{result.story}</Text>
-            </View>
-          </SpringPop>
-        ) : null}
       </ScrollView>
 
       <View style={s.resultFooter}>
@@ -493,11 +485,6 @@ const s = StyleSheet.create({
   itemsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingHorizontal: 2 },
   itemCount: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
   itemsEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#9A8770', textAlign: 'center', paddingVertical: 8 },
-  storyCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 18 },
-  storyTitle: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#161311', marginBottom: 8 },
-  storyBody: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 23 },
-
-
   resultFooter: { gap: 14, paddingTop: 6 },
   claimBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },
   claimBtnText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },

@@ -18,6 +18,7 @@ type Props = {
   delay?: number;
   clampOvershoot?: boolean;
   boundedBounce?: boolean;
+  animate?: boolean;
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 };
@@ -26,13 +27,19 @@ export function SpringPop({
   delay = 0,
   clampOvershoot = false,
   boundedBounce = false,
+  animate = true,
   style,
   children,
 }: Props) {
-  const scale = useSharedValue(boundedBounce ? 0 : 0.3);
-  const opacity = useSharedValue(0);
+  const scale = useSharedValue(animate ? (boundedBounce ? 0 : 0.3) : 1);
+  const opacity = useSharedValue(animate ? 0 : 1);
 
   useEffect(() => {
+    if (!animate) {
+      scale.value = 1;
+      opacity.value = 1;
+      return;
+    }
     scale.value = withDelay(
       delay,
       boundedBounce
@@ -46,7 +53,7 @@ export function SpringPop({
           }),
     );
     opacity.value = withDelay(delay, withTiming(1, { duration: 180 }));
-  }, [scale, opacity, delay, clampOvershoot, boundedBounce]);
+  }, [scale, opacity, delay, clampOvershoot, boundedBounce, animate]);
 
   const anim = useAnimatedStyle(() => ({
     opacity: opacity.value,

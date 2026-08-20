@@ -86,7 +86,7 @@ export default function ItemsTab() {
       await apiClient.post('/api/admin/items-cloud', { action: 'commitBatch', entries });
       setFiles([]); setRules(null);
       await load();
-      alert('Batch published. Apps will fetch it silently on next launch.');
+      alert('Batch published. Existing devices will fetch it on the next Memories/Reflect refresh after the local 6-hour TTL.');
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Upload failed');
     } finally { setBusy(''); }

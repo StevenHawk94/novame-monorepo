@@ -35,6 +35,8 @@ export interface OutfitDef {
   thumb: string;
   bunny: string;
   video: string;
+  /** Explicit Android animated WebP key; derived from video for older manifests. */
+  androidVideo?: string;
 }
 
 /** Public CDN URL for an R2 object key, segment-encoding spaces etc. */
@@ -86,12 +88,13 @@ const VIDEO_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios';
 const VIDEO_EXTENSION = Platform.OS === 'android' ? 'webp' : 'mov';
 
 /**
- * The manifest's `video` field remains the canonical iOS object key so old and
- * newly published catalogs stay compatible. Android mirrors the same basename
- * in its own R2 folder with a .webp extension.
+ * The manifest's `video` field remains the canonical iOS object key. New
+ * entries include `androidVideo`; old entries derive the Android mirror path
+ * from the iOS basename for backward compatibility.
  */
 function outfitVideoObjectKey(outfit: OutfitDef): string {
   if (Platform.OS !== 'android') return outfit.video;
+  if (outfit.androidVideo) return outfit.androidVideo;
   const filename = outfit.video.split('/').pop() || `${outfit.name}.mov`;
   const basename = filename.replace(/\.mov$/i, '');
   return `Character Videos-Android/${basename}.webp`;

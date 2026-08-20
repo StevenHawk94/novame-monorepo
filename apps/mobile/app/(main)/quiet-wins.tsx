@@ -19,6 +19,7 @@ import {
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { SpringPop } from '../../src/components/ui/spring-pop';
 
 type Phase = 'pick' | 'done';
 
@@ -153,11 +154,22 @@ export default function QuietWinsScreen() {
         <View style={styles.feedbackWrap}>
           <ScrollView contentContainerStyle={styles.feedbackScroll} showsVerticalScrollIndicator={false}>
             {xpAwarded > 0 && <CloverBurst amount={xpAwarded} />}
-            {feedback?.lines.map((line, i) => (
-              <Text key={i} style={[styles.feedbackLine, { color: kit.text }]}>
-                {line}
-              </Text>
-            ))}
+            <SpringPop boundedBounce>
+              <View style={styles.feedbackCard}>
+                {feedback?.lines.map((line, i) => (
+                  <Text
+                    key={i}
+                    style={[
+                      styles.feedbackLine,
+                      i === feedback.lines.length - 1 && styles.feedbackLineLast,
+                      { color: kit.text },
+                    ]}
+                  >
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            </SpringPop>
           </ScrollView>
           <Pressable
             onPress={() => router.back()}
@@ -220,6 +232,12 @@ const styles = StyleSheet.create({
 
   feedbackWrap: { flex: 1 },
   feedbackScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 40 },
+  feedbackCard: {
+    backgroundColor: '#FDF6E5', borderRadius: 24, paddingVertical: 34, paddingHorizontal: 22,
+    justifyContent: 'center',
+    shadowColor: '#45643C', shadowOpacity: 0.16, shadowRadius: 1,
+    shadowOffset: { width: 1, height: 2 }, elevation: 2,
+  },
   feedbackLine: {
     fontSize: 18,
     fontFamily: 'Inter_500Medium',
@@ -227,4 +245,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 18,
   },
+  feedbackLineLast: { marginBottom: 0 },
 });

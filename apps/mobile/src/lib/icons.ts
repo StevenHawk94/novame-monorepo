@@ -72,6 +72,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obQuestion: require('../../assets/onboarding/ob-2.png'),
   obWidgetPhone: require('../../assets/onboarding/ob-7.png'),
   obHowItWorksGif: require('../../assets/onboarding/ob-6.gif'),
+  reflectJournalling: require('../../assets/Icons/reflect-journalling.png'),
   obPrivacyPanel: require('../../assets/onboarding/ob-9.webp'),
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };

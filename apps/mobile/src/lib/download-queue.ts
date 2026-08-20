@@ -347,6 +347,52 @@ export function startDownloadQueue(): void {
   void ensureP0Ready().then(() => enqueueP1());
 }
 
+function taskRevision(t: DLTask): string {
+  return [t.kind, t.filename, t.dir, t.size, t.product?.filename ?? ''].join('|');
+}
+
+/**
+ * Reconcile an already-running queue with a newly downloaded manifest.
+ * Existing valid downloads stay untouched; changed/new assets are queued in
+ * the background. This is what makes a tiny launch-time version check useful
+ * without blocking the native splash or re-downloading the whole catalog.
+ */
+export function stageLatestManifest(): void {
+  const manifest = getCachedManifest();
+  if (!manifest) return;
+
+  let retryAfterActiveTask = false;
+  for (const incoming of [...buildP0Tasks(manifest), ...buildP1Tasks(manifest)]) {
+    const index = tasks.findIndex((task) => task.key === incoming.key);
+    if (index < 0) {
+      tasks.push(incoming);
+      continue;
+    }
+
+    const existing = tasks[index];
+    if (taskRevision(existing) !== taskRevision(incoming)) {
+      if (existing.status === 'active') {
+        retryAfterActiveTask = true;
+        continue;
+      }
+      tasks[index] = incoming;
+      continue;
+    }
+
+    if (
+      (existing.status === 'failed' || existing.status === 'done')
+      && !isTaskCached(incoming)
+    ) {
+      tasks[index] = incoming;
+    }
+  }
+
+  pump(manifest.baseUrl);
+  if (retryAfterActiveTask) {
+    setTimeout(stageLatestManifest, DOWNLOAD_ATTEMPT_TIMEOUT_MS + 250);
+  }
+}
+
 /** Reset all queue state (e.g. on sign-out). Does not delete cached files. */
 export function resetDownloadQueue(): void {
   tasks = [];

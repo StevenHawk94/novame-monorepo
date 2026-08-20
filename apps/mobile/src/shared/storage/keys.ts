@@ -81,6 +81,9 @@ export const kRemoteItems = defineKey('burrow_remote_items', 'device');
 /** Shared R2 video/scene manifest. Refreshed lazily with its own 6h TTL. */
 export const kR2VideoManifest = defineKey('burrow_r2_video_manifest', 'device');
 
+/** Tiny R2 content pointer checked fire-and-forget on every app launch. */
+export const kContentVersions = defineKey('burrow_content_versions', 'device');
+
 /** Latest companion bubble line from a reflection (shown on Home, then fades). */
 export const kBubble = defineKey('novame_bubble', 'user');
 

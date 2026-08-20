@@ -60,10 +60,39 @@ export default function AdminAnnouncements() {
     end_at: '',
   });
   const [adding, setAdding] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  const resetComposer = () => {
+    setShowAdd(false);
+    setForm({ title: '', content: '', type: 'info', target_users: 'all', end_at: '' });
+    setImageFile(null);
+    setImagePreview('');
+  };
+
+  const handleImageChange = (file: File | null) => {
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      alert('仅支持 PNG、JPG 或 WEBP 图片');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert('图片不能超过 8 MB');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const load = async () => {
     setLoading(true);
@@ -97,16 +126,34 @@ export default function AdminAnnouncements() {
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.content.trim()) {
-      alert('请填写标题和内容');
+    if (!form.title.trim() || !form.content.trim() || !imageFile) {
+      alert('请填写标题、上传图片并填写详情文字');
       return;
     }
     setAdding(true);
     try {
-      const data = await apiClient.post<{ success?: boolean }>('/api/admin/announcements', form);
+      const presign = await apiClient.post<{
+        success?: boolean;
+        uploadUrl?: string;
+        publicUrl?: string;
+        contentType?: string;
+      }>('/api/admin/announcements/presign', { contentType: imageFile.type });
+      if (!presign.success || !presign.uploadUrl || !presign.publicUrl) {
+        throw new Error('Unable to prepare upload');
+      }
+      const uploaded = await fetch(presign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': presign.contentType || imageFile.type },
+        body: imageFile,
+      });
+      if (!uploaded.ok) throw new Error(`Upload failed (${uploaded.status})`);
+
+      const data = await apiClient.post<{ success?: boolean }>('/api/admin/announcements', {
+        ...form,
+        image_url: presign.publicUrl,
+      });
       if (data.success) {
-        setShowAdd(false);
-        setForm({ title: '', content: '', type: 'info', target_users: 'all', end_at: '' });
+        resetComposer();
         load();
         alert('公告创建成功！');
       } else alert('创建失败');
@@ -175,6 +222,13 @@ export default function AdminAnnouncements() {
                   <h3 className="font-bold text-gray-900 text-lg mb-2">
                     {a.title}
                   </h3>
+                  {a.image_url && (
+                    <img
+                      src={a.image_url}
+                      alt={a.title}
+                      className="w-full max-w-sm aspect-square object-contain rounded-xl bg-amber-50 mb-3"
+                    />
+                  )}
                   <p className="text-gray-600 whitespace-pre-wrap">{a.content}</p>
                   <div className="flex gap-4 mt-3 text-xs text-gray-400">
                     <span>创建: {new Date(a.created_at).toLocaleDateString()}</span>
@@ -220,7 +274,7 @@ export default function AdminAnnouncements() {
             <div className="p-5 border-b flex justify-between items-center">
               <h2 className="text-lg font-bold">新建公告</h2>
               <button
-                onClick={() => setShowAdd(false)}
+                onClick={resetComposer}
                 className="text-gray-400 hover:text-gray-600 text-xl"
               >
                 ×
@@ -238,11 +292,22 @@ export default function AdminAnnouncements() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">内容 *</label>
+                <label className="block text-sm font-medium mb-1">公告图片 *</label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-1">PNG / JPG / WEBP，最大 8 MB</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">详情文字 *</label>
                 <textarea
                   value={form.content}
                   onChange={(e) => setForm({ ...form, content: e.target.value })}
-                  placeholder="公告的详细内容..."
+                  placeholder="图片下方展示的公告详情..."
                   rows={4}
                   className="w-full px-3 py-2 border rounded-lg resize-none"
                   required
@@ -298,41 +363,26 @@ export default function AdminAnnouncements() {
               {/* 预览 */}
               <div>
                 <label className="block text-sm font-medium mb-2">预览效果</label>
-                <div className="border rounded-xl overflow-hidden">
-                  <div
-                    className={`p-4 text-white text-center ${
-                      form.type === 'info'
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                        : form.type === 'update'
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                        : form.type === 'promotion'
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-500'
-                    }`}
-                  >
-                    <p className="text-3xl mb-1">
-                      {form.type === 'info'
-                        ? 'ℹ️'
-                        : form.type === 'update'
-                        ? '🆕'
-                        : form.type === 'promotion'
-                        ? '🎉'
-                        : '⚠️'}
-                    </p>
-                    <p className="font-bold">{form.title || '标题'}</p>
+                <div className="rounded-2xl bg-[#6E3F2C] p-5 text-center text-white">
+                  <p className="font-bold text-xl mb-4">{form.title || '公告标题'}</p>
+                  <div className="aspect-square w-full rounded-xl overflow-hidden bg-[#FFF4D8] mb-4 flex items-center justify-center">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="公告预览" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-[#9B806B] text-sm">公告图片预览</span>
+                    )}
                   </div>
-                  <div className="p-4 bg-white">
-                    <p className="text-gray-600 text-sm">
-                      {form.content || '内容预览...'}
-                    </p>
-                  </div>
+                  <p className="font-semibold whitespace-pre-wrap mb-5">
+                    {form.content || '详情文字预览...'}
+                  </p>
+                  <div className="rounded-xl bg-[#FFF4D8] py-3 font-bold text-[#4A2F1E]">Start Today</div>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAdd(false)}
+                  onClick={resetComposer}
                   className="flex-1 py-3 bg-gray-100 rounded-xl"
                 >
                   取消

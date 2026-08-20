@@ -34,6 +34,8 @@ import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import { touchActivity } from '@/lib/activity';
+import { checkContentVersionInBackground } from '@/lib/content-version';
+import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import {
   assertAllKeysRegistered,
   purgeLegacyKeys,
@@ -203,10 +205,16 @@ function RootLayout() {
 
     void (async () => {
       try {
+        // Tiny R2 pointer only. Never awaited: content refresh/download is
+        // staged behind the native splash and can continue after Home paints.
+        void checkContentVersionInBackground();
         const session = await getCurrentSession();
         const userId = session?.user?.id;
         void fetchAppConfig();
         if (userId) {
+          // Opportunistically cache the announcement image while startup work
+          // is already happening. This is also deliberately non-blocking.
+          void prepareUnreadAnnouncement(userId);
           void fetchSubscriptionTier(userId).catch(() => {});
           void fetchMeStats(userId).catch(() => {});
         }
@@ -256,6 +264,7 @@ function RootLayout() {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
         void touchActivity();
+        void checkContentVersionInBackground();
       } else {
         supabase.auth.stopAutoRefresh();
       }
@@ -354,7 +363,12 @@ function RootLayout() {
   // app tree. The native splash (kept visible by preventAutoHideAsync)
   // remains on screen. Per expo-splash-screen official example, this
   // is the canonical pattern.
-  if (!isReady) return null;
+  // Do not paint destination screens with a system-font fallback and then
+  // swap to Inter after the first interaction. Besides visible typography
+  // flicker, that changed the Onboarding hero from regular to bold only after
+  // tapping Start. Both gates are local and fail open, so this cannot turn a
+  // network delay into a blocked launch.
+  if (!isReady || !fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

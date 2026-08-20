@@ -21,6 +21,7 @@ import { getCachedSubscriptionTier } from '@/lib/subscription';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
+import { AnnouncementGate } from '@/components/main/announcement-gate';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(visibleAiBubble);
   const aiBubbleRef = useRef(aiBubble);
+  const openingEntryRef = useRef(false);
   const [homeLayout, setHomeLayout] = useState({
     safeHeight: 0,
     sceneY: 0,
@@ -103,6 +105,10 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // The previous entry route has fully closed. Re-enable exactly one Home
+      // launch; the ref prevents onPressIn + onPress/accessibility from ever
+      // stacking duplicate transparent-modal routes.
+      openingEntryRef.current = false;
       setCosmeticTick((t) => t + 1);
       applyAiBubble(visibleAiBubble());
       void fetchCompanion().then((c) => {
@@ -120,11 +126,15 @@ export default function HomeScreen() {
   }, []);
 
   const onReflect = () => {
-    void haptics.medium();
+    if (openingEntryRef.current) return;
     if (!requireAiConsent('/(main)/reflect')) return;
+    openingEntryRef.current = true;
+    void haptics.medium();
     router.push('/(main)/reflect');
   };
   const onFocus = () => {
+    if (openingEntryRef.current) return;
+    openingEntryRef.current = true;
     void haptics.medium();
     router.push('/(main)/focus');
   };
@@ -199,10 +209,18 @@ export default function HomeScreen() {
             style={styles.entries}
             onLayout={(event) => recordLayout({ entriesHeight: event.nativeEvent.layout.height })}
           >
-            <Pressable onPress={onFocus} style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}>
+            <Pressable
+              onPressIn={onFocus}
+              onPress={onFocus}
+              style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
+            >
               <Text style={styles.entryText}>Focus</Text>
             </Pressable>
-            <Pressable onPress={onReflect} style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}>
+            <Pressable
+              onPressIn={onReflect}
+              onPress={onReflect}
+              style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
+            >
               <Text style={styles.entryText}>Reflect</Text>
             </Pressable>
           </View>
@@ -212,6 +230,7 @@ export default function HomeScreen() {
         {/* Friend memory bubbles float over the scene; box-none so the pet,
             top bar, and Focus/Reflect stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
+        <AnnouncementGate />
 
       </SafeAreaView>
     </View>

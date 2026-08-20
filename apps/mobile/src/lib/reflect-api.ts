@@ -50,8 +50,6 @@ export interface ReflectSnapshot {
   /** Shared Memories created by this submission, ready for optimistic merge. */
   sharedItems: SharedReflectItem[];
   bubble: string | null;
-  /** Plus 流程2 cute story, when requested. */
-  story: string | null;
 }
 
 export type ReflectError =
@@ -136,7 +134,6 @@ interface WireSnapshot {
     created_at: string;
   }[];
   bubble?: string | null;
-  story?: string | null;
 }
 
 function toSnapshot(w: WireSnapshot): ReflectSnapshot {
@@ -156,7 +153,6 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
       createdAt: item.created_at,
     })),
     bubble: w.bubble ?? null,
-    story: w.story ?? null,
   };
 }
 
@@ -187,8 +183,6 @@ export async function submitReflect(params: {
   removedItemIds?: string[];
   /** typing mode: per-item notes from the edit sheet (override the label). */
   itemNotes?: Record<string, string>;
-  /** 流程2 Plus button: generate the cute story. */
-  wantStory?: boolean;
   /** "对好友可见"（细节可见性，结果页 toggle 提交后还可改）. */
   visibleToFriend?: boolean;
 }): Promise<SubmitResult> {
@@ -218,7 +212,6 @@ export async function submitReflect(params: {
       selectedItems: params.selectedItems,
       removedItemIds: params.removedItemIds,
       itemNotes: params.itemNotes,
-      wantStory: params.wantStory,
       visibleToFriend: params.visibleToFriend,
     });
 

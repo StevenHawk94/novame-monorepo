@@ -89,7 +89,10 @@ function getCacheDir(): Directory {
  * Throws on network error or invalid JSON. Caller should handle errors
  * and fall back to cached manifest.
  */
-export async function fetchManifestFromR2(options?: { force?: boolean }): Promise<AssetManifest> {
+export async function fetchManifestFromR2(options?: {
+  force?: boolean;
+  requireFresh?: boolean;
+}): Promise<AssetManifest> {
   const cached = getCachedManifest();
   const fetchedAt = Number(storage.getString(STORAGE_KEY_MANIFEST_FETCHED_AT) ?? 0);
   if (
@@ -112,8 +115,12 @@ export async function fetchManifestFromR2(options?: { force?: boolean }): Promis
   lastManifestAttemptAt = Date.now();
   manifestFetchInFlight = (async () => {
     try {
-      const bucket = Math.floor(Date.now() / MANIFEST_TTL_MS);
-      const response = await fetch(`${MANIFEST_URL}?v=${bucket}`);
+      const version = options?.force
+        ? Date.now()
+        : Math.floor(Date.now() / MANIFEST_TTL_MS);
+      const response = await fetch(`${MANIFEST_URL}?v=${version}`, {
+        cache: options?.force ? 'no-store' : 'default',
+      });
       if (!response.ok) {
         throw new Error(`Manifest fetch failed: HTTP ${response.status}`);
       }
@@ -124,7 +131,7 @@ export async function fetchManifestFromR2(options?: { force?: boolean }): Promis
       setCachedManifest(data);
       return data;
     } catch (error) {
-      if (cached) return cached;
+      if (cached && !options?.requireFresh) return cached;
       throw error;
     } finally {
       manifestFetchInFlight = null;
