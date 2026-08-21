@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
@@ -21,6 +21,7 @@ import {
   fetchSharePrivacy, setSharePrivacy, respondFriend,
   type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest, type MemoryDetailsMode,
 } from '@/lib/friends-api';
+import { subscribePairingRealtime } from '@/lib/pairing-realtime';
 
 /**
  * Friends Cave (mocks 1:1). Full-bleed meadow art; centered title; mail
@@ -81,6 +82,15 @@ export default function FriendsScreen() {
     });
   }, []);
   useFocusEffect(load);
+
+  // The accepting device refreshes synchronously in respondFriend(). The
+  // requester can remain on this screen, so listen for the private server
+  // invalidation and apply the already-refreshed snapshots immediately.
+  useEffect(() => subscribePairingRealtime((snapshot) => {
+    setStatus(snapshot.friends);
+    setPairing(snapshot.pairing);
+    setFeed(snapshot.pairing.paired ? snapshot.feed : []);
+  }), []);
 
   function onPrivacyGear() {
     void haptics.light();

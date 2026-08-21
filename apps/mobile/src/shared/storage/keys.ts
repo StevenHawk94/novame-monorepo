@@ -394,6 +394,8 @@ export const kRatingPromptUserExpressed = defineKey(
   'novame_rating_prompt_user_expressed',
   'device',
 );
+/** Successful Reflect claims on this device, used only for official store-review cadence. */
+export const kRatingReflectClaimCount = defineKey('novame_rating_reflect_claim_count', 'device');
 
 /** asset-cache.ts: STORAGE_KEY_MANIFEST. Card art and video are user-agnostic. */
 export const kAssetManifest = defineKey('asset-manifest:cached', 'device');

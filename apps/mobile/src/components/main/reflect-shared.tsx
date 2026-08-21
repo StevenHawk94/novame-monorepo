@@ -40,6 +40,10 @@ import {
   incrementReflectionPaywallCount,
   shouldShowReflectionPaywall,
 } from '@/lib/reflection-paywall-count';
+import {
+  emitOfficialRatingRequest,
+  recordReflectClaimForRating,
+} from '@/lib/official-rating-prompt';
 
 const REFLECT_CELEBRATION_SOURCE = Platform.select({
   android: require('../../../assets/animations/reflect.json'),
@@ -325,7 +329,9 @@ export function ReflectResultView({
     const isFree = tier === 'free';
     const claimCount = isFree ? incrementReflectionPaywallCount() : 0;
     const showReflectionPaywall = isFree && shouldShowReflectionPaywall(claimCount);
+    const requestOfficialRating = recordReflectClaimForRating();
     onFinished();
+    if (requestOfficialRating) emitOfficialRatingRequest();
     if (showReflectionPaywall) {
       setTimeout(() => {
         router.push('/(main)/(modals)/reflection-plus-paywall' as never);

@@ -1,18 +1,27 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { LayoutRectangle } from 'react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Image } from 'react-native';
 
 import {
-  MONSTER_HP, monsterHpForStage, monsterTierFor, isTamed,
   battleMilestoneCount, battleMilestoneThreshold, BATTLE_MILESTONE_REWARD,
   XP_RULES,
 } from '@novame/engine';
-import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
-import { GridBackground } from '../../src/components/ui/grid-background';
+import { ICONS } from '../../src/lib/icons';
 import { haptics } from '../../src/lib/haptics';
 import { Image as ExpoImage } from 'expo-image';
 
@@ -21,22 +30,42 @@ import {
   MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
 } from '../../src/lib/tame-enemy-api';
 import { MONSTER_ART } from '../../src/lib/monster-images';
-import { POINT_ICONS, deckFor, type TameCard } from '../../src/lib/tame-cards';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import {
+  TAME_FINAL_WORD_SETS,
+  TAME_INTRO_COPY,
+  TAME_TAMED_COPY,
+  type TameFinalWords,
+} from '../../src/lib/tame-final-words';
+import { SwipeAttackLayer } from '../../src/components/tame-enemy/swipe-attack-layer';
 
-type Phase = 'select' | 'prep' | 'battle' | 'done';
+type Phase = 'select' | 'prep' | 'battle' | 'finalWords' | 'exploding' | 'result';
 
-/**
- * Tame Enemy. Four screens as phases: select an enemy, a prep page, the
- * battle, and the tamed screen. One tame a day (server gate).
- *
- * Battle (2026-08-05 design): each monster owns a fixed 10-argument deck
- * (tame-cards.ts), listed as text rows — points icon + the argument's
- * opening line. TAP opens the full text; DOUBLE-TAP plays it: the monster
- * loses that argument's damage, and the FIRST time one lands its persuaded
- * line replaces the speech bubble (replays deal damage but leave the bubble
- * unchanged). HP 0 → tamed.
- */
+const ATTACKS_TO_TAME = 20;
+const WHITE_FILM_OPACITY = 0;
+const HEART_ANIMATION_SOURCE = require('../../assets/animations/exploding-heart.lottie');
+const MONSTER_BACKGROUND_SOURCE = require('../../assets/monsters/monster-bg.webp');
+const SWIPE_ICON_SOURCE = require('../../assets/Icons/Swipe.png');
+
+function MonsterBackground() {
+  return (
+    <ExpoImage
+      source={MONSTER_BACKGROUND_SOURCE}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      contentPosition="center"
+    />
+  );
+}
+
+function scaleForHits(hits: number): number {
+  if (hits >= ATTACKS_TO_TAME) return 0.55;
+  if (hits >= 14) return 0.7;
+  if (hits >= 7) return 0.85;
+  return 1;
+}
+
+/** Tame Enemy: select, prepare, land 20 native swipe attacks, then settle. */
 export default function TameEnemyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -55,48 +84,26 @@ export default function TameEnemyScreen() {
   const [perEnemyDaily, setPerEnemyDaily] = useState(cached.perEnemyDaily);
   const [battlePoints, setBattlePoints] = useState(cached.battlePoints);
   const [active, setActive] = useState<MonsterStatus | null>(null);
-  const [hp, setHp] = useState(MONSTER_HP);
-  const [maxHp, setMaxHp] = useState(MONSTER_HP);
+  const [selectedFinalWords, setSelectedFinalWords] = useState<TameFinalWords | null>(null);
   const [hits, setHits] = useState(0);
-  const [usedCardIds, setUsedCardIds] = useState<string[]>([]);
-  // The monster's current speech: its complaint at first, then the latest
-  // NEW card's persuaded line.
-  const [bubbleText, setBubbleText] = useState('');
-  // Long-press flips a card; double-tap plays it (RN has no built-in
-  // double-tap, so a per-card timestamp tracks it).
-  const [zoomCard, setZoomCard] = useState<TameCard | null>(null);
-  const [lastTap, setLastTap] = useState<{ id: string; at: number }>({ id: '', at: 0 });
+  const [monsterTarget, setMonsterTarget] = useState<LayoutRectangle | null>(null);
   const [reward, setReward] = useState<number | null>(null);
   const [milestoneBonus, setMilestoneBonus] = useState(0);
-  // -Hit art frame flashes ~0.5s after each landed skill (design 2026-07-30).
   const [hitFlash, setHitFlash] = useState(false);
-  // Damage number floated over the monster for the 0.5s hit window.
-  const [lastDamage, setLastDamage] = useState<number | null>(null);
   const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hitsRef = useRef(0);
+  const submittingRef = useRef(false);
+  const monsterScale = useSharedValue(1);
+  const monsterShake = useSharedValue(0);
+  const whiteFilm = useSharedValue(WHITE_FILM_OPACITY);
 
-  // Single tap opens the full text once the double-tap window passes; a
-  // second tap inside the window plays the argument instead.
-  const DOUBLE_TAP_MS = 300;
-  const viewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function onCardTap(card: TameCard) {
-    const now = Date.now();
-    if (lastTap.id === card.cardId && now - lastTap.at < DOUBLE_TAP_MS) {
-      if (viewTimer.current) {
-        clearTimeout(viewTimer.current);
-        viewTimer.current = null;
-      }
-      setLastTap({ id: '', at: 0 });
-      setZoomCard(null);
-      playCard(card);
-    } else {
-      setLastTap({ id: card.cardId, at: now });
-      if (viewTimer.current) clearTimeout(viewTimer.current);
-      viewTimer.current = setTimeout(() => {
-        viewTimer.current = null;
-        setZoomCard(card);
-      }, DOUBLE_TAP_MS + 20);
-    }
-  }
+  const monsterAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: monsterShake.value },
+      { scale: monsterScale.value },
+    ],
+  }));
+  const whiteFilmStyle = useAnimatedStyle(() => ({ opacity: whiteFilm.value }));
 
   useFocusEffect(
     useCallback(() => {
@@ -109,60 +116,97 @@ export default function TameEnemyScreen() {
     }, []),
   );
 
-  // Battle pool = the monster's fixed 10-card deck.
-  const deck = useMemo(() => (active ? deckFor(active.id) : []), [active]);
+  useEffect(() => () => {
+    if (hitTimer.current) clearTimeout(hitTimer.current);
+  }, []);
+
+  // Do not let a platform-specific Lottie completion callback strand the
+  // battle. At 0.75x, the 90-frame / 29.97fps asset lasts about four seconds.
+  useEffect(() => {
+    if (phase !== 'exploding') return undefined;
+    const timer = setTimeout(() => setPhase('result'), 4400);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   function startBattle(m: MonsterStatus) {
     void haptics.medium();
     setActive(m);
-    // Staged HP (Q15): grows with prior tames of this monster, capped at 300.
-    const cap = monsterHpForStage(m.tamedCount ?? 0);
-    setMaxHp(cap);
-    setHp(cap);
+    const wordSets = TAME_FINAL_WORD_SETS[m.id] ?? [];
+    setSelectedFinalWords(wordSets.length > 0
+      ? wordSets[Math.floor(Math.random() * wordSets.length)]
+      : null);
     setHits(0);
-    setUsedCardIds([]);
-    setBubbleText(m.prep);
+    hitsRef.current = 0;
+    submittingRef.current = false;
+    setMonsterTarget(null);
+    setReward(null);
+    setMilestoneBonus(0);
+    setHitFlash(false);
+    monsterScale.value = 1;
+    monsterShake.value = 0;
+    whiteFilm.value = WHITE_FILM_OPACITY;
     setPhase('prep');
   }
 
-  function playCard(card: TameCard) {
-    const next = Math.max(0, hp - card.damage);
-    setHp(next);
-    setHits((h) => h + 1);
+  const landSwipe = useCallback(() => {
+    if (phase !== 'battle' || hitsRef.current >= ATTACKS_TO_TAME) return;
+    const nextHits = hitsRef.current + 1;
+    hitsRef.current = nextHits;
+    setHits(nextHits);
     setHitFlash(true);
-    setLastDamage(card.damage);
     if (hitTimer.current) clearTimeout(hitTimer.current);
     hitTimer.current = setTimeout(() => {
       hitTimer.current = null;
       setHitFlash(false);
-      setLastDamage(null);
-    }, 500);
-    // A NEW card persuades — the bubble takes its line. Replays just damage.
-    if (!usedCardIds.includes(card.cardId)) {
-      setUsedCardIds((ids) => [...ids, card.cardId]);
-      setBubbleText(card.persuaded);
+    }, 170);
+
+    monsterShake.value = withSequence(
+      withTiming(-8, { duration: 24 }),
+      withTiming(8, { duration: 34 }),
+      withTiming(-5, { duration: 28 }),
+      withTiming(4, { duration: 26 }),
+      withTiming(0, { duration: 30 }),
+    );
+    whiteFilm.value = withSequence(
+      withTiming(0.96, { duration: 45, easing: Easing.out(Easing.quad) }),
+      withTiming(WHITE_FILM_OPACITY, { duration: 120 }),
+    );
+    monsterScale.value = withSpring(scaleForHits(nextHits), {
+      damping: 13,
+      stiffness: 210,
+      mass: 0.65,
+    });
+
+    if (nextHits === ATTACKS_TO_TAME) {
+      void haptics.heavy();
+      setPhase('finalWords');
+    } else if (nextHits === 7 || nextHits === 14) {
+      void haptics.medium();
+    } else {
+      void haptics.light();
     }
+  }, [monsterScale, monsterShake, phase, whiteFilm]);
 
-    const tier = monsterTierFor(next, maxHp);
-    if (tier === 'defeated') void haptics.heavy();
-    else if (tier === 'wounded') void haptics.medium();
-    else void haptics.light();
-
-    if (isTamed(next)) {
-      finishTame();
+  function chooseFinalWord(index: number) {
+    if (!active || submittingRef.current || phase !== 'finalWords') return;
+    submittingRef.current = true;
+    if (hitTimer.current) {
+      clearTimeout(hitTimer.current);
+      hitTimer.current = null;
     }
-  }
-
-  function finishTame() {
-    if (!active) return;
-    // Optimistic victory (2026-08-08): the screen flips the moment HP hits 0,
-    // showing the standard reward; the server submit reconciles the numbers
-    // (milestone bonus, server-declined reward) in the background.
+    setHitFlash(false);
+    cancelAnimation(monsterShake);
+    monsterShake.value = 0;
+    cancelAnimation(whiteFilm);
+    whiteFilm.value = 0;
+    void haptics.heavy();
     setReward(XP_RULES.tameEnemy.award);
     setMilestoneBonus(0);
-    setPhase('done');
+    setPhase('exploding');
     const award = optimisticCloverAward(XP_RULES.tameEnemy.award);
-    void submitTame({ monsterId: active.id, skillsUsed: usedCardIds, hits: hits + 1 }).then((res) => {
+    const variant = selectedFinalWords?.variant ?? 'fallback';
+    const choiceId = `${active.id}-final-${variant}-${index + 1}`;
+    void submitTame({ monsterId: active.id, skillsUsed: [choiceId], hits: ATTACKS_TO_TAME }).then((res) => {
       setReward(res.ok ? (res.xpAwarded ?? null) : null);
       setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
       if (res.ok) {
@@ -177,15 +221,14 @@ export default function TameEnemyScreen() {
   function exit() {
     setPhase('select');
     setActive(null);
+    setSelectedFinalWords(null);
   }
-
-  const tier = monsterTierFor(hp, maxHp);
 
   // ---- SELECT ----
   if (phase === 'select') {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <GridBackground base="#F0B87E" line="#DFA367" cell={22} lineWidth={1.2} />
+        <MonsterBackground />
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
         </Pressable>
@@ -248,7 +291,7 @@ export default function TameEnemyScreen() {
     }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
-        <GridBackground base="#F6E7C8" line="#E8D2A8" cell={22} lineWidth={1.2} />
+        <MonsterBackground />
         <ScrollView contentContainerStyle={styles.prepScroll} showsVerticalScrollIndicator={false}>
         {/* name bubble with a tail pointing at the monster (mock) */}
         <View style={styles.prepNameBubble}>
@@ -260,7 +303,9 @@ export default function TameEnemyScreen() {
         ) : (
           <Text style={styles.prepEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
         )}
-        <Text style={[styles.prepQuote, { color: kit.text }]}>“{active.prep}”</Text>
+        <Text style={[styles.prepQuote, { color: kit.text }]}>
+          {TAME_INTRO_COPY[active.id] ?? active.prep}
+        </Text>
 
         {/* milestone banner: dark brown card, the current trio of 🍀 rewards;
             crossed ones wear a Claimed badge */}
@@ -310,133 +355,163 @@ export default function TameEnemyScreen() {
     );
   }
 
-  // ---- BATTLE (design: dark dungeon scene) ----
-  if (phase === 'battle' && active) {
+  // ---- BATTLE / FINAL WORDS / SETTLEMENT ----
+  if (active && (phase === 'battle' || phase === 'finalWords' || phase === 'exploding' || phase === 'result')) {
+    const finalWords = selectedFinalWords ?? {
+      variant: 'fallback',
+      monster: active.prep,
+      replies: [] as readonly string[],
+    };
+    const showMonsterBubble = phase === 'finalWords';
+    const hpPercent = Math.max(0, ((ATTACKS_TO_TAME - hits) / ATTACKS_TO_TAME) * 100);
+
     return (
       <View style={styles.battleRoot}>
-        {/* Monster speech bubble (persuaded lines land here) + monster, over
-            the dungeon art. The art owns the top safe area (no close button —
-            a battle runs to its end); content clears the notch via padding. */}
-        <View style={[styles.battleScene, { paddingTop: insets.top + 12 }]}>
-          <ExpoImage
-            source={BACKGROUNDS.tameEnemy}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-          />
-          <GridBackground base="transparent" line="rgba(255,255,255,0.08)" cell={22} lineWidth={1} />
-          <View style={styles.monsterBubble}>
-            <Text
-              style={styles.monsterBubbleText}
-              numberOfLines={5}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
-              {bubbleText || active.prep}
-            </Text>
-            <View style={styles.monsterBubbleTail} />
-          </View>
-          {MONSTER_ART[active.id] ? (
-            <View style={styles.monsterWrap}>
-              {lastDamage !== null && (
-                <Text style={styles.damagePop}>-{lastDamage}</Text>
-              )}
-              <ExpoImage
-                source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
-                style={styles.battleImg}
-                contentFit="contain"
-              />
-            </View>
-          ) : (
-            <Text style={styles.battleEmoji}>
-              {MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}
-            </Text>
-          )}
-          {/* Pixel-flavored HP bar, labeled per the mock */}
-          <View style={styles.hpTrack}>
-            <View style={[styles.hpFill, { width: `${(hp / maxHp) * 100}%` }]} />
-          </View>
-          <Text style={styles.hpLabel}>Negative Power</Text>
-        </View>
+        <MonsterBackground />
 
-        {/* Bottom deck — text rows: tap to view, double tap to apply */}
-        <View style={[styles.skillPanel, { paddingBottom: insets.bottom + 10 }]}>
-          <Text style={styles.panelHint}>Tap to view, double tap to apply.</Text>
-          <ScrollView contentContainerStyle={styles.rowsWrap} showsVerticalScrollIndicator={false}>
-            {deck.map((card) => (
-              <Pressable
-                key={card.cardId}
-                onPress={() => onCardTap(card)}
-                style={({ pressed }) => [styles.argRow, pressed && { opacity: 0.85 }]}
-              >
+        <View style={[styles.attackArea, { paddingTop: insets.top + 12 }]}>
+          {phase !== 'battle' && (
+            <View
+              pointerEvents="none"
+              style={[styles.monsterBubble, !showMonsterBubble && styles.monsterBubbleHidden]}
+            >
+              {showMonsterBubble ? (
+                <>
+                  <Text
+                    style={styles.monsterBubbleText}
+                    numberOfLines={3}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
+                    {finalWords.monster}
+                  </Text>
+                  <View style={styles.monsterBubbleTail} />
+                </>
+              ) : null}
+            </View>
+          )}
+
+          <Animated.View
+            onLayout={(event) => setMonsterTarget(event.nativeEvent.layout)}
+            style={[styles.monsterWrap, monsterAnimatedStyle]}
+          >
+            {MONSTER_ART[active.id] ? (
+              <>
                 <ExpoImage
-                  source={POINT_ICONS[card.damage] ?? POINT_ICONS[10]}
-                  style={styles.argIcon}
+                  source={hitFlash ? MONSTER_ART[active.id].hit : MONSTER_ART[active.id].normal}
+                  style={styles.battleImg}
                   contentFit="contain"
                 />
-                <Text style={styles.argText} numberOfLines={1}>{card.argument}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+                <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, whiteFilmStyle]}>
+                  <ExpoImage
+                    source={MONSTER_ART[active.id].normal}
+                    style={styles.battleImg}
+                    contentFit="contain"
+                    tintColor="#FFFFFF"
+                  />
+                </Animated.View>
+              </>
+            ) : (
+              <Text style={styles.battleEmoji}>{MONSTER_EMOJI[active.id] ?? '\u{1F47E}'}</Text>
+            )}
+          </Animated.View>
+
+          {phase === 'battle' && (
+            <>
+              <View style={styles.hpTrack}>
+                <View style={[styles.hpFill, { width: `${hpPercent}%` }]} />
+              </View>
+              <Text style={styles.hpLabel}>Negative Power</Text>
+            </>
+          )}
+
+          {phase === 'exploding' && (
+            <LottieView
+              source={HEART_ANIMATION_SOURCE}
+              autoPlay
+              loop={false}
+              speed={0.75}
+              resizeMode="contain"
+              style={styles.heartExplosion}
+              onAnimationFinish={() => setPhase('result')}
+              onAnimationFailure={() => setPhase('result')}
+            />
+          )}
+
+          <SwipeAttackLayer
+            enabled={phase === 'battle'}
+            target={monsterTarget}
+            onHit={landSwipe}
+          />
         </View>
 
-        {/* Full-text overlay (tap): the whole counter-argument */}
-        {zoomCard !== null && (
-          <Pressable style={styles.zoomBackdrop} onPress={() => setZoomCard(null)}>
-            <Pressable
-              style={styles.zoomTextCard}
-              onPress={() => {
-                const z = zoomCard;
-                setZoomCard(null);
-                if (z) playCard(z);
-              }}
-            >
-              <ExpoImage
-                source={POINT_ICONS[zoomCard.damage] ?? POINT_ICONS[10]}
-                style={styles.zoomIcon}
-                contentFit="contain"
-              />
-              <Text style={styles.zoomArgument}>{zoomCard.argument}</Text>
-            </Pressable>
-            <Text style={styles.zoomHint}>Tap the card to apply it — or tap outside to go back.</Text>
-          </Pressable>
-        )}
-      </View>
-    );
-  }
-
-  // ---- DONE (design: victory overlay) ----
-  if (phase === 'done' && active) {
-    return (
-      <View style={[styles.battleRoot, { paddingTop: insets.top + 8 }]}>
-        <GridBackground base="#2A2140" line="#3B3154" cell={22} lineWidth={1.1} />
-        <ScrollView contentContainerStyle={styles.centerRoot} showsVerticalScrollIndicator={false}>
-        <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
-        <Text style={styles.victoryTitle}>VICTORY!</Text>
-        {MONSTER_ART[active.id] ? (
-          <ExpoImage source={MONSTER_ART[active.id].normal} style={styles.doneImg} contentFit="contain" />
-        ) : (
-          <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
-        )}
-        <Text style={styles.victoryText}>{active.tamed}</Text>
-        {reward != null && reward > 0 && (
-          <View style={styles.rewardBlock}>
-            <View style={styles.rewardRibbon}>
-              <Text style={styles.rewardRibbonText}>Rewards</Text>
+        <View style={[styles.copyArea, { paddingBottom: insets.bottom + 12 }]}>
+          {phase === 'battle' ? (
+            <View style={styles.attackInstructions}>
+              <ExpoImage source={SWIPE_ICON_SOURCE} style={styles.attackIcon} contentFit="contain" />
+              <Text style={styles.attackTitle}>Swipe to attack{`\n`}Your {active.name} Monster</Text>
+              <Text style={styles.attackSubtitle}>Tame it with your finger</Text>
             </View>
-            <Text style={styles.rewardClover}>{'🍀'}</Text>
-            <Text style={styles.rewardCount}>x{reward}</Text>
-            {milestoneBonus > 0 && (
-              <Text style={styles.milestoneText}>Milestone bonus +{milestoneBonus} 🍀</Text>
-            )}
+          ) : (
+            <>
+              <View style={styles.finalWordsHeading}>
+                <Text style={styles.finalWordsTitle}>Give Your Monster A Final Word</Text>
+              </View>
+              <ScrollView
+                style={styles.finalWordsScroll}
+                contentContainerStyle={styles.finalWordsList}
+                showsVerticalScrollIndicator={false}
+              >
+                {finalWords.replies.map((reply, index) => (
+                  <Pressable
+                    key={reply}
+                    disabled={phase !== 'finalWords'}
+                    onPress={() => chooseFinalWord(index)}
+                    style={({ pressed }) => [
+                      styles.finalWordButton,
+                      pressed && styles.finalWordButtonPressed,
+                    ]}
+                  >
+                    <Text style={styles.finalWordText}>{reply}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </>
+          )}
+        </View>
+
+        {phase === 'result' && (
+          <View style={styles.resultBackdrop}>
+            <View style={styles.resultCard}>
+              <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
+              <Text style={styles.victoryTitle}>VICTORY!</Text>
+              {MONSTER_ART[active.id] ? (
+                <ExpoImage source={MONSTER_ART[active.id].normal} style={styles.doneImg} contentFit="contain" />
+              ) : (
+                <Text style={styles.doneEmoji}>{MONSTER_TAMED_EMOJI[active.id] ?? '\u{2728}'}</Text>
+              )}
+              <Text style={styles.victoryText}>{TAME_TAMED_COPY[active.id] ?? active.tamed}</Text>
+              {reward != null && reward > 0 && (
+                <View style={styles.rewardBlock}>
+                  <View style={styles.rewardRibbon}>
+                    <Text style={styles.rewardRibbonText}>Rewards</Text>
+                  </View>
+                  <Image source={ICONS.Clover} style={styles.resultClover} resizeMode="contain" />
+                  <Text style={styles.rewardCount}>x{reward}</Text>
+                  {milestoneBonus > 0 && (
+                    <Text style={styles.milestoneText}>Milestone bonus +{milestoneBonus} 🍀</Text>
+                  )}
+                </View>
+              )}
+              <Pressable
+                onPress={() => router.back()}
+                style={({ pressed }) => [styles.confirmBtn, pressed && styles.confirmBtnPressed]}
+              >
+                <Text style={styles.confirmText}>Confirm</Text>
+              </Pressable>
+            </View>
           </View>
         )}
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.confirmBtn, pressed && { transform: [{ translateY: 2 }] }, { marginBottom: insets.bottom }]}
-        >
-          <Text style={styles.confirmText}>Confirm</Text>
-        </Pressable>
-        </ScrollView>
       </View>
     );
   }
@@ -525,66 +600,63 @@ const styles = StyleSheet.create({
   exitLink: { paddingVertical: 8 },
   exitText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
 
-  // ---- battle (dark dungeon per mock; art asset lands later, solid tones now) ----
+  // ---- swipe battle ----
   battleRoot: { flex: 1, backgroundColor: '#2A2140' },
-  battleScene: {
-    flexShrink: 1,
-    alignItems: 'center', gap: 12,
-    paddingHorizontal: 20, paddingBottom: 18,
+  attackArea: {
+    flex: 1.16,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 20, paddingBottom: 14,
     overflow: 'hidden',
   },
-  // Fixed-height bubble (5 lines × 22 + padding) so the monster never shifts
-  // with the line count; longer persuaded lines shrink to fit instead.
   monsterBubble: {
     backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 18,
-    width: '92%', height: 138, justifyContent: 'center', marginBottom: 10,
+    width: '92%', height: 100, justifyContent: 'center', marginBottom: 14,
+    zIndex: 5,
   },
-  monsterBubbleText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#2B2B2B', textAlign: 'center', lineHeight: 22 },
+  monsterBubbleHidden: { opacity: 0 },
+  monsterBubbleText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#15121B', textAlign: 'center', lineHeight: 23 },
   monsterBubbleTail: {
     position: 'absolute', bottom: -8, alignSelf: 'center', width: 0, height: 0,
     borderLeftWidth: 9, borderRightWidth: 9, borderTopWidth: 9,
     borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#FFFFFF',
   },
   battleEmoji: { fontSize: 110 },
-  battleImg: { width: 184, height: 184 },
-  monsterWrap: { alignSelf: 'center', alignItems: 'center' },
-  damagePop: {
-    position: 'absolute', top: -6, alignSelf: 'center', zIndex: 2,
-    fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: '#E5484D',
-    textShadowColor: '#FFFFFF', textShadowRadius: 4, textShadowOffset: { width: 0, height: 0 },
-  },
-  // Pixel-flavored HP bar: hard corners, chunky dark border, red fill.
+  battleImg: { width: 210, height: 210 },
+  monsterWrap: { width: 210, height: 210, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', zIndex: 4 },
   hpTrack: {
-    width: '72%', height: 22, borderRadius: 3, backgroundColor: '#FFFFFF',
-    borderWidth: 3, borderColor: '#17121F', overflow: 'hidden',
+    width: '72%', height: 22, borderRadius: 11, backgroundColor: '#FFFFFF',
+    borderWidth: 3, borderColor: '#17121F', overflow: 'hidden', marginTop: 10,
   },
-  hpFill: { height: '100%', backgroundColor: '#E4593C' },
-  hpLabel: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  hpFill: { height: '100%', borderRadius: 8, backgroundColor: '#E4593C' },
+  hpLabel: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', marginTop: 5 },
+  heartExplosion: { position: 'absolute', width: 330, height: 330, alignSelf: 'center', zIndex: 15 },
 
-  skillPanel: {
-    flex: 1, backgroundColor: '#1B1626', borderTopLeftRadius: 22, borderTopRightRadius: 22,
-    paddingHorizontal: 16, paddingTop: 14,
+  copyArea: {
+    flex: 0.84, backgroundColor: 'rgba(121,76,43,0.5)',
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 22, paddingTop: 22,
   },
-  rowsWrap: { gap: 10, paddingBottom: 10, paddingTop: 2 },
-  argRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 13, paddingHorizontal: 14,
+  attackInstructions: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 12 },
+  attackIcon: { width: 60, height: 60, marginBottom: 18 },
+  attackTitle: { color: '#FFFFFF', fontSize: 29, lineHeight: 38, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  attackSubtitle: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', marginTop: 24 },
+  finalWordsHeading: {
+    position: 'relative', width: '100%', minHeight: 44,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  argIcon: { width: 30, height: 30 },
-  argText: { flex: 1, fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#7A4A16' },
-  panelHint: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
-
-  zoomBackdrop: {
-    ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,18,0.82)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 18,
+  finalWordsTitle: {
+    width: '100%',
+    color: '#FFFFFF', fontSize: 19, fontFamily: 'Inter_800ExtraBold', textAlign: 'center',
   },
-  zoomTextCard: {
-    width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: 24,
-    paddingVertical: 30, paddingHorizontal: 26, alignItems: 'center', gap: 16,
+  finalWordsScroll: { flex: 1 },
+  finalWordsList: { gap: 12, paddingBottom: 6 },
+  finalWordButton: {
+    minHeight: 62, borderRadius: 17, backgroundColor: '#4D3019',
+    alignItems: 'center', justifyContent: 'center', paddingVertical: 13, paddingHorizontal: 18,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
   },
-  zoomIcon: { width: 52, height: 52 },
-  zoomArgument: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#2A2118', lineHeight: 24 },
-  zoomHint: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
+  finalWordButtonPressed: { opacity: 0.86, transform: [{ scale: 0.99 }] },
+  finalWordText: { color: '#FFFFFF', fontSize: 16, lineHeight: 22, fontFamily: 'Inter_700Bold', textAlign: 'center' },
 
   titleBanner: {
     backgroundColor: '#4A3220', borderRadius: 20, paddingVertical: 16, paddingHorizontal: 20,
@@ -594,22 +666,35 @@ const styles = StyleSheet.create({
   titleBannerSub: { fontSize: 13, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4 },
 
   // ---- victory ----
+  resultBackdrop: {
+    ...StyleSheet.absoluteFillObject, zIndex: 50,
+    backgroundColor: 'rgba(19,14,28,0.76)', alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 20, paddingVertical: 34,
+  },
+  resultCard: {
+    width: '100%', maxWidth: 430, maxHeight: '92%',
+    backgroundColor: 'rgba(35,29,44,0.9)', borderRadius: 30,
+    alignItems: 'center', paddingHorizontal: 24, paddingVertical: 28, gap: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
   victoryLaurel: { fontSize: 34 },
-  victoryTitle: { fontSize: 40, fontFamily: 'Inter_800ExtraBold', color: '#F7CE46', letterSpacing: 2 },
-  victoryText: { fontSize: 18, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', textAlign: 'center', lineHeight: 26, paddingHorizontal: 24 },
-  rewardBlock: { alignItems: 'center', gap: 6 },
-  rewardRibbon: { backgroundColor: '#F7CE46', borderRadius: 10, paddingHorizontal: 22, paddingVertical: 6 },
+  victoryTitle: { fontSize: 38, fontFamily: 'Inter_800ExtraBold', color: '#F7CE46', letterSpacing: 2 },
+  victoryText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center', lineHeight: 24, paddingHorizontal: 12 },
+  rewardBlock: { alignItems: 'center', gap: 4, marginTop: 2 },
+  rewardRibbon: { backgroundColor: '#F7CE46', borderRadius: 8, paddingHorizontal: 28, paddingVertical: 6 },
   rewardRibbonText: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
-  rewardClover: { fontSize: 42, marginTop: 4 },
+  resultClover: { width: 48, height: 48, marginTop: 3 },
   rewardCount: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   milestoneText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#F7CE46', marginTop: 4 },
   confirmBtn: {
-    backgroundColor: '#F7CE46', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 64,
+    alignSelf: 'stretch', backgroundColor: '#F7CE46', borderRadius: 16,
+    paddingVertical: 16, alignItems: 'center', marginTop: 6,
     shadowColor: '#151021', shadowOpacity: 0.22, shadowRadius: 1,
     shadowOffset: { width: 1, height: 2 }, elevation: 2,
   },
+  confirmBtnPressed: { transform: [{ translateY: 2 }] },
   confirmText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
 
-  doneEmoji: { fontSize: 96 },
-  doneImg: { width: 170, height: 170 },
+  doneEmoji: { fontSize: 72 },
+  doneImg: { width: 110, height: 110 },
 });

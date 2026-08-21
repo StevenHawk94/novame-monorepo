@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { haptics } from '@/lib/haptics';
+import { DEFAULT_AVATARS } from '@/lib/avatar';
 import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 
@@ -102,7 +103,9 @@ export function HowItWorksOverlay({ onClose }: { onClose: () => void }) {
                 return (
                   <View key={row.key} style={styles.feedRow}>
                     <View style={styles.rowHeader}>
-                      <View style={styles.avatar}><Text style={styles.avatarEmoji}>{'🐰'}</Text></View>
+                      <View style={styles.avatar}>
+                        <Image source={DEFAULT_AVATARS[2]} style={styles.avatarImage} resizeMode="cover" />
+                      </View>
                       <Text style={styles.feedName}>Mom</Text>
                       <View style={styles.timeCol}>
                         <Text style={styles.timeText}>{row.label}</Text>
@@ -191,8 +194,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4F1F8', alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji: { fontSize: 23 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F4F1F8', overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
   feedName: { flex: 1, fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   tileWrap: {
     flexDirection: 'row', flexWrap: 'wrap', gap: TILE_GAP,

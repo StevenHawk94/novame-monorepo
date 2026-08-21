@@ -1,5 +1,3 @@
-import { createMMKV } from 'react-native-mmkv';
-
 /**
  * MMKV storage singleton.
  *
@@ -10,10 +8,8 @@ import { createMMKV } from 'react-native-mmkv';
  * AsyncStorage in supabase.ts (Supabase auth storage requires
  * an async interface, MMKV is sync).
  *
- * react-native-mmkv v4 changed API from `new MMKV(...)` to
- * `createMMKV(...)` factory. Requires react-native-nitro-modules
- * peer dep (installed separately in mobile/).
+ * The native instance is created exactly once in shared/storage/mmkv.ts.
+ * Re-exporting it here preserves every existing cache call site while keeping
+ * the storage registry and feature modules on the same listener/native object.
  */
-export const storage = createMMKV({
-  id: 'novame-storage',
-});
+export { mmkv as storage } from '../shared/storage/mmkv';

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Items v3 pipeline (2026-07-30): icon detection, slicing, and data gen.
 
-Input:  apps/mobile/assets/memory items/*.png (42 pages, near-white bg,
+Input:  tools/item-source/memory-items/*.png (42 pages, near-white bg,
         icons in reading order but NOT on a uniform grid) +
         icon_keyword_mapping_final.xlsx (master: 1693 items with sequence
         `n`, bags category, keywords; sheet 2: 11 prompt categories).
@@ -39,7 +39,7 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'apps' / 'mobile' / 'assets' / 'memory items'
+SRC = ROOT / 'tools' / 'item-source' / 'memory-items'
 OUT_ICONS = ROOT / 'apps' / 'mobile' / 'assets' / 'items' / 'each'
 SCRATCH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/tmp/items-v3')
 SCRATCH.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@
  *
  * The chooser lists the 12 prompt-reflection categories (curated, ranked
  * subsets of the master catalog — generated into guided-catalog.g.ts from
- * Icon_Mapping_Core_Tables_v26.xlsx). The user picks the themes they care
+ * Icon_Mapping_Core_Tables_v30.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
  * Guided Reflect uses the same 12-category item library.
@@ -30,27 +30,28 @@ export interface GuidedSubcategory {
   itemIds: string[];
 }
 
-// One designed question per prompt category (keys = guided-catalog.g.ts).
-const META: Record<string, { emoji: string; question: string }> = {
-  emotion_and_feeling: { emoji: '💛', question: 'Which feelings or inner states showed up today?' },
-  food_drink: { emoji: '🍜', question: 'What was part of eating, drinking, or cooking today?' },
-  chores_home_care: { emoji: '🧹', question: 'What was part of taking care of home today?' },
-  self_care_hygiene: { emoji: '🛁', question: 'What was part of caring for your body or health today?' },
-  work_productivity: { emoji: '💼', question: 'What was part of your work or progress today?' },
-  entertainment_leisure: { emoji: '🎮', question: 'What was part of your free time today?' },
-  exercise_movement: { emoji: '🏃', question: 'What was part of your movement or exercise today?' },
-  social_relationships: { emoji: '👥', question: 'What was part of connecting with others today?' },
-  travel_commute: { emoji: '🚌', question: 'What was part of going places today?' },
-  nature_outdoors: { emoji: '🏞️', question: 'What was part of your time outdoors today?' },
-  learning_hobbies: { emoji: '📚', question: 'What was part of learning, making, or practicing today?' },
-  shopping_errands: { emoji: '🛍️', question: 'What was part of shopping or running errands today?' },
+// Emoji stays app-owned; the question comes from the generated v30 workbook
+// data so future taxonomy updates cannot be masked by a duplicate hardcode.
+const META: Record<string, { emoji: string }> = {
+  emotion_and_feeling: { emoji: '💛' },
+  food_drink: { emoji: '🍜' },
+  chores_home_care: { emoji: '🧹' },
+  self_care_hygiene: { emoji: '🛁' },
+  work_productivity: { emoji: '💼' },
+  entertainment_leisure: { emoji: '🎮' },
+  exercise_movement: { emoji: '🏃' },
+  social_relationships: { emoji: '👥' },
+  travel_commute: { emoji: '🚌' },
+  nature_outdoors: { emoji: '🏞️' },
+  learning_hobbies: { emoji: '📚' },
+  shopping_errands: { emoji: '🛍️' },
 };
 
 const CONFIG: GuidedCategory[] = PROMPT_CATEGORIES.map((c) => ({
   key: c.key,
   label: c.label,
   emoji: META[c.key]?.emoji ?? '✨',
-  question: META[c.key]?.question || c.question || `Anything about ${c.label.toLowerCase()} today?`,
+  question: c.question || `Anything about ${c.label.toLowerCase()} today?`,
 }));
 
 const BY_KEY = new Map(CONFIG.map((c) => [c.key, c]));
@@ -82,7 +83,7 @@ export function itemsForGuidedCategory(key: string): string[] {
   return extra.length > 0 ? [...base, ...extra] : base;
 }
 
-/** v26 secondary tabs in workbook order; icons stay in workbook row order. */
+/** v30 secondary tabs in workbook order; icons stay in workbook row order. */
 export function subcategoriesForGuidedCategory(key: string): GuidedSubcategory[] {
   const bundled = SUBCATEGORIES_BY_KEY.get(key) ?? [];
   const categorized = new Set(bundled.flatMap((subcategory) => subcategory.itemIds));

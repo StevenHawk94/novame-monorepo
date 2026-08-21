@@ -3,7 +3,7 @@
 build-item-dictionary.py — generate packages/engine/src/items/dictionary.json
 from the item-sheet keyword mapping.
 
-Inputs (in apps/mobile/assets/memory items/):
+Inputs (in tools/item-source/memory-items/):
   icon_keyword_mapping.csv           category,n,row,col,itemId,displayName,keywords
                                      (keywords are /-separated)
   keyword-conflicts-resolution.csv   keyword,winner_category,winner_item,...
@@ -27,7 +27,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS = os.path.join(ROOT, "apps/mobile/assets/memory items")
+ASSETS = os.path.join(ROOT, "tools/item-source/memory-items")
 OUT = os.path.join(ROOT, "packages/engine/src/items/dictionary.json")
 # DB catalog migration (see the note at the write site). Bump the filename when
 # regenerating after the previous one has already been executed in Supabase.
@@ -37,7 +37,7 @@ SQL_OUT = os.path.join(ROOT, "supabase/migrations/20260723000026_items_full_cata
 # basenames in apps/mobile/assets/items/ (kebab-case: Metro chokes on spaces).
 #
 # 2026-07-24 taxonomy (14 categories, 460 items). The CSV is already updated;
-# ⚠️ DO NOT RUN until the new sheet images land in assets/memory items/ —
+# ⚠️ DO NOT RUN until the new sheet images land in tools/item-source/memory-items/ —
 # regenerating now would point every item at grid cells that don't exist yet.
 # When they land: normalize each sheet (--grid, rows=ceil(n/8)), run this,
 # convert to webp, update ITEM_SHEETS in item-sprite.tsx, bump SQL_OUT's

@@ -9,9 +9,9 @@ function idForName(name: string): string {
   return found[0];
 }
 
-describe('real dictionary smoke (stable v19 icons + v25 matching rules)', () => {
-  it('has the complete 5,390-item catalog', () => {
-    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5390);
+describe('real dictionary smoke (v30 catalog and matching rules)', () => {
+  it('has the complete 5,439-item catalog', () => {
+    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5439);
   });
 
   it('keeps every synonym and exclusion referentially valid', () => {
@@ -49,6 +49,16 @@ describe('real dictionary smoke (stable v19 icons + v25 matching rules)', () => 
     expect(ITEM_DICTIONARY.synonyms['ultimate frisbee']).toBe(idForName('Frisbee'));
     expect(ITEM_DICTIONARY.synonyms.surprised).toBe(idForName('Surprised'));
     expect(ITEM_DICTIONARY.synonyms.celebrating).toBe(idForName('Celebrating'));
+    expect(ITEM_DICTIONARY.synonyms['moved back home']).toBe(idForName('Moving Box'));
+    expect(ITEM_DICTIONARY.synonyms['on campus']).toBe(idForName('Campus'));
+    expect(ITEM_DICTIONARY.synonyms['school day']).toBe(idForName('Classroom'));
+  });
+
+  it('includes the v30 bundled icon expansion', () => {
+    expect(ITEM_DICTIONARY.items['memory.5392_chicken_nuggets']?.displayName).toBe('Chicken Nuggets');
+    expect(ITEM_DICTIONARY.items['memory.5440_water_heater']?.displayName).toBe('Water Heater');
+    expect(matchItems('I replaced the water heater', ITEM_DICTIONARY).map((item) => item.displayName))
+      .toContain('Water Heater');
   });
 
   it('maps retired Online Shopping rules to Shopping', () => {

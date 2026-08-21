@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Grid probe for the v3 memory-item pages (2026-07-30).
 
-For every PNG page in assets/memory items, draw the assumed grid (8 cols x
+For every PNG page in tools/item-source/memory-items, draw the assumed grid (8 cols x
 rows-per-page derived from the master xlsx) and save an annotated copy into
 the scratch dir. Pages whose cells are far from square are flagged — those
 get eyeballed before slicing.
@@ -13,8 +13,8 @@ from pathlib import Path
 import openpyxl
 from PIL import Image, ImageDraw
 
-MOBILE = Path(__file__).resolve().parent.parent / 'apps' / 'mobile'
-SRC = MOBILE / 'assets' / 'memory items'
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / 'tools' / 'item-source' / 'memory-items'
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/tmp/item-grid-probe')
 OUT.mkdir(parents=True, exist_ok=True)
 

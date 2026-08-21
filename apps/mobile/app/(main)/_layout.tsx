@@ -1,5 +1,7 @@
 import { Stack } from 'expo-router';
 
+import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
+
 /**
  * Authenticated app layout.
  *
@@ -16,53 +18,56 @@ import { Stack } from 'expo-router';
  */
 export default function MainLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: '#4C331B' },
-      }}
-    >
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
-      <Stack.Screen
-        name="ai-consent"
-        options={{ presentation: 'transparentModal', animation: 'fade' }}
-      />
-      <Stack.Screen
-        name="companion-sheet"
-        options={{
-          presentation: 'transparentModal',
-          animation: 'slide_from_bottom',
-          gestureEnabled: false,
-          contentStyle: { backgroundColor: 'transparent' },
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#4C331B' },
         }}
-      />
-      <Stack.Screen name="quiet-wins" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Stack.Screen name="new-lens" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Stack.Screen name="true-north" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Stack.Screen name="tame-enemy" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Stack.Screen name="visit-master" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-      <Stack.Screen
-        name="reflect"
-        options={{
-          presentation: 'transparentModal',
-          animation: 'slide_from_bottom',
-          gestureEnabled: false,
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-      <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
-      <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
-      <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal' }} />
-      <Stack.Screen
-        name="focus"
-        options={{
-          presentation: 'transparentModal',
-          animation: 'slide_from_bottom',
-          gestureEnabled: false,
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="ai-consent"
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="companion-sheet"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen name="quiet-wins" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen name="new-lens" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen name="true-north" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen name="tame-enemy" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen name="visit-master" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
+        <Stack.Screen
+          name="reflect"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen
+          name="focus"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+      </Stack>
+      <OfficialRatingGate />
+    </>
   );
 }

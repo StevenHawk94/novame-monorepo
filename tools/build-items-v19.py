@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and visually review the v19 memory-item icon set.
+"""Build and visually review the bundled v30 memory-item icon set.
 
 The source directory contains 7x7 transparent PNG montages named by their
 Excel row span (for example, 2-50.png). Each connected alpha component is
@@ -8,8 +8,12 @@ their icon and pixels from neighboring cells cannot leak into the output.
 
 Outputs:
   apps/mobile/assets/items/each/memory.<icon-name>.webp
-  apps/mobile/assets/memory items/standardized-preview.html
-  apps/mobile/assets/memory items/items-v19-qa.json
+  tools/item-source/memory-items/standardized-preview.html
+  tools/item-source/memory-items/items-v30-image-qa.json
+
+Normal runs are incremental: only workbook items whose WebP is missing are
+decoded and written, so previously bundled artwork is never touched. Pass
+--full only when an intentional complete rebuild is required.
 """
 
 from __future__ import annotations
@@ -29,16 +33,19 @@ from scipy import ndimage
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE_DIR = ROOT / "apps" / "mobile" / "assets" / "memory items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v19.xlsx"
+SOURCE_DIR = ROOT / "tools" / "item-source" / "memory-items"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v30.xlsx"
 OUTPUT_DIR = ROOT / "apps" / "mobile" / "assets" / "items" / "each"
 PREVIEW_PATH = SOURCE_DIR / "standardized-preview.html"
-QA_PATH = SOURCE_DIR / "items-v19-qa.json"
+QA_PATH = SOURCE_DIR / "items-v30-image-qa.json"
 
 GRID = 7
 CANVAS = 256
 SAFE_SIZE = 200
 ALPHA_THRESHOLD = 2
+ICON_COUNT = 5439
+SOURCE_PAGE_COUNT = 111
+FINAL_WORKBOOK_ROW = 5440
 SOURCE_RE = re.compile(r"^(\d+)-(\d+)\.png$")
 FORCE_PROJECTION_PAGES = {"2256-2304.png", "5343-5391.png"}
 
@@ -59,15 +66,15 @@ def source_pages() -> list[tuple[int, int, Path]]:
             start, end = map(int, match.groups())
             pages.append((start, end, path))
     pages.sort(key=lambda page: page[0])
-    if len(pages) != 110:
-        raise ValueError(f"Expected 110 source pages, found {len(pages)}")
+    if len(pages) != SOURCE_PAGE_COUNT:
+        raise ValueError(f"Expected {SOURCE_PAGE_COUNT} source pages, found {len(pages)}")
     expected = 2
     for start, end, path in pages:
         if start != expected or end - start + 1 != GRID * GRID:
             raise ValueError(f"Invalid or non-contiguous page range: {path.name}")
         expected = end + 1
-    if expected != 5392:
-        raise ValueError(f"Expected final workbook row 5391, got {expected - 1}")
+    if expected != FINAL_WORKBOOK_ROW + 1:
+        raise ValueError(f"Expected final workbook row {FINAL_WORKBOOK_ROW}, got {expected - 1}")
     return pages
 
 
@@ -103,8 +110,8 @@ def workbook_items() -> dict[int, dict[str, str]]:
             "tier": str(row[indexes["Tier"]] or "").strip(),
             "status": str(row[indexes["Status"]] or "").strip(),
         }
-    if len(result) != 5390:
-        raise ValueError(f"Expected 5390 workbook icons, found {len(result)}")
+    if len(result) != ICON_COUNT:
+        raise ValueError(f"Expected {ICON_COUNT} workbook icons, found {len(result)}")
     return result
 
 
@@ -315,7 +322,7 @@ def preview_html(cards_by_page: list[tuple[str, list[dict[str, str]]]]) -> str:
     return """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Memory Items v19 · 5,390 Icons</title>
+<title>Memory Items v30 · 5,439 Icons</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f0e8;color:#50351e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 header{position:sticky;top:0;z-index:2;padding:16px 24px;background:rgba(245,240,232,.96);border-bottom:1px solid #d8c9b6;backdrop-filter:blur(8px)}
@@ -324,17 +331,22 @@ main{padding:10px 24px 40px}section{scroll-margin-top:130px}h2{margin:26px 0 12p
 .c{min-height:126px;padding:8px 6px 7px;background:white;border:1px solid #eadfce;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;box-shadow:0 1px 2px rgba(77,49,25,.06)}
 .c img{width:80px;height:80px;object-fit:contain}.c span{font-size:11px;line-height:1.15;min-height:25px;display:flex;align-items:center;justify-content:center}.c small{font-size:9px;color:#a18c73}.hidden{display:none}
 </style></head><body>
-<header><h1>Memory Items v19</h1><p id="count">5,390 icons · 110 source sheets · 7×7 each</p><input id="search" type="search" placeholder="Search Icon_name or Excel row…"></header>
+<header><h1>Memory Items v30</h1><p id="count">5,439 icons · 111 source sheets · 7×7 each</p><input id="search" type="search" placeholder="Search Icon_name or Excel row…"></header>
 <main>""" + "\n".join(sections) + """</main>
 <script>
 const cards=[...document.querySelectorAll('.c')], count=document.querySelector('#count');
-document.querySelector('#search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();let visible=0;cards.forEach(c=>{const show=!q||c.dataset.name.includes(q)||c.dataset.row.includes(q);c.classList.toggle('hidden',!show);if(show)visible++});document.querySelectorAll('section').forEach(s=>s.hidden=![...s.querySelectorAll('.c')].some(c=>!c.classList.contains('hidden'));count.textContent=`${visible.toLocaleString()} of 5,390 icons shown`;});
+document.querySelector('#search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();let visible=0;cards.forEach(c=>{const show=!q||c.dataset.name.includes(q)||c.dataset.row.includes(q);c.classList.toggle('hidden',!show);if(show)visible++});document.querySelectorAll('section').forEach(s=>s.hidden=![...s.querySelectorAll('.c')].some(c=>!c.classList.contains('hidden'));count.textContent=`${visible.toLocaleString()} of 5,439 icons shown`;});
 </script></body></html>"""
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check-only", action="store_true", help="Validate inputs without writing outputs")
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Explicitly rebuild every bundled icon; the default only writes missing outputs",
+    )
     args = parser.parse_args()
 
     pages = source_pages()
@@ -349,54 +361,91 @@ def main() -> None:
         return
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    # A cancelled/retried v19 build may leave only this pipeline's namespaced
-    # outputs behind. Remove those exact files before producing a fresh set.
-    for existing in OUTPUT_DIR.glob("memory.*.webp"):
-        existing.unlink()
+    expected_all_files = {f"{item['item_id']}.webp" for item in items.values()}
+    missing_rows = {
+        row_number
+        for row_number, item in items.items()
+        if not (OUTPUT_DIR / f"{item['item_id']}.webp").exists()
+    }
+    if args.full:
+        # Destructive behavior is opt-in only. Normal runs never remove or
+        # overwrite an already-bundled icon.
+        for existing in OUTPUT_DIR.glob("memory.*.webp"):
+            existing.unlink()
+        rows_to_write = set(items)
+        selected_pages = pages
+        mode = "full"
+    else:
+        rows_to_write = missing_rows
+        selected_pages = [
+            page for page in pages
+            if any(row_number in rows_to_write for row_number in range(page[0], page[1] + 1))
+        ]
+        mode = "incremental"
+
     page_reports = []
-    cards_by_page = []
     written_files: set[str] = set()
-    for page_index, (start, end, path) in enumerate(pages, start=1):
+    for page_index, (start, end, path) in enumerate(selected_pages, start=1):
         icons, report = extract_page(path)
-        cards = []
         for offset, icon in enumerate(icons):
             row_number = start + offset
+            if row_number not in rows_to_write:
+                continue
             item = items[row_number]
             filename = f"{item['item_id']}.webp"
             if filename in written_files:
                 raise ValueError(f"Duplicate output filename: {filename}")
             icon.save(OUTPUT_DIR / filename, "WEBP", quality=92, method=4)
             written_files.add(filename)
-            cards.append({**item, "row": str(row_number), "filename": filename})
         report["workbook_rows"] = f"{start}-{end}"
         page_reports.append(report)
-        cards_by_page.append((path.stem, cards))
-        print(f"[{page_index:03d}/{len(pages)}] {path.name}: 49 icons")
+        print(
+            f"[{page_index:03d}/{len(selected_pages)}] {path.name}: "
+            f"{sum(row_number in rows_to_write for row_number in range(start, end + 1))} new icons"
+        )
 
-    if len(written_files) != 5390:
-        raise ValueError(f"Expected 5390 written files, found {len(written_files)}")
-    disk_files = {path.name for path in OUTPUT_DIR.glob("*.webp")}
-    unexpected = sorted(disk_files - written_files)
-    missing = sorted(written_files - disk_files)
+    if len(written_files) != len(rows_to_write):
+        raise ValueError(f"Expected {len(rows_to_write)} written files, found {len(written_files)}")
+    disk_files = {path.name for path in OUTPUT_DIR.glob("memory.*.webp")}
+    unexpected = sorted(disk_files - expected_all_files)
+    missing = sorted(expected_all_files - disk_files)
     if unexpected or missing:
         raise ValueError(f"Output directory mismatch: unexpected={unexpected[:5]}, missing={missing[:5]}")
 
+    # Preview metadata is cheap to regenerate and references the existing files;
+    # incremental image builds do not need to decode or rewrite old artwork.
+    cards_by_page = []
+    for start, end, path in pages:
+        cards = []
+        for row_number in range(start, end + 1):
+            item = items[row_number]
+            cards.append({
+                **item,
+                "row": str(row_number),
+                "filename": f"{item['item_id']}.webp",
+            })
+        cards_by_page.append((path.stem, cards))
     PREVIEW_PATH.write_text(preview_html(cards_by_page), encoding="utf-8")
     qa = {
-        "schema": "memory-items-v19-qa@1",
+        "schema": "memory-items-v30-image-qa@1",
+        "mode": mode,
         "source_pages": len(pages),
-        "icons_expected": 5390,
-        "icons_written": len(written_files),
+        "processed_pages": len(selected_pages),
+        "icons_expected": ICON_COUNT,
+        "icons_generated": len(written_files),
+        "catalog_icons_present": len(disk_files),
         "canvas": f"{CANVAS}x{CANVAS}",
         "safe_content_size": SAFE_SIZE,
         "encoding": "WebP quality=92 method=4 with alpha",
-        "minimum_output_margin": min(report["minimum_margin"] for report in page_reports),
+        "minimum_output_margin": (
+            min(report["minimum_margin"] for report in page_reports) if page_reports else None
+        ),
         "unexpected_output_files": unexpected,
         "missing_output_files": missing,
         "pages": page_reports,
     }
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding="utf-8")
-    print(f"wrote {len(written_files)} icons")
+    print(f"{mode} build wrote {len(written_files)} icons; {len(disk_files)} catalog icons present")
     print(f"preview: {PREVIEW_PATH}")
     print(f"qa: {QA_PATH}")
 

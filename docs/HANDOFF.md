@@ -58,7 +58,7 @@ Tame +30（免费全局 1/天，付费每怪 1/天共 8）+ 怪物维度+10；Vi
 
 - 词典：`packages/engine/src/items/dictionary.json` = **1072 物品 + 2123 同义
   词**，由 `tools/build-item-dictionary.py` 从
-  `assets/memory items/icon_keyword_mapping.csv`（用户维护）+
+  `tools/item-source/memory-items/icon_keyword_mapping.csv`（用户维护）+
   `keyword-conflicts-resolution.csv`（85 组关键词冲突的裁决表，胜者保留、
   败者弃词）生成。改词 → 改 CSV → 重跑脚本即可
 - id 形如 `music.electric_guitar`（类目前缀 + 名称 slug）；多词词组优先且
@@ -330,7 +330,7 @@ CompanionSheet Skills 胶囊换正式图标、深链/推送、Sentry、`assets/I
 Untitled design (34/56/57/60).png` 未使用待认领。
 
 **工作区未提交**（用户自己的改动，勿动）：`assets/videos/default.mov`（新宠物
-视频）、`assets/memory items/` 目录、docs 下三个旧文档被删（1.4-completion
+视频）、`tools/item-source/memory-items/` 目录、docs 下三个旧文档被删（1.4-completion
 ×2、backlog——可能是用户清理，提交时确认）。
 
 ## 8. 验证与常用命令

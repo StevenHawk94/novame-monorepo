@@ -1,13 +1,6 @@
-import { useEffect, useRef } from 'react';
-
 import { Tabs } from 'expo-router';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
-import {
-  RatingPromptSheet,
-  type RatingPromptSheetRef,
-} from '@/components/rating/rating-prompt-sheet';
-import { subscribeRatingPromptRequest } from '@/lib/rating-prompt';
 
 /**
  * Five tabs: Home / Bags / Quests / Friends / Status.
@@ -17,31 +10,20 @@ import { subscribeRatingPromptRequest } from '@/lib/rating-prompt';
  * images; the second belongs to the willpower system. Both re-enter in Phase C
  * -- skins against companions, and nothing against study.
  *
- * The rating sheet stays: it carries no domain concept, it listens on a
- * module-level channel and presents. modal-coordinator likewise survives,
- * arbitrating only announcement-gate until Phase C gives it slots to order.
+ * Official rating requests are coordinated by the authenticated Main layout,
+ * so they can wait for Reflect and paywall routes to finish closing.
  */
 export default function TabsLayout() {
-  const ratingSheetRef = useRef<RatingPromptSheetRef>(null);
-  useEffect(() => {
-    return subscribeRatingPromptRequest(() => {
-      ratingSheetRef.current?.present();
-    });
-  }, []);
-
   return (
-    <>
-      <Tabs
-        tabBar={(props) => <BottomTabBar {...props} />}
-        screenOptions={{ headerShown: false }}
-      >
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
-        <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
-        <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-        <Tabs.Screen name="status" options={{ title: 'Connection' }} />
-      </Tabs>
-      <RatingPromptSheet ref={ratingSheetRef} />
-    </>
+    <Tabs
+      tabBar={(props) => <BottomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
+      <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
+      <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
+      <Tabs.Screen name="status" options={{ title: 'Connection' }} />
+    </Tabs>
   );
 }

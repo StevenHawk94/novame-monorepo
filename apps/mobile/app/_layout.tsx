@@ -28,6 +28,11 @@ import {
   startSubscriptionRealtime,
   stopSubscriptionRealtime,
 } from '@/lib/subscription-realtime';
+import {
+  resumePairingRealtime,
+  startPairingRealtime,
+  stopPairingRealtime,
+} from '@/lib/pairing-realtime';
 import { fetchMeStats } from '@/lib/me-stats';
 import { fetchAppConfig } from '@/lib/app-config-api';
 import { clearSkinUnlockQueue } from '@/lib/skin-unlock-store';
@@ -270,10 +275,20 @@ function RootLayout() {
         supabase.auth.startAutoRefresh();
         void touchActivity();
         void checkContentVersionInBackground();
-        void resumeSubscriptionRealtime();
+        void resumeSubscriptionRealtime().catch((error) => {
+          console.warn('[layout] entitlement realtime resume failed:', error);
+        });
+        void resumePairingRealtime().catch((error) => {
+          console.warn('[layout] pairing realtime resume failed:', error);
+        });
       } else {
         supabase.auth.stopAutoRefresh();
-        void stopSubscriptionRealtime();
+        void stopSubscriptionRealtime().catch((error) => {
+          console.warn('[layout] entitlement realtime stop failed:', error);
+        });
+        void stopPairingRealtime().catch((error) => {
+          console.warn('[layout] pairing realtime stop failed:', error);
+        });
       }
     };
     // Run once on mount to set the initial state correctly.
@@ -317,7 +332,14 @@ function RootLayout() {
         // novame_onboarding_state. Anything else is a key that outlived its
         // owner.
         debugAccountKeysRemaining('SIGNED_IN');
-        if (session?.user?.id) void startSubscriptionRealtime(session.user.id);
+        if (session?.user?.id) {
+          void startSubscriptionRealtime(session.user.id).catch((error) => {
+            console.warn('[layout] entitlement realtime start failed:', error);
+          });
+          void startPairingRealtime(session.user.id).catch((error) => {
+            console.warn('[layout] pairing realtime start failed:', error);
+          });
+        }
 
         // Fire-and-forget onboarding sync if there is pending mmkv data
         // from a fresh onboarding completion. Errors are logged and
@@ -329,7 +351,12 @@ function RootLayout() {
         // and missing Me page header on first frame after sign-in.
         router.replace('/(auth)/signing-in');
       } else if (event === 'SIGNED_OUT') {
-        void stopSubscriptionRealtime();
+        void stopSubscriptionRealtime().catch((error) => {
+          console.warn('[layout] entitlement realtime sign-out failed:', error);
+        });
+        void stopPairingRealtime().catch((error) => {
+          console.warn('[layout] pairing realtime sign-out failed:', error);
+        });
         // Stage 5.IAP.5 (Bug #5): clear all per-user MMKV caches so
         // the next user (or fresh sign-in) does not see stale data
         // from the previous user. Per Supabase official guidance for
@@ -364,7 +391,12 @@ function RootLayout() {
     return () => {
       appStateSub.remove();
       authSub.unsubscribe();
-      void stopSubscriptionRealtime();
+      void stopSubscriptionRealtime().catch((error) => {
+        console.warn('[layout] entitlement realtime cleanup failed:', error);
+      });
+      void stopPairingRealtime().catch((error) => {
+        console.warn('[layout] pairing realtime cleanup failed:', error);
+      });
       void cleanupIAP();
     };
   }, []);

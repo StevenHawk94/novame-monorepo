@@ -1,0 +1,16 @@
+{
+  "schema": "memory-items-v30-image-qa@1",
+  "mode": "incremental",
+  "source_pages": 111,
+  "processed_pages": 0,
+  "icons_expected": 5439,
+  "icons_generated": 0,
+  "catalog_icons_present": 5439,
+  "canvas": "256x256",
+  "safe_content_size": 200,
+  "encoding": "WebP quality=92 method=4 with alpha",
+  "minimum_output_margin": null,
+  "unexpected_output_files": [],
+  "missing_output_files": [],
+  "pages": []
+}
