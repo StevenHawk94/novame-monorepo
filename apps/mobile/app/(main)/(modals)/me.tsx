@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import * as StoreReview from 'expo-store-review';
@@ -327,7 +327,7 @@ export default function MeScreen() {
           {/* Burrow Plus banner (design: brown, white View button) */}
           <View style={styles.plusBanner}>
             <View style={styles.plusIconWrap}>
-              <MaterialIcons name="workspace-premium" size={25} color="#4A3220" />
+              <MaterialCommunityIcons name="crown" size={25} color="#4A3220" />
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.plusTitleRow}>
@@ -337,7 +337,7 @@ export default function MeScreen() {
               <Text style={styles.plusSub}>
                 {isPlus
                   ? "You're on Plus. Every premium feature is yours."
-                  : 'Get Plus to unlock all premium features to you and your bff'}
+                  : 'Get Plus to unlock all premium features to you and your person.'}
               </Text>
             </View>
             <Pressable

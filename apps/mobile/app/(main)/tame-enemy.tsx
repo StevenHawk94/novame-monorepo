@@ -100,6 +100,7 @@ export default function TameEnemyScreen() {
   const monsterScale = useSharedValue(1);
   const monsterShake = useSharedValue(0);
   const whiteFilm = useSharedValue(WHITE_FILM_OPACITY);
+  const resultScale = useSharedValue(0);
 
   const monsterAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -108,6 +109,9 @@ export default function TameEnemyScreen() {
     ],
   }));
   const whiteFilmStyle = useAnimatedStyle(() => ({ opacity: whiteFilm.value }));
+  const resultAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: resultScale.value }],
+  }));
 
   useFocusEffect(
     useCallback(() => {
@@ -132,6 +136,17 @@ export default function TameEnemyScreen() {
     const timer = setTimeout(() => setPhase('result'), HEART_ANIMATION_FALLBACK_MS);
     return () => clearTimeout(timer);
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'result') return;
+    cancelAnimation(resultScale);
+    resultScale.value = 0;
+    resultScale.value = withSequence(
+      withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }),
+      withTiming(0.9, { duration: 90, easing: Easing.inOut(Easing.quad) }),
+      withTiming(1, { duration: 110, easing: Easing.out(Easing.quad) }),
+    );
+  }, [phase, resultScale]);
 
   function startBattle(m: MonsterStatus) {
     void haptics.medium();
@@ -486,7 +501,7 @@ export default function TameEnemyScreen() {
 
         {phase === 'result' && (
           <View style={styles.resultBackdrop}>
-            <View style={styles.resultCard}>
+            <Animated.View style={[styles.resultCard, resultAnimatedStyle]}>
               <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
               <Text style={styles.victoryTitle}>VICTORY!</Text>
               {MONSTER_ART[active.id] ? (
@@ -513,7 +528,7 @@ export default function TameEnemyScreen() {
               >
                 <Text style={styles.confirmText}>Confirm</Text>
               </Pressable>
-            </View>
+            </Animated.View>
           </View>
         )}
       </View>

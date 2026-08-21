@@ -284,7 +284,9 @@ export default function ConnectionDashboardScreen() {
               <View style={st.itemsGrid}>
                 {items.map((it) => (
                   <Pressable key={it.itemId} onPress={() => { void haptics.light(); setOpenItem(it); }}>
-                    <ItemSprite itemId={it.itemId} size={64} radius={14} />
+                    <View style={st.matchingItemCard}>
+                      <ItemSprite itemId={it.itemId} size={64} radius={18} tileColor="transparent" />
+                    </View>
                   </Pressable>
                 ))}
               </View>
@@ -413,6 +415,11 @@ const st = StyleSheet.create({
 
   itemsCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16, minHeight: 90, justifyContent: 'center' },
   itemsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+  matchingItemCard: {
+    width: 64, height: 64, borderRadius: 18,
+    backgroundColor: 'rgba(76,51,27,0.10)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   itemsEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A6240', textAlign: 'center', lineHeight: 21 },
 
   lockCard: {

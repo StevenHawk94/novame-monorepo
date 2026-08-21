@@ -49,6 +49,7 @@ const ERROR_MESSAGE: Record<ReflectError, string> = {
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',
+  plus_required: 'Shared Memories are available with Burrow Plus.',
   network: 'Couldn’t save that. Check your connection and try again.',
 };
 
@@ -101,7 +102,6 @@ export default function SharedMemoryCreateScreen() {
   }, [text]);
 
   const shownMatches = liveMatched.filter((match) => !removedIds.has(match.itemId));
-  const missingFreeNotes = !isPaid && shownMatches.some((match) => !(notes[match.itemId] ?? '').trim());
   const atLimit = remaining <= 0;
 
   function removeMatch(itemId: string) {
@@ -111,6 +111,10 @@ export default function SharedMemoryCreateScreen() {
 
   async function create() {
     if (submitting) return;
+    if (!isPaid) {
+      router.replace('/(main)/(modals)/subscription-paywall?phase=plans' as never);
+      return;
+    }
     if (!friendUserId) {
       appAlert('Pair with someone first', 'Shared Memories are created together with your paired person.');
       return;
@@ -119,12 +123,6 @@ export default function SharedMemoryCreateScreen() {
       appAlert('No items matched', 'Mention the things you remember together, such as coffee, a movie, or flowers.');
       return;
     }
-    if (missingFreeNotes) {
-      setEditOpen(true);
-      appAlert('Add memory details', 'Free members add a description for every memory item before saving.');
-      return;
-    }
-
     const itemNotes: Record<string, string> = {};
     for (const match of shownMatches) {
       const note = (notes[match.itemId] ?? '').trim();
@@ -145,6 +143,10 @@ export default function SharedMemoryCreateScreen() {
     setSubmitting(false);
 
     if (!response.ok) {
+      if (response.error === 'plus_required') {
+        router.replace('/(main)/(modals)/subscription-paywall?phase=plans' as never);
+        return;
+      }
       if (response.error === 'daily_limit') setRemaining(0);
       appAlert('Could not save that', ERROR_MESSAGE[response.error]);
       return;
@@ -220,10 +222,6 @@ export default function SharedMemoryCreateScreen() {
                 </Pressable>
               </View>
 
-              {!isPaid && shownMatches.length > 0 && (
-                <Text style={styles.freeNote}>Add a description for each item before saving.</Text>
-              )}
-
               <Pressable
                 onPress={() => void create()}
                 disabled={text.trim().length < 4 || submitting}
@@ -249,7 +247,6 @@ export default function SharedMemoryCreateScreen() {
           onRemove={removeMatch}
           onDone={() => setEditOpen(false)}
           isPaid={isPaid}
-          requireNotes={!isPaid}
         />
       )}
     </View>
@@ -274,7 +271,6 @@ const styles = StyleSheet.create({
   matchRow: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   matchEmpty: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#B7AEA6' },
   editButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#43301F', alignItems: 'center', justifyContent: 'center' },
-  freeNote: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_600SemiBold', textAlign: 'center', marginBottom: 12 },
   createButton: {
     backgroundColor: RC.yellow, borderRadius: 24, paddingVertical: 17, alignItems: 'center',
     shadowColor: RC.yellowDrop, shadowOpacity: 1, shadowRadius: 0,

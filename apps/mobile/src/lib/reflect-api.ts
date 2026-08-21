@@ -57,6 +57,7 @@ export type ReflectError =
   | 'companion_not_ready' // no companion row (should not happen post-onboarding)
   | 'too_long' // body over 5000 chars
   | 'empty' // nothing typed
+  | 'plus_required' // Shared Memories creation is a Plus feature
   | 'network'; // request failed / server error
 
 export type SubmitResult =
@@ -222,6 +223,9 @@ export async function submitReflect(params: {
     if (data.error === 'companion_not_initialized') {
       return { ok: false, error: 'companion_not_ready' };
     }
+    if (data.error === 'plus_required') {
+      return { ok: false, error: 'plus_required' };
+    }
     if (data.error || !data.success) {
       return { ok: false, error: 'network' };
     }
@@ -235,6 +239,16 @@ export async function submitReflect(params: {
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
   } catch (e) {
+    if (
+      e instanceof ApiError
+      && e.status === 403
+      && typeof e.body === 'object'
+      && e.body !== null
+      && 'error' in e.body
+      && e.body.error === 'plus_required'
+    ) {
+      return { ok: false, error: 'plus_required' };
+    }
     // ApiError with a 409 carries the daily-limit body; other codes are network.
     if (e instanceof ApiError && e.status === 409) {
       writeCache({ date: today, reflectsToday: DAILY_LIMIT });

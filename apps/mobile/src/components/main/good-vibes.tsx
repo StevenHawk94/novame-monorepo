@@ -15,7 +15,7 @@ import { appAlert } from '@/components/ui/app-dialog';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { haptics } from '@/lib/haptics';
 import { GOOD_VIBE_ART } from '@/lib/icons';
-import { supabase } from '@/lib/supabase';
+import { subscribeGoodVibeRealtime } from '@/lib/pairing-realtime';
 import {
   GOOD_VIBE_MESSAGES,
   fetchUnreadGoodVibe,
@@ -46,8 +46,8 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
     setSending(false);
     if (result.ok) {
       void haptics.success();
-      onClose();
       onSent?.();
+      onClose();
       return;
     }
     if (result.error === 'daily_limit') {
@@ -119,20 +119,30 @@ export function GoodVibesInboxGate() {
   const [vibe, setVibe] = useState<GoodVibeInboxItem | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const checkingRef = useRef(false);
+  const vibeRef = useRef<GoodVibeInboxItem | null>(null);
+  const replyToIdRef = useRef<string | null>(null);
 
   const check = useCallback(async () => {
     // Never consume a message while iOS has the app backgrounded. Timers can
     // briefly keep running during a state transition, but a Modal cannot be
     // relied on to become visible there.
-    if (AppState.currentState !== 'active' || vibe || replyToId || checkingRef.current) return;
+    if (
+      AppState.currentState !== 'active'
+      || vibeRef.current
+      || replyToIdRef.current
+      || checkingRef.current
+    ) return;
     checkingRef.current = true;
     try {
       const incoming = await fetchUnreadGoodVibe();
-      if (incoming) setVibe(incoming);
+      if (incoming) {
+        vibeRef.current = incoming;
+        setVibe(incoming);
+      }
     } finally {
       checkingRef.current = false;
     }
-  }, [replyToId, vibe]);
+  }, []);
 
   useEffect(() => {
     void check();
@@ -140,30 +150,13 @@ export function GoodVibesInboxGate() {
       if (state === 'active') void check();
     });
 
-    let disposed = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    void supabase.auth.getSession().then(({ data }) => {
-      const userId = data.session?.user.id;
-      if (disposed || !userId) return;
-      channel = supabase
-        .channel(`good-vibes-inbox:${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'good_vibes',
-            filter: `recipient_user_id=eq.${userId}`,
-          },
-          () => { void check(); },
-        )
-        .subscribe();
+    const unsubscribeRealtime = subscribeGoodVibeRealtime(() => {
+      void check();
     });
 
     return () => {
-      disposed = true;
       subscription.remove();
-      if (channel) void supabase.removeChannel(channel);
+      unsubscribeRealtime();
     };
   }, [check]);
 
@@ -175,12 +168,14 @@ export function GoodVibesInboxGate() {
     checkingRef.current = true;
     void markGoodVibeRead(delivered.id).finally(() => {
       checkingRef.current = false;
+      void check();
     });
   }
 
   function dismiss() {
     const delivered = vibe;
     acknowledge(delivered);
+    vibeRef.current = null;
     setVibe(null);
   }
 
@@ -191,8 +186,12 @@ export function GoodVibesInboxGate() {
 
   function reply() {
     const delivered = vibe;
+    vibeRef.current = null;
     setVibe(null);
-    if (delivered?.canReply) setReplyToId(delivered.id);
+    if (delivered?.canReply) {
+      replyToIdRef.current = delivered.id;
+      setReplyToId(delivered.id);
+    }
   }
 
   return (
@@ -236,12 +235,20 @@ export function GoodVibesInboxGate() {
       <GoodVibesPicker
         visible={!!replyToId}
         replyToId={replyToId ?? undefined}
-        onClose={() => setReplyToId(null)}
+        onClose={() => {
+          replyToIdRef.current = null;
+          setReplyToId(null);
+          void check();
+        }}
         onSent={() => {
           if (replyToId) {
             checkingRef.current = true;
-            void markGoodVibeRead(replyToId).finally(() => { checkingRef.current = false; });
+            void markGoodVibeRead(replyToId).finally(() => {
+              checkingRef.current = false;
+              void check();
+            });
           }
+          replyToIdRef.current = null;
           setReplyToId(null);
         }}
       />

@@ -20,9 +20,11 @@ export type PairingRealtimeSnapshot = {
 
 type Listener = (snapshot: PairingRealtimeSnapshot) => void;
 type FriendshipListener = (status: FriendsStatus) => void;
+type GoodVibeListener = () => void;
 
 const listeners = new Set<Listener>();
 const friendshipListeners = new Set<FriendshipListener>();
+const goodVibeListeners = new Set<GoodVibeListener>();
 let channel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
 let generation = 0;
@@ -49,6 +51,16 @@ function publishFriendships(status: FriendsStatus): void {
       listener(status);
     } catch (error) {
       console.warn('[pairing] friendship realtime listener failed:', error);
+    }
+  }
+}
+
+function publishGoodVibes(): void {
+  for (const listener of goodVibeListeners) {
+    try {
+      listener();
+    } catch (error) {
+      console.warn('[pairing] Good Vibes realtime listener failed:', error);
     }
   }
 }
@@ -143,6 +155,11 @@ export function subscribeFriendshipRealtime(listener: FriendshipListener): () =>
   return () => friendshipListeners.delete(listener);
 }
 
+export function subscribeGoodVibeRealtime(listener: GoodVibeListener): () => void {
+  goodVibeListeners.add(listener);
+  return () => goodVibeListeners.delete(listener);
+}
+
 export async function startPairingRealtime(
   userId: string,
   options?: { recovery?: boolean },
@@ -180,6 +197,11 @@ export async function startPairingRealtime(
         // Invite events only invalidate the small Friends status resource.
         void reconcileFriendships(userId, subscribedGeneration);
       })
+      .on('broadcast', { event: 'good_vibe_received' }, () => {
+        // The event is only an invalidation signal. The protected API remains
+        // authoritative for the sender, message and reply state.
+        publishGoodVibes();
+      })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;
         if (typeof partnerUserId !== 'string' || !partnerUserId) return;
@@ -196,6 +218,10 @@ export async function startPairingRealtime(
           channelHealthy = true;
           reconnectAttempted = false;
           void reconcile(userId, subscribedGeneration);
+          // Recover any Good Vibes event missed while offline or while the
+          // private channel was reconnecting. The inbox gate coalesces this
+          // with its launch/foreground check.
+          publishGoodVibes();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           channelHealthy = false;
           // One temporary recovery attempt for this failure incident. There is

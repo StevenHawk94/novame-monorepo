@@ -30,6 +30,7 @@ import {
 import { ICONS } from '@/lib/icons';
 import { haptics } from '@/lib/haptics';
 import { refreshRemoteItems } from '@/lib/remote-items';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 type CollectionTab = 'mine' | 'their' | 'ours';
 
@@ -55,6 +56,7 @@ const COLLECTION_PAGE_SIZE = 100;
  */
 export default function BagsScreen() {
   const router = useRouter();
+  const isPaid = useSubscriptionTier() !== 'free';
   const { tab: initialTab } = useLocalSearchParams<{ tab?: string }>();
   const { width } = useWindowDimensions();
   const numColumns = Math.min(10, Math.max(5, Math.floor((width - 32) / 62)));
@@ -278,6 +280,10 @@ export default function BagsScreen() {
 
   function openSharedCreator() {
     void haptics.pageOpen();
+    if (!isPaid) {
+      router.push('/(main)/(modals)/subscription-paywall?phase=plans' as never);
+      return;
+    }
     if (!partner) {
       router.push('/(main)/(tabs)/friends' as never);
       return;

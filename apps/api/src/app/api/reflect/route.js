@@ -123,20 +123,12 @@ export async function POST(request) {
     const isPaid = (profile.subscription_tier || 'free') !== 'free'
     const hasConsent = !!profile.ai_consent_at
 
-    // Shared Memories is a Reflect path. Free members author every memory
-    // description themselves; Plus may leave notes blank for AI refinement.
-    // Enforce this server-side as well as in the UI so the old direct-create
-    // behavior cannot be recreated by a stale or modified client.
-    if (friendUserId && mode === 'typing' && !isPaid) {
-      if (preliminaryMatches.length === 0) {
-        return NextResponse.json({ error: 'No items matched' }, { status: 400 })
-      }
-      const complete = itemNotes && typeof itemNotes === 'object'
-        && preliminaryMatches.every((match) =>
-          typeof itemNotes[match.itemId] === 'string' && itemNotes[match.itemId].trim().length > 0)
-      if (!complete) {
-        return NextResponse.json({ error: 'Shared memory descriptions required' }, { status: 400 })
-      }
+    // Shared Memories creation is Plus-only. Enforce the entitlement at the
+    // API boundary as well as in both mobile entry points so stale or modified
+    // clients cannot bypass the gate. Existing Ours reads and realtime delivery
+    // are intentionally unaffected.
+    if (friendUserId && !isPaid) {
+      return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
 
     const dateStr = localDate || new Date().toISOString().slice(0, 10)

@@ -48,6 +48,7 @@ const ERROR_MESSAGE: Record<ReflectError, string> = {
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',
+  plus_required: 'Shared Memories are available with Burrow Plus.',
   network: 'Couldn’t save that. Check your connection and try again.',
 };
 

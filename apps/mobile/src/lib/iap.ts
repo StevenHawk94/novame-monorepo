@@ -339,11 +339,6 @@ export async function cleanupIAP(): Promise<void> {
  * Optional in Stage 5.IAP.3 -- the paywall can keep using
  * PRICING_TIERS for now and switch to live prices in a follow-up.
  */
-// Play Billing needs the offer token for the selected subscription + base
-// plan. A product can expose several offers, so keying only by SKU can select
-// the wrong billing period.
-const androidOfferTokens = new Map<string, string>();
-
 type AndroidOffer = {
   basePlanIdAndroid?: string | null;
   displayPrice: string;
@@ -356,10 +351,6 @@ type AndroidOffer = {
     }>;
   } | null;
 };
-
-function androidOfferKey(productId: string, cycle: SubscriptionCycle): string {
-  return `${productId}:${cycle}`;
-}
 
 function hasFreePhase(offer: AndroidOffer): boolean {
   return Boolean(
@@ -426,15 +417,6 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
       type: 'subs',
     });
     const list = Array.isArray(products) ? (products as ProductSubscription[]) : [];
-    if (Platform.OS === 'android') {
-      for (const prod of list) {
-        const offers = (prod as { subscriptionOffers?: AndroidOffer[] })
-          .subscriptionOffers ?? [];
-        const cycle = prod.id === 'novame.plus.yearly' ? 'yearly' : 'monthly';
-        const token = selectAndroidOffer(offers, cycle)?.offerTokenAndroid;
-        if (token) androidOfferTokens.set(androidOfferKey(prod.id, cycle), token);
-      }
-    }
     return list;
   } catch (e) {
     console.warn('[iap] fetchProducts failed:', e);
@@ -480,18 +462,23 @@ export async function purchaseSubscription(
     //                           autoRenewPreference and takes effect at
     //                           the end of the current period.
     // Cancellation throws ErrorCode.UserCancelled.
-    // Android requires the Play offer token alongside the sku; make sure
-    // products (and their tokens) are loaded before the purchase call.
+    // Android requires an eligible Play offer token alongside the SKU. Query
+    // it immediately before launch instead of reusing the paywall's earlier
+    // ProductDetails: Google explicitly warns that stale ProductDetails can
+    // make launchBillingFlow fail.
     const cycle = PRODUCT_TO_CYCLE[productId];
     const androidProductId = productId;
-    const offerKey = androidOfferKey(androidProductId, cycle);
-    if (Platform.OS === 'android' && !androidOfferTokens.has(offerKey)) {
-      await fetchSubscriptionProducts();
+    let androidOffer: string | undefined;
+    if (Platform.OS === 'android') {
+      const products = await fetchSubscriptionProducts();
+      const product = products.find((item) => item.id === androidProductId);
+      const offers = (product as { subscriptionOffers?: AndroidOffer[] } | undefined)
+        ?.subscriptionOffers ?? [];
+      androidOffer = selectAndroidOffer(offers, cycle)?.offerTokenAndroid ?? undefined;
     }
-    const androidOffer = androidOfferTokens.get(offerKey);
     if (Platform.OS === 'android' && !androidOffer) {
       throw new Error(
-        `Google Play did not return the ${cycle} plan. Confirm that ${androidProductId}/${cycle} is active and install the Play test-track build.`,
+        `Google Play could not load the ${cycle} plan. Use a Play license tester or install the opted-in Play test-track build, then try again.`,
       );
     }
     const { data: sessionData } = await supabase.auth.getSession();
@@ -505,8 +492,8 @@ export async function purchaseSubscription(
     );
     const result = await requestPurchase({
       request: {
-        ios: { sku: productId, appAccountToken: purchaseUserId },
-        android: {
+        apple: { sku: productId, appAccountToken: purchaseUserId },
+        google: {
           skus: [androidProductId],
           obfuscatedAccountId: googleAccountId,
           obfuscatedProfileId: purchaseUserId,

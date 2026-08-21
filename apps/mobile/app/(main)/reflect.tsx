@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
 import { refreshRemoteItems } from '../../src/lib/remote-items';
+import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
 
@@ -26,6 +27,7 @@ const TAN_OFFSET = '#E5B57E';
 export default function ReflectEntryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const isPaid = useSubscriptionTier() !== 'free';
   const params = useLocalSearchParams<{
     presetPrompt?: string;
     sourceKit?: string;
@@ -89,13 +91,24 @@ export default function ReflectEntryScreen() {
               radius={30}
               onPress={() => {
                 void haptics.pageOpen();
+                if (w.key === 'shared' && !isPaid) {
+                  router.push('/(main)/(modals)/subscription-paywall?phase=plans' as never);
+                  return;
+                }
                 router.push(w.route as never);
               }}
               cardStyle={styles.wayCard}
               style={{ marginBottom: 18 }}
             >
               <View style={{ flex: 1 }}>
-                <Text style={styles.wayTitle}>{w.title}</Text>
+                <View style={styles.wayTitleRow}>
+                  <Text style={styles.wayTitle}>{w.title}</Text>
+                  {w.key === 'shared' ? (
+                    <View style={styles.plusBadge}>
+                      <Text style={styles.plusBadgeText}>Plus</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text style={styles.wayText}>{w.text}</Text>
               </View>
               <ExpoImage source={w.icon} style={styles.wayIcon} contentFit="contain" />
@@ -116,7 +129,10 @@ const styles = StyleSheet.create({
   lead: { fontSize: 28, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginTop: 4, marginBottom: 20 },
   wayCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', padding: 20 },
+  wayTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   wayTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  plusBadge: { backgroundColor: '#4A3220', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 3 },
+  plusBadgeText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' },
   wayText: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3E3229', marginTop: 4 },
   wayIcon: { width: 56, height: 56 },
 });
