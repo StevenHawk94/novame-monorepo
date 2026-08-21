@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { storage } from './storage';
 
@@ -32,6 +33,7 @@ import { storage } from './storage';
  */
 
 const STORAGE_KEY = 'novame_notification_settings';
+const ANDROID_CHANNEL_ID = 'daily-reminders';
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -103,6 +105,15 @@ export function shouldPromptNotifAfterPurchase(): boolean {
 
 export type PermissionResult = 'granted' | 'denied' | 'undetermined';
 
+async function ensureAndroidNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+    name: 'Daily reminders',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+  });
+}
+
 export async function checkNotificationPermission(): Promise<PermissionResult> {
   const settings = await Notifications.getPermissionsAsync();
   if (settings.granted) return 'granted';
@@ -115,20 +126,17 @@ export async function checkNotificationPermission(): Promise<PermissionResult> {
 }
 
 export async function requestNotificationPermission(): Promise<PermissionResult> {
-  const result = await Notifications.requestPermissionsAsync({
+  // Android 13 does not present its runtime permission dialog until at least
+  // one notification channel exists.
+  await ensureAndroidNotificationChannel();
+  await Notifications.requestPermissionsAsync({
     ios: {
       allowAlert: true,
       allowBadge: true,
       allowSound: true,
     },
   });
-  if (result.granted) return 'granted';
-  if (
-    result.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
-  ) {
-    return 'granted';
-  }
-  return 'denied';
+  return checkNotificationPermission();
 }
 
 // ---- schedule / cancel ----
@@ -147,6 +155,7 @@ export async function scheduleDailyReminder(
   hour: number,
   min: number,
 ): Promise<void> {
+  await ensureAndroidNotificationChannel();
   const current = getNotificationSettings();
   if (current.identifier) {
     try {
@@ -166,6 +175,7 @@ export async function scheduleDailyReminder(
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour,
       minute: min,
+      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
     },
   });
 

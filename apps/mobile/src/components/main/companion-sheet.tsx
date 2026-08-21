@@ -34,14 +34,17 @@ interface DoneState {
   quietWins: boolean;
   newLens: boolean;
   trueNorth: boolean;
+  trueNorthNextAvailableAt: string | null;
   tameEnemy: boolean;
 }
 
 function readDoneState(): DoneState {
+  const trueNorth = getCachedStatus();
   return {
     quietWins: isQuietWinsDoneToday(),
     newLens: isNewLensDoneToday(),
-    trueNorth: !!getCachedStatus()?.doneThisWeek,
+    trueNorth: !!trueNorth.doneThisWeek,
+    trueNorthNextAvailableAt: trueNorth.nextAvailableAt,
     tameEnemy: isTameEnemyDoneToday(),
   };
 }
@@ -60,6 +63,7 @@ export function CompanionSheet() {
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
   const [masterStatus, setMasterStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
+  const [clockMs, setClockMs] = useState(Date.now());
 
   useEffect(() => subscribeCosmetics((state) => setBalance(state.balance)), []);
 
@@ -69,6 +73,7 @@ export function CompanionSheet() {
   useFocusEffect(
     useCallback(() => {
       setDoneState(readDoneState());
+      setClockMs(Date.now());
       setBalance(getCachedCosmetics().balance);
       void fetchCosmetics().then((state) => setBalance(state.balance));
       setMasterStatus(getCachedMasterStatus());
@@ -76,11 +81,24 @@ export function CompanionSheet() {
     }, []),
   );
 
+  const trueNorthRemainingMs = doneState.trueNorthNextAvailableAt
+    ? new Date(doneState.trueNorthNextAvailableAt).getTime() - clockMs
+    : 0;
+  const trueNorthCoolingDown = doneState.trueNorth && trueNorthRemainingMs > 0;
   const trueNorthAvail = useMemo(() => {
-    const dow = (new Date().getDay() + 6) % 7;
-    const days = 7 - dow;
-    return days === 1 ? 'New ranking tomorrow' : `New ranking in ${days} days`;
-  }, []);
+    const days = Math.ceil(trueNorthRemainingMs / (24 * 60 * 60 * 1000));
+    return days <= 1 ? 'New ranking tomorrow' : `New ranking in ${days} days`;
+  }, [trueNorthRemainingMs]);
+
+  // Purely local one-shot timer: wake only when the displayed day count is
+  // due to change. No polling and no server request.
+  useEffect(() => {
+    if (!trueNorthCoolingDown) return;
+    const days = Math.ceil(trueNorthRemainingMs / (24 * 60 * 60 * 1000));
+    const delay = Math.max(1_000, trueNorthRemainingMs - (days - 1) * 24 * 60 * 60 * 1000 + 1_000);
+    const timer = setTimeout(() => setClockMs(Date.now()), delay);
+    return () => clearTimeout(timer);
+  }, [trueNorthCoolingDown, trueNorthRemainingMs]);
 
   const kits: KitRow[] = useMemo(() => {
     const masterCoolingDown = masterStatus.isPaid && !masterStatus.available;
@@ -90,7 +108,7 @@ export function CompanionSheet() {
     return [
       { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
       { key: 'new_lens', label: 'New Lens', desc: 'Feeling stuck? A different angle might help.', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
-      { key: 'true_north', label: 'True North', desc: 'See what truly deserves your energy right now.', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: doneState.trueNorth, availText: trueNorthAvail },
+      { key: 'true_north', label: 'True North', desc: 'See what truly deserves your energy right now.', icon: ICONS.TrueNorth, route: '/(main)/true-north', done: trueNorthCoolingDown, availText: trueNorthAvail },
       { key: 'tame_enemy', label: 'Tame Enemy', desc: "That voice working against you? Let's tame it.", icon: ICONS.TameEnemy, route: '/(main)/tame-enemy', done: doneState.tameEnemy, daily: true },
       {
         key: 'visit_master', label: 'Visit Master',
@@ -102,7 +120,7 @@ export function CompanionSheet() {
         disabled: masterCoolingDown,
       },
     ];
-  }, [doneState, masterStatus, trueNorthAvail]);
+  }, [doneState, masterStatus, trueNorthAvail, trueNorthCoolingDown]);
 
   // Daily Kits vanish once done; permanent Kits always show.
   const visibleKits = kits.filter((k) => !(k.daily && k.done));

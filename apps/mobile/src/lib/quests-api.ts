@@ -4,6 +4,8 @@
  * 7-day checklist. Plan creation / check-off / custom AI generation land in
  * later steps.
  */
+import { ApiError } from '@novame/api-client';
+
 import { kQuestCustomGeneration, kQuestStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
@@ -41,6 +43,8 @@ interface QuestStatusCache {
 
 const QUEST_STATUS_TTL_MS = 15 * 60 * 1000;
 let statusInflight: Promise<QuestStatus> | null = null;
+let statusForcedFollowup: Promise<QuestStatus> | null = null;
+let statusCacheRevision = 0;
 
 function todayLocal(): string {
   const d = new Date();
@@ -64,6 +68,16 @@ export function getCachedStatus(): QuestStatus {
   return readStatusCache()?.state ?? { active: false };
 }
 
+/** Mutation-confirmed state; also protects it from an older GET in flight. */
+export function cacheQuestStatus(state: QuestStatus): void {
+  storage.set(kQuestStatus.name, JSON.stringify({
+    state,
+    fetchedAtMs: Date.now(),
+    localDate: todayLocal(),
+  } satisfies QuestStatusCache));
+  statusCacheRevision += 1;
+}
+
 export function fetchQuestStatus(options?: { force?: boolean }): Promise<QuestStatus> {
   const cached = readStatusCache();
   const localDate = todayLocal();
@@ -75,8 +89,17 @@ export function fetchQuestStatus(options?: { force?: boolean }): Promise<QuestSt
   ) {
     return Promise.resolve(cached.state);
   }
-  if (statusInflight) return statusInflight;
+  if (statusInflight) {
+    if (!options?.force) return statusInflight;
+    if (!statusForcedFollowup) {
+      statusForcedFollowup = statusInflight
+        .then(() => fetchQuestStatus({ force: true }))
+        .finally(() => { statusForcedFollowup = null; });
+    }
+    return statusForcedFollowup;
+  }
 
+  const revisionAtStart = statusCacheRevision;
   statusInflight = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
@@ -87,6 +110,9 @@ export function fetchQuestStatus(options?: { force?: boolean }): Promise<QuestSt
       );
       if (!data.success) return getCachedStatus();
       const state: QuestStatus = { active: !!data.active, plan: data.plan };
+      // A task mutation that happened after this GET started is newer than
+      // this snapshot. Keep the confirmed mutation cache instead.
+      if (revisionAtStart !== statusCacheRevision) return getCachedStatus();
       const next: QuestStatusCache = { state, fetchedAtMs: Date.now(), localDate };
       storage.set(kQuestStatus.name, JSON.stringify(next));
       return state;
@@ -124,7 +150,7 @@ export async function startPlan(themeKey: string, title: string, tasks: string[]
 
 
 export type CheckResult =
-  | { ok: true; reward: number; bonus: number; allDone: boolean; cloversEarned: number; checkedCount: number }
+  | { ok: true; reward: number; bonus: number; replayed: boolean; allDone: boolean; cloversEarned: number; checkedCount: number }
   | { ok: false; error: 'already_checked_today' | 'already_done' | 'no_active_plan' | 'network' };
 
 /** Check off one task (one per calendar day). Server pays clovers + any bonus. */
@@ -134,19 +160,25 @@ export async function checkTask(taskIndex: number): Promise<CheckResult> {
   if (!userId) return { ok: false, error: 'network' };
   try {
     const data = await apiClient.post<{
-      success?: boolean; error?: string; reward?: number; bonus?: number;
+      success?: boolean; error?: string; reward?: number; bonus?: number; replayed?: boolean;
       allDone?: boolean; cloversEarned?: number; checkedCount?: number;
     }>('/api/quests/check', { userId, taskIndex, localDate: todayLocal() });
     if (data.success) {
       return {
-        ok: true, reward: data.reward ?? 0, bonus: data.bonus ?? 0,
+        ok: true, reward: data.reward ?? 0, bonus: data.bonus ?? 0, replayed: !!data.replayed,
         allDone: !!data.allDone, cloversEarned: data.cloversEarned ?? 0, checkedCount: data.checkedCount ?? 0,
       };
     }
     const e = data.error;
     if (e === 'already_checked_today' || e === 'already_done' || e === 'no_active_plan') return { ok: false, error: e };
     return { ok: false, error: 'network' };
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiError && error.kind === 'http') {
+      const code = (error.body as { error?: unknown } | null)?.error;
+      if (code === 'already_checked_today' || code === 'already_done' || code === 'no_active_plan') {
+        return { ok: false, error: code };
+      }
+    }
     return { ok: false, error: 'network' };
   }
 }

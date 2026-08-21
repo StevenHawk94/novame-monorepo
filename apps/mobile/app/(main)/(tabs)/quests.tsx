@@ -15,6 +15,7 @@ import { haptics } from '@/lib/haptics';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import {
   checkTask,
+  cacheQuestStatus,
   fetchQuestStatus,
   getCachedCustomTasks,
   getCachedStatus,
@@ -57,11 +58,15 @@ export default function QuestsScreen() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showLottie, setShowLottie] = useState(false);
   const checkInFlight = useRef(false);
+  const statusRevision = useRef(0);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      void fetchQuestStatus().then(setStatus);
+      const revision = statusRevision.current;
+      void fetchQuestStatus().then((next) => {
+        if (revision === statusRevision.current) setStatus(next);
+      });
     }, []),
   );
 
@@ -116,6 +121,7 @@ export default function QuestsScreen() {
       return;
     }
     checkInFlight.current = true;
+    statusRevision.current += 1;
 
     // Optimistic: complete the row NOW — confetti, haptic, +clovers.
     void haptics.success();
@@ -125,18 +131,35 @@ export default function QuestsScreen() {
     const finishingPlan = status.plan.checkedCount + 1 === status.plan.tasks.length;
     const expectedAward = CLOVERS_PER_TASK + (finishingPlan ? COMPLETION_BONUS : 0);
     const award = optimisticCloverAward(expectedAward);
-    setStatus((cur) => {
-      if (!cur.plan) return cur;
-      const tasks = cur.plan.tasks.map((t, i) => (i === index ? { ...t, done: true } : t));
-      return { ...cur, plan: { ...cur.plan, tasks, checkedToday: true, checkedCount: cur.plan.checkedCount + 1 } };
-    });
+    const tasks = status.plan.tasks.map((t, i) => (i === index ? { ...t, done: true } : t));
+    const optimisticStatus: QuestStatus = {
+      ...status,
+      plan: {
+        ...status.plan,
+        tasks,
+        checkedToday: true,
+        checkedCount: status.plan.checkedCount + 1,
+      },
+    };
+    setStatus(optimisticStatus);
+    cacheQuestStatus(optimisticStatus);
     // Background reconcile: confirm with the server, roll back on rejection.
     void (async () => {
       const res = await checkTask(index);
-      checkInFlight.current = false;
       if (!res.ok) {
         setStatus(prevStatus);
+        cacheQuestStatus(prevStatus);
         award.rollback();
+        // A transport error can mean the server committed but the response
+        // was lost. Re-read once so the first tap still converges to the
+        // authoritative completed state without asking the user to retry.
+        const revision = statusRevision.current;
+        const authoritative = await fetchQuestStatus({ force: true });
+        if (revision === statusRevision.current) setStatus(authoritative);
+        const serverConfirmed = !!authoritative.plan?.tasks[index]?.done
+          || (finishingPlan && !authoritative.active);
+        checkInFlight.current = false;
+        if (serverConfirmed) return;
         if (res.error === 'already_checked_today') {
           appAlert('Come back tomorrow', 'You can complete one task per day.');
         } else {
@@ -144,6 +167,7 @@ export default function QuestsScreen() {
         }
         return;
       }
+      checkInFlight.current = false;
       award.commit(res.cloversEarned);
       if (res.allDone) {
         appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
@@ -151,10 +175,12 @@ export default function QuestsScreen() {
         return;
       }
       // Align the count with the server's authoritative value.
-      setStatus((cur) => {
-        if (!cur.plan) return cur;
-        return { ...cur, plan: { ...cur.plan, checkedCount: res.checkedCount } };
-      });
+      const confirmedStatus: QuestStatus = {
+        ...optimisticStatus,
+        plan: { ...optimisticStatus.plan!, checkedCount: res.checkedCount },
+      };
+      cacheQuestStatus(confirmedStatus);
+      setStatus(confirmedStatus);
     })();
   }
 

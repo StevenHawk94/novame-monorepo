@@ -71,6 +71,7 @@ interface FriendsFeedCache {
 }
 
 let friendsStatusRequest: Promise<FriendsStatus> | null = null;
+let friendsStatusForcedFollowup: Promise<FriendsStatus> | null = null;
 let friendsFeedRequest: Promise<FeedEntry[]> | null = null;
 
 function readFriendsStatusCache(): FriendsStatusCache | null {
@@ -123,7 +124,18 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
     && Date.now() - cached.fetchedAtMs < FRIENDS_CACHE_MAX_AGE_MS) {
     return Promise.resolve(cached.status);
   }
-  if (friendsStatusRequest) return friendsStatusRequest;
+  if (friendsStatusRequest) {
+    if (!options?.force) return friendsStatusRequest;
+    // A force refresh is an explicit invalidation signal. Reusing a request
+    // that began before that signal can return the exact stale snapshot the
+    // caller is trying to replace, so queue one (and only one) follow-up.
+    if (!friendsStatusForcedFollowup) {
+      friendsStatusForcedFollowup = friendsStatusRequest
+        .then(() => fetchFriends({ force: true }))
+        .finally(() => { friendsStatusForcedFollowup = null; });
+    }
+    return friendsStatusForcedFollowup;
+  }
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;

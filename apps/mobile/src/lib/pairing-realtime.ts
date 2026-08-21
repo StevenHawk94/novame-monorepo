@@ -28,6 +28,10 @@ let activeUserId: string | null = null;
 let generation = 0;
 let reconcileInFlight: Promise<void> | null = null;
 let friendshipReconcileInFlight: Promise<void> | null = null;
+let friendshipReconcileQueued = false;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempted = false;
+let channelHealthy = false;
 
 function publish(snapshot: PairingRealtimeSnapshot): void {
   for (const listener of listeners) {
@@ -50,7 +54,12 @@ function publishFriendships(status: FriendsStatus): void {
 }
 
 async function reconcileFriendships(userId: string, expectedGeneration: number): Promise<void> {
-  if (friendshipReconcileInFlight) return friendshipReconcileInFlight;
+  if (friendshipReconcileInFlight) {
+    // Coalesce any number of overlapping invalidations into exactly one
+    // follow-up read after the older snapshot settles.
+    friendshipReconcileQueued = true;
+    return friendshipReconcileInFlight;
+  }
   const request = (async () => {
     try {
       const friends = await fetchFriends({ force: true });
@@ -61,9 +70,38 @@ async function reconcileFriendships(userId: string, expectedGeneration: number):
     }
   })().finally(() => {
     if (friendshipReconcileInFlight === request) friendshipReconcileInFlight = null;
+    if (friendshipReconcileQueued) {
+      friendshipReconcileQueued = false;
+      if (activeUserId === userId && generation === expectedGeneration) {
+        void reconcileFriendships(userId, expectedGeneration);
+      }
+    }
   });
   friendshipReconcileInFlight = request;
   return request;
+}
+
+function scheduleSingleReconnect(userId: string, expectedGeneration: number): void {
+  if (reconnectTimer || reconnectAttempted || activeUserId !== userId || generation !== expectedGeneration) return;
+  reconnectAttempted = true;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (activeUserId !== userId || generation !== expectedGeneration) return;
+    const staleChannel = channel;
+    channel = null;
+    activeUserId = null;
+    void (async () => {
+      if (staleChannel) {
+        try {
+          await supabase.removeChannel(staleChannel);
+        } catch {
+          // startPairingRealtime below creates a fresh channel regardless.
+        }
+      }
+      if (generation !== expectedGeneration) return;
+      await startPairingRealtime(userId, { recovery: true });
+    })();
+  }, 1_500);
 }
 
 async function reconcile(userId: string, expectedGeneration: number): Promise<void> {
@@ -105,11 +143,19 @@ export function subscribeFriendshipRealtime(listener: FriendshipListener): () =>
   return () => friendshipListeners.delete(listener);
 }
 
-export async function startPairingRealtime(userId: string): Promise<void> {
+export async function startPairingRealtime(
+  userId: string,
+  options?: { recovery?: boolean },
+): Promise<void> {
   let attemptGeneration: number | null = null;
   try {
+    if (!options?.recovery) reconnectAttempted = false;
     if (activeUserId === userId && channel) {
-      void reconcile(userId, generation);
+      if (channelHealthy) {
+        void reconcile(userId, generation);
+      } else {
+        scheduleSingleReconnect(userId, generation);
+      }
       return;
     }
 
@@ -143,9 +189,19 @@ export async function startPairingRealtime(userId: string): Promise<void> {
         notifyRemoteSharedBoxChanged(partnerUserId);
       })
       .subscribe((status) => {
+        if (activeUserId !== userId || generation !== subscribedGeneration) return;
         // Reconcile after every successful subscription as the delivery
         // fallback for events missed while the device was offline/backgrounded.
-        if (status === 'SUBSCRIBED') void reconcile(userId, subscribedGeneration);
+        if (status === 'SUBSCRIBED') {
+          channelHealthy = true;
+          reconnectAttempted = false;
+          void reconcile(userId, subscribedGeneration);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          channelHealthy = false;
+          // One temporary recovery attempt for this failure incident. There is
+          // no polling loop; foregrounding the app is the later fallback.
+          scheduleSingleReconnect(userId, subscribedGeneration);
+        }
       });
   } catch (error) {
     if (attemptGeneration === null || attemptGeneration === generation) {
@@ -169,9 +225,13 @@ export async function resumePairingRealtime(): Promise<void> {
 
 export async function stopPairingRealtime(): Promise<void> {
   generation += 1;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
   activeUserId = null;
+  channelHealthy = false;
   reconcileInFlight = null;
   friendshipReconcileInFlight = null;
+  friendshipReconcileQueued = false;
   const current = channel;
   channel = null;
   if (!current) return;

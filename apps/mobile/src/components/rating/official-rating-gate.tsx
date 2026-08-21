@@ -5,7 +5,6 @@ import * as StoreReview from 'expo-store-review';
 
 import { subscribeOfficialRatingRequest } from '@/lib/official-rating-prompt';
 
-const REQUEST_DELAY_MS = 2_000;
 let requestInFlight = false;
 
 async function requestOfficialRating(): Promise<void> {
@@ -23,9 +22,9 @@ async function requestOfficialRating(): Promise<void> {
 }
 
 /**
- * Waits until Claim navigation has settled before requesting the native store
- * dialog. Any modal route (including the Free reflection paywall) keeps the
- * request pending; closing it restarts the quiet two-second delay.
+ * Waits only until Claim navigation has settled before requesting the native
+ * store dialog. Any modal route (including the Free reflection paywall) keeps
+ * the request pending until it closes.
  */
 export function OfficialRatingGate() {
   const segments = useSegments();
@@ -45,17 +44,13 @@ export function OfficialRatingGate() {
     const modalOpen = routeSegments.includes('(modals)');
     if (!pending || appState !== 'active' || modalOpen) return;
 
-    let interaction: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
-    const timer = setTimeout(() => {
-      interaction = InteractionManager.runAfterInteractions(() => {
-        setPending(false);
-        void requestOfficialRating();
-      });
-    }, REQUEST_DELAY_MS);
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      setPending(false);
+      void requestOfficialRating();
+    });
 
     return () => {
-      clearTimeout(timer);
-      interaction?.cancel();
+      interaction.cancel();
     };
   }, [appState, pending, routeKey]);
 

@@ -69,6 +69,7 @@ export async function POST(request) {
       success: true,
       reward: result?.reward ?? 0,
       bonus: result?.bonus ?? 0,
+      replayed: !!result?.replayed,
       checkedCount: result?.checked_count ?? 0,
       allDone: !!result?.all_done,
       cloversEarned: result?.clovers_earned ?? 0,

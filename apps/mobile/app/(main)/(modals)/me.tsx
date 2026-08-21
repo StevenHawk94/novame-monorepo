@@ -151,9 +151,7 @@ export default function MeScreen() {
       const current = await checkNotificationPermission();
       const result = current === 'granted'
         ? 'granted'
-        : current === 'undetermined'
-          ? await requestNotificationPermission()
-          : 'denied';
+        : await requestNotificationPermission();
 
       if (result === 'granted') {
         openNotificationTimePicker();
@@ -328,7 +326,9 @@ export default function MeScreen() {
 
           {/* Burrow Plus banner (design: brown, white View button) */}
           <View style={styles.plusBanner}>
-            <Text style={styles.rowEmoji}>{'🪪'}</Text>
+            <View style={styles.plusIconWrap}>
+              <MaterialIcons name="workspace-premium" size={25} color="#4A3220" />
+            </View>
             <View style={{ flex: 1 }}>
               <View style={styles.plusTitleRow}>
                 <Text style={styles.plusTitle}>Burrow</Text>
@@ -623,6 +623,10 @@ const styles = StyleSheet.create({
   plusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#4A3220', borderRadius: 20, padding: 16, marginBottom: 14,
+  },
+  plusIconWrap: {
+    width: 34, height: 34, flexShrink: 0, borderRadius: 17,
+    backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
   },
   plusTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   plusTitle: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },

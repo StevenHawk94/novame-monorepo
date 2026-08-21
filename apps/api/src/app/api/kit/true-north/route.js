@@ -22,11 +22,12 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, ranking: DimensionId[8], localDate }
  *
- * Completes this week's True North: the engine turns the ranking into gem hits
+ * Completes True North: the engine turns the ranking into gem hits
  * (top three get +30/+20/+10, via trueNorthGemHits) and submit_kit writes them
  * atomically -- +50 xp, the gems, the completion with the ranking in its
- * payload, once per week. True North is the only Kit besides Reflect that bears
- * gems, which is exactly what submit_kit's gem path is for.
+ * payload, then the database enforces a rolling seven-day cooldown. True
+ * North is the only Kit besides Reflect that bears gems, which is exactly what
+ * submit_kit's gem path is for.
  */
 export async function POST(request) {
   try {
@@ -61,11 +62,11 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const gemHits = trueNorthGemHits(ranking)
 
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
+    const { data: result, error: rpcErr } = await supabase.rpc('submit_true_north', {
       p_user_id: userId,
-      p_kit: 'true_north',
-      p_source: 'true_north',
-      p_period_key: weekStr, // weekly kit: period is the ISO week
+      // Uniqueness is still retained as a last-resort replay guard. The
+      // rolling cooldown itself is enforced atomically by submit_true_north.
+      p_period_key: `rolling:${crypto.randomUUID()}`,
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.trueNorth.award,
@@ -80,7 +81,11 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
 
-    return NextResponse.json({ success: true, ...result })
+    return NextResponse.json({
+      success: true,
+      ...result,
+      nextAvailableAt: result?.next_available_at ?? null,
+    })
   } catch (err) {
     console.error('[true-north] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

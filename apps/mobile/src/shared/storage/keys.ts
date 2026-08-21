@@ -330,8 +330,9 @@ export const kQuietWinsFeedbackSequence = defineKey(
 export const kNewLensState = defineKey('novame_new_lens_state', 'user');
 
 /** true-north.tsx: this week's completion + rankings for the reveal and the
- *  week-over-week comparison. Shape: { weekKey, doneThisWeek, thisWeekRanking,
- *  lastRanking }. A read-only shadow of kit_completions; the weekly gate stays
+ *  previous-result comparison. Shape: { weekKey, doneThisWeek,
+ *  thisWeekRanking, lastRanking, nextAvailableAt }. A read-only shadow of
+ *  kit_completions; the rolling seven-day gate stays
  *  server-side. */
 export const kTrueNorthState = defineKey('novame_true_north_state', 'user');
 
