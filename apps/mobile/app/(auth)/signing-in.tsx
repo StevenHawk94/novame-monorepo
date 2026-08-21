@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { ensureSession, getCurrentSession } from '@/lib/auth';
 import {
@@ -31,6 +31,8 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<TimedRes
 }
 
 export default function SigningInScreen() {
+  const params = useLocalSearchParams<{ after?: string }>();
+
   useEffect(() => {
     const start = Date.now();
     let cancelled = false;
@@ -41,7 +43,13 @@ export default function SigningInScreen() {
       navigated = true;
       const elapsed = Date.now() - start;
       setTimeout(() => {
-        if (!cancelled) router.replace('/(main)/(tabs)');
+        if (!cancelled) {
+          router.replace(
+            params.after === 'notification-settings'
+              ? '/(main)/(modals)/notification-settings'
+              : '/(main)/(tabs)',
+          );
+        }
       }, Math.max(0, MIN_DISPLAY_MS - elapsed));
     };
 
@@ -101,7 +109,7 @@ export default function SigningInScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [params.after]);
 
   return (
     <View style={styles.root}>

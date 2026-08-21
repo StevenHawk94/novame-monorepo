@@ -79,6 +79,7 @@ export default function QuestsScreen() {
   const standard = themes.filter((t) => !t.isCustom);
 
   function onPickTheme(theme: QuestTheme) {
+    void haptics.pageOpen();
     if (theme.isCustom) {
       router.push('/(main)/quest-custom' as never);
       return;

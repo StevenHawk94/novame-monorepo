@@ -53,7 +53,7 @@ export default function FriendProfileScreen() {
   );
 
   function openDetail(e: FeedEntry) {
-    void haptics.light();
+    void haptics.pageOpen();
     router.push({
       pathname: '/(main)/friend-reflect-detail' as never,
       params: {
@@ -73,7 +73,7 @@ export default function FriendProfileScreen() {
         <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{name}</Text>
         <Pressable
           onPress={() => {
-            void haptics.light();
+            void haptics.pageOpen();
             router.push({
               pathname: '/(main)/(tabs)/bags' as never,
               params: { tab: 'ours' },
@@ -87,7 +87,7 @@ export default function FriendProfileScreen() {
         {/* UGC compliance: report this user (prefills a support ticket). */}
         <Pressable
           onPress={() => {
-            void haptics.light();
+            void haptics.pageOpen();
             router.push({
               pathname: '/(main)/(modals)/support' as never,
               params: {

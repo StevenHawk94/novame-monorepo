@@ -88,7 +88,7 @@ export default function ReflectEntryScreen() {
               offset={4}
               radius={30}
               onPress={() => {
-                void haptics.light();
+                void haptics.pageOpen();
                 router.push(w.route as never);
               }}
               cardStyle={styles.wayCard}

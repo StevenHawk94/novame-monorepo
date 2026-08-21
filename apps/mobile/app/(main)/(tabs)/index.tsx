@@ -134,17 +134,17 @@ export default function HomeScreen() {
     if (openingEntryRef.current) return;
     if (!requireAiConsent('/(main)/reflect')) return;
     openingEntryRef.current = true;
-    void haptics.medium();
+    void haptics.pageOpen();
     router.push('/(main)/reflect');
   };
   const onFocus = () => {
     if (openingEntryRef.current) return;
     openingEntryRef.current = true;
-    void haptics.medium();
+    void haptics.pageOpen();
     router.push('/(main)/focus');
   };
   const onPetTap = () => {
-    void haptics.medium();
+    void haptics.pageOpen();
     router.push('/(main)/companion-sheet');
   };
 
@@ -171,14 +171,14 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.push('/(main)/(modals)/me')} hitSlop={8}>
+          <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/me'); }} hitSlop={8}>
             <Image source={ICONS.Menu} style={styles.topIcon} resizeMode="contain" />
           </Pressable>
           <View style={styles.topRight}>
-            <Pressable onPress={() => { void haptics.light(); router.push('/(main)/(modals)/skin-select'); }} hitSlop={8}>
+            <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/skin-select'); }} hitSlop={8}>
               <Image source={ICONS.Outfits} style={styles.topIcon} resizeMode="contain" />
             </Pressable>
-            <Pressable onPress={() => { void haptics.light(); router.push('/(main)/(modals)/scene-select'); }} hitSlop={8}>
+            <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/scene-select'); }} hitSlop={8}>
               <Image source={ICONS.Maps} style={styles.topIcon} resizeMode="contain" />
             </Pressable>
             {/* Leaderboard removed per v2.0 design (Home top bar = outfits + scenes only). */}
@@ -272,15 +272,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bubble: {
-    backgroundColor: 'rgba(244, 228, 193, 0.8)', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
+    backgroundColor: 'rgba(244, 228, 193, 0.9)', borderRadius: 20, paddingHorizontal: 26, paddingVertical: 18,
     maxWidth: 330,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
   bubbleTail: {
-    position: 'absolute', bottom: -10, alignSelf: 'center',
+    position: 'absolute', bottom: -12, alignSelf: 'center',
     width: 0, height: 0, borderLeftWidth: 11, borderRightWidth: 11, borderTopWidth: 12,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'rgba(244, 228, 193, 0.8)',
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'rgba(244, 228, 193, 0.9)',
   },
   bubbleText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#3A2E1A', textAlign: 'center', lineHeight: 23 },
   ground: { position: 'absolute', left: 20, right: 20, zIndex: 2 },

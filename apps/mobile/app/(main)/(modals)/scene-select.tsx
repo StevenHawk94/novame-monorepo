@@ -116,6 +116,7 @@ export default function SceneSelectScreen() {
       setCosmetics(getCachedCosmetics());
       await useScene(s.key, sceneAssetUrl(s.image));
     } else if (res.error === 'plus_required') {
+      void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
       appAlert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
@@ -131,7 +132,7 @@ export default function SceneSelectScreen() {
     if (busy || switching || isCurrent(s.key)) return;
     if (s.plusOnly && !isPaid) {
       // Free user on a Plus scene: straight to the paywall (Closet contract).
-      void haptics.warning();
+      void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
       return;
     }

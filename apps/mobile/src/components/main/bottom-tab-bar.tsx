@@ -91,7 +91,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   state.routes.forEach((r) => routesByName.set(r.name, r));
 
   const handleTabPress = (routeName: string, isFocused: boolean) => {
-    void haptics.light();
+    void haptics.pageOpen();
     const route = routesByName.get(routeName);
     if (!route) return;
     const event = navigation.emit({

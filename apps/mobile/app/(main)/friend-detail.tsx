@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../../src/theme/use-theme';
 import { fetchFriends, type FriendCard } from '../../src/lib/friends-api';
+import { haptics } from '../../src/lib/haptics';
 
 /**
  * Friend detail (C11a). A friend's day at a glance: the emoji of what they
@@ -58,7 +59,10 @@ export default function FriendDetailScreen() {
 
       {/* Guess Their Day (C11c) */}
       <Pressable
-        onPress={() => router.push({ pathname: '/(main)/guess', params: { userId, name } })}
+        onPress={() => {
+          void haptics.pageOpen();
+          router.push({ pathname: '/(main)/guess', params: { userId, name } });
+        }}
         style={[styles.guessBtn, { backgroundColor: c.brand.primary, marginBottom: insets.bottom + 12 }]}
       >
         <MaterialIcons name="lightbulb-outline" size={20} color="#FFFFFF" />

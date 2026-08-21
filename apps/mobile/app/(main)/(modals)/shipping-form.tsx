@@ -120,8 +120,8 @@ export default function ShippingFormModal() {
   };
 
   const onContinue = () => {
-    void haptics.light();
     if (!valid) return;
+    void haptics.pageOpen();
     router.push({
       pathname: '/(main)/(modals)/payment-stub',
       params: {

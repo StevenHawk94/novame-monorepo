@@ -23,7 +23,7 @@ export default function ReflectionPlusPaywallModal() {
   };
 
   const openPlans = () => {
-    void haptics.medium();
+    void haptics.pageOpen();
     router.replace('/(main)/(modals)/subscription-paywall?phase=plans' as never);
   };
 

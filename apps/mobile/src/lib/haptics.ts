@@ -8,6 +8,9 @@ import * as Haptics from 'expo-haptics';
  * (accessibility settings, user preference, etc.) in stage 3+.
  */
 export const haptics = {
+  /** Page open — user-initiated navigation, matching the bottom tabs. */
+  pageOpen: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+
   /** Light tap — list selection, toggle, minor confirmation. */
   light: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
 

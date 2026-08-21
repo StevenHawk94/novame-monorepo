@@ -112,6 +112,7 @@ export default function OrderHistoryModal() {
   };
 
   const openDetail = (order: Order) => {
+    void haptics.pageOpen();
     router.push({
       pathname: '/(main)/(modals)/order-detail',
       params: { id: order.id },
@@ -119,6 +120,7 @@ export default function OrderHistoryModal() {
   };
 
   const resumePayment = (order: Order) => {
+    void haptics.pageOpen();
     const persisted = storage.getString('novame.shipping');
     let shipping: Record<string, string>;
     if (persisted) {

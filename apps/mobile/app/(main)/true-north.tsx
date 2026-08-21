@@ -16,6 +16,7 @@ import { GridBackground } from '../../src/components/ui/grid-background';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { haptics } from '../../src/lib/haptics';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 import {
   fetchStatus,
@@ -171,7 +172,7 @@ export default function TrueNorthScreen() {
             Let’s find out what’s really on top right now.
           </Text>
           <Pressable
-            onPress={() => setPhase('rank')}
+            onPress={() => { void haptics.pageOpen(); setPhase('rank'); }}
             style={({ pressed }) => [styles.startBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1 }, pressed && styles.btnPressed]}
           >
             <Text style={styles.primaryBtnText}>Start</Text>

@@ -66,7 +66,7 @@ export default function VisitMasterScreen() {
   }
 
   async function openDetail(v: MasterVisit) {
-    void haptics.light();
+    void haptics.pageOpen();
     const full = await fetchMasterVisit(v.id);
     if (full) {
       setDetail({ question: full.question, response: full.response });
@@ -112,7 +112,7 @@ export default function VisitMasterScreen() {
               <MaterialIcons name="close" size={26} color="#3A2E1A" />
             </Pressable>
             <Pressable
-              onPress={() => { void haptics.light(); setPhase('history'); }}
+              onPress={() => { void haptics.pageOpen(); setPhase('history'); }}
               hitSlop={10}
             >
               <Image source={ICONS.visitMasterHistory} style={styles.historyIcon} resizeMode="contain" />
@@ -140,7 +140,7 @@ export default function VisitMasterScreen() {
           {/* The keyboard layer resizes; the absolute artwork behind it never moves. */}
             {!status.isPaid ? (
               <Pressable
-                onPress={() => { void haptics.warning(); router.push('/(main)/(modals)/subscription-paywall'); }}
+                onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/subscription-paywall'); }}
                 style={[styles.askPill, styles.askPillResting, { marginBottom: insets.bottom + 18 }]}
               >
                 <Text maxFontSizeMultiplier={1.15} style={styles.lockedText}>

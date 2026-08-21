@@ -8,6 +8,7 @@ import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { GridBackground } from '@/components/ui/grid-background';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
+import { haptics } from '@/lib/haptics';
 
 /**
  * My Logs -- the Reflect Feed (design 2026-07-22, 1:1): journal icon +
@@ -73,7 +74,7 @@ export default function MyLogsScreen() {
         </Pressable>
         <Image source={ICONS.sharedMemories} style={styles.headerIcon} resizeMode="contain" />
         <Text style={styles.title} numberOfLines={1}>Reflect Feed</Text>
-        <Pressable onPress={() => setCalOpen(true)} style={styles.byDatePill}>
+        <Pressable onPress={() => { void haptics.pageOpen(); setCalOpen(true); }} style={styles.byDatePill}>
           <Text style={styles.byDateText} numberOfLines={1}>{pillLabel}</Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color="#4A3423" />
         </Pressable>
@@ -110,7 +111,10 @@ export default function MyLogsScreen() {
                 )}
               </View>
               <Pressable
-                onPress={() => router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } })}
+                onPress={() => {
+                  void haptics.pageOpen();
+                  router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } });
+                }}
                 style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.7 }]}
               >
                 <Text style={styles.detailText}>View Detail</Text>

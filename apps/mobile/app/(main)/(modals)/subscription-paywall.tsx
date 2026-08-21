@@ -87,7 +87,7 @@ export default function SubscriptionPaywallModal() {
   }, []);
 
   // Global IAP listeners: close on success (no redundant alert — StoreKit
-  // already confirmed), one-time notification prompt, friendly retry on error.
+  // already confirmed), then serialize account safety before notifications.
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
       setBusy('idle');
@@ -95,28 +95,55 @@ export default function SubscriptionPaywallModal() {
       const promptNotif = shouldPromptNotifAfterPurchase();
       if (promptNotif) markNotifPromptedAfterPurchase();
       if (router.canGoBack()) router.back();
-      if (promptNotif) {
+
+      const openNotificationSetup = () => {
+        if (promptNotif) router.push('/(main)/(modals)/notification-settings');
+      };
+      const continueToNotificationSetup = () => {
+        // AppDialog clears its overlay before this navigation starts, so the
+        // next native modal can never appear underneath the closing alert.
+        setTimeout(openNotificationSetup, 200);
+      };
+
+      // Resolve account state after dismissing the paywall, then present only
+      // one surface at a time. The notification setup is continued from the
+      // selected safety action instead of racing this alert on a timer.
+      void (async () => {
+        let needsAccountSafety = false;
+        try {
+          const { data } = await supabase.auth.getUser();
+          const user = data.user;
+          const anonymous = (user as { is_anonymous?: boolean } | null)?.is_anonymous ?? false;
+          needsAccountSafety = !user || anonymous || !user.email;
+        } catch (error) {
+          console.warn('[paywall] account safety check failed:', error);
+        }
+
         setTimeout(() => {
-          router.push('/(main)/(modals)/notification-settings');
-        }, 450);
-      }
-      // First-payment safety prompt: a paying guest should bind an account
-      // so the subscription and memories survive reinstalls.
-      void supabase.auth.getUser().then(({ data }) => {
-        const u = data.user;
-        const anonymous = (u as { is_anonymous?: boolean } | null)?.is_anonymous ?? false;
-        if (!u || (!anonymous && u.email)) return;
-        setTimeout(() => {
+          if (!needsAccountSafety) {
+            openNotificationSetup();
+            return;
+          }
+
           appAlert(
             'Keep your Plus safe',
             'Connect an account so your subscription and memories are never lost — even if you change phones.',
             [
-              { text: 'Later', style: 'cancel' },
-              { text: 'Connect Now', onPress: () => router.push('/(main)/(modals)/connect-account' as never) },
+              { text: 'Later', style: 'cancel', onPress: continueToNotificationSetup },
+              {
+                text: 'Connect Now',
+                onPress: () => {
+                  void haptics.pageOpen();
+                  router.push({
+                    pathname: '/(main)/(modals)/connect-account',
+                    params: promptNotif ? { after: 'notification-settings' } : {},
+                  } as never);
+                },
+              },
             ],
           );
-        }, promptNotif ? 900 : 500);
-      });
+        }, 450);
+      })();
     });
     const offError = onPurchaseError((err) => {
       setBusy('idle');
@@ -172,6 +199,7 @@ export default function SubscriptionPaywallModal() {
     if (busy !== 'idle') return;
     if (isPaid) {
       // Already subscribed: Apple rules forbid in-app cancel/manage.
+      void haptics.pageOpen();
       void Linking.openURL(
         Platform.OS === 'android'
           ? 'https://play.google.com/store/account/subscriptions'
@@ -240,7 +268,7 @@ export default function SubscriptionPaywallModal() {
               </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Pressable
-                onPress={() => { void haptics.medium(); setPhase('plans'); }}
+                onPress={() => { void haptics.pageOpen(); setPhase('plans'); }}
                 style={({ pressed }) => [styles.cta, { opacity: pressed ? 0.85 : 1 }]}
               >
                 <Text style={styles.ctaText}>Start Free Trial</Text>
@@ -311,7 +339,7 @@ export default function SubscriptionPaywallModal() {
               {Platform.OS === 'android' ? 'Google Play' : 'App Store'} settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 10, marginTop: 10 }]}>
-              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/privacy')} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/privacy'); }} hitSlop={8}>
                 <Text style={styles.legalLink}>Privacy</Text>
               </Pressable>
               <Pressable onPress={() => void handleRestore()} hitSlop={8}>
@@ -319,7 +347,7 @@ export default function SubscriptionPaywallModal() {
                   {busy === 'restoring' ? 'Restoring…' : 'Restore purchases'}
                 </Text>
               </Pressable>
-              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/terms')} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/terms'); }} hitSlop={8}>
                 <Text style={styles.legalLink}>Terms</Text>
               </Pressable>
             </View>

@@ -213,7 +213,7 @@ export default function ConnectionDashboardScreen() {
           disabled={!partner}
           onPress={() => {
             if (!partner) return;
-            void haptics.light();
+            void haptics.pageOpen();
             router.push({
               pathname: '/(main)/their-patterns',
             } as never);
@@ -315,7 +315,7 @@ export default function ConnectionDashboardScreen() {
                     resizeMode="contain"
                   />
                   <Pressable
-                    onPress={() => { void haptics.light(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
+                    onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
                     style={st.plusBtn}
                   >
                     <MaterialIcons name="lock" size={17} color="#FFFFFF" />

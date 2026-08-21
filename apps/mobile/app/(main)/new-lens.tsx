@@ -9,6 +9,7 @@ import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 
@@ -62,6 +63,7 @@ export default function NewLensScreen() {
       setPhase('done');
     } else {
       // Route immediately; saving and Clover reconciliation continue silently.
+      void haptics.pageOpen();
       router.replace({
         pathname: '/(main)/reflect',
         params: { presetPrompt: NEW_LENS_PROMPT, sourceKit: 'new_lens' },

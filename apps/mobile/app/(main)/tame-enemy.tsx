@@ -230,7 +230,7 @@ export default function TameEnemyScreen() {
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
         <MonsterBackground />
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={kit.textSub} />
+          <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>
         {/* Design: brown banner title card. PRD copy kept inside it. */}
         <View style={styles.titleBanner}>
@@ -342,7 +342,7 @@ export default function TameEnemyScreen() {
         </Text>
 
         <Pressable
-          onPress={() => { void haptics.medium(); setPhase('battle'); }}
+          onPress={() => { void haptics.pageOpen(); setPhase('battle'); }}
           style={({ pressed }) => [styles.startTamingBtn, pressed && { transform: [{ translateY: 2 }] }]}
         >
           <Text style={styles.startTamingText}>Start Taming</Text>

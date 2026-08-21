@@ -93,7 +93,7 @@ export default function FriendsScreen() {
   }), []);
 
   function onPrivacyGear() {
-    void haptics.light();
+    void haptics.pageOpen();
     setPrivacyOpen(true);
     void fetchSharePrivacy().then(setPrivacyMode);
   }
@@ -139,7 +139,6 @@ export default function FriendsScreen() {
 
 
   function onFeedRow(e: FeedEntry) {
-    void haptics.light();
     if (e.unread) {
       void markFriendRead(e.friendUserId);
       setFeed((cur) => cur.map((x) => (x.friendUserId === e.friendUserId ? { ...x, unread: false } : x)));
@@ -147,6 +146,7 @@ export default function FriendsScreen() {
     // No detail screen when the friend hasn't shared details (details null)
     // or this reflect carries no written text (empty/blank entries).
     if (e.details && e.details.some((d) => d.text && d.text.trim().length > 0)) {
+      void haptics.pageOpen();
       router.push({
         pathname: '/(main)/friend-reflect-detail' as never,
         params: {
@@ -157,6 +157,7 @@ export default function FriendsScreen() {
         },
       } as never);
     } else {
+      void haptics.light();
       appAlert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
     }
   }
@@ -171,7 +172,7 @@ export default function FriendsScreen() {
 
   const addPill = (
     <Pressable
-      onPress={() => { void haptics.medium(); router.push('/(main)/friend-add' as never); }}
+      onPress={() => { void haptics.pageOpen(); router.push('/(main)/friend-add' as never); }}
       style={({ pressed }) => [styles.addPill, pressed && { transform: [{ translateY: 2 }] }]}
     >
       <View style={styles.addPlus}><MaterialIcons name="add" size={19} color="#FFFFFF" /></View>
@@ -194,7 +195,7 @@ export default function FriendsScreen() {
         <View style={[styles.headerRow, !paired && styles.headerRowOverlay, !paired && { top: insets.top }]}>
           <View style={styles.headerIcons}>
             {paired && (
-              <Pressable onPress={() => setCalendarOpen(true)} style={styles.iconBtn} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); setCalendarOpen(true); }} style={styles.iconBtn} hitSlop={8}>
                 <Image source={ICONS.calendar} style={styles.calendarHeaderIcon} resizeMode="contain" />
               </Pressable>
             )}
@@ -220,7 +221,7 @@ export default function FriendsScreen() {
                   offset={4}
                   radius={18}
                   onPress={() => {
-                    void haptics.light();
+                    void haptics.pageOpen();
                     setVibesOpen(true);
                   }}
                   cardStyle={styles.vibesButton}
@@ -324,7 +325,7 @@ export default function FriendsScreen() {
                   Pair with some you care and love,{'\n'}then create memories together!
                 </Text>
                 <Pressable
-                  onPress={() => { void haptics.medium(); setHowItWorks(true); }}
+                  onPress={() => { void haptics.pageOpen(); setHowItWorks(true); }}
                   style={({ pressed }) => [styles.demoBtn, pressed && { opacity: 0.85 }]}
                 >
                   <MaterialIcons name="auto-awesome" size={17} color="#FFF6E8" />

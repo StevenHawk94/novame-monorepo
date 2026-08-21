@@ -3,7 +3,7 @@ import {
   ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { appAlert } from '@/components/ui/app-dialog';
@@ -28,6 +28,7 @@ import {
 export default function ConnectAccountScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams<{ after?: string }>();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   // 'enter' → email form; 'verify' → the 6-digit code sent to that email.
@@ -41,6 +42,25 @@ export default function ConnectAccountScreen() {
   const [connectedAs, setConnectedAs] = useState<string | null>(
     () => storage.getString(kConnectedAccount.name) ?? null,
   );
+
+  const finish = () => {
+    if (params.after === 'notification-settings') {
+      void haptics.pageOpen();
+      router.replace('/(main)/(modals)/notification-settings' as never);
+    } else {
+      router.back();
+    }
+  };
+
+  const continueAfterAccountRestore = () => {
+    void haptics.pageOpen();
+    router.replace({
+      pathname: '/(auth)/signing-in',
+      params: params.after === 'notification-settings'
+        ? { after: 'notification-settings' }
+        : {},
+    } as never);
+  };
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -69,20 +89,20 @@ export default function ConnectAccountScreen() {
 
   async function onProvider(provider: 'apple' | 'google') {
     if (busy) return;
-    void haptics.light();
+    void haptics.pageOpen();
     setBusy(true);
     const res = await connectProviderOrSignIn(provider);
     setBusy(false);
     if (res.ok && res.mode === 'linked') {
       refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: finish },
       ]);
     } else if (res.ok) {
       // Recovered an existing account — reload every cache as that user.
       void haptics.success();
       appAlert('Welcome back!', 'Your account and memories have been restored.', [
-        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in' as never) },
+        { text: 'OK', onPress: continueAfterAccountRestore },
       ]);
     } else if (!res.cancelled) {
       appAlert('Could not connect', res.error ?? 'Please try again.');
@@ -119,11 +139,11 @@ export default function ConnectAccountScreen() {
     if (emailMode === 'change') {
       refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: finish },
       ]);
     } else {
       appAlert('Welcome back!', 'Your account and memories have been restored.', [
-        { text: 'OK', onPress: () => router.replace('/(auth)/signing-in' as never) },
+        { text: 'OK', onPress: continueAfterAccountRestore },
       ]);
     }
   }
@@ -132,7 +152,7 @@ export default function ConnectAccountScreen() {
     <View style={styles.root}>
       <GridBackground />
       <View style={[styles.inner, { paddingTop: insets.top + 14 }]}>
-        <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
+        <Pressable onPress={finish} style={styles.closeCircle} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </Pressable>
 
@@ -212,7 +232,7 @@ export default function ConnectAccountScreen() {
                       <Text style={styles.ctaText}>Verify Code</Text>
                     )}
                   </Pressable>
-                  <Pressable onPress={() => { setEmailPhase('enter'); setCode(''); }} hitSlop={8}>
+                  <Pressable onPress={() => { void haptics.pageOpen(); setEmailPhase('enter'); setCode(''); }} hitSlop={8}>
                     <Text style={styles.backLink}>Use a different email</Text>
                   </Pressable>
                 </>

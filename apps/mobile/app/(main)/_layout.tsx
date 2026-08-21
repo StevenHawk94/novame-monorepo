@@ -28,6 +28,15 @@ export default function MainLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
         <Stack.Screen
+          name="item-sheet"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            gestureEnabled: false,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
           name="ai-consent"
           options={{ presentation: 'transparentModal', animation: 'fade' }}
         />

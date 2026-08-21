@@ -165,14 +165,14 @@ export default function TheirPatternsScreen() {
   }, [data, generating, isPaid]));
 
   const openPaywall = useCallback(() => {
-    void haptics.light();
+    void haptics.pageOpen();
     router.push('/(main)/(modals)/subscription-paywall' as never);
   }, [router]);
 
   function openMoment(dimension: PatternDimension, index: number) {
     const moment = dimension.related[index];
     if (!moment?.reflectId) return;
-    void haptics.light();
+    void haptics.pageOpen();
     router.push({
       pathname: '/(main)/friend-reflect-detail',
       params: {
@@ -210,7 +210,7 @@ export default function TheirPatternsScreen() {
                 openPaywall();
                 return;
               }
-              void haptics.light();
+              void haptics.pageOpen();
               setHistoryOpen(true);
             }}
             style={styles.calendarButton}

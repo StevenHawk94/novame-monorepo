@@ -84,7 +84,10 @@ export default function QuestCustomScreen() {
           { text: 'Not now', style: 'cancel' },
           {
             text: 'See Plus',
-            onPress: () => router.push('/(main)/(modals)/subscription-paywall' as never),
+            onPress: () => {
+              void haptics.pageOpen();
+              router.push('/(main)/(modals)/subscription-paywall' as never);
+            },
           },
         ],
       );

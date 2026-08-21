@@ -242,6 +242,7 @@ export default function OnboardingScreen() {
 
   async function onLinkProvider(provider: 'apple' | 'google') {
     if (linking) return;
+    void haptics.pageOpen();
     setLinking(true);
     const res = await connectProviderOrSignIn(provider);
     setLinking(false);
@@ -251,7 +252,7 @@ export default function OnboardingScreen() {
         res.mode === 'linked'
           ? 'Your memories are now safe on this account.'
           : 'Your account and memories have been restored.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/signing-in') }],
+        [{ text: 'OK', onPress: () => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); } }],
       );
     } else if (!res.cancelled) {
       appAlert(
@@ -290,7 +291,7 @@ export default function OnboardingScreen() {
       linkMode === 'change'
         ? 'Your memories are now safe.'
         : 'Your account and memories have been restored.',
-      [{ text: 'OK', onPress: () => router.replace('/(auth)/signing-in') }],
+      [{ text: 'OK', onPress: () => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); } }],
     );
   }
 
@@ -641,10 +642,10 @@ export default function OnboardingScreen() {
               Cancel anytime in your App Store settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 8, marginTop: 8 }]}>
-              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/privacy')} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/privacy'); }} hitSlop={8}>
                 <Text style={styles.legalLink}>Privacy</Text>
               </Pressable>
-              <Pressable onPress={() => void Linking.openURL('https://www.burrow-app.com/terms')} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/terms'); }} hitSlop={8}>
                 <Text style={styles.legalLink}>Terms</Text>
               </Pressable>
             </View>
@@ -678,7 +679,7 @@ export default function OnboardingScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
-                onPress={() => router.replace('/(auth)/signing-in')}
+                onPress={() => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); }}
                 style={styles.closeCircle}
                 hitSlop={10}
               >
@@ -750,12 +751,12 @@ export default function OnboardingScreen() {
                       <Text style={styles.ctaText}>Verify Code</Text>
                     )}
                   </Pressable>
-                  <Pressable onPress={() => { setLinkPhase('enter'); setLinkCode(''); }} hitSlop={8}>
+                  <Pressable onPress={() => { void haptics.pageOpen(); setLinkPhase('enter'); setLinkCode(''); }} hitSlop={8}>
                     <Text style={styles.loginLink}>Use a different email</Text>
                   </Pressable>
                 </>
               )}
-              <Pressable onPress={() => router.replace('/(auth)/sign-in')} hitSlop={8}>
+              <Pressable onPress={() => { void haptics.pageOpen(); router.replace('/(auth)/sign-in'); }} hitSlop={8}>
                 <Text style={styles.loginLink}>Already have an account? Log in</Text>
               </Pressable>
               <View style={{ flex: 1, minHeight: 20 }} />

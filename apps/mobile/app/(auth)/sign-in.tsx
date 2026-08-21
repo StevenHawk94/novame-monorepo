@@ -170,6 +170,7 @@ export default function AuthScreen() {
   };
 
   const handleProvider = async (provider: 'apple' | 'google') => {
+    void haptics.pageOpen();
     clearMessages();
     setLoading(true);
     const result = await connectProviderOrSignIn(provider);
@@ -191,11 +192,11 @@ export default function AuthScreen() {
         By continuing, you agree to Burrow&apos;s{' '}
       </Text>
       <View style={styles.footerLinks}>
-        <Pressable onPress={() => { void haptics.light(); Linking.openURL(TERMS_URL); }}>
+        <Pressable onPress={() => { void haptics.pageOpen(); Linking.openURL(TERMS_URL); }}>
           <Text style={styles.linkText}>Terms &amp; Conditions</Text>
         </Pressable>
         <Text style={styles.footerText}> and acknowledge the </Text>
-        <Pressable onPress={() => { void haptics.light(); Linking.openURL(PRIVACY_URL); }}>
+        <Pressable onPress={() => { void haptics.pageOpen(); Linking.openURL(PRIVACY_URL); }}>
           <Text style={styles.linkText}>Privacy Policy</Text>
         </Pressable>
         <Text style={styles.footerText}>.</Text>
@@ -279,7 +280,7 @@ export default function AuthScreen() {
         </View>
         {__DEV__ && (
           <Pressable
-            onPress={() => router.replace('/(onboarding)')}
+            onPress={() => { void haptics.pageOpen(); router.replace('/(onboarding)'); }}
             style={{ alignItems: 'center', paddingVertical: 10 }}
           >
             <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>

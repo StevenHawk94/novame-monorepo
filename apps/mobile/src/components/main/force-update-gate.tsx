@@ -1,5 +1,7 @@
 import { Platform, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { haptics } from '@/lib/haptics';
+
 // Play URL is a placeholder slot — points at the package name; goes live
 // automatically once the Play listing exists.
 const STORE_URL = Platform.select({
@@ -20,6 +22,7 @@ const STORE_URL = Platform.select({
  */
 export function ForceUpdateGate({ message }: { message: string | null }) {
   const handleUpdate = () => {
+    void haptics.pageOpen();
     void Linking.openURL(STORE_URL).catch(() => {
       // If the store URL somehow fails to open, there is nothing else the user
       // can do from here; leave the screen up so they can retry.

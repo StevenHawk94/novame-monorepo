@@ -78,7 +78,7 @@ export default function AiConsentModal() {
   // and so the consent modal stays parked in the background ready
   // for the user to return and finish the agree flow.
   const handleLearnMore = () => {
-    void haptics.light();
+    void haptics.pageOpen();
     void Linking.openURL('https://www.burrow-app.com/ai-features').catch(() => {
       appAlert(
         'Unable to open page',

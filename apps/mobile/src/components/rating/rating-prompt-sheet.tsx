@@ -132,7 +132,7 @@ export const RatingPromptSheet = forwardRef<RatingPromptSheetRef>(
     };
 
     const onSendFeedback = async () => {
-      haptics.medium();
+      haptics.pageOpen();
       markUserExpressed('unhappy');
 
       // Pre-fill subject + body metadata so support can triage

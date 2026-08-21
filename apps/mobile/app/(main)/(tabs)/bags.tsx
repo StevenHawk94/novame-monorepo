@@ -3,7 +3,6 @@ import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
-import { ItemSheet, type ItemSheetRef } from '@/components/main/item-sheet';
 import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { OffsetCard } from '@/components/ui/offset-card';
@@ -29,6 +28,7 @@ import {
   type PairingStatus,
 } from '@/lib/friends-api';
 import { ICONS } from '@/lib/icons';
+import { haptics } from '@/lib/haptics';
 import { refreshRemoteItems } from '@/lib/remote-items';
 
 type CollectionTab = 'mine' | 'their' | 'ours';
@@ -87,7 +87,6 @@ export default function BagsScreen() {
   const [mineLoadingMore, setMineLoadingMore] = useState(false);
   const [theirLoadingMore, setTheirLoadingMore] = useState(false);
   const [oursLoadingMore, setOursLoadingMore] = useState(false);
-  const itemSheetRef = useRef<ItemSheetRef>(null);
   const listRef = useRef<FlatList<CollectedItem[]>>(null);
   const sharedRefreshGeneration = useRef(0);
   const screenRefreshGeneration = useRef(0);
@@ -275,6 +274,7 @@ export default function BagsScreen() {
   }, [oursReadThrough, oursUnread, partner, tab]);
 
   function openSharedCreator() {
+    void haptics.pageOpen();
     if (!partner) {
       router.push('/(main)/(tabs)/friends' as never);
       return;
@@ -291,10 +291,12 @@ export default function BagsScreen() {
 
   function openHeaderDestination() {
     if (tab === 'mine') {
+      void haptics.pageOpen();
       router.push('/(main)/my-logs');
       return;
     }
     if (tab === 'their') {
+      void haptics.pageOpen();
       router.push('/(main)/(tabs)/friends' as never);
       return;
     }
@@ -394,7 +396,17 @@ export default function BagsScreen() {
               {row.map((item) => (
                 <Pressable
                   key={item.itemId}
-                  onPress={() => itemSheetRef.current?.present(item.itemId)}
+                  onPress={() => {
+                    void haptics.pageOpen();
+                    router.push({
+                      pathname: '/(main)/item-sheet',
+                      params: {
+                        itemId: item.itemId,
+                        scope: tab,
+                        ...(partner?.userId ? { expectedOwnerUserId: partner.userId } : {}),
+                      },
+                    });
+                  }}
                   style={[styles.cell, { width: cellWidth }]}
                 >
                   <View style={styles.itemCard}>
@@ -418,13 +430,6 @@ export default function BagsScreen() {
           }
         />
       )}
-
-        <ItemSheet
-          ref={itemSheetRef}
-          items={shown}
-          scope={tab}
-          expectedOwnerUserId={partner?.userId}
-        />
       </View>
     </SafeAreaView>
   );

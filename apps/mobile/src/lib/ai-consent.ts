@@ -26,6 +26,7 @@
  * matching Q5 from the design decisions ("X close does not persist").
  */
 import { router } from 'expo-router';
+import { haptics } from './haptics';
 
 import { storage } from './storage';
 import { apiClient } from './api';
@@ -136,6 +137,7 @@ export function requireAiConsent(next: string): boolean {
   // in the path; use the object form with separate params instead.
   // The modal reads `next` via useLocalSearchParams and feeds it to
   // router.replace after the user agrees.
+  void haptics.pageOpen();
   router.push({
     pathname: '/(main)/ai-consent',
     params: { next },

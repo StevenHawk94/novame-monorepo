@@ -97,7 +97,7 @@ export default function OutfitClosetScreen() {
 
   async function buy(o: OutfitDef) {
     if (o.plusOnly && !isPaid) {
-      void haptics.warning();
+      void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
       return;
     }
@@ -117,6 +117,7 @@ export default function OutfitClosetScreen() {
         { text: 'Done', onPress: () => void equipAndReturn(o) },
       ]);
     } else if (res.error === 'plus_required') {
+      void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
     } else if (res.error === 'insufficient') {
       appAlert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
@@ -221,7 +222,7 @@ export default function OutfitClosetScreen() {
                 onPress={() => {
                   if (plusLocked) {
                     // Free user on a Plus outfit: straight to the paywall.
-                    void haptics.warning();
+                    void haptics.pageOpen();
                     router.push('/(main)/(modals)/subscription-paywall');
                     return;
                   }

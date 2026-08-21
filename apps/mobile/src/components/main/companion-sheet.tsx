@@ -109,7 +109,7 @@ export function CompanionSheet() {
 
   function openKit(row: KitRow) {
     if (!row.route || row.disabled) return;
-    void haptics.medium();
+    void haptics.pageOpen();
     router.push(row.route as never);
   }
 

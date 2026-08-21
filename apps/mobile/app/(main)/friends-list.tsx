@@ -36,7 +36,7 @@ export default function FriendsListScreen() {
                 <Text style={styles.name} numberOfLines={1}>{f.displayName}</Text>
                 <Pressable
                   onPress={() => {
-                    void haptics.light();
+                    void haptics.pageOpen();
                     router.push({
                       pathname: '/(main)/friend-profile' as never,
                       params: { friendUserId: f.userId, friendName: f.displayName },

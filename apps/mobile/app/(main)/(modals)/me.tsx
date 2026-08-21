@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -24,8 +25,15 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { PRICING_TIERS } from '@novame/core';
 import { PlanBillingSheet, type PlanBillingSheetRef } from '@/components/me/plan-billing-sheet';
+import { NotificationTimePicker } from '@/components/notifications/notification-time-picker';
+import { appAlert } from '@/components/ui/app-dialog';
 import { GridBackground } from '@/components/ui/grid-background';
 import { haptics } from '@/lib/haptics';
+import {
+  checkNotificationPermission,
+  getNotificationSettings,
+  requestNotificationPermission,
+} from '@/lib/notification-settings';
 import {
   fetchSubscriptionTier,
 } from '@/lib/subscription';
@@ -73,6 +81,11 @@ export default function MeScreen() {
   const [confirmText, setConfirmText] = useState('');
   const [unpairing, setUnpairing] = useState(false);
   const [unpairError, setUnpairError] = useState('');
+  const [notificationPermissionBusy, setNotificationPermissionBusy] = useState(false);
+  const [notificationPickerOpen, setNotificationPickerOpen] = useState(false);
+  const [notificationPickerSeed, setNotificationPickerSeed] = useState(
+    () => getNotificationSettings(),
+  );
 
   // Name + avatar come from me-stats (profiles), the same source Account
   // Management edits — so a save there shows here on the next focus.
@@ -121,12 +134,50 @@ export default function MeScreen() {
 
 
   const goTo = (path: string) => {
-    void haptics.light();
+    void haptics.pageOpen();
     router.push(path as never);
   };
 
+  const openNotificationTimePicker = () => {
+    setNotificationPickerSeed(getNotificationSettings());
+    setNotificationPickerOpen(true);
+  };
+
+  const onEnableNotifications = async () => {
+    if (notificationPermissionBusy) return;
+    void haptics.pageOpen();
+    setNotificationPermissionBusy(true);
+    try {
+      const current = await checkNotificationPermission();
+      const result = current === 'granted'
+        ? 'granted'
+        : current === 'undetermined'
+          ? await requestNotificationPermission()
+          : 'denied';
+
+      if (result === 'granted') {
+        openNotificationTimePicker();
+        return;
+      }
+
+      appAlert(
+        'Notifications Disabled',
+        'Allow notifications in your device settings to choose a daily reminder time.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => { void Linking.openSettings(); } },
+        ],
+      );
+    } catch (error) {
+      console.warn('[me] notification permission failed:', error);
+      appAlert('Could not enable notifications', 'Please try again.');
+    } finally {
+      setNotificationPermissionBusy(false);
+    }
+  };
+
   const openUrl = async (url: string) => {
-    void haptics.light();
+    void haptics.pageOpen();
     try {
       await WebBrowser.openBrowserAsync(url);
     } catch (e) {
@@ -263,10 +314,15 @@ export default function MeScreen() {
               <Text style={styles.notifSub}>Get reminder to collect your memories.</Text>
             </View>
             <Pressable
-              onPress={() => goTo('/(main)/(modals)/notification-settings')}
+              onPress={() => void onEnableNotifications()}
+              disabled={notificationPermissionBusy}
               style={({ pressed }) => [styles.notifBtn, pressed && styles.pressedBtn]}
             >
-              <Text style={styles.notifBtnText}>Enable</Text>
+              {notificationPermissionBusy ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.notifBtnText}>Enable</Text>
+              )}
             </Pressable>
           </View>
 
@@ -285,7 +341,7 @@ export default function MeScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }}
+              onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }}
               style={({ pressed }) => [styles.plusViewBtn, pressed && styles.pressedBtn]}
             >
               <Text style={styles.plusViewText}>View</Text>
@@ -295,7 +351,7 @@ export default function MeScreen() {
           {/* Settings list (design rows) */}
           <View style={styles.menuCard}>
             <MenuRow emoji={'🙂'} label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
-            <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.light(); planBillingSheetRef.current?.present(); }} divider />
+            <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }} divider />
             <MenuRow
               emoji={pairing?.paired ? '🐇' : '🐰'}
               label={pairing?.paired ? 'My Paired' : 'Invite Friends'}
@@ -347,6 +403,36 @@ export default function MeScreen() {
         </ScrollView>
 
         <PlanBillingSheet ref={planBillingSheetRef} />
+
+        <Modal
+          visible={notificationPickerOpen}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setNotificationPickerOpen(false)}
+        >
+          <View style={styles.notificationPickerBackdrop}>
+            <View style={styles.notificationPickerModal}>
+              <GridBackground base="#F2E6CB" line="#E3D2B2" cell={22} lineWidth={1.2} />
+              <Pressable
+                onPress={() => setNotificationPickerOpen(false)}
+                style={styles.notificationPickerClose}
+                hitSlop={8}
+              >
+                <MaterialIcons name="close" size={20} color="#FFFFFF" />
+              </Pressable>
+              <View style={styles.notificationPickerContent}>
+                <NotificationTimePicker
+                  initialHour={notificationPickerSeed.hour}
+                  initialMin={notificationPickerSeed.min}
+                  showDisable={notificationPickerSeed.enabled}
+                  onSaved={() => setNotificationPickerOpen(false)}
+                  onDisabled={() => setNotificationPickerOpen(false)}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           visible={pairedModalStep !== 'closed'}
@@ -518,6 +604,21 @@ const styles = StyleSheet.create({
   notifSub: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
   notifBtn: { backgroundColor: '#8A6240', borderRadius: 22, paddingHorizontal: 18, paddingVertical: 11 },
   notifBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  notificationPickerBackdrop: {
+    flex: 1, backgroundColor: 'rgba(41,27,18,0.58)',
+    alignItems: 'center', justifyContent: 'center', padding: 22,
+  },
+  notificationPickerModal: {
+    width: '100%', maxWidth: 420, overflow: 'hidden',
+    backgroundColor: '#F2E6CB', borderRadius: 28, padding: 22,
+    shadowColor: '#2A1A10', shadowOpacity: 0.24, shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 }, elevation: 8,
+  },
+  notificationPickerClose: {
+    alignSelf: 'flex-end', width: 38, height: 38, borderRadius: 19,
+    backgroundColor: '#4A3423', alignItems: 'center', justifyContent: 'center',
+  },
+  notificationPickerContent: { alignItems: 'center', paddingTop: 4 },
 
   plusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

@@ -111,7 +111,7 @@ export const PlanBillingSheet = forwardRef<PlanBillingSheetRef>((_, ref) => {
   };
 
   const handleUpgrade = () => {
-    void haptics.medium();
+    void haptics.pageOpen();
     sheetRef.current?.dismiss();
     // Wait for the sheet's dismiss animation (~250ms) before pushing
     // the paywall so navigation doesn't race with the animation.
