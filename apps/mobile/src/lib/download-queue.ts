@@ -1,403 +1,340 @@
 /**
- * download-queue.ts — Priority asset download queue (P1).
+ * Foreground-only R2 completion queue.
  *
- * Tiers:
- *   P0 (tier 0): bucket-root assets (dir === ''). Must be local before
- *     the Home screen renders for a returning (session) user. The
- *     gate in app/index.tsx awaits ensureP0Ready().
- *   P1 (tier 1): folder assets, downloaded in background after P0.
- *     Order: 'cards art' (0) -> 'chars-video' (1) -> 'product details' (2).
- *   P2: anything not enqueued — pulled on demand via bumpToFront().
+ * Runtime inventory is intentionally limited to the folders that exist in
+ * the production bucket: Announcements, Character Videos(-Android), Focus
+ * Voice, Maps and Outfits. The retired Cards/Product Assets manifest fields
+ * are never read here.
  *
- * Concurrency capped at MAX_CONCURRENCY (no scattered parallelism).
- * Reuses asset-cache primitives:
- *   - downloadAsset(baseUrl, filename) for video/card/extra (bare name).
- *   - downloadProductAsset(baseUrl, entry) for productAssets (versioned name).
- *   - verifyCachedAsset / getCachedAssetUri / productCacheFilename for
- *     idempotent "already cached" skips.
- *
- * Manifest timing: ensureManifest() awaits a fresh fetch if the cache
- * is empty, so the queue and the P0 gate never race the cold-start
- * prewarm's async manifest refresh.
+ * Pages keep their existing cache-first behavior. This queue only warms the
+ * same expo-image / file-system caches in the background, retries missing
+ * files for as long as the app remains active, and reconstructs its work from
+ * the manifest + local cache on every launch.
  */
+import { AppState } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+
 import {
-  downloadAsset,
-  downloadProductAsset,
-  fetchManifestFromR2,
-  getCachedAssetUri,
-  getCachedManifest,
-  productCacheFilename,
-  setCachedManifest,
-  verifyCachedAsset,
-} from './asset-cache';
-import type { AssetManifest, ProductAssetManifestEntry } from './asset-types';
+  ensureOutfitVideoCached,
+  fetchOutfitCatalog,
+  getCachedOutfitCatalog,
+  getCachedOutfitVideoUri,
+  outfitAssetUrl,
+  type OutfitDef,
+} from './outfits';
+import {
+  fetchSceneCatalog,
+  getCachedSceneCatalog,
+  sceneAssetUrl,
+  type SceneDef,
+} from './scenes';
+import { syncAllFocusVoiceAssets } from './focus-voice';
 
-const MAX_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 2;
+const ATTEMPT_TIMEOUT_MS = 30_000;
+const MAX_RETRY_BACKOFF_MS = 5 * 60_000;
 
-// P0 assets must eventually land, so a tier-0 download that stalls or fails
-// is retried forever with capped exponential backoff. Each attempt is bounded
-// by a timeout because File.downloadFileAsync has no cancellation: a stalled
-// connection would otherwise hang the task in 'active' forever and never
-// resolve the P0 gate. A timed-out native download is left to die on its own;
-// the next attempt re-downloads and verifyCachedAsset's size check self-heals
-// any partial/corrupt file, so no temp-file dance is needed.
-const DOWNLOAD_ATTEMPT_TIMEOUT_MS = 12000;
-const P0_RETRY_MAX_BACKOFF_MS = 30000;
-// A P0 asset that fails this many attempts is marked failed and the gate
-// opens anyway. Retry-forever assumed the manifest was always truthful; a
-// deleted R2 object (2026-07-30 bucket re-org) proved a 404 can be permanent,
-// and bricking every launch over a missing asset is worse than degrading.
-const P0_MAX_ATTEMPTS = 4;
+type QueueTask = {
+  key: string;
+  priority: number;
+  status: 'queued' | 'active' | 'done';
+  attempts: number;
+  nextAttemptAt: number;
+  isReady?: () => Promise<boolean>;
+  run: () => Promise<boolean>;
+};
 
-function withTimeout(p: Promise<unknown>, ms: number): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('download attempt timeout')), ms);
-    p.then(
-      (v) => {
+const tasks = new Map<string, QueueTask>();
+const listeners = new Set<() => void>();
+let activeCount = 0;
+let started = false;
+let paused = AppState.currentState !== 'active';
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let notifyTimer: ReturnType<typeof setTimeout> | null = null;
+let revision = 0;
+
+function notifyAssetReady(): void {
+  revision += 1;
+  // A fresh install can finish dozens of tiny thumbnails in quick succession.
+  // Coalesce their UI invalidations so Home/Closet do not re-render once per
+  // file while preserving immediate eventual repaint after failures recover.
+  if (listeners.size === 0 || notifyTimer) return;
+  notifyTimer = setTimeout(() => {
+    notifyTimer = null;
+    for (const listener of listeners) listener();
+  }, 200);
+}
+
+export function subscribeR2AssetChanges(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function getR2AssetRevision(): number {
+  return revision;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('R2 download attempt timed out')), timeoutMs);
+    promise.then(
+      (value) => {
         clearTimeout(timer);
-        resolve(v);
+        resolve(value);
       },
-      (e) => {
+      (error) => {
         clearTimeout(timer);
-        reject(e);
+        reject(error);
       },
     );
   });
 }
 
-// P1 folder download order (Q-P1: cards art -> chars-video -> product details).
-const P1_DIR_SEQ: Record<string, number> = {
-  'cards art': 0,
-  'chars-video': 1,
-  'product details': 2,
-};
-
-// Extra P0 assets not present in the manifest. Intentionally empty:
-// cards-background.webp is consumed via R2 URL + expo-image cache (not
-// asset-cache), is not a Home asset, and record.tsx already
-// ExpoImage.prefetch()es it before the insight screen. Left as a hook
-// for any future manifest-absent P0 asset that IS consumed via asset-cache.
-const EXTRA_P0_FILENAMES: readonly string[] = [];
-
-type AssetKind = 'video' | 'card' | 'product' | 'extra';
-
-type DLTask = {
-  key: string; // dedupe key: product uses id, others use filename
-  kind: AssetKind;
-  filename: string; // bare name (cache + verify name for video/card/extra)
-  dir: string;
-  size: number; // 0 for extra (no size check)
-  product?: ProductAssetManifestEntry; // present when kind === 'product'
-  tier: 0 | 1;
-  seq: number; // order within tier (lower = earlier)
-  status: 'queued' | 'active' | 'done' | 'failed';
-  attempts?: number; // tier-0 retry count (undefined = 0). Tier 0 retries forever.
-  nextAttemptAt?: number; // earliest ms a queued task may be picked (backoff gate; undefined/0 = now)
-};
-
-let tasks: DLTask[] = [];
-let active = 0;
-let started = false;
-let p0Resolve: (() => void) | null = null;
-let p0Promise: Promise<void> | null = null;
-
-/** Returns the cached manifest, fetching+caching once if absent. */
-async function ensureManifest(): Promise<AssetManifest | null> {
-  const cached = getCachedManifest();
-  if (cached) {
-    // Lazy SWR: callers continue with cache immediately; the shared manifest
-    // module decides whether its independent six-hour TTL needs a GET.
-    void fetchManifestFromR2().catch(() => {});
-    return cached;
-  }
-  try {
-    const fresh = await fetchManifestFromR2();
-    setCachedManifest(fresh);
-    return fresh;
-  } catch {
-    return null;
-  }
-}
-
-function isTaskCached(t: DLTask): boolean {
-  if (t.kind === 'product' && t.product) {
-    return getCachedAssetUri(productCacheFilename(t.product)) !== null;
-  }
-  if (t.kind === 'extra') {
-    return getCachedAssetUri(t.filename) !== null; // no size, existence only
-  }
-  // video / card: size-verified (mismatch deletes the file -> false).
-  return verifyCachedAsset(t.filename, t.size);
-}
-
-function maybeResolveP0(): void {
-  if (!p0Resolve) return;
-  const left = tasks.some(
-    (t) => t.tier === 0 && (t.status === 'queued' || t.status === 'active'),
-  );
-  if (!left) {
-    p0Resolve();
-    p0Resolve = null;
-  }
-}
-
-async function runTask(t: DLTask, baseUrl: string): Promise<void> {
-  if (isTaskCached(t)) {
-    t.status = 'done';
-    return;
-  }
-  try {
-    const dl =
-      t.kind === 'product' && t.product
-        ? downloadProductAsset(baseUrl, t.product)
-        : downloadAsset(baseUrl, t.filename);
-    await withTimeout(dl, DOWNLOAD_ATTEMPT_TIMEOUT_MS);
-    t.status = 'done';
-  } catch {
-    if (t.tier === 0) {
-      // P0 retries with capped exponential backoff, but only up to
-      // P0_MAX_ATTEMPTS: a permanently missing object (manifest drift) must
-      // not hold the launch gate forever — mark failed and let the app
-      // degrade (bundled fallbacks cover Home).
-      t.attempts = (t.attempts ?? 0) + 1;
-      if (t.attempts >= P0_MAX_ATTEMPTS) {
-        console.warn(`[download-queue] P0 gave up after ${t.attempts} attempts: ${t.filename}`);
-        t.status = 'failed';
-      } else {
-        const backoff = Math.min(
-          1000 * 2 ** Math.min(t.attempts - 1, 5),
-          P0_RETRY_MAX_BACKOFF_MS,
-        );
-        t.nextAttemptAt = Date.now() + backoff;
-        t.status = 'queued';
-        setTimeout(() => pump(baseUrl), backoff);
-      }
-    } else {
-      t.status = 'failed'; // P1: non-blocking; retried on bumpToFront or next launch
-    }
-  }
-}
-
-function pickNext(): DLTask | null {
-  let best: DLTask | null = null;
+function scheduleRetryPump(): void {
+  if (paused || retryTimer) return;
   const now = Date.now();
-  for (const t of tasks) {
-    if (t.status !== 'queued') continue;
-    if ((t.nextAttemptAt ?? 0) > now) continue; // backoff: not yet eligible
-    if (!best) {
-      best = t;
-      continue;
-    }
-    if (t.tier !== best.tier) {
-      if (t.tier < best.tier) best = t;
-      continue;
-    }
-    if (t.seq < best.seq) best = t;
+  let nextAt = Number.POSITIVE_INFINITY;
+  for (const task of tasks.values()) {
+    if (task.status === 'queued') nextAt = Math.min(nextAt, task.nextAttemptAt);
+  }
+  if (!Number.isFinite(nextAt)) return;
+  const wait = Math.max(100, nextAt - now);
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    pump();
+  }, wait);
+}
+
+function pickNext(): QueueTask | null {
+  const now = Date.now();
+  let best: QueueTask | null = null;
+  for (const task of tasks.values()) {
+    if (task.status !== 'queued' || task.nextAttemptAt > now) continue;
+    if (!best || task.priority < best.priority) best = task;
   }
   return best;
 }
 
-function pump(baseUrl: string): void {
-  while (active < MAX_CONCURRENCY) {
-    const next = pickNext();
-    if (!next) break;
-    next.status = 'active';
-    active += 1;
-    void runTask(next, baseUrl).finally(() => {
-      active -= 1;
-      maybeResolveP0();
-      pump(baseUrl);
-    });
-  }
-  maybeResolveP0();
-}
-
-function hasTask(key: string): boolean {
-  return tasks.some((t) => t.key === key);
-}
-
-function buildP0Tasks(m: AssetManifest): DLTask[] {
-  const out: DLTask[] = [];
-  const isRoot = (dir?: string) => (dir ?? '') === '';
-  m.videos
-    .filter((v) => isRoot(v.dir))
-    .forEach((v) =>
-      out.push({ key: v.filename, kind: 'video', filename: v.filename, dir: '', size: v.size, tier: 0, seq: 0, status: 'queued' }),
-    );
-  m.cards
-    .filter((c) => isRoot(c.dir))
-    .forEach((c) =>
-      out.push({ key: c.filename, kind: 'card', filename: c.filename, dir: '', size: c.size, tier: 0, seq: 0, status: 'queued' }),
-    );
-  (m.productAssets ?? [])
-    .filter((p) => isRoot(p.dir))
-    .forEach((p) =>
-      out.push({ key: p.id, kind: 'product', filename: p.filename, dir: '', size: p.size, product: p, tier: 0, seq: 0, status: 'queued' }),
-    );
-  EXTRA_P0_FILENAMES.forEach((fn) =>
-    out.push({ key: fn, kind: 'extra', filename: fn, dir: '', size: 0, tier: 0, seq: 0, status: 'queued' }),
-  );
-  return out;
-}
-
-function buildP1Tasks(m: AssetManifest): DLTask[] {
-  const out: DLTask[] = [];
-  const seqOf = (dir?: string) => P1_DIR_SEQ[dir ?? ''] ?? 99;
-  m.videos
-    .filter((v) => (v.dir ?? '') !== '')
-    .forEach((v) =>
-      out.push({ key: v.filename, kind: 'video', filename: v.filename, dir: v.dir ?? '', size: v.size, tier: 1, seq: seqOf(v.dir), status: 'queued' }),
-    );
-  m.cards
-    .filter((c) => (c.dir ?? '') !== '')
-    .forEach((c) =>
-      out.push({ key: c.filename, kind: 'card', filename: c.filename, dir: c.dir ?? '', size: c.size, tier: 1, seq: seqOf(c.dir), status: 'queued' }),
-    );
-  (m.productAssets ?? [])
-    .filter((p) => (p.dir ?? '') !== '')
-    .forEach((p) =>
-      out.push({ key: p.id, kind: 'product', filename: p.filename, dir: p.dir ?? '', size: p.size, product: p, tier: 1, seq: seqOf(p.dir), status: 'queued' }),
-    );
-  return out;
-}
-
-/** Enqueue all P0 assets; resolves when every P0 task is done/skipped. */
-export async function ensureP0Ready(homeVideoFilename?: string): Promise<void> {
-  const m = await ensureManifest();
-  if (!m) return; // no manifest: can't download; gate timeout + CDN fallback cover it
-  if (!p0Promise) {
-    p0Promise = new Promise<void>((res) => {
-      p0Resolve = res;
-    });
-  }
-  for (const t of buildP0Tasks(m)) {
-    if (!hasTask(t.key)) tasks.push(t);
-  }
-  // Dynamically include the video the Home screen will actually play on
-  // its first frame. For a returning user this is their current state's
-  // clip (e.g. char1-outfitN-study.mp4) which lives in chars-video/ = P1;
-  // promote it to P0 so the gate waits for it and Home plays it locally
-  // (no CDN dependency, no failure placeholder). New users pass
-  // char1-outfit1-hungry.mp4 which is already a root P0 asset.
-  if (homeVideoFilename) {
-    const v = m.videos.find((x) => x.filename === homeVideoFilename);
-    if (v) {
-      const existing = tasks.find((t) => t.key === v.filename);
-      if (!existing) {
-        tasks.push({
-          key: v.filename, kind: 'video', filename: v.filename,
-          dir: v.dir ?? '', size: v.size, tier: 0, seq: -1, status: 'queued',
-        });
-      } else if (existing.status === 'queued' || existing.status === 'failed') {
-        existing.tier = 0;
-        existing.seq = -1;
-        existing.status = 'queued';
-      }
+async function runTask(task: QueueTask): Promise<void> {
+  try {
+    if (task.isReady && await task.isReady()) {
+      task.status = 'done';
+      return;
     }
+    const ok = await withTimeout(task.run(), ATTEMPT_TIMEOUT_MS);
+    if (!ok) throw new Error('R2 asset was not cached');
+    task.status = 'done';
+    task.attempts = 0;
+    notifyAssetReady();
+  } catch {
+    task.attempts += 1;
+    const backoff = Math.min(
+      1000 * 2 ** Math.min(task.attempts - 1, 8),
+      MAX_RETRY_BACKOFF_MS,
+    );
+    task.nextAttemptAt = Date.now() + backoff;
+    task.status = 'queued';
   }
-  pump(m.baseUrl);
-  maybeResolveP0();
-  return p0Promise;
 }
 
-/** Enqueue all P1 assets (background, not awaited). Call after P0. */
-export function enqueueP1(): void {
-  const m = getCachedManifest();
-  if (!m) return;
-  for (const t of buildP1Tasks(m)) {
-    if (!hasTask(t.key)) tasks.push(t);
+function pump(): void {
+  if (paused) return;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
   }
-  pump(m.baseUrl);
+
+  while (activeCount < MAX_CONCURRENCY) {
+    const task = pickNext();
+    if (!task) break;
+    task.status = 'active';
+    activeCount += 1;
+    void runTask(task).finally(() => {
+      activeCount -= 1;
+      pump();
+    });
+  }
+  scheduleRetryPump();
 }
 
-/**
- * Action-triggered priority bump. filename = bare name (video/card/extra)
- * or a productAsset's filename. Re-queues queued/failed tasks at top
- * priority; creates a top-priority task if not enqueued (P2 on-demand).
- */
-export function bumpToFront(filename: string): void {
-  const m = getCachedManifest();
-  if (!m) return;
-  const existing = tasks.find((t) => t.filename === filename || t.key === filename);
+function addTask(task: Omit<QueueTask, 'status' | 'attempts' | 'nextAttemptAt'>): void {
+  const existing = tasks.get(task.key);
   if (existing) {
-    if (existing.status === 'queued' || existing.status === 'failed') {
-      existing.tier = 0;
-      existing.seq = -1;
-      existing.status = 'queued';
+    existing.priority = Math.min(existing.priority, task.priority);
+    if (existing.status !== 'active' && existing.status !== 'done') {
+      existing.nextAttemptAt = Math.min(existing.nextAttemptAt, Date.now());
     }
-    pump(m.baseUrl);
     return;
   }
-  const v = m.videos.find((x) => x.filename === filename);
-  const c = m.cards.find((x) => x.filename === filename);
-  const p = (m.productAssets ?? []).find((x) => x.filename === filename);
-  let t: DLTask;
-  if (v) t = { key: v.filename, kind: 'video', filename, dir: v.dir ?? '', size: v.size, tier: 0, seq: -1, status: 'queued' };
-  else if (c) t = { key: c.filename, kind: 'card', filename, dir: c.dir ?? '', size: c.size, tier: 0, seq: -1, status: 'queued' };
-  else if (p) t = { key: p.id, kind: 'product', filename, dir: p.dir ?? '', size: p.size, product: p, tier: 0, seq: -1, status: 'queued' };
-  else t = { key: filename, kind: 'extra', filename, dir: '', size: 0, tier: 0, seq: -1, status: 'queued' };
-  tasks.push(t);
-  pump(m.baseUrl);
+  tasks.set(task.key, {
+    ...task,
+    status: 'queued',
+    attempts: 0,
+    nextAttemptAt: Date.now(),
+  });
 }
 
-/** Cold-start entry: start P0, then chain P1 in the background. Idempotent. */
-export function startDownloadQueue(): void {
-  if (started) return;
-  started = true;
-  void ensureP0Ready().then(() => enqueueP1());
-}
-
-function taskRevision(t: DLTask): string {
-  return [t.kind, t.filename, t.dir, t.size, t.product?.filename ?? ''].join('|');
-}
-
-/**
- * Reconcile an already-running queue with a newly downloaded manifest.
- * Existing valid downloads stay untouched; changed/new assets are queued in
- * the background. This is what makes a tiny launch-time version check useful
- * without blocking the native splash or re-downloading the whole catalog.
- */
-export function stageLatestManifest(): void {
-  const manifest = getCachedManifest();
-  if (!manifest) return;
-
-  let retryAfterActiveTask = false;
-  for (const incoming of [...buildP0Tasks(manifest), ...buildP1Tasks(manifest)]) {
-    const index = tasks.findIndex((task) => task.key === incoming.key);
-    if (index < 0) {
-      tasks.push(incoming);
-      continue;
-    }
-
-    const existing = tasks[index];
-    if (taskRevision(existing) !== taskRevision(incoming)) {
-      if (existing.status === 'active') {
-        retryAfterActiveTask = true;
-        continue;
+/** Add a static R2 image to expo-image's persistent disk cache. */
+export function enqueueR2Image(url: string, priority = 20): void {
+  if (!url.startsWith('https://media.novameapp.com/')) return;
+  addTask({
+    key: `image:${url}`,
+    priority,
+    isReady: async () => {
+      try {
+        return Boolean(await ExpoImage.getCachePathAsync(url));
+      } catch {
+        return false;
       }
-      tasks[index] = incoming;
-      continue;
-    }
+    },
+    run: async () => {
+      try {
+        return Boolean(await ExpoImage.prefetch(url, { cachePolicy: 'memory-disk' }));
+      } catch {
+        return false;
+      }
+    },
+  });
+  pump();
+}
 
-    if (
-      (existing.status === 'failed' || existing.status === 'done')
-      && !isTaskCached(incoming)
-    ) {
-      tasks[index] = incoming;
-    }
+/** User-visible image failed or is about to be used: move it to the front. */
+export function prioritizeR2Image(url: string): void {
+  enqueueR2Image(url, -100);
+  const task = tasks.get(`image:${url}`);
+  if (task && task.status !== 'active') {
+    task.status = 'queued';
+    task.nextAttemptAt = Date.now();
   }
+  pump();
+}
 
-  pump(manifest.baseUrl);
-  if (retryAfterActiveTask) {
-    setTimeout(stageLatestManifest, DOWNLOAD_ATTEMPT_TIMEOUT_MS + 250);
+function stageOutfit(outfit: OutfitDef): void {
+  enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), 5);
+  enqueueR2Image(outfitAssetUrl(outfit.bunny, outfit.assetVersion), 8);
+  const version = outfit.assetVersion ?? 'unversioned';
+  addTask({
+    key: `outfit-video:${outfit.key}:${version}`,
+    priority: 12,
+    isReady: async () => Boolean(
+      await getCachedOutfitVideoUri(outfit.key, outfit.assetVersion),
+    ),
+    run: async () => Boolean(await ensureOutfitVideoCached(outfit)),
+  });
+}
+
+function stageScene(scene: SceneDef): void {
+  enqueueR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion), 5);
+  enqueueR2Image(sceneAssetUrl(scene.image, scene.assetVersion), 15);
+}
+
+async function refreshRuntimeCatalogs(): Promise<boolean> {
+  const [outfits, scenes] = await Promise.all([
+    fetchOutfitCatalog(),
+    fetchSceneCatalog(),
+  ]);
+  for (const outfit of outfits) stageOutfit(outfit);
+  for (const scene of scenes) stageScene(scene);
+  return outfits.length > 0 && scenes.length > 0;
+}
+
+function stageRuntimeInventory(): void {
+  const cachedOutfits = getCachedOutfitCatalog();
+  const cachedScenes = getCachedSceneCatalog();
+  for (const outfit of cachedOutfits) stageOutfit(outfit);
+  for (const scene of cachedScenes) stageScene(scene);
+
+  addTask({
+    key: 'catalogs:runtime',
+    priority: -10,
+    run: refreshRuntimeCatalogs,
+  });
+
+  // Focus Voice has no bucket manifest. Its sync function discovers the
+  // sequential numbered tracks with cheap HEAD probes, then caches every one.
+  addTask({
+    key: 'focus-voice:all',
+    priority: 30,
+    run: syncAllFocusVoiceAssets,
+  });
+  pump();
+}
+
+/** Cold-start entry. Never blocks the splash or a page render. */
+export function startDownloadQueue(): void {
+  if (started) {
+    resumeDownloadQueue();
+    return;
+  }
+  started = true;
+  paused = AppState.currentState !== 'active';
+  stageRuntimeInventory();
+  pump();
+}
+
+export function pauseDownloadQueue(): void {
+  paused = true;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
   }
 }
 
-/** Reset all queue state (e.g. on sign-out). Does not delete cached files. */
+export function resumeDownloadQueue(): void {
+  paused = false;
+  if (!started) {
+    startDownloadQueue();
+    return;
+  }
+  for (const task of tasks.values()) {
+    if (task.status === 'queued') task.nextAttemptAt = Math.min(task.nextAttemptAt, Date.now());
+  }
+  pump();
+}
+
+/** Reconcile after the tiny content-version pointer reports new assets. */
+export function stageLatestManifest(): void {
+  const catalogTask = tasks.get('catalogs:runtime');
+  if (catalogTask && catalogTask.status !== 'active') {
+    catalogTask.status = 'queued';
+    catalogTask.attempts = 0;
+    catalogTask.nextAttemptAt = Date.now();
+  }
+  stageRuntimeInventory();
+  pump();
+}
+
+// Compatibility exports for retired callers. They now route into the same
+// non-blocking foreground queue rather than maintaining a second cache policy.
+export async function ensureP0Ready(): Promise<void> {
+  startDownloadQueue();
+}
+
+export function enqueueP1(): void {
+  stageLatestManifest();
+}
+
+export function bumpToFront(filename: string): void {
+  const encoded = encodeURIComponent(filename);
+  for (const task of tasks.values()) {
+    if (task.key.includes(filename) || task.key.includes(encoded)) {
+      task.priority = -100;
+      if (task.status !== 'active') {
+        task.status = 'queued';
+        task.nextAttemptAt = Date.now();
+      }
+    }
+  }
+  pump();
+}
+
 export function resetDownloadQueue(): void {
-  tasks = [];
-  active = 0;
+  tasks.clear();
+  activeCount = 0;
   started = false;
-  p0Resolve = null;
-  p0Promise = null;
+  paused = true;
+  if (retryTimer) clearTimeout(retryTimer);
+  retryTimer = null;
+  if (notifyTimer) clearTimeout(notifyTimer);
+  notifyTimer = null;
 }

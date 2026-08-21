@@ -47,6 +47,10 @@ import { touchActivity } from '@/lib/activity';
 import { checkContentVersionInBackground } from '@/lib/content-version';
 import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import {
+  pauseDownloadQueue,
+  resumeDownloadQueue,
+} from '@/lib/download-queue';
+import {
   assertAllKeysRegistered,
   purgeLegacyKeys,
   clearOnSignIn,
@@ -273,6 +277,10 @@ function RootLayout() {
     const handleAppStateChange = (state: AppStateStatus) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
+        // R2 assets are warmed only while the app is in use. The queue
+        // rebuilds from the manifest + local disk on every cold launch, so a
+        // force-close naturally resumes only the still-missing files.
+        resumeDownloadQueue();
         void touchActivity();
         void checkContentVersionInBackground();
         void resumeSubscriptionRealtime().catch((error) => {
@@ -283,6 +291,7 @@ function RootLayout() {
         });
       } else {
         supabase.auth.stopAutoRefresh();
+        pauseDownloadQueue();
         void stopSubscriptionRealtime().catch((error) => {
           console.warn('[layout] entitlement realtime stop failed:', error);
         });

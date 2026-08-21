@@ -167,15 +167,13 @@ export async function r2PresignPut({ key, contentType, expiresIn = 600 }) {
  * Fetch the asset manifest from R2 and parse as JSON.
  *
  * The manifest is at the well-known key 'video-manifest.json' (legacy
- * name, used for all manifest data: videos, cards, and -- after B3 --
- * productAssets). It is publicly readable via media.novameapp.com but
+ * filename; its live catalog now contains only outfits and scenes). It is
+ * publicly readable via media.novameapp.com but
  * we go through the authenticated S3 path to ensure we read the
  * authoritative version (Cloudflare CDN cache can be ~minutes stale).
  *
- * Returns the parsed manifest object. Schema:
- *   { version, baseUrl, videos: [...], cards: [...], productAssets?: [...] }
- *
- * If productAssets is missing (pre-B3 state), callers should default to [].
+ * Returns the parsed manifest object. Runtime schema:
+ *   { version, baseUrl, outfits: [...], scenes: [...] }
  */
 export async function r2GetManifest() {
   const bytes = await r2GetObjectBytes('video-manifest.json');

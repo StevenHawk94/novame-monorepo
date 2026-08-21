@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,13 +33,15 @@ export default function QuestCustomScreen() {
   const router = useRouter();
   const [goal, setGoal] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [restoring, setRestoring] = useState(true);
+  const goalRef = useRef('');
 
   useEffect(() => {
     let active = true;
     void fetchCachedCustomTasks().then((tasks) => {
       if (!active) return;
-      if (tasks?.length) {
+      // Server recovery is intentionally silent. Never replace work the user
+      // already started typing while a reinstall/cross-device lookup runs.
+      if (tasks?.length && goalRef.current.length === 0) {
         router.replace({
           pathname: '/(main)/quest-pick',
           params: {
@@ -48,9 +50,7 @@ export default function QuestCustomScreen() {
             tasksJson: JSON.stringify(tasks),
           },
         });
-        return;
       }
-      setRestoring(false);
     });
     return () => {
       active = false;
@@ -106,15 +106,6 @@ export default function QuestCustomScreen() {
     );
   }
 
-  if (restoring) {
-    return (
-      <View style={[styles.root, styles.restoring, { paddingTop: insets.top + 12 }]}>
-        <ActivityIndicator color={CREAM} />
-        <Text style={styles.restoringText}>Checking your latest plan…</Text>
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -134,7 +125,11 @@ export default function QuestCustomScreen() {
             placeholder="e.g. Run my first 5k in a month, sleep before midnight, finish my thesis chapter…"
             placeholderTextColor={MUTED}
             value={goal}
-            onChangeText={(t) => setGoal(t.slice(0, MAX_GOAL))}
+            onChangeText={(t) => {
+              const next = t.slice(0, MAX_GOAL);
+              goalRef.current = next;
+              setGoal(next);
+            }}
             multiline
             autoFocus
             textAlignVertical="top"
@@ -165,8 +160,6 @@ export default function QuestCustomScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
-  restoring: { alignItems: 'center', justifyContent: 'center', gap: 12 },
-  restoringText: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED },
   header: { paddingHorizontal: 4, paddingBottom: 12 },
   title: { fontSize: 26, fontFamily: 'Inter_800ExtraBold', color: CREAM },
   sub: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6, lineHeight: 20 },

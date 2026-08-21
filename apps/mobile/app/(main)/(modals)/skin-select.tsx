@@ -7,6 +7,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
+import { prioritizeR2Image } from '../../../src/lib/download-queue';
+import { useR2AssetRevision } from '../../../src/lib/use-r2-asset-revision';
 import { ICONS } from '../../../src/lib/icons';
 import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
 import {
@@ -48,6 +50,7 @@ export default function OutfitClosetScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
+  const assetRevision = useR2AssetRevision();
 
   const [catalog, setCatalog] = useState<OutfitDef[]>(() => getCachedOutfitCatalog());
   const [cosmetics, setCosmetics] = useState<CosmeticsState>(() => getCachedCosmetics());
@@ -68,7 +71,7 @@ export default function OutfitClosetScreen() {
 
   // Prefetch worn-preview images so tapping cards feels instant.
   useEffect(() => {
-    for (const o of catalog) void ExpoImage.prefetch(outfitAssetUrl(o.bunny));
+    for (const o of catalog) void ExpoImage.prefetch(outfitAssetUrl(o.bunny, o.assetVersion));
   }, [catalog]);
 
   const preview = catalog.find((o) => o.key === previewKey) ?? null;
@@ -83,7 +86,7 @@ export default function OutfitClosetScreen() {
   async function equipAndReturn(o: OutfitDef) {
     setEquippedOutfitKey(o.key);
     setEquipped(o.key);
-    const cached = await getCachedOutfitVideoUri(o.key);
+    const cached = await getCachedOutfitVideoUri(o.key, o.assetVersion);
     if (!cached) {
       setSwitching(true);
       const uri = await ensureOutfitVideoCached(o);
@@ -166,10 +169,14 @@ export default function OutfitClosetScreen() {
       <View style={styles.bgWrap}>
         <ExpoImage source={BG} style={styles.bgImg} contentFit="cover" />
         <ExpoImage
-          source={preview ? { uri: outfitAssetUrl(preview.bunny) } : DEFAULT_BUNNY}
+          source={preview ? { uri: outfitAssetUrl(preview.bunny, preview.assetVersion) } : DEFAULT_BUNNY}
           style={styles.bunny}
           contentFit="contain"
           transition={120}
+          recyclingKey={`outfit-preview:${preview?.key ?? 'default'}:${assetRevision}`}
+          onError={() => {
+            if (preview) prioritizeR2Image(outfitAssetUrl(preview.bunny, preview.assetVersion));
+          }}
         />
         <Pressable
           onPress={() => { void haptics.light(); router.back(); }}
@@ -232,10 +239,12 @@ export default function OutfitClosetScreen() {
                 style={[styles.card, isSelected && styles.cardSelected]}
               >
                 <ExpoImage
-                  source={{ uri: outfitAssetUrl(o.thumb) }}
+                  source={{ uri: outfitAssetUrl(o.thumb, o.assetVersion) }}
                   style={styles.thumb}
                   contentFit="contain"
                   transition={100}
+                  recyclingKey={`outfit-thumb:${o.key}:${assetRevision}`}
+                  onError={() => prioritizeR2Image(outfitAssetUrl(o.thumb, o.assetVersion))}
                 />
                 {plusLocked ? (
                   <View style={styles.plusPill}>

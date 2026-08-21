@@ -35,7 +35,7 @@ export const CURRENCY_CAP = 99999;
 //  - focus pays twice a day now (was once)
 //  - visitMaster's real gate is the 48h cooldown in the RPC; the day-cap here
 //    only stops double-pay inside one day
-//  - tameEnemy: free users tame once a day; paid users once per enemy (8/day).
+//  - tameEnemy: free users tame three times a day; paid users once per enemy (8/day).
 //    The per-enemy gate lives in the RPC — this table holds the paid ceiling
 //    so maxDailyXp() stays the true upper bound.
 //  - bubble: popping a friend's memory bubble on Home (+5, at most 5 a day)
@@ -51,7 +51,7 @@ export const XP_RULES: Record<XpSource, XpRule> = {
 };
 
 /** Free-tier tame cap (paid = XP_RULES.tameEnemy.cap, one per enemy). */
-export const TAME_CAP_FREE_PER_DAY = 1;
+export const TAME_CAP_FREE_PER_DAY = 3;
 
 /**
  * XP for one action given how many times this source already fired in the

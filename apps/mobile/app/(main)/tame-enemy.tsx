@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutRectangle } from 'react-native';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -43,7 +43,11 @@ type Phase = 'select' | 'prep' | 'battle' | 'finalWords' | 'exploding' | 'result
 
 const ATTACKS_TO_TAME = 20;
 const WHITE_FILM_OPACITY = 0;
-const HEART_ANIMATION_SOURCE = require('../../assets/animations/exploding-heart.lottie');
+const HEART_ANIMATION_SOURCE = Platform.select({
+  android: require('../../assets/animations/exploding-heart.json'),
+  default: require('../../assets/animations/exploding-heart.lottie'),
+});
+const HEART_ANIMATION_FALLBACK_MS = 6000;
 const MONSTER_BACKGROUND_SOURCE = require('../../assets/monsters/monster-bg.webp');
 const SWIPE_ICON_SOURCE = require('../../assets/Icons/Swipe.png');
 
@@ -121,10 +125,11 @@ export default function TameEnemyScreen() {
   }, []);
 
   // Do not let a platform-specific Lottie completion callback strand the
-  // battle. At 0.75x, the 90-frame / 29.97fps asset lasts about four seconds.
+  // battle. At 0.75x, the 90-frame / 29.97fps asset lasts about four seconds;
+  // this only wins if loading or the native completion event fails entirely.
   useEffect(() => {
     if (phase !== 'exploding') return undefined;
-    const timer = setTimeout(() => setPhase('result'), 4400);
+    const timer = setTimeout(() => setPhase('result'), HEART_ANIMATION_FALLBACK_MS);
     return () => clearTimeout(timer);
   }, [phase]);
 
@@ -210,6 +215,9 @@ export default function TameEnemyScreen() {
       setReward(res.ok ? (res.xpAwarded ?? null) : null);
       setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
       if (res.ok) {
+        if (typeof res.battleTotalPoints === 'number') {
+          setBattlePoints(res.battleTotalPoints);
+        }
         markTameEnemyDoneToday();
         award.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
       } else {
@@ -279,15 +287,13 @@ export default function TameEnemyScreen() {
 
   // ---- PREP (design: Enemy selected — data + progress before the fight) ----
   if (phase === 'prep' && active) {
-    // Milestones come in rolling windows of three: finish all three and the
-    // banner advances to the next trio. Crossed ones show a Claimed badge
-    // (rewards are auto-paid server-side when the threshold is crossed).
+    // Always show the next three unclaimed milestones. As soon as one is
+    // crossed, the following threshold becomes the leftmost node and a new
+    // future threshold enters on the right.
     const crossed = battleMilestoneCount(battlePoints);
-    const windowStart = Math.floor(crossed / 3) * 3;
     const milestones = [1, 2, 3].map((i) => ({
-      n: windowStart + i,
-      threshold: battleMilestoneThreshold(windowStart + i),
-      claimed: windowStart + i <= crossed,
+      n: crossed + i,
+      threshold: battleMilestoneThreshold(crossed + i),
     }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
@@ -307,22 +313,16 @@ export default function TameEnemyScreen() {
           {TAME_INTRO_COPY[active.id] ?? active.prep}
         </Text>
 
-        {/* milestone banner: dark brown card, the current trio of 🍀 rewards;
-            crossed ones wear a Claimed badge */}
+        {/* milestone banner: the next three unclaimed 🍀 thresholds */}
         <View style={styles.milestoneBanner}>
           {milestones.map((m, i) => (
             <View key={m.n} style={styles.milestoneNodeWrap}>
               {i > 0 && <View style={styles.milestoneLink} />}
-              <View style={[styles.milestoneNode, m.claimed && { opacity: 0.55 }]}>
+              <View style={styles.milestoneNode}>
                 <Image source={ICONS.Clover} style={styles.milestoneCloverImg} resizeMode="contain" />
                 <Text style={styles.milestoneReward}>x{BATTLE_MILESTONE_REWARD}</Text>
               </View>
               <Text style={styles.milestoneThreshold}>{m.threshold.toLocaleString()}</Text>
-              {m.claimed && (
-                <View style={styles.claimedChip}>
-                  <Text style={styles.claimedText}>Claimed</Text>
-                </View>
-              )}
             </View>
           ))}
         </View>
@@ -426,16 +426,20 @@ export default function TameEnemyScreen() {
           )}
 
           {phase === 'exploding' && (
-            <LottieView
-              source={HEART_ANIMATION_SOURCE}
-              autoPlay
-              loop={false}
-              speed={0.75}
-              resizeMode="contain"
-              style={styles.heartExplosion}
-              onAnimationFinish={() => setPhase('result')}
-              onAnimationFailure={() => setPhase('result')}
-            />
+            <View pointerEvents="none" style={styles.heartExplosionLayer}>
+              <LottieView
+                source={HEART_ANIMATION_SOURCE}
+                autoPlay
+                loop={false}
+                speed={0.75}
+                resizeMode="contain"
+                style={styles.heartExplosion}
+                onAnimationFinish={() => setPhase('result')}
+                onAnimationFailure={(error) => {
+                  console.warn('[tame-enemy] heart animation failed:', error);
+                }}
+              />
+            </View>
           )}
 
           <SwipeAttackLayer
@@ -562,11 +566,6 @@ const styles = StyleSheet.create({
   milestoneCloverImg: { width: 40, height: 40 },
   milestoneReward: { position: 'absolute', top: -6, right: -26, fontSize: 12, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE' },
   milestoneThreshold: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#FFF6DE', marginTop: 6 },
-  claimedChip: {
-    marginTop: 4, backgroundColor: '#7BB661', borderRadius: 9,
-    paddingHorizontal: 9, paddingVertical: 2,
-  },
-  claimedText: { fontSize: 10.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', letterSpacing: 0.4 },
   prepStatsBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', marginTop: 18,
     backgroundColor: '#FBF2DE', borderRadius: 16,
@@ -629,7 +628,13 @@ const styles = StyleSheet.create({
   },
   hpFill: { height: '100%', borderRadius: 8, backgroundColor: '#E4593C' },
   hpLabel: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF', marginTop: 5 },
-  heartExplosion: { position: 'absolute', width: 330, height: 330, alignSelf: 'center', zIndex: 15 },
+  heartExplosionLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartExplosion: { width: 330, height: 330 },
 
   copyArea: {
     flex: 0.84, backgroundColor: 'rgba(121,76,43,0.5)',

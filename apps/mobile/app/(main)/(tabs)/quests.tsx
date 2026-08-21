@@ -13,7 +13,13 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { ConfettiBurst } from '@/components/main/confetti-burst';
 import { haptics } from '@/lib/haptics';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
-import { checkTask, fetchQuestStatus, getCachedStatus, type QuestStatus } from '@/lib/quests-api';
+import {
+  checkTask,
+  fetchQuestStatus,
+  getCachedCustomTasks,
+  getCachedStatus,
+  type QuestStatus,
+} from '@/lib/quests-api';
 
 
 const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = {
@@ -81,6 +87,18 @@ export default function QuestsScreen() {
   function onPickTheme(theme: QuestTheme) {
     void haptics.pageOpen();
     if (theme.isCustom) {
+      const cachedTasks = getCachedCustomTasks();
+      if (cachedTasks?.length) {
+        router.push({
+          pathname: '/(main)/quest-pick',
+          params: {
+            themeKey: 'custom',
+            title: 'My Custom Plan',
+            tasksJson: JSON.stringify(cachedTasks),
+          },
+        });
+        return;
+      }
       router.push('/(main)/quest-custom' as never);
       return;
     }

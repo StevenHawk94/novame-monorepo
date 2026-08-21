@@ -37,11 +37,14 @@ export interface OutfitDef {
   video: string;
   /** Explicit Android animated WebP key; derived from video for older manifests. */
   androidVideo?: string;
+  /** Catalog revision used to invalidate remote/native disk caches. */
+  assetVersion?: string;
 }
 
 /** Public CDN URL for an R2 object key, segment-encoding spaces etc. */
-export function outfitAssetUrl(objectKey: string): string {
-  return `${R2_BASE}/${objectKey.split('/').map(encodeURIComponent).join('/')}`;
+export function outfitAssetUrl(objectKey: string, version?: string): string {
+  const url = `${R2_BASE}/${objectKey.split('/').map(encodeURIComponent).join('/')}`;
+  return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 }
 
 // ---- catalog (cache-first) ----
@@ -59,8 +62,11 @@ export function getCachedOutfitCatalog(): OutfitDef[] {
 export async function fetchOutfitCatalog(options?: { force?: boolean }): Promise<OutfitDef[]> {
   try {
     const manifest = await fetchManifestFromR2(options);
+    const version = typeof manifest.outfitsUpdatedAt === 'string'
+      ? manifest.outfitsUpdatedAt
+      : undefined;
     const outfits = Array.isArray(manifest?.outfits)
-      ? manifest.outfits as OutfitDef[]
+      ? (manifest.outfits as OutfitDef[]).map((outfit) => ({ ...outfit, assetVersion: version }))
       : [];
     if (outfits.length > 0) storage.set(kOutfitCatalog.name, JSON.stringify(outfits));
     return outfits.length > 0 ? outfits : getCachedOutfitCatalog();
@@ -92,7 +98,7 @@ const VIDEO_EXTENSION = Platform.OS === 'android' ? 'webp' : 'mov';
  * entries include `androidVideo`; old entries derive the Android mirror path
  * from the iOS basename for backward compatibility.
  */
-function outfitVideoObjectKey(outfit: OutfitDef): string {
+export function outfitVideoObjectKey(outfit: OutfitDef): string {
   if (Platform.OS !== 'android') return outfit.video;
   if (outfit.androidVideo) return outfit.androidVideo;
   const filename = outfit.video.split('/').pop() || `${outfit.name}.mov`;
@@ -100,14 +106,15 @@ function outfitVideoObjectKey(outfit: OutfitDef): string {
   return `Character Videos-Android/${basename}.webp`;
 }
 
-function videoCachePath(key: string): string {
-  return `${FileSystem.cacheDirectory}outfit-video-${VIDEO_PLATFORM}-${key}.${VIDEO_EXTENSION}`;
+function videoCachePath(key: string, version?: string): string {
+  const tag = version ? `-${version.replace(/[^0-9A-Za-z]/g, '')}` : '';
+  return `${FileSystem.cacheDirectory}outfit-video-${VIDEO_PLATFORM}-${key}${tag}.${VIDEO_EXTENSION}`;
 }
 
 /** Local file URI if the outfit's video is already cached, else null. */
-export async function getCachedOutfitVideoUri(key: string): Promise<string | null> {
+export async function getCachedOutfitVideoUri(key: string, version?: string): Promise<string | null> {
   try {
-    const info = await FileSystem.getInfoAsync(videoCachePath(key));
+    const info = await FileSystem.getInfoAsync(videoCachePath(key, version));
     return info.exists && (info.size ?? 0) > 0 ? info.uri : null;
   } catch {
     return null;
@@ -121,19 +128,19 @@ const inflight = new Map<string, Promise<string | null>>();
  * failure). Concurrent callers share one download.
  */
 export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | null> {
-  const inflightKey = `${VIDEO_PLATFORM}:${outfit.key}`;
+  const inflightKey = `${VIDEO_PLATFORM}:${outfit.key}:${outfit.assetVersion ?? 'unversioned'}`;
   const existing = inflight.get(inflightKey);
   if (existing) return existing;
   const p = (async () => {
-    const cached = await getCachedOutfitVideoUri(outfit.key);
+    const cached = await getCachedOutfitVideoUri(outfit.key, outfit.assetVersion);
     if (cached) return cached;
     try {
       const res = await FileSystem.downloadAsync(
-        outfitAssetUrl(outfitVideoObjectKey(outfit)),
-        videoCachePath(outfit.key),
+        outfitAssetUrl(outfitVideoObjectKey(outfit), outfit.assetVersion),
+        videoCachePath(outfit.key, outfit.assetVersion),
       );
       if (res.status === 200) return res.uri;
-      await FileSystem.deleteAsync(videoCachePath(outfit.key), { idempotent: true });
+      await FileSystem.deleteAsync(videoCachePath(outfit.key, outfit.assetVersion), { idempotent: true });
       return null;
     } catch {
       return null;

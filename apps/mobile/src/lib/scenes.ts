@@ -32,10 +32,13 @@ export interface SceneDef {
   /** R2 object keys under Maps/. */
   image: string;
   thumb: string;
+  /** Catalog revision used to invalidate remote/native disk caches. */
+  assetVersion?: string;
 }
 
-export function sceneAssetUrl(objectKey: string): string {
-  return `${R2_BASE}/${objectKey.split('/').map(encodeURIComponent).join('/')}`;
+export function sceneAssetUrl(objectKey: string, version?: string): string {
+  const url = `${R2_BASE}/${objectKey.split('/').map(encodeURIComponent).join('/')}`;
+  return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 }
 
 export function getCachedSceneCatalog(): SceneDef[] {
@@ -51,8 +54,11 @@ export function getCachedSceneCatalog(): SceneDef[] {
 export async function fetchSceneCatalog(options?: { force?: boolean }): Promise<SceneDef[]> {
   try {
     const manifest = await fetchManifestFromR2(options);
+    const version = typeof manifest.scenesUpdatedAt === 'string'
+      ? manifest.scenesUpdatedAt
+      : undefined;
     const scenes = Array.isArray(manifest?.scenes)
-      ? manifest.scenes as SceneDef[]
+      ? (manifest.scenes as SceneDef[]).map((scene) => ({ ...scene, assetVersion: version }))
       : [];
     if (scenes.length > 0) storage.set(kSceneCatalog.name, JSON.stringify(scenes));
     return scenes.length > 0 ? scenes : getCachedSceneCatalog();
@@ -72,5 +78,5 @@ export function getHomeSceneSource(): number | { uri: string } {
     return DEFAULT_SCENE_BG;
   }
   const def = getCachedSceneCatalog().find((s) => s.key === selected);
-  return def ? { uri: sceneAssetUrl(def.image) } : DEFAULT_SCENE_BG;
+  return def ? { uri: sceneAssetUrl(def.image, def.assetVersion) } : DEFAULT_SCENE_BG;
 }

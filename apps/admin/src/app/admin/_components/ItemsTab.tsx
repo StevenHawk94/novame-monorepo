@@ -8,28 +8,20 @@ type Candidate = {
   suggested_item_id?: string | null; suggested_icon_name?: string | null;
   confidence: number; occurrence_count: number; status: string; safety_mode: string; exclusion_rules?: string[];
 };
-type CloudItem = { id: string; name: string; imageKey?: string; keywords?: string[]; bagsCategory?: string; promptCategory?: string; candidateId?: string };
-type Manifest = { version?: string; items?: CloudItem[]; keywordPatches?: unknown[]; history?: { version: string; publishedAt: string; reason?: string }[] };
-
 export default function ItemsTab() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [manifest, setManifest] = useState<Manifest>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState('pending');
-  const [files, setFiles] = useState<File[]>([]);
-  const [rules, setRules] = useState<File | null>(null);
   const [busy, setBusy] = useState('');
 
   const missingKeywords = useMemo(() => candidates.filter((c) => c.kind === 'missing_keyword'), [candidates]);
   const missingIcons = useMemo(() => candidates.filter((c) => c.kind === 'missing_icon'), [candidates]);
 
   async function load() {
-    const [learning, cloud] = await Promise.all([
-      apiClient.get<{ success: boolean; candidates: Candidate[] }>(`/api/admin/item-learning?status=${status}`),
-      apiClient.get<{ success: boolean; manifest: Manifest }>('/api/admin/items-cloud'),
-    ]);
+    const learning = await apiClient.get<{ success: boolean; candidates: Candidate[] }>(
+      `/api/admin/item-learning?status=${status}`,
+    );
     setCandidates(learning.candidates || []);
-    setManifest(cloud.manifest || {});
     setSelected(new Set());
   }
   useEffect(() => { void load(); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -44,59 +36,6 @@ export default function ItemsTab() {
     });
     setBusy('');
     await load();
-  }
-
-  async function publishApproved() {
-    setBusy('Publishing approved keywords…');
-    try {
-      await apiClient.post('/api/admin/items-cloud', { action: 'publishApproved' });
-      await load();
-    } finally { setBusy(''); }
-  }
-
-  async function uploadBatch() {
-    if (!rules || !files.length) return alert('Select a JSON rules file and one or more .webp files.');
-    setBusy('Reading rules…');
-    try {
-      const parsed = JSON.parse(await rules.text()) as { items?: CloudItem[] } | CloudItem[];
-      const definitions = Array.isArray(parsed) ? parsed : parsed.items;
-      if (!Array.isArray(definitions)) throw new Error('Rules JSON must be an array or { items: [...] }.');
-      const fileByName = new Map(files.map((file) => [file.name, file]));
-      const batchId = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-      const pre = await apiClient.post<{ uploads: { filename: string; key: string; contentType: string; url: string }[] }>(
-        '/api/admin/items-cloud/presign', { batchId, files: files.map((file) => ({ filename: file.name })) },
-      );
-      for (let i = 0; i < pre.uploads.length; i += 6) {
-        setBusy(`Uploading ${Math.min(i + 6, pre.uploads.length)} / ${pre.uploads.length}…`);
-        await Promise.all(pre.uploads.slice(i, i + 6).map(async (upload) => {
-          const file = fileByName.get(upload.filename);
-          if (!file) throw new Error(`Missing file ${upload.filename}`);
-          const response = await fetch(upload.url, { method: 'PUT', headers: { 'Content-Type': upload.contentType }, body: file });
-          if (!response.ok) throw new Error(`Upload failed: ${upload.filename}`);
-        }));
-      }
-      const keyByFilename = new Map(pre.uploads.map((upload) => [upload.filename, upload.key]));
-      const entries = definitions.map((item) => {
-        const filename = (item as CloudItem & { filename?: string }).filename || `${item.id}.webp`;
-        const imageKey = keyByFilename.get(filename);
-        if (!imageKey) throw new Error(`No uploaded image for ${item.id} (expected ${filename})`);
-        return { ...item, imageKey };
-      });
-      setBusy('Publishing atomic manifest…');
-      await apiClient.post('/api/admin/items-cloud', { action: 'commitBatch', entries });
-      setFiles([]); setRules(null);
-      await load();
-      alert('Batch published. Existing devices will fetch it on the next Memories/Reflect refresh after the local 6-hour TTL.');
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'Upload failed');
-    } finally { setBusy(''); }
-  }
-
-  async function rollback(version: string) {
-    if (!confirm(`Roll back the item catalog to version ${version}?`)) return;
-    setBusy('Rolling back…');
-    try { await apiClient.post('/api/admin/items-cloud', { action: 'rollback', version }); await load(); }
-    finally { setBusy(''); }
   }
 
   const CandidateList = ({ title, rows }: { title: string; rows: Candidate[] }) => (
@@ -134,25 +73,15 @@ export default function ItemsTab() {
 
   return <div className="space-y-6">
     <div className="flex flex-wrap gap-3 items-center">
-      <div><h2 className="text-xl font-bold text-black">Memory Items Learning & Cloud Updates</h2>
-        <p className="text-sm text-gray-500">No journal text is stored here. Every rule remains manual until approved and published.</p></div>
+      <div><h2 className="text-xl font-bold text-black">Memory Items Learning Review</h2>
+        <p className="text-sm text-gray-500">No journal text is stored here. Approved mappings are incorporated into the bundled catalog release workflow.</p></div>
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded px-3 py-2 text-black">
         <option value="pending">Pending</option><option value="approved">Approved</option><option value="published">Published</option><option value="rejected">Rejected</option><option value="all">All</option>
       </select>
       <button disabled={!selected.size || !!busy} className="bg-green-700 text-white px-3 py-2 rounded disabled:opacity-40" onClick={() => void review([...selected], 'approved')}>Approve selected</button>
       <button disabled={!selected.size || !!busy} className="bg-red-700 text-white px-3 py-2 rounded disabled:opacity-40" onClick={() => void review([...selected], 'rejected')}>Reject selected</button>
-      <button disabled={!!busy} className="bg-black text-white px-3 py-2 rounded disabled:opacity-40" onClick={() => void publishApproved()}>Publish approved keywords</button>
       {busy && <span className="text-sm text-blue-700">{busy}</span>}
     </div>
     <div className="grid md:grid-cols-2 gap-5"><CandidateList title="Missing icon suggestions" rows={missingIcons} /><CandidateList title="Missing keyword mappings" rows={missingKeywords} /></div>
-    <section className="bg-white border rounded-lg p-4 space-y-3">
-      <h3 className="font-bold text-black">Batch upload to R2</h3>
-      <p className="text-sm text-gray-500">Images upload browser → R2 directly. JSON fields: id, name, keywords, promptCategory, bagsCategory, optional filename.</p>
-      <input type="file" multiple accept=".webp,image/webp" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
-      <input type="file" accept=".json,application/json" onChange={(e) => setRules(e.target.files?.[0] || null)} />
-      <button disabled={!!busy} className="bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-40" onClick={() => void uploadBatch()}>Upload & publish {files.length || ''} items</button>
-      <div className="text-sm text-black">Current version: {manifest.version || 'none'} · cloud items: {manifest.items?.length || 0} · keyword patches: {manifest.keywordPatches?.length || 0}</div>
-      <div className="flex flex-wrap gap-2">{(manifest.history || []).slice(1, 8).map((entry) => <button key={entry.version} className="border px-2 py-1 rounded text-xs text-black" onClick={() => void rollback(entry.version)}>Rollback {new Date(entry.publishedAt).toLocaleString()}</button>)}</div>
-    </section>
   </div>;
 }

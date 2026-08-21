@@ -106,24 +106,85 @@ function candidates(scene: string, index: number): string[] {
 }
 
 /** HEAD-probe R2 for a track; returns the exact key that exists, or null. */
-async function probe(scene: string, index: number): Promise<string | null> {
+async function probeDetailed(
+  scene: string,
+  index: number,
+): Promise<{ key: string | null; reachable: boolean }> {
+  let confirmedMissing = false;
+  let retryableFailure = false;
   for (const key of candidates(scene, index)) {
     try {
       const res = await fetch(urlFor(key), { method: 'HEAD' });
-      if (res.ok) return key;
-    } catch { /* network hiccup — treat as missing */ }
+      if (res.ok) return { key, reachable: true };
+      if (res.status === 404 || res.status === 410) confirmedMissing = true;
+      else retryableFailure = true;
+    } catch {
+      retryableFailure = true;
+    }
   }
-  return null;
+  // Only a definitive not-found response closes the inventory. Auth, rate
+  // limit, server and network errors must stay queued for a later retry.
+  return { key: null, reachable: confirmedMissing && !retryableFailure };
 }
 
-async function ensureDownloaded(scene: string, index: number, key: string): Promise<void> {
+async function probe(scene: string, index: number): Promise<string | null> {
+  return (await probeDetailed(scene, index)).key;
+}
+
+async function ensureDownloaded(scene: string, index: number, key: string): Promise<boolean> {
   const path = localPath(scene, index);
   try {
     const info = await FileSystem.getInfoAsync(path);
-    if (info.exists) return;
+    if (info.exists && (info.size ?? 0) > 0) return true;
     await FileSystem.makeDirectoryAsync(cacheDir(), { intermediates: true }).catch(() => {});
-    await FileSystem.downloadAsync(urlFor(key), path);
-  } catch { /* prefetch is best-effort; playback can stream */ }
+    const result = await FileSystem.downloadAsync(urlFor(key), path);
+    return result.status >= 200 && result.status < 300;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Discover and locally cache every numbered Focus Voice track currently on
+ * R2. Track 1 is bundled; R2 tracks are sequential from 2. A reachable 404
+ * closes a scene's inventory, while a network failure returns false so the
+ * foreground download queue keeps retrying instead of mistaking offline for
+ * "no more tracks".
+ */
+export async function syncAllFocusVoiceAssets(): Promise<boolean> {
+  const state = readState();
+  const scenes = Object.keys(FOCUS_VOICE_BUNDLED);
+  let complete = true;
+
+  for (const scene of scenes) {
+    const previous = sceneState(state, scene);
+    const st: SceneState = { ...previous, keys: { ...previous.keys } };
+
+    // First make every already-known track durable locally.
+    for (let index = 2; index <= st.knownMax; index++) {
+      const key = st.keys[String(index)];
+      if (key && !await ensureDownloaded(scene, index, key)) complete = false;
+    }
+
+    // Then walk forward until R2 confirms the first missing index. The hard
+    // ceiling protects a malformed bucket from creating an unbounded probe.
+    for (let index = Math.max(2, st.knownMax + 1); index <= 100; index++) {
+      const found = await probeDetailed(scene, index);
+      if (!found.reachable) {
+        complete = false;
+        break;
+      }
+      if (!found.key) break;
+      st.keys[String(index)] = found.key;
+      st.knownMax = index;
+      if (!await ensureDownloaded(scene, index, found.key)) complete = false;
+    }
+
+    state[scene] = st;
+    writeState(state);
+  }
+
+  return complete;
 }
 
 export type FocusVoiceSource = number | { uri: string };

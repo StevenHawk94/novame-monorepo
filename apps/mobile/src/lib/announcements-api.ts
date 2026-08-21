@@ -1,5 +1,6 @@
 import { apiClient } from './api';
 import { Image as ExpoImage } from 'expo-image';
+import { enqueueR2Image } from './download-queue';
 
 export type Announcement = {
   id: string;
@@ -80,6 +81,9 @@ export function prepareUnreadAnnouncement(
     const announcement = await fetchUnreadAnnouncement(userId);
     const imageUrl = announcement?.image_url?.trim();
     if (!announcement || !imageUrl) return null;
+    // Keep retrying an R2 announcement image in the foreground even if the
+    // five-second display deadline below is missed this time.
+    enqueueR2Image(imageUrl, 0);
     if (!await prefetchImageBeforeDeadline(imageUrl)) return null;
     preparedByUser.set(userId, announcement);
     return announcement;

@@ -49,8 +49,8 @@ export async function GET(request) {
       countByDim[s.dimension] = (countByDim[s.dimension] || 0) + 1
     }
 
-    // Per-monster tame history: counts drive the staged HP (50/150/250/300),
-    // today's set drives paid per-enemy availability.
+    // Per-monster tame history drives badges; today's set drives paid
+    // per-enemy availability. Points themselves are a fixed +50 per tame.
     const { data: past } = await supabase
       .from('kit_completions')
       .select('payload, local_date')

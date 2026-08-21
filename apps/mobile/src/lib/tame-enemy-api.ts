@@ -23,7 +23,7 @@ export interface MonsterStatus {
   tamed: string;
   skillCount: number;
   tamedBefore: boolean;
-  /** How many times this monster was tamed — drives staged HP (50→300). */
+  /** How many times this monster was tamed (history/badge metadata). */
   tamedCount: number;
   /** Paid users tame each enemy once a day; this flags today's use. */
   tamedToday: boolean;
@@ -151,7 +151,15 @@ export async function submitTame(params: {
   monsterId: string;
   skillsUsed: string[];
   hits: number;
-}): Promise<{ ok: boolean; error?: string; xpAwarded?: number; companionXp?: number; milestoneBonus?: number }> {
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  xpAwarded?: number;
+  companionXp?: number;
+  battlePoints?: number;
+  battleTotalPoints?: number;
+  milestoneBonus?: number;
+}> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
@@ -162,6 +170,8 @@ export async function submitTame(params: {
       error?: string;
       xp_awarded?: number;
       companion_xp?: number;
+      battlePoints?: number;
+      battleTotalPoints?: number;
       milestoneBonus?: number;
     }>('/api/tame-enemy', {
       userId,
@@ -171,7 +181,21 @@ export async function submitTame(params: {
       localDate: localDateStr(),
     });
     if (data.error) return { ok: false, error: data.error };
-    return { ok: true, xpAwarded: data.xp_awarded, companionXp: data.companion_xp, milestoneBonus: data.milestoneBonus ?? 0 };
+    if (typeof data.battleTotalPoints === 'number') {
+      const cached = getCachedTameStatus();
+      storage.set(
+        kTameStatus.name,
+        JSON.stringify({ ...cached, battlePoints: data.battleTotalPoints }),
+      );
+    }
+    return {
+      ok: true,
+      xpAwarded: data.xp_awarded,
+      companionXp: data.companion_xp,
+      battlePoints: data.battlePoints,
+      battleTotalPoints: data.battleTotalPoints,
+      milestoneBonus: data.milestoneBonus ?? 0,
+    };
   } catch {
     return { ok: false, error: 'network' };
   }

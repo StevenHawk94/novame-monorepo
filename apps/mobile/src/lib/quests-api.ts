@@ -161,7 +161,8 @@ interface CachedCustomGeneration {
   expiresAt: string;
 }
 
-function readCachedCustomTasks(): string[] | null {
+/** Synchronous local-only read used to route straight to an unstarted plan. */
+export function getCachedCustomTasks(): string[] | null {
   const raw = storage.getString(kQuestCustomGeneration.name);
   if (!raw) return null;
   try {
@@ -199,7 +200,7 @@ function cacheCustomTasks(tasks: string[], expiresAt?: string): void {
  * reinstall or on another device. A cache miss intentionally returns null.
  */
 export async function fetchCachedCustomTasks(): Promise<string[] | null> {
-  const local = readCachedCustomTasks();
+  const local = getCachedCustomTasks();
   if (local) return local;
 
   const { data: sess } = await supabase.auth.getSession();

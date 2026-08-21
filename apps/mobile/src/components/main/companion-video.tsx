@@ -41,7 +41,7 @@ const WATCHDOG_DELAY_MS = 300;
 type Props = { onPress?: () => void; onReady?: () => void };
 
 function AndroidCompanion({ onPress, onReady }: Props) {
-  const [source, setSource] = useState<number | { uri: string }>(DEFAULT_COMPANION_VIDEO);
+  const [source, setSource] = useState<number | { uri: string; isAnimated?: boolean }>(DEFAULT_COMPANION_VIDEO);
 
   const syncSource = useCallback(() => {
     const key = getEquippedOutfitKey();
@@ -52,14 +52,16 @@ function AndroidCompanion({ onPress, onReady }: Props) {
 
     const useAnimatedSource = (resolved: Awaited<ReturnType<typeof resolveEquippedOutfitVideo>>) => {
       if (!resolved || getEquippedOutfitKey() !== resolved.key) return;
-      setSource({ uri: resolved.uri });
+      // expo-image cannot always infer animation from a cache path without an
+      // extension on Android. Mark the locally cached WebP explicitly.
+      setSource({ uri: resolved.uri, isAnimated: true });
     };
 
     const cached = getCachedOutfitCatalog().find((outfit) => outfit.key === key);
     if (cached) {
       // Show the transparent worn preview immediately while the animated WebP
       // is being resolved from disk (or downloaded on first launch).
-      setSource({ uri: outfitAssetUrl(cached.bunny) });
+      setSource({ uri: outfitAssetUrl(cached.bunny, cached.assetVersion) });
       void resolveEquippedOutfitVideo().then(useAnimatedSource);
       return;
     }
@@ -67,7 +69,7 @@ function AndroidCompanion({ onPress, onReady }: Props) {
     void fetchOutfitCatalog().then((catalog) => {
       const currentKey = getEquippedOutfitKey();
       const outfit = catalog.find((entry) => entry.key === currentKey);
-      if (outfit) setSource({ uri: outfitAssetUrl(outfit.bunny) });
+      if (outfit) setSource({ uri: outfitAssetUrl(outfit.bunny, outfit.assetVersion) });
       return resolveEquippedOutfitVideo();
     }).then(useAnimatedSource);
   }, []);

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import {
-  XP_RULES, GEMS_PER_DIMENSION, MONSTERS,
-  monsterHpForStage, BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD,
+  XP_RULES, TAME_POINTS_PER_COMPLETION,
+  BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD,
 } from '@novame/engine'
 
 export const runtime = 'edge'
@@ -25,8 +25,8 @@ function isoWeek(dateStr) {
  * Body: { userId, monsterId, skillsUsed: string[], hits: number, localDate }
  *
  * Records one tame. PRD v2.0 economy:
- *   - pays XP_RULES.tameEnemy.award (+30) and credits the monster's dimension
- *     +10 (PRD 1.2)
+ *   - pays XP_RULES.tameEnemy.award (+30 Clover)
+ *   - banks a fixed +50 Tame History points toward milestone rewards
  *   - FREE: 3 tames a day across all monsters (period = date#slot, slots 1-3)
  *   - PAID: once per monster per day, up to all 8 (period = date:monsterId)
  * The tier fork only widens the period key -- submit_kit's unique row stays
@@ -78,30 +78,21 @@ export async function POST(request) {
     }
     const periodKey = isPaid ? `${dateStr}:${monsterId}` : `${dateStr}#${tamesToday + 1}`
 
-    // Staged HP (Q15): this battle's max HP grows with prior tames of THIS
-    // monster (50 → 150 → 250 → 300 cap) and is what the tame banks as
-    // battle points. Counted before this tame is recorded.
-    const timesTamedBefore = (priorRows || []).filter(
-      (r) => r.payload?.monster_id === monsterId,
-    ).length
-    const battlePoints = monsterHpForStage(timesTamedBefore)
+    const battlePoints = TAME_POINTS_PER_COMPLETION
 
-    // PRD 1.2: taming credits the monster's dimension +10.
-    const monster = MONSTERS.find((m) => m.id === monsterId)
-    const gemHits = monster?.dimension
-      ? [{ dimension: monster.dimension, gems: GEMS_PER_DIMENSION }]
-      : []
-
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
+    // Completion, Clover XP, fixed history points and milestone Clover are one
+    // database transaction. A transient failure cannot leave a successful
+    // tame without its 50 pts (or make a retry double-pay).
+    const { data: result, error: rpcErr } = await supabase.rpc('submit_tame_enemy', {
       p_user_id: userId,
-      p_kit: 'tame_enemy',
-      p_source: 'tame_enemy',
       p_period_key: periodKey,
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.tameEnemy.award,
-      p_gem_hits: gemHits,
       p_payload: { monster_id: monsterId, skills_used: usedIds, hits: hits ?? 0 },
+      p_battle_points: battlePoints,
+      p_base: BATTLE_MILESTONE_BASE,
+      p_reward: BATTLE_MILESTONE_REWARD,
     })
     if (rpcErr) {
       console.error('[tame-enemy] rpc error:', rpcErr.message)
@@ -111,30 +102,12 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
 
-    // Bank battle points + pay any crossed milestones (best-effort — the tame
-    // itself already stands; RPC applies thresholds atomically).
-    let milestone = null
-    try {
-      const { data: mp, error: mpErr } = await supabase.rpc('record_tame_points', {
-        p_user_id: userId,
-        p_points: battlePoints,
-        p_local_date: dateStr,
-        p_iso_week: weekStr,
-        p_base: BATTLE_MILESTONE_BASE,
-        p_reward: BATTLE_MILESTONE_REWARD,
-      })
-      if (mpErr) console.warn('[tame-enemy] points skipped:', mpErr.message)
-      else if (!mp?.error) milestone = mp
-    } catch (e) {
-      console.warn('[tame-enemy] points skipped:', e && e.message)
-    }
-
     return NextResponse.json({
       success: true,
       ...result,
       battlePoints,
-      milestoneBonus: milestone?.bonus_awarded ?? 0,
-      battleTotalPoints: milestone?.points ?? null,
+      milestoneBonus: result?.milestone_bonus ?? 0,
+      battleTotalPoints: result?.battle_total_points ?? null,
     })
   } catch (err) {
     console.error('[tame-enemy] unexpected:', err && err.message)

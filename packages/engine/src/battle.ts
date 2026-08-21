@@ -8,21 +8,13 @@
  * tier from remaining HP. Pure and deterministic.
  */
 
-// PRD §2.4 (v2.0 economy pass): base HP 50, and each cleared stage adds 100.
-// "Stage" = how many times THIS monster was tamed before (the natural reading
-// of "每过一个阶段" — pending explicit product confirmation, tracked as plan
-// doc Q15; the function keeps the policy in one place either way).
+// Legacy skill-card combat helpers. The current swipe battle uses a fixed
+// 20-hit interaction; this 50-HP value remains only for the pure engine tests
+// and any retained skill-card calculations.
 export const MONSTER_HP = 50;
 
-/** 2026-07 ruling (Q15 follow-up): staged HP is capped at 300. */
-export const MONSTER_HP_CAP = 300;
-
-export function monsterHpForStage(timesTamedBefore: number): number {
-  return Math.min(MONSTER_HP_CAP, MONSTER_HP + 100 * Math.max(0, timesTamedBefore));
-}
-
-// ---- Battle points & milestone rewards (PRD §2.4 + 2026-07 ruling) --------
-// Each tame banks the defeated monster's max HP as battle points. Milestones
+// ---- Battle points & milestone rewards -----------------------------------
+// Every completed tame banks a fixed amount of Tame History points. Milestones
 // sit at GROWING intervals: the n-th gap is n × 1000, so the cumulative
 // thresholds run 1000, 3000, 6000, 10000, … (base × n(n+1)/2). Every crossed
 // milestone pays BATTLE_MILESTONE_REWARD currency.
@@ -32,6 +24,7 @@ export function monsterHpForStage(timesTamedBefore: number): number {
 // record_tame_points RPC (closed form) so the pay stays atomic server-side.
 export const BATTLE_MILESTONE_BASE = 1000;
 export const BATTLE_MILESTONE_REWARD = 200; // per the prep-screen mock (🍀 x200)
+export const TAME_POINTS_PER_COMPLETION = 50;
 
 /** How many milestones a running points total has fully crossed. */
 export function battleMilestoneCount(totalPoints: number): number {

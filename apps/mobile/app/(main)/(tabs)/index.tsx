@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { requireAiConsent } from '@/lib/ai-consent';
+import { prioritizeR2Image } from '@/lib/download-queue';
+import { useR2AssetRevision } from '@/lib/use-r2-asset-revision';
 import { haptics } from '@/lib/haptics';
 import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
@@ -43,6 +45,7 @@ function visibleAiBubble(isPaid: boolean): FreshBubble | null {
 }
 
 export default function HomeScreen() {
+  const r2AssetRevision = useR2AssetRevision();
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
@@ -132,8 +135,10 @@ export default function HomeScreen() {
 
   const onReflect = () => {
     if (openingEntryRef.current) return;
-    if (!requireAiConsent('/(main)/reflect')) return;
+    // Lock before the consent gate: onPressIn + onPress can both fire for one
+    // physical tap, and the gate returns early for a first-time user.
     openingEntryRef.current = true;
+    if (!requireAiConsent('/(main)/reflect')) return;
     void haptics.pageOpen();
     router.push('/(main)/reflect');
   };
@@ -167,6 +172,10 @@ export default function HomeScreen() {
         contentFit="cover"
         cachePolicy="memory-disk"
         priority="high"
+        recyclingKey={`home-scene:${r2AssetRevision}`}
+        onError={() => {
+          if (typeof sceneImg === 'object' && sceneImg.uri) prioritizeR2Image(sceneImg.uri);
+        }}
       />
       <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}

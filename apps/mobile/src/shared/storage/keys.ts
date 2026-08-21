@@ -75,7 +75,7 @@ export const kPairingStatus = defineKey('burrow_pairing_status', 'user');
 export const kCommonItems = defineKey('burrow_common_items', 'user');
 export const kConnInsights = defineKey('burrow_conn_insights', 'user');
 
-/** OTA items manifest (R2 Items/items-manifest.json) — global content. */
+/** Clear-only legacy OTA items manifest; current items ship in the bundle. */
 export const kRemoteItems = defineKey('burrow_remote_items', 'device');
 
 /** Shared R2 video/scene manifest. Refreshed lazily with its own 6h TTL. */
@@ -397,7 +397,7 @@ export const kRatingPromptUserExpressed = defineKey(
 /** Successful Reflect claims on this device, used only for official store-review cadence. */
 export const kRatingReflectClaimCount = defineKey('novame_rating_reflect_claim_count', 'device');
 
-/** asset-cache.ts: STORAGE_KEY_MANIFEST. Card art and video are user-agnostic. */
+/** asset-cache.ts: user-agnostic R2 Outfits/Maps runtime catalog. */
 export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
 /** asset-cache.ts: independent six-hour freshness timestamp for the R2 manifest. */
 export const kAssetManifestFetchedAt = defineKey('asset-manifest:fetched-at', 'device');

@@ -7,6 +7,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
+import { prioritizeR2Image } from '../../../src/lib/download-queue';
+import { useR2AssetRevision } from '../../../src/lib/use-r2-asset-revision';
 import { ICONS } from '../../../src/lib/icons';
 import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
 import { getSelectedScene, setSelectedScene } from '../../../src/lib/cosmetics-store';
@@ -39,6 +41,7 @@ export default function SceneSelectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
+  const assetRevision = useR2AssetRevision();
 
   const [catalog, setCatalog] = useState<SceneDef[]>(() => getCachedSceneCatalog());
   const [cosmetics, setCosmetics] = useState<CosmeticsState>(() => getCachedCosmetics());
@@ -59,7 +62,7 @@ export default function SceneSelectScreen() {
   // limited to the current/owned set and warmed one at a time (current first),
   // so opening Maps never starts sixteen large competing downloads.
   useEffect(() => {
-    const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb));
+    const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb, scene.assetVersion));
     if (thumbUrls.length > 0) {
       void ExpoImage.prefetch(thumbUrls, { cachePolicy: 'disk' });
     }
@@ -67,7 +70,7 @@ export default function SceneSelectScreen() {
     const fullUrls = catalog
       .filter((scene) => scene.key === current || isUnlocked(cosmetics, 'scene', scene.key))
       .sort((a, b) => Number(b.key === current) - Number(a.key === current))
-      .map((scene) => sceneAssetUrl(scene.image));
+      .map((scene) => sceneAssetUrl(scene.image, scene.assetVersion));
     let cancelled = false;
     void (async () => {
       for (const url of fullUrls) {
@@ -114,7 +117,7 @@ export default function SceneSelectScreen() {
     setBusy(false);
     if (res.ok) {
       setCosmetics(getCachedCosmetics());
-      await useScene(s.key, sceneAssetUrl(s.image));
+      await useScene(s.key, sceneAssetUrl(s.image, s.assetVersion));
     } else if (res.error === 'plus_required') {
       void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
@@ -122,7 +125,7 @@ export default function SceneSelectScreen() {
       appAlert('Not enough clovers', `You need ${s.price} clovers for ${s.name}.`);
     } else if (res.error === 'already_owned') {
       setCosmetics(getCachedCosmetics());
-      await useScene(s.key, sceneAssetUrl(s.image));
+      await useScene(s.key, sceneAssetUrl(s.image, s.assetVersion));
     } else {
       appAlert('Something went wrong', 'Could not complete the purchase. Try again.');
     }
@@ -138,7 +141,7 @@ export default function SceneSelectScreen() {
     }
     if (owned(s)) {
       void haptics.selection();
-      void useScene(s.key, sceneAssetUrl(s.image));
+      void useScene(s.key, sceneAssetUrl(s.image, s.assetVersion));
       return;
     }
     if (cosmetics.balance < s.price) {
@@ -206,10 +209,12 @@ export default function SceneSelectScreen() {
               return (
                 <Pressable key={s.key} onPress={() => onTap(s)} style={styles.cell}>
                   <ExpoImage
-                    source={{ uri: sceneAssetUrl(s.thumb) }}
+                    source={{ uri: sceneAssetUrl(s.thumb, s.assetVersion) }}
                     style={styles.thumb}
                     contentFit="cover"
                     transition={100}
+                    recyclingKey={`scene-thumb:${s.key}:${assetRevision}`}
+                    onError={() => prioritizeR2Image(sceneAssetUrl(s.thumb, s.assetVersion))}
                   />
                   <Text style={styles.cellName} numberOfLines={2}>{s.name}</Text>
                   {isCurrent(s.key) ? (

@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { applyHit, damageFor, HEALTHY_MIN_HP, isTamed, MONSTER_HP, monsterTier } from './battle';
+import {
+  applyHit,
+  battleMilestoneCount,
+  battleMilestoneThreshold,
+  damageFor,
+  HEALTHY_MIN_HP,
+  isTamed,
+  MONSTER_HP,
+  monsterTier,
+  nextMilestoneThresholds,
+  TAME_POINTS_PER_COMPLETION,
+} from './battle';
+
+describe('Tame History points', () => {
+  it('awards the fixed launch value for each completed tame', () => {
+    expect(TAME_POINTS_PER_COMPLETION).toBe(50);
+  });
+
+  it('advances the next three milestones immediately after a crossing', () => {
+    expect(battleMilestoneThreshold(1)).toBe(1000);
+    expect(battleMilestoneThreshold(2)).toBe(3000);
+    expect(battleMilestoneCount(999)).toBe(0);
+    expect(battleMilestoneCount(1000)).toBe(1);
+    expect(nextMilestoneThresholds(999, 3)).toEqual([1000, 3000, 6000]);
+    expect(nextMilestoneThresholds(1000, 3)).toEqual([3000, 6000, 10000]);
+  });
+});
 
 describe('damage', () => {
   it('maps kind to damage', () => {
