@@ -197,7 +197,7 @@ export default function TheirPatternsScreen() {
     <View style={styles.root}>
       <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerButton} hitSlop={10}>
+          <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.headerButton} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
           <View style={styles.headerCopy}>
@@ -325,7 +325,7 @@ export default function TheirPatternsScreen() {
           <SafeAreaView style={styles.historySheet} edges={['bottom']}>
             <View style={styles.historyHeader}>
               <View><Text style={styles.historyTitle}>Recap History</Text><Text style={styles.historySubtitle}>Weekly Recaps you generated</Text></View>
-              <Pressable onPress={() => setHistoryOpen(false)} style={styles.modalClose}><MaterialIcons name="close" size={23} color="#FFFFFF" /></Pressable>
+              <Pressable onPress={() => { void haptics.pageClose(); setHistoryOpen(false); }} style={styles.modalClose}><MaterialIcons name="close" size={23} color="#FFFFFF" /></Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.historyList}>
               {history.length === 0 ? (

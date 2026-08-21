@@ -8,6 +8,7 @@ import { QUEST_THEME_BY_KEY, TASKS_TO_PICK } from '@novame/domain';
 
 import { OffsetCard } from '@/components/ui/offset-card';
 import { fetchQuestStatus, startPlan } from '@/lib/quests-api';
+import { haptics } from '@/lib/haptics';
 
 // Quests family theme (2026-07-23): dark-brown ground, white offset cards.
 const BG = '#4C331B';
@@ -135,7 +136,7 @@ export default function QuestPickScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>Theme not found</Text>
-        <Pressable onPress={() => router.back()} style={styles.linkBtn}>
+        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.linkBtn}>
           <Text style={styles.linkText}>Go back</Text>
         </Pressable>
       </View>
@@ -169,7 +170,7 @@ export default function QuestPickScreen() {
             <Pressable onPress={onAddManual} hitSlop={8} style={[styles.addConfirm, !draft.trim() && { opacity: 0.4 }]}>
               <MaterialIcons name="check" size={20} color="#FFFFFF" />
             </Pressable>
-            <Pressable onPress={() => { setAdding(false); setDraft(''); }} hitSlop={8}>
+            <Pressable onPress={() => { void haptics.light(); setAdding(false); setDraft(''); }} hitSlop={8}>
               <MaterialIcons name="close" size={22} color={MUTED} />
             </Pressable>
           </OffsetCard>
@@ -218,7 +219,7 @@ export default function QuestPickScreen() {
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable onPress={() => router.back()} style={styles.closeX} hitSlop={10}>
+        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.closeX} hitSlop={10}>
           <MaterialIcons name="close" size={24} color={TEXT} />
         </Pressable>
         <Pressable onPress={onStart} disabled={!ready || submitting} style={[styles.startBtn, { backgroundColor: ready ? ORANGE : 'rgba(255,246,232,0.25)' }]}>

@@ -140,7 +140,7 @@ export default function FocusScreen() {
       >
         <ImageBackground source={BACKGROUNDS.focus} style={styles.root} resizeMode="cover">
           <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
-            <Pressable onPress={() => router.back()} style={styles.backDark} hitSlop={12}>
+            <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backDark} hitSlop={12}>
               <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
             </Pressable>
             <Text style={styles.h1}>What are you preparing for?</Text>
@@ -199,7 +199,7 @@ export default function FocusScreen() {
         {/* 50% black scrim so white text/controls read over the art. */}
         <View style={styles.scrim} pointerEvents="none" />
         <View style={[styles.inner, { paddingTop: insets.top + 10 }]}>
-          <Pressable onPress={exit} style={styles.backLight} hitSlop={12}>
+          <Pressable onPress={() => { void haptics.pageClose(); exit(); }} style={styles.backLight} hitSlop={12}>
             <MaterialIcons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
 
@@ -209,7 +209,7 @@ export default function FocusScreen() {
                 {reward > 0 && <CloverBurst amount={reward} />}
                 <MaterialIcons name="check-circle" size={64} color="#FFFFFF" />
                 <Text style={styles.doneText}>Done. Carry that with you.</Text>
-                <Pressable onPress={() => router.back()} style={styles.doneBtn}>
+                <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.doneBtn}>
                   <Text style={styles.doneBtnText}>Finish</Text>
                 </Pressable>
               </View>

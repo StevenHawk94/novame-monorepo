@@ -69,7 +69,7 @@ export default function MyLogsScreen() {
       <GridBackground base="#5A3B2A" line="#714E3A" cell={22} lineWidth={1.2} />
       {/* Header: journal + title + By Date */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} hitSlop={12} style={styles.back}>
           <MaterialIcons name="arrow-back" size={24} color="#FFF6E8" />
         </Pressable>
         <Image source={ICONS.sharedMemories} style={styles.headerIcon} resizeMode="contain" />
@@ -203,10 +203,10 @@ function CalendarSheet({ start, end, onChange, onClose }: {
           })}
         </View>
         <View style={calStyles.btnRow}>
-          <Pressable onPress={() => { onChange(null, null); onClose(); }} style={calStyles.clearBtn}>
+          <Pressable onPress={() => { void haptics.pageClose(); onChange(null, null); onClose(); }} style={calStyles.clearBtn}>
             <Text style={calStyles.clearText}>Clear</Text>
           </Pressable>
-          <Pressable onPress={onClose} style={calStyles.doneBtn}>
+          <Pressable onPress={() => { void haptics.pageClose(); onClose(); }} style={calStyles.doneBtn}>
             <Text style={calStyles.doneText}>Done</Text>
           </Pressable>
         </View>

@@ -141,7 +141,7 @@ export default function ReflectDetailScreen() {
 
       {/* Close: white circle, dark X (mock) */}
       <View style={[styles.closeWrap, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.85 }]}>
+        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.85 }]}>
           <MaterialIcons name="close" size={28} color="#43301F" />
         </Pressable>
       </View>

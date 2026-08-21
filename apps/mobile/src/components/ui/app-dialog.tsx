@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 
+import { haptics } from '@/lib/haptics';
+
 /**
  * Themed replacement for the system Alert.alert (design 2026-08-05): white
  * rounded card on a dim overlay, dark-brown pill = confirm, light-tan pill =
@@ -65,6 +67,9 @@ export function AppDialogHost() {
   const ordered = row ? [...dialog.buttons].sort((a, b) => Number(isCancel(b)) - Number(isCancel(a))) : dialog.buttons;
 
   const press = (b: AppAlertButton) => {
+    if (/^(ok|done|close|cancel|not now)$/i.test(b.text.trim())) {
+      void haptics.pageClose();
+    }
     setDialog(null);
     b.onPress?.();
   };

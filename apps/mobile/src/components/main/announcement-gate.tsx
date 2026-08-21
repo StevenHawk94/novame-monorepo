@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 
+import { haptics } from '@/lib/haptics';
+
 import { getCurrentSession } from '@/lib/auth';
 import {
   clearPreparedAnnouncement,
@@ -121,7 +123,7 @@ export function AnnouncementGate() {
             />
             <Text style={styles.body}>{announcement.content}</Text>
           </ScrollView>
-          <Pressable style={styles.button} onPress={close}>
+          <Pressable style={styles.button} onPress={() => { void haptics.pageClose(); close(); }}>
             <Text style={styles.buttonText}>Start Today</Text>
           </Pressable>
         </Pressable>

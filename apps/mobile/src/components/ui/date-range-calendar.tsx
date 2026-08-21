@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { haptics } from '@/lib/haptics';
+
 function pad2(n: number): string { return String(n).padStart(2, '0'); }
 function iso(y: number, m: number, d: number): string { return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
 
@@ -67,7 +69,7 @@ export function DateRangeCalendar({ visible, start, end, onChange, onClose, onDo
             <Pressable onPress={() => onChange(null, null)} style={styles.clearButton}>
               <Text style={styles.clearText}>Clear</Text>
             </Pressable>
-            <Pressable onPress={() => { onDone?.(start, end); onClose(); }} style={styles.doneButton}>
+            <Pressable onPress={() => { void haptics.pageClose(); onDone?.(start, end); onClose(); }} style={styles.doneButton}>
               <Text style={styles.doneText}>Show memories</Text>
             </Pressable>
           </View>

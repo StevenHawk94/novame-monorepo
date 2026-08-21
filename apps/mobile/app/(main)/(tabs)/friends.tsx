@@ -21,7 +21,7 @@ import {
   fetchSharePrivacy, setSharePrivacy, respondFriend,
   type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest, type MemoryDetailsMode,
 } from '@/lib/friends-api';
-import { subscribePairingRealtime } from '@/lib/pairing-realtime';
+import { subscribeFriendshipRealtime, subscribePairingRealtime } from '@/lib/pairing-realtime';
 
 /**
  * Friends Cave (mocks 1:1). Full-bleed meadow art; centered title; mail
@@ -91,6 +91,11 @@ export default function FriendsScreen() {
     setPairing(snapshot.pairing);
     setFeed(snapshot.pairing.paired ? snapshot.feed : []);
   }), []);
+
+  // A newly-created invitation is not a pairing row yet, so it has its own
+  // small invalidation event. This updates the pending badge/list immediately
+  // without refreshing the feed or changing the normal five-minute cache.
+  useEffect(() => subscribeFriendshipRealtime(setStatus), []);
 
   function onPrivacyGear() {
     void haptics.pageOpen();
@@ -433,7 +438,7 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
               <Text style={styles.privacySaveText}>{saving ? 'Saving…' : 'Save'}</Text>
             </Pressable>
           </View>
-          <Pressable onPress={onClose} style={styles.privacyClose}>
+          <Pressable onPress={() => { void haptics.pageClose(); onClose(); }} style={styles.privacyClose}>
             <MaterialIcons name="close" size={34} color="#53351D" />
           </Pressable>
         </View>

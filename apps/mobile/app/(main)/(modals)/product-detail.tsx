@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { haptics } from '@/lib/haptics';
+
 /**
  * Product -- Phase A placeholder.
  *
@@ -13,7 +15,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-      <Pressable onPress={() => router.back()} style={styles.close}>
+      <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.close}>
         <Text style={styles.closeText}>Close</Text>
       </Pressable>
       <View style={styles.center}>

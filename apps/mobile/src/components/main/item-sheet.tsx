@@ -96,6 +96,11 @@ export function ItemSheet({
     onOpenReflect(reflectId);
   }
 
+  function closeFromButton() {
+    void haptics.pageClose();
+    onClose();
+  }
+
   return (
     <View style={styles.overlay}>
       <Pressable
@@ -160,12 +165,12 @@ export function ItemSheet({
                         <Text style={styles.memDate}>{dateLabel}</Text>
                         <Text
                           style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}
-                          numberOfLines={3}
+                          numberOfLines={scope === 'their' ? undefined : 3}
                         >
                           {wrote ? memory.excerpt : 'No memory was added to this item.'}
                         </Text>
                       </View>
-                      {memory.reflectId ? (
+                      {scope === 'mine' && memory.reflectId ? (
                         <Pressable
                           onPress={() => openReflect(memory.reflectId!)}
                           style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.7 }]}
@@ -197,7 +202,7 @@ export function ItemSheet({
           )}
 
           <Pressable
-            onPress={onClose}
+            onPress={closeFromButton}
             style={[styles.closeBtn, { bottom: insets.bottom + 14 }]}
             hitSlop={8}
             accessibilityRole="button"

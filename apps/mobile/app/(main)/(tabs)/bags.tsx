@@ -107,6 +107,7 @@ export default function BagsScreen() {
   }, []);
 
   const selectCollectionTab = useCallback((nextTab: CollectionTab) => {
+    void haptics.light();
     setTab(nextTab);
     router.setParams({ tab: nextTab });
   }, [router]);
@@ -250,9 +251,11 @@ export default function BagsScreen() {
     return subscribeSharedBoxChanges((change) => {
       if (change.friendUserId !== partner.userId) return;
       // Paint the optimistic cache synchronously before any network request.
-      applyOurItems(getCachedSharedBox(change.friendUserId).items);
+      const cachedShared = getCachedSharedBox(change.friendUserId);
+      applyOurItems(cachedShared.items);
+      setOursUnread(cachedShared.hasUnreadFromPartner);
       const generation = ++sharedRefreshGeneration.current;
-      void fetchSharedBoxWithMeta(change.friendUserId).then((shared) => {
+      void fetchSharedBoxWithMeta(change.friendUserId, { force: change.forceRefresh }).then((shared) => {
         if (generation !== sharedRefreshGeneration.current) return;
         applyOurItems(shared.items);
         setOursUnread(shared.hasUnreadFromPartner);

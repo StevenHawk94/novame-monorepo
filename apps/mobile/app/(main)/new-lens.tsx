@@ -85,7 +85,7 @@ export default function NewLensScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
       <GridBackground base="#F3C98F" line="#E8B875" cell={22} lineWidth={1.2} />
-      <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
+      <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
@@ -187,7 +187,7 @@ export default function NewLensScreen() {
             <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           </SpringPop>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => { void haptics.pageClose(); router.back(); }}
             style={({ pressed }) => [styles.doneBtn, { backgroundColor: kit.accent, opacity: pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 }]}
           >
             <Text style={styles.responseText}>Done</Text>

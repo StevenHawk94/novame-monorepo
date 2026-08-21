@@ -464,7 +464,7 @@ function PickerSheet({
         <View style={styles.sheetHandle} />
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>{title}</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable onPress={() => { void haptics.pageClose(); onClose(); }} hitSlop={12}>
             <MaterialIcons name="close" size={22} color="#6B5B44" />
           </Pressable>
         </View>

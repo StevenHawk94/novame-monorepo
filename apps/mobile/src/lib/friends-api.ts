@@ -487,6 +487,8 @@ export function getCachedSharedBox(friendUserId?: string): SharedBoxResult {
 export interface SharedBoxChange {
   friendUserId: string;
   items: SharedBoxItem[];
+  /** A remote database invalidation must bypass only the Ours TTL once. */
+  forceRefresh?: boolean;
 }
 
 type SharedBoxChangeListener = (change: SharedBoxChange) => void;
@@ -555,6 +557,27 @@ export function notifySharedBoxChanged(friendUserId: string, items: SharedBoxIte
     });
   }
   const change = { friendUserId, items } satisfies SharedBoxChange;
+  for (const listener of sharedBoxChangeListeners) listener(change);
+}
+
+/**
+ * Apply the partner's tiny realtime invalidation without polling. The existing
+ * five-minute TTL remains the delivery fallback; setting fetchedAt to zero
+ * only makes the next Ours read refresh immediately after this explicit event.
+ */
+export function notifyRemoteSharedBoxChanged(friendUserId: string): void {
+  if (!friendUserId) return;
+  const cached = getCachedSharedBox(friendUserId);
+  cacheSharedBox(friendUserId, {
+    ...cached,
+    hasUnreadFromPartner: true,
+    fetchedAt: 0,
+  });
+  const change = {
+    friendUserId,
+    items: [],
+    forceRefresh: true,
+  } satisfies SharedBoxChange;
   for (const listener of sharedBoxChangeListeners) listener(change);
 }
 

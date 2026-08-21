@@ -96,7 +96,7 @@ export default function QuestWriteOwnScreen() {
         </ScrollView>
 
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-          <Pressable onPress={() => router.back()} style={styles.closeX} hitSlop={10}>
+          <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.closeX} hitSlop={10}>
             <MaterialIcons name="close" size={24} color={TEXT} />
           </Pressable>
           <Pressable

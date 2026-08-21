@@ -168,7 +168,7 @@ export function CompanionSheet() {
                   ))}
                 </ScrollView>
                 <Pressable
-                  onPress={() => router.back()}
+                  onPress={() => { void haptics.pageClose(); router.back(); }}
                   style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
                   hitSlop={8}
                 >

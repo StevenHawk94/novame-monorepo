@@ -76,7 +76,7 @@ export default function ReflectEntryScreen() {
       <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
         <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
-          <Pressable onPress={() => router.back()} style={styles.backCircle} hitSlop={10}>
+          <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
           </Pressable>
           <Text style={styles.lead}>How would you like to reflect?</Text>

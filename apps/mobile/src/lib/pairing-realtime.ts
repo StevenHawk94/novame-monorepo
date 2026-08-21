@@ -4,6 +4,8 @@ import {
   fetchFriendFeed,
   fetchFriends,
   fetchPairing,
+  getCachedPairing,
+  notifyRemoteSharedBoxChanged,
   type FeedEntry,
   type FriendsStatus,
   type PairingStatus,
@@ -17,12 +19,15 @@ export type PairingRealtimeSnapshot = {
 };
 
 type Listener = (snapshot: PairingRealtimeSnapshot) => void;
+type FriendshipListener = (status: FriendsStatus) => void;
 
 const listeners = new Set<Listener>();
+const friendshipListeners = new Set<FriendshipListener>();
 let channel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
 let generation = 0;
 let reconcileInFlight: Promise<void> | null = null;
+let friendshipReconcileInFlight: Promise<void> | null = null;
 
 function publish(snapshot: PairingRealtimeSnapshot): void {
   for (const listener of listeners) {
@@ -32,6 +37,33 @@ function publish(snapshot: PairingRealtimeSnapshot): void {
       console.warn('[pairing] realtime listener failed:', error);
     }
   }
+}
+
+function publishFriendships(status: FriendsStatus): void {
+  for (const listener of friendshipListeners) {
+    try {
+      listener(status);
+    } catch (error) {
+      console.warn('[pairing] friendship realtime listener failed:', error);
+    }
+  }
+}
+
+async function reconcileFriendships(userId: string, expectedGeneration: number): Promise<void> {
+  if (friendshipReconcileInFlight) return friendshipReconcileInFlight;
+  const request = (async () => {
+    try {
+      const friends = await fetchFriends({ force: true });
+      if (activeUserId !== userId || generation !== expectedGeneration) return;
+      publishFriendships(friends);
+    } catch (error) {
+      console.warn('[pairing] friendship realtime reconcile failed:', error);
+    }
+  })().finally(() => {
+    if (friendshipReconcileInFlight === request) friendshipReconcileInFlight = null;
+  });
+  friendshipReconcileInFlight = request;
+  return request;
 }
 
 async function reconcile(userId: string, expectedGeneration: number): Promise<void> {
@@ -68,6 +100,11 @@ export function subscribePairingRealtime(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
+export function subscribeFriendshipRealtime(listener: FriendshipListener): () => void {
+  friendshipListeners.add(listener);
+  return () => friendshipListeners.delete(listener);
+}
+
 export async function startPairingRealtime(userId: string): Promise<void> {
   let attemptGeneration: number | null = null;
   try {
@@ -92,6 +129,18 @@ export async function startPairingRealtime(userId: string): Promise<void> {
       .channel(`pairing:${userId}`, { config: { private: true } })
       .on('broadcast', { event: 'pairing_changed' }, () => {
         void reconcile(userId, subscribedGeneration);
+      })
+      .on('broadcast', { event: 'friendship_invited' }, () => {
+        // Invite events only invalidate the small Friends status resource.
+        void reconcileFriendships(userId, subscribedGeneration);
+      })
+      .on('broadcast', { event: 'shared_box_changed' }, (message) => {
+        const partnerUserId = message.payload?.partner_user_id;
+        if (typeof partnerUserId !== 'string' || !partnerUserId) return;
+        // Treat broadcast payloads as invalidations, not authority. Only the
+        // currently authenticated pairing may select which local cache moves.
+        if (getCachedPairing()?.partner?.userId !== partnerUserId) return;
+        notifyRemoteSharedBoxChanged(partnerUserId);
       })
       .subscribe((status) => {
         // Reconcile after every successful subscription as the delivery
@@ -122,6 +171,7 @@ export async function stopPairingRealtime(): Promise<void> {
   generation += 1;
   activeUserId = null;
   reconcileInFlight = null;
+  friendshipReconcileInFlight = null;
   const current = channel;
   channel = null;
   if (!current) return;

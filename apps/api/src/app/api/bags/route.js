@@ -153,7 +153,10 @@ export async function GET(request) {
         memories: visibleRows.map((row) => ({
           excerpt: row.refined_desc || row.raw_excerpt,
           rawExcerpt: row.raw_excerpt,
-          reflectId: row.reflect_id,
+          // A partner may expose the memory description, never a route/key to
+          // their private reflection detail. The mobile UI also hides Details
+          // for Their, making this privacy boundary defense-in-depth.
+          ...(readingPartner ? {} : { reflectId: row.reflect_id }),
           createdAt: row.created_at,
         })),
         hasMore,

@@ -175,7 +175,7 @@ export default function FriendAddScreen() {
 
       {/* Round white close (mock: bottom center) */}
       <Pressable
-        onPress={() => router.back()}
+        onPress={() => { void haptics.pageClose(); router.back(); }}
         style={[styles.closeBtn, { bottom: closeBottom }]}
         hitSlop={8}
       >
@@ -255,7 +255,7 @@ export default function FriendAddScreen() {
 
           {/* Same round white close, dismissing the result overlay */}
           <Pressable
-            onPress={() => setFound(null)}
+            onPress={() => { void haptics.pageClose(); setFound(null); }}
             style={[styles.closeBtn, { bottom: closeBottom }]}
             hitSlop={8}
           >

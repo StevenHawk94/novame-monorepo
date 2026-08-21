@@ -78,7 +78,7 @@ export function itemIdsForCategories(categories: string[]): string[] {
 export function ReflectTopBar({ remaining, onBack }: { remaining?: number; onBack: () => void }) {
   return (
     <View style={s.topBar}>
-      <Pressable onPress={onBack} style={s.backCircle} hitSlop={10}>
+      <Pressable onPress={() => { void haptics.pageClose(); onBack(); }} style={s.backCircle} hitSlop={10}>
         <MaterialIcons name="arrow-back" size={24} color={RC.ink} />
       </Pressable>
       {remaining != null && <Text style={s.remaining}>{remaining} of 3 left today</Text>}
@@ -283,7 +283,7 @@ export function MemoryEditSheet({
             color={RC.yellowDrop}
             offset={4}
             radius={24}
-            onPress={onDone}
+            onPress={() => { void haptics.pageClose(); onDone(); }}
             disabled={!notesComplete}
             style={{ opacity: notesComplete ? 1 : 0.5 }}
             cardStyle={s.doneBtn}

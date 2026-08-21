@@ -415,7 +415,7 @@ export default function MeScreen() {
             <View style={styles.notificationPickerModal}>
               <GridBackground base="#F2E6CB" line="#E3D2B2" cell={22} lineWidth={1.2} />
               <Pressable
-                onPress={() => setNotificationPickerOpen(false)}
+                onPress={() => { void haptics.pageClose(); setNotificationPickerOpen(false); }}
                 style={styles.notificationPickerClose}
                 hitSlop={8}
               >
@@ -459,7 +459,7 @@ export default function MeScreen() {
                 >
                 {pairedModalStep === 'profile' && pairing?.partner ? (
                   <>
-                    <Pressable onPress={closePairedModal} style={styles.pairedClose} hitSlop={8}>
+                    <Pressable onPress={() => { void haptics.pageClose(); closePairedModal(); }} style={styles.pairedClose} hitSlop={8}>
                       <MaterialIcons name="close" size={22} color="#FFFFFF" />
                     </Pressable>
                     <View style={styles.partnerAvatarWrap}>
@@ -521,7 +521,7 @@ export default function MeScreen() {
                     {unpairError ? <Text style={styles.unpairError}>{unpairError}</Text> : null}
                     <View style={styles.confirmActions}>
                       <Pressable
-                        onPress={goBackToPairedProfile}
+                        onPress={() => { void haptics.pageClose(); goBackToPairedProfile(); }}
                         disabled={unpairing}
                         style={({ pressed }) => [styles.cancelButton, pressed && styles.pressedBtn]}
                       >

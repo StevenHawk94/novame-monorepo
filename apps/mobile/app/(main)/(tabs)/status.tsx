@@ -368,7 +368,7 @@ export default function ConnectionDashboardScreen() {
             <Text style={st.detailText}>
               {openItem.partner.text ?? 'Their words are private — but you both hold this one.'}
             </Text>
-            <Pressable onPress={() => setOpenItem(null)} style={st.detailClose} hitSlop={8}>
+            <Pressable onPress={() => { void haptics.pageClose(); setOpenItem(null); }} style={st.detailClose} hitSlop={8}>
               <MaterialIcons name="close" size={24} color="#FFFFFF" />
             </Pressable>
           </View>

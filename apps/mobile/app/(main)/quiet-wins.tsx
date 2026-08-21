@@ -20,6 +20,7 @@ import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { SpringPop } from '../../src/components/ui/spring-pop';
+import { haptics } from '../../src/lib/haptics';
 
 type Phase = 'pick' | 'done';
 
@@ -94,7 +95,7 @@ export default function QuietWinsScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
       <GridBackground base="#A8D69A" line="#91C681" cell={22} lineWidth={1.2} />
-      <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
+      <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
@@ -172,7 +173,7 @@ export default function QuietWinsScreen() {
             </SpringPop>
           </ScrollView>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => { void haptics.pageClose(); router.back(); }}
             style={({ pressed }) => [styles.doneBtn, { backgroundColor: '#F0885C', opacity: pressed ? 0.85 : 1, marginBottom: insets.bottom + 12 }]}
           >
             <Text style={styles.doneBtnText}>Done</Text>

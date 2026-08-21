@@ -65,7 +65,7 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
         <View style={styles.pickerCard}>
           <View style={styles.modalTitleRow}>
             <Text style={styles.modalTitle}>Select Your Message</Text>
-            <Pressable onPress={onClose} hitSlop={12} style={styles.closeIcon}>
+            <Pressable onPress={() => { void haptics.pageClose(); onClose(); }} hitSlop={12} style={styles.closeIcon}>
               <MaterialIcons name="close" size={24} color="#FFF8E9" />
             </Pressable>
           </View>
@@ -184,6 +184,11 @@ export function GoodVibesInboxGate() {
     setVibe(null);
   }
 
+  function dismissFromButton() {
+    void haptics.pageClose();
+    dismiss();
+  }
+
   function reply() {
     const delivered = vibe;
     setVibe(null);
@@ -195,7 +200,7 @@ export function GoodVibesInboxGate() {
       <Modal visible={!!vibe} transparent animationType="fade" onRequestClose={dismiss}>
         <View style={styles.backdrop}>
           <View style={styles.inboxCard}>
-            <Pressable onPress={dismiss} hitSlop={12} style={styles.inboxClose}>
+            <Pressable onPress={dismissFromButton} hitSlop={12} style={styles.inboxClose}>
               <MaterialIcons name="close" size={24} color="#FFF8E9" />
             </Pressable>
             {vibe && (

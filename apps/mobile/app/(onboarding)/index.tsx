@@ -557,7 +557,7 @@ export default function OnboardingScreen() {
         {step === 'paywall' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={[styles.center, { minHeight: '100%' }]}>
-              <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
+              <Pressable onPress={() => { void haptics.pageClose(); setIdx(FLOW.indexOf('name')); }} style={styles.closeCircle} hitSlop={10}>
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
               <View style={{ flex: 1, minHeight: 56 }} />
@@ -594,7 +594,7 @@ export default function OnboardingScreen() {
 
         {step === 'plans' && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
-            <Pressable onPress={() => setIdx(FLOW.indexOf('name'))} style={styles.closeCircle} hitSlop={10}>
+            <Pressable onPress={() => { void haptics.pageClose(); setIdx(FLOW.indexOf('name')); }} style={styles.closeCircle} hitSlop={10}>
               <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
             <Text style={[styles.h1, { marginTop: 46 }]}>Choose your plan</Text>

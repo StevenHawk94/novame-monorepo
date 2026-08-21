@@ -11,6 +11,9 @@ export const haptics = {
   /** Page open — user-initiated navigation, matching the bottom tabs. */
   pageOpen: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
 
+  /** Page/sheet close — user-initiated exit, matching the bottom tabs. */
+  pageClose: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+
   /** Light tap — list selection, toggle, minor confirmation. */
   light: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
 

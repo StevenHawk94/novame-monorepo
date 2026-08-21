@@ -162,7 +162,7 @@ export default function TrueNorthScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
       <GridBackground base="#EF9C8E" line="#E5887B" cell={22} lineWidth={1.2} />
-      <Pressable onPress={() => router.back()} style={styles.close} hitSlop={12}>
+      <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.close} hitSlop={12}>
         <Text style={[styles.closeText, { color: kit.textSub }]}>Close</Text>
       </Pressable>
 
@@ -246,7 +246,7 @@ export default function TrueNorthScreen() {
           lastRanking={status.lastRanking}
           showReward={justEarned}
           colors={KIT_PALETTE}
-          onDone={() => router.back()}
+          onDone={() => { void haptics.pageClose(); router.back(); }}
         />
       )}
     </View>

@@ -48,6 +48,7 @@ export default function ConnectAccountScreen() {
       void haptics.pageOpen();
       router.replace('/(main)/(modals)/notification-settings' as never);
     } else {
+      void haptics.pageClose();
       router.back();
     }
   };

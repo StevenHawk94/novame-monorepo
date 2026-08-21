@@ -237,7 +237,7 @@ export default function TameEnemyScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
         <MonsterBackground />
-        <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
+        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.back} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>
         {/* Design: brown banner title card. PRD copy kept inside it. */}
@@ -347,7 +347,7 @@ export default function TameEnemyScreen() {
         >
           <Text style={styles.startTamingText}>Start Taming</Text>
         </Pressable>
-        <Pressable onPress={exit} style={[styles.prepClose, { marginBottom: insets.bottom + 8 }]} hitSlop={10}>
+        <Pressable onPress={() => { void haptics.pageClose(); exit(); }} style={[styles.prepClose, { marginBottom: insets.bottom + 8 }]} hitSlop={10}>
           <Text style={styles.prepCloseX}>✕</Text>
         </Pressable>
         </ScrollView>
@@ -508,7 +508,7 @@ export default function TameEnemyScreen() {
                 </View>
               )}
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => { void haptics.pageClose(); router.back(); }}
                 style={({ pressed }) => [styles.confirmBtn, pressed && styles.confirmBtnPressed]}
               >
                 <Text style={styles.confirmText}>Confirm</Text>

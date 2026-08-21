@@ -31,7 +31,7 @@ export default function FriendDetailScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.bgPrimary, paddingTop: insets.top + 8 }]}>
-      <Pressable onPress={() => router.back()} style={styles.back} hitSlop={12}>
+      <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.back} hitSlop={12}>
         <MaterialIcons name="arrow-back" size={24} color={c.textSecondary} />
       </Pressable>
 
