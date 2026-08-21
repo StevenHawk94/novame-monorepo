@@ -7,7 +7,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "eas:build:ios": "EAS_NO_VCS=1 eas build --platform ios --profile production",
+    "eas:build:android": "EAS_NO_VCS=1 eas build --platform android --profile production"
   },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
