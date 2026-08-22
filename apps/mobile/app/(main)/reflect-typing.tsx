@@ -216,8 +216,8 @@ export default function ReflectTypingScreen() {
                 <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
               </View>
 
-              {/* Live match bar (mock: "Item matched from your reflection") */}
-              <Text style={styles.matchLabel}>Item matched from your reflection</Text>
+              {/* Live match bar (mock: "Items matched from your reflection") */}
+              <Text style={styles.matchLabel}>Items matched from your reflection</Text>
               <View style={styles.matchBar}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
                   {shownMatches.length === 0 ? (
