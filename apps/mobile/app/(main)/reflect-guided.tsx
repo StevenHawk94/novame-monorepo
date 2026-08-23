@@ -10,9 +10,9 @@ import { itemDisplayName } from '../../src/lib/remote-items';
 
 import {
   getReflectStateToday,
-  submitReflect,
+  prepareReflect,
+  type PreparedReflect,
   type ReflectError,
-  type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags, getCachedBags } from '../../src/lib/bags-api';
@@ -36,12 +36,11 @@ import {
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import {
-  MemoryEditSheet,
   RC,
-  ReflectResultView,
   ReflectTopBar,
   SelectableItemGrid,
 } from '../../src/components/main/reflect-shared';
+import { ReflectSettlementView } from '../../src/components/main/reflect-settlement';
 
 const MAX_CHARS = 5000;
 const FAVORITE_TAB = 'favorite';
@@ -71,12 +70,10 @@ export default function ReflectGuidedScreen() {
   const [draft, setDraft] = useState<Set<string>>(new Set(stored));
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [notes, setNotes] = useState<Record<string, string>>({});
   const [note, setNote] = useState('');
-  const [editOpen, setEditOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ReflectError | null>(null);
-  const [result, setResult] = useState<ReflectSnapshot | null>(null);
+  const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
   // Freeze Favorite eligibility and contents when this Guided flow opens.
   // Selections made during this run are persisted on submit, but become
@@ -209,27 +206,15 @@ export default function ReflectGuidedScreen() {
     if (submitting || selected.size === 0) return;
     setSubmitting(true);
     setError(null);
-    const res = await submitReflect({
+    const res = await prepareReflect({
       promptId: 9,
       body: note,
       mode: 'prompt',
-      selectedItems: [...selected].map((id) => ({
-        itemId: id,
-        note: notes[id]?.trim() || undefined,
-      })),
+      selectedItems: [...selected].map((itemId) => ({ itemId })),
     });
     setSubmitting(false);
     if (res.ok) {
-      cacheReflectItems(res.snapshot);
-      rememberGuidedFavoriteItems([
-        ...Object.values(favoriteItemsAtOpen).flat(),
-        ...selected,
-      ]);
-      setResult(res.snapshot);
-      setRemaining(res.snapshot.reflectsRemaining);
-      void fetchReflectFeed({ force: true });
-      void fetchBags();
-      void haptics.success();
+      setPreparedDraft(res.draft);
       setPhase('result');
     } else {
       setError(res.error);
@@ -378,10 +363,10 @@ export default function ReflectGuidedScreen() {
             </View>
           ) : phase === 'note' ? (
             <View style={{ flex: 1 }}>
-              <Text style={styles.stepTitleLeft}>Tell us about the moments behind your picks.</Text>
+              <Text style={styles.stepTitleLeft}>Want to add a little context?</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter here..."
+                placeholder={isPaid ? 'Add a note & save your items in memories' : 'Type here'}
                 placeholderTextColor="#B7AEA6"
                 value={note}
                 onChangeText={(t) => setNote(t.slice(0, MAX_CHARS))}
@@ -402,13 +387,6 @@ export default function ReflectGuidedScreen() {
                     <ItemSprite key={m.itemId} itemId={m.itemId} size={44} radius={12} />
                   ))}
                 </ScrollView>
-                <Pressable
-                  onPress={() => { void haptics.light(); setEditOpen(true); }}
-                  style={styles.pencilBtn}
-                  hitSlop={8}
-                >
-                  <MaterialIcons name="edit" size={20} color="#FFFFFF" />
-                </Pressable>
               </View>
 
               <OffsetCard
@@ -426,24 +404,29 @@ export default function ReflectGuidedScreen() {
               </OffsetCard>
             </View>
           ) : (
-            result && (
+            preparedDraft && (
               <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
-                <ReflectResultView result={result} onFinished={() => router.back()} />
+                <ReflectSettlementView
+                  draft={preparedDraft}
+                  itemWord="Selected"
+                  onFinalized={(snapshot) => {
+                    cacheReflectItems(snapshot);
+                    rememberGuidedFavoriteItems([
+                      ...Object.values(favoriteItemsAtOpen).flat(),
+                      ...selected,
+                    ]);
+                    setRemaining(snapshot.reflectsRemaining);
+                    void fetchReflectFeed({ force: true });
+                    void fetchBags('mine');
+                    router.back();
+                  }}
+                />
               </View>
             )
           )}
         </View>
       </KeyboardAvoidingView>
 
-      {editOpen && (
-        <MemoryEditSheet
-          items={selectedList}
-          notes={notes}
-          onChangeNote={(id, t) => setNotes((cur) => ({ ...cur, [id]: t }))}
-          onDone={() => setEditOpen(false)}
-          isPaid={isPaid}
-        />
-      )}
     </View>
   );
 }

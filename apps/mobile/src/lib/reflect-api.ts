@@ -13,6 +13,7 @@
  * which the next server response corrects.
  */
 import { ApiError } from '@novame/api-client';
+import { randomUUID } from 'expo-crypto';
 
 import { apiClient } from './api';
 import { confirmCloverAward } from './cosmetics-api';
@@ -29,6 +30,25 @@ export interface MatchedItem {
   displayName: string;
   rarity: string;
   label: string;
+  sourceExcerpt?: string;
+}
+
+export type MemorySource = 'manual' | 'ai' | 'use_my_words' | 'legacy';
+
+export interface ReflectMemoryDraft {
+  itemId: string;
+  text: string;
+  source: MemorySource;
+  visible: boolean;
+}
+
+export interface PreparedReflect {
+  draftId: string;
+  matchedItems: MatchedItem[];
+  aiMemories: Record<string, string>;
+  bubble: string | null;
+  isPaid: boolean;
+  reflectsRemaining: number;
 }
 
 export interface SharedReflectItem {
@@ -50,6 +70,7 @@ export interface ReflectSnapshot {
   /** Shared Memories created by this submission, ready for optimistic merge. */
   sharedItems: SharedReflectItem[];
   bubble: string | null;
+  memories?: ReflectMemoryDraft[];
 }
 
 export type ReflectError =
@@ -62,6 +83,10 @@ export type ReflectError =
 
 export type SubmitResult =
   | { ok: true; snapshot: ReflectSnapshot }
+  | { ok: false; error: ReflectError };
+
+export type PrepareResult =
+  | { ok: true; draft: PreparedReflect }
   | { ok: false; error: ReflectError };
 
 interface CachedState {
@@ -155,6 +180,130 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
     })),
     bubble: w.bubble ?? null,
   };
+}
+
+export async function prepareReflect(params: {
+  promptId: number;
+  body: string;
+  sourceKit?: 'new_lens';
+  friendUserId?: string;
+  mode?: 'typing' | 'prompt' | 'items';
+  selectedItems?: { itemId: string }[];
+  removedItemIds?: string[];
+  idempotencyKey?: string;
+}): Promise<PrepareResult> {
+  const mode = params.mode ?? 'typing';
+  const body = params.body.trim();
+  if (mode === 'typing' && !body) return { ok: false, error: 'empty' };
+  if (mode !== 'typing' && (params.selectedItems?.length ?? 0) === 0) {
+    return { ok: false, error: 'empty' };
+  }
+  if (body.length > 5000) return { ok: false, error: 'too_long' };
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  try {
+    const wire = await apiClient.post<{
+      success?: boolean;
+      error?: string;
+      draftId?: string;
+      matches?: MatchedItem[];
+      aiMemories?: Record<string, string>;
+      bubble?: string | null;
+      isPaid?: boolean;
+      reflectsRemaining?: number;
+    }>('/api/reflect/prepare', {
+      userId,
+      promptId: params.promptId,
+      body,
+      localDate: localDateStr(),
+      sourceKit: params.sourceKit,
+      friendUserId: params.friendUserId,
+      mode,
+      selectedItems: params.selectedItems,
+      removedItemIds: params.removedItemIds,
+      idempotencyKey: params.idempotencyKey ?? randomUUID(),
+    });
+    if (!wire.success || !wire.draftId) return { ok: false, error: 'network' };
+    return {
+      ok: true,
+      draft: {
+        draftId: wire.draftId,
+        matchedItems: wire.matches ?? [],
+        aiMemories: wire.aiMemories ?? {},
+        bubble: wire.bubble ?? null,
+        isPaid: wire.isPaid === true,
+        reflectsRemaining: wire.reflectsRemaining ?? getReflectStateToday().reflectsRemaining,
+      },
+    };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) return { ok: false, error: 'plus_required' };
+    if (error instanceof ApiError && error.status === 409) {
+      const code = typeof error.body === 'object' && error.body && 'error' in error.body
+        ? error.body.error : '';
+      if (code === 'daily_limit_reached') {
+        writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
+        return { ok: false, error: 'daily_limit' };
+      }
+    }
+    return { ok: false, error: 'network' };
+  }
+}
+
+export async function enrichReflectDraft(
+  draftId: string,
+  emptyItemIds: string[],
+): Promise<{ ok: boolean; aiMemories: Record<string, string>; bubble: string | null }> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return { ok: false, aiMemories: {}, bubble: null };
+  try {
+    const result = await apiClient.post<{
+      success?: boolean; aiMemories?: Record<string, string>; bubble?: string | null;
+    }>('/api/reflect/enrich', { userId, draftId, emptyItemIds });
+    return {
+      ok: result.success === true,
+      aiMemories: result.aiMemories ?? {},
+      bubble: result.bubble ?? null,
+    };
+  } catch {
+    return { ok: false, aiMemories: {}, bubble: null };
+  }
+}
+
+export async function finalizeReflect(
+  draft: PreparedReflect,
+  memories: ReflectMemoryDraft[],
+): Promise<SubmitResult> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  try {
+    const wire = await apiClient.post<WireSnapshot>('/api/reflect/finalize', {
+      userId,
+      draftId: draft.draftId,
+      memories: memories.map(({ itemId, text, source }) => ({ itemId, text: text.trim(), source })),
+      visibility: memories.map(({ itemId, visible }) => ({ itemId, visible })),
+    });
+    if (wire.error === 'daily_limit_reached') {
+      writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
+      return { ok: false, error: 'daily_limit' };
+    }
+    if (wire.error || !wire.success) return { ok: false, error: 'network' };
+    const snapshot = { ...toSnapshot(wire), memories };
+    writeCache({ date: localDateStr(), reflectsToday: snapshot.reflectsToday, lastSnapshot: snapshot });
+    confirmCloverAward(snapshot.xpAwarded);
+    return { ok: true, snapshot };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) {
+      return { ok: false, error: 'plus_required' };
+    }
+    if (error instanceof ApiError && error.status === 409) {
+      writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
+      return { ok: false, error: 'daily_limit' };
+    }
+    return { ok: false, error: 'network' };
+  }
 }
 
 /**
@@ -265,7 +414,7 @@ export async function submitReflect(params: {
  */
 export async function editReflectMemories(
   reflectId: string,
-  edits: { itemId: string; text: string }[],
+  edits: { itemId: string; text: string; source?: MemorySource; visible?: boolean }[],
 ): Promise<boolean> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
@@ -279,6 +428,32 @@ export async function editReflectMemories(
     return !!data.success;
   } catch {
     return false;
+  }
+}
+
+export interface ReflectMemoryEditorData {
+  shared: boolean;
+  items: Array<{
+    itemId: string;
+    displayName: string;
+    sourceExcerpt: string;
+    text: string;
+    source: MemorySource;
+    visible: boolean;
+  }>;
+}
+
+export async function fetchReflectMemories(reflectId: string): Promise<ReflectMemoryEditorData | null> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return null;
+  try {
+    const result = await apiClient.get<{ success?: boolean } & ReflectMemoryEditorData>(
+      `/api/reflect/edit-memories?userId=${encodeURIComponent(userId)}&reflectId=${encodeURIComponent(reflectId)}`,
+    );
+    return result.success ? result : null;
+  } catch {
+    return null;
   }
 }
 

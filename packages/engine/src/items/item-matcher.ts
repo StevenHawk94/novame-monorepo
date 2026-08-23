@@ -52,6 +52,9 @@ export interface ItemMatch {
   rarity: ItemRarity;
   /** Noun + adjective prefix, title-cased. The free-tier memory excerpt. */
   label: string;
+  /** The source sentence containing the first accepted hit. Used by the
+   *  non-AI "Use My Words" memory action. */
+  sourceExcerpt?: string;
 }
 
 const NEGATORS = new Set([
@@ -126,6 +129,21 @@ function buildLabel(tokens: Token[], nounStartIdx: number, displayName: string):
   return titleCase(label);
 }
 
+function sourceSentence(text: string, offset: number): string {
+  const before = text.slice(0, offset);
+  const after = text.slice(offset);
+  const leftBoundary = Math.max(
+    before.lastIndexOf('.'),
+    before.lastIndexOf('!'),
+    before.lastIndexOf('?'),
+    before.lastIndexOf('\n'),
+  );
+  const rightCandidates = [after.indexOf('.'), after.indexOf('!'), after.indexOf('?'), after.indexOf('\n')]
+    .filter((value) => value >= 0);
+  const rightBoundary = rightCandidates.length > 0 ? Math.min(...rightCandidates) + 1 : after.length;
+  return text.slice(leftBoundary + 1, offset + rightBoundary).trim().slice(0, 500);
+}
+
 export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
   const { items, synonyms, exclusions = {} } = dict;
   const tokens = tokenize(text);
@@ -175,5 +193,6 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
     displayName: items[h.itemId].displayName,
     rarity: items[h.itemId].rarity,
     label: h.label,
+    sourceExcerpt: sourceSentence(text, tokens[h.tokenIndex]?.start ?? 0),
   }));
 }

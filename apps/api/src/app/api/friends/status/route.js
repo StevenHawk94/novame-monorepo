@@ -119,11 +119,13 @@ export async function GET(request) {
         let items = []
         if (rids.length > 0) {
           const { data } = await supabase
-            .from('item_memories')
-            .select('item_id, created_at')
+            .from('reflect_items')
+            .select('item_id, created_at, position')
             .eq('user_id', fid)
+            .eq('visible_to_paired', true)
             .in('reflect_id', rids)
             .order('created_at', { ascending: true })
+            .order('position', { ascending: true })
           items = data || []
         }
         friends.push({

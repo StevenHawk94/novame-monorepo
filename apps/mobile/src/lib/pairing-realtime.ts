@@ -145,6 +145,27 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
   return request;
 }
 
+async function reconcileReflectFeed(userId: string, expectedGeneration: number): Promise<void> {
+  if (reconcileInFlight) return reconcileInFlight;
+  const request = (async () => {
+    try {
+      const pairing = getCachedPairing() ?? await fetchPairing({ force: true });
+      const [friends, feed] = await Promise.all([
+        fetchFriends({ force: true }),
+        pairing.paired ? fetchFriendFeed(undefined, { force: true }) : Promise.resolve([]),
+      ]);
+      if (activeUserId !== userId || generation !== expectedGeneration) return;
+      publish({ pairing, friends, feed });
+    } catch (error) {
+      console.warn('[pairing] reflect feed reconcile failed:', error);
+    }
+  })().finally(() => {
+    if (reconcileInFlight === request) reconcileInFlight = null;
+  });
+  reconcileInFlight = request;
+  return request;
+}
+
 export function subscribePairingRealtime(listener: Listener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -201,6 +222,11 @@ export async function startPairingRealtime(
         // The event is only an invalidation signal. The protected API remains
         // authoritative for the sender, message and reply state.
         publishGoodVibes();
+      })
+      .on('broadcast', { event: 'reflect_feed_changed' }, () => {
+        // One tiny invalidation per finalized/edited reflection. No journal or
+        // memory text is carried over Realtime and no polling loop is added.
+        void reconcileReflectFeed(userId, subscribedGeneration);
       })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;

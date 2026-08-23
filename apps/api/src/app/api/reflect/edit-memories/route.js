@@ -1,60 +1,93 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
-import { createClient } from '@supabase/supabase-js'
+import { serviceClient } from '@/lib/reflect-draft'
 
 export const runtime = 'edge'
 
-const MAX_TEXT = 500
+async function authenticate(request, userId) {
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  const verified = await verifyToken(token)
+  return !!verified && verified.id === userId
+}
 
-/**
- * POST /api/reflect/edit-memories
- *
- * Body: { userId, reflectId, edits: [{ itemId, text }] }
- *
- * The free tier's "Add Memories Manually" (claim screen; PRD: 免费用户可自行
- * 添加描述): overwrite the rule-matched excerpt of THIS reflect's item
- * memories with the user's own words. Scoped strictly to
- * (user_id, reflect_id, item_id) rows — you can only describe your own
- * memories, and only ones this reflect actually created. Paid users may use
- * it too (editing is a PRD 4.4 right); it never touches refined_desc, which
- * stays the AI channel.
- */
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const reflectId = searchParams.get('reflectId')
+    if (!userId || !reflectId) return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
+    if (!(await authenticate(request, userId))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const supabase = serviceClient()
+    const { data: reflect } = await supabase.from('reflects')
+      .select('id, shared_with_user_id').eq('id', reflectId).eq('user_id', userId).maybeSingle()
+    if (!reflect) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const [{ data: matched }, { data: memories }] = await Promise.all([
+      supabase.from('reflect_items')
+        .select('item_id, position, source_excerpt, visible_to_paired, items(display_name)')
+        .eq('reflect_id', reflectId).eq('user_id', userId).order('position'),
+      supabase.from('item_memories')
+        .select('item_id, description, raw_excerpt, refined_desc, memory_source')
+        .eq('reflect_id', reflectId).eq('user_id', userId),
+    ])
+    const memoryByItem = new Map((memories || []).map((memory) => [memory.item_id, memory]))
+    return NextResponse.json({
+      success: true,
+      shared: !!reflect.shared_with_user_id,
+      items: (matched || []).map((item) => {
+        const memory = memoryByItem.get(item.item_id)
+        return {
+          itemId: item.item_id,
+          displayName: item.items?.display_name || item.item_id,
+          sourceExcerpt: item.source_excerpt || '',
+          text: memory?.description || memory?.refined_desc || memory?.raw_excerpt || '',
+          source: memory?.memory_source || 'manual',
+          visible: item.visible_to_paired !== false,
+        }
+      }),
+    })
+  } catch (error) {
+    console.error('[reflect/edit-memories] GET unexpected:', error?.message || error)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}
+
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('authorization') || ''
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-    const verified = await verifyToken(token)
-    if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { userId, reflectId, edits } = await request.json()
-    if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!reflectId || !Array.isArray(edits) || edits.length === 0) {
+    const input = await request.json()
+    if (!(await authenticate(request, input.userId))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!input.reflectId || !Array.isArray(input.edits)) {
       return NextResponse.json({ error: 'Missing reflectId or edits' }, { status: 400 })
     }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    )
-
-    let updated = 0
-    // Match count is uncapped (2026-07-23), so the edit batch can't stay at
-    // 10 -- 100 is far above any real reflect while still bounding the loop.
-    for (const e of edits.slice(0, 100)) {
-      const text = typeof e?.text === 'string' ? e.text.trim().slice(0, MAX_TEXT) : ''
-      if (!e?.itemId || !text) continue
-      const { error, count } = await supabase
-        .from('item_memories')
-        .update({ raw_excerpt: text }, { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('reflect_id', reflectId)
-        .eq('item_id', e.itemId)
-      if (!error) updated += count ?? 0
+    const supabase = serviceClient()
+    const edits = input.edits.slice(0, 100).map((edit) => ({
+      itemId: typeof edit?.itemId === 'string' ? edit.itemId : '',
+      text: typeof edit?.text === 'string' ? edit.text.trim().slice(0, 500) : '',
+      source: ['manual', 'ai', 'use_my_words'].includes(edit?.source) ? edit.source : 'manual',
+      visible: edit?.visible !== false,
+    })).filter((edit) => edit.itemId)
+    const { data: result, error } = await supabase.rpc('edit_reflect_item_memories', {
+      p_user_id: input.userId,
+      p_reflect_id: input.reflectId,
+      p_edits: edits,
+    })
+    if (error) {
+      console.error('[reflect/edit-memories] rpc:', error.message)
+      return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
-
-    return NextResponse.json({ success: true, updated })
-  } catch (err) {
-    console.error('[reflect/edit-memories] unexpected:', err && err.message)
+    if (result?.error) return NextResponse.json(result, { status: 404 })
+    await Promise.all([
+      supabase.rpc('broadcast_reflect_feed_change', { p_user_id: input.userId }),
+      result?.shared && Number(result?.shared_rows || 0) === 0
+        ? supabase.rpc('broadcast_shared_box_change', { p_user_id: input.userId })
+        : Promise.resolve(),
+    ])
+    return NextResponse.json({ success: true, updated: result?.updated || 0 })
+  } catch (error) {
+    console.error('[reflect/edit-memories] POST unexpected:', error?.message || error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

@@ -52,6 +52,7 @@ interface WireItem {
 }
 
 interface MineBagsCache {
+  version?: number;
   items: WireItem[];
   fetchedAt: number;
   historyComplete?: boolean;
@@ -138,15 +139,7 @@ export function sharedBoxToCollectedItems(
 }
 
 export function getCachedBags(): CollectedItem[] {
-  const raw = storage.getString(kBagsState.name);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as WireItem[] | MineBagsCache;
-    const items = Array.isArray(parsed) ? parsed : parsed.items;
-    return Array.isArray(items) ? items.map(decorate) : [];
-  } catch {
-    return [];
-  }
+  return (readMineCache()?.items ?? []).map(decorate);
 }
 
 export function getCachedTheirBags(expectedOwnerUserId?: string): CollectedItem[] {
@@ -167,7 +160,14 @@ function readMineCache(): MineBagsCache | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as WireItem[] | MineBagsCache;
-    if (Array.isArray(parsed)) return { items: parsed, fetchedAt: 0, historyComplete: false };
+    if (Array.isArray(parsed)) {
+      storage.remove(kBagsState.name);
+      return null;
+    }
+    if (parsed.version !== 2) {
+      storage.remove(kBagsState.name);
+      return null;
+    }
     return Array.isArray(parsed.items)
       ? { ...parsed, fetchedAt: parsed.fetchedAt ?? 0, historyComplete: parsed.historyComplete ?? false }
       : null;
@@ -255,26 +255,39 @@ export async function refreshBagsIfStale(
 export function cacheReflectItems(snapshot: {
   reflectId: string;
   matchedItems: { itemId: string; label: string }[];
+  memories?: { itemId: string; text: string }[];
 }): void {
-  if (!snapshot.reflectId || snapshot.matchedItems.length === 0) return;
+  if (!snapshot.reflectId) return;
   const cached = readMineCache();
   const items = cached?.items ? [...cached.items] : [];
   const now = new Date().toISOString();
   const byId = new Map(items.map((item) => [item.itemId, item]));
-  for (const matched of snapshot.matchedItems) {
+  // Reconcile this reflect exactly: blank memories must not survive in Mine.
+  for (const current of [...byId.values()]) {
+    const before = current.memories.length;
+    current.memories = current.memories.filter((memory) => memory.reflectId !== snapshot.reflectId);
+    const removed = before - current.memories.length;
+    if (removed > 0) current.count = Math.max(0, current.count - removed);
+    // First-page Bags rows intentionally omit details until the tile is
+    // opened. An empty `memories` array therefore does not mean the item has
+    // no stored memories; only remove the tile when its authoritative count
+    // reaches zero.
+    if (current.count === 0) byId.delete(current.itemId);
+  }
+  const actual = (snapshot.memories ?? []).filter((memory) => memory.text.trim());
+  for (const memoryDraft of actual) {
+    const matched = snapshot.matchedItems.find((item) => item.itemId === memoryDraft.itemId);
+    if (!matched) continue;
     const current = byId.get(matched.itemId);
-    const alreadyIncluded = current?.memories.some((memory) => memory.reflectId === snapshot.reflectId) ?? false;
     const memory: ItemMemory = {
-      excerpt: matched.label,
-      rawExcerpt: matched.label,
+      excerpt: memoryDraft.text.trim(),
+      rawExcerpt: memoryDraft.text.trim(),
       reflectId: snapshot.reflectId,
       createdAt: now,
     };
     if (current) {
-      if (!alreadyIncluded) {
-        current.count += 1;
-        current.memories = [memory, ...current.memories];
-      }
+      current.count += 1;
+      current.memories = [memory, ...current.memories];
       current.firstSeenAt = now;
     } else {
       const created: WireItem = {
@@ -287,18 +300,24 @@ export function cacheReflectItems(snapshot: {
         nextMemoryBeforeCreatedAt: null,
         nextMemoryBeforeId: null,
       };
-      items.push(created);
       byId.set(matched.itemId, created);
     }
   }
-  items.sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt));
+  const reconciled = [...byId.values()].sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt));
   storage.set(kBagsState.name, JSON.stringify({
-    items,
+    version: 2,
+    items: reconciled,
     fetchedAt: cached?.fetchedAt ?? 0,
     historyComplete: cached?.historyComplete ?? false,
     nextBeforeFirstSeenAt: cached?.nextBeforeFirstSeenAt ?? null,
     nextBeforeItemId: cached?.nextBeforeItemId ?? null,
   } satisfies MineBagsCache));
+}
+
+/** Targeted semantic invalidation after a memory edit. TTL values and every
+ * other page cache remain untouched. */
+export function invalidateMineBagsCache(): void {
+  storage.remove(kBagsState.name);
 }
 
 /** A successful Paired feed can append the partner's new tiles locally. */
@@ -413,6 +432,7 @@ async function fetchBagsFirstPage(
       const merged = mergeWireItems(previous?.items ?? [], data.items);
       const hasDeeperCachedHistory = (previous?.items.length ?? 0) > data.items.length;
       storage.set(kBagsState.name, JSON.stringify({
+        version: 2,
         items: merged,
         fetchedAt: Date.now(),
         historyComplete: hasDeeperCachedHistory
@@ -510,6 +530,7 @@ export async function fetchMoreBags(
       if (scope === 'mine') {
         const latest = readMineCache();
         storage.set(kBagsState.name, JSON.stringify({
+          version: 2,
           items: mergeWireItems(latest?.items ?? [], data.items),
           fetchedAt: latest?.fetchedAt ?? Date.now(),
           historyComplete: data.hasMore !== true,

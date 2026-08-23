@@ -40,8 +40,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
     if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    await supabase.from('reflect_items')
+      .update({ visible_to_paired: visible })
+      .eq('reflect_id', reflectId)
+      .eq('user_id', userId)
     await supabase.from('connection_insights').delete()
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    await supabase.rpc('broadcast_reflect_feed_change', { p_user_id: userId })
     return NextResponse.json({ success: true, visible })
   } catch (err) {
     console.error('[reflect/visibility] unexpected:', err && err.message)

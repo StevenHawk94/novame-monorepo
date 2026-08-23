@@ -46,15 +46,17 @@ export async function GET(request) {
       .order('created_at', { ascending: false })
       .limit(90)
 
-    // Item memories keyed by reflect_id (to attach items to their day).
+    // All matched/selected items belong in the private log, even when the
+    // user deliberately left their memory description blank.
     const reflectIds = (reflects || []).map((r) => r.id)
     const itemsByReflect = {}
     if (reflectIds.length > 0) {
       const { data: mems } = await supabase
-        .from('item_memories')
-        .select('reflect_id, item_id')
+        .from('reflect_items')
+        .select('reflect_id, item_id, position')
         .eq('user_id', userId)
         .in('reflect_id', reflectIds)
+        .order('position', { ascending: true })
       for (const m of mems || []) {
         if (!itemsByReflect[m.reflect_id]) itemsByReflect[m.reflect_id] = []
         itemsByReflect[m.reflect_id].push(m.item_id)

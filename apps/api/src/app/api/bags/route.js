@@ -108,7 +108,7 @@ export async function GET(request) {
 
       let memoryQuery = supabase
         .from('item_memories')
-        .select('id, item_id, reflect_id, raw_excerpt, refined_desc, created_at')
+        .select('id, item_id, reflect_id, raw_excerpt, refined_desc, description, memory_source, created_at')
         .eq('user_id', targetUserId)
         .eq('item_id', detailItemId)
         .order('created_at', { ascending: false })
@@ -131,6 +131,20 @@ export async function GET(request) {
       const pageRows = (rawRows || []).slice(0, memoryPageSize)
       let visibleRows = pageRows
 
+      // Per-item hiding is always authoritative for a partner. A hidden item
+      // is absent entirely, not merely stripped of its description.
+      if (readingPartner && pageRows.length > 0) {
+        const reflectIds = [...new Set(pageRows.map((row) => row.reflect_id).filter(Boolean))]
+        const { data: visibleItems } = await supabase.from('reflect_items')
+          .select('reflect_id, item_id')
+          .eq('user_id', targetUserId)
+          .eq('item_id', detailItemId)
+          .eq('visible_to_paired', true)
+          .in('reflect_id', reflectIds)
+        const visibleKeys = new Set((visibleItems || []).map((row) => `${row.reflect_id}:${row.item_id}`))
+        visibleRows = visibleRows.filter((row) => visibleKeys.has(`${row.reflect_id}:${row.item_id}`))
+      }
+
       if (detailMode === 'custom') {
         const reflectIds = [...new Set(pageRows.map((row) => row.reflect_id).filter(Boolean))]
         if (reflectIds.length > 0) {
@@ -140,7 +154,7 @@ export async function GET(request) {
             .in('id', reflectIds)
             .or('shared_to_friends.neq.false,shared_to_friends.is.null')
           const visibleIds = new Set((visible || []).map((row) => row.id))
-          visibleRows = pageRows.filter((row) => visibleIds.has(row.reflect_id))
+          visibleRows = visibleRows.filter((row) => visibleIds.has(row.reflect_id))
         } else {
           visibleRows = []
         }
@@ -151,8 +165,8 @@ export async function GET(request) {
         ownerUserId: targetUserId,
         itemId: detailItemId,
         memories: visibleRows.map((row) => ({
-          excerpt: row.refined_desc || row.raw_excerpt,
-          rawExcerpt: row.raw_excerpt,
+          excerpt: row.description || row.refined_desc || row.raw_excerpt,
+          rawExcerpt: row.description || row.raw_excerpt,
           // A partner may expose the memory description, never a route/key to
           // their private reflection detail. The mobile UI also hides Details
           // for Their, making this privacy boundary defense-in-depth.
@@ -193,7 +207,17 @@ export async function GET(request) {
     }
 
     const hasMore = (ownedRaw || []).length > pageSize
-    const owned = (ownedRaw || []).slice(0, pageSize)
+    let owned = (ownedRaw || []).slice(0, pageSize)
+    if (readingPartner && owned.length > 0) {
+      const itemIds = owned.map((row) => row.item_id)
+      const { data: visibleItems } = await supabase.from('reflect_items')
+        .select('item_id')
+        .eq('user_id', targetUserId)
+        .eq('visible_to_paired', true)
+        .in('item_id', itemIds)
+      const allowed = new Set((visibleItems || []).map((row) => row.item_id))
+      owned = owned.filter((row) => allowed.has(row.item_id))
+    }
     const items = owned.map((it) => ({
       itemId: it.item_id,
       count: it.count,

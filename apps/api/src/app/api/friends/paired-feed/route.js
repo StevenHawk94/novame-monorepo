@@ -59,11 +59,13 @@ export async function GET(request) {
     const reflectIds = (reflects || []).map((r) => r.id)
     if (reflectIds.length > 0) {
       const { data: memories } = await supabase
-        .from('item_memories')
-        .select('item_id, reflect_id, created_at')
+        .from('reflect_items')
+        .select('item_id, reflect_id, created_at, position')
         .eq('user_id', partnerId)
+        .eq('visible_to_paired', true)
         .in('reflect_id', reflectIds)
         .order('created_at', { ascending: true })
+        .order('position', { ascending: true })
       items = (memories || []).map((m) => ({
         itemId: m.item_id,
         reflectId: m.reflect_id,

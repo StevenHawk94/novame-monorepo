@@ -124,6 +124,21 @@ describe('matchItems: labels (noun + adjective prefix, title-cased)', () => {
   });
 });
 
+describe('matchItems: source excerpts', () => {
+  it('keeps the sentence containing each first accepted match', () => {
+    const matches = matchItems('I felt tired. Then I made warm coffee! Reading a book helped.', DICT);
+    expect(matches.find((match) => match.itemId === 'food.coffee')?.sourceExcerpt)
+      .toBe('Then I made warm coffee!');
+    expect(matches.find((match) => match.itemId === 'object.book')?.sourceExcerpt)
+      .toBe('Reading a book helped.');
+  });
+
+  it('uses only the first accepted occurrence for duplicate matches', () => {
+    const [match] = matchItems('Coffee helped. Later I bought coffee.', DICT);
+    expect(match.sourceExcerpt).toBe('Coffee helped.');
+  });
+});
+
 describe('matchItems: tokenization', () => {
   it('handles case and punctuation', () => {
     expect(ids('Rain, rain! And SUNSHINE.')).toEqual(['nature.rain', 'nature.sun']);

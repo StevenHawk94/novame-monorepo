@@ -13,15 +13,13 @@ import {
 import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
 import { matchItems } from '@novame/engine';
 
 import {
-  MemoryEditSheet,
   RC,
-  ReflectResultView,
   ReflectTopBar,
 } from '@/components/main/reflect-shared';
+import { MatchedItemsReviewSheet, ReflectSettlementView } from '@/components/main/reflect-settlement';
 import { appAlert } from '@/components/ui/app-dialog';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
@@ -38,9 +36,10 @@ import { mergedItemDictionary } from '@/lib/remote-items';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
 import {
   getReflectStateToday,
-  submitReflect,
+  prepareReflect,
+  type MatchedItem,
+  type PreparedReflect,
   type ReflectError,
-  type ReflectSnapshot,
 } from '@/lib/reflect-api';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
@@ -68,11 +67,10 @@ export default function SharedMemoryCreateScreen() {
   const [phase, setPhase] = useState<Phase>('write');
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [liveMatched, setLiveMatched] = useState<{ itemId: string; displayName: string }[]>([]);
+  const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const [notes, setNotes] = useState<Record<string, string>>({});
   const [editOpen, setEditOpen] = useState(false);
-  const [result, setResult] = useState<ReflectSnapshot | null>(null);
+  const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
   const isPaid = useSubscriptionTier() !== 'free';
 
@@ -93,10 +91,7 @@ export default function SharedMemoryCreateScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLiveMatched(matchItems(text, mergedItemDictionary()).map((match) => ({
-        itemId: match.itemId,
-        displayName: match.displayName,
-      })));
+      setLiveMatched(matchItems(text, mergedItemDictionary()));
     }, 250);
     return () => clearTimeout(timer);
   }, [text]);
@@ -123,22 +118,14 @@ export default function SharedMemoryCreateScreen() {
       appAlert('No items matched', 'Mention the things you remember together, such as coffee, a movie, or flowers.');
       return;
     }
-    const itemNotes: Record<string, string> = {};
-    for (const match of shownMatches) {
-      const note = (notes[match.itemId] ?? '').trim();
-      if (note) itemNotes[match.itemId] = note;
-    }
-
     void haptics.medium();
     setSubmitting(true);
-    const response = await submitReflect({
+    const response = await prepareReflect({
       promptId: 9,
       body: text,
       friendUserId,
       mode: 'typing',
       removedItemIds: [...removedIds],
-      itemNotes,
-      visibleToFriend: true,
     });
     setSubmitting(false);
 
@@ -152,16 +139,7 @@ export default function SharedMemoryCreateScreen() {
       return;
     }
 
-    setResult(response.snapshot);
-    setRemaining(response.snapshot.reflectsRemaining);
-    if (response.snapshot.bubble) setReflectBubble(response.snapshot.bubble);
-    notifySharedBoxChanged(friendUserId, response.snapshot.sharedItems.map((item) => ({
-      ...item,
-      emoji: '',
-    })));
-    void fetchReflectFeed({ force: true });
-    void fetchBags();
-    void haptics.success();
+    setPreparedDraft(response.draft);
     setPhase('result');
   }
 
@@ -173,9 +151,24 @@ export default function SharedMemoryCreateScreen() {
         <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && <ReflectTopBar remaining={remaining} onBack={() => router.back()} />}
 
-          {phase === 'result' && result ? (
+          {phase === 'result' && preparedDraft ? (
             <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
-              <ReflectResultView result={result} onFinished={() => router.back()} />
+              <ReflectSettlementView
+                draft={preparedDraft}
+                itemWord="Matched"
+                shared
+                onFinalized={(snapshot) => {
+                  setRemaining(snapshot.reflectsRemaining);
+                  if (snapshot.bubble) setReflectBubble(snapshot.bubble);
+                  notifySharedBoxChanged(friendUserId, snapshot.sharedItems.map((item) => ({
+                    ...item,
+                    emoji: '',
+                  })));
+                  void fetchReflectFeed({ force: true });
+                  void fetchBags('mine');
+                  router.back();
+                }}
+              />
             </View>
           ) : pairLoading ? (
             <View style={styles.centerState}><ActivityIndicator color="#FFFFFF" /></View>
@@ -204,7 +197,16 @@ export default function SharedMemoryCreateScreen() {
               />
 
               <Text style={styles.matchLabel}>Items matched from your memory</Text>
-              <View style={styles.matchBar}>
+              <Pressable
+                onPress={() => {
+                  if (shownMatches.length > 0) {
+                    void haptics.pageOpen();
+                    setEditOpen(true);
+                  }
+                }}
+                disabled={shownMatches.length === 0}
+                style={styles.matchBar}
+              >
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
                   {shownMatches.length === 0 ? (
                     <Text style={styles.matchEmpty}>Items will appear as you write…</Text>
@@ -212,15 +214,7 @@ export default function SharedMemoryCreateScreen() {
                     <ItemSprite key={match.itemId} itemId={match.itemId} size={44} radius={12} />
                   ))}
                 </ScrollView>
-                <Pressable
-                  onPress={() => { void haptics.light(); setEditOpen(true); }}
-                  disabled={shownMatches.length === 0}
-                  style={[styles.editButton, shownMatches.length === 0 && styles.disabled]}
-                  hitSlop={8}
-                >
-                  <MaterialIcons name="edit" size={20} color="#FFFFFF" />
-                </Pressable>
-              </View>
+              </Pressable>
 
               <Pressable
                 onPress={() => void create()}
@@ -232,7 +226,7 @@ export default function SharedMemoryCreateScreen() {
                   { marginBottom: insets.bottom + 12 },
                 ]}
               >
-                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.createText}>Create</Text>}
+                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.createText}>Save Reflection</Text>}
               </Pressable>
             </View>
           )}
@@ -240,13 +234,10 @@ export default function SharedMemoryCreateScreen() {
       </KeyboardAvoidingView>
 
       {editOpen && (
-        <MemoryEditSheet
+        <MatchedItemsReviewSheet
           items={shownMatches}
-          notes={notes}
-          onChangeNote={(itemId, value) => setNotes((current) => ({ ...current, [itemId]: value }))}
           onRemove={removeMatch}
           onDone={() => setEditOpen(false)}
-          isPaid={isPaid}
         />
       )}
     </View>
@@ -270,7 +261,6 @@ const styles = StyleSheet.create({
   matchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 22, paddingVertical: 10, paddingLeft: 12, paddingRight: 10, minHeight: 60, maxHeight: 64, marginBottom: 8 },
   matchRow: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   matchEmpty: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#B7AEA6' },
-  editButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#43301F', alignItems: 'center', justifyContent: 'center' },
   createButton: {
     backgroundColor: RC.yellow, borderRadius: 24, paddingVertical: 17, alignItems: 'center',
     shadowColor: RC.yellowDrop, shadowOpacity: 1, shadowRadius: 0,

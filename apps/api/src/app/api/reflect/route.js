@@ -195,7 +195,20 @@ export async function POST(request) {
             displayName: m.displayName,
             rarity: m.rarity,
             label: m.label,
+            sourceExcerpt: m.sourceExcerpt || (mode === 'typing' ? '' : body),
           }))
+          // Compatibility for clients built before the draft/finalize flow:
+          // keep all matched/selected icons in the normalized relation so the
+          // new My Logs and paired readers never lose an older submission.
+          await supabase.from('reflect_items').upsert(matches.map((m, position) => ({
+            reflect_id: reflectId,
+            user_id: userId,
+            item_id: m.itemId,
+            position,
+            match_label: m.label,
+            source_excerpt: m.sourceExcerpt || (mode === 'typing' ? null : body || null),
+            visible_to_paired: visibleToFriend !== false,
+          })), { onConflict: 'reflect_id,item_id' })
 
           // Co-creation (PRD §3.7 prompt #9): a reflect written "with" a friend
           // drops its matched items into the pair's shared memory box too,
@@ -212,6 +225,8 @@ export async function POST(request) {
               .eq('user_id', userId)
               .maybeSingle()
             if (pairing?.partner_user_id === friendUserId) {
+              await supabase.from('reflects').update({ shared_with_user_id: friendUserId })
+                .eq('id', reflectId).eq('user_id', userId)
               const boxRows = matches.map((m) => ({
                 user_a: a,
                 user_b: b,

@@ -92,6 +92,9 @@ export default function SubscriptionPaywallModal() {
     const offComplete = onPurchaseComplete(() => {
       setBusy('idle');
       emitHomeRefresh();
+      // Returning closes only the paywall; an underlying Reflect settlement
+      // stays mounted and reacts to the refreshed tier. Keep the established
+      // account-safety -> notification prompt sequence unchanged.
       const promptNotif = shouldPromptNotifAfterPurchase();
       if (promptNotif) markNotifPromptedAfterPurchase();
       if (router.canGoBack()) router.back();

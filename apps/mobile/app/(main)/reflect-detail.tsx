@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,10 +7,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { fetchReflectFeed, getCachedFeed, formatDayLabel, type FeedDay } from '@/lib/reflect-feed-api';
-import { setReflectVisibility } from '@/lib/reflect-api';
+import {
+  editReflectMemories,
+  fetchReflectMemories,
+  type ReflectMemoryDraft,
+  type ReflectMemoryEditorData,
+} from '@/lib/reflect-api';
 import { appAlert } from '@/components/ui/app-dialog';
 import { haptics } from '@/lib/haptics';
 import { GridBackground } from '@/components/ui/grid-background';
+import { MemoryEditorSheet } from '@/components/main/reflect-settlement';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { invalidateMineBagsCache } from '@/lib/bags-api';
 
 /**
  * Reflect detail (design 2026-07-22, 1:1): dark-brown full screen, a white
@@ -28,6 +36,7 @@ export default function ReflectDetailScreen() {
   const memCols = Math.max(4, Math.floor((memInner + 14) / (72 + 14)));
   const memTile = Math.floor((memInner - (memCols - 1) * 14) / memCols);
   const router = useRouter();
+  const isPaid = useSubscriptionTier() !== 'free';
   const { reflectId } = useLocalSearchParams<{ reflectId: string }>();
   // Cache-first: the pushed-from screen already had this feed cached.
   const [feed, setFeed] = useState<FeedDay[]>(() => getCachedFeed());
@@ -52,32 +61,42 @@ export default function ReflectDetailScreen() {
     return null;
   }, [feed, reflectId]);
 
-  const [detailsVisible, setDetailsVisible] = useState(true);
-  const [savingVisibility, setSavingVisibility] = useState(false);
-  useEffect(() => {
-    if (entry) setDetailsVisible(entry.sharedToFriends);
-  }, [entry]);
+  const [editor, setEditor] = useState<ReflectMemoryEditorData | null>(null);
+  const [editorMemories, setEditorMemories] = useState<ReflectMemoryDraft[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [loadingEditor, setLoadingEditor] = useState(false);
 
-  async function toggleVisibility() {
-    if (!reflectId || savingVisibility) return;
-    const previous = detailsVisible;
-    const next = !previous;
-    setDetailsVisible(next);
-    setSavingVisibility(true);
-    void haptics.light();
-    const ok = await setReflectVisibility(reflectId, next);
-    setSavingVisibility(false);
+  async function openEditor() {
+    if (!reflectId || loadingEditor) return;
+    void haptics.pageOpen();
+    setLoadingEditor(true);
+    const data = await fetchReflectMemories(reflectId);
+    setLoadingEditor(false);
+    if (!data) {
+      appAlert('Could not load memories', 'Please check your connection and try again.');
+      return;
+    }
+    setEditor(data);
+    setEditorMemories(data.items.map((item) => ({
+      itemId: item.itemId,
+      text: item.text,
+      source: item.source,
+      visible: item.visible,
+    })));
+    setEditorOpen(true);
+  }
+
+  async function saveEditor() {
+    if (!reflectId || !editor) return;
+    const ok = await editReflectMemories(reflectId, editorMemories);
     if (!ok) {
-      setDetailsVisible(previous);
       appAlert('Could not save', 'Please check your connection and try again.');
       return;
     }
-    setFeed((current) => current.map((day) => ({
-      ...day,
-      reflects: day.reflects.map((reflect) => reflect.id === reflectId
-        ? { ...reflect, sharedToFriends: next }
-        : reflect),
-    })));
+    invalidateMineBagsCache();
+    void fetchReflectFeed({ force: true }).then(setFeed);
+    void haptics.success();
+    setEditorOpen(false);
   }
 
   // Items this reflection gathered, aggregated to (item, count) so a double
@@ -102,15 +121,19 @@ export default function ReflectDetailScreen() {
               <Text style={styles.date}>{entry.dateLabel}</Text>
             </View>
           )}
-          <Text style={styles.body}>{entry?.body ?? 'This reflection is no longer available.'}</Text>
+          <Text style={styles.body}>
+            {entry
+              ? entry.body.trim() || 'You did not type anything on this reflection.'
+              : 'This reflection is no longer available.'}
+          </Text>
         </View>
 
-        {/* Memory Items Created */}
+        {/* Every item matched/selected by this reflection. */}
         {gathered.length > 0 && (
           <View style={styles.memCard}>
             <View style={styles.memTitleRow}>
               <Image source={ICONS.memory} style={styles.memTitleIcon} resizeMode="contain" />
-              <Text style={styles.memTitle}>Memory Items Created</Text>
+              <Text style={styles.memTitle}>Items Selected</Text>
             </View>
             {/* Wrapping grid: every item visible, growing downward (no side-scroll). */}
             <View style={styles.memRow}>
@@ -124,19 +147,15 @@ export default function ReflectDetailScreen() {
           </View>
         )}
 
-        <View style={styles.visibilityRow}>
+        {gathered.length > 0 && (
           <Pressable
-            disabled={savingVisibility}
-            onPress={() => void toggleVisibility()}
-            style={[styles.toggle, detailsVisible && styles.toggleOn, savingVisibility && { opacity: 0.6 }]}
+            disabled={loadingEditor}
+            onPress={() => void openEditor()}
+            style={({ pressed }) => [styles.editMemories, pressed && { opacity: 0.82 }]}
           >
-            <Text style={styles.toggleLabel}>{detailsVisible ? 'ON' : 'OFF'}</Text>
-            <View style={[styles.toggleKnob, detailsVisible && styles.toggleKnobOn]} />
+            <Text style={styles.editMemoriesText}>{loadingEditor ? 'Loading…' : 'Edit Memories'}</Text>
           </Pressable>
-          <Text style={styles.visibilityText}>
-            Turn off to hide all the details of these memory items from your paired person.
-          </Text>
-        </View>
+        )}
       </ScrollView>
 
       {/* Close: white circle, dark X (mock) */}
@@ -145,6 +164,22 @@ export default function ReflectDetailScreen() {
           <MaterialIcons name="close" size={28} color="#43301F" />
         </Pressable>
       </View>
+      {editorOpen && editor && (
+        <MemoryEditorSheet
+          items={editor.items.map((item) => ({
+            itemId: item.itemId,
+            displayName: item.displayName,
+            rarity: 'common',
+            label: item.displayName,
+            sourceExcerpt: item.sourceExcerpt,
+          }))}
+          memories={editorMemories}
+          isPaid={isPaid}
+          shared={editor.shared}
+          onChange={setEditorMemories}
+          onDone={() => void saveEditor()}
+        />
+      )}
     </View>
   );
 }
@@ -167,13 +202,8 @@ const styles = StyleSheet.create({
   memItem: { alignItems: 'center', gap: 6 },
   memCount: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3B2A' },
 
-  visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 8, paddingVertical: 8 },
-  toggle: { width: 88, height: 44, borderRadius: 22, backgroundColor: '#8C7A68', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 9 },
-  toggleOn: { backgroundColor: '#FF7C52' },
-  toggleLabel: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_800ExtraBold' },
-  toggleKnob: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF' },
-  toggleKnobOn: { backgroundColor: '#FFF9F1' },
-  visibilityText: { flex: 1, color: '#FFFFFF', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_700Bold' },
+  editMemories: { backgroundColor: '#F9C939', borderRadius: 22, paddingVertical: 17, alignItems: 'center' },
+  editMemoriesText: { color: '#633A21', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
 
   closeWrap: { alignItems: 'center' },
   closeBtn: {

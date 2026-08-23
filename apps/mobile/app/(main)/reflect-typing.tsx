@@ -14,32 +14,27 @@ import {
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
 import { matchItems } from '@novame/engine';
 
 import {
   getReflectStateToday,
-  submitReflect,
+  prepareReflect,
+  type MatchedItem,
+  type PreparedReflect,
   type ReflectError,
-  type ReflectSnapshot,
 } from '../../src/lib/reflect-api';
 import { setReflectBubble } from '../../src/lib/bubble-store';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags } from '../../src/lib/bags-api';
-import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
 import { mergedItemDictionary } from '../../src/lib/remote-items';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
-import {
-  MemoryEditSheet,
-  RC,
-  ReflectResultView,
-  ReflectTopBar,
-} from '../../src/components/main/reflect-shared';
+import { RC, ReflectTopBar } from '../../src/components/main/reflect-shared';
+import { MatchedItemsReviewSheet, ReflectSettlementView } from '../../src/components/main/reflect-settlement';
 
 const MAX_CHARS = 5000;
 
@@ -57,9 +52,8 @@ const TAN_OFFSET = '#E5B57E';
 /**
  * 流程1 — Write Freely (2026-07-24 design): the 9-prompt second level, then
  * the typing page with the LIVE match bar — items appear as you type
- * (client-side engine, same dictionary as the server), the pencil opens the
- * edit sheet where a wrong match can be dismissed and any item can get a
- * hand-written memory note. Body is required. Result: ReflectResultView.
+ * (client-side engine, same dictionary as the server). The whole preview opens
+ * a remove-only sheet; memory text and privacy are finalized in settlement.
  */
 type Phase = 'pick' | 'write' | 'result';
 
@@ -80,14 +74,12 @@ export default function ReflectTypingScreen() {
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ReflectError | null>(null);
-  const [result, setResult] = useState<ReflectSnapshot | null>(null);
+  const [draft, setDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(initial.reflectsRemaining);
   // Live matching state: debounced engine pass minus dismissed chips + notes.
-  const [liveMatched, setLiveMatched] = useState<{ itemId: string; displayName: string }[]>([]);
+  const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const [notes, setNotes] = useState<Record<string, string>>({});
   const [editOpen, setEditOpen] = useState(false);
-  const isPaid = useSubscriptionTier() !== 'free';
 
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
@@ -103,7 +95,7 @@ export default function ReflectTypingScreen() {
   useEffect(() => {
     const t = setTimeout(() => {
       const matches = matchItems(body, mergedItemDictionary());
-      setLiveMatched(matches.map((m) => ({ itemId: m.itemId, displayName: m.displayName })));
+      setLiveMatched(matches);
     }, 250);
     return () => clearTimeout(t);
   }, [body]);
@@ -131,27 +123,16 @@ export default function ReflectTypingScreen() {
     if (promptId == null || submitting) return;
     setSubmitting(true);
     setError(null);
-    const itemNotes: Record<string, string> = {};
-    for (const [k, v] of Object.entries(notes)) {
-      if (v.trim()) itemNotes[k] = v.trim();
-    }
-    const res = await submitReflect({
+    const res = await prepareReflect({
       promptId,
       body,
       sourceKit,
       mode: 'typing',
       removedItemIds: [...removedIds],
-      itemNotes,
     });
     setSubmitting(false);
     if (res.ok) {
-      cacheReflectItems(res.snapshot);
-      setResult(res.snapshot);
-      setRemaining(res.snapshot.reflectsRemaining);
-      if (res.snapshot.bubble) setReflectBubble(res.snapshot.bubble);
-      void fetchReflectFeed({ force: true });
-      void fetchBags();
-      void haptics.success();
+      setDraft(res.draft);
       setPhase('result');
     } else {
       setError(res.error);
@@ -218,7 +199,16 @@ export default function ReflectTypingScreen() {
 
               {/* Live match bar (mock: "Items matched from your reflection") */}
               <Text style={styles.matchLabel}>Items matched from your reflection</Text>
-              <View style={styles.matchBar}>
+              <Pressable
+                onPress={() => {
+                  if (shownMatches.length > 0) {
+                    void haptics.pageOpen();
+                    setEditOpen(true);
+                  }
+                }}
+                disabled={shownMatches.length === 0}
+                style={styles.matchBar}
+              >
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
                   {shownMatches.length === 0 ? (
                     <Text style={styles.matchEmpty}>Items will appear as you write…</Text>
@@ -228,15 +218,7 @@ export default function ReflectTypingScreen() {
                     ))
                   )}
                 </ScrollView>
-                <Pressable
-                  onPress={() => { void haptics.light(); setEditOpen(true); }}
-                  disabled={shownMatches.length === 0}
-                  style={[styles.pencilBtn, shownMatches.length === 0 && { opacity: 0.4 }]}
-                  hitSlop={8}
-                >
-                  <MaterialIcons name="edit" size={20} color="#FFFFFF" />
-                </Pressable>
-              </View>
+              </Pressable>
 
               <OffsetCard
                 color={RC.yellowDrop}
@@ -255,9 +237,20 @@ export default function ReflectTypingScreen() {
               </OffsetCard>
             </View>
           ) : (
-            result && (
+            draft && (
               <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
-                <ReflectResultView result={result} onFinished={() => router.back()} />
+                <ReflectSettlementView
+                  draft={draft}
+                  itemWord="Matched"
+                  onFinalized={(snapshot) => {
+                    cacheReflectItems(snapshot);
+                    setRemaining(snapshot.reflectsRemaining);
+                    if (snapshot.bubble) setReflectBubble(snapshot.bubble);
+                    void fetchReflectFeed({ force: true });
+                    void fetchBags('mine');
+                    router.back();
+                  }}
+                />
               </View>
             )
           )}
@@ -265,13 +258,10 @@ export default function ReflectTypingScreen() {
       </KeyboardAvoidingView>
 
       {editOpen && (
-        <MemoryEditSheet
+        <MatchedItemsReviewSheet
           items={shownMatches}
-          notes={notes}
-          onChangeNote={(id, t) => setNotes((cur) => ({ ...cur, [id]: t }))}
           onRemove={removeMatch}
           onDone={() => setEditOpen(false)}
-          isPaid={isPaid}
         />
       )}
     </View>
@@ -309,10 +299,6 @@ const styles = StyleSheet.create({
   },
   matchRow: { gap: 8, alignItems: 'center', flexGrow: 1, justifyContent: 'center' },
   matchEmpty: { fontSize: 13, fontFamily: 'Inter_500Medium', color: '#B7AEA6' },
-  pencilBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#43301F',
-    alignItems: 'center', justifyContent: 'center',
-  },
 
   yellowBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },
   yellowBtnText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },

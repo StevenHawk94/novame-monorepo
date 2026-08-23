@@ -13,9 +13,8 @@ import { haptics } from '@/lib/haptics';
 /**
  * My Logs -- the Reflect Feed (design 2026-07-22, 1:1): journal icon +
  * "Reflect Feed" title, a "By Date" pill top right, then one cream card per
- * reflection -- calendar date, the entry, the gathered items on bordered
- * tiles (+N overflow in green), and a dark View Detail pill. Private to the
- * user (friends only ever see the emoji glimpse elsewhere).
+ * reflection -- calendar date, the entry and the gathered items on bordered
+ * tiles (+N overflow in green). The whole card opens the private detail.
  *
  * The back arrow is not in the mock but the route is pushed -- kept small so
  * the screen stays navigable.
@@ -92,12 +91,21 @@ export default function MyLogsScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {entries.map((e) => (
-            <View key={e.id} style={styles.card}>
+            <Pressable
+              key={e.id}
+              onPress={() => {
+                void haptics.pageOpen();
+                router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } });
+              }}
+              style={({ pressed }) => [styles.card, pressed && { opacity: 0.82 }]}
+            >
               <View style={styles.cardTop}>
                 <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
                 <Text style={styles.cardDate}>{e.dateLabel}</Text>
               </View>
-              <Text style={styles.cardBody} numberOfLines={4}>{e.body}</Text>
+              <Text style={styles.cardBody} numberOfLines={4}>
+                {e.body.trim() || 'You did not type anything on this reflection.'}
+              </Text>
               <View style={styles.itemRow}>
                 {e.items.slice(0, 5).map((id, i) => (
                   <View key={i} style={styles.itemTile}>
@@ -110,17 +118,7 @@ export default function MyLogsScreen() {
                   </View>
                 )}
               </View>
-              <Pressable
-                onPress={() => {
-                  void haptics.pageOpen();
-                  router.push({ pathname: '/(main)/reflect-detail', params: { reflectId: e.id } });
-                }}
-                style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.7 }]}
-              >
-                <Text style={styles.detailText}>View Detail</Text>
-                <MaterialIcons name="chevron-right" size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
+            </Pressable>
           ))}
         </ScrollView>
       )}
@@ -259,18 +257,10 @@ const styles = StyleSheet.create({
   cardDate: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#2E2418' },
   cardBody: { fontSize: 15.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', lineHeight: 23, marginBottom: 14 },
 
-  itemRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 14 },
+  itemRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   itemTile: { borderRadius: 14, backgroundColor: '#F4F1F8', padding: 2 },
   moreTile: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', padding: 0 },
   moreText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#3E7A3E' },
-
-  // Design: solid dark-brown View Detail pill, white label, right-aligned.
-  detailBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 2, alignSelf: 'flex-end',
-    borderRadius: 24, backgroundColor: '#4A3423',
-    paddingHorizontal: 20, paddingVertical: 13,
-  },
-  detailText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
   emptyEmoji: { fontSize: 44 },
