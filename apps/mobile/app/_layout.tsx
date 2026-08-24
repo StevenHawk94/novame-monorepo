@@ -337,9 +337,8 @@ function RootLayout() {
         } catch (e) {
           console.warn('[layout] sign-in cache clear failed:', e);
         }
-        // Dev-only. Should print exactly one survivor: [preauth]
-        // novame_onboarding_state. Anything else is a key that outlived its
-        // owner.
+        // Dev-only. Only registered preauth/device keys should survive here;
+        // anything user-scoped is a key that outlived its owner.
         debugAccountKeysRemaining('SIGNED_IN');
         if (session?.user?.id) {
           void startSubscriptionRealtime(session.user.id).catch((error) => {

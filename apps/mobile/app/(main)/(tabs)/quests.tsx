@@ -11,6 +11,7 @@ import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { GridBackground } from '@/components/ui/grid-background';
 import { ConfettiBurst } from '@/components/main/confetti-burst';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { haptics } from '@/lib/haptics';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import {
@@ -280,6 +281,7 @@ export default function QuestsScreen() {
             )}
           </View>
         )}
+        <FeatureGuideModal guide="quests" />
       </SafeAreaView>
     );
   }
@@ -348,6 +350,7 @@ export default function QuestsScreen() {
         })}
         <View style={{ height: 24 }} />
       </ScrollView>
+      <FeatureGuideModal guide="quests" />
     </SafeAreaView>
   );
 }

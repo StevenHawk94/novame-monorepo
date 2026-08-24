@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
 import { HowItWorksOverlay } from '@/components/main/how-it-works-overlay';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { BACKGROUNDS, FRIEND_ICONS, ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { UserAvatar } from '@/components/ui/user-avatar';
@@ -389,6 +390,7 @@ export default function FriendsScreen() {
         onClose={() => setPrivacyOpen(false)}
         onSave={() => void savePrivacy()}
       />
+      <FeatureGuideModal guide="paired" />
     </View>
   );
 }

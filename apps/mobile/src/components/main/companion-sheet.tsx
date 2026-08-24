@@ -14,6 +14,7 @@ import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
 import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 
 const COMPANION_PANEL_BG = '#F9D9B2';
 
@@ -196,6 +197,7 @@ export function CompanionSheet() {
             </View>
           </View>
         </View>
+        <FeatureGuideModal guide="bunny" />
       </View>
   );
 }

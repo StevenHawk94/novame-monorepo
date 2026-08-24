@@ -11,6 +11,7 @@ import { refreshRemoteItems } from '../../src/lib/remote-items';
 import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
+import { FeatureGuideModal } from '../../src/components/main/feature-guide-modal';
 
 const TAN_OFFSET = '#E5B57E';
 
@@ -115,6 +116,7 @@ export default function ReflectEntryScreen() {
             </OffsetCard>
           ))}
         </View>
+        <FeatureGuideModal guide="reflect" />
       </View>
     </SwipeDownToDismiss>
   );

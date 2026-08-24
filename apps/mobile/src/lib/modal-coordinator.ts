@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
  *   - announcement popup (Home AnnouncementGate)
  *   - study-claim modal   (tabs/_layout, driven by study-claim-store)
  *   - skin-unlock modal   (tabs/_layout, driven by skin-unlock-store queue)
+ *   - feature guide       (first-use walkthrough on a focused feature page)
  *
  * Serial, NON-PREEMPTIVE arbiter. Each surface REQUESTS a slot. At most one is
  * "active" (shown) at a time. KEY RULE: once a slot becomes active it is LOCKED
@@ -35,12 +36,13 @@ import { useEffect, useState } from 'react';
  * active + rendering, never at request time.
  */
 
-export type ModalKind = 'announcement' | 'claim' | 'skin';
+export type ModalKind = 'announcement' | 'claim' | 'skin' | 'guide';
 
 const PRIORITY: Record<ModalKind, number> = {
   announcement: 3,
   claim: 2,
   skin: 1,
+  guide: 0,
 };
 
 const SETTLE_MS = 200;

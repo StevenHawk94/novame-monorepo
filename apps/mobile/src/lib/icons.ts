@@ -42,6 +42,12 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
   reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
   reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
+  guideFocus: require('../../assets/Icons/focus-challenge.png'),
+  guidePaired: require('../../assets/Icons/friend-list.png'),
+  guideConnection: require('../../assets/Icons/reflect-someone.png'),
+  guideMemories: require('../../assets/Icons/Memories.png'),
+  guideBunny: require('../../assets/Icons/bunny.png'),
+  guideQuests: require('../../assets/Icons/Week-Plan.png'),
   // Connection Dashboard (unpaired teaser cards + relationship surfaces)
   friendList: require('../../assets/Icons/friend-list.png'),
   vibeMatching: require('../../assets/Icons/vibe-matching.png'),

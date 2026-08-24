@@ -11,6 +11,9 @@ import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import {
+  enableFeatureGuidesForNewUser,
+} from '../../src/lib/feature-guides';
+import {
   markIntroSeen,
   setBunnyName,
   setChosenCompanion,
@@ -224,6 +227,7 @@ export default function OnboardingScreen() {
       router.replace('/(auth)/sign-in');
       return;
     }
+    enableFeatureGuidesForNewUser();
     // The onboarding name is also the user's default display name (2026-08-09
     // ruling) — write it to profiles so friends/partners see a real name
     // instead of the signup seed ('user'). Fire-and-forget.

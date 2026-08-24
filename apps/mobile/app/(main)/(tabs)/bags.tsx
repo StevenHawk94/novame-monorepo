@@ -5,6 +5,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { OffsetCard } from '@/components/ui/offset-card';
 import {
   fetchMoreBags,
@@ -440,6 +441,7 @@ export default function BagsScreen() {
         />
       )}
       </View>
+      <FeatureGuideModal guide="memories" />
     </SafeAreaView>
   );
 }

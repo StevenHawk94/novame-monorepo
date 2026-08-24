@@ -254,6 +254,17 @@ export const kNotifPromptedAfterPurchase = defineKey(
  */
 export const kOnboardingState = defineKey('novame_onboarding_state', 'preauth');
 
+/**
+ * Fresh-onboarding handoff for the one-time feature walkthroughs. This is
+ * written before the user reaches authenticated screens, then promoted into
+ * the user-scoped state on the first real feature visit. Existing users never
+ * receive this marker, so an app update cannot unexpectedly replay guides.
+ */
+export const kFeatureGuidesPending = defineKey('burrow_feature_guides_pending', 'preauth');
+
+/** One-time feature walkthrough completion state for the signed-in account. */
+export const kFeatureGuideState = defineKey('burrow_feature_guide_state', 'user');
+
 /** Whether the pre-auth onboarding intro has been seen on THIS phone. Device
  *  scope, not user/preauth: it must survive sign-out so a returning user goes
  *  straight to sign-in, never re-watches the intro (C4 decision B). Set true

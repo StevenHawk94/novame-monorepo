@@ -14,6 +14,7 @@ import { BACKGROUNDS, FOCUS_SCENE_ICONS } from '../../src/lib/icons';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
+import { FeatureGuideModal } from '../../src/components/main/feature-guide-modal';
 import {
   FOCUS_VOICE_BUNDLED, getFocusVoiceSource, onFocusVoiceListened, type FocusVoiceSource,
 } from '../../src/lib/focus-voice';
@@ -186,6 +187,7 @@ export default function FocusScreen() {
               </Text>
             </ScrollView>
           </View>
+          <FeatureGuideModal guide="focus" />
         </ImageBackground>
       </SwipeDownToDismiss>
     );

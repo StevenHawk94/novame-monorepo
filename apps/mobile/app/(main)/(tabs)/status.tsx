@@ -22,6 +22,7 @@ import { getCachedMeStats } from '@/lib/me-stats';
 import { getBunnyName } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
@@ -376,6 +377,7 @@ export default function ConnectionDashboardScreen() {
           </View>
         </View>
       )}
+      <FeatureGuideModal guide="connection" enabled={!!pairing?.paired && !!partner} />
     </View>
   );
 }

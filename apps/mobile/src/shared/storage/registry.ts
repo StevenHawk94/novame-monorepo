@@ -43,9 +43,10 @@ export type KeyScope =
    * them there destroys their own work. At SIGNED_OUT they belong to the user
    * who is leaving, and must go.
    *
-   * Exactly one key qualifies today (novame_onboarding_state). This exists as
-   * a named scope rather than an exception list because an exception list
-   * grows: the second entry is always easier to add than the first.
+   * Only onboarding handoff keys qualify today. This exists as a named scope
+   * rather than an exception list because their ownership changes at auth:
+   * preserving them on SIGNED_IN is required, while preserving them on
+   * SIGNED_OUT would leak the departing user's setup to the next account.
    */
   | 'preauth';
 
