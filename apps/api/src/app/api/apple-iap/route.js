@@ -68,6 +68,12 @@ const PRODUCT_TO_PLAN_TYPE = {
   'novame.plusduo.yearly':  'duo',
 }
 
+function normalizeStoreEnvironment(value) {
+  if (value === 'Sandbox') return 'sandbox'
+  if (value === 'Production') return 'production'
+  return 'unknown'
+}
+
 export async function POST(request) {
   try {
     // A2: let (not const) -- productId/transactionId/originalTransactionId/
@@ -153,6 +159,7 @@ export async function POST(request) {
         { status: 401 }
       )
     }
+    const storeEnvironment = normalizeStoreEnvironment(verifiedTxn.environment)
     const EXPECTED_BUNDLE_ID = 'com.novame.app'
     if (verifiedTxn.bundleId && verifiedTxn.bundleId !== EXPECTED_BUNDLE_ID) {
       console.warn('[apple-iap] rejected: bundleId mismatch', verifiedTxn.bundleId)
@@ -167,7 +174,12 @@ export async function POST(request) {
     if (verifiedTxn.appAccountToken && String(verifiedTxn.appAccountToken).toLowerCase() !== String(userId).toLowerCase()) {
       console.warn('[apple-iap] rejected: appAccountToken belongs to another user')
       return NextResponse.json(
-        { success: false, error: 'Purchase belongs to another account' },
+        {
+          success: false,
+          error: 'Purchase belongs to another account',
+          code: 'PURCHASE_ACCOUNT_CONFLICT',
+          storeEnvironment,
+        },
         { status: 409 }
       )
     }
@@ -221,9 +233,25 @@ export async function POST(request) {
       const conflict = applied?.error === 'credential_owned_by_another_user'
       console.warn('[apple-iap] subscription rejected:', applied?.error)
       return NextResponse.json(
-        { success: false, error: conflict ? 'Purchase belongs to another account' : 'Failed to activate subscription' },
+        {
+          success: false,
+          error: conflict ? 'Purchase belongs to another account' : 'Failed to activate subscription',
+          ...(conflict ? { code: 'PURCHASE_ACCOUNT_CONFLICT', storeEnvironment } : {}),
+        },
         { status: conflict ? 409 : 500 }
       )
+    }
+
+    // Environment is diagnostic metadata, not an entitlement input. Keep the
+    // atomic subscription RPC backward-compatible, then persist the verified
+    // JWS environment separately. This remains non-fatal during a rolling
+    // deploy if the migration has not reached Supabase yet.
+    const { error: environmentErr } = await supabase
+      .from('subscriptions')
+      .update({ store_environment: storeEnvironment })
+      .eq('user_id', userId)
+    if (environmentErr) {
+      console.warn('[apple-iap] store environment persistence failed (non-fatal):', environmentErr.message)
     }
 
     // Duo: ensure the owner has a duo_membership row with a one-time invite
@@ -253,13 +281,14 @@ export async function POST(request) {
       }
     }
 
-    console.log(`[apple-iap] Activated ${tier} (${billingCycle}) for user ${userId} — txn=${transactionId}`)
+    console.log(`[apple-iap] Activated ${tier} (${billingCycle}, ${storeEnvironment}) for user ${userId} — txn=${transactionId}`)
 
     return NextResponse.json({
       success: true,
       tier,
       billingCycle,
       periodEnd,
+      storeEnvironment,
     })
   } catch (error) {
     console.error('[apple-iap] Error:', error)

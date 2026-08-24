@@ -45,6 +45,7 @@ import {
   presentCodeRedemptionSheetIOS,
   purchaseUpdatedListener,
   purchaseErrorListener,
+  createPurchaseError,
   ErrorCode,
   type Purchase,
   type ExpoPurchaseError as PurchaseError,
@@ -52,6 +53,7 @@ import {
 } from 'expo-iap';
 
 import { apiClient } from './api';
+import { ApiError } from '@novame/api-client';
 import { clearQuotaExhausted } from './quota-flag';
 import { refreshMeStats } from './me-stats';
 import { supabase } from './supabase';
@@ -181,6 +183,75 @@ type PurchaseErrorCallback = (error: PurchaseError) => void;
 
 const completeCallbacks = new Set<PurchaseCompleteCallback>();
 const errorCallbacks = new Set<PurchaseErrorCallback>();
+let pendingOwnershipError: PurchaseError | null = null;
+
+type StoreEnvironment = 'sandbox' | 'production' | 'unknown';
+
+type PurchaseOwnershipConflict = {
+  storeEnvironment: StoreEnvironment;
+  message: string;
+};
+
+function purchaseOwnershipConflict(error: unknown): PurchaseOwnershipConflict | null {
+  if (!(error instanceof ApiError) || error.status !== 409) return null;
+  const body = error.body && typeof error.body === 'object'
+    ? error.body as { code?: unknown; error?: unknown; storeEnvironment?: unknown }
+    : null;
+  const isOwnershipConflict = body?.code === 'PURCHASE_ACCOUNT_CONFLICT'
+    || body?.error === 'Purchase belongs to another account';
+  if (!isOwnershipConflict) return null;
+
+  const storeEnvironment: StoreEnvironment = body?.storeEnvironment === 'sandbox'
+    ? 'sandbox'
+    : body?.storeEnvironment === 'production'
+      ? 'production'
+      : 'unknown';
+  const message = storeEnvironment === 'sandbox'
+    ? 'This Sandbox purchase is linked to another Burrow test account. Clear Purchase History in Settings > Developer > Sandbox Apple Account > Manage, sign out and back in, then try again.'
+    : 'This purchase is linked to another Burrow account. Sign in to the Burrow account that originally purchased it, then restore purchases.';
+  return { storeEnvironment, message };
+}
+
+async function finishOwnershipConflict(
+  purchase: Purchase,
+  conflict: PurchaseOwnershipConflict,
+): Promise<void> {
+  try {
+    // A verified transaction rejected for account ownership is a permanent
+    // business failure for the CURRENT app account, not a transient upload
+    // failure. Finishing removes it from StoreKit's update queue so it does
+    // not POST 409 on every launch. The underlying entitlement remains
+    // restorable after the user signs into the correct Burrow account.
+    await finishTransaction({ purchase, isConsumable: false });
+    console.warn(
+      '[iap] finished account-conflict transaction:',
+      String(purchase.id),
+      conflict.storeEnvironment,
+    );
+  } catch (finishError) {
+    console.warn('[iap] could not finish account-conflict transaction:', finishError);
+  }
+}
+
+function notifyOwnershipConflict(
+  conflict: PurchaseOwnershipConflict,
+  productId: string,
+): void {
+  const error = createPurchaseError({
+    code: ErrorCode.PurchaseVerificationFailed,
+    message: conflict.message,
+    productId,
+    platform: Platform.OS === 'ios' ? 'ios' : 'android',
+  });
+  if (errorCallbacks.size === 0) {
+    // Queue one actionable error when cold-start recovery detects the conflict
+    // before a paywall/onboarding listener exists. It is delivered once when
+    // the user next opens a purchase surface, rather than interrupting Home.
+    pendingOwnershipError = error;
+    return;
+  }
+  handlePurchaseError(error);
+}
 
 export function onPurchaseComplete(
   cb: PurchaseCompleteCallback,
@@ -195,6 +266,11 @@ export function onPurchaseError(
   cb: PurchaseErrorCallback,
 ): () => void {
   errorCallbacks.add(cb);
+  if (pendingOwnershipError) {
+    const pending = pendingOwnershipError;
+    pendingOwnershipError = null;
+    cb(pending);
+  }
   return () => {
     errorCallbacks.delete(cb);
   };
@@ -247,6 +323,12 @@ export async function initIAP(): Promise<void> {
           console.log('[iap] recovered transaction', txnId, purchase.productId);
         } catch (e) {
           console.warn('[iap] recovery failed for', txnId, e);
+          const conflict = purchaseOwnershipConflict(e);
+          if (conflict) {
+            await finishOwnershipConflict(purchase, conflict);
+            notifyOwnershipConflict(conflict, purchase.productId);
+            continue;
+          }
           // Stage 6 fix: distinguish INFRASTRUCTURE failures (no
           // session / network down / supabase unavailable) from
           // BUSINESS failures (server rejected the transaction).
@@ -560,6 +642,7 @@ export async function purchaseSubscription(
 export async function restoreSubscriptions(): Promise<{
   restored: boolean;
   tier?: PricingTierKey;
+  ownershipConflict?: PurchaseOwnershipConflict;
 }> {
   if (!initialized) {
     try {
@@ -578,6 +661,7 @@ export async function restoreSubscriptions(): Promise<{
     }
 
     let highestTier: PricingTierKey | undefined;
+    let ownershipConflict: PurchaseOwnershipConflict | undefined;
     for (const purchase of purchases) {
       const productId = purchase.productId;
       const entitlement = getPurchaseEntitlement(purchase);
@@ -585,6 +669,12 @@ export async function restoreSubscriptions(): Promise<{
       try {
         await uploadPurchaseToServer(purchase);
       } catch (e) {
+        const conflict = purchaseOwnershipConflict(e);
+        if (conflict) {
+          ownershipConflict ??= conflict;
+          await finishOwnershipConflict(purchase, conflict);
+          continue;
+        }
         console.warn('[iap] restore upload failed for', productId, e);
         continue;
       }
@@ -600,7 +690,7 @@ export async function restoreSubscriptions(): Promise<{
       await refreshSubscriptionCache();
       return { restored: true, tier: highestTier };
     }
-    return { restored: false };
+    return { restored: false, ownershipConflict };
   } catch (e) {
     console.warn('[iap] restoreSubscriptions failed:', e);
     return { restored: false };
@@ -644,6 +734,12 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     await uploadPurchaseToServer(purchase);
   } catch (e) {
     console.error('[iap] server upload failed:', e);
+    const conflict = purchaseOwnershipConflict(e);
+    if (conflict) {
+      await finishOwnershipConflict(purchase, conflict);
+      notifyOwnershipConflict(conflict, productId);
+      return;
+    }
     // Don't finish the transaction -- StoreKit replays it on next
     // launch and we can retry the upload then. Also remove from the
     // dedup set so a future retry can attempt again.
@@ -738,6 +834,7 @@ type AppleIapResponse = {
   tier?: PricingTierKey;
   billingCycle?: string;
   periodEnd?: string;
+  storeEnvironment?: StoreEnvironment;
   error?: string;
 };
 

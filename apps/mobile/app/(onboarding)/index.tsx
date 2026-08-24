@@ -29,6 +29,8 @@ import { reportOnboardingChoices, updateDisplayName } from '../../src/lib/accoun
 import {
   fetchSubscriptionProducts,
   initIAP,
+  onPurchaseComplete,
+  onPurchaseError,
   purchaseSubscription,
 } from '../../src/lib/iap';
 
@@ -135,6 +137,26 @@ export default function OnboardingScreen() {
   const [compareAt, setCompareAt] = useState<string | null>(null);
   const pricesFetched = useRef(false);
 
+  useEffect(() => {
+    const offComplete = onPurchaseComplete(() => {
+      setPurchasing(false);
+      setPurchased(true);
+      setIdx(FLOW.indexOf('name'));
+    });
+    const offError = onPurchaseError((error) => {
+      setPurchasing(false);
+      setPurchased(false);
+      appAlert(
+        'Purchase didn’t go through',
+        error.message || 'You can subscribe anytime from the app.',
+      );
+    });
+    return () => {
+      offComplete();
+      offError();
+    };
+  }, []);
+
 
   const step: Step = useMemo(
     () => (idx >= FLOW.length ? 'connect' : FLOW[idx]),
@@ -190,9 +212,14 @@ export default function OnboardingScreen() {
       const outcome = await purchaseSubscription(
         plan === 'yearly' ? 'novame.plus.yearly' : 'novame.plus.monthly',
       );
-      if (outcome.kind === 'completed' || outcome.kind === 'scheduled') {
-        setPurchased(true);
+      if (outcome.kind === 'cancelled') {
+        setPurchasing(false);
+      } else if (outcome.kind === 'scheduled') {
+        setPurchasing(false);
+        setIdx(FLOW.indexOf('name'));
       }
+      // A completed StoreKit sheet is not enough to grant Plus. The global
+      // listener above advances only after the API verifies and records it.
     } catch (e) {
       // Surface the underlying StoreKit reason — a silent catch made
       // failures undiagnosable (2026-08-07).
@@ -202,9 +229,7 @@ export default function OnboardingScreen() {
         'Purchase didn’t go through',
         `You can subscribe anytime from the app.\n\n(${detail})`,
       );
-    } finally {
       setPurchasing(false);
-      setIdx(FLOW.indexOf('name'));
     }
   }
 
@@ -607,7 +632,7 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.planTitle}>12 Months</Text>
                 <Text style={styles.planPrice}>
-                  <Text style={styles.planStrike}>{compareAt ?? '$119.98'}</Text>
+                  <Text style={styles.planStrike}>{compareAt ?? '$83.88'}</Text>
                   {'  '}
                   {priceYearly ?? '$69.99'} ({perMonth ?? '$5.83'}/month)
                 </Text>

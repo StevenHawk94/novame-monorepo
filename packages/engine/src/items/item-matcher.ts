@@ -137,10 +137,25 @@ function sourceSentence(text: string, offset: number): string {
     before.lastIndexOf('!'),
     before.lastIndexOf('?'),
     before.lastIndexOf('\n'),
+    before.lastIndexOf(','),
   );
-  const rightCandidates = [after.indexOf('.'), after.indexOf('!'), after.indexOf('?'), after.indexOf('\n')]
-    .filter((value) => value >= 0);
-  const rightBoundary = rightCandidates.length > 0 ? Math.min(...rightCandidates) + 1 : after.length;
+  const rightCandidates = [
+    { index: after.indexOf('.'), includeBoundary: true },
+    { index: after.indexOf('!'), includeBoundary: true },
+    { index: after.indexOf('?'), includeBoundary: true },
+    { index: after.indexOf('\n'), includeBoundary: false },
+    { index: after.indexOf(','), includeBoundary: false },
+  ].filter((candidate) => candidate.index >= 0);
+  const nearestRight = rightCandidates.reduce<{
+    index: number;
+    includeBoundary: boolean;
+  } | null>(
+    (nearest, candidate) => (!nearest || candidate.index < nearest.index ? candidate : nearest),
+    null,
+  );
+  const rightBoundary = nearestRight
+    ? nearestRight.index + (nearestRight.includeBoundary ? 1 : 0)
+    : after.length;
   return text.slice(leftBoundary + 1, offset + rightBoundary).trim().slice(0, 500);
 }
 

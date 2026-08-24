@@ -184,6 +184,8 @@ export default function SubscriptionPaywallModal() {
             },
           },
         ]);
+      } else if (result.ownershipConflict) {
+        appAlert('Purchase Linked to Another Account', result.ownershipConflict.message);
       } else {
         appAlert(
           'Nothing to Restore',
@@ -299,7 +301,7 @@ export default function SubscriptionPaywallModal() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.planTitle}>12 Months</Text>
                 <Text style={styles.planPrice}>
-                  <Text style={styles.planStrike}>{compareAt ?? '$119.98'}</Text>
+                  <Text style={styles.planStrike}>{compareAt ?? '$83.88'}</Text>
                   {'  '}
                   {priceYearly ?? '$69.99'} ({perMonth ?? '$5.83'}/month)
                 </Text>

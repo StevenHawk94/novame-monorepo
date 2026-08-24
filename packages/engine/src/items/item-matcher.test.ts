@@ -137,6 +137,14 @@ describe('matchItems: source excerpts', () => {
     const [match] = matchItems('Coffee helped. Later I bought coffee.', DICT);
     expect(match.sourceExcerpt).toBe('Coffee helped.');
   });
+
+  it('uses comma-separated clauses without saving the comma', () => {
+    const matches = matchItems('I made coffee, then reading a book helped.', DICT);
+    expect(matches.find((match) => match.itemId === 'food.coffee')?.sourceExcerpt)
+      .toBe('I made coffee');
+    expect(matches.find((match) => match.itemId === 'object.book')?.sourceExcerpt)
+      .toBe('then reading a book helped.');
+  });
 });
 
 describe('matchItems: tokenization', () => {

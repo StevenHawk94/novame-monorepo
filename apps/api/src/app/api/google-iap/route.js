@@ -275,6 +275,14 @@ export async function POST(request) {
       )
     }
 
+    const { error: environmentErr } = await supabase
+      .from('subscriptions')
+      .update({ store_environment: 'production' })
+      .eq('user_id', userId)
+    if (environmentErr) {
+      console.warn('[google-iap] store environment persistence failed (non-fatal):', environmentErr.message)
+    }
+
     // The mobile finishTransaction path also acknowledges, but the backend is
     // authoritative and covers restores/out-of-app completion. Only PURCHASED
     // subscriptions are acknowledged; retries are safe and idempotent.

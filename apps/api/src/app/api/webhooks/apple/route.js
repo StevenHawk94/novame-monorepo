@@ -358,7 +358,20 @@ async function handleActive(supabase, txn) {
   if (applyErr) throw new Error(`atomic subscription apply failed: ${applyErr.message}`)
   if (!applied?.success) throw new Error(`subscription apply rejected: ${applied?.error || 'unknown'}`)
 
-  console.log(`[Apple webhook] Activated ${tier} for user ${userId} until ${expiresDate}`)
+  const storeEnvironment = txn.environment === 'Sandbox'
+    ? 'sandbox'
+    : txn.environment === 'Production'
+      ? 'production'
+      : 'unknown'
+  const { error: environmentErr } = await supabase
+    .from('subscriptions')
+    .update({ store_environment: storeEnvironment })
+    .eq('user_id', userId)
+  if (environmentErr) {
+    console.warn('[Apple webhook] store environment persistence failed (non-fatal):', environmentErr.message)
+  }
+
+  console.log(`[Apple webhook] Activated ${tier} (${storeEnvironment}) for user ${userId} until ${expiresDate}`)
 }
 
 /**
