@@ -270,7 +270,7 @@ export async function POST(request) {
       const applyDescriptions = async (descriptions) => {
         for (const target of targets) {
           const description = typeof descriptions?.[target.itemId] === 'string'
-            ? descriptions[target.itemId].trim().slice(0, 200) : ''
+            ? descriptions[target.itemId].trim().slice(0, 500) : ''
           if (!description) continue
           await supabase.from('item_memories').update({ refined_desc: description })
             .eq('user_id', userId).eq('reflect_id', reflectId).eq('item_id', target.itemId)
@@ -294,11 +294,14 @@ export async function POST(request) {
         }
 
         const analyzerPromise = runReflectAnalyzer({
+          reflectId,
           journal: body,
           matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
           weeklyEligible: body.trim().length >= 100,
           connectionEnabled: analyzerContext.connectionEnabled,
           currentConnectionBoard: analyzerContext.connectionEnabled ? analyzerContext.currentBoard : null,
+          writerRecentEvidence: analyzerContext.writerRecentEvidence,
+          readerRecentEvidence: analyzerContext.readerRecentEvidence,
         })
         const copyPromise = runReflectCopy({
           journal: body,

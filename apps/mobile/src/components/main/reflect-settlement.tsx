@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,11 +13,14 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { appAlert } from '@/components/ui/app-dialog';
+import { CloverBurst } from '@/components/main/clover-burst';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { OffsetCard } from '@/components/ui/offset-card';
+import { SpringPop } from '@/components/ui/spring-pop';
 import { haptics } from '@/lib/haptics';
 import {
   enrichReflectDraft,
@@ -54,7 +60,14 @@ export function MatchedItemsReviewSheet({
             </Pressable>
           ))}
         </ScrollView>
-        <OffsetCard color="#CBBDAA" offset={4} radius={22} onPress={onDone} cardStyle={styles.brownButton}>
+        <OffsetCard
+          color="#CBBDAA"
+          offset={4}
+          radius={22}
+          onPress={onDone}
+          style={styles.brownButtonWrap}
+          cardStyle={styles.brownButton}
+        >
           <Text style={styles.brownButtonText}>Confirm</Text>
         </OffsetCard>
       </View>
@@ -77,6 +90,7 @@ export function MemoryEditorSheet({
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const byId = useMemo(() => new Map(memories.map((memory) => [memory.itemId, memory])), [memories]);
   const update = (itemId: string, patch: Partial<ReflectMemoryDraft>) => {
     onChange(memories.map((memory) => memory.itemId === itemId ? { ...memory, ...patch } : memory));
@@ -91,64 +105,80 @@ export function MemoryEditorSheet({
   };
 
   return (
-    <KeyboardDismissView style={styles.overlay}>
-      <View style={styles.editorFrame}>
-        <View style={styles.editorCard}>
-          <View style={styles.editorHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.editorTitle}>{items.length} {items.length === 1 ? 'Item' : 'Items'}</Text>
-              <Text style={styles.editorSub}>
-                Items with memories will be saved to your hub. Tap to edit.
-              </Text>
-            </View>
-            {!isPaid && memories.some((memory) => !memory.text.trim()) && items.some((item) => item.sourceExcerpt?.trim()) && (
-              <Pressable onPress={useWords} style={styles.useWordsButton}>
-                <Text style={styles.useWordsText}>Use My Words</Text>
-              </Pressable>
-            )}
-          </View>
-          <ScrollView
-            style={{ flexShrink: 1 }}
-            contentContainerStyle={styles.editorRows}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {items.map((item) => {
-              const memory = byId.get(item.itemId)!;
-              return (
-                <View key={item.itemId} style={styles.editorRow}>
-                  <ItemSprite itemId={item.itemId} size={58} radius={14} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.editorName}>{item.displayName}</Text>
-                    <TextInput
-                      value={memory.text}
-                      placeholder="Type here"
-                      placeholderTextColor="#B7AEA6"
-                      multiline
-                      style={styles.editorInput}
-                      onChangeText={(text) => update(item.itemId, { text: text.slice(0, 500), source: 'manual' })}
-                    />
-                  </View>
-                  {!shared && (
-                    <Pressable
-                      onPress={() => { void haptics.light(); update(item.itemId, { visible: !memory.visible }); }}
-                      style={[styles.toggle, memory.visible ? styles.toggleOn : styles.toggleOff]}
-                    >
-                      <Text style={styles.toggleText}>{memory.visible ? 'ON' : 'OFF'}</Text>
-                      <View style={styles.toggleKnob} />
-                    </Pressable>
-                  )}
+    <Modal
+      transparent
+      animationType="fade"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onDone}
+    >
+      <KeyboardAvoidingView style={styles.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <KeyboardDismissView
+          style={[
+            styles.fullScreenOverlay,
+            { paddingTop: Math.max(insets.top, 8) + 8, paddingBottom: Math.max(insets.bottom, 8) + 8 },
+          ]}
+        >
+          <View style={styles.editorFrame}>
+            <View style={styles.editorCard}>
+              <View style={styles.editorHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.editorTitle}>{items.length} {items.length === 1 ? 'Item' : 'Items'}</Text>
+                  <Text style={styles.editorSub}>
+                    Items with memories will be saved to your hub. Tap to edit.
+                  </Text>
                 </View>
-              );
-            })}
-          </ScrollView>
-          <OffsetCard color={RC.yellowDrop} offset={4} radius={22} onPress={onDone} cardStyle={styles.doneButton}>
-            <Text style={styles.doneText}>Done</Text>
-          </OffsetCard>
-          {!shared && <Text style={styles.editorFoot}>Turn off the toggle if you don’t want the memory seen by your paired.</Text>}
-        </View>
-      </View>
-    </KeyboardDismissView>
+                {!isPaid && memories.some((memory) => !memory.text.trim()) && items.some((item) => item.sourceExcerpt?.trim()) && (
+                  <Pressable onPress={useWords} style={styles.useWordsButton}>
+                    <Text style={styles.useWordsText}>Use My Words</Text>
+                  </Pressable>
+                )}
+              </View>
+              <ScrollView
+                style={styles.editorScroll}
+                contentContainerStyle={styles.editorRows}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {items.map((item) => {
+                  const memory = byId.get(item.itemId)!;
+                  return (
+                    <View key={item.itemId} style={styles.editorRow}>
+                      <ItemSprite itemId={item.itemId} size={54} radius={13} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.editorName}>{item.displayName}</Text>
+                        <TextInput
+                          value={memory.text}
+                          placeholder="Type here"
+                          placeholderTextColor="#B7AEA6"
+                          multiline
+                          style={styles.editorInput}
+                          onChangeText={(text) => update(item.itemId, { text: text.slice(0, 500), source: 'manual' })}
+                        />
+                      </View>
+                      {!shared && (
+                        <Pressable
+                          onPress={() => { void haptics.light(); update(item.itemId, { visible: !memory.visible }); }}
+                          style={[styles.toggle, memory.visible ? styles.toggleOn : styles.toggleOff]}
+                        >
+                          <Text style={styles.toggleText}>{memory.visible ? 'ON' : 'OFF'}</Text>
+                          <View style={styles.toggleKnob} />
+                        </Pressable>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+              <OffsetCard color={RC.yellowDrop} offset={4} radius={22} onPress={onDone} cardStyle={styles.doneButton}>
+                <Text style={styles.doneText}>Done</Text>
+              </OffsetCard>
+              {!shared && <Text style={styles.editorFoot}>Turn off the toggle if you don’t want the memory seen by your paired.</Text>}
+            </View>
+          </View>
+        </KeyboardDismissView>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -163,6 +193,7 @@ function ShareItemsSheet({
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const hidden = new Set(memories.filter((memory) => !memory.visible).map((memory) => memory.itemId));
   const toggle = (itemId: string) => {
     void haptics.light();
@@ -171,38 +202,65 @@ function ShareItemsSheet({
       : memory));
   };
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modalCard}>
-        <Text style={styles.reviewTitle}>Click to select the items you don’t{`\n`}want your person to see.</Text>
-        <ScrollView contentContainerStyle={styles.itemGrid} showsVerticalScrollIndicator={false}>
-          {items.map((item) => (
-            <Pressable
-              key={item.itemId}
-              onPress={() => toggle(item.itemId)}
-              style={[styles.reviewItem, hidden.has(item.itemId) && styles.hiddenItem]}
-            >
-              <ItemSprite itemId={item.itemId} size={58} radius={14} />
-              {hidden.has(item.itemId) && (
-                <MaterialIcons name="visibility-off" size={18} color="#FFFFFF" style={styles.removeBadge} />
-              )}
-            </Pressable>
-          ))}
-        </ScrollView>
-        <Pressable
-          onPress={() => onChange(memories.map((memory) => ({
-            ...memory,
-            visible: hidden.size === items.length,
-          })))}
-          style={styles.selectAllRow}
+    <Modal
+      transparent
+      animationType="fade"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onDone}
+    >
+      <View style={styles.modalRoot}>
+        <View
+          style={[
+            styles.fullScreenOverlay,
+            { paddingTop: Math.max(insets.top, 8) + 8, paddingBottom: Math.max(insets.bottom, 8) + 8 },
+          ]}
         >
-          <MaterialIcons name={hidden.size === items.length ? 'check-box' : 'check-box-outline-blank'} size={28} color="#5A351B" />
-          <Text style={styles.selectAllText}>{hidden.size === items.length ? 'Show All' : 'Hide All'}</Text>
-        </Pressable>
-        <OffsetCard color="#CBBDAA" offset={4} radius={22} onPress={onDone} cardStyle={styles.brownButton}>
-          <Text style={styles.brownButtonText}>Confirm</Text>
-        </OffsetCard>
+          <View style={styles.shareModalCard}>
+            <Text style={styles.shareReviewTitle}>Click to select the items you don’t{`\n`}want your person to see.</Text>
+            <ScrollView
+              style={styles.shareItemsScroll}
+              contentContainerStyle={styles.shareItemGrid}
+              showsVerticalScrollIndicator={false}
+            >
+              {items.map((item) => (
+                <Pressable
+                  key={item.itemId}
+                  onPress={() => toggle(item.itemId)}
+                  style={[styles.shareReviewItem, hidden.has(item.itemId) && styles.hiddenItem]}
+                >
+                  <ItemSprite itemId={item.itemId} size={52} radius={13} />
+                  {hidden.has(item.itemId) && (
+                    <MaterialIcons name="visibility-off" size={17} color="#FFFFFF" style={styles.removeBadge} />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Pressable
+              onPress={() => onChange(memories.map((memory) => ({
+                ...memory,
+                visible: hidden.size === items.length,
+              })))}
+              style={styles.selectAllRow}
+            >
+              <MaterialIcons name={hidden.size === items.length ? 'check-box' : 'check-box-outline-blank'} size={25} color="#5A351B" />
+              <Text style={styles.selectAllText}>{hidden.size === items.length ? 'Show All' : 'Hide All'}</Text>
+            </Pressable>
+            <OffsetCard
+              color="#CBBDAA"
+              offset={4}
+              radius={20}
+              onPress={onDone}
+              style={styles.brownButtonWrap}
+              cardStyle={styles.brownButton}
+            >
+              <Text style={styles.brownButtonText}>Confirm</Text>
+            </OffsetCard>
+          </View>
+        </View>
       </View>
-    </View>
+    </Modal>
   );
 }
 
@@ -234,11 +292,7 @@ export function ReflectSettlementView({
   const [saving, setSaving] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [rewardToast, setRewardToast] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setRewardToast(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+  const handleRewardDone = useCallback(() => setRewardToast(false), []);
 
   useEffect(() => {
     if (!isPaid || enriched.current) return;
@@ -296,23 +350,25 @@ export function ReflectSettlementView({
         <Text style={styles.savedTitle}>REFLECTION SAVED</Text>
         <Text style={styles.savedSub}>Your full reflection is private in My Logs.</Text>
 
-        <Pressable onPress={() => { void haptics.pageOpen(); setEditorOpen(true); }} style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>{draft.matchedItems.length} Items {itemWord}</Text>
-          <Text style={styles.summarySub}>
-            {enriching
-              ? 'Creating memories…'
-              : isPaid && allCreated
-                ? 'All memories are created. Click here to edit.'
-                : savedCount > 0
-                  ? `${savedCount} will be saved to your memories hub. Click here to edit.`
-                  : 'Click here to add memories.'}
-          </Text>
-          <View style={styles.summaryItems}>
-            {draft.matchedItems.map((item) => (
-              <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} />
-            ))}
-          </View>
-        </Pressable>
+        <SpringPop boundedBounce>
+          <Pressable onPress={() => { void haptics.pageOpen(); setEditorOpen(true); }} style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>{draft.matchedItems.length} Items {itemWord}</Text>
+            <Text style={styles.summarySub}>
+              {enriching
+                ? 'Creating memories…'
+                : isPaid && allCreated
+                  ? 'All memories are created. Click here to edit.'
+                  : savedCount > 0
+                    ? `${savedCount} will be saved to your memories hub. Click here to edit.`
+                    : 'Click here to add memories.'}
+            </Text>
+            <View style={styles.summaryItems}>
+              {draft.matchedItems.map((item) => (
+                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} />
+              ))}
+            </View>
+          </Pressable>
+        </SpringPop>
 
         {!shared && (
           <Pressable onPress={() => { void haptics.pageOpen(); setShareOpen(true); }} style={styles.shareCard}>
@@ -348,8 +404,8 @@ export function ReflectSettlementView({
       </View>
 
       {rewardToast && (
-        <View pointerEvents="none" style={styles.rewardToast}>
-          <Text style={styles.rewardToastText}>🍀 +30 Clovers</Text>
+        <View pointerEvents="none" style={styles.rewardBurst}>
+          <CloverBurst amount={30} onDone={handleRewardDone} />
         </View>
       )}
       {editorOpen && (
@@ -379,26 +435,41 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, zIndex: 40, backgroundColor: 'rgba(25,18,16,0.58)',
     alignItems: 'center', justifyContent: 'center', padding: 18,
   },
+  modalRoot: { flex: 1 },
+  fullScreenOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(25,18,16,0.64)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
   modalCard: { width: '100%', maxHeight: '82%', backgroundColor: '#FFF7E7', borderRadius: 30, padding: 22 },
   reviewTitle: { fontSize: 24, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', color: '#161311', marginVertical: 22 },
   itemGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, paddingVertical: 16 },
   reviewItem: { position: 'relative', borderRadius: 16, backgroundColor: '#B27A4C', padding: 5 },
   hiddenItem: { backgroundColor: '#7B4B37', opacity: 0.72 },
   removeBadge: { position: 'absolute', right: 2, top: 2, borderRadius: 10, backgroundColor: '#8B3D2E', padding: 2 },
-  brownButton: { backgroundColor: '#84503E', alignItems: 'center', paddingVertical: 17, marginTop: 18 },
-  brownButtonText: { color: '#FFFFFF', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
-  selectAllRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 14 },
-  selectAllText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#1E1712' },
-  editorFrame: { backgroundColor: RC.yellow, borderRadius: 30, padding: 10, width: '100%', maxHeight: '91%' },
-  editorCard: { backgroundColor: '#FDF9F1', borderRadius: 22, padding: 16, flexShrink: 1 },
+  brownButtonWrap: { marginTop: 16 },
+  brownButton: { backgroundColor: '#84503E', alignItems: 'center', paddingVertical: 15 },
+  brownButtonText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
+  selectAllRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 13 },
+  selectAllText: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#1E1712' },
+  shareModalCard: { width: '100%', maxWidth: 500, maxHeight: '88%', backgroundColor: '#FFF7E7', borderRadius: 28, padding: 20 },
+  shareReviewTitle: { fontSize: 20, lineHeight: 27, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', color: '#161311', marginTop: 6, marginBottom: 14 },
+  shareItemsScroll: { flexShrink: 1 },
+  shareItemGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingVertical: 12 },
+  shareReviewItem: { position: 'relative', borderRadius: 15, backgroundColor: '#B27A4C', padding: 4 },
+  editorFrame: { backgroundColor: RC.yellow, borderRadius: 30, padding: 9, width: '100%', maxWidth: 520, flex: 1 },
+  editorCard: { backgroundColor: '#FDF9F1', borderRadius: 22, padding: 15, flex: 1 },
   editorHeader: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 14 },
-  editorTitle: { fontSize: 27, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  editorTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   editorSub: { fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: '#3A2E1A', marginTop: 3 },
-  useWordsButton: { backgroundColor: '#54351E', borderRadius: 18, paddingHorizontal: 13, paddingVertical: 11 },
-  useWordsText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
-  editorRows: { gap: 12, paddingBottom: 12 },
-  editorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: '#D8BCA8', borderRadius: 18, padding: 11, backgroundColor: '#FFFFFF' },
-  editorName: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
+  useWordsButton: { backgroundColor: '#54351E', borderRadius: 17, paddingHorizontal: 12, paddingVertical: 10 },
+  useWordsText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' },
+  editorScroll: { flex: 1 },
+  editorRows: { gap: 10, paddingBottom: 12 },
+  editorRow: { flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: 1.5, borderColor: '#D8BCA8', borderRadius: 18, padding: 10, backgroundColor: '#FFFFFF' },
+  editorName: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   editorInput: { minHeight: 34, fontSize: 14, lineHeight: 19, fontFamily: 'Inter_500Medium', color: '#2A2118', padding: 0, paddingTop: 4 },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 18, padding: 5 },
   toggleOn: { backgroundColor: '#FF8A47' },
@@ -429,6 +500,5 @@ const styles = StyleSheet.create({
   joinText: { color: '#633A21', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
   finishButton: { backgroundColor: '#FF8A47', alignItems: 'center', paddingVertical: 16 },
   finishText: { color: '#FFFFFF', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
-  rewardToast: { position: 'absolute', top: '45%', alignSelf: 'center', backgroundColor: 'rgba(45,35,25,0.92)', borderRadius: 18, paddingHorizontal: 20, paddingVertical: 13, zIndex: 60 },
-  rewardToastText: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
+  rewardBurst: { position: 'absolute', top: '45%', left: 0, right: 0, zIndex: 60, alignItems: 'center' },
 });

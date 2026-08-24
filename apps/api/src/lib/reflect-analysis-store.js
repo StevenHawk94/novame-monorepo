@@ -1,20 +1,11 @@
 import { REFLECT_ANALYZER_VERSION, CONNECTION_DIMENSIONS } from './reflect-ai'
 
 const ACTIVE_WINDOW_MS = 48 * 60 * 60 * 1000
+const BASELINE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
 function detailsMode(profile) {
   return profile?.memory_details_mode
     || (profile?.share_memory_details === false ? 'none' : 'custom')
-}
-
-function mergeUpdates(prior, updates) {
-  const next = { ...(prior || {}) }
-  for (const key of CONNECTION_DIMENSIONS) {
-    const row = updates?.[key]
-    if (row?.hasUpdate && row.text) next[key] = row.text
-    else if (!(key in next)) next[key] = null
-  }
-  return next
 }
 
 export async function loadReflectAnalyzerContext(supabase, {
@@ -31,11 +22,20 @@ export async function loadReflectAnalyzerContext(supabase, {
   }
   const partnerId = pairing.partner_user_id
   const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
-  const [{ data: reader }, { data: cached }] = await Promise.all([
+  const baselineSince = new Date(Date.now() - BASELINE_WINDOW_MS).toISOString()
+  const [{ data: reader }, { data: cached }, { data: writerEvidence }, { data: readerEvidence }] = await Promise.all([
     supabase.from('profiles').select('last_active_at').eq('id', partnerId).maybeSingle(),
     supabase.from('connection_insights').select('payload')
       .eq('user_a', ua).eq('user_b', ub).eq('for_user', partnerId)
       .order('for_date', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('reflect_ai_analyses')
+      .select('reflect_id, local_date, weekly_evidence, created_at')
+      .eq('user_id', userId).eq('status', 'completed').gte('created_at', baselineSince)
+      .order('created_at', { ascending: false }).limit(30),
+    supabase.from('reflect_ai_analyses')
+      .select('reflect_id, local_date, weekly_evidence, created_at')
+      .eq('user_id', partnerId).eq('status', 'completed').gte('created_at', baselineSince)
+      .order('created_at', { ascending: false }).limit(30),
   ])
   const privacyAllows = detailsMode(writerProfile) !== 'none' && visibleToFriend !== false
   const activeAt = reader?.last_active_at ? new Date(reader.last_active_at).getTime() : 0
@@ -44,7 +44,32 @@ export async function loadReflectAnalyzerContext(supabase, {
     connectionEligible: privacyAllows,
     connectionEnabled: privacyAllows && readerActive,
     currentBoard: cached?.payload || null,
+    writerRecentEvidence: writerEvidence || [],
+    readerRecentEvidence: readerEvidence || [],
     pair: { ua, ub, writerId: userId, readerId: partnerId, localDate },
+  }
+}
+
+export async function applyConnectionUpdates(supabase, {
+  pair, updates, reflectId, localDate,
+}) {
+  if (!pair || !updates) return { changed: false, payload: null }
+  const hasAnyUpdate = CONNECTION_DIMENSIONS.some((key) => (
+    updates[key]?.hasUpdate && Array.isArray(updates[key]?.cards) && updates[key].cards.length > 0
+  ))
+  if (!hasAnyUpdate) return { changed: false, payload: null }
+  const { data, error } = await supabase.rpc('apply_connection_insight_updates_v2', {
+    p_user_a: pair.ua,
+    p_user_b: pair.ub,
+    p_for_user: pair.readerId,
+    p_for_date: localDate,
+    p_reflect_id: reflectId,
+    p_updates: updates,
+  })
+  if (error) throw error
+  return {
+    changed: data?.changed === true,
+    payload: data?.payload || null,
   }
 }
 
@@ -52,13 +77,11 @@ export async function persistReflectAnalyzerResult(supabase, {
   reflectId, userId, localDate, reflectsToday, analyzer, context, matchedItems,
 }) {
   const updates = analyzer.data.connectionUpdates
-  let connectionMode = !context.connectionEligible
+  const connectionMode = !context.connectionEligible
     ? 'disabled'
     : !context.connectionEnabled
       ? 'inactive'
-      : reflectsToday <= 1
-        ? 'immediate'
-        : 'deferred'
+      : 'immediate'
 
   const analysisRow = {
     reflect_id: reflectId,
@@ -93,54 +116,15 @@ export async function persistReflectAnalyzerResult(supabase, {
   }
 
   if (!context.pair || !updates) return
-  const hasAnyUpdate = CONNECTION_DIMENSIONS.some((key) => updates[key]?.hasUpdate && updates[key]?.text)
-  if (!hasAnyUpdate) return
-  const { ua, ub, writerId, readerId } = context.pair
-
   if (connectionMode === 'immediate') {
-    const payload = mergeUpdates(context.currentBoard, updates)
-    await supabase.from('connection_insights').upsert({
-      user_a: ua,
-      user_b: ub,
-      for_date: localDate,
-      for_user: readerId,
-      payload,
-      created_at: new Date().toISOString(),
-    }, { onConflict: 'user_a,user_b,for_date,for_user' })
-  } else if (connectionMode === 'deferred') {
-    await supabase.from('connection_update_candidates').upsert({
-      reflect_id: reflectId,
-      writer_user_id: writerId,
-      for_user: readerId,
-      user_a: ua,
-      user_b: ub,
-      writer_local_date: localDate,
-      updates,
-      status: 'pending',
-    }, { onConflict: 'reflect_id,for_user' })
+    await applyConnectionUpdates(supabase, {
+      pair: context.pair, updates, reflectId, localDate,
+    })
   }
 }
 
 export function mergeConnectionCandidatePayload(prior, candidateRows) {
-  const best = {}
-  for (const row of candidateRows || []) {
-    for (const key of CONNECTION_DIMENSIONS) {
-      const update = row.updates?.[key]
-      if (!update?.hasUpdate || !update.text) continue
-      const existing = best[key]
-      if (!existing
-        || Number(update.confidence || 0) > Number(existing.update.confidence || 0)
-        || (Number(update.confidence || 0) === Number(existing.update.confidence || 0)
-          && new Date(row.created_at) > new Date(existing.createdAt))) {
-        best[key] = { update, createdAt: row.created_at }
-      }
-    }
-  }
-  const next = { ...(prior || {}) }
-  for (const key of CONNECTION_DIMENSIONS) {
-    if (best[key]) next[key] = best[key].update.text
-    else if (!(key in next)) next[key] = null
-  }
-  return next
+  // Kept for the legacy rollup route until the old candidate table is retired.
+  // v2 writes every active reflection immediately and never queues candidates.
+  return prior || null
 }
-

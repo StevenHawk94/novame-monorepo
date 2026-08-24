@@ -3,7 +3,7 @@ import { storage } from './storage';
 
 /** One backwards-compatible envelope for the two connection analysis pages. */
 interface AnalysisCacheEnvelope {
-  version: 2;
+  version: 3;
   insights?: unknown;
   dashboardDate?: string;
   dashboardFetchedAt?: number;
@@ -12,7 +12,7 @@ interface AnalysisCacheEnvelope {
 }
 
 function empty(): AnalysisCacheEnvelope {
-  return { version: 2 };
+  return { version: 3 };
 }
 
 export function readAnalysisCache(): AnalysisCacheEnvelope {
@@ -20,18 +20,24 @@ export function readAnalysisCache(): AnalysisCacheEnvelope {
   if (!raw) return empty();
   try {
     const parsed = JSON.parse(raw) as AnalysisCacheEnvelope | unknown;
-    if (parsed && typeof parsed === 'object' && (parsed as AnalysisCacheEnvelope).version === 2) {
+    if (parsed && typeof parsed === 'object' && (parsed as AnalysisCacheEnvelope).version === 3) {
       return parsed as AnalysisCacheEnvelope;
     }
-    // v1 stored InsightsResult directly. Preserve it during the migration.
-    return { version: 2, insights: parsed };
+    // The former five-field payload cannot be safely mapped into v2's seven
+    // evidence-backed modules. Drop it and let the server rebuild naturally.
+    return empty();
   } catch {
     return empty();
   }
 }
 
 export function patchAnalysisCache(patch: Partial<AnalysisCacheEnvelope>): void {
-  storage.set(kConnInsights.name, JSON.stringify({ ...readAnalysisCache(), ...patch, version: 2 }));
+  storage.set(kConnInsights.name, JSON.stringify({ ...readAnalysisCache(), ...patch, version: 3 }));
+}
+
+/** Explicit realtime/foreground invalidation; cached content stays paintable. */
+export function invalidateConnectionDashboard(): void {
+  patchAnalysisCache({ dashboardDate: '', dashboardFetchedAt: 0 });
 }
 
 export function localDateKey(now = new Date()): string {

@@ -17,8 +17,19 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+    const now = new Date()
+    const { data: profile } = await supabase.from('profiles')
+      .select('last_active_at, connection_resume_required')
+      .eq('id', verified.id).maybeSingle()
+    const previousActiveAt = profile?.last_active_at
+      ? new Date(profile.last_active_at).getTime()
+      : 0
+    const returnedAfterLongAbsence = previousActiveAt > 0
+      && previousActiveAt < now.getTime() - 48 * 60 * 60 * 1000
     await supabase.from('profiles').update({
-      last_active_at: new Date().toISOString(),
+      last_active_at: now.toISOString(),
+      connection_resume_required:
+        profile?.connection_resume_required === true || returnedAfterLongAbsence,
       ...(timezone ? { timezone_name: timezone } : {}),
     }).eq('id', verified.id)
     return NextResponse.json({ success: true })
@@ -27,4 +38,3 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
-

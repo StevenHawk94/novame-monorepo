@@ -50,12 +50,10 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   guideQuests: require('../../assets/Icons/Week-Plan.png'),
   // Connection Dashboard (unpaired teaser cards + relationship surfaces)
   friendList: require('../../assets/Icons/friend-list.png'),
-  vibeMatching: require('../../assets/Icons/vibe-matching.png'),
-  emotionStatus: require('../../assets/Icons/emotion-status.png'),
-  careTips: require('../../assets/Icons/care-tips.png'),
-  topicIdeas: require('../../assets/Icons/topic-ideas.png'),
-  boundary: require('../../assets/Icons/boundary.png'),
-  hangout: require('../../assets/Icons/hangout.png'),
+  connect1: require('../../assets/Icons/connect-1.png'),
+  connect2: require('../../assets/Icons/connect-2.png'),
+  connect3: require('../../assets/Icons/connect-3.png'),
+  connect4: require('../../assets/Icons/connect-4.png'),
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
   connectionNew: require('../../assets/Icons/connection-new.png'),

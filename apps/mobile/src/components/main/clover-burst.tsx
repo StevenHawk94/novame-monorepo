@@ -1,12 +1,13 @@
 /**
- * "+30 🍀" floating reward toast. Mounts, pops in, drifts upward, fades out
+ * Floating Clover reward toast. Mounts, pops in, drifts upward, fades out
  * (~1.6s), then calls onDone so the parent can unmount it. Every currency
  * award in the app uses this one component so the reward language stays
  * uniform (user directive: all rewards read as clovers, with a small
  * appear-then-vanish animation).
  */
 import { useEffect } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -16,6 +17,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+
+import { ICONS } from '@/lib/icons';
 
 type Props = {
   amount: number;
@@ -51,7 +54,10 @@ export function CloverBurst({ amount, onDone }: Props) {
   if (amount <= 0) return null;
   return (
     <Animated.View style={[styles.wrap, style]} pointerEvents="none">
-      <Text style={styles.text}>+{amount} {'🍀'}</Text>
+      <View style={styles.content}>
+        <Text style={styles.text}>+{amount}</Text>
+        <ExpoImage source={ICONS.Clovers} style={styles.icon} contentFit="contain" />
+      </View>
     </Animated.View>
   );
 }
@@ -69,5 +75,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
+  content: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   text: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#2E7A3A' },
+  icon: { width: 27, height: 27 },
 });

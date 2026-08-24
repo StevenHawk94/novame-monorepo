@@ -61,7 +61,7 @@ export async function POST(request) {
 
     // The analyzer needs a permanent reflect id. It runs only after the atomic
     // commit; failure is non-fatal and never rolls back the user's reflection.
-    if (!result?.already_finalized && draft.body?.trim() && draft.mode === 'typing') {
+    if (!result?.already_finalized && draft.body?.trim()) {
       try {
         const { data: profile } = await supabase.from('profiles')
           .select('subscription_tier, ai_consent_at').eq('id', userId).single()
@@ -70,11 +70,14 @@ export async function POST(request) {
             userId, visibleToFriend: true, localDate: draft.local_date,
           })
           const analyzer = await runReflectAnalyzer({
+            reflectId: result.reflect_id,
             journal: draft.body,
             matchedIcons: (draft.matches || []).map((item) => ({ id: item.itemId, name: item.displayName })),
             weeklyEligible: draft.body.trim().length >= 100,
             connectionEnabled: context.connectionEnabled,
             currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
+            writerRecentEvidence: context.writerRecentEvidence,
+            readerRecentEvidence: context.readerRecentEvidence,
           })
           await Promise.all([
             persistReflectAnalyzerResult(supabase, {

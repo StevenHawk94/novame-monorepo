@@ -6,7 +6,7 @@
  *      card width (as many per line as fit), 2 lines max, and an
  *      overflowing row ends in a "+N" tile (display-only; Next advances)
  *   2. detail bubbles — icon + vivid text
- *   3. insights teaser — the six Connection pills
+ *   3. insights teaser — the four Connection sections
  * Next / Next / Done. Pure display; all data is local sample content.
  */
 import { useMemo, useState } from 'react';
@@ -48,12 +48,10 @@ const DETAILS: { itemId: string; text: string }[] = [
 ];
 
 const TEASERS = [
-  { label: 'Vibe Matching Moments', icon: ICONS.vibeMatching },
-  { label: 'Emotion Status', icon: ICONS.emotionStatus },
-  { label: 'Care Tips', icon: ICONS.careTips },
-  { label: 'Topics Ideas', icon: ICONS.topicIdeas },
-  { label: 'Boundaries', icon: ICONS.boundary },
-  { label: 'Hangout Ideas', icon: ICONS.hangout },
+  { label: 'Catch what you missed', icon: ICONS.connect1 },
+  { label: 'Understand their world lately', icon: ICONS.connect2 },
+  { label: 'Find a natural way in', icon: ICONS.connect3 },
+  { label: 'See what’s unfolding between you', icon: ICONS.connect4 },
 ];
 
 function dayOfYear(): number {
@@ -219,18 +217,17 @@ const styles = StyleSheet.create({
   detailText: { flex: 1, fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_500Medium', color: '#2B2B2B' },
 
   teaserGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-    columnGap: 10, rowGap: 14, marginTop: 6,
+    width: '100%', gap: 14, marginTop: 6,
   },
   teaserPill: {
-    width: '47%', backgroundColor: '#FFFFFF', borderRadius: 16,
+    width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 13, paddingHorizontal: 11, minHeight: 60,
+    paddingVertical: 13, paddingHorizontal: 22, minHeight: 68,
     shadowColor: '#C9A97C', shadowOpacity: 0.7, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  teaserIcon: { width: 28, height: 28 },
-  teaserText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
+  teaserIcon: { width: 38, height: 38 },
+  teaserText: { flex: 1, fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#161311' },
 
   nextBtn: {
     alignSelf: 'center', backgroundColor: '#7A4A32', borderRadius: 26,

@@ -888,49 +888,81 @@ export async function fetchCommonItems(): Promise<CommonItem[]> {
   }
 }
 
+export type ConnectionModuleKey =
+  | 'worth_knowing'
+  | 'recent_vibe'
+  | 'what_theyre_into'
+  | 'how_to_show_up'
+  | 'talk_about'
+  | 'try_together'
+  | 'shared_rhythm';
+
+export interface ConnectionInsightCard {
+  label: string;
+  headline: string | null;
+  body: string;
+  supportingText: string | null;
+  action: string | null;
+}
+
 export interface ConnectionInsights {
-  emotion: string | null;
-  topic: string | null;
-  careTips: string | null;
-  boundaries: string | null;
-  hangoutIdeas: string | null;
+  schemaVersion: 2;
+  modules: Record<ConnectionModuleKey, ConnectionInsightCard[]>;
+  updatedAt?: string;
+  lastProcessedReflectId?: string;
 }
 
 export type InsightsResult =
-  | { ok: true; insights: ConnectionInsights | null }
+  | { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
   | { ok: false; error: 'plus_required' | 'consent_required' | 'network' };
 
 export function getCachedInsights(): InsightsResult | null {
   return (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
 }
 
-/** Connection is daily, and resumes only when the user actually opens it. */
+/** Cache-first daily reconciliation, plus a one-time refresh after 48h away. */
 export function shouldRefreshConnectionDashboard(): boolean {
   const cache = readAnalysisCache();
   return cache.dashboardDate !== localDateKey()
     || shouldResumeAfterAbsence(2, cache.dashboardFetchedAt);
 }
 
+/** Long-absence UI signal captured before foreground activity updates the API. */
+export function shouldShowConnectionResumeLoading(): boolean {
+  return shouldResumeAfterAbsence(2, readAnalysisCache().dashboardFetchedAt);
+}
+
 export function markConnectionDashboardRefreshed(): void {
   patchAnalysisCache({ dashboardDate: localDateKey(), dashboardFetchedAt: Date.now() });
 }
 
-/** 板块4 (Plus): daily AI guidance about the partner. */
-export async function fetchInsights(): Promise<
-  { ok: true; insights: ConnectionInsights | null } | { ok: false; error: 'plus_required' | 'consent_required' | 'network' }
+/** Plus Connection modules. The server may catch up one latest reflection. */
+export async function fetchInsights(options?: { resume?: boolean }): Promise<
+  { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
+  | { ok: false; error: 'plus_required' | 'consent_required' | 'network' }
 > {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'network' };
   const date = localDateKey();
   try {
-    const data = await apiClient.get<{ success?: boolean; error?: string; insights?: ConnectionInsights | null }>(
-      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view`,
+    const data = await apiClient.get<{
+      success?: boolean;
+      error?: string;
+      insights?: ConnectionInsights | null;
+      refreshPending?: boolean;
+      resumed?: boolean;
+    }>(
+      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view${options?.resume ? '&resume=1' : ''}`,
     );
     if (data.success) {
-      const res: InsightsResult = { ok: true, insights: data.insights ?? null };
-      patchAnalysisCache({ insights: res });
-      return res;
+      const cachedResult: InsightsResult = { ok: true, insights: data.insights ?? null };
+      patchAnalysisCache({ insights: cachedResult });
+      return {
+        ...cachedResult,
+        refreshPending: data.refreshPending === true,
+        resumed: data.resumed === true,
+      };
     }
     if (data.error === 'plus_required' || data.error === 'consent_required') {
       const res: InsightsResult = { ok: false, error: data.error };

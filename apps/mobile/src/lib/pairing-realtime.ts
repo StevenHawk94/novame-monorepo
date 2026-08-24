@@ -11,6 +11,7 @@ import {
   type PairingStatus,
 } from './friends-api';
 import { supabase } from './supabase';
+import { invalidateConnectionDashboard } from './connection-analysis-cache';
 
 export type PairingRealtimeSnapshot = {
   pairing: PairingStatus;
@@ -21,10 +22,12 @@ export type PairingRealtimeSnapshot = {
 type Listener = (snapshot: PairingRealtimeSnapshot) => void;
 type FriendshipListener = (status: FriendsStatus) => void;
 type GoodVibeListener = () => void;
+type ConnectionListener = () => void;
 
 const listeners = new Set<Listener>();
 const friendshipListeners = new Set<FriendshipListener>();
 const goodVibeListeners = new Set<GoodVibeListener>();
+const connectionListeners = new Set<ConnectionListener>();
 let channel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
 let generation = 0;
@@ -61,6 +64,16 @@ function publishGoodVibes(): void {
       listener();
     } catch (error) {
       console.warn('[pairing] Good Vibes realtime listener failed:', error);
+    }
+  }
+}
+
+function publishConnectionChanged(): void {
+  for (const listener of connectionListeners) {
+    try {
+      listener();
+    } catch (error) {
+      console.warn('[pairing] Connection realtime listener failed:', error);
     }
   }
 }
@@ -181,6 +194,11 @@ export function subscribeGoodVibeRealtime(listener: GoodVibeListener): () => voi
   return () => goodVibeListeners.delete(listener);
 }
 
+export function subscribeConnectionRealtime(listener: ConnectionListener): () => void {
+  connectionListeners.add(listener);
+  return () => connectionListeners.delete(listener);
+}
+
 export async function startPairingRealtime(
   userId: string,
   options?: { recovery?: boolean },
@@ -228,6 +246,12 @@ export async function startPairingRealtime(
         // memory text is carried over Realtime and no polling loop is added.
         void reconcileReflectFeed(userId, subscribedGeneration);
       })
+      .on('broadcast', { event: 'connection_changed' }, () => {
+        // Payload is an invalidation only. The Connection page re-reads the
+        // protected API if it is currently mounted; no polling is introduced.
+        invalidateConnectionDashboard();
+        publishConnectionChanged();
+      })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;
         if (typeof partnerUserId !== 'string' || !partnerUserId) return;
@@ -248,6 +272,10 @@ export async function startPairingRealtime(
           // private channel was reconnecting. The inbox gate coalesces this
           // with its launch/foreground check.
           publishGoodVibes();
+          // A private broadcast may have been missed while backgrounded.
+          // Invalidate once per reconnect; the next Connection focus performs
+          // one protected read and keeps the normal cache-first paint.
+          invalidateConnectionDashboard();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           channelHealthy = false;
           // One temporary recovery attempt for this failure incident. There is

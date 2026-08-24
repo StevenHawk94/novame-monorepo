@@ -1,199 +1,237 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
+  ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
+import { GridBackground } from '@/components/ui/grid-background';
+import { OffsetCard } from '@/components/ui/offset-card';
+import { UserAvatar } from '@/components/ui/user-avatar';
+import {
+  fetchInsights, fetchPairing, getCachedInsights, getCachedPairing,
+  markConnectionDashboardRefreshed, shouldRefreshConnectionDashboard,
+  shouldShowConnectionResumeLoading,
+  type ConnectionInsightCard, type ConnectionInsights, type ConnectionModuleKey,
+  type PairingStatus,
+} from '@/lib/friends-api';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
-import { GridBackground } from '@/components/ui/grid-background';
-import { ItemSprite } from '@/components/ui/item-sprite';
-import { OffsetCard } from '@/components/ui/offset-card';
-import {
-  fetchCommonItems, fetchInsights, fetchPairing,
-  getCachedCommonItems, getCachedInsights, getCachedPairing,
-  markConnectionDashboardRefreshed, shouldRefreshConnectionDashboard,
-  type CommonItem, type ConnectionInsights, type PairingStatus,
-} from '@/lib/friends-api';
 import { getCachedMeStats } from '@/lib/me-stats';
 import { getBunnyName } from '@/lib/onboarding';
-import { supabase } from '@/lib/supabase';
-import { UserAvatar } from '@/components/ui/user-avatar';
-import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
+import { subscribeConnectionRealtime } from '@/lib/pairing-realtime';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
+import { supabase } from '@/lib/supabase';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
-/**
- * Me tab → Connection Board (2026-07-24 重构, mock 1:1). The old Me page
- * (growth stages, dimension tiles) is fully removed; this tab is about the
- * ONE paired relationship:
- *   板块1  title + subtitle + Their Patterns entry
- *   板块2  both members, the relationship, its duration
- *   板块3  up to 8 items BOTH recently reflected (tap → both sides' words)
- *   板块4  Plus daily AI: Emotion / Topic / Care Tips / Boundaries / Hangout
- * Settings stay reachable from Home's menu.
- */
-const INSIGHT_SECTIONS: { key: keyof ConnectionInsights; label: string; emoji: string }[] = [
-  { key: 'emotion', label: 'Emotion', emoji: '💬' },
-  { key: 'topic', label: 'Topic', emoji: '💡' },
-  { key: 'careTips', label: 'Care Tip', emoji: '❤️' },
-  { key: 'boundaries', label: 'Boundaries', emoji: '🚧' },
-  { key: 'hangoutIdeas', label: 'Hangout Ideas', emoji: '🎈' },
+type SectionDefinition = {
+  title: string;
+  icon: typeof ICONS.connect1;
+  modules: ConnectionModuleKey[];
+  preset: string;
+};
+
+const SECTION_DEFINITIONS: SectionDefinition[] = [
+  {
+    title: 'What You May Have Missed',
+    icon: ICONS.connect1,
+    modules: ['worth_knowing'],
+    preset: 'Important moments, changes, and quiet wins worth following up on will appear here.',
+  },
+  {
+    title: 'Their World Lately',
+    icon: ICONS.connect2,
+    modules: ['recent_vibe', 'what_theyre_into'],
+    preset: 'Get a clearer feel for their recent vibe and what’s been capturing their attention.',
+  },
+  {
+    title: 'Ways In',
+    icon: ICONS.connect3,
+    modules: ['how_to_show_up', 'talk_about', 'try_together'],
+    preset: 'Find thoughtful ways to check in, start a conversation, or spend time together.',
+  },
+  {
+    title: 'Between You Lately',
+    icon: ICONS.connect4,
+    modules: ['shared_rhythm'],
+    preset: 'See the funny, cozy, or chaotic little patterns unfolding between your lives.',
+  },
 ];
 
-// The unpaired teaser cards (mock 2026-08-05 v2): what pairing unlocks.
-const TEASER_PILLS = [
-  { label: 'Vibe Matching Moments', icon: ICONS.vibeMatching },
-  { label: 'Emotion Status', icon: ICONS.emotionStatus },
-  { label: 'Care Tips', icon: ICONS.careTips },
-  { label: 'Topics Ideas', icon: ICONS.topicIdeas },
-  { label: 'Boundaries', icon: ICONS.boundary },
-  { label: 'Hangout Ideas', icon: ICONS.hangout },
+const TEASER_ROWS = [
+  { label: 'Catch what you missed', icon: ICONS.connect1 },
+  { label: 'Understand their world lately', icon: ICONS.connect2 },
+  { label: 'Find a natural way in', icon: ICONS.connect3 },
+  { label: 'See what’s unfolding between you', icon: ICONS.connect4 },
 ];
 
-// Fixed, pre-blurred fake copy. Free users never receive real AI insight text.
-const LOCKED_INSIGHT_PREVIEW = require('../../../assets/connection/connection-board-free.webp');
+function validInsights(value: ConnectionInsights | null): ConnectionInsights | null {
+  return value?.schemaVersion === 2 && value.modules ? value : null;
+}
 
+function cardsForSection(
+  insights: ConnectionInsights | null,
+  definition: SectionDefinition,
+): ConnectionInsightCard[] {
+  if (!insights) return [];
+  return definition.modules.flatMap((key) => (
+    Array.isArray(insights.modules[key]) ? insights.modules[key] : []
+  ));
+}
+
+function InsightContentCard({ card }: { card: ConnectionInsightCard }) {
+  return (
+    <View style={st.insightCard}>
+      <View style={st.insightBadge}>
+        <Text style={st.insightBadgeText}>{card.label}</Text>
+      </View>
+      {!!card.headline && <Text style={st.insightHeadline}>{card.headline}</Text>}
+      <Text style={st.insightText}>{card.body}</Text>
+      {!!card.supportingText && <Text style={st.supportingText}>{card.supportingText}</Text>}
+      {!!card.action && (
+        <View style={st.actionRow}>
+          <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
+          <Text style={st.actionText}>{card.action}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function ConnectionDashboardScreen() {
   const router = useRouter();
-  // Cache-first (2026-08-08): the tab paints its last-known state instantly;
-  // the focus-effect fetches only reconcile in the background.
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const narrow = width < 380;
+  const cachedResult = getCachedInsights();
+  const cachedInsightValue = cachedResult?.ok ? validInsights(cachedResult.insights) : null;
+  const cachedPaid = getCachedSubscriptionTier() !== 'free';
+
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
+  const [isPaid, setIsPaid] = useState(cachedPaid);
+  const [insights, setInsights] = useState<ConnectionInsights | null>(cachedInsightValue);
+  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(() => {
+    if (!cachedResult) return null;
+    if (cachedResult.ok) return 'ok';
+    if (cachedResult.error === 'network') return null;
+    if (cachedResult.error === 'plus_required' && cachedPaid) return null;
+    return cachedResult.error;
+  });
+  const [refreshingLatest, setRefreshingLatest] = useState(false);
   const [myName, setMyName] = useState('Me');
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [myAvatarUrl, setMyAvatarUrl] = useState('');
-  const [myIsDefaultAvatar, setMyIsDefaultAvatar] = useState<boolean | undefined>(undefined);
-  const [items, setItems] = useState<CommonItem[]>(() => getCachedCommonItems());
-  // The cached subscription tier decides the lock INSTANTLY (fetched once at
-  // launch + after purchases — industry pattern). A cached 'plus_required'
-  // gate from before an upgrade is stale noise: ignore it when the tier says
-  // paid, so members never flash 'Unlock Plus' while the fetch reconciles.
-  const [isPaid, setIsPaid] = useState(() => getCachedSubscriptionTier() !== 'free');
+  const [myIsDefaultAvatar, setMyIsDefaultAvatar] = useState<boolean | undefined>();
   const liveTier = useSubscriptionTier();
-  const cachedIns = getCachedInsights();
-  const [insights, setInsights] = useState<ConnectionInsights | null>(
-    cachedIns?.ok ? cachedIns.insights : null,
-  );
-  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(() => {
-    if (!cachedIns) return null;
-    if (cachedIns.ok) return 'ok';
-    if (cachedIns.error === 'network') return null;
-    if (cachedIns.error === 'plus_required' && isPaid) return null; // stale gate
-    return cachedIns.error;
-  });
-  const [openItem, setOpenItem] = useState<CommonItem | null>(null);
   const refreshInFlight = useRef(false);
 
-  useEffect(() => {
-    setIsPaid(liveTier !== 'free');
-  }, [liveTier]);
+  useEffect(() => setIsPaid(liveTier !== 'free'), [liveTier]);
+
+  const refreshInsights = useCallback(async (resume = false): Promise<boolean> => {
+    if (refreshInFlight.current) {
+      if (resume) setRefreshingLatest(false);
+      return false;
+    }
+    refreshInFlight.current = true;
+    if (resume) setRefreshingLatest(true);
+    try {
+      const result = await fetchInsights({ resume });
+      if (result.ok) {
+        setInsights(validInsights(result.insights));
+        setInsightsGate('ok');
+        return result.refreshPending !== true;
+      } else if (result.error === 'plus_required' || result.error === 'consent_required') {
+        setInsightsGate(result.error);
+      }
+      return false;
+    } finally {
+      if (resume) setRefreshingLatest(false);
+      refreshInFlight.current = false;
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      // Paint from cache immediately, then reconcile pairing + entitlement
-      // together. Pair acceptance may have just granted a Duo seat, so the
-      // local tier alone is not authoritative enough for this focus pass.
-      const cachedPaid = getCachedSubscriptionTier() !== 'free';
-      setIsPaid(cachedPaid);
+      const resumeAfterAbsence = shouldShowConnectionResumeLoading();
+      if (resumeAfterAbsence && getCachedPairing()?.paired && cachedPaid) {
+        setRefreshingLatest(true);
+      }
       const previousPartnerId = getCachedPairing()?.partner?.userId ?? null;
       void (async () => {
-        const [{ data }, p] = await Promise.all([
+        const [{ data }, nextPairing] = await Promise.all([
           supabase.auth.getSession(),
           fetchPairing(),
         ]);
         if (!active) return;
-
-        let paid = cachedPaid;
         const uid = data.session?.user?.id;
+        let paid = getCachedSubscriptionTier() !== 'free';
         if (uid) {
           try {
-            const freshSubscription = await fetchSubscriptionTier(uid);
-            paid = freshSubscription.tier !== 'free';
+            paid = (await fetchSubscriptionTier(uid)).tier !== 'free';
           } catch {
-            // Keep the cache-first state when the background sync is offline.
+            // Cache remains authoritative while offline.
           }
         }
         if (!active) return;
         setIsPaid(paid);
-
-          setPairing(p);
-          if (!p.paired) {
-            setItems([]);
-            setInsights(null);
-            setInsightsGate(null);
-            return;
-          }
-          const partnerChanged = previousPartnerId !== p.partner?.userId;
-          const entitlementChanged = paid !== cachedPaid;
-          if ((!partnerChanged && !entitlementChanged && !shouldRefreshConnectionDashboard()) || refreshInFlight.current) return;
-          refreshInFlight.current = true;
-          try {
-            const commonPromise = fetchCommonItems().then(setItems);
-            if (!paid) {
-              setInsightsGate('plus_required');
-              await commonPromise;
-              return;
-            }
-            const [, insightResult] = await Promise.all([commonPromise, fetchInsights()]);
-            if (insightResult.ok) {
-              setInsights(insightResult.insights);
-              setInsightsGate('ok');
-            } else if (insightResult.error === 'plus_required' || insightResult.error === 'consent_required') {
-              setInsightsGate(insightResult.error);
-              if (insightResult.error === 'plus_required') {
-                // Tier cache says paid but the server disagrees — re-sync it.
-                const { data } = await supabase.auth.getSession();
-                const uid = data.session?.user?.id;
-                if (uid) void fetchSubscriptionTier(uid, { force: true }).catch(() => {});
-              }
-            }
-          } finally {
-            markConnectionDashboardRefreshed();
-            refreshInFlight.current = false;
-          }
+        setPairing(nextPairing);
+        if (!nextPairing.paired) {
+          setInsights(null);
+          setInsightsGate(null);
+          setRefreshingLatest(false);
+          return;
+        }
+        if (!paid) {
+          setInsightsGate('plus_required');
+          setRefreshingLatest(false);
+          return;
+        }
+        const partnerChanged = previousPartnerId !== nextPairing.partner?.userId;
+        if (partnerChanged || resumeAfterAbsence || shouldRefreshConnectionDashboard()) {
+          const refreshCompleted = await refreshInsights(resumeAfterAbsence);
+          if (!active) return;
+          if (refreshCompleted) markConnectionDashboardRefreshed();
+        } else {
+          setRefreshingLatest(false);
+        }
       })().catch(() => {
-          refreshInFlight.current = false;
-        });
+        if (active) setRefreshingLatest(false);
+      });
+
       void supabase.auth.getSession().then(({ data }) => {
+        if (!active) return;
         setMyUserId(data.session?.user?.id ?? null);
-        // Same resolution as the Me page header: profiles.display_name via
-        // me-stats (auto-seeded 'user' filtered out) -> onboarding name.
         const cached = getCachedMeStats();
-        const profileName =
-          cached?.displayName && cached.displayName !== 'user' ? cached.displayName : '';
-        const n = profileName || getBunnyName()
+        const profileName = cached?.displayName && cached.displayName !== 'user'
+          ? cached.displayName : '';
+        const name = profileName || getBunnyName()
           || (data.session?.user?.email?.split('@')[0] as string | undefined);
-        if (n) setMyName(n);
+        if (name) setMyName(name);
         setMyAvatarUrl(cached?.avatarUrl ?? '');
         setMyIsDefaultAvatar(cached?.isDefaultAvatar);
       });
-      return () => {
-        active = false;
-      };
-    }, []),
+      return () => { active = false; };
+    }, [cachedPaid, refreshInsights]),
   );
 
+  useEffect(() => subscribeConnectionRealtime(() => {
+    if (getCachedSubscriptionTier() !== 'free') {
+      void refreshInsights(false).then((completed) => {
+        if (completed) markConnectionDashboardRefreshed();
+      });
+    }
+  }), [refreshInsights]);
 
   const partner = pairing?.partner ?? null;
-  const insets = useSafeAreaInsets();
-  // Narrow-screen type hierarchy (2026-08-08): the title may auto-shrink to
-  // fit beside the Their Patterns pill, but only to 80% — and the subtitle
-  // steps down with it so the pair never reads the same size.
-  const { width: winW } = useWindowDimensions();
-  const narrow = winW < 380;
-  const hasInsights = !!insights && INSIGHT_SECTIONS.some(({ key }) => {
-    const value = insights[key];
-    return typeof value === 'string' && value.trim().length > 0;
-  });
+  const hasAnyContent = SECTION_DEFINITIONS.some((section) => (
+    cardsForSection(insights, section).length > 0
+  ));
 
   return (
     <View style={st.root}>
-      {/* 板块1: header — the brown block owns the status-bar area too */}
       <View style={[st.header, { paddingTop: insets.top + 10 }]}>
         <View style={{ flex: 1 }}>
           <Text
@@ -204,9 +242,10 @@ export default function ConnectionDashboardScreen() {
           >
             Connection Board
           </Text>
-          <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>Everything new about them at a glance.</Text>
+          <Text style={[st.subtitle, narrow && { fontSize: 11.5 }]} numberOfLines={2}>
+            The little things tell a bigger story.
+          </Text>
         </View>
-        {/* Always shown (mock); display-only until a partner exists. */}
         <OffsetCard
           color="#C96F2A"
           offset={4}
@@ -215,9 +254,7 @@ export default function ConnectionDashboardScreen() {
           onPress={() => {
             if (!partner) return;
             void haptics.pageOpen();
-            router.push({
-              pathname: '/(main)/their-patterns',
-            } as never);
+            router.push('/(main)/their-patterns' as never);
           }}
           cardStyle={st.hubPill}
         >
@@ -226,168 +263,127 @@ export default function ConnectionDashboardScreen() {
         </OffsetCard>
       </View>
 
-      {!pairing || !partner ? (
-        /* Unpaired (mock 2026-08-05): grid ground, cream lock card with the
-           six teaser pills previewing what pairing unlocks. */
-        <View style={{ flex: 1 }}>
-          <GridBackground />
-          {/* Display-only until paired: no tap targets anywhere (mock v2). */}
-          <ScrollView
-            contentContainerStyle={st.unpairedScroll}
-            showsVerticalScrollIndicator={false}
-          >
+      <View style={{ flex: 1 }}>
+        <GridBackground />
+        {!pairing || !partner ? (
+          <ScrollView contentContainerStyle={st.unpairedScroll} showsVerticalScrollIndicator={false}>
             <View style={st.pairLockCard}>
-              <MaterialIcons name="lock" size={56} color="#5D3A1F" />
-              <Text style={st.pairLockText}>Pair with someone now to{'\n'}unlock your connection board</Text>
-              <View style={st.teaserGrid}>
-                {TEASER_PILLS.map((t) => (
-                  <View key={t.label} style={st.teaserPill}>
-                    <Image source={t.icon} style={st.teaserIcon} resizeMode="contain" />
-                    <Text style={st.teaserPillText} numberOfLines={2}>{t.label}</Text>
+              <MaterialIcons name="lock" size={58} color="#714329" />
+              <Text style={st.pairLockText}>
+                Pair with someone now to{`\n`}unlock connection dashboard
+              </Text>
+              <View style={st.teaserList}>
+                {TEASER_ROWS.map((row) => (
+                  <View key={row.label} style={st.teaserRow}>
+                    <Image source={row.icon} style={st.teaserIcon} resizeMode="contain" />
+                    <Text style={st.teaserText}>{row.label}</Text>
                   </View>
                 ))}
               </View>
             </View>
           </ScrollView>
-        </View>
-      ) : (
-        <View style={{ flex: 1 }}>
-          <GridBackground />
+        ) : (
           <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
-            {/* 板块2: the relationship */}
             <View style={st.relCard}>
-            <View style={st.relSide}>
-              <UserAvatar userId={myUserId} avatarUrl={myAvatarUrl} isDefaultAvatar={myIsDefaultAvatar} size={56} />
-              <Text style={st.relName} numberOfLines={1}>{myName}</Text>
-            </View>
-            <View style={st.relMid}>
-              <Text style={st.relTitle}>{pairing.relationship || 'Paired'}</Text>
-              <Text style={st.relDays}>For {pairing.pairedDays ?? 0} days</Text>
-            </View>
-            <View style={st.relSide}>
-              <UserAvatar userId={partner.userId} avatarUrl={partner.avatarUrl} isDefaultAvatar={partner.isDefaultAvatar} size={56} />
-              <Text style={st.relName} numberOfLines={1}>{partner.displayName}</Text>
-            </View>
-          </View>
-
-          {/* 板块3: recent moments both people have reflected */}
-          <View style={st.sectionPillWrap}>
-            <View style={st.sectionPill}>
-              <Text style={st.sectionPillText}>Vibe Matching Moments</Text>
-            </View>
-          </View>
-          <View style={st.itemsCard}>
-            {items.length === 0 ? (
-              <Text style={st.itemsEmpty}>
-                Keep reflecting, and vibe matching moments{`\n`}will be displayed here.
-              </Text>
-            ) : (
-              <View style={st.itemsGrid}>
-                {items.map((it) => (
-                  <Pressable key={it.itemId} onPress={() => { void haptics.light(); setOpenItem(it); }}>
-                    <View style={st.matchingItemCard}>
-                      <ItemSprite itemId={it.itemId} size={64} radius={18} tileColor="transparent" />
-                    </View>
-                  </Pressable>
-                ))}
+              <View style={st.relSide}>
+                <UserAvatar
+                  userId={myUserId}
+                  avatarUrl={myAvatarUrl}
+                  isDefaultAvatar={myIsDefaultAvatar}
+                  size={56}
+                />
+                <Text style={st.relName} numberOfLines={1}>{myName}</Text>
               </View>
-            )}
-          </View>
-
-          {/* 板块4: a little bit to know */}
-          <View style={st.sectionPillWrap}>
-            <View style={st.sectionPill}>
-              <Text style={st.sectionPillText} numberOfLines={1}>
-                What's new with {partner.displayName}
-              </Text>
-            </View>
-          </View>
-
-          {!isPaid || insightsGate === 'plus_required' ? (
-            /* Free tier: fixed pre-blurred artwork only (real insights are
-               never fetched), with one real paywall button per card. */
-            INSIGHT_SECTIONS.map(({ key, label, emoji }) => (
-              <View key={key} style={st.insightCard}>
-                <View style={st.insightBadge}>
-                  <Text style={st.insightBadgeText}>{emoji} {label}</Text>
-                </View>
-                <View style={st.lockedInsightPreview}>
-                  <Image
-                    source={LOCKED_INSIGHT_PREVIEW}
-                    style={st.lockedInsightImage}
-                    resizeMode="contain"
-                  />
-                  <Pressable
-                    onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/subscription-paywall' as never); }}
-                    style={st.plusBtn}
-                  >
-                    <MaterialIcons name="lock" size={17} color="#FFFFFF" />
-                    <Text style={st.copyBtnText}>Join Plus to Access Details</Text>
-                  </Pressable>
-                </View>
+              <View style={st.relMid}>
+                <Text style={st.relTitle}>{pairing.relationship || 'Paired'}</Text>
+                <Text style={st.relDays}>For {pairing.pairedDays ?? 0} days</Text>
               </View>
-            ))
-          ) : insightsGate === 'consent_required' ? (
-            <View style={st.lockCard}>
-              <MaterialIcons name="privacy-tip" size={22} color="#8A5F3F" />
-              <Text style={st.lockText}>Turn on AI features in settings to unlock daily guidance.</Text>
+              <View style={st.relSide}>
+                <UserAvatar
+                  userId={partner.userId}
+                  avatarUrl={partner.avatarUrl}
+                  isDefaultAvatar={partner.isDefaultAvatar}
+                  size={56}
+                />
+                <Text style={st.relName} numberOfLines={1}>{partner.displayName}</Text>
+              </View>
             </View>
-          ) : hasInsights ? (
-            INSIGHT_SECTIONS.map(({ key, label, emoji }) => {
-              const text = insights?.[key];
-              if (!text) return null;
+
+            {!isPaid || insightsGate === 'plus_required' ? (
+              <Pressable
+                style={st.plusCard}
+                onPress={() => {
+                  void haptics.pageOpen();
+                  router.push('/(main)/(modals)/subscription-paywall' as never);
+                }}
+              >
+                <MaterialIcons name="lock" size={22} color="#FFFFFF" />
+                <View style={{ flex: 1 }}>
+                  <Text style={st.plusTitle}>Unlock your Connection details</Text>
+                  <Text style={st.plusText}>Join Plus to see thoughtful patterns as they emerge.</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={26} color="#FFFFFF" />
+              </Pressable>
+            ) : insightsGate === 'consent_required' ? (
+              <View style={st.noticeCard}>
+                <MaterialIcons name="privacy-tip" size={24} color="#8A5F3F" />
+                <Text style={st.noticeText}>Turn on AI features in settings to unlock Connection details.</Text>
+              </View>
+            ) : !hasAnyContent ? (
+              <Text style={st.emptyIntro}>
+                These spaces will fill in naturally when their reflections offer enough context.
+              </Text>
+            ) : null}
+
+            {SECTION_DEFINITIONS.map((section) => {
+              const cards = isPaid && insightsGate !== 'plus_required'
+                ? cardsForSection(insights, section)
+                : [];
               return (
-                <View key={key} style={st.insightCard}>
-                  <View style={st.insightBadge}>
-                    <Text style={st.insightBadgeText}>{emoji} {label}</Text>
+                <View key={section.title}>
+                  <View style={st.sectionPillWrap}>
+                    <View style={st.sectionPill}>
+                      <Text style={st.sectionPillText}>{section.title}</Text>
+                    </View>
                   </View>
-                  <Text style={st.insightText}>“{text}”</Text>
+                  {cards.length > 0 ? cards.map((card, index) => (
+                    <InsightContentCard key={`${section.title}-${card.label}-${index}`} card={card} />
+                  )) : (
+                    <View style={st.presetCard}>
+                      <Image source={section.icon} style={st.presetIcon} resizeMode="contain" />
+                      <Text style={st.presetText}>{section.preset}</Text>
+                    </View>
+                  )}
                 </View>
               );
-            })
-          ) : (
-            <View style={st.emptyInsightCard}>
-              <Image source={ICONS.connectionNew} style={st.emptyInsightIcon} resizeMode="contain" />
-              <Text style={st.emptyInsightText}>
-                {partner.displayName} hasn't reflected anything yet. Once they do, the connection insight will show up here.
-              </Text>
-            </View>
-          )}
-            <View style={{ height: 24 }} />
+            })}
+            <View style={{ height: 28 }} />
           </ScrollView>
-        </View>
-      )}
+        )}
+      </View>
 
-      {/* 板块3 detail: both sides' latest words for one item */}
-      {openItem && (
-        <View style={st.detailOverlay}>
-          <View style={st.detailCard}>
-            <View style={{ alignItems: 'center', marginBottom: 14 }}>
-              <ItemSprite itemId={openItem.itemId} size={72} radius={16} />
-            </View>
-            <Text style={st.detailWho}>You</Text>
-            <Text style={st.detailText}>{openItem.mine.text}</Text>
-            <Text style={[st.detailWho, { marginTop: 14 }]}>{partner?.displayName ?? 'Partner'}</Text>
-            <Text style={st.detailText}>
-              {openItem.partner.text ?? 'Their words are private — but you both hold this one.'}
-            </Text>
-            <Pressable onPress={() => { void haptics.pageClose(); setOpenItem(null); }} style={st.detailClose} hitSlop={8}>
-              <MaterialIcons name="close" size={24} color="#FFFFFF" />
-            </Pressable>
+      {refreshingLatest && pairing?.paired && partner && (
+        <View style={st.loadingOverlay} pointerEvents="auto">
+          <View style={st.loadingCard}>
+            <ActivityIndicator size="large" color="#8C523D" />
+            <Text style={st.loadingTitle}>Updating the latest moments...</Text>
+            <Text style={st.loadingText}>Looking at their newest reflection for anything worth adding.</Text>
           </View>
         </View>
       )}
-      <FeatureGuideModal guide="connection" enabled={!!pairing?.paired && !!partner} />
+      <FeatureGuideModal
+        guide="connection"
+        enabled={!!pairing?.paired && !!partner && !refreshingLatest}
+      />
     </View>
   );
 }
 
 const st = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8D9B8' },
-
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#7A4A3A', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18,
+    backgroundColor: '#7A4A3A', paddingHorizontal: 18, paddingBottom: 18,
   },
   title: { fontSize: 23, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   subtitle: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
@@ -397,10 +393,25 @@ const st = StyleSheet.create({
   },
   hubPillIcon: { width: 30, height: 30 },
   hubPillText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-
   scroll: { paddingHorizontal: 16, paddingTop: 16 },
-  unpairedScroll: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20 },
-
+  unpairedScroll: { flexGrow: 1, justifyContent: 'center', padding: 22 },
+  pairLockCard: {
+    backgroundColor: '#FFF6E4', borderRadius: 28, paddingHorizontal: 20,
+    paddingVertical: 36, alignItems: 'center', gap: 18,
+  },
+  pairLockText: {
+    fontSize: 18, lineHeight: 25, textAlign: 'center',
+    fontFamily: 'Inter_800ExtraBold', color: '#161311',
+  },
+  teaserList: { width: '100%', gap: 12, marginTop: 8 },
+  teaserRow: {
+    minHeight: 70, borderRadius: 20, paddingHorizontal: 18,
+    flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: '#FFFFFF',
+    shadowColor: '#B98964', shadowOpacity: 0.75, shadowRadius: 0, shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  teaserIcon: { width: 42, height: 42 },
+  teaserText: { flex: 1, fontSize: 16, fontFamily: 'Inter_700Bold', color: '#161311' },
   relCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF6E4',
     borderRadius: 22, padding: 16,
@@ -410,91 +421,57 @@ const st = StyleSheet.create({
   relMid: { flex: 1, alignItems: 'center', gap: 4 },
   relTitle: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center' },
   relDays: { fontSize: 13.5, fontFamily: 'Inter_600SemiBold', color: '#8A6240' },
-
-  sectionPillWrap: { alignItems: 'center', marginTop: 18, marginBottom: 12 },
-  sectionPill: { backgroundColor: '#7A4A3A', borderRadius: 18, paddingHorizontal: 20, paddingVertical: 11 },
-  sectionPillText: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-
-  itemsCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16, minHeight: 90, justifyContent: 'center' },
-  itemsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
-  matchingItemCard: {
-    width: 64, height: 64, borderRadius: 18,
-    backgroundColor: 'rgba(76,51,27,0.10)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  itemsEmpty: { fontSize: 14, fontFamily: 'Inter_500Medium', color: '#8A6240', textAlign: 'center', lineHeight: 21 },
-
-  lockCard: {
+  plusCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFF6E4', borderRadius: 22, padding: 18, marginBottom: 14,
+    backgroundColor: '#7A4A3A', borderRadius: 22, padding: 17, marginTop: 16,
   },
-  lockText: { flex: 1, fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#5A4432', lineHeight: 21 },
-
-  emptyInsightCard: {
-    minHeight: 260, backgroundColor: '#FFF6E4', borderRadius: 22,
-    paddingHorizontal: 28, paddingVertical: 34, marginBottom: 14,
-    alignItems: 'center', justifyContent: 'center', gap: 18,
+  plusTitle: { fontSize: 15.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  plusText: { fontSize: 12.5, lineHeight: 18, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
+  noticeCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#FFF6E4', borderRadius: 22, padding: 18, marginTop: 16,
   },
-  emptyInsightIcon: { width: 48, height: 48 },
-  emptyInsightText: {
-    maxWidth: 300, fontSize: 14, fontFamily: 'Inter_500Medium',
-    color: '#2A2118', lineHeight: 21, textAlign: 'center',
+  noticeText: { flex: 1, fontSize: 14, lineHeight: 21, fontFamily: 'Inter_600SemiBold', color: '#5A4432' },
+  emptyIntro: {
+    fontSize: 16, lineHeight: 23, textAlign: 'center', color: '#5D351D',
+    fontFamily: 'Inter_700Bold', paddingHorizontal: 22, marginTop: 28, marginBottom: 2,
   },
-
-  insightCard: { backgroundColor: '#FFF6E4', borderRadius: 22, padding: 16, marginBottom: 14 },
+  sectionPillWrap: { alignItems: 'center', marginTop: 22, marginBottom: 14 },
+  sectionPill: { backgroundColor: '#8C523D', borderRadius: 16, paddingHorizontal: 26, paddingVertical: 11, minWidth: '62%' },
+  sectionPillText: { fontSize: 15, textAlign: 'center', fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  presetCard: {
+    minHeight: 145, borderRadius: 26, paddingHorizontal: 25, paddingVertical: 18,
+    backgroundColor: '#FFF6E4', alignItems: 'center', justifyContent: 'center', gap: 12,
+  },
+  presetIcon: { width: 48, height: 48 },
+  presetText: {
+    maxWidth: 330, fontSize: 15.5, lineHeight: 23, textAlign: 'center',
+    fontFamily: 'Inter_500Medium', color: '#2A2118',
+  },
+  insightCard: { backgroundColor: '#FFF6E4', borderRadius: 26, padding: 20, marginBottom: 14 },
   insightBadge: {
-    alignSelf: 'flex-start', backgroundColor: '#F7DE8B', borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10,
+    alignSelf: 'flex-start', backgroundColor: '#F8D88B', borderRadius: 13,
+    paddingHorizontal: 12, paddingVertical: 7, marginBottom: 14,
   },
-  insightBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4A3423' },
-  insightText: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 23, marginBottom: 14 },
-  copyBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#B97D5E', borderRadius: 16, paddingVertical: 14,
+  insightBadgeText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#7A462A' },
+  insightHeadline: { fontSize: 18, lineHeight: 24, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 8 },
+  insightText: { fontSize: 16, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#2A2118' },
+  supportingText: { fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#785E49', marginTop: 9 },
+  actionRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    borderTopWidth: 1, borderTopColor: 'rgba(122,74,58,0.16)', marginTop: 14, paddingTop: 13,
   },
-  copyBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-
-  pairLockCard: {
-    marginHorizontal: 18, borderRadius: 32,
-    backgroundColor: '#FBF3DF', alignItems: 'center', justifyContent: 'center',
-    gap: 22, paddingVertical: 32, paddingHorizontal: 20,
+  actionText: { flex: 1, fontSize: 14.5, lineHeight: 21, fontFamily: 'Inter_600SemiBold', color: '#5B3B29' },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject, zIndex: 50, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(24,16,12,0.55)', paddingHorizontal: 28,
   },
-  pairLockText: {
-    fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B',
-    textAlign: 'center', lineHeight: 29,
+  loadingCard: {
+    width: '100%', maxWidth: 360, borderRadius: 28, backgroundColor: '#FFF6E4',
+    paddingHorizontal: 28, paddingVertical: 34, alignItems: 'center',
+    shadowColor: '#000000', shadowOpacity: 0.28, shadowRadius: 24, shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
-  teaserGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-    columnGap: 8, rowGap: 14, marginTop: 8,
-  },
-  teaserPill: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18,
-    flexDirection: 'row', alignItems: 'center', gap: 9,
-    paddingVertical: 14, paddingHorizontal: 10, minHeight: 64,
-    shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  teaserIcon: { width: 26, height: 26 },
-  teaserPillText: { flex: 1, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#161311' },
-  lockedInsightPreview: {
-    width: '100%', aspectRatio: 500 / 300, position: 'relative',
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 12,
-  },
-  lockedInsightImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  plusBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    width: '88%', backgroundColor: '#8A6240', borderRadius: 16, paddingVertical: 14,
-  },
-
-  detailOverlay: {
-    ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center', justifyContent: 'center', padding: 24,
-  },
-  detailCard: { backgroundColor: '#FDF9F1', borderRadius: 24, padding: 22, width: '100%' },
-  detailWho: { fontSize: 13, fontFamily: 'Inter_800ExtraBold', color: '#8A6240', marginBottom: 4 },
-  detailText: { fontSize: 15, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 22 },
-  detailClose: {
-    alignSelf: 'center', marginTop: 18, width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#43301F', alignItems: 'center', justifyContent: 'center',
-  },
+  loadingTitle: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#4E301D', marginTop: 18, textAlign: 'center' },
+  loadingText: { fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#7B6250', marginTop: 8, textAlign: 'center' },
 });
