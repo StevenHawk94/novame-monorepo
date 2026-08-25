@@ -334,19 +334,40 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
  * Returns false when no session could be established (feature off / offline)
  * — the caller falls back to the standalone passwordless recovery screen.
  */
+let ensureSessionInFlight: Promise<boolean> | null = null;
+
 export async function ensureSession(): Promise<boolean> {
   const existing = await getCurrentSession();
   if (existing) return true;
-  try {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.warn('[auth] anonymous sign-in failed:', error.message);
+
+  // App bootstrap, onboarding and the paywall can all request a guest session
+  // at nearly the same time. Serialize anonymous sign-in so those callers can
+  // never mint competing UUIDs for the same local installation.
+  if (ensureSessionInFlight) return ensureSessionInFlight;
+
+  ensureSessionInFlight = (async () => {
+    try {
+      // Re-check after acquiring the module-level lock: another caller may
+      // have completed anonymous sign-in between the first read and now.
+      const restored = await getCurrentSession();
+      if (restored) return true;
+
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.warn('[auth] anonymous sign-in failed:', error.message);
+        return false;
+      }
+      return Boolean(data.session);
+    } catch (err) {
+      console.warn('[auth] anonymous sign-in threw:', err instanceof Error ? err.message : err);
       return false;
     }
-    return Boolean(data.session);
-  } catch (err) {
-    console.warn('[auth] anonymous sign-in threw:', err instanceof Error ? err.message : err);
-    return false;
+  })();
+
+  try {
+    return await ensureSessionInFlight;
+  } finally {
+    ensureSessionInFlight = null;
   }
 }
 

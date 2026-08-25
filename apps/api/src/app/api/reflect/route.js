@@ -306,7 +306,11 @@ export async function POST(request) {
         const copyPromise = runReflectCopy({
           journal: body,
           generateBunny: true,
-          items: targets.map((item) => ({ id: item.itemId, name: item.displayName })),
+          items: targets.map((item) => ({
+            id: item.itemId,
+            name: item.displayName,
+            evidence: item.sourceExcerpt || item.label || '',
+          })),
         })
         const [analysisResult, copyResult] = await Promise.allSettled([analyzerPromise, copyPromise])
 
@@ -364,7 +368,11 @@ export async function POST(request) {
         try {
           const copy = await runReflectCopy({
             journal: body, generateBunny: false,
-            items: targets.map((item) => ({ id: item.itemId, name: item.displayName })),
+            items: targets.map((item) => ({
+              id: item.itemId,
+              name: item.displayName,
+              evidence: item.sourceExcerpt || item.label || '',
+            })),
           })
           await applyDescriptions(copy.data.items)
         } catch (copyErr) {

@@ -21,6 +21,7 @@ import {
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
+import { hasSeenIntro } from '@/lib/onboarding';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
 import {
@@ -106,7 +107,8 @@ const PREWARM_TIMEOUT_MS = 3000;
  *      backgrounded (saves battery, avoids stale state on resume).
  *
  * 2. onAuthStateChange listener (global lifecycle):
- *    - SIGNED_IN  → router.replace to /(main)/(tabs)
+ *    - SIGNED_IN  → router.replace to /(main)/(tabs), except an anonymous
+ *      UUID prepared while the onboarding flow is still in progress
  *    - SIGNED_OUT → router.replace to /(auth)/sign-in
  *    - This is what makes sign-out from any screen (e.g. Me page)
  *      automatically navigate back to auth. Individual screens do
@@ -312,6 +314,27 @@ function RootLayout() {
       data: { subscription: authSub },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
+        const isAnonymous =
+          (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
+
+        // The onboarding paywall prepares its anonymous UUID before opening
+        // StoreKit / Play Billing. That auth event is identity preparation,
+        // not onboarding completion: keep the current screen mounted so the
+        // user can finish the store sheet and the remaining onboarding steps.
+        // A deliberate sign-in to an existing Apple/Google/email account is
+        // non-anonymous and still follows the normal signing-in route below.
+        if (isAnonymous && !hasSeenIntro()) {
+          if (session?.user?.id) {
+            void startSubscriptionRealtime(session.user.id).catch((error) => {
+              console.warn('[layout] onboarding entitlement realtime start failed:', error);
+            });
+            void startPairingRealtime(session.user.id).catch((error) => {
+              console.warn('[layout] onboarding pairing realtime start failed:', error);
+            });
+          }
+          return;
+        }
+
         // SIGNED_IN fires without a preceding SIGNED_OUT more often than you
         // would expect: a force-quit leaves the Supabase session in
         // AsyncStorage, an expo-dev-client hot restart reuses it, and Apple

@@ -37,9 +37,10 @@ import {
 /**
  * Burrow story flow on the beige grid: hook → who/what-blocks questions →
  * branch feedback → how-it-works pages → creator's words → the two-people
- * paywall → plans → Name Your Bunny → done. GUEST MODE: finishing creates an
- * ANONYMOUS session (no forced sign-in); Connect Your Account only appears
- * after a successful purchase, and is skippable there too.
+ * paywall → plans → Name Your Bunny → done. GUEST MODE: the first operation
+ * that needs a backend identity (including purchase) creates one ANONYMOUS
+ * session with no forced sign-in; Connect Your Account only appears after a
+ * successful purchase, and is skippable there too.
  */
 const INK = '#4A2F17';
 const CARD = '#FFF4E3';
@@ -208,6 +209,15 @@ export default function OnboardingScreen() {
     void haptics.medium();
     setPurchasing(true);
     try {
+      // Onboarding reaches the paywall before the name step that normally
+      // creates guest mode. Prepare the same durable anonymous UUID here so
+      // purchasing never requires Apple/Google/email account binding.
+      const sessionReady = await ensureSession();
+      if (!sessionReady) {
+        throw new Error(
+          'We couldn’t prepare your account for purchase. Check your connection and try again.',
+        );
+      }
       await initIAP();
       const outcome = await purchaseSubscription(
         plan === 'yearly' ? 'novame.plus.yearly' : 'novame.plus.monthly',

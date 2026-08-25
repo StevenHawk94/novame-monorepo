@@ -56,6 +56,7 @@ import { apiClient } from './api';
 import { ApiError } from '@novame/api-client';
 import { clearQuotaExhausted } from './quota-flag';
 import { refreshMeStats } from './me-stats';
+import { ensureSession } from './auth';
 import { supabase } from './supabase';
 import {
   clearCachedSubscription,
@@ -173,6 +174,10 @@ const processedTransactionIds = new Set<string>();
 // trigger that UI -- they should just sync silently to the server.
 let userInitiatedInFlight = false;
 let userInitiatedTimer: ReturnType<typeof setTimeout> | null = null;
+// UUID that launched the active store sheet. It prevents a transaction from
+// being uploaded under a different account if the auth session changes while
+// StoreKit / Play Billing is still open.
+let purchaseAccountIdInFlight: string | null = null;
 
 // Event emitter for UI to subscribe to purchase outcomes.
 type PurchaseCompleteCallback = (info: {
@@ -524,14 +529,33 @@ export async function purchaseSubscription(
     throw new Error('IAP not initialized -- call initIAP() first');
   }
 
+  // Purchases are allowed for guest users, but the receipt must still be
+  // attached to a durable Supabase UUID. Create/restore that anonymous
+  // session silently before opening StoreKit or Play Billing.
+  const sessionReady = await ensureSession();
+  if (!sessionReady) {
+    throw new Error(
+      'We couldn’t prepare your account for purchase. Check your connection and try again.',
+    );
+  }
+  const { data: sessionData } = await supabase.auth.getSession();
+  const purchaseUserId = sessionData.session?.user?.id;
+  if (!purchaseUserId) {
+    throw new Error(
+      'We couldn’t prepare your account for purchase. Check your connection and try again.',
+    );
+  }
+
   // Mark that the next listener fire originated from a user tap. The
   // listener uses this to decide whether to fire onPurchaseComplete
   // (which closes the paywall + shows success). Replays / renewals
   // run silently. Auto-clear after 60s in case the dialog is dismissed.
   userInitiatedInFlight = true;
+  purchaseAccountIdInFlight = purchaseUserId;
   if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
   userInitiatedTimer = setTimeout(() => {
     userInitiatedInFlight = false;
+    purchaseAccountIdInFlight = null;
     userInitiatedTimer = null;
   }, 60000);
 
@@ -563,11 +587,6 @@ export async function purchaseSubscription(
         `Google Play could not load the ${cycle} plan. Use a Play license tester or install the opted-in Play test-track build, then try again.`,
       );
     }
-    const { data: sessionData } = await supabase.auth.getSession();
-    const purchaseUserId = sessionData.session?.user?.id;
-    if (!purchaseUserId) {
-      throw new Error('Sign in before starting a purchase');
-    }
     const googleAccountId = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
       `novame:${purchaseUserId}`,
@@ -591,6 +610,7 @@ export async function purchaseSubscription(
       // Scheduled change -- clear the in-flight flag because the
       // listener won't fire. The paywall will show "scheduled" UI.
       userInitiatedInFlight = false;
+      purchaseAccountIdInFlight = null;
       if (userInitiatedTimer) {
         clearTimeout(userInitiatedTimer);
         userInitiatedTimer = null;
@@ -608,6 +628,7 @@ export async function purchaseSubscription(
     return { kind: 'completed', productId };
   } catch (e) {
     userInitiatedInFlight = false;
+    purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
       userInitiatedTimer = null;
@@ -722,8 +743,10 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   // handling. Even if userInitiatedInFlight clears mid-flight (60s
   // timeout) we want to honor the original intent.
   const wasUserInitiated = userInitiatedInFlight;
+  const expectedUserId = wasUserInitiated ? purchaseAccountIdInFlight : null;
   if (wasUserInitiated) {
     userInitiatedInFlight = false;
+    purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
       userInitiatedTimer = null;
@@ -731,7 +754,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   }
 
   try {
-    await uploadPurchaseToServer(purchase);
+    await uploadPurchaseToServer(purchase, expectedUserId);
   } catch (e) {
     console.error('[iap] server upload failed:', e);
     const conflict = purchaseOwnershipConflict(e);
@@ -838,11 +861,19 @@ type AppleIapResponse = {
   error?: string;
 };
 
-async function uploadPurchaseToServer(purchase: Purchase): Promise<void> {
+async function uploadPurchaseToServer(
+  purchase: Purchase,
+  expectedUserId: string | null = null,
+): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) {
     throw new Error('No active session for IAP upload');
+  }
+  if (expectedUserId && userId !== expectedUserId) {
+    throw new Error(
+      'Your account changed while the purchase was open. Return to the account that started the purchase and restore it.',
+    );
   }
 
   // iOS StoreKit fields (verified against PurchaseIOS interface in

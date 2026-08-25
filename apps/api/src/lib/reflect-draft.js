@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { matchItems } from '@novame/engine'
 
 import { getMergedDictionary } from '@/lib/remote-items'
-import { runReflectCopy } from '@/lib/reflect-ai'
+import { isUsableReflectMemoryCopy, runReflectCopy } from '@/lib/reflect-ai'
 
 export const MAX_BODY_CHARS = 5000
 export const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
@@ -66,12 +66,49 @@ export async function resolveDraftInput(supabase, input) {
   return { mode, body, matches }
 }
 
+function firstWords(value, maxWords = 30) {
+  const clean = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
+  if (!clean) return ''
+  return clean.split(' ').slice(0, maxWords).join(' ').slice(0, 500)
+}
+
+export function createMemoryFallbacks({ body, matches }) {
+  if (!body.trim()) return {}
+  return Object.fromEntries(matches.map((item) => [
+    item.itemId,
+    firstWords(item.sourceExcerpt || body),
+  ]).filter(([, value]) => value))
+}
+
 export async function createMemoryCopy({ body, matches, generateBunny }) {
   if (!body.trim() || matches.length === 0) return { memories: {}, bubble: null, usage: null }
-  const copy = await runReflectCopy({
-    journal: body,
-    generateBunny,
-    items: matches.map((item) => ({ id: item.itemId, name: item.displayName })),
-  })
-  return { memories: copy.data.items || {}, bubble: copy.data.bunnyText || null, usage: copy }
+  const fallbacks = createMemoryFallbacks({ body, matches })
+  try {
+    const copy = await runReflectCopy({
+      journal: body,
+      generateBunny,
+      items: matches.map((item) => ({
+        id: item.itemId,
+        name: item.displayName,
+        evidence: item.sourceExcerpt || '',
+      })),
+    })
+    const memories = Object.fromEntries(matches.map((item) => {
+      const generated = copy.data.items?.[item.itemId]
+      return [
+        item.itemId,
+        isUsableReflectMemoryCopy(generated) ? generated : fallbacks[item.itemId] || '',
+      ]
+    }).filter(([, value]) => value))
+    return {
+      memories,
+      bubble: copy.data.bunnyText || null,
+      usage: copy,
+      error: null,
+    }
+  } catch (error) {
+    // A matched item always has deterministic source evidence. AI outages must
+    // not turn a paid user's item into an empty or contradictory memory.
+    return { memories: fallbacks, bubble: null, usage: null, error }
+  }
 }

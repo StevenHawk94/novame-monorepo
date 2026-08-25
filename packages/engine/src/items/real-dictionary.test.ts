@@ -39,6 +39,15 @@ describe('real dictionary smoke (v30 catalog and matching rules)', () => {
     expect(names).toContain('Cat');
   });
 
+  it('keeps the contextual evidence that made a high-school identity match School', () => {
+    const school = matchItems(
+      'Quick journal check-in from a black high-school student in atlanta: the day was busy in an ordinary, very real way.',
+      ITEM_DICTIONARY,
+    ).find((item) => item.displayName === 'School');
+    expect(school).toBeDefined();
+    expect(school?.sourceExcerpt).toContain('black high-school student');
+  });
+
   it('applies literal AUTO_UNLESS_EXCLUDED phrases', () => {
     expect(matchItems('I made coffee', ITEM_DICTIONARY).map((item) => item.displayName)).toContain('Coffee');
     expect(matchItems('I bought a coffee table', ITEM_DICTIONARY).map((item) => item.displayName)).not.toContain('Coffee');

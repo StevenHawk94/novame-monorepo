@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,6 +23,7 @@ import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
 import { haptics } from '@/lib/haptics';
+import { ICONS } from '@/lib/icons';
 import {
   enrichReflectDraft,
   finalizeReflect,
@@ -34,6 +36,19 @@ import { emitOfficialRatingRequest, recordReflectClaimForRating } from '@/lib/of
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 import { RC } from './reflect-shared';
+
+const INVALID_AI_MEMORY = [
+  /\bno (?:specific )?memor(?:y|ies)\b/i,
+  /\b(?:journal|reflection|entry) (?:does not|doesn't|did not|didn't) (?:mention|include|record|describe)\b/i,
+  /\b(?:was|were|is|are) not (?:mentioned|included|recorded|described|provided)\b/i,
+  /\b(?:not enough|insufficient|no) (?:specific )?(?:context|detail|information)\b/i,
+  /\bnothing (?:specific )?(?:was )?(?:mentioned|included|recorded|described|provided)\b/i,
+];
+
+function usableAiMemory(value: string | undefined): string {
+  const clean = value?.trim() || '';
+  return clean && !INVALID_AI_MEMORY.some((pattern) => pattern.test(clean)) ? clean : '';
+}
 
 export function MatchedItemsReviewSheet({
   items,
@@ -281,12 +296,15 @@ export function ReflectSettlementView({
   // pass so an AI timeout, a concurrent idempotent retry, or an in-page
   // purchase can recover without replacing anything the user typed.
   const enriched = useRef(false);
-  const [memories, setMemories] = useState<ReflectMemoryDraft[]>(() => draft.matchedItems.map((item) => ({
-    itemId: item.itemId,
-    text: draft.aiMemories[item.itemId] || '',
-    source: draft.aiMemories[item.itemId] ? 'ai' : 'manual',
-    visible: true,
-  })));
+  const [memories, setMemories] = useState<ReflectMemoryDraft[]>(() => draft.matchedItems.map((item) => {
+    const aiText = usableAiMemory(draft.aiMemories[item.itemId]);
+    return {
+      itemId: item.itemId,
+      text: aiText,
+      source: aiText ? 'ai' : 'manual',
+      visible: true,
+    };
+  }));
   const [editorOpen, setEditorOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -304,7 +322,7 @@ export function ReflectSettlementView({
       if (result.ok) {
         setMemories((current) => current.map((memory) => {
           if (memory.text.trim()) return memory;
-          const text = result.aiMemories[memory.itemId]?.trim() || '';
+          const text = usableAiMemory(result.aiMemories[memory.itemId]);
           return text ? { ...memory, text, source: 'ai' } : memory;
         }));
       }
@@ -345,8 +363,20 @@ export function ReflectSettlementView({
   return (
     <View style={styles.settlement}>
       <ScrollView contentContainerStyle={styles.settlementScroll} showsVerticalScrollIndicator={false}>
-        {isPaid && <View style={styles.plusBadge}><Text style={styles.plusBadgeText}>♕  Burrow Plus</Text></View>}
-        <Text style={styles.celebration}>🎉</Text>
+        {isPaid && (
+          <View style={styles.plusBadge}>
+            <ExpoImage source={ICONS.Plus} style={styles.plusBadgeIcon} contentFit="contain" />
+            <Text style={styles.plusBadgeText}>Burrow Plus</Text>
+          </View>
+        )}
+        <View style={styles.celebrationAnchor}>
+          {rewardToast && (
+            <View pointerEvents="none" style={styles.rewardBurst}>
+              <CloverBurst amount={30} durationMs={2000} onDone={handleRewardDone} />
+            </View>
+          )}
+          <Text style={styles.celebration}>🎉</Text>
+        </View>
         <Text style={styles.savedTitle}>REFLECTION SAVED</Text>
         <Text style={styles.savedSub}>Your full reflection is private in My Logs.</Text>
 
@@ -403,11 +433,6 @@ export function ReflectSettlementView({
         </OffsetCard>
       </View>
 
-      {rewardToast && (
-        <View pointerEvents="none" style={styles.rewardBurst}>
-          <CloverBurst amount={30} onDone={handleRewardDone} />
-        </View>
-      )}
       {editorOpen && (
         <MemoryEditorSheet
           items={draft.matchedItems}
@@ -481,8 +506,10 @@ const styles = StyleSheet.create({
   editorFoot: { marginTop: 10, textAlign: 'center', color: '#2A2118', fontSize: 12, fontFamily: 'Inter_700Bold' },
   settlement: { flex: 1 },
   settlementScroll: { paddingVertical: 8, gap: 13 },
-  plusBadge: { alignSelf: 'flex-start', backgroundColor: '#54351E', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 9 },
+  plusBadge: { alignSelf: 'flex-start', backgroundColor: '#54351E', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  plusBadgeIcon: { width: 20, height: 20 },
   plusBadgeText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
+  celebrationAnchor: { position: 'relative', alignItems: 'center', overflow: 'visible', marginTop: 18 },
   celebration: { fontSize: 42, textAlign: 'center' },
   savedTitle: { color: '#FFFFFF', textAlign: 'center', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
   savedSub: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 8 },
@@ -500,5 +527,5 @@ const styles = StyleSheet.create({
   joinText: { color: '#633A21', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
   finishButton: { backgroundColor: '#FF8A47', alignItems: 'center', paddingVertical: 16 },
   finishText: { color: '#FFFFFF', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
-  rewardBurst: { position: 'absolute', top: '45%', left: 0, right: 0, zIndex: 60, alignItems: 'center' },
+  rewardBurst: { position: 'absolute', bottom: 42, left: 0, right: 0, zIndex: 60, alignItems: 'center' },
 });

@@ -263,7 +263,6 @@ export default function QuestsScreen() {
             </OffsetCard>
           ))}
 
-          <Text style={styles.editHint}>You can edit your plan anytime.</Text>
           <View style={{ height: 24 }} />
         </ScrollView>
         {(showConfetti || showLottie) && (
@@ -433,5 +432,4 @@ const styles = StyleSheet.create({
   checkBtnReady: { backgroundColor: GREEN },
   checkBtnLocked: { backgroundColor: '#F0EADF', borderWidth: 2, borderColor: '#E0D5C2' },
 
-  editHint: { fontSize: 13, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, textAlign: 'center', marginTop: 6 },
 });

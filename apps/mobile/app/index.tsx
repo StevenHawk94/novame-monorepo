@@ -12,11 +12,12 @@ import { hideSplashOnce } from '@/lib/splash';
  * every first screen has a bundled fallback for its initial paint.
  *
  * GUEST MODE (2026-07-26): the app never forces a login. A signed-in (or
- * anonymous) session goes home; a fresh install goes to onboarding, which
- * ends by creating an ANONYMOUS session; a returning session-less launch
- * silently re-establishes an anonymous session and goes home. The classic
- * sign-in screen only appears when anonymous auth is unavailable, or via
- * "Already have an account? Log in".
+ * anonymous) completed session goes home; a fresh install goes to onboarding.
+ * Onboarding may create its ANONYMOUS session before purchase, so an anonymous
+ * session does not bypass onboarding until the local completion marker exists.
+ * A returning session-less launch silently re-establishes an anonymous session
+ * and goes home. The classic sign-in screen only appears when anonymous auth is
+ * unavailable, or via "Already have an account? Log in".
  *
  * While the local route resolves, iOS shows the bundled full-screen splash.
  * Android keeps its native solid-colour + centred-icon splash visible until
@@ -46,9 +47,12 @@ export default function Index() {
     void (async () => {
       const session = await getLaunchSession();
       if (cancelled) return;
-      if (session) {
+      const introSeen = hasSeenIntro();
+      const isAnonymous =
+        (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
+      if (session && (!isAnonymous || introSeen)) {
         setRoute('main');
-      } else if (!hasSeenIntro()) {
+      } else if (!introSeen) {
         setRoute('onboarding');
       } else {
         // Never perform a network auth mutation while the full-screen entry

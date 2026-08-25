@@ -113,10 +113,16 @@ export async function POST(request) {
         await Promise.all([
           supabase.from('reflect_drafts').update({ ai_memories: aiMemories, bubble })
             .eq('id', draft.id).eq('user_id', input.userId),
-          generated.usage ? recordAIUsage(supabase, {
-            userId: input.userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
-            result: generated.usage.result, latencyMs: generated.usage.latencyMs, refId: draft.id,
-          }) : Promise.resolve(),
+          generated.error
+            ? recordAIUsage(supabase, {
+              userId: input.userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+              success: false, refId: draft.id,
+              error: generated.error?.message || String(generated.error),
+            })
+            : generated.usage ? recordAIUsage(supabase, {
+              userId: input.userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+              result: generated.usage.result, latencyMs: generated.usage.latencyMs, refId: draft.id,
+            }) : Promise.resolve(),
         ])
       } catch (error) {
         console.warn('[reflect/prepare] copy failed (non-fatal):', error?.message || error)

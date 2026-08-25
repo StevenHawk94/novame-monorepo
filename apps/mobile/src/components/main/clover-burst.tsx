@@ -22,26 +22,36 @@ import { ICONS } from '@/lib/icons';
 
 type Props = {
   amount: number;
+  /** Optional total lifetime. Omitted preserves the original ~1.45s timing. */
+  durationMs?: number;
   /** Called after the animation finishes — unmount from the parent. */
   onDone?: () => void;
 };
 
-export function CloverBurst({ amount, onDone }: Props) {
+export function CloverBurst({ amount, durationMs, onDone }: Props) {
   const progress = useSharedValue(0);
   const fade = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withTiming(1, { duration: 1500, easing: Easing.out(Easing.quad) });
+    const enterMs = 220;
+    const exitMs = 480;
+    const holdMs = durationMs === undefined
+      ? 750
+      : Math.max(0, durationMs - enterMs - exitMs);
+    progress.value = withTiming(1, {
+      duration: durationMs ?? 1500,
+      easing: Easing.out(Easing.quad),
+    });
     fade.value = withSequence(
-      withTiming(1, { duration: 220, easing: Easing.out(Easing.back(1.5)) }),
+      withTiming(1, { duration: enterMs, easing: Easing.out(Easing.back(1.5)) }),
       withDelay(
-        750,
-        withTiming(0, { duration: 480 }, (finished) => {
+        holdMs,
+        withTiming(0, { duration: exitMs }, (finished) => {
           if (finished && onDone) runOnJS(onDone)();
         }),
       ),
     );
-  }, [progress, fade, onDone]);
+  }, [progress, fade, durationMs, onDone]);
 
   const style = useAnimatedStyle(() => ({
     opacity: fade.value,

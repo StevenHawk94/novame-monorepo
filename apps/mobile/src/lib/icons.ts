@@ -36,6 +36,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   interact: require('../../assets/Icons/interact.png'),
   Clover: require('../../assets/Icons/clovers.png'),
   Clovers: require('../../assets/Icons/clovers.png'),
+  Plus: require('../../assets/Icons/plus.png'),
   send: require('../../assets/Icons/send.png'),
   visitMasterHistory: require('../../assets/Icons/visit-master-history.png'),
   // Reflect entry (three ways in)

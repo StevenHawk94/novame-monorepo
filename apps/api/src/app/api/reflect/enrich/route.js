@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient, createMemoryCopy } from '@/lib/reflect-draft'
 import { recordAIUsage } from '@/lib/ai-usage'
-import { REFLECT_COPY_VERSION } from '@/lib/reflect-ai'
+import { isUsableReflectMemoryCopy, REFLECT_COPY_VERSION } from '@/lib/reflect-ai'
 
 export const runtime = 'edge'
 
@@ -30,11 +30,11 @@ export async function POST(request) {
       : [])
     const existingMemories = draft.ai_memories || {}
     const targets = (draft.matches || []).filter((item) => (
-      allowed.has(item.itemId) && !String(existingMemories[item.itemId] || '').trim()
+      allowed.has(item.itemId) && !isUsableReflectMemoryCopy(existingMemories[item.itemId])
     ))
     const alreadyGenerated = Object.fromEntries(
       (draft.matches || [])
-        .filter((item) => allowed.has(item.itemId) && String(existingMemories[item.itemId] || '').trim())
+        .filter((item) => allowed.has(item.itemId) && isUsableReflectMemoryCopy(existingMemories[item.itemId]))
         .map((item) => [item.itemId, existingMemories[item.itemId]]),
     )
     if (targets.length === 0) {
@@ -52,10 +52,16 @@ export async function POST(request) {
     await Promise.all([
       supabase.from('reflect_drafts').update({ ai_memories: merged, bubble })
         .eq('id', draftId).eq('user_id', userId),
-      generated.usage ? recordAIUsage(supabase, {
-        userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
-        result: generated.usage.result, latencyMs: generated.usage.latencyMs, refId: draftId,
-      }) : Promise.resolve(),
+      generated.error
+        ? recordAIUsage(supabase, {
+          userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+          success: false, refId: draftId,
+          error: generated.error?.message || String(generated.error),
+        })
+        : generated.usage ? recordAIUsage(supabase, {
+          userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
+          result: generated.usage.result, latencyMs: generated.usage.latencyMs, refId: draftId,
+        }) : Promise.resolve(),
     ])
     return NextResponse.json({
       success: true,
