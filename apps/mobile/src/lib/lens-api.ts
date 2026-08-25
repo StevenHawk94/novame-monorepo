@@ -33,10 +33,14 @@ export type LensSubmitResult =
   | { ok: false; error: LensError };
 
 interface CachedState {
+  contentVersion: number;
   date: string; // YYYY-MM-DD the done flag belongs to
   done: boolean;
   nextCards: Record<string, LensCard>; // theme -> pre-fetched next card
 }
+
+/** Bump only when the authored card library is fully replaced. */
+const LENS_CONTENT_VERSION = 3;
 
 function localDateStr(): string {
   const d = new Date();
@@ -48,16 +52,19 @@ function localDateStr(): string {
 
 function readState(): CachedState {
   const raw = storage.getString(kNewLensState.name);
-  if (!raw) return { date: '', done: false, nextCards: {} };
+  if (!raw) return { contentVersion: LENS_CONTENT_VERSION, date: '', done: false, nextCards: {} };
   try {
     const s = JSON.parse(raw) as Partial<CachedState>;
     return {
+      contentVersion: LENS_CONTENT_VERSION,
       date: s.date ?? '',
       done: s.done ?? false,
-      nextCards: s.nextCards ?? {},
+      // Keep today's done state, but never surface a card cached from an older
+      // authored library after a full content replacement.
+      nextCards: s.contentVersion === LENS_CONTENT_VERSION ? (s.nextCards ?? {}) : {},
     };
   } catch {
-    return { date: '', done: false, nextCards: {} };
+    return { contentVersion: LENS_CONTENT_VERSION, date: '', done: false, nextCards: {} };
   }
 }
 
@@ -177,7 +184,7 @@ function markDoneToday(): void {
   const today = localDateStr();
   // Reset nextCards if crossing a day boundary; keep otherwise.
   const nextCards = s.date === today ? s.nextCards : {};
-  writeState({ date: today, done: true, nextCards });
+  writeState({ contentVersion: LENS_CONTENT_VERSION, date: today, done: true, nextCards });
 }
 
 /** Fetch the now-next card after a completion and stash it for tomorrow. */

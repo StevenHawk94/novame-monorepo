@@ -2,107 +2,85 @@
  * Quiet Wins -- the preset "small wins" checklist (C5).
  *
  * The user checks whatever's true from a mixed list; the app credits a flat
- * +20 xp once a day regardless of how many are checked. Unlike Reflect and True
- * North, Quiet Wins does NOT award gems -- it's a light daily nudge toward
- * noticing, not a dimension measurement -- so `dimension` here remains
- * backstage metadata and is never a gem source.
+ * +20 clovers once a day regardless of how many are checked. Quiet Wins does
+ * not award gems or contribute to growth dimensions -- it is a light daily
+ * nudge toward noticing, not a dimension measurement.
  *
- * Two per dimension, sixteen total, shown shuffled and ungrouped (the user
- * never sees the dimension label). Feedback is selected from the version banks
- * below according to how many items were checked. The ids are stable and
- * load-bearing (stored in kit_completions.payload).
+ * Sixteen total, shown in a stable mixed order. Feedback is selected from the
+ * version banks below according to how many items were checked. The ids are
+ * stable and load-bearing (stored in kit_completions.payload).
  */
-import type { DimensionId } from './dimensions';
-
 export interface QuietWin {
   /** Stable id, stored in kit_completions.payload. Never reuse or renumber. */
   id: string;
   text: string;
-  /** Backstage metadata only, never a gem source. */
-  dimension: DimensionId;
 }
 
 export const QUIET_WINS: readonly QuietWin[] = [
   {
     id: 'qw_expression_1',
-    dimension: 'expression',
     text: "Said what I actually thought, even though staying quiet was easier",
   },
   {
     id: 'qw_expression_2',
-    dimension: 'expression',
     text: "Told someone how I really felt instead of brushing it off",
   },
   {
     id: 'qw_awareness_1',
-    dimension: 'awareness',
     text: "Caught myself mid-spiral and actually paused",
   },
   {
     id: 'qw_awareness_2',
-    dimension: 'awareness',
     text: "Sat with a hard feeling instead of scrolling it away",
   },
   {
     id: 'qw_momentum_1',
-    dimension: 'momentum',
     text: "Started the thing I'd been putting off",
   },
   {
     id: 'qw_momentum_2',
-    dimension: 'momentum',
     text: "Sent the message I'd been avoiding",
   },
   {
     id: 'qw_direction_1',
-    dimension: 'direction',
     text: "Said no to a plan that didn't feel right",
   },
   {
     id: 'qw_direction_2',
-    dimension: 'direction',
     text: "Got a little clearer on what I actually want",
   },
   {
     id: 'qw_steadiness_1',
-    dimension: 'steadiness',
     text: "Handled something that threw me off, and stayed standing",
   },
   {
     id: 'qw_steadiness_2',
-    dimension: 'steadiness',
     text: "Took a break without guilt",
   },
   {
     id: 'qw_confidence_1',
-    dimension: 'confidence',
     text: "Trusted my gut on something I wasn't sure about",
   },
   {
     id: 'qw_confidence_2',
-    dimension: 'confidence',
     text: "Did the thing before I felt fully ready",
   },
   {
     id: 'qw_gratitude_1',
-    dimension: 'gratitude',
     text: "Noticed a small thing that was better than I expected",
   },
   {
     id: 'qw_gratitude_2',
-    dimension: 'gratitude',
     text: "Thanked someone and meant it",
   },
   {
     // qw_connection_1 ("Told someone the truth, gently") retired 2026-08-06 —
     // ids are never reused; old payloads referencing it are simply ignored.
     id: 'qw_connection_3',
-    dimension: 'connection',
     text: "Showed up for someone without being asked",
   },
   {
     id: 'qw_connection_2',
-    dimension: 'connection',
     text: "Reached out to someone instead of waiting for them",
   },
 ];

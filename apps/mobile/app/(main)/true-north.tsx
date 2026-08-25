@@ -268,14 +268,14 @@ function Reveal({
 }) {
   void lastRanking; // the mock drops the week-over-week comparison
   void c;
-  // Keep the reveal concise: surface five points from each top-two dimension.
+  // Keep the reveal concise: surface three points from each top-three dimension.
   // The week + complete ranking seed freezes the result for the entire weekly
   // period, while a newly ranked week receives a fresh combination.
   const focusPoints = useMemo(
     () => {
       const resultSeed = `${currentLocalWeekSeed()}:${ranking.join(',')}`;
-      return ranking.slice(0, 2).flatMap((dim) =>
-        stableSample(TRUE_NORTH_FOCUS_POINTS[dim], 5, `${resultSeed}:${dim}`),
+      return ranking.slice(0, 3).flatMap((dim) =>
+        stableSample(TRUE_NORTH_FOCUS_POINTS[dim], 3, `${resultSeed}:${dim}`),
       );
     },
     [ranking],
@@ -325,7 +325,7 @@ function Reveal({
         </View>
       </View>
 
-      {/* What matters most — five points from each top-two dimension */}
+      {/* What matters most — three points from each top-three dimension */}
       <SpringPop animate={showReward} boundedBounce delay={330} style={styles.revealCard}>
         <View style={styles.revealCardHeader}>
           <Text style={styles.revealCardEmoji}>{'🎯'}</Text>

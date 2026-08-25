@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { quietWinsFeedback } from './quiet-wins';
+import { QUIET_WINS, quietWinsFeedback } from './quiet-wins';
+
+describe('QUIET_WINS', () => {
+  it('contains no growth-dimension metadata', () => {
+    expect(QUIET_WINS).toHaveLength(16);
+    for (const win of QUIET_WINS) {
+      expect(Object.keys(win).sort()).toEqual(['id', 'text']);
+      expect(win).not.toHaveProperty('dimension');
+    }
+  });
+});
 
 describe('quietWinsFeedback', () => {
   it('cycles zero-selection feedback in order', () => {

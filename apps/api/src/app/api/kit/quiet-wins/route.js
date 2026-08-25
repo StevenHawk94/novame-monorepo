@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { XP_RULES, GEMS_PER_DIMENSION } from '@novame/engine'
-import { QUIET_WINS } from '@novame/domain'
+import { XP_RULES } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -22,13 +21,13 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, checkedIds: string[], localDate }
  *
- * Records one Quiet Wins run: a flat +20 xp, no gems, once a day. The checked
+ * Records one Quiet Wins run: a flat +20 clovers, no gems, once a day. The checked
  * items are stored in the completion payload; the layered feedback shown to the
  * user is computed client-side from them (a pure display mapping), so this
- * endpoint just credits xp and returns the snapshot. Zero checks is allowed --
+ * endpoint just credits clovers and returns the snapshot. Zero checks is allowed --
  * the run still counts and still pays, matching the "no pressure" framing.
  *
- * xp is a flat 20; submit_kit's once-per-day gate (not this endpoint) enforces
+ * The award is a flat 20; submit_kit's once-per-day gate (not this endpoint) enforces
  * the daily limit, so a successful call is always the first of the day.
  */
 export async function POST(request) {
@@ -58,17 +57,6 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const ids = Array.isArray(checkedIds) ? checkedIds : []
 
-    // PRD 1.2: each checked win credits its dimension +10. Aggregated per
-    // dimension; unknown ids (client/domain drift) are simply skipped.
-    const gemsByDim = new Map()
-    for (const id of ids) {
-      const win = QUIET_WINS.find((w) => w.id === id)
-      if (win?.dimension) {
-        gemsByDim.set(win.dimension, (gemsByDim.get(win.dimension) || 0) + GEMS_PER_DIMENSION)
-      }
-    }
-    const gemHits = [...gemsByDim].map(([dimension, gems]) => ({ dimension, gems }))
-
     const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
       p_user_id: userId,
       p_kit: 'quiet_wins',
@@ -77,7 +65,9 @@ export async function POST(request) {
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.quietWins.award,
-      p_gem_hits: gemHits,
+      // Small Wins is intentionally dimension-free. Keep this explicit at the
+      // server boundary so checklist selections can never become gem events.
+      p_gem_hits: [],
       p_payload: { checkedIds: ids },
     })
     if (rpcErr) {

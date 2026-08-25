@@ -40,7 +40,7 @@ export function trueNorthGemHits(
 }
 
 /**
- * Reveal-page content (copy finalized 2026-08-06). The TOP-TWO ranked
+ * Reveal-page content (copy finalized 2026-08-06). The TOP-THREE ranked
  * dimensions surface their FOCUS lists ("What matters to you most"); the
  * LAST-ranked dimension surfaces its RELEASE list ("What you should forgive
  * and forget", six per dimension).

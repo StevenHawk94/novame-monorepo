@@ -9,7 +9,7 @@ function idForName(name: string): string {
   return found[0];
 }
 
-describe('real dictionary smoke (v30 catalog and matching rules)', () => {
+describe('real dictionary smoke (v31 catalog and matching rules)', () => {
   it('has the complete 5,439-item catalog', () => {
     expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5439);
   });
@@ -58,12 +58,14 @@ describe('real dictionary smoke (v30 catalog and matching rules)', () => {
     expect(ITEM_DICTIONARY.synonyms['ultimate frisbee']).toBe(idForName('Frisbee'));
     expect(ITEM_DICTIONARY.synonyms.surprised).toBe(idForName('Surprised'));
     expect(ITEM_DICTIONARY.synonyms.celebrating).toBe(idForName('Celebrating'));
-    expect(ITEM_DICTIONARY.synonyms['moved back home']).toBe(idForName('Moving Box'));
+    expect(ITEM_DICTIONARY.synonyms['moved back home']).toBe(idForName('Home'));
     expect(ITEM_DICTIONARY.synonyms['on campus']).toBe(idForName('Campus'));
-    expect(ITEM_DICTIONARY.synonyms['school day']).toBe(idForName('Classroom'));
+    expect(ITEM_DICTIONARY.synonyms['school day']).toBe(idForName('School'));
+    expect(ITEM_DICTIONARY.synonyms.suitcases).toBe(idForName('Suitcase'));
+    expect(ITEM_DICTIONARY.synonyms['steel toe boots']).toBe(idForName('Steel-Toe Boot'));
   });
 
-  it('includes the v30 bundled icon expansion', () => {
+  it('keeps the final 49 bundled icon identities in the v31 catalog', () => {
     expect(ITEM_DICTIONARY.items['memory.5392_chicken_nuggets']?.displayName).toBe('Chicken Nuggets');
     expect(ITEM_DICTIONARY.items['memory.5440_water_heater']?.displayName).toBe('Water Heater');
     expect(matchItems('I replaced the water heater', ITEM_DICTIONARY).map((item) => item.displayName))

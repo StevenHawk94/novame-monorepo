@@ -3,7 +3,7 @@
  *
  * The chooser lists the 12 prompt-reflection categories (curated, ranked
  * subsets of the master catalog — generated into guided-catalog.g.ts from
- * Icon_Mapping_Core_Tables_v30.xlsx). The user picks the themes they care
+ * Icon_Mapping_Core_Tables_v31.xlsx). The user picks the themes they care
  * about once; later opens jump straight to their prompt pages, one designed
  * question per theme, and the pages' top-right Edit reopens the chooser.
  * Guided Reflect uses the same 12-category item library.
@@ -30,7 +30,7 @@ export interface GuidedSubcategory {
   itemIds: string[];
 }
 
-// Emoji stays app-owned; the question comes from the generated v30 workbook
+// Emoji stays app-owned; the question comes from the generated v31 workbook
 // data so future taxonomy updates cannot be masked by a duplicate hardcode.
 const META: Record<string, { emoji: string }> = {
   emotion_and_feeling: { emoji: '💛' },
@@ -83,7 +83,7 @@ export function itemsForGuidedCategory(key: string): string[] {
   return extra.length > 0 ? [...base, ...extra] : base;
 }
 
-/** v30 secondary tabs in workbook order; icons stay in workbook row order. */
+/** v31 secondary tabs in workbook order; icons stay in workbook row order. */
 export function subcategoriesForGuidedCategory(key: string): GuidedSubcategory[] {
   const bundled = SUBCATEGORIES_BY_KEY.get(key) ?? [];
   const categorized = new Set(bundled.flatMap((subcategory) => subcategory.itemIds));

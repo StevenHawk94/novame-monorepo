@@ -12,5 +12,10 @@ Runtime outputs live in:
 - `packages/engine/src/items/dictionary.json`
 
 Run `python3 tools/build-items-v19.py` for an incremental image build. It only
-creates missing WebPs. Use `--full` only for an intentional complete rebuild.
+creates missing WebPs. To intentionally replace a suffix from updated source
+pages without touching earlier icons, use for example:
+
+`python3 tools/build-items-v19.py --source-dir tools/item-source/memory-items/新icons --replace-from-row 1374`
+
+Use `--full` only for an intentional complete rebuild.
 Run `python3 tools/build-item-data-v19.py` after workbook matching-rule changes.

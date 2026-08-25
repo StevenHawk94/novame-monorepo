@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and visually review the bundled v30 memory-item icon set.
+"""Build and visually review the bundled v31 memory-item icon set.
 
 The source directory contains 7x7 transparent PNG montages named by their
 Excel row span (for example, 2-50.png). Each connected alpha component is
@@ -9,11 +9,12 @@ their icon and pixels from neighboring cells cannot leak into the output.
 Outputs:
   apps/mobile/assets/items/each/memory.<icon-name>.webp
   tools/item-source/memory-items/standardized-preview.html
-  tools/item-source/memory-items/items-v30-image-qa.json
+  tools/item-source/memory-items/items-v31-image-qa.json
 
 Normal runs are incremental: only workbook items whose WebP is missing are
-decoded and written, so previously bundled artwork is never touched. Pass
---full only when an intentional complete rebuild is required.
+decoded and written, so previously bundled artwork is never touched. To replace
+an intentional suffix from alternate source pages, pass both --source-dir and
+--replace-from-row. Pass --full only for an intentional complete rebuild.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import re
 import unicodedata
 from collections import defaultdict
@@ -34,10 +36,11 @@ from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "tools" / "item-source" / "memory-items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v30.xlsx"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v31.xlsx"
 OUTPUT_DIR = ROOT / "apps" / "mobile" / "assets" / "items" / "each"
 PREVIEW_PATH = SOURCE_DIR / "standardized-preview.html"
-QA_PATH = SOURCE_DIR / "items-v30-image-qa.json"
+QA_PATH = SOURCE_DIR / "items-v31-image-qa.json"
+PREVIEW_IMAGE_DIR = Path(os.path.relpath(OUTPUT_DIR, PREVIEW_PATH.parent)).as_posix()
 
 GRID = 7
 CANVAS = 256
@@ -58,22 +61,24 @@ def slugify(value: str) -> str:
     return value
 
 
-def source_pages() -> list[tuple[int, int, Path]]:
+def source_pages(source_dir: Path, *, require_full_catalog: bool) -> list[tuple[int, int, Path]]:
     pages = []
-    for path in SOURCE_DIR.glob("*.png"):
+    for path in source_dir.glob("*.png"):
         match = SOURCE_RE.match(path.name)
         if match:
             start, end = map(int, match.groups())
             pages.append((start, end, path))
     pages.sort(key=lambda page: page[0])
-    if len(pages) != SOURCE_PAGE_COUNT:
+    if not pages:
+        raise ValueError(f"No source pages found in {source_dir}")
+    if require_full_catalog and len(pages) != SOURCE_PAGE_COUNT:
         raise ValueError(f"Expected {SOURCE_PAGE_COUNT} source pages, found {len(pages)}")
-    expected = 2
+    expected = 2 if require_full_catalog else pages[0][0]
     for start, end, path in pages:
         if start != expected or end - start + 1 != GRID * GRID:
             raise ValueError(f"Invalid or non-contiguous page range: {path.name}")
         expected = end + 1
-    if expected != FINAL_WORKBOOK_ROW + 1:
+    if require_full_catalog and expected != FINAL_WORKBOOK_ROW + 1:
         raise ValueError(f"Expected final workbook row {FINAL_WORKBOOK_ROW}, got {expected - 1}")
     return pages
 
@@ -305,11 +310,12 @@ def preview_html(cards_by_page: list[tuple[str, list[dict[str, str]]]]) -> str:
     for page_name, cards in cards_by_page:
         card_markup = "\n".join(
             "<div class='c' data-name='{query}' data-row='{row}' title='Excel row {row} · {item_id}'>"
-            "<img loading='lazy' src='../items/each/{filename}' alt='{name}'>"
+            "<img loading='lazy' src='{image_dir}/{filename}' alt='{name}'>"
             "<span>{name}</span><small>Row {row}</small></div>".format(
                 query=html.escape(card["name"].casefold(), quote=True),
                 row=card["row"],
                 item_id=html.escape(card["item_id"], quote=True),
+                image_dir=html.escape(PREVIEW_IMAGE_DIR, quote=True),
                 filename=html.escape(card["filename"], quote=True),
                 name=html.escape(card["name"]),
             )
@@ -322,7 +328,7 @@ def preview_html(cards_by_page: list[tuple[str, list[dict[str, str]]]]) -> str:
     return """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Memory Items v30 · 5,439 Icons</title>
+<title>Memory Items v31 · 5,439 Icons</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f0e8;color:#50351e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 header{position:sticky;top:0;z-index:2;padding:16px 24px;background:rgba(245,240,232,.96);border-bottom:1px solid #d8c9b6;backdrop-filter:blur(8px)}
@@ -331,7 +337,7 @@ main{padding:10px 24px 40px}section{scroll-margin-top:130px}h2{margin:26px 0 12p
 .c{min-height:126px;padding:8px 6px 7px;background:white;border:1px solid #eadfce;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;box-shadow:0 1px 2px rgba(77,49,25,.06)}
 .c img{width:80px;height:80px;object-fit:contain}.c span{font-size:11px;line-height:1.15;min-height:25px;display:flex;align-items:center;justify-content:center}.c small{font-size:9px;color:#a18c73}.hidden{display:none}
 </style></head><body>
-<header><h1>Memory Items v30</h1><p id="count">5,439 icons · 111 source sheets · 7×7 each</p><input id="search" type="search" placeholder="Search Icon_name or Excel row…"></header>
+<header><h1>Memory Items v31</h1><p id="count">5,439 icons · 111 source sheets · 7×7 each</p><input id="search" type="search" placeholder="Search Icon_name or Excel row…"></header>
 <main>""" + "\n".join(sections) + """</main>
 <script>
 const cards=[...document.querySelectorAll('.c')], count=document.querySelector('#count');
@@ -347,9 +353,27 @@ def main() -> None:
         action="store_true",
         help="Explicitly rebuild every bundled icon; the default only writes missing outputs",
     )
+    parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=SOURCE_DIR,
+        help="Directory containing row-range PNG montages (defaults to the catalog source directory)",
+    )
+    parser.add_argument(
+        "--replace-from-row",
+        type=int,
+        help="Overwrite only icons at or after this workbook row, using --source-dir pages",
+    )
     args = parser.parse_args()
 
-    pages = source_pages()
+    if args.full and args.replace_from_row is not None:
+        raise ValueError("--full and --replace-from-row are mutually exclusive")
+    source_dir = args.source_dir.resolve()
+    catalog_pages = source_pages(SOURCE_DIR.resolve(), require_full_catalog=True)
+    pages = source_pages(
+        source_dir,
+        require_full_catalog=source_dir == SOURCE_DIR.resolve(),
+    )
     items = workbook_items()
     if args.check_only:
         for page_index, (_, _, path) in enumerate(pages, start=1):
@@ -375,6 +399,30 @@ def main() -> None:
         rows_to_write = set(items)
         selected_pages = pages
         mode = "full"
+    elif args.replace_from_row is not None:
+        replace_from = args.replace_from_row
+        if replace_from not in items:
+            raise ValueError(f"--replace-from-row is outside the workbook: {replace_from}")
+        available_rows = {
+            row_number
+            for start, end, _ in pages
+            for row_number in range(start, end + 1)
+        }
+        rows_to_write = {
+            row_number for row_number in items
+            if row_number >= replace_from
+        }
+        uncovered = sorted(rows_to_write - available_rows)
+        if uncovered:
+            raise ValueError(
+                f"Replacement pages do not cover rows {replace_from}-{FINAL_WORKBOOK_ROW}; "
+                f"first missing rows: {uncovered[:5]}"
+            )
+        selected_pages = [
+            page for page in pages
+            if page[1] >= replace_from
+        ]
+        mode = f"replace-from-{replace_from}"
     else:
         rows_to_write = missing_rows
         selected_pages = [
@@ -401,7 +449,7 @@ def main() -> None:
         page_reports.append(report)
         print(
             f"[{page_index:03d}/{len(selected_pages)}] {path.name}: "
-            f"{sum(row_number in rows_to_write for row_number in range(start, end + 1))} new icons"
+            f"{sum(row_number in rows_to_write for row_number in range(start, end + 1))} written icons"
         )
 
     if len(written_files) != len(rows_to_write):
@@ -415,7 +463,7 @@ def main() -> None:
     # Preview metadata is cheap to regenerate and references the existing files;
     # incremental image builds do not need to decode or rewrite old artwork.
     cards_by_page = []
-    for start, end, path in pages:
+    for start, end, path in catalog_pages:
         cards = []
         for row_number in range(start, end + 1):
             item = items[row_number]
@@ -427,9 +475,9 @@ def main() -> None:
         cards_by_page.append((path.stem, cards))
     PREVIEW_PATH.write_text(preview_html(cards_by_page), encoding="utf-8")
     qa = {
-        "schema": "memory-items-v30-image-qa@1",
+        "schema": "memory-items-v31-image-qa@1",
         "mode": mode,
-        "source_pages": len(pages),
+        "source_pages": len(catalog_pages),
         "processed_pages": len(selected_pages),
         "icons_expected": ICON_COUNT,
         "icons_generated": len(written_files),
