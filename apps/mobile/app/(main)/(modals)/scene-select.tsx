@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
@@ -48,15 +48,23 @@ export default function SceneSelectScreen() {
   const [current, setCurrent] = useState<string>(() => getSelectedScene());
   const [busy, setBusy] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const closingRef = useRef(false);
 
   useEffect(() => subscribeCosmetics(setCosmetics), []);
 
   useFocusEffect(
     useCallback(() => {
+      closingRef.current = false;
       void fetchSceneCatalog().then(setCatalog);
       void fetchCosmetics().then(setCosmetics);
     }, []),
   );
+
+  const closeScreen = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    router.back();
+  }, [router]);
 
   // Thumbs are tiny and can warm together. Full-size scenes are intentionally
   // limited to the current/owned set and warmed one at a time (current first),
@@ -87,6 +95,7 @@ export default function SceneSelectScreen() {
 
   /** Switch scene: cached art returns immediately; only a cache miss blocks. */
   async function useScene(key: string, imageUrl: string | null) {
+    if (closingRef.current) return;
     setSelectedScene(key);
     setCurrent(key);
     if (imageUrl) {
@@ -108,7 +117,7 @@ export default function SceneSelectScreen() {
       }
     }
     void haptics.success();
-    router.back();
+    closeScreen();
   }
 
   async function buyAndUse(s: SceneDef) {
@@ -132,7 +141,7 @@ export default function SceneSelectScreen() {
   }
 
   function onTap(s: SceneDef) {
-    if (busy || switching || isCurrent(s.key)) return;
+    if (busy || switching || closingRef.current || isCurrent(s.key)) return;
     if (s.plusOnly && !isPaid) {
       // Free user on a Plus scene: straight to the paywall (Closet contract).
       void haptics.pageOpen();
@@ -164,7 +173,7 @@ export default function SceneSelectScreen() {
     <View style={styles.root}>
       <View style={[styles.topRow, { paddingTop: insets.top + 8 }]}>
         <Pressable
-          onPress={() => { void haptics.light(); router.back(); }}
+          onPress={() => { void haptics.light(); closeScreen(); }}
           style={styles.closeBtn}
           hitSlop={12}
         >

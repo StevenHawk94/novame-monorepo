@@ -9,6 +9,7 @@ import { kBubble } from '../shared/storage/keys';
 import { storage } from './storage';
 
 const FRESH_MS = 6 * 60 * 60 * 1000; // show an AI line for up to 6h
+const bubbleListeners = new Set<() => void>();
 
 export interface FreshBubble {
   line: string;
@@ -31,6 +32,14 @@ interface BubbleSequence {
 export function setReflectBubble(line: string): void {
   const payload: StoredBubble = { ...readStoredBubble(), line, atMs: Date.now() };
   storage.set(kBubble.name, JSON.stringify(payload));
+  for (const listener of bubbleListeners) listener();
+}
+
+/** Repaint mounted Home immediately when a completed Reflect replaces the
+ * cached line. This is local-only and does not change the six-hour cache. */
+export function subscribeToReflectBubble(listener: () => void): () => void {
+  bubbleListeners.add(listener);
+  return () => bubbleListeners.delete(listener);
 }
 
 /** The fresh AI line, or null if none / expired. */
@@ -92,4 +101,5 @@ export function advanceDefaultBubble(): string {
 
 export function clearBubble(): void {
   storage.remove(kBubble.name);
+  for (const listener of bubbleListeners) listener();
 }

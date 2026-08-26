@@ -66,7 +66,10 @@ export async function applyConnectionUpdates(supabase, {
 }) {
   if (!pair || !updates) return { changed: false, payload: null }
   const hasAnyUpdate = CONNECTION_DIMENSIONS.some((key) => (
-    updates[key]?.hasUpdate && Array.isArray(updates[key]?.cards) && updates[key].cards.length > 0
+    updates[key]?.hasUpdate && (
+      updates[key]?.clearExisting === true
+      || (Array.isArray(updates[key]?.cards) && updates[key].cards.length > 0)
+    )
   ))
   if (!hasAnyUpdate) return { changed: false, payload: null }
   const { data, error } = await supabase.rpc('apply_connection_insight_updates_v2', {

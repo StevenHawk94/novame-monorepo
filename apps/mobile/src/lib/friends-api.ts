@@ -926,12 +926,37 @@ export type ConnectionHistoryResult =
   | { ok: true; paired: boolean; unavailable?: boolean; cards: ConnectionHistoryCard[] }
   | { ok: false; error: 'plus_required' | 'network' };
 
+type ConnectionHistoryListener = (result: ConnectionHistoryResult) => void;
+
+const connectionHistoryListeners = new Set<ConnectionHistoryListener>();
+let connectionHistoryRequest: Promise<ConnectionHistoryResult> | null = null;
+
 export type InsightsResult =
   | { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
   | { ok: false; error: 'plus_required' | 'network' };
 
 export function getCachedInsights(): InsightsResult | null {
   return (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
+}
+
+export function getCachedConnectionHistory(): ConnectionHistoryResult | null {
+  const cached = readAnalysisCache().history as ConnectionHistoryResult | undefined;
+  return cached?.ok === true ? cached : null;
+}
+
+export function subscribeConnectionHistory(listener: ConnectionHistoryListener): () => void {
+  connectionHistoryListeners.add(listener);
+  return () => connectionHistoryListeners.delete(listener);
+}
+
+function publishConnectionHistory(result: ConnectionHistoryResult): void {
+  for (const listener of connectionHistoryListeners) {
+    try {
+      listener(result);
+    } catch (error) {
+      console.warn('[connection-history] listener failed:', error);
+    }
+  }
 }
 
 /** Cache-first daily reconciliation, plus a one-time refresh after 48h away. */
@@ -991,36 +1016,81 @@ export async function fetchInsights(options?: { resume?: boolean }): Promise<
   }
 }
 
-/** Append-only Connection cards, newest date first. Date filtering is server-side. */
+function mergeConnectionHistoryCards(
+  cached: ConnectionHistoryCard[],
+  incoming: ConnectionHistoryCard[],
+): ConnectionHistoryCard[] {
+  const byId = new Map<string, ConnectionHistoryCard>();
+  for (const card of [...cached, ...incoming]) {
+    if (card?.id) byId.set(card.id, card);
+  }
+  return [...byId.values()].sort((a, b) => {
+    const dateOrder = b.date.localeCompare(a.date);
+    if (dateOrder !== 0) return dateOrder;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+}
+
+/**
+ * Append-only Connection cards. Full history is cached locally; Realtime and
+ * reconnects request only rows at/after the newest cached timestamp, then
+ * de-duplicate by immutable history id.
+ */
 export async function fetchConnectionHistory(options?: {
   start?: string | null;
   end?: string | null;
+  incremental?: boolean;
+  force?: boolean;
 }): Promise<ConnectionHistoryResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
-  const params = new URLSearchParams({ userId });
-  if (options?.start) params.set('start', options.start);
-  if (options?.end) params.set('end', options.end);
-  try {
-    const result = await apiClient.get<{
-      success?: boolean;
-      paired?: boolean;
-      unavailable?: boolean;
-      cards?: ConnectionHistoryCard[];
-      error?: string;
-    }>(`/api/friends/insights/history?${params.toString()}`);
-    if (result.success) {
-      return {
-        ok: true,
-        paired: result.paired === true,
-        unavailable: result.unavailable === true,
-        cards: Array.isArray(result.cards) ? result.cards : [],
-      };
+  const cacheable = !options?.start && !options?.end;
+  const cached = cacheable ? getCachedConnectionHistory() : null;
+  if (!options?.force && !options?.incremental && cached) return cached;
+  if (cacheable && connectionHistoryRequest) return connectionHistoryRequest;
+
+  const request = (async (): Promise<ConnectionHistoryResult> => {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return { ok: false, error: 'network' };
+    const params = new URLSearchParams({ userId });
+    if (options?.start) params.set('start', options.start);
+    if (options?.end) params.set('end', options.end);
+    if (cacheable && options?.incremental && cached?.ok && cached.cards.length > 0) {
+      params.set('since', cached.cards.reduce((latest, card) => (
+        card.createdAt > latest ? card.createdAt : latest
+      ), cached.cards[0].createdAt));
     }
-    return { ok: false, error: result.error === 'plus_required' ? 'plus_required' : 'network' };
-  } catch (error) {
-    const code = (error as { body?: { error?: string } })?.body?.error;
-    return { ok: false, error: code === 'plus_required' ? 'plus_required' : 'network' };
-  }
+    try {
+      const result = await apiClient.get<{
+        success?: boolean;
+        paired?: boolean;
+        unavailable?: boolean;
+        cards?: ConnectionHistoryCard[];
+        error?: string;
+      }>(`/api/friends/insights/history?${params.toString()}`);
+      if (result.success) {
+        const next: ConnectionHistoryResult = {
+          ok: true,
+          paired: result.paired === true,
+          unavailable: result.unavailable === true,
+          cards: cacheable && options?.incremental && cached?.ok
+            ? mergeConnectionHistoryCards(cached.cards, Array.isArray(result.cards) ? result.cards : [])
+            : (Array.isArray(result.cards) ? result.cards : []),
+        };
+        if (cacheable) {
+          patchAnalysisCache({ history: next, historyFetchedAt: Date.now() });
+          publishConnectionHistory(next);
+        }
+        return next;
+      }
+      return cached ?? { ok: false, error: result.error === 'plus_required' ? 'plus_required' : 'network' };
+    } catch (error) {
+      const code = (error as { body?: { error?: string } })?.body?.error;
+      return cached ?? { ok: false, error: code === 'plus_required' ? 'plus_required' : 'network' };
+    }
+  })().finally(() => {
+    if (connectionHistoryRequest === request) connectionHistoryRequest = null;
+  });
+
+  if (cacheable) connectionHistoryRequest = request;
+  return request;
 }

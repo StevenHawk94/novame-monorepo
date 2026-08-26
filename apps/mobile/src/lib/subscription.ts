@@ -56,6 +56,9 @@ export type CachedSubscription = {
   tier: PricingTierKey;
   /** Wall-clock timestamp of the last successful server fetch. */
   lastFetchedAtMs: number;
+  /** Added after the old sign-in bootstrap stopped writing a temporary Free
+   * tier. Missing means the record may be that legacy placeholder. */
+  serverConfirmed?: boolean;
 };
 
 // ---- mmkv read / write ----
@@ -84,13 +87,26 @@ export function getCachedSubscriptionTier(): PricingTierKey {
   return getCachedSubscription()?.tier ?? 'free';
 }
 
+/** Distinguishes an authoritative/cached Free tier from a cache that has not
+ * been hydrated yet. Most gates should keep using getCachedSubscriptionTier;
+ * launch UI that must avoid a false Free first frame can use this snapshot. */
+export function getCachedSubscriptionTierState(): PricingTierKey | null {
+  const cached = getCachedSubscription();
+  if (!cached) return null;
+  // Paid was never used as a bootstrap placeholder. A legacy Free entry,
+  // however, may have been written before the server replied and must remain
+  // "hydrating" until it is reconciled once.
+  if (cached.tier === 'free' && !cached.serverConfirmed) return null;
+  return cached.tier;
+}
+
 /**
  * Persists subscription state to MMKV cache.
  */
 export function setCachedSubscription(state: CachedSubscription): void {
-  const previousTier = getCachedSubscription()?.tier;
+  const previousTierState = getCachedSubscriptionTierState();
   storage.set(STORAGE_KEY, JSON.stringify(state));
-  if (previousTier !== state.tier) {
+  if (previousTierState !== getCachedSubscriptionTierState()) {
     for (const listener of tierListeners) listener();
   }
 }
@@ -106,7 +122,11 @@ export function subscribeToSubscriptionTier(listener: () => void): () => void {
  * Clears cached subscription (sign-out, account switch, etc.).
  */
 export function clearCachedSubscription(): void {
+  const hadCachedSubscription = getCachedSubscription() !== null;
   storage.remove(STORAGE_KEY);
+  if (hadCachedSubscription) {
+    for (const listener of tierListeners) listener();
+  }
 }
 
 // ---- server fetch ----
@@ -133,6 +153,7 @@ export async function fetchSubscriptionTier(
   if (
     !options?.force
     && cached
+    && cached.serverConfirmed
     && Date.now() - cached.lastFetchedAtMs < SUBSCRIPTION_TTL_MS
   ) {
     return cached;
@@ -151,6 +172,7 @@ export async function fetchSubscriptionTier(
     const next: CachedSubscription = {
       tier,
       lastFetchedAtMs: Date.now(),
+      serverConfirmed: true,
     };
     setCachedSubscription(next);
     return next;
@@ -181,7 +203,7 @@ export async function devSetTier(tier: 'free' | 'plus'): Promise<boolean> {
       { userId, tier },
       __DEV__ && secret ? { headers: { 'x-dev-tier-secret': secret } } : undefined,
     );
-    setCachedSubscription({ tier, lastFetchedAtMs: Date.now() });
+    setCachedSubscription({ tier, lastFetchedAtMs: Date.now(), serverConfirmed: true });
     return true;
   } catch {
     return false;

@@ -34,7 +34,7 @@ interface GuideCopy {
 const GUIDES: Record<FeatureGuideId, GuideCopy> = {
   reflect: {
     title: 'YOUR DAY, NOW COLLECTIBLE',
-    body: 'Write what happened, or tap your keyboard’s mic to say. Items appear as you go, giving your person a glimpse while the full story stays private.',
+    body: 'Write what happened, or tap your keyboard mic to voice typing. Items appear as you go, giving your person a glimpse while the full story stays private.',
     button: 'Let’s Reflect',
     icon: ICONS.reflectEntry3,
   },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -65,6 +65,7 @@ export function CompanionSheet() {
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
   const [masterStatus, setMasterStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
   const [clockMs, setClockMs] = useState(Date.now());
+  const closingRef = useRef(false);
 
   useEffect(() => subscribeCosmetics((state) => setBalance(state.balance)), []);
 
@@ -127,14 +128,21 @@ export function CompanionSheet() {
   const visibleKits = kits.filter((k) => !(k.daily && k.done));
 
   function openKit(row: KitRow) {
-    if (!row.route || row.disabled) return;
+    if (!row.route || row.disabled || closingRef.current) return;
     void haptics.pageOpen();
     router.push(row.route as never);
   }
 
+  function closeSheet() {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    void haptics.pageClose();
+    router.back();
+  }
+
   return (
       <View style={styles.modalRoot}>
-        <Pressable style={styles.backdrop} onPress={() => router.back()} />
+        <Pressable style={styles.backdrop} onPress={closeSheet} />
         <View style={styles.sheet}>
           <View style={styles.outer}>
             <GridBackground />
@@ -187,7 +195,7 @@ export function CompanionSheet() {
                   ))}
                 </ScrollView>
                 <Pressable
-                  onPress={() => { void haptics.pageClose(); router.back(); }}
+                  onPress={closeSheet}
                   style={[styles.closeBtn, { bottom: Math.max(insets.bottom, 8) }]}
                   hitSlop={8}
                 >

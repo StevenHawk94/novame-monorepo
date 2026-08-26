@@ -5,6 +5,8 @@ import { storage } from './storage';
 interface AnalysisCacheEnvelope {
   version: 4;
   insights?: unknown;
+  history?: unknown;
+  historyFetchedAt?: number;
   dashboardDate?: string;
   dashboardFetchedAt?: number;
 }

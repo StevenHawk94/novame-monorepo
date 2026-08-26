@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { PricingTierKey } from '@novame/core';
 import {
   getCachedSubscriptionTier,
+  getCachedSubscriptionTierState,
   subscribeToSubscriptionTier,
 } from './subscription';
 
@@ -13,5 +14,16 @@ export function useSubscriptionTier(): PricingTierKey {
     subscribeToSubscriptionTier,
     getCachedSubscriptionTier,
     getCachedSubscriptionTier,
+  );
+}
+
+/** Null means the local entitlement cache is still hydrating. This is kept
+ * separate from useSubscriptionTier so existing gates retain their fail-closed
+ * Free default. */
+export function useSubscriptionTierState(): PricingTierKey | null {
+  return useSyncExternalStore(
+    subscribeToSubscriptionTier,
+    getCachedSubscriptionTierState,
+    getCachedSubscriptionTierState,
   );
 }

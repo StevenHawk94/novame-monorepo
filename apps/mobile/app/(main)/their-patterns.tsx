@@ -1,15 +1,17 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 import { DateRangeCalendar } from '@/components/ui/date-range-calendar';
 import { GridBackground } from '@/components/ui/grid-background';
 import {
   fetchConnectionHistory,
+  getCachedConnectionHistory,
+  subscribeConnectionHistory,
   type ConnectionHistoryCard,
   type ConnectionHistorySection,
 } from '@/lib/friends-api';
@@ -56,9 +58,12 @@ function HistoryCard({ card }: { card: ConnectionHistoryCard }) {
 export default function ConnectionHistoryScreen() {
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
+  const initialHistory = useMemo(() => getCachedConnectionHistory(), []);
   const [tab, setTab] = useState<ConnectionHistorySection>('missed');
-  const [cards, setCards] = useState<ConnectionHistoryCard[]>([]);
-  const [loading, setLoading] = useState(isPaid);
+  const [cards, setCards] = useState<ConnectionHistoryCard[]>(
+    initialHistory?.ok ? initialHistory.cards : [],
+  );
+  const [loading, setLoading] = useState(isPaid && !initialHistory);
   const [error, setError] = useState<'network' | 'unavailable' | 'unpaired' | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
@@ -66,13 +71,7 @@ export default function ConnectionHistoryScreen() {
   const [appliedStart, setAppliedStart] = useState<string | null>(null);
   const [appliedEnd, setAppliedEnd] = useState<string | null>(null);
 
-  const load = useCallback(async (start: string | null, end: string | null) => {
-    if (!isPaid) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const result = await fetchConnectionHistory({ start, end });
+  const applyResult = useCallback((result: Awaited<ReturnType<typeof fetchConnectionHistory>>) => {
     if (!result.ok) {
       setError('network');
     } else if (!result.paired) {
@@ -85,14 +84,39 @@ export default function ConnectionHistoryScreen() {
       setCards(result.cards);
       setError(null);
     }
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!isPaid) {
+      setLoading(false);
+      return;
+    }
+    if (!getCachedConnectionHistory()) setLoading(true);
+    const result = await fetchConnectionHistory({ force: true });
+    applyResult(result);
     setLoading(false);
-  }, [isPaid]);
+  }, [applyResult, isPaid]);
 
-  useFocusEffect(useCallback(() => {
-    void load(appliedStart, appliedEnd);
-  }, [appliedEnd, appliedStart, load]));
+  useEffect(() => {
+    if (!isPaid) {
+      setLoading(false);
+      return undefined;
+    }
+    const cached = getCachedConnectionHistory();
+    if (cached) applyResult(cached);
+    const unsubscribe = subscribeConnectionHistory((result) => {
+      applyResult(result);
+      setLoading(false);
+    });
+    if (!cached) void load();
+    return unsubscribe;
+  }, [applyResult, isPaid, load]);
 
-  const shown = useMemo(() => cards.filter((card) => card.section === tab), [cards, tab]);
+  const shown = useMemo(() => cards.filter((card) => (
+    card.section === tab
+    && (!appliedStart || card.date >= appliedStart)
+    && (!appliedEnd || card.date <= appliedEnd)
+  )), [appliedEnd, appliedStart, cards, tab]);
   const activeRangeLabel = appliedStart
     ? appliedEnd && appliedEnd !== appliedStart
       ? `${shortDate(appliedStart)} – ${shortDate(appliedEnd)}`
@@ -182,7 +206,7 @@ export default function ConnectionHistoryScreen() {
               {error === 'network' ? 'Please check your connection and try again.' : 'New Connection cards will appear here when they become available.'}
             </Text>
             {error === 'network' && (
-              <Pressable onPress={() => void load(appliedStart, appliedEnd)} style={styles.retryButton}>
+              <Pressable onPress={() => void load()} style={styles.retryButton}>
                 <Text style={styles.retryText}>Try Again</Text>
               </Pressable>
             )}

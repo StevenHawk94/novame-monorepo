@@ -6,8 +6,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ensureSession, getCurrentSession } from '@/lib/auth';
 import {
   fetchSubscriptionTier,
-  getCachedSubscription,
-  setCachedSubscription,
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
@@ -81,10 +79,6 @@ export default function SigningInScreen() {
         navigated = true;
         router.replace('/(auth)/sign-in');
         return;
-      }
-
-      if (!getCachedSubscription()) {
-        setCachedSubscription({ tier: 'free', lastFetchedAtMs: Date.now() });
       }
 
       // Onboarding: sync the locally-chosen companion into a companions row on

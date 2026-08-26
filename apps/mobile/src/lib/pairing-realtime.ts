@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   fetchFriendFeed,
   fetchFriends,
+  fetchConnectionHistory,
   fetchPairing,
   getCachedPairing,
   notifyRemoteSharedBoxChanged,
@@ -247,9 +248,13 @@ export async function startPairingRealtime(
         void reconcileReflectFeed(userId, subscribedGeneration);
       })
       .on('broadcast', { event: 'connection_changed' }, () => {
-        // Payload is an invalidation only. The Connection page re-reads the
-        // protected API if it is currently mounted; no polling is introduced.
+        // Payload is an invalidation only. Refresh the append-only History
+        // cache incrementally even when its screen is not mounted; the next
+        // open paints from storage without a loading pass.
         invalidateConnectionDashboard();
+        void fetchConnectionHistory({ incremental: true }).catch((error) => {
+          console.warn('[pairing] Connection history reconcile failed:', error);
+        });
         publishConnectionChanged();
       })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
@@ -273,9 +278,12 @@ export async function startPairingRealtime(
           // with its launch/foreground check.
           publishGoodVibes();
           // A private broadcast may have been missed while backgrounded.
-          // Invalidate once per reconnect; the next Connection focus performs
-          // one protected read and keeps the normal cache-first paint.
+          // Invalidate once per reconnect and silently catch up only History
+          // rows not already present in the local append-only cache.
           invalidateConnectionDashboard();
+          void fetchConnectionHistory({ incremental: true }).catch((error) => {
+            console.warn('[pairing] Connection history reconnect failed:', error);
+          });
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           channelHealthy = false;
           // One temporary recovery attempt for this failure incident. There is

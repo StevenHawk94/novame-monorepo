@@ -20,6 +20,11 @@ const SECTION_BY_MODULE = {
 }
 
 const isoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value : null
+const isoTimestamp = (value) => {
+  if (!value || typeof value !== 'string') return null
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null
+}
 const copy = (value, max) => typeof value === 'string' && value.trim()
   ? value.trim().slice(0, max) : null
 
@@ -51,8 +56,12 @@ export async function GET(request) {
     }
     const start = isoDate(searchParams.get('start'))
     const end = isoDate(searchParams.get('end'))
+    const since = isoTimestamp(searchParams.get('since'))
     if ((searchParams.get('start') && !start) || (searchParams.get('end') && !end) || (start && end && start > end)) {
       return NextResponse.json({ error: 'invalid_date_range' }, { status: 400 })
+    }
+    if (searchParams.get('since') && !since) {
+      return NextResponse.json({ error: 'invalid_since' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -96,6 +105,9 @@ export async function GET(request) {
         .range(from, from + pageSize - 1)
       if (start) query = query.gte('for_date', start)
       if (end) query = query.lte('for_date', end)
+      // Inclusive by design: multiple cards can share a timestamp. The client
+      // merges by immutable history id, so no tied row can be skipped.
+      if (since) query = query.gte('created_at', since)
       const { data, error } = await query
       if (error) throw error
       rows.push(...(data || []))

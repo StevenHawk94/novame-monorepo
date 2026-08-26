@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Image, InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -17,9 +17,10 @@ import {
   advanceDefaultBubble,
   getFreshBubbleState,
   getLaunchDefaultBubble,
+  subscribeToReflectBubble,
   type FreshBubble,
 } from '@/lib/bubble-store';
-import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
 import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
@@ -38,21 +39,24 @@ import { AnnouncementGate } from '@/components/main/announcement-gate';
  * hideSplashOnce() must be called by whatever screen renders first, or the
  * native splash never lifts.
  */
-function visibleAiBubble(isPaid: boolean): FreshBubble | null {
+function visibleAiBubble(tier: ReturnType<typeof useSubscriptionTierState>): FreshBubble | null {
   // A cached AI line must never leak through after the account becomes Free.
-  if (!isPaid) return null;
+  // `null` is not Free: it means the current account's local entitlement is
+  // still hydrating. User-scoped caches are cleared together on account
+  // switches, so a bubble that exists in this state belongs to this account.
+  if (tier === 'free') return null;
   return getFreshBubbleState();
 }
 
 export default function HomeScreen() {
   const r2AssetRevision = useR2AssetRevision();
   const router = useRouter();
-  const isPaid = useSubscriptionTier() !== 'free';
+  const subscriptionTier = useSubscriptionTierState();
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
   const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
-  const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(isPaid));
+  const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
   const aiBubbleRef = useRef(aiBubble);
   const openingEntryRef = useRef(false);
   const [homeLayout, setHomeLayout] = useState({
@@ -75,8 +79,15 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    applyAiBubble(visibleAiBubble(isPaid));
-  }, [applyAiBubble, isPaid]);
+    applyAiBubble(visibleAiBubble(subscriptionTier));
+  }, [applyAiBubble, subscriptionTier]);
+
+  // Reflect finalization writes MMKV before its route closes. Subscribe to
+  // that local write so Home is already showing the new line when revealed,
+  // rather than repainting from the default after the back transition.
+  useEffect(() => subscribeToReflectBubble(() => {
+    applyAiBubble(visibleAiBubble(subscriptionTier));
+  }), [applyAiBubble, subscriptionTier]);
 
   // A new Reflect replaces the old AI line and starts a fresh six-hour timer.
   // If the app stays open, expiry switches to the next local-time default line.
@@ -113,12 +124,16 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // The previous entry route has fully closed. Re-enable exactly one Home
-      // launch; the ref prevents onPressIn + onPress/accessibility from ever
-      // stacking duplicate transparent-modal routes.
-      openingEntryRef.current = false;
+      // Focus can return before a native modal's dismissal animation ends.
+      // Keep Home entry points locked until native interactions settle so a
+      // Scene/Outfit modal cannot be presented while the bunny sheet is still
+      // being dismissed.
+      let cancelled = false;
+      const unlockTask = InteractionManager.runAfterInteractions(() => {
+        if (!cancelled) openingEntryRef.current = false;
+      });
       setCosmeticTick((t) => t + 1);
-      applyAiBubble(visibleAiBubble(isPaid));
+      applyAiBubble(visibleAiBubble(subscriptionTier));
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
@@ -126,7 +141,11 @@ export default function HomeScreen() {
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-    }, [applyAiBubble, isPaid]),
+      return () => {
+        cancelled = true;
+        unlockTask.cancel();
+      };
+    }, [applyAiBubble, subscriptionTier]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -149,8 +168,17 @@ export default function HomeScreen() {
     router.push('/(main)/focus');
   };
   const onPetTap = () => {
+    if (openingEntryRef.current) return;
+    openingEntryRef.current = true;
     void haptics.pageOpen();
     router.push('/(main)/companion-sheet');
+  };
+
+  const openHomeModal = (route: '/(main)/(modals)/me' | '/(main)/(modals)/skin-select' | '/(main)/(modals)/scene-select') => {
+    if (openingEntryRef.current) return;
+    openingEntryRef.current = true;
+    void haptics.pageOpen();
+    router.push(route);
   };
 
   const sceneImg = getHomeSceneSource();
@@ -180,14 +208,14 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>
-          <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/me'); }} hitSlop={8}>
+          <Pressable onPress={() => openHomeModal('/(main)/(modals)/me')} hitSlop={8}>
             <Image source={ICONS.Menu} style={styles.topIcon} resizeMode="contain" />
           </Pressable>
           <View style={styles.topRight}>
-            <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/skin-select'); }} hitSlop={8}>
+            <Pressable onPress={() => openHomeModal('/(main)/(modals)/skin-select')} hitSlop={8}>
               <Image source={ICONS.Outfits} style={styles.topIcon} resizeMode="contain" />
             </Pressable>
-            <Pressable onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/scene-select'); }} hitSlop={8}>
+            <Pressable onPress={() => openHomeModal('/(main)/(modals)/scene-select')} hitSlop={8}>
               <Image source={ICONS.Maps} style={styles.topIcon} resizeMode="contain" />
             </Pressable>
             {/* Leaderboard removed per v2.0 design (Home top bar = outfits + scenes only). */}
