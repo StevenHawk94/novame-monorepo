@@ -14,7 +14,8 @@ Outputs:
 Normal runs are incremental: only workbook items whose WebP is missing are
 decoded and written, so previously bundled artwork is never touched. To replace
 an intentional suffix from alternate source pages, pass both --source-dir and
---replace-from-row. Pass --full only for an intentional complete rebuild.
+--replace-from-row. For isolated crop corrections, pass --replace-rows with the
+exact workbook rows. Pass --full only for an intentional complete rebuild.
 """
 
 from __future__ import annotations
@@ -169,6 +170,66 @@ def render_icon(source_rgba: np.ndarray, own_mask: np.ndarray) -> tuple[Image.Im
     if bbox is None:
         raise ValueError("Generated an empty icon")
     return canvas, bbox
+
+
+def extract_component_slots(
+    path: Path,
+    target_offsets: set[int],
+) -> tuple[dict[int, Image.Image], dict[str, object]]:
+    """Extract exact 7x7 slots by assigning whole alpha components by centroid.
+
+    This targeted path is intended for manual QA corrections. It keeps every
+    detached component whose centroid belongs to the requested icon's semantic
+    grid slot, while preventing any component from a neighboring icon from
+    leaking into the output. Unlike rectangular crops, it also preserves artwork
+    that intentionally extends beyond its nominal 1/7 cell boundary.
+    """
+    source = Image.open(path).convert("RGBA")
+    source_rgba = np.asarray(source)
+    raw_content = source_rgba[..., 3] > ALPHA_THRESHOLD
+    labels, raw_component_count = ndimage.label(
+        raw_content,
+        structure=np.ones((3, 3), dtype=int),
+    )
+    component_sizes = np.bincount(labels.ravel())
+    kept_components = [
+        component_id
+        for component_id in range(1, raw_component_count + 1)
+        if component_sizes[component_id] >= 16
+    ]
+    height, width = raw_content.shape
+    components_by_slot: dict[int, list[int]] = defaultdict(list)
+    for component_id in kept_components:
+        ys, xs = np.where(labels == component_id)
+        row = min(GRID - 1, max(0, round(float(ys.mean()) * GRID / height - 0.5)))
+        column = min(GRID - 1, max(0, round(float(xs.mean()) * GRID / width - 0.5)))
+        components_by_slot[row * GRID + column].append(component_id)
+
+    icons: dict[int, Image.Image] = {}
+    alpha_boxes = []
+    for offset in sorted(target_offsets):
+        component_ids = components_by_slot[offset]
+        if not component_ids:
+            raise ValueError(f"{path.name}: target slot {offset} has no alpha components")
+        icon, bbox = render_icon(source_rgba, np.isin(labels, component_ids))
+        icons[offset] = icon
+        alpha_boxes.append(bbox)
+
+    return icons, {
+        "source": path.name,
+        "width": width,
+        "height": height,
+        "components": len(kept_components),
+        "discarded_tiny_components": raw_component_count - len(kept_components),
+        "icons": len(icons),
+        "isolation_method": "component-centroid-slots",
+        "dilation": None,
+        "minimum_source_row_gap": None,
+        "minimum_source_column_gap": None,
+        "minimum_margin": min(
+            min(x0, y0, CANVAS - x1, CANVAS - y1) for x0, y0, x1, y1 in alpha_boxes
+        ),
+    }
 
 
 def extract_page(path: Path) -> tuple[list[Image.Image], dict[str, object]]:
@@ -364,10 +425,19 @@ def main() -> None:
         type=int,
         help="Overwrite only icons at or after this workbook row, using --source-dir pages",
     )
+    parser.add_argument(
+        "--replace-rows",
+        type=int,
+        nargs="+",
+        help="Overwrite only these exact workbook rows using component-safe slot extraction",
+    )
     args = parser.parse_args()
 
-    if args.full and args.replace_from_row is not None:
-        raise ValueError("--full and --replace-from-row are mutually exclusive")
+    selected_modes = sum(
+        (args.full, args.replace_from_row is not None, args.replace_rows is not None)
+    )
+    if selected_modes > 1:
+        raise ValueError("--full, --replace-from-row, and --replace-rows are mutually exclusive")
     source_dir = args.source_dir.resolve()
     catalog_pages = source_pages(SOURCE_DIR.resolve(), require_full_catalog=True)
     pages = source_pages(
@@ -423,6 +493,25 @@ def main() -> None:
             if page[1] >= replace_from
         ]
         mode = f"replace-from-{replace_from}"
+    elif args.replace_rows is not None:
+        rows_to_write = set(args.replace_rows)
+        invalid_rows = sorted(rows_to_write - items.keys())
+        if invalid_rows:
+            raise ValueError(f"--replace-rows contains invalid workbook rows: {invalid_rows}")
+        available_rows = {
+            row_number
+            for start, end, _ in pages
+            for row_number in range(start, end + 1)
+        }
+        uncovered = sorted(rows_to_write - available_rows)
+        if uncovered:
+            raise ValueError(f"Replacement pages do not cover rows: {uncovered}")
+        selected_pages = [
+            page
+            for page in pages
+            if any(row_number in rows_to_write for row_number in range(page[0], page[1] + 1))
+        ]
+        mode = f"replace-rows-{len(rows_to_write)}"
     else:
         rows_to_write = missing_rows
         selected_pages = [
@@ -434,8 +523,17 @@ def main() -> None:
     page_reports = []
     written_files: set[str] = set()
     for page_index, (start, end, path) in enumerate(selected_pages, start=1):
-        icons, report = extract_page(path)
-        for offset, icon in enumerate(icons):
+        if args.replace_rows is not None:
+            offsets = {
+                row_number - start
+                for row_number in rows_to_write
+                if start <= row_number <= end
+            }
+            icons_by_offset, report = extract_component_slots(path, offsets)
+        else:
+            icons, report = extract_page(path)
+            icons_by_offset = dict(enumerate(icons))
+        for offset, icon in icons_by_offset.items():
             row_number = start + offset
             if row_number not in rows_to_write:
                 continue
