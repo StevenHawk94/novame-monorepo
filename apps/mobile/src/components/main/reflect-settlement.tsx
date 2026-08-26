@@ -97,6 +97,7 @@ export function MemoryEditorSheet({
   shared,
   onChange,
   onDone,
+  saving = false,
 }: {
   items: MatchedItem[];
   memories: ReflectMemoryDraft[];
@@ -104,6 +105,7 @@ export function MemoryEditorSheet({
   shared: boolean;
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
+  saving?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const byId = useMemo(() => new Map(memories.map((memory) => [memory.itemId, memory])), [memories]);
@@ -188,8 +190,15 @@ export function MemoryEditorSheet({
                   );
                 })}
               </ScrollView>
-              <OffsetCard color={RC.yellowDrop} offset={4} radius={22} onPress={onDone} cardStyle={styles.doneButton}>
-                <Text style={styles.doneText}>Done</Text>
+              <OffsetCard
+                color={RC.yellowDrop}
+                offset={4}
+                radius={22}
+                onPress={onDone}
+                disabled={saving}
+                cardStyle={styles.doneButton}
+              >
+                {saving ? <ActivityIndicator color="#633A21" /> : <Text style={styles.doneText}>Done</Text>}
               </OffsetCard>
               {!shared && <Text style={styles.editorFoot}>Turn off the toggle if you don’t want the memory seen by your paired.</Text>}
             </View>

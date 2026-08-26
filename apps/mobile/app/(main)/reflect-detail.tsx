@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,6 +19,24 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { MemoryEditorSheet } from '@/components/main/reflect-settlement';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { invalidateMineBagsCache } from '@/lib/bags-api';
+
+function toMemoryDrafts(data: ReflectMemoryEditorData): ReflectMemoryDraft[] {
+  return data.items.map((item) => ({
+    itemId: item.itemId,
+    text: item.text,
+    source: item.source,
+    visible: item.visible,
+  }));
+}
+
+function memoryDraftSignature(memories: ReflectMemoryDraft[]): string {
+  return JSON.stringify(memories.map((memory) => [
+    memory.itemId,
+    memory.text,
+    memory.source,
+    memory.visible,
+  ]));
+}
 
 /**
  * Reflect detail (design 2026-07-22, 1:1): dark-brown full screen, a white
@@ -56,6 +74,7 @@ export default function ReflectDetailScreen() {
         dateLabel: formatDayLabel(day.date),
         sharedToFriends: r.sharedToFriends,
         itemIds: r.itemIds,
+        hasMemories: r.hasMemories,
       };
     }
     return null;
@@ -65,10 +84,38 @@ export default function ReflectDetailScreen() {
   const [editorMemories, setEditorMemories] = useState<ReflectMemoryDraft[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [loadingEditor, setLoadingEditor] = useState(false);
+  const [savingEditor, setSavingEditor] = useState(false);
+  const savedEditorSignature = useRef('');
+
+  const adoptEditorData = useCallback((data: ReflectMemoryEditorData) => {
+    const memories = toMemoryDrafts(data);
+    setEditor(data);
+    setEditorMemories(memories);
+    savedEditorSignature.current = memoryDraftSignature(memories);
+  }, []);
+
+  // Warm this reflect's small editor payload while the user reads the detail.
+  // fetchReflectMemories deduplicates the request and keeps a session cache, so
+  // opening the sheet normally requires no additional round-trip.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      if (reflectId) {
+        void fetchReflectMemories(reflectId).then((data) => {
+          if (active && data) adoptEditorData(data);
+        });
+      }
+      return () => { active = false; };
+    }, [adoptEditorData, reflectId]),
+  );
 
   async function openEditor() {
     if (!reflectId || loadingEditor) return;
     void haptics.pageOpen();
+    if (editor) {
+      setEditorOpen(true);
+      return;
+    }
     setLoadingEditor(true);
     const data = await fetchReflectMemories(reflectId);
     setLoadingEditor(false);
@@ -76,23 +123,41 @@ export default function ReflectDetailScreen() {
       appAlert('Could not load memories', 'Please check your connection and try again.');
       return;
     }
-    setEditor(data);
-    setEditorMemories(data.items.map((item) => ({
-      itemId: item.itemId,
-      text: item.text,
-      source: item.source,
-      visible: item.visible,
-    })));
+    adoptEditorData(data);
     setEditorOpen(true);
   }
 
   async function saveEditor() {
-    if (!reflectId || !editor) return;
+    if (!reflectId || !editor || savingEditor) return;
+    const nextSignature = memoryDraftSignature(editorMemories);
+    if (nextSignature === savedEditorSignature.current) {
+      void haptics.pageClose();
+      setEditorOpen(false);
+      return;
+    }
+    setSavingEditor(true);
     const ok = await editReflectMemories(reflectId, editorMemories);
+    setSavingEditor(false);
     if (!ok) {
       appAlert('Could not save', 'Please check your connection and try again.');
       return;
     }
+    const editsByItem = new Map(editorMemories.map((memory) => [memory.itemId, memory]));
+    setEditor((current) => current ? {
+      ...current,
+      items: current.items.map((item) => {
+        const memory = editsByItem.get(item.itemId);
+        return memory ? { ...item, text: memory.text, source: memory.source, visible: memory.visible } : item;
+      }),
+    } : current);
+    savedEditorSignature.current = nextSignature;
+    const hasMemories = editorMemories.some((memory) => memory.text.trim().length > 0);
+    setFeed((current) => current.map((day) => ({
+      ...day,
+      reflects: day.reflects.map((reflect) => reflect.id === reflectId
+        ? { ...reflect, hasMemories }
+        : reflect),
+    })));
     invalidateMineBagsCache();
     void fetchReflectFeed({ force: true }).then(setFeed);
     void haptics.success();
@@ -133,7 +198,7 @@ export default function ReflectDetailScreen() {
           <View style={styles.memCard}>
             <View style={styles.memTitleRow}>
               <Image source={ICONS.memory} style={styles.memTitleIcon} resizeMode="contain" />
-              <Text style={styles.memTitle}>Items Selected</Text>
+              <Text style={styles.memTitle}>{entry?.hasMemories ? 'Memories Created' : 'Items Reflected'}</Text>
             </View>
             {/* Wrapping grid: every item visible, growing downward (no side-scroll). */}
             <View style={styles.memRow}>
@@ -178,6 +243,7 @@ export default function ReflectDetailScreen() {
           shared={editor.shared}
           onChange={setEditorMemories}
           onDone={() => void saveEditor()}
+          saving={savingEditor}
         />
       )}
     </View>

@@ -12,7 +12,13 @@ import { supabase } from './supabase';
 
 export interface FeedDay {
   date: string;
-  reflects: { id: string; body: string; sharedToFriends: boolean; itemIds: string[] }[];
+  reflects: {
+    id: string;
+    body: string;
+    sharedToFriends: boolean;
+    itemIds: string[];
+    hasMemories: boolean;
+  }[];
   itemIds: string[];
   itemEmoji: string[]; // decorated
 }
@@ -49,7 +55,10 @@ export function getCachedFeed(): FeedDay[] {
 
 export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay[]> {
   const cached = readCache();
-  if (!options?.force && cached && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
+  const cacheHasMemoryStatus = cached?.days.every((day) =>
+    day.reflects.every((reflect) => typeof reflect.hasMemories === 'boolean'),
+  );
+  if (!options?.force && cached && cacheHasMemoryStatus && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
     return Promise.resolve(cached.days);
   }
   if (feedInflight) return feedInflight;
@@ -63,14 +72,24 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
         success?: boolean;
         days?: {
           date: string;
-          reflects: { id: string; body: string; sharedToFriends: boolean; itemIds?: string[] }[];
+          reflects: {
+            id: string;
+            body: string;
+            sharedToFriends: boolean;
+            itemIds?: string[];
+            hasMemories?: boolean;
+          }[];
           itemIds: string[];
         }[];
       }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
       if (!data.success || !data.days) return getCachedFeed();
       const days = data.days.map((d) => ({
         ...d,
-        reflects: d.reflects.map((reflect) => ({ ...reflect, itemIds: reflect.itemIds ?? [] })),
+        reflects: d.reflects.map((reflect) => ({
+          ...reflect,
+          itemIds: reflect.itemIds ?? [],
+          hasMemories: reflect.hasMemories === true,
+        })),
         itemEmoji: d.itemIds.map(emojiFor),
       }));
       storage.set(

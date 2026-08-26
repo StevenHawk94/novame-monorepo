@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { XP_RULES } from '@novame/engine'
 
@@ -8,6 +8,83 @@ import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from '@/lib/
 import { recordAIUsage } from '@/lib/ai-usage'
 
 export const runtime = 'edge'
+export const maxDuration = 60
+
+async function markConnectionRecoveryRequired(supabase, userId) {
+  const { data: pairing } = await supabase.from('pairings')
+    .select('partner_user_id').eq('user_id', userId).maybeSingle()
+  if (!pairing?.partner_user_id) return
+  await supabase.from('profiles')
+    .update({ connection_resume_required: true })
+    .eq('id', pairing.partner_user_id)
+}
+
+async function analyzeFinalizedReflect({ userId, draft, result }) {
+  const supabase = serviceClient()
+  let context = {
+    connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null,
+  }
+  try {
+    const { data: profile } = await supabase.from('profiles')
+      .select('subscription_tier, ai_consent_at').eq('id', userId).single()
+    if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at) return
+
+    context = await loadReflectAnalyzerContext(supabase, {
+      userId, visibleToFriend: true, localDate: draft.local_date,
+    })
+    const analyzer = await runReflectAnalyzer({
+      reflectId: result.reflect_id,
+      journal: draft.body,
+      matchedIcons: (draft.matches || []).map((item) => ({
+        id: item.itemId, name: item.displayName,
+      })),
+      connectionEnabled: context.connectionEnabled,
+      currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
+      writerRecentEvidence: context.writerRecentEvidence,
+      readerRecentEvidence: context.readerRecentEvidence,
+    })
+    await persistReflectAnalyzerResult(supabase, {
+      reflectId: result.reflect_id, userId, localDate: draft.local_date,
+      reflectsToday: Number(result.reflects_today || 1), analyzer, context,
+      matchedItems: draft.matches || [],
+    })
+    try {
+      await recordAIUsage(supabase, {
+        userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
+        result: analyzer.result, latencyMs: analyzer.latencyMs, refId: result.reflect_id,
+      })
+    } catch (usageError) {
+      console.warn('[reflect/finalize] background usage record failed:', usageError?.message || usageError)
+    }
+  } catch (error) {
+    const message = String(error?.message || error)
+    console.warn('[reflect/finalize] background analyzer failed:', message)
+    const connectionMode = !context.connectionEligible
+      ? 'disabled'
+      : !context.connectionEnabled
+        ? 'inactive'
+        : 'immediate'
+    await Promise.allSettled([
+      supabase.from('reflect_ai_analyses').upsert({
+        reflect_id: result.reflect_id,
+        user_id: userId,
+        local_date: draft.local_date,
+        prompt_version: REFLECT_ANALYZER_VERSION,
+        weekly_eligible: false,
+        connection_eligible: context.connectionEligible,
+        connection_mode: connectionMode,
+        status: 'failed',
+        error: message.slice(0, 500),
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'reflect_id' }),
+      recordAIUsage(supabase, {
+        userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
+        success: false, refId: result.reflect_id, error: message,
+      }),
+      markConnectionRecoveryRequired(supabase, userId),
+    ])
+  }
+}
 
 export async function POST(request) {
   try {
@@ -59,40 +136,12 @@ export async function POST(request) {
       return NextResponse.json(result, { status })
     }
 
-    // The analyzer needs a permanent reflect id. It runs only after the atomic
-    // commit; failure is non-fatal and never rolls back the user's reflection.
+    // The analyzer needs a permanent reflect id, but it must not keep the user
+    // waiting on the settlement screen. Next's after() keeps the task alive
+    // after the response has been sent. A failed row + recovery flag lets the
+    // next Connection visit retry only this latest reflection.
     if (!result?.already_finalized && draft.body?.trim()) {
-      try {
-        const { data: profile } = await supabase.from('profiles')
-          .select('subscription_tier, ai_consent_at').eq('id', userId).single()
-        if ((profile?.subscription_tier || 'free') !== 'free' && profile?.ai_consent_at) {
-          const context = await loadReflectAnalyzerContext(supabase, {
-            userId, visibleToFriend: true, localDate: draft.local_date,
-          })
-          const analyzer = await runReflectAnalyzer({
-            reflectId: result.reflect_id,
-            journal: draft.body,
-            matchedIcons: (draft.matches || []).map((item) => ({ id: item.itemId, name: item.displayName })),
-            connectionEnabled: context.connectionEnabled,
-            currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
-            writerRecentEvidence: context.writerRecentEvidence,
-            readerRecentEvidence: context.readerRecentEvidence,
-          })
-          await Promise.all([
-            persistReflectAnalyzerResult(supabase, {
-              reflectId: result.reflect_id, userId, localDate: draft.local_date,
-              reflectsToday: Number(result.reflects_today || 1), analyzer, context,
-              matchedItems: draft.matches || [],
-            }),
-            recordAIUsage(supabase, {
-              userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
-              result: analyzer.result, latencyMs: analyzer.latencyMs, refId: result.reflect_id,
-            }),
-          ])
-        }
-      } catch (error) {
-        console.warn('[reflect/finalize] analyzer failed (non-fatal):', error?.message || error)
-      }
+      after(() => analyzeFinalizedReflect({ userId, draft, result }))
     }
 
     await supabase.rpc('broadcast_reflect_feed_change', { p_user_id: userId })

@@ -50,16 +50,28 @@ export async function GET(request) {
     // user deliberately left their memory description blank.
     const reflectIds = (reflects || []).map((r) => r.id)
     const itemsByReflect = {}
+    const reflectsWithMemories = new Set()
     if (reflectIds.length > 0) {
-      const { data: mems } = await supabase
-        .from('reflect_items')
-        .select('reflect_id, item_id, position')
-        .eq('user_id', userId)
-        .in('reflect_id', reflectIds)
-        .order('position', { ascending: true })
-      for (const m of mems || []) {
+      const [{ data: matchedItems }, { data: memories }] = await Promise.all([
+        supabase
+          .from('reflect_items')
+          .select('reflect_id, item_id, position')
+          .eq('user_id', userId)
+          .in('reflect_id', reflectIds)
+          .order('position', { ascending: true }),
+        supabase
+          .from('item_memories')
+          .select('reflect_id, description, refined_desc, raw_excerpt')
+          .eq('user_id', userId)
+          .in('reflect_id', reflectIds),
+      ])
+      for (const m of matchedItems || []) {
         if (!itemsByReflect[m.reflect_id]) itemsByReflect[m.reflect_id] = []
         itemsByReflect[m.reflect_id].push(m.item_id)
+      }
+      for (const memory of memories || []) {
+        const text = memory.description || memory.refined_desc || memory.raw_excerpt || ''
+        if (memory.reflect_id && text.trim()) reflectsWithMemories.add(memory.reflect_id)
       }
     }
 
@@ -76,6 +88,7 @@ export async function GET(request) {
         body: r.body,
         sharedToFriends: r.shared_to_friends !== false,
         itemIds: reflectionItemIds,
+        hasMemories: reflectsWithMemories.has(r.id),
       })
       for (const itemId of reflectionItemIds) day.itemIds.push(itemId)
     }

@@ -425,6 +425,25 @@ export async function editReflectMemories(
       reflectId,
       edits,
     });
+    if (data.success) {
+      const cacheKey = reflectMemoryCacheKey(userId, reflectId);
+      const cached = reflectMemoryCache.get(cacheKey);
+      if (cached) {
+        const editsByItem = new Map(edits.map((edit) => [edit.itemId, edit]));
+        reflectMemoryCache.set(cacheKey, {
+          ...cached,
+          items: cached.items.map((item) => {
+            const edit = editsByItem.get(item.itemId);
+            return edit ? {
+              ...item,
+              text: edit.text,
+              source: edit.source ?? item.source,
+              visible: edit.visible !== false,
+            } : item;
+          }),
+        });
+      }
+    }
     return !!data.success;
   } catch {
     return false;
@@ -443,18 +462,45 @@ export interface ReflectMemoryEditorData {
   }>;
 }
 
-export async function fetchReflectMemories(reflectId: string): Promise<ReflectMemoryEditorData | null> {
+const reflectMemoryCache = new Map<string, ReflectMemoryEditorData>();
+const reflectMemoryInflight = new Map<string, Promise<ReflectMemoryEditorData | null>>();
+
+function reflectMemoryCacheKey(userId: string, reflectId: string): string {
+  return `${userId}:${reflectId}`;
+}
+
+export async function fetchReflectMemories(
+  reflectId: string,
+  options?: { force?: boolean },
+): Promise<ReflectMemoryEditorData | null> {
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user?.id;
   if (!userId) return null;
-  try {
-    const result = await apiClient.get<{ success?: boolean } & ReflectMemoryEditorData>(
-      `/api/reflect/edit-memories?userId=${encodeURIComponent(userId)}&reflectId=${encodeURIComponent(reflectId)}`,
-    );
-    return result.success ? result : null;
-  } catch {
-    return null;
+  const cacheKey = reflectMemoryCacheKey(userId, reflectId);
+  if (!options?.force) {
+    const cached = reflectMemoryCache.get(cacheKey);
+    if (cached) return cached;
+    const inflight = reflectMemoryInflight.get(cacheKey);
+    if (inflight) return inflight;
   }
+
+  const request = (async () => {
+    try {
+      const result = await apiClient.get<{ success?: boolean } & ReflectMemoryEditorData>(
+        `/api/reflect/edit-memories?userId=${encodeURIComponent(userId)}&reflectId=${encodeURIComponent(reflectId)}`,
+      );
+      if (!result.success) return null;
+      const normalized = { shared: result.shared, items: result.items };
+      reflectMemoryCache.set(cacheKey, normalized);
+      return normalized;
+    } catch {
+      return null;
+    } finally {
+      reflectMemoryInflight.delete(cacheKey);
+    }
+  })();
+  reflectMemoryInflight.set(cacheKey, request);
+  return request;
 }
 
 /**

@@ -383,14 +383,13 @@ const st = StyleSheet.create({
   title: { fontSize: 23, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   subtitle: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
   hubPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    width: 112, backgroundColor: '#F0885C', borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3,
+    width: 108, backgroundColor: '#F0885C', borderRadius: 20,
     paddingHorizontal: 10, paddingVertical: 9,
   },
   hubPillIcon: { width: 30, height: 30 },
   hubPillText: {
-    flex: 1, textAlign: 'center',
-    fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
+    fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
   },
   scroll: { paddingHorizontal: 16, paddingTop: 16 },
   unpairedScroll: { flexGrow: 1, justifyContent: 'center', padding: 22 },
