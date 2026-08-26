@@ -1,0 +1,58 @@
+# EAS resolves its ignore file from the app directory (where eas.json lives),
+# even though the uploaded workspace starts at the monorepo root.
+
+# Dependencies and VCS metadata
+node_modules/
+.pnpm-store/
+.git/
+
+# Build and framework outputs
+dist/
+build/
+.next/
+.expo/
+.expo-shared/
+.turbo/
+*.tsbuildinfo
+
+# Environment and local files
+.env
+.env.local
+.env.*.local
+!.env.example
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Generated native projects and artifacts
+apps/mobile/ios/
+apps/mobile/android/
+ios/
+android/
+*.ipa
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+expo-env.d.ts
+
+# Development and source-only assets
+tools/item-source/memory-items/
+design-refs/
+__pycache__/
+_admin-api-tmp/
+_old-*
+*.tmp
+*.zip
+video-manifest.json
+
+# Apple authentication keys
+*.p8
+AuthKey_*.p8
