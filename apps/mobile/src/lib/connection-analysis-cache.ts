@@ -1,18 +1,16 @@
 import { kConnInsights } from '../shared/storage/keys';
 import { storage } from './storage';
 
-/** One backwards-compatible envelope for the two connection analysis pages. */
+/** Backwards-compatible envelope for the cache-first Connection dashboard. */
 interface AnalysisCacheEnvelope {
-  version: 3;
+  version: 4;
   insights?: unknown;
   dashboardDate?: string;
   dashboardFetchedAt?: number;
-  patterns?: unknown;
-  patternsFetchedAt?: number;
 }
 
 function empty(): AnalysisCacheEnvelope {
-  return { version: 3 };
+  return { version: 4 };
 }
 
 export function readAnalysisCache(): AnalysisCacheEnvelope {
@@ -20,7 +18,7 @@ export function readAnalysisCache(): AnalysisCacheEnvelope {
   if (!raw) return empty();
   try {
     const parsed = JSON.parse(raw) as AnalysisCacheEnvelope | unknown;
-    if (parsed && typeof parsed === 'object' && (parsed as AnalysisCacheEnvelope).version === 3) {
+    if (parsed && typeof parsed === 'object' && (parsed as AnalysisCacheEnvelope).version === 4) {
       return parsed as AnalysisCacheEnvelope;
     }
     // The former five-field payload cannot be safely mapped into v2's seven
@@ -32,7 +30,7 @@ export function readAnalysisCache(): AnalysisCacheEnvelope {
 }
 
 export function patchAnalysisCache(patch: Partial<AnalysisCacheEnvelope>): void {
-  storage.set(kConnInsights.name, JSON.stringify({ ...readAnalysisCache(), ...patch, version: 3 }));
+  storage.set(kConnInsights.name, JSON.stringify({ ...readAnalysisCache(), ...patch, version: 4 }));
 }
 
 /** Explicit realtime/foreground invalidation; cached content stays paintable. */

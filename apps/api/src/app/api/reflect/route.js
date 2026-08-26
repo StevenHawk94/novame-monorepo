@@ -297,7 +297,6 @@ export async function POST(request) {
           reflectId,
           journal: body,
           matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
-          weeklyEligible: body.trim().length >= 100,
           connectionEnabled: analyzerContext.connectionEnabled,
           currentConnectionBoard: analyzerContext.connectionEnabled ? analyzerContext.currentBoard : null,
           writerRecentEvidence: analyzerContext.writerRecentEvidence,

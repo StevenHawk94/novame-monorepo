@@ -11,11 +11,10 @@ export const runtime = 'edge'
  * The Tame Enemy select screen's data. The eight monsters are static (from the
  * engine); this endpoint decorates each with how many skills the user has in
  * that dimension (the monster's skill pool) and whether they've tamed it before
- * (for the "Tamed once" badge), plus whether today's single tame is already
- * spent.
+ * (for the exact "Tamed N×" badge), plus today's per-monster availability.
  *
- * The daily limit is one tame across ALL monsters (not per monster), so it's a
- * single kit_completions check for kit='tame_enemy' on localDate.
+ * Free users can tame three times across all monsters per day. Plus users can
+ * tame each monster once per day.
  */
 export async function GET(request) {
   try {

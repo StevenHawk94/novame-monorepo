@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -19,7 +20,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appAlert } from '@/components/ui/app-dialog';
 import { CloverBurst } from '@/components/main/clover-burst';
 import { ItemSprite } from '@/components/ui/item-sprite';
-import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
 import { haptics } from '@/lib/haptics';
@@ -129,7 +129,7 @@ export function MemoryEditorSheet({
       onRequestClose={onDone}
     >
       <KeyboardAvoidingView style={styles.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <KeyboardDismissView
+        <View
           style={[
             styles.fullScreenOverlay,
             { paddingTop: Math.max(insets.top, 8) + 8, paddingBottom: Math.max(insets.bottom, 8) + 8 },
@@ -154,6 +154,9 @@ export function MemoryEditorSheet({
                 style={styles.editorScroll}
                 contentContainerStyle={styles.editorRows}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                nestedScrollEnabled
+                onScrollBeginDrag={Keyboard.dismiss}
                 showsVerticalScrollIndicator={false}
               >
                 {items.map((item) => {
@@ -191,7 +194,7 @@ export function MemoryEditorSheet({
               {!shared && <Text style={styles.editorFoot}>Turn off the toggle if you don’t want the memory seen by your paired.</Text>}
             </View>
           </View>
-        </KeyboardDismissView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -290,6 +293,7 @@ export function ReflectSettlementView({
   shared?: boolean;
   onFinalized: (snapshot: ReflectSnapshot) => void;
 }) {
+  const insets = useSafeAreaInsets();
   const tier = useSubscriptionTier();
   const isPaid = tier !== 'free';
   // Prepare normally supplies Plus copy. Still run one blank-only enrichment
@@ -362,7 +366,13 @@ export function ReflectSettlementView({
 
   return (
     <View style={styles.settlement}>
-      <ScrollView contentContainerStyle={styles.settlementScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.settlementScroll,
+          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {isPaid && (
           <View style={styles.plusBadge}>
             <ExpoImage source={ICONS.Plus} style={styles.plusBadgeIcon} contentFit="contain" />
@@ -409,29 +419,29 @@ export function ReflectSettlementView({
             <View style={styles.editCircle}><MaterialIcons name="edit" size={20} color="#5A351B" /></View>
           </Pressable>
         )}
-      </ScrollView>
 
-      <View style={styles.settlementFooter}>
-        {!isPaid && (
-          <>
-            <Text style={styles.joinCopy}>You can join Plus to turn reflections into memories automatically.</Text>
-            <OffsetCard
-              color={RC.yellowDrop}
-              offset={4}
-              radius={24}
-              onPress={() => {
-                router.push('/(main)/(modals)/subscription-paywall?phase=plans&continueReflect=1' as never);
-              }}
-              cardStyle={styles.joinButton}
-            >
-              <Text style={styles.joinText}>Join Burrow Plus</Text>
-            </OffsetCard>
-          </>
-        )}
-        <OffsetCard color="#D96B3F" offset={4} radius={24} onPress={() => void finish()} disabled={saving} cardStyle={styles.finishButton}>
-          {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.finishText}>Done</Text>}
-        </OffsetCard>
-      </View>
+        <View style={styles.settlementFooter}>
+          {!isPaid && (
+            <>
+              <Text style={styles.joinCopy}>You can join Plus to turn reflections into memories automatically.</Text>
+              <OffsetCard
+                color={RC.yellowDrop}
+                offset={4}
+                radius={24}
+                onPress={() => {
+                  router.push('/(main)/(modals)/subscription-paywall?phase=plans&continueReflect=1' as never);
+                }}
+                cardStyle={styles.joinButton}
+              >
+                <Text style={styles.joinText}>Join Burrow Plus</Text>
+              </OffsetCard>
+            </>
+          )}
+          <OffsetCard color="#D96B3F" offset={4} radius={24} onPress={() => void finish()} disabled={saving} cardStyle={styles.finishButton}>
+            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.finishText}>Done</Text>}
+          </OffsetCard>
+        </View>
+      </ScrollView>
 
       {editorOpen && (
         <MemoryEditorSheet
@@ -484,14 +494,14 @@ const styles = StyleSheet.create({
   shareItemsScroll: { flexShrink: 1 },
   shareItemGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingVertical: 12 },
   shareReviewItem: { position: 'relative', borderRadius: 15, backgroundColor: '#B27A4C', padding: 4 },
-  editorFrame: { backgroundColor: RC.yellow, borderRadius: 30, padding: 9, width: '100%', maxWidth: 520, flex: 1 },
-  editorCard: { backgroundColor: '#FDF9F1', borderRadius: 22, padding: 15, flex: 1 },
+  editorFrame: { backgroundColor: RC.yellow, borderRadius: 30, padding: 9, width: '100%', maxWidth: 520, flex: 1, minHeight: 0 },
+  editorCard: { backgroundColor: '#FDF9F1', borderRadius: 22, padding: 15, flex: 1, minHeight: 0 },
   editorHeader: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 14 },
   editorTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   editorSub: { fontSize: 13, lineHeight: 18, fontFamily: 'Inter_500Medium', color: '#3A2E1A', marginTop: 3 },
   useWordsButton: { backgroundColor: '#54351E', borderRadius: 17, paddingHorizontal: 12, paddingVertical: 10 },
   useWordsText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' },
-  editorScroll: { flex: 1 },
+  editorScroll: { flex: 1, minHeight: 0 },
   editorRows: { gap: 10, paddingBottom: 12 },
   editorRow: { flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: 1.5, borderColor: '#D8BCA8', borderRadius: 18, padding: 10, backgroundColor: '#FFFFFF' },
   editorName: { fontSize: 15, fontFamily: 'Inter_800ExtraBold', color: '#161311' },

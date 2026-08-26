@@ -2,7 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 import { matchItems } from '@novame/engine'
 
 import { getMergedDictionary } from '@/lib/remote-items'
-import { isUsableReflectMemoryCopy, runReflectCopy } from '@/lib/reflect-ai'
+import {
+  isUsableReflectMemoryCopy,
+  neutralizeReflectMemoryCopy,
+  runReflectCopy,
+} from '@/lib/reflect-ai'
 
 export const MAX_BODY_CHARS = 5000
 export const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
@@ -76,7 +80,8 @@ export function createMemoryFallbacks({ body, matches }) {
   if (!body.trim()) return {}
   return Object.fromEntries(matches.map((item) => [
     item.itemId,
-    firstWords(item.sourceExcerpt || body),
+    neutralizeReflectMemoryCopy(firstWords(item.sourceExcerpt || body))
+      || firstWords(item.displayName),
   ]).filter(([, value]) => value))
 }
 

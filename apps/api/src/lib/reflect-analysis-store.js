@@ -11,32 +11,43 @@ function detailsMode(profile) {
 export async function loadReflectAnalyzerContext(supabase, {
   userId, visibleToFriend, localDate,
 }) {
-  const [{ data: pairing }, { data: writerProfile }] = await Promise.all([
+  const [pairingResult, writerProfileResult] = await Promise.all([
     supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle(),
     supabase.from('profiles')
       .select('share_memory_details, memory_details_mode')
       .eq('id', userId).maybeSingle(),
   ])
+  if (pairingResult.error) throw pairingResult.error
+  if (writerProfileResult.error) throw writerProfileResult.error
+  const pairing = pairingResult.data
+  const writerProfile = writerProfileResult.data
   if (!pairing?.partner_user_id) {
     return { connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null }
   }
   const partnerId = pairing.partner_user_id
   const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
   const baselineSince = new Date(Date.now() - BASELINE_WINDOW_MS).toISOString()
-  const [{ data: reader }, { data: cached }, { data: writerEvidence }, { data: readerEvidence }] = await Promise.all([
+  const [readerResult, cachedResult, writerEvidenceResult, readerEvidenceResult] = await Promise.all([
     supabase.from('profiles').select('last_active_at').eq('id', partnerId).maybeSingle(),
     supabase.from('connection_insights').select('payload')
       .eq('user_a', ua).eq('user_b', ub).eq('for_user', partnerId)
       .order('for_date', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('reflect_ai_analyses')
-      .select('reflect_id, local_date, weekly_evidence, created_at')
+      .select('reflect_id, local_date, connection_updates, created_at')
       .eq('user_id', userId).eq('status', 'completed').gte('created_at', baselineSince)
       .order('created_at', { ascending: false }).limit(30),
     supabase.from('reflect_ai_analyses')
-      .select('reflect_id, local_date, weekly_evidence, created_at')
+      .select('reflect_id, local_date, connection_updates, created_at')
       .eq('user_id', partnerId).eq('status', 'completed').gte('created_at', baselineSince)
       .order('created_at', { ascending: false }).limit(30),
   ])
+  for (const result of [readerResult, cachedResult, writerEvidenceResult, readerEvidenceResult]) {
+    if (result.error) throw result.error
+  }
+  const reader = readerResult.data
+  const cached = cachedResult.data
+  const writerEvidence = writerEvidenceResult.data
+  const readerEvidence = readerEvidenceResult.data
   const privacyAllows = detailsMode(writerProfile) !== 'none' && visibleToFriend !== false
   const activeAt = reader?.last_active_at ? new Date(reader.last_active_at).getTime() : 0
   const readerActive = activeAt >= Date.now() - ACTIVE_WINDOW_MS
@@ -88,8 +99,8 @@ export async function persistReflectAnalyzerResult(supabase, {
     user_id: userId,
     local_date: localDate,
     prompt_version: REFLECT_ANALYZER_VERSION,
-    weekly_eligible: !!analyzer.data.weeklyEvidence,
-    weekly_evidence: analyzer.data.weeklyEvidence,
+    weekly_eligible: false,
+    weekly_evidence: null,
     visual_concepts: analyzer.data.visualConcepts,
     connection_eligible: context.connectionEligible,
     connection_updates: updates,
@@ -101,10 +112,12 @@ export async function persistReflectAnalyzerResult(supabase, {
     error: null,
     completed_at: new Date().toISOString(),
   }
-  await supabase.from('reflect_ai_analyses').upsert(analysisRow, { onConflict: 'reflect_id' })
+  const { error: analysisError } = await supabase.from('reflect_ai_analyses')
+    .upsert(analysisRow, { onConflict: 'reflect_id' })
+  if (analysisError) throw analysisError
 
   if (analyzer.data.visualConcepts.length > 0) {
-    await supabase.from('item_learning_jobs').upsert({
+    const { error: learningError } = await supabase.from('item_learning_jobs').upsert({
       reflect_id: reflectId,
       concepts: analyzer.data.visualConcepts,
       matched_item_ids: (matchedItems || []).map((item) => item.itemId),
@@ -113,6 +126,11 @@ export async function persistReflectAnalyzerResult(supabase, {
       error: null,
       processed_at: null,
     }, { onConflict: 'reflect_id' })
+    if (learningError) {
+      // This admin-only learning queue must never block a user's Connection
+      // update after the durable analysis row has already been saved.
+      console.warn('[reflect-analysis] item learning enqueue failed:', learningError.message)
+    }
   }
 
   if (!context.pair || !updates) return

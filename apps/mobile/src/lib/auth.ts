@@ -89,6 +89,65 @@ export type AppleSignInResult =
   | { kind: 'unsupported' }
   | { kind: 'error'; message: string };
 
+type AppleIdTokenResult =
+  | { kind: 'success'; token: string; nonce: string }
+  | { kind: 'cancelled' }
+  | { kind: 'unsupported' }
+  | { kind: 'error'; message: string };
+
+/**
+ * Opens the native Apple sheet exactly once and returns the credential needed
+ * by either Supabase's linkIdentity or signInWithIdToken endpoint.
+ */
+async function requestAppleIdToken(): Promise<AppleIdTokenResult> {
+  if (Platform.OS !== 'ios') {
+    return { kind: 'unsupported' };
+  }
+
+  const isAvailable = await AppleAuthentication.isAvailableAsync();
+  if (!isAvailable) {
+    return { kind: 'unsupported' };
+  }
+
+  const rawNonce = randomUUID();
+  const hashedNonce = await digestStringAsync(
+    CryptoDigestAlgorithm.SHA256,
+    rawNonce,
+  );
+
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+  } catch (e) {
+    if (e instanceof Error && (e as Error & { code?: string }).code === 'ERR_REQUEST_CANCELED') {
+      return { kind: 'cancelled' };
+    }
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Apple sign-in failed',
+    };
+  }
+
+  if (!credential.identityToken) {
+    return {
+      kind: 'error',
+      message: 'No identity token returned from Apple.',
+    };
+  }
+
+  return {
+    kind: 'success',
+    token: credential.identityToken,
+    nonce: rawNonce,
+  };
+}
+
 /**
  * Signs in (or up) with Apple via the native iOS Sign in with Apple sheet.
  *
@@ -115,57 +174,14 @@ export type AppleSignInResult =
  * (B21, deferred to stage 5 IAP context).
  */
 export async function signInWithApple(): Promise<AppleSignInResult> {
-  if (Platform.OS !== 'ios') {
-    return { kind: 'unsupported' };
-  }
-
-  const isAvailable = await AppleAuthentication.isAvailableAsync();
-  if (!isAvailable) {
-    return { kind: 'unsupported' };
-  }
-
-  // 1. Generate raw nonce
-  const rawNonce = randomUUID();
-
-  // 2. Hash it (SHA-256 hex, matching Supabase server-side comparison)
-  const hashedNonce = await digestStringAsync(
-    CryptoDigestAlgorithm.SHA256,
-    rawNonce,
-  );
-
-  // 3. Show Apple sheet with HASHED nonce
-  let credential: AppleAuthentication.AppleAuthenticationCredential;
-  try {
-    credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-      nonce: hashedNonce,
-    });
-  } catch (e) {
-    // Expo throws ERR_REQUEST_CANCELED when user dismisses
-    if (e instanceof Error && (e as Error & { code?: string }).code === 'ERR_REQUEST_CANCELED') {
-      return { kind: 'cancelled' };
-    }
-    return {
-      kind: 'error',
-      message: e instanceof Error ? e.message : 'Apple sign-in failed',
-    };
-  }
-
-  if (!credential.identityToken) {
-    return {
-      kind: 'error',
-      message: 'No identity token returned from Apple.',
-    };
-  }
+  const credential = await requestAppleIdToken();
+  if (credential.kind !== 'success') return credential;
 
   // 4. Hand off to Supabase with RAW nonce
   const { data, error } = await supabase.auth.signInWithIdToken({
     provider: 'apple',
-    token: credential.identityToken,
-    nonce: rawNonce,
+    token: credential.token,
+    nonce: credential.nonce,
   });
 
   if (error) {
@@ -374,7 +390,7 @@ export async function ensureSession(): Promise<boolean> {
 // ---- Anonymous-account linking (onboarding "Connect Your Account") ----
 
 /**
- * Links the CURRENT (anonymous) session to an Apple/Google identity via
+ * Links the CURRENT (anonymous) session to a provider identity via
  * Supabase's linkIdentity OAuth flow in an auth browser session. This is the
  * supported way to convert a guest without minting a new user (native
  * signInWithIdToken would sign into a different account and orphan the
@@ -431,7 +447,8 @@ export async function linkIdentityWithProvider(
  * config) must NOT fall through: an id-token sign-in would silently mint
  * a fresh user and orphan the guest\u2019s data.
  */
-function isAlreadyBoundError(msg?: string): boolean {
+function isAlreadyBoundError(msg?: string, code?: string): boolean {
+  if (code === 'identity_already_exists') return true;
   if (!msg) return false;
   const m = msg.toLowerCase();
   return m.includes('already') && (m.includes('linked') || m.includes('registered') || m.includes('exists') || m.includes('in use'));
@@ -440,6 +457,48 @@ function isAlreadyBoundError(msg?: string): boolean {
 export type ConnectResult =
   | { ok: true; mode: 'linked' | 'signedIn' }
   | { ok: false; cancelled?: boolean; error?: string };
+
+/**
+ * Converts an anonymous Apple user without a second Apple prompt.
+ *
+ * The same native credential is first offered to linkIdentity, preserving the
+ * current guest UUID. Only identity_already_exists means the Apple identity is
+ * owned by a previous account; in that case the same token signs into that
+ * account, intentionally switching to its UUID without reopening Apple UI.
+ */
+async function connectAppleProviderOrSignIn(): Promise<ConnectResult> {
+  const credential = await requestAppleIdToken();
+  if (credential.kind === 'cancelled') return { ok: false, cancelled: true };
+  if (credential.kind === 'unsupported') {
+    return { ok: false, error: 'Sign-in is not available on this device.' };
+  }
+  if (credential.kind === 'error') {
+    return { ok: false, error: credential.message };
+  }
+
+  const { data: linked, error: linkError } = await supabase.auth.linkIdentity({
+    provider: 'apple',
+    token: credential.token,
+    nonce: credential.nonce,
+  });
+  if (!linkError && linked.session && linked.user) {
+    return { ok: true, mode: 'linked' };
+  }
+  if (!isAlreadyBoundError(linkError?.message, linkError?.code)) {
+    return { ok: false, error: linkError?.message ?? 'Could not link Apple account.' };
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: credential.token,
+    nonce: credential.nonce,
+  });
+  if (error) return { ok: false, error: error.message };
+  if (!data.session || !data.user) {
+    return { ok: false, error: 'Apple sign-in succeeded but no session returned.' };
+  }
+  return { ok: true, mode: 'signedIn' };
+}
 
 /**
  * The one-button "Connect" contract (product call 2026-08-07):
@@ -467,6 +526,10 @@ export async function connectProviderOrSignIn(
   const session = await getCurrentSession();
   const isAnonymous = (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
   if (!isAnonymous) return signIn();
+
+  // Native Apple ID-token linking lets one credential handle both possible
+  // outcomes, so the user never sees a browser sheet followed by Apple again.
+  if (provider === 'apple') return connectAppleProviderOrSignIn();
 
   const link = await linkIdentityWithProvider(provider);
   if (link.ok) return { ok: true, mode: 'linked' };

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import * as Clipboard from 'expo-clipboard';
@@ -20,6 +20,21 @@ import { GridBackground } from '@/components/ui/grid-background';
 const RELATIONSHIPS = ['Partner', 'Best Friend', 'Families', 'Someone Special', 'Others'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+type InviteDraft = {
+  relationship: string | null;
+  since: { y: number; m: number; d: number };
+  dateOpen: boolean;
+};
+
+function freshInviteDraft(): InviteDraft {
+  const now = new Date();
+  return {
+    relationship: null,
+    since: { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() },
+    dateOpen: false,
+  };
+}
+
 /**
  * Add Friends (mock 2026-08-05, 1:1): brown full screen, vertically centered
  * column — two-bunny art, the one-close-friend copy, Friend ID search, Invite
@@ -36,14 +51,14 @@ export default function FriendAddScreen() {
   const [query, setQuery] = useState('');
   // Search-result card (mock 2): the resolved user + the proposed relationship.
   const [found, setFound] = useState<{ code: string; name: string; userId?: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null>(null);
-  const [relationship, setRelationship] = useState<string | null>(null);
-  const now = new Date();
-  const [since, setSince] = useState<{ y: number; m: number; d: number }>({
-    y: now.getFullYear(), m: now.getMonth(), d: now.getDate(),
-  });
-  const [dateOpen, setDateOpen] = useState(false);
+  // Relationship and date are one atomic invitation draft. Date-wheel updates
+  // can no longer replace or reset the relationship chosen a moment earlier.
+  const [inviteDraft, setInviteDraft] = useState<InviteDraft>(freshInviteDraft);
+  const { relationship, since, dateOpen } = inviteDraft;
+  const currentYear = new Date().getFullYear();
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const searchInFlightRef = useRef(false);
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
@@ -52,24 +67,29 @@ export default function FriendAddScreen() {
 
   async function onSearch() {
     const code = query.trim().toUpperCase();
-    if (code.length < 4) return;
-    void haptics.medium();
-    const res = await previewFriend(code);
-    if (res.ok && res.targetName) {
-      setFound({ code, name: res.targetName, userId: res.targetUserId, avatarUrl: res.targetAvatarUrl, isDefaultAvatar: res.targetIsDefaultAvatar });
-      setRelationship(null);
-    } else {
-      const msg =
-        res.error === 'code_not_found' ? "That ID doesn't look right — double check with your friend."
-        : res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
-        : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
-        : res.error === 'already_friends' ? "You're already friends."
-        : res.error === 'already_pending' ? 'A request is already pending with them.'
-        : res.error === 'cannot_add_self' ? "That's your own ID!"
-        : res.error === 'friend_limit_reached' ? 'Your friend slots are full. Burrow Plus holds 99.'
-        : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
-        : 'Something went wrong. Try again.';
-      appAlert('Hmm', msg);
+    if (code.length < 4 || searchInFlightRef.current) return;
+    searchInFlightRef.current = true;
+    try {
+      void haptics.medium();
+      const res = await previewFriend(code);
+      if (res.ok && res.targetName) {
+        setFound({ code, name: res.targetName, userId: res.targetUserId, avatarUrl: res.targetAvatarUrl, isDefaultAvatar: res.targetIsDefaultAvatar });
+        setInviteDraft(freshInviteDraft());
+      } else {
+        const msg =
+          res.error === 'code_not_found' ? "That ID doesn't look right — double check with your friend."
+          : res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
+          : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
+          : res.error === 'already_friends' ? "You're already friends."
+          : res.error === 'already_pending' ? 'A request is already pending with them.'
+          : res.error === 'cannot_add_self' ? "That's your own ID!"
+          : res.error === 'friend_limit_reached' ? 'Your friend slots are full. Burrow Plus holds 99.'
+          : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
+          : 'Something went wrong. Try again.';
+        appAlert('Hmm', msg);
+      }
+    } finally {
+      searchInFlightRef.current = false;
     }
   }
 
@@ -84,6 +104,7 @@ export default function FriendAddScreen() {
       appAlert('Invitation sent', `We've sent your invitation to ${res.requestedTo ?? found.name}.`);
       setFound(null);
       setQuery('');
+      setInviteDraft(freshInviteDraft());
       load();
     } else {
       const msg =
@@ -201,7 +222,10 @@ export default function FriendAddScreen() {
                 return (
                   <Pressable
                     key={r}
-                    onPress={() => { void haptics.light(); setRelationship(r); }}
+                    onPress={() => {
+                      void haptics.light();
+                      setInviteDraft((current) => ({ ...current, relationship: r }));
+                    }}
                     style={[styles.relPill, on && styles.relPillOn]}
                   >
                     <Text style={[styles.relPillText, on && styles.relPillTextOn]} numberOfLines={1}>{r}</Text>
@@ -211,7 +235,13 @@ export default function FriendAddScreen() {
             </View>
 
             <Text style={styles.modalQ}>When is the first time you be in the relationship?</Text>
-            <Pressable onPress={() => { void haptics.light(); setDateOpen((v) => !v); }} style={styles.dateField}>
+            <Pressable
+              onPress={() => {
+                void haptics.light();
+                setInviteDraft((current) => ({ ...current, dateOpen: !current.dateOpen }));
+              }}
+              style={styles.dateField}
+            >
               <Text style={styles.dateFieldText}>
                 {MONTHS[since.m]} {since.d} {since.y}
               </Text>
@@ -221,21 +251,42 @@ export default function FriendAddScreen() {
               <View style={styles.dateWheels}>
                 <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                   {MONTHS.map((mn, i) => (
-                    <Pressable key={mn} onPress={() => setSince((c) => ({ ...c, m: i }))} style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}>
+                    <Pressable
+                      key={mn}
+                      onPress={() => setInviteDraft((current) => ({
+                        ...current,
+                        since: { ...current.since, m: i },
+                      }))}
+                      style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}
+                    >
                       <Text style={[styles.wheelText, since.m === i && styles.wheelTextOn]}>{mn.slice(0, 3)}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
                 <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <Pressable key={d} onPress={() => setSince((c) => ({ ...c, d }))} style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}>
+                    <Pressable
+                      key={d}
+                      onPress={() => setInviteDraft((current) => ({
+                        ...current,
+                        since: { ...current.since, d },
+                      }))}
+                      style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}
+                    >
                       <Text style={[styles.wheelText, since.d === d && styles.wheelTextOn]}>{d}</Text>
                     </Pressable>
                   ))}
                 </ScrollView>
                 <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-                  {Array.from({ length: 80 }, (_, i) => now.getFullYear() - i).map((y) => (
-                    <Pressable key={y} onPress={() => setSince((c) => ({ ...c, y }))} style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}>
+                  {Array.from({ length: 80 }, (_, i) => currentYear - i).map((y) => (
+                    <Pressable
+                      key={y}
+                      onPress={() => setInviteDraft((current) => ({
+                        ...current,
+                        since: { ...current.since, y },
+                      }))}
+                      style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}
+                    >
                       <Text style={[styles.wheelText, since.y === y && styles.wheelTextOn]}>{y}</Text>
                     </Pressable>
                   ))}
@@ -255,7 +306,11 @@ export default function FriendAddScreen() {
 
           {/* Same round white close, dismissing the result overlay */}
           <Pressable
-            onPress={() => { void haptics.pageClose(); setFound(null); }}
+            onPress={() => {
+              void haptics.pageClose();
+              setFound(null);
+              setInviteDraft(freshInviteDraft());
+            }}
             style={[styles.closeBtn, { bottom: closeBottom }]}
             hitSlop={8}
           >

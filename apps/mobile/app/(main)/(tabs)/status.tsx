@@ -112,7 +112,7 @@ export default function ConnectionDashboardScreen() {
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [isPaid, setIsPaid] = useState(cachedPaid);
   const [insights, setInsights] = useState<ConnectionInsights | null>(cachedInsightValue);
-  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | 'consent_required' | null>(() => {
+  const [insightsGate, setInsightsGate] = useState<'ok' | 'plus_required' | null>(() => {
     if (!cachedResult) return null;
     if (cachedResult.ok) return 'ok';
     if (cachedResult.error === 'network') return null;
@@ -142,7 +142,7 @@ export default function ConnectionDashboardScreen() {
         setInsights(validInsights(result.insights));
         setInsightsGate('ok');
         return result.refreshPending !== true;
-      } else if (result.error === 'plus_required' || result.error === 'consent_required') {
+      } else if (result.error === 'plus_required') {
         setInsightsGate(result.error);
       }
       return false;
@@ -258,8 +258,8 @@ export default function ConnectionDashboardScreen() {
           }}
           cardStyle={st.hubPill}
         >
-          <Image source={ICONS.personalVibe} style={st.hubPillIcon} resizeMode="contain" />
-          <Text style={st.hubPillText}>Weekly Recap</Text>
+          <Image source={ICONS.calendar} style={st.hubPillIcon} resizeMode="contain" />
+          <Text style={st.hubPillText}>History</Text>
         </OffsetCard>
       </View>
 
@@ -324,11 +324,6 @@ export default function ConnectionDashboardScreen() {
                 </View>
                 <MaterialIcons name="chevron-right" size={26} color="#FFFFFF" />
               </Pressable>
-            ) : insightsGate === 'consent_required' ? (
-              <View style={st.noticeCard}>
-                <MaterialIcons name="privacy-tip" size={24} color="#8A5F3F" />
-                <Text style={st.noticeText}>Turn on AI features in settings to unlock Connection details.</Text>
-              </View>
             ) : !hasAnyContent ? (
               <Text style={st.emptyIntro}>
                 These spaces will fill in naturally when their reflections offer enough context.
@@ -427,11 +422,6 @@ const st = StyleSheet.create({
   },
   plusTitle: { fontSize: 15.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   plusText: { fontSize: 12.5, lineHeight: 18, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
-  noticeCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFF6E4', borderRadius: 22, padding: 18, marginTop: 16,
-  },
-  noticeText: { flex: 1, fontSize: 14, lineHeight: 21, fontFamily: 'Inter_600SemiBold', color: '#5A4432' },
   emptyIntro: {
     fontSize: 16, lineHeight: 23, textAlign: 'center', color: '#5D351D',
     fontFamily: 'Inter_700Bold', paddingHorizontal: 22, marginTop: 28, marginBottom: 2,

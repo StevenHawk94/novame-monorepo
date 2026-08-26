@@ -912,9 +912,23 @@ export interface ConnectionInsights {
   lastProcessedReflectId?: string;
 }
 
+export type ConnectionHistorySection = 'missed' | 'world' | 'ways_in' | 'between';
+
+export interface ConnectionHistoryCard extends ConnectionInsightCard {
+  id: string;
+  section: ConnectionHistorySection;
+  moduleKey: ConnectionModuleKey;
+  date: string;
+  createdAt: string;
+}
+
+export type ConnectionHistoryResult =
+  | { ok: true; paired: boolean; unavailable?: boolean; cards: ConnectionHistoryCard[] }
+  | { ok: false; error: 'plus_required' | 'network' };
+
 export type InsightsResult =
   | { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
-  | { ok: false; error: 'plus_required' | 'consent_required' | 'network' };
+  | { ok: false; error: 'plus_required' | 'network' };
 
 export function getCachedInsights(): InsightsResult | null {
   return (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
@@ -939,7 +953,7 @@ export function markConnectionDashboardRefreshed(): void {
 /** Plus Connection modules. The server may catch up one latest reflection. */
 export async function fetchInsights(options?: { resume?: boolean }): Promise<
   { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
-  | { ok: false; error: 'plus_required' | 'consent_required' | 'network' }
+  | { ok: false; error: 'plus_required' | 'network' }
 > {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
@@ -964,15 +978,49 @@ export async function fetchInsights(options?: { resume?: boolean }): Promise<
         resumed: data.resumed === true,
       };
     }
-    if (data.error === 'plus_required' || data.error === 'consent_required') {
-      const res: InsightsResult = { ok: false, error: data.error };
+    if (data.error === 'plus_required') {
+      const res: InsightsResult = { ok: false, error: 'plus_required' };
       patchAnalysisCache({ insights: res });
       return res;
     }
     return getCachedInsights() ?? { ok: false, error: 'network' };
   } catch (err) {
     const e = (err as { body?: { error?: string } })?.body?.error;
-    if (e === 'plus_required' || e === 'consent_required') return { ok: false, error: e };
+    if (e === 'plus_required') return { ok: false, error: e };
     return getCachedInsights() ?? { ok: false, error: 'network' };
+  }
+}
+
+/** Append-only Connection cards, newest date first. Date filtering is server-side. */
+export async function fetchConnectionHistory(options?: {
+  start?: string | null;
+  end?: string | null;
+}): Promise<ConnectionHistoryResult> {
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  const params = new URLSearchParams({ userId });
+  if (options?.start) params.set('start', options.start);
+  if (options?.end) params.set('end', options.end);
+  try {
+    const result = await apiClient.get<{
+      success?: boolean;
+      paired?: boolean;
+      unavailable?: boolean;
+      cards?: ConnectionHistoryCard[];
+      error?: string;
+    }>(`/api/friends/insights/history?${params.toString()}`);
+    if (result.success) {
+      return {
+        ok: true,
+        paired: result.paired === true,
+        unavailable: result.unavailable === true,
+        cards: Array.isArray(result.cards) ? result.cards : [],
+      };
+    }
+    return { ok: false, error: result.error === 'plus_required' ? 'plus_required' : 'network' };
+  } catch (error) {
+    const code = (error as { body?: { error?: string } })?.body?.error;
+    return { ok: false, error: code === 'plus_required' ? 'plus_required' : 'network' };
   }
 }

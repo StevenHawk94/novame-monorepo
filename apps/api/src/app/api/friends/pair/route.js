@@ -140,6 +140,13 @@ export async function DELETE(request) {
     // 2026-08-11: unpair revokes the granted seat (member keeps Plus only
     // with an active subscription of their own).
     if (pairRow?.partner_user_id) {
+      const [ua, ub] = userId < pairRow.partner_user_id
+        ? [userId, pairRow.partner_user_id]
+        : [pairRow.partner_user_id, userId]
+      await Promise.all([
+        supabase.from('connection_insights').delete().eq('user_a', ua).eq('user_b', ub),
+        supabase.from('connection_card_history').delete().eq('user_a', ua).eq('user_b', ub),
+      ])
       await revokeDuoOnUnpair(supabase, userId, pairRow.partner_user_id)
     }
     return NextResponse.json({ success: true })

@@ -73,7 +73,6 @@ export async function POST(request) {
             reflectId: result.reflect_id,
             journal: draft.body,
             matchedIcons: (draft.matches || []).map((item) => ({ id: item.itemId, name: item.displayName })),
-            weeklyEligible: draft.body.trim().length >= 100,
             connectionEnabled: context.connectionEnabled,
             currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
             writerRecentEvidence: context.writerRecentEvidence,

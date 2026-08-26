@@ -41,28 +41,43 @@ export async function GET(request) {
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } })
 
-    const { data: me } = await supabase.from('profiles')
-      .select('subscription_tier, ai_consent_at, connection_resume_required')
+    const { data: me, error: meError } = await supabase.from('profiles')
+      .select('subscription_tier, connection_resume_required')
       .eq('id', userId).maybeSingle()
+    if (meError) throw meError
     if ((me?.subscription_tier || 'free') === 'free') return NextResponse.json({ error: 'plus_required' }, { status: 403 })
-    if (!me?.ai_consent_at) return NextResponse.json({ error: 'consent_required' }, { status: 403 })
-    if (intentView) await supabase.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', userId)
+    if (intentView) {
+      const { error: activityError } = await supabase.from('profiles')
+        .update({ last_active_at: new Date().toISOString() }).eq('id', userId)
+      if (activityError) throw activityError
+    }
 
-    const { data: pairing } = await supabase.from('pairings')
+    const { data: pairing, error: pairingError } = await supabase.from('pairings')
       .select('partner_user_id, created_at').eq('user_id', userId).maybeSingle()
+    if (pairingError) throw pairingError
     if (!pairing) return NextResponse.json({ success: true, paired: false, insights: null })
     const partnerId = pairing.partner_user_id
     const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
-    const { data: partner } = await supabase.from('profiles').select('share_memory_details, memory_details_mode').eq('id', partnerId).maybeSingle()
+    const { data: partner, error: partnerError } = await supabase.from('profiles')
+      .select('share_memory_details, memory_details_mode, ai_consent_at')
+      .eq('id', partnerId).maybeSingle()
+    if (partnerError) throw partnerError
     const mode = partner?.memory_details_mode || (partner?.share_memory_details === false ? 'none' : 'custom')
-    if (mode === 'none') return NextResponse.json({ success: true, paired: true, insights: null, reason: 'unavailable' })
+    // Connection copy is derived from the partner's reflections. The viewer's
+    // own AI choice is irrelevant to reading already-authorized partner data.
+    if (mode === 'none' || !partner?.ai_consent_at) {
+      return NextResponse.json({ success: true, paired: true, insights: null, reason: 'unavailable' })
+    }
 
-    const { data: cached } = await supabase.from('connection_insights').select('payload, for_date, created_at')
+    const { data: cached, error: cachedError } = await supabase.from('connection_insights').select('payload, for_date, created_at')
       .eq('user_a', ua).eq('user_b', ub).eq('for_user', userId)
       .order('for_date', { ascending: false }).limit(1).maybeSingle()
-    if (!intentView || (me?.connection_resume_required !== true && !forceResume)) {
+    if (cachedError) throw cachedError
+    const cachedInsights = publicInsights(cached?.payload)
+    const needsRecovery = !cachedInsights
+    if (!intentView || (me?.connection_resume_required !== true && !forceResume && !needsRecovery)) {
       return NextResponse.json({
-        success: true, paired: true, insights: publicInsights(cached?.payload), cached: true,
+        success: true, paired: true, insights: cachedInsights, cached: true,
       })
     }
     const result = await generateBrief(supabase, {
@@ -74,7 +89,7 @@ export async function GET(request) {
     })
     if (!result.ok) {
       return NextResponse.json({
-        success: true, paired: true, insights: publicInsights(cached?.payload),
+        success: true, paired: true, insights: cachedInsights,
         cached: true, refreshPending: true,
       })
     }

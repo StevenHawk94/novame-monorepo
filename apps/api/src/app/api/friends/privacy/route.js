@@ -65,8 +65,12 @@ export async function POST(request) {
     }
     // A changed visibility policy must not leave an AI brief generated from
     // now-hidden reflections in either person's daily cache.
-    await supabase.from('connection_insights').delete()
-      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    await Promise.all([
+      supabase.from('connection_insights').delete()
+        .or(`user_a.eq.${userId},user_b.eq.${userId}`),
+      supabase.from('connection_card_history').delete()
+        .or(`user_a.eq.${userId},user_b.eq.${userId}`),
+    ])
     return NextResponse.json({ success: true, share: mode !== 'none', mode })
   } catch (err) {
     console.error('[friends/privacy] unexpected:', err && err.message)

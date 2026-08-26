@@ -18,20 +18,22 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
     const now = new Date()
-    const { data: profile } = await supabase.from('profiles')
+    const { data: profile, error: profileError } = await supabase.from('profiles')
       .select('last_active_at, connection_resume_required')
       .eq('id', verified.id).maybeSingle()
+    if (profileError) throw profileError
     const previousActiveAt = profile?.last_active_at
       ? new Date(profile.last_active_at).getTime()
       : 0
     const returnedAfterLongAbsence = previousActiveAt > 0
       && previousActiveAt < now.getTime() - 48 * 60 * 60 * 1000
-    await supabase.from('profiles').update({
+    const { error: updateError } = await supabase.from('profiles').update({
       last_active_at: now.toISOString(),
       connection_resume_required:
         profile?.connection_resume_required === true || returnedAfterLongAbsence,
       ...(timezone ? { timezone_name: timezone } : {}),
     }).eq('id', verified.id)
+    if (updateError) throw updateError
     return NextResponse.json({ success: true })
   } catch (err) {
     console.warn('[activity] failed:', err && err.message)

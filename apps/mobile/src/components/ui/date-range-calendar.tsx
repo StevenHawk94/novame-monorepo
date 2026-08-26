@@ -7,13 +7,14 @@ import { haptics } from '@/lib/haptics';
 function pad2(n: number): string { return String(n).padStart(2, '0'); }
 function iso(y: number, m: number, d: number): string { return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
 
-export function DateRangeCalendar({ visible, start, end, onChange, onClose, onDone }: {
+export function DateRangeCalendar({ visible, start, end, onChange, onClose, onDone, doneLabel = 'Show memories' }: {
   visible: boolean;
   start: string | null;
   end: string | null;
   onChange: (start: string | null, end: string | null) => void;
   onClose: () => void;
   onDone?: (start: string | null, end: string | null) => void;
+  doneLabel?: string;
 }) {
   const now = new Date();
   const [ym, setYm] = useState(() => start
@@ -70,7 +71,7 @@ export function DateRangeCalendar({ visible, start, end, onChange, onClose, onDo
               <Text style={styles.clearText}>Clear</Text>
             </Pressable>
             <Pressable onPress={() => { void haptics.pageClose(); onDone?.(start, end); onClose(); }} style={styles.doneButton}>
-              <Text style={styles.doneText}>Show memories</Text>
+              <Text style={styles.doneText}>{doneLabel}</Text>
             </Pressable>
           </View>
         </Pressable>

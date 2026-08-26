@@ -46,6 +46,8 @@ export async function POST(request) {
       .eq('user_id', userId)
     await supabase.from('connection_insights').delete()
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    await supabase.from('connection_card_history').delete()
+      .eq('source_reflect_id', reflectId)
     await supabase.rpc('broadcast_reflect_feed_change', { p_user_id: userId })
     return NextResponse.json({ success: true, visible })
   } catch (err) {

@@ -275,6 +275,13 @@ export default function TameEnemyScreen() {
           {monsters.map((m) => {
             // Free: 3 tames a day across all monsters. Paid: one per monster.
             const locked = perEnemyDaily ? m.tamedToday : doneToday;
+            // Old cached payloads only carried tamedBefore. Preserve that
+            // first-tame badge until the background status refresh supplies
+            // the exact server count.
+            const tamedCount = Math.max(
+              0,
+              Number(m.tamedCount ?? (m.tamedBefore ? 1 : 0)) || 0,
+            );
             return (
               <Pressable
                 key={m.id}
@@ -287,9 +294,9 @@ export default function TameEnemyScreen() {
                   <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
                 )}
                 <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
-                {m.tamedBefore && (
+                {tamedCount > 0 && (
                   <View style={[styles.tamedBadge, { backgroundColor: 'rgba(58,46,26,0.08)' }]}>
-                    <Text style={[styles.tamedBadgeText, { color: kit.textSub }]}>Tamed once</Text>
+                    <Text style={[styles.tamedBadgeText, { color: kit.textSub }]}>Tamed {tamedCount}×</Text>
                   </View>
                 )}
               </Pressable>

@@ -3,7 +3,7 @@ export async function recordAIUsage(supabase, {
   success = true, refId = null, error = null,
 }) {
   try {
-    await supabase.from('ai_usage_events').insert({
+    const { error: insertError } = await supabase.from('ai_usage_events').insert({
       user_id: userId || null,
       feature,
       prompt_version: promptVersion,
@@ -15,8 +15,8 @@ export async function recordAIUsage(supabase, {
       ref_id: refId == null ? null : String(refId),
       error: error ? String(error).slice(0, 500) : null,
     })
+    if (insertError) throw insertError
   } catch (err) {
     console.warn('[ai-usage] insert failed:', err && err.message)
   }
 }
-
