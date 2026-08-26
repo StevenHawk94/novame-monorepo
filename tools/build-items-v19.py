@@ -147,7 +147,12 @@ def projection_groups(on: np.ndarray, target: int, label: str) -> list[tuple[int
     return runs
 
 
-def render_icon(source_rgba: np.ndarray, own_mask: np.ndarray) -> tuple[Image.Image, tuple[int, int, int, int]]:
+def render_icon(
+    source_rgba: np.ndarray,
+    own_mask: np.ndarray,
+    *,
+    safe_size: int = SAFE_SIZE,
+) -> tuple[Image.Image, tuple[int, int, int, int]]:
     ys, xs = np.where(own_mask)
     if not len(xs):
         raise ValueError("Cannot render an empty icon mask")
@@ -156,7 +161,7 @@ def render_icon(source_rgba: np.ndarray, own_mask: np.ndarray) -> tuple[Image.Im
     patch = source_rgba[y0:y1, x0:x1].copy()
     patch[~own_mask[y0:y1, x0:x1], 3] = 0
     icon = Image.fromarray(patch, "RGBA")
-    scale = min(SAFE_SIZE / icon.width, SAFE_SIZE / icon.height)
+    scale = min(safe_size / icon.width, safe_size / icon.height)
     resized = icon.resize(
         (max(1, round(icon.width * scale)), max(1, round(icon.height * scale))),
         Image.Resampling.LANCZOS,
@@ -175,6 +180,8 @@ def render_icon(source_rgba: np.ndarray, own_mask: np.ndarray) -> tuple[Image.Im
 def extract_component_slots(
     path: Path,
     target_offsets: set[int],
+    *,
+    target_size: int = SAFE_SIZE,
 ) -> tuple[dict[int, Image.Image], dict[str, object]]:
     """Extract exact 7x7 slots by assigning whole alpha components by centroid.
 
@@ -211,7 +218,11 @@ def extract_component_slots(
         component_ids = components_by_slot[offset]
         if not component_ids:
             raise ValueError(f"{path.name}: target slot {offset} has no alpha components")
-        icon, bbox = render_icon(source_rgba, np.isin(labels, component_ids))
+        icon, bbox = render_icon(
+            source_rgba,
+            np.isin(labels, component_ids),
+            safe_size=target_size,
+        )
         icons[offset] = icon
         alpha_boxes.append(bbox)
 
@@ -431,6 +442,12 @@ def main() -> None:
         nargs="+",
         help="Overwrite only these exact workbook rows using component-safe slot extraction",
     )
+    parser.add_argument(
+        "--target-size",
+        type=int,
+        default=SAFE_SIZE,
+        help="Maximum content width/height for --replace-rows (default: 200 on a 256 canvas)",
+    )
     args = parser.parse_args()
 
     selected_modes = sum(
@@ -438,6 +455,10 @@ def main() -> None:
     )
     if selected_modes > 1:
         raise ValueError("--full, --replace-from-row, and --replace-rows are mutually exclusive")
+    if not 64 <= args.target_size <= SAFE_SIZE:
+        raise ValueError(f"--target-size must be between 64 and {SAFE_SIZE}")
+    if args.target_size != SAFE_SIZE and args.replace_rows is None:
+        raise ValueError("--target-size is only valid with --replace-rows")
     source_dir = args.source_dir.resolve()
     catalog_pages = source_pages(SOURCE_DIR.resolve(), require_full_catalog=True)
     pages = source_pages(
@@ -529,7 +550,11 @@ def main() -> None:
                 for row_number in rows_to_write
                 if start <= row_number <= end
             }
-            icons_by_offset, report = extract_component_slots(path, offsets)
+            icons_by_offset, report = extract_component_slots(
+                path,
+                offsets,
+                target_size=args.target_size,
+            )
         else:
             icons, report = extract_page(path)
             icons_by_offset = dict(enumerate(icons))
@@ -581,7 +606,9 @@ def main() -> None:
         "icons_generated": len(written_files),
         "catalog_icons_present": len(disk_files),
         "canvas": f"{CANVAS}x{CANVAS}",
-        "safe_content_size": SAFE_SIZE,
+        "safe_content_size": (
+            args.target_size if args.replace_rows is not None else SAFE_SIZE
+        ),
         "encoding": "WebP quality=92 method=4 with alpha",
         "minimum_output_margin": (
             min(report["minimum_margin"] for report in page_reports) if page_reports else None
