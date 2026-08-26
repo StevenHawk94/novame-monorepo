@@ -33,6 +33,10 @@ import {
   onPurchaseError,
   purchaseSubscription,
 } from '../../src/lib/iap';
+import {
+  markNotifPromptedAfterPurchase,
+  shouldPromptNotifAfterPurchase,
+} from '../../src/lib/notification-settings';
 
 /**
  * Burrow story flow on the beige grid: hook → who/what-blocks questions →
@@ -204,6 +208,15 @@ export default function OnboardingScreen() {
     setIdx(FLOW.indexOf('plans'));
   }
 
+  function finishPurchasedOnboarding() {
+    const promptNotification = shouldPromptNotifAfterPurchase();
+    if (promptNotification) markNotifPromptedAfterPurchase();
+    router.replace({
+      pathname: '/(auth)/signing-in',
+      params: promptNotification ? { after: 'notification-settings' } : {},
+    } as never);
+  }
+
   async function onStartPlan() {
     if (purchasing) return;
     void haptics.medium();
@@ -212,13 +225,15 @@ export default function OnboardingScreen() {
       // Onboarding reaches the paywall before the name step that normally
       // creates guest mode. Prepare the same durable anonymous UUID here so
       // purchasing never requires Apple/Google/email account binding.
-      const sessionReady = await ensureSession();
+      const [sessionReady] = await Promise.all([
+        ensureSession(),
+        initIAP(),
+      ]);
       if (!sessionReady) {
         throw new Error(
           'We couldn’t prepare your account for purchase. Check your connection and try again.',
         );
       }
-      await initIAP();
       const outcome = await purchaseSubscription(
         plan === 'yearly' ? 'novame.plus.yearly' : 'novame.plus.monthly',
       );
@@ -288,7 +303,7 @@ export default function OnboardingScreen() {
         res.mode === 'linked'
           ? 'Your memories are now safe on this account.'
           : 'Your account and memories have been restored.',
-        [{ text: 'OK', onPress: () => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); } }],
+        [{ text: 'OK', onPress: () => { void haptics.pageOpen(); finishPurchasedOnboarding(); } }],
       );
     } else if (!res.cancelled) {
       appAlert(
@@ -327,7 +342,7 @@ export default function OnboardingScreen() {
       linkMode === 'change'
         ? 'Your memories are now safe.'
         : 'Your account and memories have been restored.',
-      [{ text: 'OK', onPress: () => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); } }],
+      [{ text: 'OK', onPress: () => { void haptics.pageOpen(); finishPurchasedOnboarding(); } }],
     );
   }
 
@@ -712,7 +727,7 @@ export default function OnboardingScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
-                onPress={() => { void haptics.pageOpen(); router.replace('/(auth)/signing-in'); }}
+                onPress={() => { void haptics.pageOpen(); finishPurchasedOnboarding(); }}
                 style={styles.closeCircle}
                 hitSlop={10}
               >
@@ -789,7 +804,18 @@ export default function OnboardingScreen() {
                   </Pressable>
                 </>
               )}
-              <Pressable onPress={() => { void haptics.pageOpen(); router.replace('/(auth)/sign-in'); }} hitSlop={8}>
+              <Pressable
+                onPress={() => {
+                  void haptics.pageOpen();
+                  const promptNotification = shouldPromptNotifAfterPurchase();
+                  if (promptNotification) markNotifPromptedAfterPurchase();
+                  router.replace({
+                    pathname: '/(auth)/sign-in',
+                    params: promptNotification ? { after: 'notification-settings' } : {},
+                  } as never);
+                }}
+                hitSlop={8}
+              >
                 <Text style={styles.loginLink}>Already have an account? Log in</Text>
               </Pressable>
               <View style={{ flex: 1, minHeight: 20 }} />

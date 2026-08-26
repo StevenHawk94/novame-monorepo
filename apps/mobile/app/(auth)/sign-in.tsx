@@ -11,7 +11,7 @@ import { Platform,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 import { hideSplashOnce } from '@/lib/splash';
@@ -100,6 +100,14 @@ export default function AuthScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const router = useRouter();
+  const params = useLocalSearchParams<{ after?: string }>();
+
+  const finishAuth = () => {
+    router.replace({
+      pathname: '/(auth)/signing-in',
+      params: params.after ? { after: params.after } : {},
+    } as never);
+  };
 
   // The dev-only "replay onboarding" button lived here. The eleven-step flow is
   // deleted and the six-step one does not exist yet, so there is nowhere to
@@ -153,7 +161,7 @@ export default function AuthScreen() {
       setErrorMsg(result.error ?? 'The verification code is invalid or expired.');
       return;
     }
-    router.replace('/(auth)/signing-in');
+    finishAuth();
   };
 
   const handleResendEmailCode = async () => {
@@ -179,7 +187,7 @@ export default function AuthScreen() {
       setErrorMsg(result.error ?? `Could not continue with ${provider === 'apple' ? 'Apple' : 'Google'}.`);
       return;
     }
-    if (result.ok) router.replace('/(auth)/signing-in');
+    if (result.ok) finishAuth();
   };
 
   // ---- shared visual fragments ----

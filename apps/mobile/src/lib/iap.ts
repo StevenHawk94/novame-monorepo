@@ -61,6 +61,7 @@ import { supabase } from './supabase';
 import {
   clearCachedSubscription,
   fetchSubscriptionTier,
+  setCachedSubscription,
 } from './subscription';
 import type { PricingTierKey } from '@novame/core';
 
@@ -155,6 +156,7 @@ function getPurchaseEntitlement(purchase: Purchase): {
 // ---- Module-level state (single listener, single connection) ----
 
 let initialized = false;
+let initIAPInFlight: Promise<void> | null = null;
 let purchaseUpdateSub: { remove: () => void } | null = null;
 let purchaseErrorSub: { remove: () => void } | null = null;
 
@@ -290,10 +292,20 @@ export function onPurchaseError(
  */
 export async function initIAP(): Promise<void> {
   if (initialized) return;
+  if (initIAPInFlight) return initIAPInFlight;
+
+  initIAPInFlight = initializeIAP();
+  try {
+    await initIAPInFlight;
+  } finally {
+    initIAPInFlight = null;
+  }
+}
+
+async function initializeIAP(): Promise<void> {
 
   try {
     await initConnection();
-    initialized = true;
   } catch (e) {
     console.warn('[iap] initConnection failed:', e);
     return;
@@ -373,8 +385,11 @@ export async function initIAP(): Promise<void> {
               txnId,
             );
           }
-          // For non-transient (business) errors: keep in set, don't
-          // spam server with the same broken txn every launch.
+          // Release every non-conflict failure for a later retry. initIAP is
+          // single-flight, so this cannot create concurrent duplicate POSTs;
+          // keeping the id here would make a later user-initiated retry get
+          // skipped and leave its paywall waiting forever.
+          if (!isTransient) processedTransactionIds.delete(txnId);
         }
       }
       // After recovery, refresh the cached tier so the user sees
@@ -395,6 +410,10 @@ export async function initIAP(): Promise<void> {
   purchaseErrorSub = purchaseErrorListener((error) => {
     handlePurchaseError(error);
   });
+  // Initialization is complete only after recovery and both listeners are
+  // installed. Purchase surfaces awaiting initIAP can now safely launch the
+  // native store sheet without racing listener registration.
+  initialized = true;
 }
 
 /**
@@ -402,6 +421,13 @@ export async function initIAP(): Promise<void> {
  * app exits, so this is mostly defensive.
  */
 export async function cleanupIAP(): Promise<void> {
+  if (initIAPInFlight) {
+    try {
+      await initIAPInFlight;
+    } catch {
+      /* initialization already logged its failure */
+    }
+  }
   purchaseUpdateSub?.remove();
   purchaseErrorSub?.remove();
   purchaseUpdateSub = null;
@@ -490,8 +516,7 @@ export function getSubscriptionPlanPricing(
 export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]> {
   if (!initialized) {
     try {
-      await initConnection();
-      initialized = true;
+      await initIAP();
     } catch {
       return [];
     }
@@ -526,7 +551,10 @@ export async function purchaseSubscription(
   productId: IOSSubscriptionProductId,
 ): Promise<PurchaseOutcome> {
   if (!initialized) {
-    throw new Error('IAP not initialized -- call initIAP() first');
+    await initIAP();
+  }
+  if (!initialized) {
+    throw new Error('The App Store connection is not ready. Please try again.');
   }
 
   // Purchases are allowed for guest users, but the receipt must still be
@@ -554,10 +582,17 @@ export async function purchaseSubscription(
   purchaseAccountIdInFlight = purchaseUserId;
   if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
   userInitiatedTimer = setTimeout(() => {
+    const timedOutProductId = productId;
     userInitiatedInFlight = false;
     purchaseAccountIdInFlight = null;
     userInitiatedTimer = null;
-  }, 60000);
+    handlePurchaseError(createPurchaseError({
+      code: ErrorCode.PurchaseVerificationFailed,
+      message: 'Your purchase is taking longer than expected. It will be restored automatically; you can also try Restore Purchases.',
+      productId: timedOutProductId,
+      platform: Platform.OS === 'ios' ? 'ios' : 'android',
+    }));
+  }, 10 * 60 * 1000);
 
   try {
     // requestPurchase returns:
@@ -667,8 +702,7 @@ export async function restoreSubscriptions(): Promise<{
 }> {
   if (!initialized) {
     try {
-      await initConnection();
-      initialized = true;
+      await initIAP();
     } catch {
       return { restored: false };
     }
@@ -753,8 +787,9 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     }
   }
 
+  let verified: AppleIapResponse;
   try {
-    await uploadPurchaseToServer(purchase, expectedUserId);
+    verified = await uploadPurchaseToServer(purchase, expectedUserId);
   } catch (e) {
     console.error('[iap] server upload failed:', e);
     const conflict = purchaseOwnershipConflict(e);
@@ -767,6 +802,17 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     // launch and we can retry the upload then. Also remove from the
     // dedup set so a future retry can attempt again.
     processedTransactionIds.delete(txnId);
+    if (wasUserInitiated) {
+      const message = e instanceof Error && e.message
+        ? e.message
+        : 'We could not verify your purchase. It will be restored automatically; please check your connection and try again.';
+      handlePurchaseError(createPurchaseError({
+        code: ErrorCode.PurchaseVerificationFailed,
+        message,
+        productId,
+        platform: Platform.OS === 'ios' ? 'ios' : 'android',
+      }));
+    }
     return;
   }
 
@@ -777,8 +823,16 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     console.warn('[iap] finishTransaction failed (non-fatal):', e);
   }
 
-  // Refresh local cache so any later UI read sees the new tier.
-  await refreshSubscriptionCache();
+  // The verification endpoint is authoritative and already returns the
+  // granted tier. Persist it immediately so closing the paywall cannot flash
+  // Free while a second user-sync request is still in flight.
+  const verifiedTier = verified.tier ?? entitlement.tier;
+  setCachedSubscription({
+    tier: verifiedTier,
+    lastFetchedAtMs: Date.now(),
+    serverConfirmed: true,
+  });
+  clearQuotaExhausted();
 
   // Only fire the success UI callback if this was a user tap on
   // Subscribe. Replays and silent auto-renewals must NOT close the
@@ -793,7 +847,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     return;
   }
 
-  const { tier, cycle } = entitlement;
+  const { cycle } = entitlement;
 
   // Stage 6 follow-up (Me-page subscription regression): proactively
   // refresh me-stats cache rather than just invalidating it.
@@ -829,14 +883,25 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
 
   for (const cb of completeCallbacks) {
     try {
-      cb({ tier, cycle });
+      cb({ tier: verifiedTier, cycle });
     } catch (e) {
       console.warn('[iap] completeCallback threw:', e);
     }
   }
+
+  // Reconcile verbose subscription/profile caches after the UI has already
+  // closed. This is intentionally not awaited: server verification above is
+  // the durable success boundary, while this GET is redundant bookkeeping.
+  void refreshSubscriptionCache({ preserveExisting: true });
 }
 
 function handlePurchaseError(error: PurchaseError): void {
+  userInitiatedInFlight = false;
+  purchaseAccountIdInFlight = null;
+  if (userInitiatedTimer) {
+    clearTimeout(userInitiatedTimer);
+    userInitiatedTimer = null;
+  }
   // user-cancelled is silent (per expo-iap official guidance:
   // "Don't show error message, just continue").
   if (error.code === ErrorCode.UserCancelled) return;
@@ -864,7 +929,7 @@ type AppleIapResponse = {
 async function uploadPurchaseToServer(
   purchase: Purchase,
   expectedUserId: string | null = null,
-): Promise<void> {
+): Promise<AppleIapResponse> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) {
@@ -931,13 +996,16 @@ async function uploadPurchaseToServer(
   if (!data.success) {
     throw new Error(data.error ?? 'iap upload returned !success');
   }
+  return data;
 }
 
-async function refreshSubscriptionCache(): Promise<void> {
+async function refreshSubscriptionCache(
+  options?: { preserveExisting?: boolean },
+): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return;
-  clearCachedSubscription();
+  if (!options?.preserveExisting) clearCachedSubscription();
   try {
     await fetchSubscriptionTier(userId, { force: true });
     // A purchase just upgraded the tier, so any locally-remembered
