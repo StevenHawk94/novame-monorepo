@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -214,6 +214,7 @@ export default function ReflectGuidedScreen() {
     });
     setSubmitting(false);
     if (res.ok) {
+      Keyboard.dismiss();
       setPreparedDraft(res.draft);
       setPhase('result');
     } else {
@@ -243,7 +244,11 @@ export default function ReflectGuidedScreen() {
     <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View pointerEvents="none" style={styles.scrim} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        enabled={phase !== 'result'}
+      >
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
             <View style={styles.topRow}>
@@ -405,7 +410,7 @@ export default function ReflectGuidedScreen() {
             </View>
           ) : (
             preparedDraft && (
-              <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
+              <View style={{ flex: 1 }}>
                 <ReflectSettlementView
                   draft={preparedDraft}
                   itemWord="Selected"

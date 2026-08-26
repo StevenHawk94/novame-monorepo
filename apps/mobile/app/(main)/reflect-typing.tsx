@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -132,6 +133,7 @@ export default function ReflectTypingScreen() {
     });
     setSubmitting(false);
     if (res.ok) {
+      Keyboard.dismiss();
       setDraft(res.draft);
       setPhase('result');
     } else {
@@ -146,7 +148,11 @@ export default function ReflectTypingScreen() {
       {/* Only the Reflect-method entry stays unshaded. Every page inside this
           flow uses the same scrim so white labels remain readable. */}
       <View pointerEvents="none" style={styles.scrim} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        enabled={phase !== 'result'}
+      >
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
             <ReflectTopBar remaining={remaining} onBack={() => router.back()} />
@@ -238,7 +244,7 @@ export default function ReflectTypingScreen() {
             </View>
           ) : (
             draft && (
-              <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
+              <View style={{ flex: 1 }}>
                 <ReflectSettlementView
                   draft={draft}
                   itemWord="Matched"

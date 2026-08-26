@@ -57,6 +57,7 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   connect4: require('../../assets/Icons/connect-4.png'),
   // Shared with Memories Cave
   calendar: require('../../assets/Icons/calendar.png'),
+  history: require('../../assets/Icons/history.png'),
   connectionNew: require('../../assets/Icons/connection-new.png'),
   personalVibe: require('../../assets/Icons/personal-vibe.png'),
   weekPlan: require('../../assets/Icons/Week-Plan.png'),

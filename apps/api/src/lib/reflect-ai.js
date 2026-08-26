@@ -1,8 +1,8 @@
 import { callAI, parseAIJson } from './ai'
 
-export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V6'
+export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V7'
 export const REFLECT_COPY_VERSION = 'REFLECT_COPY_V4'
-export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V5'
+export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V6'
 
 const CONNECTION_KEYS = [
   'worth_knowing',
@@ -29,6 +29,19 @@ const CONNECTION_SECTION_BY_KEY = {
   how_to_show_up: 'ways_in',
   talk_about: 'ways_in',
   try_together: 'ways_in',
+  shared_rhythm: 'between',
+}
+const CONNECTION_SECTION_ALIASES = {
+  missed: 'missed',
+  worth_knowing: 'missed',
+  world: 'world',
+  recent_vibe: 'world',
+  what_theyre_into: 'world',
+  ways_in: 'ways_in',
+  how_to_show_up: 'ways_in',
+  talk_about: 'ways_in',
+  try_together: 'ways_in',
+  between: 'between',
   shared_rhythm: 'between',
 }
 const CONNECTION_SIGNAL_TYPE_BY_SECTION = {
@@ -209,11 +222,31 @@ function canonicalSignalKey(value, max = 80) {
   return canonical || null
 }
 
+export function normalizeConnectionSection(value) {
+  const key = canonicalSignalKey(value, 40)
+  return key ? CONNECTION_SECTION_ALIASES[key] || null : null
+}
+
 const CONNECTION_DEDUPE_STOPWORDS = new Set([
   'about', 'after', 'again', 'could', 'from', 'have', 'into', 'just', 'latest',
   'might', 'recent', 'really', 'that', 'their', 'there', 'they', 'this', 'with',
   'would', 'worth', 'your',
 ])
+
+const CONNECTION_TOPIC_GENERIC_TERMS = new Set([
+  'action', 'activity', 'about', 'conversation', 'discussion', 'event', 'experience',
+  'family', 'friend', 'general', 'hobby', 'home', 'interest', 'latest', 'moment',
+  'personal', 'plan', 'preference', 'project', 'recent', 'school', 'thing', 'topic',
+  'update', 'work',
+])
+
+function connectionTopicTerms(card) {
+  return new Set([card.topicKey, card.signalId]
+    .filter(Boolean)
+    .join('_')
+    .split(/_+/)
+    .filter((term) => term.length >= 4 && !CONNECTION_TOPIC_GENERIC_TERMS.has(term)))
+}
 
 function connectionSemanticTerms(card) {
   return new Set([
@@ -225,6 +258,11 @@ function connectionSemanticTerms(card) {
 
 function semanticallyDuplicatesConnectionCard(left, right) {
   if (left.topicKey === right.topicKey || left.signalId === right.signalId) return true
+  const leftTopics = connectionTopicTerms(left)
+  const rightTopics = connectionTopicTerms(right)
+  for (const term of leftTopics) {
+    if (rightTopics.has(term)) return true
+  }
   const a = connectionSemanticTerms(left)
   const b = connectionSemanticTerms(right)
   if (a.size < 4 || b.size < 4) return false
@@ -233,18 +271,28 @@ function semanticallyDuplicatesConnectionCard(left, right) {
   return overlap >= 4 && overlap / Math.min(a.size, b.size) >= 0.72
 }
 
-function cleanConnectionCard(value, reflectId, moduleKey, order) {
-  if (!value || typeof value !== 'object') return null
+function cleanConnectionCard(value, reflectId, moduleKey, order, onReject = null) {
+  const reject = (reason) => {
+    if (typeof onReject === 'function') onReject(reason)
+    return null
+  }
+  if (!value || typeof value !== 'object') return reject('invalid_card')
   const body = text(value.body, 500)
   const conf = confidence(value.confidence)
-  const assignedSection = text(value.assignedSection, 20)
+  const assignedSection = normalizeConnectionSection(value.assignedSection)
   const expectedSection = CONNECTION_SECTION_BY_KEY[moduleKey]
   const signalType = text(value.signalType, 30)
   const signalId = canonicalSignalKey(value.signalId)
   const topicKey = canonicalSignalKey(value.topicKey)
-  if (!body || conf < 0.55 || !signalId || !topicKey
-    || assignedSection !== expectedSection
-    || signalType !== CONNECTION_SIGNAL_TYPE_BY_SECTION[expectedSection]) return null
+  if (!body) return reject('missing_body')
+  if (conf < 0.55) return reject('low_confidence')
+  if (!signalId) return reject('missing_signal_id')
+  if (!topicKey) return reject('missing_topic_key')
+  if (!assignedSection) return reject('unknown_section')
+  if (assignedSection !== expectedSection) return reject('section_mismatch')
+  if (signalType !== CONNECTION_SIGNAL_TYPE_BY_SECTION[expectedSection]) {
+    return reject('signal_type_mismatch')
+  }
   const expiresAtMs = typeof value.expiresAt === 'string' ? Date.parse(value.expiresAt) : NaN
   return {
     signalId,
@@ -271,6 +319,10 @@ export function cleanConnectionUpdates(value, reflectId = null, options = {}) {
   if (!value || typeof value !== 'object') return null
   const candidates = []
   const clearExisting = {}
+  const rejectionCounts = {}
+  const recordRejection = (reason) => {
+    rejectionCounts[reason] = (rejectionCounts[reason] || 0) + 1
+  }
   for (const key of CONNECTION_KEYS) {
     const row = value[key]
     const sharedRhythmBlocked = key === 'shared_rhythm' && options.allowSharedRhythm === false
@@ -279,9 +331,13 @@ export function cleanConnectionUpdates(value, reflectId = null, options = {}) {
     if (sharedRhythmBlocked) continue
     const rawCards = Array.isArray(row?.cards) ? row.cards : []
     rawCards.slice(0, CONNECTION_LIMITS[key] * 2).forEach((card, order) => {
-      const clean = cleanConnectionCard(card, reflectId, key, order)
+      const clean = cleanConnectionCard(card, reflectId, key, order, recordRejection)
       if (row?.hasUpdate === true && clean) candidates.push(clean)
     })
+  }
+  if (Object.keys(rejectionCounts).length > 0) {
+    // Counts only: never log the private reflection or generated card content.
+    console.warn('[connection] rejected generated cards:', rejectionCounts)
   }
 
   // The prompt performs the first allocation pass. This deterministic guard

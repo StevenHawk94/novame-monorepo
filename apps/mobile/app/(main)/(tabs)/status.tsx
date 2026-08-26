@@ -258,7 +258,7 @@ export default function ConnectionDashboardScreen() {
           }}
           cardStyle={st.hubPill}
         >
-          <Image source={ICONS.calendar} style={st.hubPillIcon} resizeMode="contain" />
+          <Image source={ICONS.history} style={st.hubPillIcon} resizeMode="contain" />
           <Text style={st.hubPillText}>History</Text>
         </OffsetCard>
       </View>
@@ -384,10 +384,14 @@ const st = StyleSheet.create({
   subtitle: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
   hubPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#F0885C', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 9,
+    width: 112, backgroundColor: '#F0885C', borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 9,
   },
   hubPillIcon: { width: 30, height: 30 },
-  hubPillText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
+  hubPillText: {
+    flex: 1, textAlign: 'center',
+    fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
+  },
   scroll: { paddingHorizontal: 16, paddingTop: 16 },
   unpairedScroll: { flexGrow: 1, justifyContent: 'center', padding: 22 },
   pairLockCard: {

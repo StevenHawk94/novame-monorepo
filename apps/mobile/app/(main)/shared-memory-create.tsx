@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -139,6 +140,7 @@ export default function SharedMemoryCreateScreen() {
       return;
     }
 
+    Keyboard.dismiss();
     setPreparedDraft(response.draft);
     setPhase('result');
   }
@@ -147,12 +149,16 @@ export default function SharedMemoryCreateScreen() {
     <View style={styles.screen}>
       <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
       <View pointerEvents="none" style={styles.scrim} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        enabled={phase !== 'result'}
+      >
         <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && <ReflectTopBar remaining={remaining} onBack={() => router.back()} />}
 
           {phase === 'result' && preparedDraft ? (
-            <View style={{ flex: 1, paddingBottom: insets.bottom + 12 }}>
+            <View style={{ flex: 1 }}>
               <ReflectSettlementView
                 draft={preparedDraft}
                 itemWord="Matched"
