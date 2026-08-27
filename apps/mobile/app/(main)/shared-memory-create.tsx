@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { randomUUID } from 'expo-crypto';
+import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import {
   ActivityIndicator,
   Keyboard,
@@ -32,6 +34,8 @@ import {
   notifySharedBoxChanged,
 } from '@/lib/friends-api';
 import { haptics } from '@/lib/haptics';
+import { useCompletionSound } from '@/lib/use-completion-sound';
+import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS } from '@/lib/icons';
 import { mergedItemDictionary } from '@/lib/remote-items';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
@@ -60,6 +64,7 @@ type Phase = 'write' | 'result';
 /** Shared Memories is the third Reflect path and the Ours create destination. */
 export default function SharedMemoryCreateScreen() {
   const router = useRouter();
+  const { play: playCompletionSound } = useCompletionSound();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ friendUserId?: string }>();
   const routeFriendId = typeof params.friendUserId === 'string' ? params.friendUserId : '';
@@ -73,6 +78,9 @@ export default function SharedMemoryCreateScreen() {
   const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [editOpen, setEditOpen] = useState(false);
+  const saveKey = useMemo(() => randomUUID(), [text, friendUserId, removedIds]);
+  const submitLock = useRef(false);
+  useReflectExitGuard(submitting);
   const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
   const isPaid = useSubscriptionTier() !== 'free';
@@ -108,7 +116,7 @@ export default function SharedMemoryCreateScreen() {
   }
 
   async function create() {
-    if (submitting) return;
+    if (submitLock.current) return;
     if (!isPaid) {
       router.replace('/(main)/(modals)/subscription-paywall?phase=plans' as never);
       return;
@@ -123,13 +131,16 @@ export default function SharedMemoryCreateScreen() {
     }
     void haptics.medium();
     setSubmitting(true);
+    submitLock.current = true;
     const response = await prepareReflect({
       promptId: 9,
       body: text,
       friendUserId,
       mode: 'typing',
       removedItemIds: [...removedIds],
+      idempotencyKey: saveKey,
     });
+    submitLock.current = false;
     setSubmitting(false);
 
     if (!response.ok) {
@@ -163,6 +174,7 @@ export default function SharedMemoryCreateScreen() {
             <View style={{ flex: 1 }}>
               <ReflectSettlementView
                 draft={preparedDraft}
+                onPresented={playCompletionSound}
                 itemWord="Matched"
                 shared
                 onFinalized={(snapshot) => {
@@ -240,6 +252,7 @@ export default function SharedMemoryCreateScreen() {
           )}
         </KeyboardDismissView>
       </KeyboardAvoidingView>
+      <ReflectCelebration active={phase === 'result'} />
 
       {editOpen && (
         <MatchedItemsReviewSheet

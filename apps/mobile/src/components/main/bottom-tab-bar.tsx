@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
@@ -7,13 +7,16 @@ import type { ImageSourcePropType } from 'react-native';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
+import { HomeEntryImage } from './home-entry-gate';
+import { useHomeEntry } from '@/lib/use-home-entry';
+import { markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
 
 /**
  * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
  * (assets/Icons), on a warm cream bar to match the Home art. The focused tab
  * reads at full opacity; unfocused tabs dim slightly.
  */
-const TABS: ReadonlyArray<{ name: string; icon: ImageSourcePropType; label: string }> = [
+const TABS: ReadonlyArray<{ name: 'index' | 'bags' | 'quests' | 'friends' | 'status'; icon: ImageSourcePropType; label: string }> = [
   { name: 'index', icon: ICONS.Home, label: 'Home' },
   { name: 'bags', icon: ICONS.Memories, label: 'Memories' },
   { name: 'quests', icon: ICONS.Quests, label: 'Quests' },
@@ -80,6 +83,7 @@ const BAG_COLLECTION_THEMES: Record<'their' | 'ours', TabBarTheme> = {
 const FALLBACK_THEME = TAB_THEMES.index;
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
+  const { attempt } = useHomeEntry();
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
   const activeRouteName = activeRoute?.name ?? 'index';
@@ -118,7 +122,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         },
       ]}
     >
-      <View style={styles.row}>
+      <View key={attempt} style={styles.row} onLayout={() => markHomeEntryAsset('tabs-layout', attempt)}>
         {TABS.map((tab) => {
           const route = routesByName.get(tab.name);
           if (!route) return null;
@@ -128,6 +132,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
             <TabButton
               key={route.key}
               icon={tab.icon}
+              asset={`tab:${tab.name}`}
               label={tab.label}
               isFocused={isFocused}
               labelColor={theme.label}
@@ -143,6 +148,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
 
 type TabButtonProps = {
   icon: ImageSourcePropType;
+  asset: HomeEntryAsset;
   label: string;
   isFocused: boolean;
   labelColor: string;
@@ -150,14 +156,14 @@ type TabButtonProps = {
   onPress: () => void;
 };
 
-function TabButton({ icon, label, isFocused, labelColor, activeBackground, onPress }: TabButtonProps): ReactNode {
+function TabButton({ icon, asset, label, isFocused, labelColor, activeBackground, onPress }: TabButtonProps): ReactNode {
   // Focused pill wraps icon + label together with even padding (mock).
   return (
     <Pressable
       onPress={onPress}
       style={[styles.tabBtn, isFocused && { backgroundColor: activeBackground }]}
     >
-      <Image source={icon} style={styles.tabIcon} resizeMode="contain" />
+      <HomeEntryImage asset={asset} source={icon} style={styles.tabIcon} contentFit="contain" />
       <Text style={[styles.tabLabel, { color: labelColor }]}>{label}</Text>
     </Pressable>
   );

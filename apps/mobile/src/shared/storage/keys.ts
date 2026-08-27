@@ -96,6 +96,9 @@ export const kBubbleSequence = defineKey('novame_bubble_sequence', 'user');
 /** Cached Reflect Feed (My Logs), cache-first render. */
 export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
 
+/** Durable settlement edits, replayed only for their owning UUID. Not a TTL cache. */
+export const kReflectSettlement = definePrefixKey('burrow_reflect_settlement:', 'user');
+
 /** Clovers balance + unlocked cosmetics (cache-first). */
 export const kCosmeticUnlocks = defineKey('novame_cosmetic_unlocks', 'user');
 

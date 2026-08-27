@@ -10,6 +10,9 @@ import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { GridBackground } from '../../src/components/ui/grid-background';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
+import { OnboardingImage, OnboardingPage, OnboardingPager } from '../../src/components/onboarding/onboarding-pager';
+import { beginHomeEntry, deferHomeEntryNotification } from '../../src/lib/home-entry-readiness';
+import { ITEM_IMAGES } from '../../src/lib/item-images.g';
 import {
   enableFeatureGuidesForNewUser,
 } from '../../src/lib/feature-guides';
@@ -210,7 +213,10 @@ export default function OnboardingScreen() {
 
   function finishPurchasedOnboarding() {
     const promptNotification = shouldPromptNotifAfterPurchase();
-    if (promptNotification) markNotifPromptedAfterPurchase();
+    if (promptNotification) {
+      markNotifPromptedAfterPurchase();
+      deferHomeEntryNotification();
+    }
     router.replace({
       pathname: '/(auth)/signing-in',
       params: promptNotification ? { after: 'notification-settings' } : {},
@@ -265,6 +271,9 @@ export default function OnboardingScreen() {
     if (name.trim()) setBunnyName(name);
     setChosenCompanion('pet1');
     setOnboardingChoices(who ?? '', blocker ?? '');
+    // Arm before auth can redirect independently on SIGNED_IN. UUID creation
+    // and the purchase/name/connect sequence are otherwise unchanged.
+    beginHomeEntry();
     markIntroSeen();
     // Guest mode: an anonymous session carries the whole app. Connect only
     // pops after payment (skippable); everyone else goes straight in.
@@ -365,21 +374,22 @@ export default function OnboardingScreen() {
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
       <GridBackground />
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
-        {step === 'start' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPager requestedPage={step} nextPage={idx < FLOW.length - 1 ? FLOW[idx + 1] : null}>
+        <OnboardingPage id="start" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <ExpoImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
+            <OnboardingImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
             <Text style={styles.heroTitle}>{'Stay close to the\npeople who matter.'}</Text>
             <Text style={styles.h2}>Even when life gets busy.</Text>
             <View style={{ flex: 1 }} />
             <Btn label="Start" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'someone' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="someone" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <ExpoImage source={ICONS.obQuestion} style={styles.qmarkIcon} contentFit="contain" />
+            <OnboardingImage source={ICONS.obQuestion} style={styles.qmarkIcon} contentFit="contain" />
             <Text style={styles.h1}>
               Is there someone you wish you felt closer to?
             </Text>
@@ -390,10 +400,10 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Btn label="Yes, someone comes to mind" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'who' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="who" imageCount={WHO_OPTIONS.length}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1, minHeight: 24 }} />
             <Text style={[styles.h1, { marginBottom: 26 }]}>Who came to mind?</Text>
             {WHO_OPTIONS.map((o) => (
@@ -402,17 +412,17 @@ export default function OnboardingScreen() {
                 onPress={() => { void haptics.light(); setWho(o.key); }}
                 style={[styles.optionRow, who === o.key && styles.optionRowOn]}
               >
-                <ExpoImage source={o.icon} style={styles.optionIcon} contentFit="contain" />
+                <OnboardingImage source={o.icon} style={styles.optionIcon} contentFit="contain" />
                 <Text style={styles.optionText}>{o.label}</Text>
               </Pressable>
             ))}
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!who} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'blocker' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="blocker" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1, minHeight: 24 }} />
             <Text style={[styles.h1, { marginBottom: 26 }]}>What tends to get in the way?</Text>
             {BLOCKER_OPTIONS.map((o) => (
@@ -427,10 +437,10 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} disabled={!blocker} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'feedback' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="feedback" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.feedbackTitle}>
               {BLOCKER_FEEDBACK[blocker ?? 'A'].title}
@@ -446,15 +456,15 @@ export default function OnboardingScreen() {
                 </Text>
               </View>
               <View style={styles.feedbackPromptTail} />
-              <ExpoImage source={ICONS.obBunnyHead} style={styles.feedbackLogo} contentFit="contain" />
+              <OnboardingImage source={ICONS.obBunnyHead} style={styles.feedbackLogo} contentFit="contain" />
             </View>
             <View style={{ height: 24 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'imagine' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="imagine" imageCount={SAMPLE_DAY.length + 1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Imagine opening a little window into their day.</Text>
             <Text style={[styles.body, { marginTop: 18 }]}>
@@ -468,14 +478,14 @@ export default function OnboardingScreen() {
               style={({ pressed }) => [styles.sampleCard, pressed && styles.sampleCardPressed]}
             >
               <View style={styles.sampleHeader}>
-                <ExpoImage source={SAMPLE_AVATAR} style={styles.sampleAvatar} contentFit="cover" />
+                <OnboardingImage source={SAMPLE_AVATAR} style={styles.sampleAvatar} contentFit="cover" />
                 <Text style={styles.sampleName}>Mom</Text>
                 <Text style={styles.sampleTime}>10h ago</Text>
               </View>
               <View style={styles.sampleRow}>
                 {SAMPLE_DAY.map((s) => (
-                  <View key={s.itemId} pointerEvents="none">
-                    <ItemSprite itemId={s.itemId} size={44} radius={12} />
+                  <View key={s.itemId} pointerEvents="none" style={styles.sampleTile}>
+                    <OnboardingImage source={ITEM_IMAGES[s.itemId]} style={{ width: 44, height: 44 }} contentFit="contain" />
                   </View>
                 ))}
               </View>
@@ -487,10 +497,10 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'how' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="how" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>A few minutes of reflection becomes something you can share.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
@@ -498,33 +508,33 @@ export default function OnboardingScreen() {
               that grows with both of you.
             </Text>
             {/* expo-image plays and loops animated GIFs natively. */}
-            <ExpoImage source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
+            <OnboardingImage animated source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
             <Text style={[styles.privacySmall, { marginTop: 16 }]}>
               Reflect privately. Share selectively. Stay connected naturally.
             </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'space' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="space" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>A shared space where your lives naturally meet.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
               Add the widget to your Home Screen and see the latest moments they&apos;ve chosen to share.
             </Text>
-            <ExpoImage source={ICONS.obWidgetPhone} style={styles.widgetPhone} contentFit="contain" />
+            <OnboardingImage source={ICONS.obWidgetPhone} style={styles.widgetPhone} contentFit="contain" />
             <Text style={styles.spaceCaption}>
               So you can reach out with more understanding, or simply let them know you&apos;re there.
             </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'insights' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="insights" imageCount={INSIGHT_PILLS.length}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>The little things tell a bigger story</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
@@ -534,7 +544,7 @@ export default function OnboardingScreen() {
             <View style={styles.insightGrid}>
               {INSIGHT_PILLS.map((t) => (
                 <View key={t.label} style={styles.insightPill}>
-                  <ExpoImage source={t.icon} style={styles.insightIcon} contentFit="contain" />
+                  <OnboardingImage source={t.icon} style={styles.insightIcon} contentFit="contain" />
                   <Text style={styles.insightPillText} numberOfLines={2}>{t.label}</Text>
                 </View>
               ))}
@@ -542,10 +552,10 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'boundaries' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="boundaries" imageCount={2}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Close doesn&apos;t have to mean exposed.</Text>
             <Text style={styles.boundaryIntro}>
@@ -553,12 +563,12 @@ export default function OnboardingScreen() {
               You decide what enters your shared space.
             </Text>
             <View style={styles.boundaryVisualWrap}>
-              <ExpoImage
+              <OnboardingImage
                 source={ICONS.obPrivacyPanel}
                 style={styles.boundaryVisual}
                 contentFit="contain"
               />
-              <ExpoImage
+              <OnboardingImage
                 source={ICONS.privacy}
                 style={styles.boundaryPrivacyIcon}
                 contentFit="contain"
@@ -568,14 +578,14 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'creator' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="creator" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1, minHeight: 16 }} />
             <View>
               <View style={styles.card}>
-                <ExpoImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
+                <OnboardingImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
                 <Text style={[styles.h3, { marginBottom: 14 }]}>I built Burrow for my mom.</Text>
                 <Text style={styles.creatorBody}>
                   We live thousands of miles apart. We talked about once a month, and with work
@@ -600,10 +610,10 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1, minHeight: 16 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'paywall' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <OnboardingPage id="paywall" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={[styles.center, { minHeight: '100%' }]}>
               <Pressable onPress={() => { void haptics.pageClose(); setIdx(FLOW.indexOf('name')); }} style={styles.closeCircle} hitSlop={10}>
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
@@ -611,7 +621,7 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1, minHeight: 56 }} />
               <Text style={styles.h1}>Feel closer through the little things.</Text>
               <View style={styles.plusCard}>
-                <ExpoImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
+                <OnboardingImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
                 <View style={styles.plusTitleRow}>
                   <Text style={styles.plusTitle}>Burrow</Text>
                   <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
@@ -638,10 +648,10 @@ export default function OnboardingScreen() {
               <Btn label="Start Free Trial" onPress={onTryFree} />
             </View>
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'plans' && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
+        <OnboardingPage id="plans" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <Pressable onPress={() => { void haptics.pageClose(); setIdx(FLOW.indexOf('name')); }} style={styles.closeCircle} hitSlop={10}>
               <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
@@ -698,17 +708,17 @@ export default function OnboardingScreen() {
               </Pressable>
             </View>
           </ScrollView>
-        )}
+        </OnboardingPage>
 
-        {step === 'name' && (
+        <OnboardingPage id="name" imageCount={1}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
+            <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <View style={{ flex: 1, minHeight: 24 }} />
               <Text style={styles.h1}>Name your bunny.</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
                 They&apos;ll help you reflect, remember, and stay close to your person.
               </Text>
-              <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
+              <OnboardingImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput
                 style={styles.nameInput}
                 placeholder="Type here"
@@ -721,11 +731,11 @@ export default function OnboardingScreen() {
               <Btn label="Start" onPress={() => void onFinishName()} busy={finishing} />
             </ScrollView>
           </KeyboardAvoidingView>
-        )}
+        </OnboardingPage>
 
-        {step === 'connect' && (
+        <OnboardingPage id="connect" imageCount={0}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
+            <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
                 onPress={() => { void haptics.pageOpen(); finishPurchasedOnboarding(); }}
                 style={styles.closeCircle}
@@ -825,7 +835,8 @@ export default function OnboardingScreen() {
               </Text>
             </ScrollView>
           </KeyboardAvoidingView>
-        )}
+        </OnboardingPage>
+        </OnboardingPager>
       </View>
       <Modal
         visible={sampleDetailsOpen}
@@ -958,6 +969,7 @@ const styles = StyleSheet.create({
   sampleAvatar: { width: 38, height: 38, borderRadius: 19 },
   sampleName: { flex: 1, fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   sampleTime: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
+  sampleTile: { width: 44, height: 44, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F4F1F8' },
   sampleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap' },
   sampleHint: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3A2E1A', textAlign: 'center', marginTop: 16 },
   sampleDetailOverlay: {

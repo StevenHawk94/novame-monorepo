@@ -172,7 +172,7 @@ function settlementHarness(paid = false, platform = 'ios') {
   const h = harness(platform);
   const module = h.load(settlementFile, {
     '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' }, 'expo-image': { Image: 'Image' },
-    'expo-router': { router: {} }, 'lottie-react-native': 'Lottie',
+    'expo-router': { router: {} },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: 34 }) },
     '@/components/ui/app-dialog': {}, '@/components/main/clover-burst': { CloverBurst: 'CloverBurst' },
     '@/components/ui/item-sprite': { ItemSprite: 'ItemSprite' }, '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
@@ -180,16 +180,16 @@ function settlementHarness(paid = false, platform = 'ios') {
     '@/lib/reflect-api': {}, '@/lib/official-rating-prompt': {},
     '@/lib/use-subscription-tier': { useSubscriptionTier: () => paid ? 'plus' : 'free' },
     '@/lib/use-memory-editor-keyboard': h.keyboard,
-    '@/lib/use-completion-sound': { useCompletionSound: () => ({ play() {} }) },
+    '@/lib/use-reflect-exit-guard': { useReflectExitGuard() {} },
+    '@/lib/reflect-settlement-outbox': { holdReflectSettlement() {}, releaseReflectSettlement() {}, writeSettlementCheckpoint() {} },
     './reflect-shared': { RC: { yellow: '#fff', yellowDrop: '#aaa' } },
-    '../../../assets/animations/reflect-dense.json': require('../apps/mobile/assets/animations/reflect-dense.json'),
   });
   return { ...h, ...module };
 }
 function settlementTree(h, count = 2, shared = false, mode = 'prompt') {
   return h.ReflectSettlementView({
     draft: { draftId: 'one', mode, hasContext: false, matchedItems: Array.from({ length: count }, (_, i) => ({ itemId: 'item-' + i })), aiMemories: {} },
-    itemWord: 'Selected', shared, onFinalized() {},
+    itemWord: 'Selected', shared, onPresented() {}, onFinalized() {},
   });
 }
 test('settlement and editor use Tap Your Day art only for curated choices', () => {
@@ -224,29 +224,18 @@ test('all settlement sizes retain the full list, flow footer, and reserved upwar
     assert.equal(all.filter((node) => node.type === 'SpringPop')[0].props.boundedBounce, true);
   }
 });
-test('celebration starts once after BOTH load and nonzero layout, never intercepting taps', () => {
-  for (const platform of ['ios', 'android']) for (const loadFirst of [false, true]) {
-    const h = settlementHarness(false, platform);
-    const component = nodes(settlementTree(h)).find((node) => typeof node.type === 'function');
-    const tree = component.type();
-    assert.equal(tree.props.pointerEvents, 'none');
-    const lottie = nodes(tree).find((node) => node.type === 'Lottie');
-    let plays = 0;
-    lottie.props.ref.current = { play: () => plays++ };
-    const layout = () => lottie.props.onLayout({ nativeEvent: { layout: { width: 390, height: 740 } } });
-    if (loadFirst) lottie.props.onAnimationLoaded(); else layout();
-    assert.equal(plays, 0);
-    if (loadFirst) layout(); else lottie.props.onAnimationLoaded();
-    assert.equal(plays, 1);
-    layout(); lottie.props.onAnimationLoaded();
-    assert.equal(plays, 1);
-    assert.equal(lottie.props.loop, false);
-    assert.equal(lottie.props.hardwareAccelerationAndroid, platform === 'android');
-    assert.equal(lottie.props.renderMode, platform === 'android' ? 'HARDWARE' : 'AUTOMATIC');
-    assert.equal(lottie.props.source.op / lottie.props.source.fr, 5);
-    assert.ok(lottie.props.source.assets.every((asset) => !asset.p)); // no remote image dependency
-    lottie.props.onAnimationFinish(false);
-    assert.equal(h.stateChanges.at(-1), true);
+test('settlement starts the preloaded sound once on first visible layout, not on edit or AI updates', () => {
+  for (const paid of [false, true]) for (const shared of [false, true]) {
+    const h = settlementHarness(paid), calls = [];
+    const tree = h.ReflectSettlementView({
+      draft: { draftId: 'one', mode: 'typing', hasContext: false, matchedItems: [], aiMemories: {} },
+      itemWord: 'Matched', shared, onPresented: (id) => calls.push(id), onFinalized() {},
+    });
+    const layout = (width, height) => tree.props.onLayout({ nativeEvent: { layout: { width, height } } });
+    assert.deepEqual(calls, []);
+    layout(0, 700); layout(390, 0); assert.deepEqual(calls, []);
+    layout(390, 700); assert.deepEqual(calls, ['one']);
+    layout(390, 720); layout(390, 400); assert.deepEqual(calls, ['one']);
   }
 });
 test('shared editor wires every input to focus/reveal and limits multiline height', () => {

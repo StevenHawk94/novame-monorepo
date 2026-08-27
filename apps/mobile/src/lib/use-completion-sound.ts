@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { createCompletionSoundPlayer } from './completion-sound-player';
 
 const COMPLETION_SOUND = require('../../assets/music/reflection-finished.mp3');
@@ -17,6 +17,13 @@ export function useCompletionSound() {
     };
     const prepare = () => {
       if (sound.current || AppState.currentState !== 'active') return;
+      // Configure before completion, not when the chime should already be heard.
+      // Otherwise iOS sound depends on whether Focus happened to set this first.
+      void setAudioModeAsync({
+        shouldPlayInBackground: false,
+        playsInSilentMode: true,
+        interruptionMode: 'duckOthers',
+      }).catch((error) => console.warn('[completion-sound] audio mode unavailable:', error));
       let player: ReturnType<typeof createAudioPlayer> | undefined;
       try {
         player = createAudioPlayer(COMPLETION_SOUND, { updateInterval: 1000, keepAudioSessionActive: false });

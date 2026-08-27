@@ -1,6 +1,6 @@
 /**
  * Full-screen confetti celebration (~3s): small colored pieces launch from
- * the upper third, tumble down with drift and spin, fade near the floor,
+ * the top, tumble down with drift and spin, leave the viewport completely,
  * then onDone fires so the parent can unmount. Brand palette, pointerEvents
  * none — it never blocks the tap that triggered it.
  */
@@ -8,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
+  cancelAnimation,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -41,6 +42,7 @@ function Piece({ spec, onLast }: { spec: PieceSpec; onLast?: () => void }) {
         if (finished && onLast) runOnJS(onLast)();
       }),
     );
+    return () => cancelAnimation(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -50,7 +52,7 @@ function Piece({ spec, onLast }: { spec: PieceSpec; onLast?: () => void }) {
       { translateY: -40 + spec.fall * t.value },
       { rotate: `${spec.spin * t.value}deg` },
     ],
-    opacity: t.value < 0.75 ? 1 : 1 - (t.value - 0.75) / 0.25,
+    opacity: 1,
   }));
 
   return (
@@ -77,7 +79,9 @@ export function ConfettiBurst({ onDone }: { onDone?: () => void }) {
       Array.from({ length: PIECES }, (_, i) => ({
         x: Math.random() * width,
         delay: Math.random() * MAX_DELAY,
-        fall: height * (0.55 + Math.random() * 0.45),
+        // translateY starts at -40. Even the shortest path must end beyond
+        // the entire screen plus a rotating particle's diagonal and shadow.
+        fall: height + 80 + Math.random() * 120,
         drift: (Math.random() - 0.5) * 140,
         spin: (Math.random() - 0.5) * 720,
         size: 8 + Math.random() * 8,

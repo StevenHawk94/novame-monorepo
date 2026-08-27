@@ -31,6 +31,7 @@ function mobileHarness(post) {
     'expo-crypto': { randomUUID: () => 'same-client-key' },
     './api': { apiClient: { post } },
     './cosmetics-api': { confirmCloverAward() {} },
+    './reflect-settlement-outbox': { beginReflectPreparation() {}, endReflectPreparation() {}, holdReflectSettlement() {} },
     '../shared/storage/keys': { kReflectShareDefaults: { name: 'share' }, kReflectState: { name: 'state' } },
     './storage': { storage: { getString: () => undefined, set() {} } },
     './supabase': { supabase: { auth: { getSession: async () => ({ data: { session: { user: { id: 'writer' } } } }) } } },
@@ -66,6 +67,9 @@ function aiHarness(result = { items: {}, bunnyText: null }) {
 const response = { json: (body, options = {}) => ({ status: options.status || 200, body }) };
 const request = (body) => ({ headers: new Headers(), json: async () => body });
 function routeImports(db, draft, ai) {
+  const settlement = load('apps/api/src/lib/reflect-settlement.js', {
+    './reflect-draft': draft, './reflect-ai': ai, './ai-usage': { recordAIUsage: async () => {} },
+  });
   return {
     'next/server': { NextResponse: response, after() {} },
     '@novame/engine': { ...catalog, XP_RULES: { reflect: { award: 30 } } },
@@ -74,26 +78,34 @@ function routeImports(db, draft, ai) {
     '@/lib/reflect-ai': ai,
     '@/lib/ai-usage': { recordAIUsage: async () => {} },
     '@/lib/reflect-analysis-store': {},
+    '@/lib/reflect-completion': { analyzeFinalizedReflect: async () => {} },
+    '@/lib/reflect-settlement': settlement,
   };
 }
 function dbHarness({ tier = 'plus', consent = true, existing = null, storedDraft = null, matched = [], reflectMode = 'prompt' } = {}) {
   const rpcCalls = [];
   let inserted = null;
+  let saved = storedDraft;
   const db = {
     from(table) {
       const query = {
-        select() { return this; }, eq() { return this; }, order() { return this; },
+        select() { return this; }, eq() { return this; }, order() { return this; }, is() { return this; },
         insert(value) { inserted = { ...value, id: 'draft-1', ai_memories: {} }; return this; },
-        update() { return this; },
+        update(value) { this.patch = value; return this; },
         single() {
           return Promise.resolve({ data: table === 'profiles'
             ? { subscription_tier: tier, ai_consent_at: consent ? '2026-08-01' : null }
-            : inserted });
+            : saved || inserted });
         },
         maybeSingle() {
+          if (table === 'reflect_drafts' && this.patch?.ai_claimed_at) {
+            if (!saved || saved.ai_claimed_at) return Promise.resolve({ data: null });
+            Object.assign(saved, this.patch);
+            return Promise.resolve({ data: saved });
+          }
           return Promise.resolve({ data: table === 'reflects'
             ? { id: 'reflect-1', mode: reflectMode, shared_with_user_id: null }
-            : storedDraft || existing });
+            : saved || existing });
         },
         then(resolve, reject) {
           return Promise.resolve({ data: table === 'reflect_items' ? matched : [], count: 0 }).then(resolve, reject);
@@ -103,6 +115,19 @@ function dbHarness({ tier = 'plus', consent = true, existing = null, storedDraft
     },
     async rpc(name, args) {
       rpcCalls.push({ name, args });
+      if (name === 'begin_saved_reflect') {
+        inserted = { ...args.p_payload, id: 'draft-1', saved_reflect_id: 'reflect-1', ai_memories: {},
+          save_receipt: { reflects_remaining: 2 },
+          settlement_memories: args.p_payload.matches.map(m => ({ itemId: m.itemId,
+            text: args.p_memories[m.itemId] || '', source: 'ai', visible: true, edited: false })) };
+        saved = inserted;
+        return { data: { draft: saved }, error: null };
+      }
+      if (name === 'store_reflect_generation') {
+        saved.ai_memories = { ...saved.ai_memories, ...args.p_memories };
+        saved.bubble = args.p_bubble;
+        return { data: { success: true }, error: null };
+      }
       return { data: { reflect_id: 'reflect-1', updated: args?.p_edits?.length || 0, error: null }, error: null };
     },
   };
@@ -264,7 +289,8 @@ test('enrichment after upgrade preserves generated items and only targets reques
   const { matches } = await draft.resolveDraftInput(null, draftInput('Happy Day'));
   const first = matches[0].itemId;
   const second = matches[1].itemId;
-  const { db } = dbHarness({ storedDraft: { body: 'Happy Day', mode: 'prompt', matches, ai_memories: { [first]: 'A quiet day at home.' } } });
+  const { db } = dbHarness({ storedDraft: { id: 'draft-1', saved_reflect_id: 'reflect-1',
+    body: 'Happy Day', mode: 'prompt', matches: matches.slice(0,2), ai_memories: { [first]: 'A quiet day at home.' } } });
   const route = load('apps/api/src/app/api/reflect/enrich/route.js', routeImports(db, draft, ai));
   const result = await route.POST(request({ userId: 'writer', draftId: 'draft-1', emptyItemIds: [first, second] }));
   assert.equal(result.status, 200);
@@ -300,7 +326,7 @@ test('My Logs exposes mode and selection label; editing all 131 retains last ite
   assert.equal(get.body.items[0].visible, false);
   const post = await route.POST(request({ userId: 'writer', reflectId: 'reflect-1', edits: picks.map(({ itemId }) => ({ itemId, text: 'Edited.' })) }));
   assert.equal(post.status, 200);
-  assert.equal(rpcCalls.find((call) => call.name === 'edit_reflect_item_memories').args.p_edits.length, 131);
+  assert.equal(rpcCalls.find((call) => call.name === 'edit_durable_reflect_memories').args.p_edits.length, 131);
 });
 
 test('v2 has the exact requested food grouping, labels and 16 representative cuisines', () => {

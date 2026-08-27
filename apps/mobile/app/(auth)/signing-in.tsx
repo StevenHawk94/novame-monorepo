@@ -11,6 +11,7 @@ import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
+import { deferHomeEntryNotification, getHomeEntryState } from '@/lib/home-entry-readiness';
 
 /** Bounded auth bootstrap. Remote assets always warm in the background. */
 const MIN_DISPLAY_MS = 600;
@@ -42,8 +43,12 @@ export default function SigningInScreen() {
       const elapsed = Date.now() - start;
       setTimeout(() => {
         if (!cancelled) {
+          const preparingFirstHome = getHomeEntryState().pending;
+          if (preparingFirstHome && params.after === 'notification-settings') {
+            deferHomeEntryNotification();
+          }
           router.replace(
-            params.after === 'notification-settings'
+            params.after === 'notification-settings' && !preparingFirstHome
               ? '/(main)/(modals)/notification-settings'
               : '/(main)/(tabs)',
           );
@@ -94,9 +99,9 @@ export default function SigningInScreen() {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      // Every first screen has a bundled fallback. Remote asset downloads and
-      // cache warming must never gate navigation, especially on Android cold
-      // starts with a slow or unavailable network.
+      // Remote assets remain background work. On first onboarding completion,
+      // HomeEntryGate keeps this loading look until bundled visuals display in
+      // the actual Home views; returning launches remain cache-first.
       goHome();
     })();
 

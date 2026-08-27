@@ -4,8 +4,8 @@
  * fixed and live here; ranking them is a weekly ritual that credits gems to
  * the top three.
  *
- * The reveal interprets only the first and last, and compares to last week's
- * ranking when there is one -- both handled client-side from these labels.
+ * The reveal samples focus points from the top three and release points from
+ * the bottom two -- handled client-side from these labels.
  */
 import type { DimensionId } from './dimensions';
 
@@ -41,9 +41,9 @@ export function trueNorthGemHits(
 
 /**
  * Reveal-page content (copy finalized 2026-08-06). The TOP-THREE ranked
- * dimensions surface their FOCUS lists ("What matters to you most"); the
- * LAST-ranked dimension surfaces its RELEASE list ("What you should forgive
- * and forget", six per dimension).
+ * dimensions each contribute three FOCUS points ("What matters to you most");
+ * the BOTTOM-TWO each contribute three sampled RELEASE points ("What you
+ * should forgive and forget"), from pools of six per dimension.
  */
 export const TRUE_NORTH_FOCUS_POINTS: Record<DimensionId, string[]> = {
   expression: ['Speaking honestly', 'Sharing your thoughts', 'Being heard', 'Hard conversations', 'Saying no clearly', 'Finding your voice', 'Emotional honesty', 'Standing by your words', 'Asking for what you need', 'Telling your story'],

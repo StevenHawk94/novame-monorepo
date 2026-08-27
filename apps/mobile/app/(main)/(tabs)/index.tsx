@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -11,7 +11,9 @@ import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
-import { Image as ExpoImage } from 'expo-image';
+import { HomeEntryImage } from '@/components/main/home-entry-gate';
+import { useHomeEntry } from '@/lib/use-home-entry';
+import { failHomeEntry, markHomeEntryAsset } from '@/lib/home-entry-readiness';
 import { getHomeSceneSource } from '@/lib/scenes';
 import {
   advanceDefaultBubble,
@@ -49,6 +51,7 @@ function visibleAiBubble(tier: ReturnType<typeof useSubscriptionTierState>): Fre
 }
 
 export default function HomeScreen() {
+  const homeEntry = useHomeEntry();
   const r2AssetRevision = useR2AssetRevision();
   const router = useRouter();
   const subscriptionTier = useSubscriptionTierState();
@@ -59,6 +62,7 @@ export default function HomeScreen() {
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
   const aiBubbleRef = useRef(aiBubble);
   const openingEntryRef = useRef(false);
+  const [measuredLayoutParts, setMeasuredLayoutParts] = useState<string[]>([]);
   const [homeLayout, setHomeLayout] = useState({
     safeHeight: 0,
     sceneY: 0,
@@ -109,6 +113,10 @@ export default function HomeScreen() {
   }, []);
 
   const recordLayout = useCallback((part: Partial<typeof homeLayout>) => {
+    setMeasuredLayoutParts((current) => {
+      const added = Object.keys(part).filter((key) => !current.includes(key));
+      return added.length ? [...current, ...added] : current;
+    });
     setHomeLayout((current) => {
       const next = { ...current, ...part };
       return Object.keys(part).every((key) => current[key as keyof typeof current] === next[key as keyof typeof next])
@@ -192,9 +200,18 @@ export default function HomeScreen() {
     ? videoBottom + Math.max(0, (availableBelowVideo - homeLayout.entriesHeight) / 2)
     : undefined;
 
+  useEffect(() => {
+    if (!homeEntry.pending || entriesTop == null || measuredLayoutParts.length < 5) return;
+    // All measurements have committed, including the repositioned Focus /
+    // Reflect row. Retry can reuse these measurements without remounting Home.
+    const frame = requestAnimationFrame(() => markHomeEntryAsset('home-layout', homeEntry.attempt));
+    return () => cancelAnimationFrame(frame);
+  }, [homeEntry.pending, homeEntry.attempt, homeLayout, measuredLayoutParts, entriesTop]);
+
   return (
     <View style={styles.root} onLayout={onFirstPaint}>
-      <ExpoImage
+      <HomeEntryImage
+        asset="scene"
         source={sceneImg}
         style={styles.sceneBgImg}
         contentFit="cover"
@@ -209,14 +226,14 @@ export default function HomeScreen() {
         {/* Top bar: menu (left) + outfits / scenes / leaderboard (right) */}
         <View style={styles.topBar}>
           <Pressable onPress={() => openHomeModal('/(main)/(modals)/me')} hitSlop={8}>
-            <Image source={ICONS.Menu} style={styles.topIcon} resizeMode="contain" />
+            <HomeEntryImage asset="menu" source={ICONS.Menu} style={styles.topIcon} contentFit="contain" />
           </Pressable>
           <View style={styles.topRight}>
             <Pressable onPress={() => openHomeModal('/(main)/(modals)/skin-select')} hitSlop={8}>
-              <Image source={ICONS.Outfits} style={styles.topIcon} resizeMode="contain" />
+              <HomeEntryImage asset="outfits" source={ICONS.Outfits} style={styles.topIcon} contentFit="contain" />
             </Pressable>
             <Pressable onPress={() => openHomeModal('/(main)/(modals)/scene-select')} hitSlop={8}>
-              <Image source={ICONS.Maps} style={styles.topIcon} resizeMode="contain" />
+              <HomeEntryImage asset="scenes" source={ICONS.Maps} style={styles.topIcon} contentFit="contain" />
             </Pressable>
             {/* Leaderboard removed per v2.0 design (Home top bar = outfits + scenes only). */}
           </View>
@@ -242,7 +259,12 @@ export default function HomeScreen() {
                 <View style={styles.bubbleTail} />
               </View>
             </View>
-            <CompanionVideo onPress={onPetTap} onReady={onFirstPaint} />
+            <CompanionVideo
+              key={homeEntry.attempt}
+              onPress={onPetTap}
+              onReady={() => { onFirstPaint(); markHomeEntryAsset('companion', homeEntry.attempt); }}
+              onError={() => failHomeEntry(homeEntry.attempt)}
+            />
           </View>
         </View>
 
@@ -278,7 +300,7 @@ export default function HomeScreen() {
         {/* Friend memory bubbles float over the scene; box-none so the pet,
             top bar, and Focus/Reflect stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
-        <AnnouncementGate />
+        {!homeEntry.pending && <AnnouncementGate />}
 
       </SafeAreaView>
     </View>

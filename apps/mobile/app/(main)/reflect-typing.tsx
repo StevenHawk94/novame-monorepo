@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { randomUUID } from 'expo-crypto';
+import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import {
   ActivityIndicator,
   Image,
@@ -31,6 +33,8 @@ import { setReflectBubble } from '../../src/lib/bubble-store';
 import { fetchReflectFeed } from '../../src/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags } from '../../src/lib/bags-api';
 import { haptics } from '../../src/lib/haptics';
+import { useCompletionSound } from '@/lib/use-completion-sound';
+import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
 import { mergedItemDictionary } from '../../src/lib/remote-items';
 import { OffsetCard } from '../../src/components/ui/offset-card';
@@ -63,6 +67,7 @@ type Phase = 'pick' | 'write' | 'result';
 export default function ReflectTypingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { play: playCompletionSound } = useCompletionSound();
 
   const params = useLocalSearchParams<{
     presetPrompt?: string;
@@ -83,6 +88,9 @@ export default function ReflectTypingScreen() {
   const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [editOpen, setEditOpen] = useState(false);
+  const saveKey = useMemo(() => randomUUID(), [body, promptId, removedIds, sourceKit]);
+  const submitLock = useRef(false);
+  useReflectExitGuard(submitting);
 
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
@@ -123,7 +131,8 @@ export default function ReflectTypingScreen() {
   }
 
   async function onSubmit() {
-    if (promptId == null || submitting) return;
+    if (promptId == null || submitLock.current) return;
+    submitLock.current = true;
     setSubmitting(true);
     setError(null);
     const res = await prepareReflect({
@@ -132,7 +141,9 @@ export default function ReflectTypingScreen() {
       sourceKit,
       mode: 'typing',
       removedItemIds: [...removedIds],
+      idempotencyKey: saveKey,
     });
+    submitLock.current = false;
     setSubmitting(false);
     if (res.ok) {
       Keyboard.dismiss();
@@ -248,7 +259,8 @@ export default function ReflectTypingScreen() {
             draft && (
               <View style={{ flex: 1 }}>
                 <ReflectSettlementView
-                  draft={draft}
+                draft={draft}
+                onPresented={playCompletionSound}
                   itemWord="Matched"
                   onFinalized={(snapshot) => {
                     cacheReflectItems(snapshot);
@@ -264,6 +276,7 @@ export default function ReflectTypingScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      <ReflectCelebration active={phase === 'result'} />
 
       {editOpen && (
         <MatchedItemsReviewSheet

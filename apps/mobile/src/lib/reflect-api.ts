@@ -21,6 +21,10 @@ import { confirmCloverAward } from './cosmetics-api';
 import { kReflectShareDefaults, kReflectState } from '../shared/storage/keys';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import {
+  beginReflectPreparation, endReflectPreparation, holdReflectSettlement,
+  readSettlementCheckpoint, writeSettlementCheckpoint, clearSettlementCheckpoint,
+} from './reflect-settlement-outbox';
 
 const DAILY_LIMIT = 3;
 
@@ -40,10 +44,16 @@ export interface ReflectMemoryDraft {
   text: string;
   source: MemorySource;
   visible: boolean;
+  /** Includes explicit clearing; AI may not refill a user-edited memory. */
+  edited?: boolean;
 }
 
 export interface PreparedReflect {
   draftId: string;
+  userId?: string;
+  reflectId?: string;
+  revision?: number;
+  memories?: ReflectMemoryDraft[];
   mode: 'typing' | 'prompt' | 'items';
   hasContext: boolean;
   matchedItems: MatchedItem[];
@@ -149,6 +159,7 @@ export function getReflectStateToday(): {
 /** Wire shape from /api/reflect (snake_case from the RPC snapshot). */
 interface WireSnapshot {
   success?: boolean;
+  memories?: ReflectMemoryDraft[];
   error?: string;
   reflect_id?: string;
   xp_awarded?: number;
@@ -205,14 +216,19 @@ export async function prepareReflect(params: {
     return { ok: false, error: 'empty' };
   }
   if (body.length > 5000) return { ok: false, error: 'too_long' };
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
+  beginReflectPreparation();
   try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) return { ok: false, error: 'network' };
     const wire = await apiClient.post<{
       success?: boolean;
       error?: string;
       draftId?: string;
+      reflectId?: string;
+      localDate?: string;
+      revision?: number;
+      memories?: ReflectMemoryDraft[];
       matches?: MatchedItem[];
       aiMemories?: Record<string, string>;
       bubble?: string | null;
@@ -240,10 +256,15 @@ export async function prepareReflect(params: {
         return { ok: false, error: 'selection_unavailable' };
       }
     }
+    holdReflectSettlement(wire.draftId);
+    if (wire.reflectId && wire.localDate === localDateStr()) {
+      writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT - (wire.reflectsRemaining ?? 0) });
+    }
     return {
       ok: true,
       draft: {
         draftId: wire.draftId,
+        userId, reflectId: wire.reflectId, revision: wire.revision, memories: wire.memories,
         mode,
         hasContext: body.length > 0,
         matchedItems: wire.matches ?? [],
@@ -276,8 +297,11 @@ export async function prepareReflect(params: {
         return { ok: false, error: 'daily_limit' };
       }
     }
+    if (code === 'companion_not_initialized') return { ok: false, error: 'companion_not_ready' };
     if (code === 'empty' || code === 'too_long') return { ok: false, error: code };
     return { ok: false, error: 'network' };
+  } finally {
+    endReflectPreparation();
   }
 }
 
@@ -285,10 +309,10 @@ export async function enrichReflectDraft(
   draftId: string,
   emptyItemIds: string[],
 ): Promise<{ ok: boolean; aiMemories: Record<string, string>; bubble: string | null }> {
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user?.id;
-  if (!userId) return { ok: false, aiMemories: {}, bubble: null };
   try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) return { ok: false, aiMemories: {}, bubble: null };
     const result = await apiClient.post<{
       success?: boolean; aiMemories?: Record<string, string>; bubble?: string | null;
     }>('/api/reflect/enrich', { userId, draftId, emptyItemIds });
@@ -306,14 +330,19 @@ export async function finalizeReflect(
   draft: PreparedReflect,
   memories: ReflectMemoryDraft[],
 ): Promise<SubmitResult> {
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
   try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) return { ok: false, error: 'network' };
+    if (draft.userId && draft.userId !== userId) return { ok: false, error: 'network' };
+    const checkpoint = draft.userId
+      ? readSettlementCheckpoint(draft.userId, draft.draftId) ?? writeSettlementCheckpoint(draft, memories)
+      : null;
     const wire = await apiClient.post<WireSnapshot>('/api/reflect/finalize', {
       userId,
       draftId: draft.draftId,
-      memories: memories.map(({ itemId, text, source }) => ({ itemId, text: text.trim(), source })),
+      revision: checkpoint?.revision,
+      memories: memories.map(({ itemId, text, source, edited }) => ({ itemId, text: text.trim(), source, edited })),
       visibility: memories.map(({ itemId, visible }) => ({ itemId, visible })),
     });
     if (wire.error === 'daily_limit_reached') {
@@ -321,7 +350,8 @@ export async function finalizeReflect(
       return { ok: false, error: 'daily_limit' };
     }
     if (wire.error || !wire.success) return { ok: false, error: 'network' };
-    const snapshot = { ...toSnapshot(wire), memories };
+    if (checkpoint) clearSettlementCheckpoint(userId, draft.draftId, checkpoint.revision);
+    const snapshot = { ...toSnapshot(wire), memories: wire.memories ?? memories };
     writeCache({ date: localDateStr(), reflectsToday: snapshot.reflectsToday, lastSnapshot: snapshot });
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };

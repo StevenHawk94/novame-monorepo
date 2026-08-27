@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
 
 import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
+import { HomeEntryGate } from '@/components/main/home-entry-gate';
+import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recovery';
 
 /**
  * Authenticated app layout.
@@ -17,8 +19,9 @@ import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
  * still-mounted sheet without a close/reopen flash.
  */
 export default function MainLayout() {
+  useReflectSettlementRecovery();
   return (
-    <>
+    <HomeEntryGate>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -63,9 +66,9 @@ export default function MainLayout() {
             contentStyle: { backgroundColor: 'transparent' },
           }}
         />
-        <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+        <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+        <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen
           name="focus"
           options={{
@@ -77,6 +80,6 @@ export default function MainLayout() {
         />
       </Stack>
       <OfficialRatingGate />
-    </>
+    </HomeEntryGate>
   );
 }

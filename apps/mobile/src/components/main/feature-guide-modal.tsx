@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Image as NativeImage,
   Easing,
   Modal,
   Pressable,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage, useImage } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 
 import { ICONS } from '@/lib/icons';
@@ -85,6 +86,11 @@ export function FeatureGuideModal({
 }) {
   const activeModal = useActiveModalSlot();
   const requestedRef = useRef(false);
+  const retryIcon = useRef<(() => void) | null>(null);
+  const icon = useImage(NativeImage.resolveAssetSource(GUIDES[guide].icon).uri, {
+    onError: (_error, retry) => { retryIcon.current = retry; },
+  });
+  const [iconDisplayed, setIconDisplayed] = useState(false);
   const [visible, setVisible] = useState(false);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -93,6 +99,10 @@ export function FeatureGuideModal({
   useFocusEffect(
     useCallback(() => {
       if (!enabled || !shouldShowFeatureGuide(guide)) return undefined;
+      if (!icon) { retryIcon.current?.(); return undefined; }
+      setIconDisplayed(false);
+      backdropOpacity.setValue(0);
+      cardOpacity.setValue(0);
       requestedRef.current = true;
       requestModalSlot('guide');
       return () => {
@@ -100,19 +110,19 @@ export function FeatureGuideModal({
         setVisible(false);
         releaseModalSlot('guide');
       };
-    }, [enabled, guide]),
+    }, [enabled, guide, icon, backdropOpacity, cardOpacity]),
   );
 
   useEffect(() => {
     setVisible(requestedRef.current && activeModal === 'guide');
-  }, [activeModal]);
+  }, [activeModal, icon, enabled]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !iconDisplayed) return;
     backdropOpacity.setValue(0);
     cardOpacity.setValue(0);
     cardScale.setValue(0.78);
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(backdropOpacity, {
         toValue: 1,
         duration: 180,
@@ -144,15 +154,29 @@ export function FeatureGuideModal({
           useNativeDriver: true,
         }),
       ]),
-    ]).start();
-  }, [backdropOpacity, cardOpacity, cardScale, visible]);
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [backdropOpacity, cardOpacity, cardScale, visible, iconDisplayed]);
+
+  useEffect(() => {
+    if (!visible || iconDisplayed) return;
+    // A rendering failure must not leave an invisible modal blocking the app.
+    // Do not mark the guide completed: another visit may retry it.
+    const timer = setTimeout(() => {
+      requestedRef.current = false;
+      setVisible(false);
+      releaseModalSlot('guide');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [visible, iconDisplayed]);
 
   const dismiss = useCallback(() => {
-    completeFeatureGuide(guide);
+    if (iconDisplayed) completeFeatureGuide(guide);
     requestedRef.current = false;
     setVisible(false);
     releaseModalSlot('guide');
-  }, [guide]);
+  }, [guide, iconDisplayed]);
 
   const copy = GUIDES[guide];
 
@@ -174,7 +198,8 @@ export function FeatureGuideModal({
           ]}
         >
           <Text style={styles.title}>{copy.title}</Text>
-          <ExpoImage source={copy.icon} style={styles.icon} contentFit="contain" />
+          <ExpoImage source={icon} style={styles.icon} contentFit="contain"
+            transition={0} onDisplay={() => setIconDisplayed(true)} />
           <Text style={styles.body}>{copy.body}</Text>
           <Pressable
             accessibilityRole="button"

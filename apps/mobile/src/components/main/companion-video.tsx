@@ -38,9 +38,9 @@ import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
  */
 const WATCHDOG_DELAY_MS = 300;
 
-type Props = { onPress?: () => void; onReady?: () => void };
+type Props = { onPress?: () => void; onReady?: () => void; onError?: () => void };
 
-function AndroidCompanion({ onPress, onReady }: Props) {
+function AndroidCompanion({ onPress, onReady, onError }: Props) {
   const [source, setSource] = useState<number | { uri: string; isAnimated?: boolean }>(DEFAULT_COMPANION_VIDEO);
 
   const syncSource = useCallback(() => {
@@ -91,13 +91,14 @@ function AndroidCompanion({ onPress, onReady }: Props) {
         style={styles.video}
         contentFit="contain"
         autoplay
-        onLoad={onReady}
+        onDisplay={onReady}
+        onError={onError}
       />
     </Pressable>
   );
 }
 
-function AppleCompanionVideo({ onPress, onReady }: Props) {
+function AppleCompanionVideo({ onPress, onReady, onError }: Props) {
   const player = useVideoPlayer(DEFAULT_COMPANION_VIDEO, (p) => {
     p.loop = true;
     p.muted = true;
@@ -115,12 +116,13 @@ function AppleCompanionVideo({ onPress, onReady }: Props) {
   }, [player]);
 
   useEffect(() => {
-    if (!onReady) return;
+    if (!onError) return;
+    if (player.status === 'error') onError();
     const sub = player.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay') onReady();
+      if (status === 'error') onError();
     });
     return () => sub.remove();
-  }, [player, onReady]);
+  }, [player, onError]);
 
   // Watchdog: the player reported a stop we didn't ask for -> resume. The
   // small delay lets legitimate teardown (unmount) win the race; safePlay
@@ -204,6 +206,7 @@ function AppleCompanionVideo({ onPress, onReady }: Props) {
         contentFit="contain"
         nativeControls={false}
         pointerEvents="none"
+        onFirstFrameRender={onReady}
       />
     </Pressable>
   );

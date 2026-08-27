@@ -104,7 +104,11 @@ test('sound hook preloads only while focused, dedupes a draft and cannot auto-re
     react: { useRef: (current) => ({ current }), useCallback: (fn) => fn },
     'react-native': { AppState: appState },
     '@react-navigation/native': { useFocusEffect: (fn) => focus.push(fn) },
-    'expo-audio': { createAudioPlayer(source, options) {
+    'expo-audio': { setAudioModeAsync: async (mode) => {
+      assert.equal(mode.playsInSilentMode, true);
+      assert.equal(mode.shouldPlayInBackground, false);
+      assert.equal(mode.interruptionMode, 'duckOthers');
+    }, createAudioPlayer(source, options) {
       assert.equal(source, 123); assert.equal(options.keepAudioSessionActive, false);
       const p = player(); players.push(p); return p;
     } },
@@ -139,10 +143,14 @@ test('sound wiring is completion-only: Quest guard, Focus didJustFinish, Reflect
   const endGuard = descendants(focus).find((node) => ts.isIfStatement(node) && node.expression.getText(focus) === 'status.didJustFinish');
   assert.match(endGuard.thenStatement.getText(focus), /creditedRef.current = true;\s*playCompletionSound\(\)/);
   const settlement = read('apps/mobile/src/components/main/reflect-settlement.tsx');
-  assert.match(settlement, /useEffect\(\(\) => \{ playCompletionSound\(draft.draftId\); \}, \[draft.draftId, playCompletionSound\]\)/);
-  assert.equal((settlement.match(/playCompletionSound\(draft.draftId\)/g) || []).length, 1);
+  assert.ok(!settlement.includes('useCompletionSound'));
+  assert.match(settlement, /onPresented\(draft.draftId\)/);
+  assert.match(settlement, /presented.current === draft.draftId/);
   for (const file of ['reflect-typing', 'reflect-guided', 'shared-memory-create']) {
-    assert.match(read(`apps/mobile/app/(main)/${file}.tsx`), /<ReflectSettlementView/);
+    const screen = read(`apps/mobile/app/(main)/${file}.tsx`);
+    assert.match(screen, /const \{ play: playCompletionSound \} = useCompletionSound\(\)/);
+    assert.match(screen, /onPresented=\{playCompletionSound\}/);
+    assert.match(screen, /<\/KeyboardAvoidingView>\s*<ReflectCelebration active=\{phase === 'result'\}/);
   }
   assert.ok(fs.statSync(path.join(root, 'apps/mobile/assets/music/reflection-finished.mp3')).size > 0);
 });

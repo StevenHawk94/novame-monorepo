@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
+import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { TAP_YOUR_DAY_CHOICES, TAP_YOUR_DAY_QUESTIONS, TAP_YOUR_DAY_VERSION } from '@novame/engine';
@@ -11,6 +12,8 @@ import { fetchReflectFeed } from '@/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags } from '@/lib/bags-api';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { haptics } from '@/lib/haptics';
+import { useCompletionSound } from '@/lib/use-completion-sound';
+import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } from '@/components/main/tap-your-day-item';
@@ -25,6 +28,7 @@ export default function ReflectGuidedScreen() {
   const insets = useSafeAreaInsets();
   const { height, fontScale } = useWindowDimensions();
   const router = useRouter();
+  const { play: playCompletionSound } = useCompletionSound();
   const tier = useSubscriptionTier();
   const isPaid = tier !== 'free';
   const [phase, setPhase] = useState<Phase>('steps');
@@ -41,6 +45,7 @@ export default function ReflectGuidedScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const requestKey = useRef<string | null>(null);
   const submitLock = useRef(false);
+  useReflectExitGuard(submitting);
   const question = TAP_YOUR_DAY_QUESTIONS[step];
   const selectedList = useMemo(() => TAP_YOUR_DAY_CHOICES.filter((choice) => selected.has(choice.itemId)), [selected]);
   const { cellWidth } = tapItemGridMetrics(gridWidth, fontScale);
@@ -174,7 +179,7 @@ export default function ReflectGuidedScreen() {
               </OffsetCard>
             </ScrollView>
           ) : preparedDraft && (
-            <ReflectSettlementView draft={preparedDraft} itemWord="Selected" onFinalized={(snapshot) => {
+            <ReflectSettlementView draft={preparedDraft} itemWord="Selected" onPresented={playCompletionSound} onFinalized={(snapshot) => {
               cacheReflectItems(snapshot);
               setRemaining(snapshot.reflectsRemaining);
               void fetchReflectFeed({ force: true });
@@ -184,6 +189,7 @@ export default function ReflectGuidedScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      <ReflectCelebration active={phase === 'result'} />
     </View>
   );
 }

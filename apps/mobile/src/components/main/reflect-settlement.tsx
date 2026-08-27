@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
-import LottieView from 'lottie-react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,58 +36,13 @@ import {
 import { emitOfficialRatingRequest, recordReflectClaimForRating } from '@/lib/official-rating-prompt';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { useMemoryEditorKeyboard } from '@/lib/use-memory-editor-keyboard';
-import { useCompletionSound } from '@/lib/use-completion-sound';
+import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
+import {
+  holdReflectSettlement, releaseReflectSettlement, readSettlementCheckpoint,
+  writeSettlementCheckpoint, flushSettlementCheckpoint,
+} from '@/lib/reflect-settlement-outbox';
 
 import { RC } from './reflect-shared';
-
-// A single, prebuilt double-density composition; never stack two full-screen views.
-const REFLECT_CELEBRATION_SOURCE = require('../../../assets/animations/reflect-dense.json');
-
-const ReflectCelebration = memo(function ReflectCelebration() {
-  const animation = useRef<LottieView>(null);
-  const loaded = useRef(false);
-  const laidOut = useRef(false);
-  const started = useRef(false);
-  const [finished, setFinished] = useState(false);
-  useEffect(() => {
-    if (finished) return;
-    const fallback = setTimeout(() => setFinished(true), 8000);
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') setFinished(true);
-    });
-    return () => { clearTimeout(fallback); subscription.remove(); };
-  }, [finished]);
-  const playWhenReady = useCallback(() => {
-    if (!loaded.current || !laidOut.current || started.current || !animation.current) return;
-    started.current = true;
-    animation.current.play();
-  }, []);
-
-  if (finished) return null;
-  return (
-    <View pointerEvents="none" style={styles.celebrationLayer}>
-      <LottieView
-        ref={animation}
-        source={REFLECT_CELEBRATION_SOURCE}
-        loop={false}
-        renderMode={Platform.OS === 'android' ? 'HARDWARE' : 'AUTOMATIC'}
-        hardwareAccelerationAndroid={Platform.OS === 'android'}
-        resizeMode="contain"
-        style={StyleSheet.absoluteFill}
-        onLayout={(event) => {
-          laidOut.current = event.nativeEvent.layout.width > 0 && event.nativeEvent.layout.height > 0;
-          playWhenReady();
-        }}
-        onAnimationLoaded={() => { loaded.current = true; playWhenReady(); }}
-        onAnimationFinish={(cancelled) => { if (!cancelled) setFinished(true); }}
-        onAnimationFailure={(error) => {
-          console.warn('[reflect] celebration animation failed:', error);
-          setFinished(true);
-        }}
-      />
-    </View>
-  );
-});
 
 const INVALID_AI_MEMORY = [
   /\bno (?:specific )?memor(?:y|ies)\b/i,
@@ -369,31 +323,76 @@ export function ReflectSettlementView({
   draft,
   itemWord,
   shared = false,
+  onPresented,
   onFinalized,
 }: {
   draft: PreparedReflect;
   itemWord: 'Matched' | 'Selected';
   shared?: boolean;
+  onPresented: (draftId: string) => void;
   onFinalized: (snapshot: ReflectSnapshot) => void;
 }) {
   const insets = useSafeAreaInsets();
   const tier = useSubscriptionTier();
   const isPaid = tier !== 'free';
-  const { play: playCompletionSound } = useCompletionSound();
-  useEffect(() => { playCompletionSound(draft.draftId); }, [draft.draftId, playCompletionSound]);
+  const presented = useRef<string | null>(null);
   // Prepare normally supplies Plus copy. Still run one blank-only enrichment
   // pass so an AI timeout, a concurrent idempotent retry, or an in-page
   // purchase can recover without replacing anything the user typed.
   const enriched = useRef(false);
-  const [memories, setMemories] = useState<ReflectMemoryDraft[]>(() => draft.matchedItems.map((item) => {
+  const [memories, setMemories] = useState<ReflectMemoryDraft[]>(() =>
+    (draft.userId ? readSettlementCheckpoint(draft.userId, draft.draftId)?.memories : null)
+    ?? draft.memories ?? draft.matchedItems.map((item) => {
     const aiText = usableAiMemory(draft.aiMemories[item.itemId]);
     return {
       itemId: item.itemId,
       text: aiText,
       source: aiText ? 'ai' : 'manual',
       visible: true,
+      edited: false,
     };
   }));
+  const memoriesRef = useRef(memories);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishLock = useRef(false);
+  const [completed, setCompleted] = useState<ReflectSnapshot | null>(null);
+  const delivered = useRef(false);
+  useReflectExitGuard(!completed);
+  // Navigation happens only after the guard has been lifted by a committed render.
+  useEffect(() => {
+    if (!completed || delivered.current) return;
+    delivered.current = true;
+    releaseReflectSettlement(draft.draftId);
+    onFinalized(completed);
+    if (recordReflectClaimForRating()) emitOfficialRatingRequest();
+  }, [completed, draft.draftId, onFinalized]);
+
+  function persistMemories(next: ReflectMemoryDraft[]) {
+    memoriesRef.current = next;
+    const checkpoint = writeSettlementCheckpoint(draft, next);
+    setMemories(next);
+    if (flushTimer.current) clearTimeout(flushTimer.current);
+    if (checkpoint) flushTimer.current = setTimeout(() => { void flushSettlementCheckpoint(checkpoint); }, 600);
+  }
+  function editMemories(next: ReflectMemoryDraft[]) {
+    if (finishLock.current) return;
+    persistMemories(next.map((memory) => {
+      const previous = memoriesRef.current.find((old) => old.itemId === memory.itemId);
+      return previous?.text !== memory.text || previous?.source !== memory.source
+        ? { ...memory, edited: true } : memory;
+    }));
+  }
+  useEffect(() => {
+    holdReflectSettlement(draft.draftId);
+    writeSettlementCheckpoint(draft, memoriesRef.current);
+    const flush = () => {
+      if (flushTimer.current) clearTimeout(flushTimer.current);
+      const checkpoint = draft.userId && readSettlementCheckpoint(draft.userId, draft.draftId);
+      if (checkpoint) void flushSettlementCheckpoint(checkpoint);
+    };
+    const listener = AppState.addEventListener('change', (state) => { if (state !== 'active') flush(); });
+    return () => { listener.remove(); flush(); releaseReflectSettlement(draft.draftId); };
+  }, [draft]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -410,9 +409,9 @@ export function ReflectSettlementView({
     if (empty.length === 0) return;
     setEnriching(true);
     void enrichReflectDraft(draft.draftId, empty).then((result) => {
-      if (result.ok) {
-        setMemories((current) => current.map((memory) => {
-          if (memory.text.trim()) return memory;
+      if (result.ok && !finishLock.current) {
+        persistMemories(memoriesRef.current.map((memory) => {
+          if (memory.edited || memory.text.trim()) return memory;
           const text = usableAiMemory(result.aiMemories[memory.itemId]);
           return text ? { ...memory, text, source: 'ai' } : memory;
         }));
@@ -426,12 +425,15 @@ export function ReflectSettlementView({
   const allCreated = savedCount === memories.length && memories.length > 0;
 
   async function finish() {
-    if (saving) return;
+    if (finishLock.current) return;
+    finishLock.current = true;
     void haptics.medium();
     setSaving(true);
-    const result = await finalizeReflect(draft, memories);
+    if (flushTimer.current) clearTimeout(flushTimer.current);
+    const result = await finalizeReflect(draft, memoriesRef.current);
     setSaving(false);
     if (!result.ok) {
+      finishLock.current = false;
       appAlert(
         result.error === 'daily_limit'
           ? 'That’s three for today'
@@ -447,12 +449,18 @@ export function ReflectSettlementView({
       return;
     }
     void haptics.success();
-    onFinalized(result.snapshot);
-    if (recordReflectClaimForRating()) emitOfficialRatingRequest();
+    setCompleted(result.snapshot);
   }
 
   return (
-    <View style={styles.settlement}>
+    <View style={styles.settlement} onLayout={(event) => {
+      if (event.nativeEvent.layout.height <= 0 || event.nativeEvent.layout.width <= 0
+        || presented.current === draft.draftId) return;
+      presented.current = draft.draftId;
+      // The flow preloads audio while writing. Start on the first visible layout,
+      // not in a late effect or after AI/reward/finalize requests.
+      onPresented(draft.draftId);
+    }}>
       <ScrollView
         contentContainerStyle={[
           styles.settlementScroll,
@@ -529,7 +537,6 @@ export function ReflectSettlementView({
           </OffsetCard>
         </View>
       </ScrollView>
-      <ReflectCelebration />
 
       {editorOpen && (
         <MemoryEditorSheet
@@ -539,7 +546,7 @@ export function ReflectSettlementView({
           shared={shared}
           allowUseMyWords={draft.mode === 'typing'}
           tapYourDay={draft.mode === 'prompt'}
-          onChange={setMemories}
+          onChange={editMemories}
           onDone={() => { void haptics.pageClose(); setEditorOpen(false); }}
         />
       )}
@@ -548,7 +555,7 @@ export function ReflectSettlementView({
           items={draft.matchedItems}
           memories={memories}
           tapYourDay={draft.mode === 'prompt'}
-          onChange={setMemories}
+          onChange={editMemories}
           onDone={() => { void haptics.pageClose(); setShareOpen(false); }}
         />
       )}
@@ -613,7 +620,6 @@ const styles = StyleSheet.create({
   // CloverBurst rises 34pt. Reserve its full travel plus shadow INSIDE the
   // scroll content, never above the safe viewport. Keep the slot after fade.
   rewardSlot: { minHeight: 96, paddingTop: 44, paddingBottom: 8, alignItems: 'center', justifyContent: 'flex-end' },
-  celebrationLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   celebration: { fontSize: 42, textAlign: 'center' },
   savedTitle: { color: '#FFFFFF', textAlign: 'center', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
   savedSub: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 8 },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Image, Platform, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,8 +37,6 @@ const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = 
   write_own: { icon: ICONS.ThemeWriteOwn, color: '#7BB661' },
 };
 const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
-const LOTTIE_FALLBACK_MS = 1800;
-const CONFETTI_FALLBACK_MS = 3200;
 const QUEST_CELEBRATION_SOURCE = Platform.select({
   android: require('../../../assets/animations/Confetti.json'),
   default: require('../../../assets/animations/Confetti.lottie'),
@@ -73,20 +71,6 @@ export default function QuestsScreen() {
     }, []),
   );
 
-  // The two celebration layers have different durations. Each one unmounts as
-  // soon as its own animation finishes; these timers are only safety fallbacks
-  // for devices that fail to deliver an animation completion callback.
-  useEffect(() => {
-    if (!showConfetti) return;
-    const timer = setTimeout(() => setShowConfetti(false), CONFETTI_FALLBACK_MS);
-    return () => clearTimeout(timer);
-  }, [showConfetti]);
-
-  useEffect(() => {
-    if (!showLottie) return;
-    const timer = setTimeout(() => setShowLottie(false), LOTTIE_FALLBACK_MS);
-    return () => clearTimeout(timer);
-  }, [showLottie]);
 
   const themes = useMemo(() => themesForScope('self'), []);
   const custom = themes.find((t) => t.isCustom);
@@ -188,6 +172,24 @@ export default function QuestsScreen() {
     })();
   }
 
+  // Same keyed sibling in BOTH page states. Finishing the seventh task may
+  // switch to the picker while paper is still falling; don't unmount it.
+  const celebration = (showConfetti || showLottie) ? (
+    <View key="quest-celebration" style={styles.celebration} pointerEvents="none">
+      {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
+      {showLottie && (
+        <LottieView source={QUEST_CELEBRATION_SOURCE} autoPlay loop={false}
+          resizeMode="contain"
+          onAnimationFinish={(cancelled) => { if (!cancelled) setShowLottie(false); }}
+          onAnimationFailure={(error) => {
+            console.warn('[quests] celebration animation failed:', error);
+            setShowLottie(false);
+          }}
+          style={styles.confettiLottie} />
+      )}
+    </View>
+  ) : null;
+
   // ---- Active plan: 7-day checklist ----
   if (status.active && status.plan) {
     const p = status.plan;
@@ -268,21 +270,7 @@ export default function QuestsScreen() {
 
           <View style={{ height: 24 }} />
         </ScrollView>
-        {(showConfetti || showLottie) && (
-          <View style={styles.celebration} pointerEvents="none">
-            {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
-            {showLottie && (
-              <LottieView
-                source={QUEST_CELEBRATION_SOURCE}
-                autoPlay
-                loop={false}
-                resizeMode="contain"
-                onAnimationFinish={() => setShowLottie(false)}
-                style={styles.confettiLottie}
-              />
-            )}
-          </View>
-        )}
+        {celebration}
         <FeatureGuideModal guide="quests" />
       </SafeAreaView>
     );
@@ -353,6 +341,7 @@ export default function QuestsScreen() {
         <View style={{ height: 24 }} />
       </ScrollView>
       <FeatureGuideModal guide="quests" />
+      {celebration}
     </SafeAreaView>
   );
 }

@@ -280,7 +280,17 @@ function Reveal({
     },
     [ranking],
   );
-  const bottom = ranking[ranking.length - 1];
+  // Each of the bottom two contributes three distinct release points.
+  // Reuse the existing stable weekly sampling; re-renders don't reshuffle.
+  const releasePoints = useMemo(
+    () => {
+      const resultSeed = `${currentLocalWeekSeed()}:${ranking.join(',')}`;
+      return ranking.slice(-2).flatMap((dim) =>
+        stableSample(TRUE_NORTH_RELEASE_POINTS[dim], 3, `${resultSeed}:release:${dim}`),
+      );
+    },
+    [ranking],
+  );
   // Podium trophies use the dedicated art set (assets/Icons/true-north-N.png).
   const medals = [
     require('../../assets/Icons/true-north-1.png'),
@@ -336,14 +346,14 @@ function Reveal({
         ))}
       </SpringPop>
 
-      {/* What to release — the last-ranked dimension */}
+      {/* What to release — three points from each of the bottom two */}
       <SpringPop animate={showReward} boundedBounce delay={440} style={styles.revealCard}>
         <View style={styles.revealCardHeader}>
           <Text style={styles.revealCardEmoji}>{'🍃'}</Text>
           <Text style={styles.revealCardTitle}>What you should forgive and forget</Text>
         </View>
-        {TRUE_NORTH_RELEASE_POINTS[bottom].map((line) => (
-          <Text key={line} style={styles.bullet}>{'•'}  {line}</Text>
+        {releasePoints.map((line, index) => (
+          <Text key={`${index}:${line}`} style={styles.bullet}>{'•'}  {line}</Text>
         ))}
       </SpringPop>
 
