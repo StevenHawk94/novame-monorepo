@@ -168,12 +168,12 @@ test('Tap item columns adapt to narrow screens and large text without overflowin
     assert.ok(columns <= 6);
   }
 });
-function settlementHarness(paid = false, platform = 'ios') {
+function settlementHarness(paid = false, platform = 'ios', bottomInset = 34) {
   const h = harness(platform);
   const module = h.load(settlementFile, {
     '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' }, 'expo-image': { Image: 'Image' },
     'expo-router': { router: {} },
-    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: 34 }) },
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: bottomInset }) },
     '@/components/ui/app-dialog': {}, '@/components/main/clover-burst': { CloverBurst: 'CloverBurst' },
     '@/components/ui/item-sprite': { ItemSprite: 'ItemSprite' }, '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
     '@/components/ui/spring-pop': { SpringPop: 'SpringPop' }, '@/lib/haptics': {}, '@/lib/icons': { ICONS: { Plus: 'plus.png' } },
@@ -211,17 +211,109 @@ test('settlement and editor use Tap Your Day art only for curated choices', () =
   assert.match(fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-detail.tsx'), 'utf8'), /tapYourDay=\{editor.mode === 'prompt'\}/);
 });
 test('all settlement sizes retain the full list, flow footer, and reserved upward reward space', () => {
-  for (const paid of [false, true]) for (const count of [2, 131]) {
-    const h = settlementHarness(paid), tree = settlementTree(h, count, paid);
+  for (const platform of ['ios', 'android'])
+  for (const [paid, shared] of [[false, false], [true, false], [true, true]])
+  for (const count of [0, 1, 7, 131]) {
+    const h = settlementHarness(paid, platform), tree = settlementTree(h, count, shared);
     const all = nodes(tree), scroller = all.find((node) => node.type === 'ScrollView');
+    assert.equal(all.filter((node) => node.type === 'ScrollView').length, 1);
+    assert.equal(scroller.props.style.flex, 1);
     assert.equal(scroller.props.contentContainerStyle[0].flexGrow, 1);
+    assert.equal(scroller.props.contentContainerStyle[0].justifyContent, 'flex-start');
     assert.equal(all.filter((node) => node.type === 'ItemSprite').length, count);
-    const slot = all.find((node) => node.props?.style?.minHeight === 96);
-    assert.ok(slot.props.style.paddingTop > 34); // lift + shadow stays inside scroll viewport
-    assert.equal(nodes(slot).find((node) => node.type === 'CloverBurst').props.durationMs, 2000);
-    assert.ok(all.some((node) => node.props?.style?.flexGrow === 1 && node.props.style.justifyContent === 'center'));
+    const slot = all.find((node) => node.props?.style?.height === 48);
+    assert.equal(slot.props.style.paddingTop, undefined); // no hidden padding restoring the old 96pt gap
+    assert.equal(slot.props.style.justifyContent, 'center');
+    const reward = nodes(slot).find((node) => node.type === 'CloverBurst');
+    assert.equal(reward.props.durationMs, 2000);
+    assert.equal(reward.props.riseDistance, 4); // the original 34pt drift would clip above this compact slot
+    assert.ok(!all.some((node) => node.props?.style?.flexGrow === 1 && node.props.style.justifyContent === 'center'));
     assert.ok(nodes(scroller).some((node) => node.type === 'Text' && node.props.children === 'Done'));
     assert.equal(all.filter((node) => node.type === 'SpringPop')[0].props.boundedBounce, true);
+  }
+});
+test('sections have fixed gaps in content order; only the Items card grows with its wrapped rows', () => {
+  for (const [paid, shared] of [[false, false], [true, false], [true, true]]) {
+    for (const count of [1, 7, 131]) {
+      const scroller = nodes(settlementTree(settlementHarness(paid), count, shared))
+        .find((node) => node.type === 'ScrollView');
+      const blocks = [scroller.props.children].flat(Infinity).filter((node) => node?.type);
+      const celebration = blocks.find((node) => node.props.children === '🎉');
+      const title = blocks.find((node) => node.props.children === 'REFLECTION SAVED');
+      const subtitle = blocks.find((node) => node.props.children === 'Your full reflection is private in My Logs.');
+      const summary = blocks.find((node) => nodes(node).some((child) => child.type === 'SpringPop'));
+      const share = blocks.find((node) => node.type === 'Pressable');
+      const footer = blocks.at(-1);
+      const ordered = [celebration, title, subtitle, summary, ...(shared ? [] : [share]), footer];
+      assert.deepEqual(blocks.slice(paid ? 2 : 1), ordered);
+      assert.equal(title.props.style.marginTop, 12);
+      assert.equal(subtitle.props.style.marginTop, 8);
+      assert.equal(summary.props.style.marginTop, 24);
+      assert.equal(!!share, !shared);
+      if (share) assert.equal(share.props.style.marginTop, 16);
+      const footerStyle = Object.assign({}, ...footer.props.style.filter(Boolean));
+      assert.equal(footerStyle.marginTop, shared ? 24 : 36);
+      assert.equal(footerStyle.gap, 12);
+      // No flexible spacer or bottom pin may distribute spare viewport space.
+      assert.equal(scroller.props.contentContainerStyle[0].gap, undefined);
+      for (const block of blocks) {
+        const style = Object.assign({}, ...[block.props.style].flat(Infinity).filter(Boolean));
+        for (const property of ['flex', 'flexGrow', 'height', 'maxHeight', 'bottom', 'position', 'marginBottom']) {
+          if (property === 'height' && nodes(block).some((node) => node.type === 'CloverBurst')) continue; // fixed 48pt reward slot
+          if (property === 'marginBottom' && block === blocks[0] && paid) continue; // compact badge gap
+          assert.equal(style?.[property], undefined, property + ' must not stretch/pin a section');
+        }
+      }
+      const card = nodes(summary).find((node) => node.type === 'Pressable');
+      assert.equal(card.props.style.height, undefined);
+      assert.equal(card.props.style.maxHeight, undefined);
+      const grid = nodes(card).find((node) => node.props?.style?.flexWrap === 'wrap');
+      assert.equal(grid.props.style.justifyContent, 'center');
+      assert.equal(nodes(grid).filter((node) => node.type === 'ItemSprite').length, count);
+      const actions = [footer.props.children].flat(Infinity).filter((node) => node?.type);
+      assert.equal(actions.length, paid ? 1 : 2);
+      if (!paid) {
+        assert.equal(actions[0].props.style.gap, 16); // upgrade copy -> Join Plus
+        assert.ok(nodes(actions[0]).some((node) => node.props?.children === 'Join Burrow Plus'));
+      }
+      assert.ok(nodes(actions.at(-1)).some((node) => node.props?.children === 'Done'));
+    }
+  }
+});
+test('Done has 24pt of scrollable bottom breathing room plus the device safe area', () => {
+  for (const bottomInset of [0, 16, 34, 48]) {
+    const tree = settlementTree(settlementHarness(true, 'android', bottomInset), 131);
+    const scroll = nodes(tree).find((node) => node.type === 'ScrollView');
+    assert.equal(scroll.props.contentContainerStyle[1].paddingBottom, bottomInset + 24);
+  }
+});
+test('compact settlement reward preserves the default upward drift on other reward surfaces', () => {
+  for (const riseDistance of [undefined, 4]) {
+    const values = [];
+    let animatedStyle;
+    const { CloverBurst } = harness().load('apps/mobile/src/components/main/clover-burst.tsx', {
+      'expo-image': { Image: 'Image' },
+      '@/lib/icons': { ICONS: { Clovers: 'clovers.png' } },
+      'react-native-reanimated': {
+        __esModule: true, default: { View: 'AnimatedView' },
+        useSharedValue: (value) => { const shared = { value }; values.push(shared); return shared; },
+        useAnimatedStyle: (compute) => { animatedStyle = compute; return compute(); },
+      },
+    });
+    CloverBurst({ amount: 30, riseDistance, durationMs: 2000 });
+    values[0].value = 1;
+    values[1].value = 1;
+    const style = animatedStyle();
+    assert.equal(style.transform[0].translateY, -(riseDistance ?? 34));
+    assert.equal(style.transform[1].scale, 1);
+    assert.equal(style.opacity, 1);
+  }
+});
+test('all three Reflect routes continue to use the common settlement layout', () => {
+  for (const route of ['reflect-typing', 'reflect-guided', 'shared-memory-create']) {
+    const source = fs.readFileSync(path.join(root, `apps/mobile/app/(main)/${route}.tsx`), 'utf8');
+    assert.match(source, /<ReflectSettlementView\b/);
+    assert.match(source, /enabled=\{phase !== 'result'\}/); // stale keyboard cannot shrink the result viewport
   }
 });
 test('settlement starts the preloaded sound once on first visible layout, not on edit or AI updates', () => {

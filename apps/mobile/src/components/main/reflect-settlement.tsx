@@ -462,9 +462,10 @@ export function ReflectSettlementView({
       onPresented(draft.draftId);
     }}>
       <ScrollView
+        style={styles.settlementViewport}
         contentContainerStyle={[
           styles.settlementScroll,
-          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+          { paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -476,7 +477,7 @@ export function ReflectSettlementView({
         )}
         <View pointerEvents="none" style={styles.rewardSlot}>
           {rewardToast && (
-            <CloverBurst amount={30} durationMs={2000} onDone={handleRewardDone} />
+            <CloverBurst amount={30} durationMs={2000} riseDistance={4} onDone={handleRewardDone} />
           )}
         </View>
         <Text style={styles.celebration}>🎉</Text>
@@ -515,9 +516,9 @@ export function ReflectSettlementView({
           </Pressable>
         )}
 
-        <View style={styles.settlementFooter}>
+        <View style={[styles.settlementFooter, shared && styles.sharedSettlementFooter]}>
           {!isPaid && (
-            <>
+            <View style={styles.upgradeActions}>
               <Text style={styles.joinCopy}>You can join Plus to turn reflections into memories automatically.</Text>
               <OffsetCard
                 color={RC.yellowDrop}
@@ -530,7 +531,7 @@ export function ReflectSettlementView({
               >
                 <Text style={styles.joinText}>Join Burrow Plus</Text>
               </OffsetCard>
-            </>
+            </View>
           )}
           <OffsetCard color="#D96B3F" offset={4} radius={24} onPress={() => void finish()} disabled={saving} cardStyle={styles.finishButton}>
             {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.finishText}>Done</Text>}
@@ -613,26 +614,31 @@ const styles = StyleSheet.create({
   doneText: { color: '#5A4419', fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
   editorFoot: { marginTop: 10, textAlign: 'center', color: '#2A2118', fontSize: 12, fontFamily: 'Inter_700Bold' },
   settlement: { flex: 1 },
-  settlementScroll: { flexGrow: 1, paddingVertical: 8, gap: 13 },
-  plusBadge: { alignSelf: 'flex-start', backgroundColor: '#54351E', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  settlementViewport: { flex: 1 },
+  // Only the scroll canvas fills the viewport. Its sections stay at intrinsic
+  // height: extra screen space belongs below Done, never around the Items card.
+  settlementScroll: { flexGrow: 1, justifyContent: 'flex-start', paddingTop: 8 },
+  plusBadge: { alignSelf: 'flex-start', backgroundColor: '#54351E', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8 },
   plusBadgeIcon: { width: 20, height: 20 },
   plusBadgeText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
-  // CloverBurst rises 34pt. Reserve its full travel plus shadow INSIDE the
-  // scroll content, never above the safe viewport. Keep the slot after fade.
-  rewardSlot: { minHeight: 96, paddingTop: 44, paddingBottom: 8, alignItems: 'center', justifyContent: 'flex-end' },
+  // Keep exactly 48pt after the reward fades. The settlement-only 4pt drift
+  // fits this compact slot and the scroll canvas's 8pt top shadow allowance.
+  rewardSlot: { height: 48, alignItems: 'center', justifyContent: 'center' },
   celebration: { fontSize: 42, textAlign: 'center' },
-  savedTitle: { color: '#FFFFFF', textAlign: 'center', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
-  savedSub: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 8 },
-  summaryRegion: { flexGrow: 1, justifyContent: 'center', paddingVertical: 12 },
+  savedTitle: { color: '#FFFFFF', textAlign: 'center', fontSize: 25, fontFamily: 'Inter_800ExtraBold', marginTop: 12 },
+  savedSub: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontFamily: 'Inter_700Bold', marginTop: 8 },
+  summaryRegion: { marginTop: 24 },
   summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 25, padding: 18, alignItems: 'center' },
-  summaryTitle: { color: '#12100E', fontSize: 23, fontFamily: 'Inter_800ExtraBold' },
+  summaryTitle: { color: '#12100E', fontSize: 23, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
   summarySub: { color: '#2A2118', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 8 },
   summaryItems: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 9, marginTop: 14 },
-  shareCard: { backgroundColor: '#54351E', borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  shareCard: { backgroundColor: '#54351E', borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
   shareTitle: { color: '#FFFFFF', fontSize: 15, lineHeight: 20, fontFamily: 'Inter_800ExtraBold' },
   shareStatus: { color: '#FF7A2F', fontSize: 13, fontFamily: 'Inter_800ExtraBold', marginTop: 5 },
   editCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  settlementFooter: { gap: 12, paddingTop: 8 },
+  settlementFooter: { gap: 12, marginTop: 36 },
+  sharedSettlementFooter: { marginTop: 24 },
+  upgradeActions: { gap: 16 },
   joinCopy: { color: '#FFFFFF', textAlign: 'center', fontSize: 14, lineHeight: 19, fontFamily: 'Inter_700Bold', paddingHorizontal: 20 },
   joinButton: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 16 },
   joinText: { color: '#633A21', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },

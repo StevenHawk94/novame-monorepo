@@ -1,0 +1,1476 @@
+{
+  "schema": "memory-items-v33-data-qa@1",
+  "source_workbook": "Icon_Mapping_Core_Tables_v33.xlsx",
+  "items": 5439,
+  "executable_keyword_rows": 35834,
+  "unique_executable_keywords": 34849,
+  "never_auto_rows_omitted": 696,
+  "never_auto_unique_keywords": 690,
+  "never_auto_keywords_with_explicit_auto_carrier": [
+    "anime",
+    "anime series",
+    "audio book",
+    "bank balance",
+    "bank branch",
+    "bank statement",
+    "bank transfer",
+    "bar cart",
+    "bar clamp",
+    "bar mitzvah",
+    "bar stool",
+    "baseball",
+    "baseball bat",
+    "bat mitzvah",
+    "beading needle",
+    "blocked someone",
+    "butcher block",
+    "candy bar",
+    "caught in the rain",
+    "chicken breast",
+    "chicken wings",
+    "computer mouse",
+    "console gaming",
+    "crab cake",
+    "crab dip",
+    "crab legs",
+    "crab meat",
+    "cricket bat",
+    "did my nails",
+    "duck breast",
+    "duck eggs",
+    "duck sauce",
+    "duct tape",
+    "embroidery needle",
+    "food bank",
+    "fried chicken",
+    "gaming mouse",
+    "gift wrap",
+    "gold star sticker",
+    "ground turkey",
+    "hit snooze",
+    "knife block",
+    "laptop dock",
+    "listened to an audiobook",
+    "maintenance log",
+    "mouse pad",
+    "mouthwash",
+    "moved back home",
+    "needle felting",
+    "needle nose pliers",
+    "nose running",
+    "on campus",
+    "orange chicken",
+    "orange juice",
+    "orange tree",
+    "painted my nails",
+    "played baseball",
+    "played checkers",
+    "played chess",
+    "played dominoes",
+    "played mahjong",
+    "power bank",
+    "printer jam",
+    "protein bar",
+    "ran the vacuum",
+    "ranch dip",
+    "ranch dressing",
+    "rinsed with mouthwash",
+    "river bank",
+    "rock climbing",
+    "rock collection",
+    "rocking chair",
+    "rose wine",
+    "running a fever",
+    "running on empty",
+    "running shoes",
+    "running store",
+    "running track",
+    "school day",
+    "scrolling short videos",
+    "set my alarm",
+    "short form video",
+    "short form videos",
+    "softball bat",
+    "step stool",
+    "stool sample",
+    "teddy bear",
+    "traffic jam",
+    "tree topper star",
+    "turkey bacon",
+    "turkey breast",
+    "turkey dinner",
+    "turkey sandwich",
+    "used mouthwash",
+    "vacuumed",
+    "vacuuming",
+    "watched anime",
+    "watched reels",
+    "watched shorts",
+    "water lily",
+    "wedding toast",
+    "whole turkey",
+    "wore my retainer",
+    "x ray",
+    "yoga block"
+  ],
+  "auto_unless_excluded_keywords_with_literal_rules": 1025,
+  "unresolved_instructional_exclusions": 859,
+  "unsafe_auto_unless_excluded_keywords_omitted": 855,
+  "unsafe_keyword_samples": [
+    "abandoned",
+    "abrasion",
+    "absolutely delighted",
+    "absolutely thrilled",
+    "accepted as i am",
+    "accepted it reluctantly",
+    "accomplished",
+    "aching joints",
+    "acid reflux",
+    "admiring",
+    "affectionate",
+    "afraid",
+    "allergic reaction",
+    "allergies acting up",
+    "amused",
+    "angry",
+    "ankle brace",
+    "ankle hurt",
+    "ankle pain",
+    "ankle twist",
+    "annoyed",
+    "antibiotic course complete",
+    "antibiotic prescription",
+    "anxiety",
+    "anxious",
+    "apology rejected",
+    "apprehensive",
+    "argument not settled",
+    "arm hurt",
+    "arm pain",
+    "ashamed",
+    "at ease",
+    "authorization approved",
+    "awe",
+    "awestruck",
+    "awkward",
+    "awkward about myself",
+    "awkward after conflict",
+    "awkward after not socializing",
+    "baby monitor",
+    "back brace",
+    "back hurt",
+    "back pain",
+    "ballot",
+    "baseball bat",
+    "bashful",
+    "began antibiotics",
+    "began new medication",
+    "bereaved",
+    "blinds",
+    "bloating",
+    "blood pressure monitor",
+    "body feels calm",
+    "body feels flexible",
+    "body feels good after workout",
+    "body feels relaxed",
+    "body feels settled",
+    "body feels strong",
+    "body finally settled down",
+    "body moving well",
+    "body part swollen",
+    "body relaxed",
+    "body settling after workout",
+    "bothered",
+    "brave",
+    "breathing treatment",
+    "breathless",
+    "broke out in hives",
+    "broke out in rash",
+    "brokenhearted",
+    "bruise",
+    "bruised",
+    "burned myself",
+    "burning chest after eating",
+    "buzzing with energy",
+    "calm",
+    "can't move freely",
+    "can't wait",
+    "carefree mood",
+    "cash",
+    "cast removed",
+    "caught a cold",
+    "ceiling fan",
+    "champagne toast",
+    "changed medicine",
+    "cheerful",
+    "chest hurt",
+    "chest pain",
+    "claim approved",
+    "claim denied",
+    "cognitive overload",
+    "collards",
+    "comfy",
+    "common cold",
+    "compassionate",
+    "completed antibiotics",
+    "completely confused",
+    "completely drained",
+    "computer monitor",
+    "computer mouse"
+  ],
+  "unresolved_instructional_exclusion_samples": [
+    {
+      "row": 287,
+      "icon": "BBQ Ribs",
+      "keyword": "ribs",
+      "rule": "exclude body/anatomy/injury contexts such as sore ribs, broken ribs, rib pain; pork ribs raw; beef short ribs"
+    },
+    {
+      "row": 503,
+      "icon": "Salmon",
+      "keyword": "salmon",
+      "rule": "exclude live-fish/ocean/river/fishing contexts when clearly not food; salmon fillet; salmon fish; canned salmon; smoked salmon"
+    },
+    {
+      "row": 507,
+      "icon": "Shrimp",
+      "keyword": "shrimp",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food; shrimp raw; shrimp and grits"
+    },
+    {
+      "row": 512,
+      "icon": "Shrimp",
+      "keyword": "prawns",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 513,
+      "icon": "Lobster",
+      "keyword": "lobster",
+      "rule": "exclude live-animal/ocean/aquarium/fishing contexts when clearly not food; lobster roll; lobster tail; lobster whole raw"
+    },
+    {
+      "row": 540,
+      "icon": "Oysters",
+      "keyword": "oyster",
+      "rule": "exclude live-shellfish/ecology contexts when clearly not food; oyster sauce; oyster mushroom; king oyster mushroom"
+    },
+    {
+      "row": 541,
+      "icon": "Oysters",
+      "keyword": "oysters",
+      "rule": "exclude live-shellfish/ecology contexts when clearly not food; oysters raw"
+    },
+    {
+      "row": 616,
+      "icon": "Stuffing",
+      "keyword": "stuffing",
+      "rule": "exclude object-filling/craft/upholstery contexts when clearly not food"
+    },
+    {
+      "row": 621,
+      "icon": "Gravy",
+      "keyword": "gravy",
+      "rule": "exclude idiomatic 'gravy train' / non-food figurative usage; biscuits and gravy"
+    },
+    {
+      "row": 667,
+      "icon": "Crawfish",
+      "keyword": "crawfish",
+      "rule": "exclude live-animal/creek/aquarium/fishing contexts when clearly not food; crawfish bread; crawfish pie; crawfish raw"
+    },
+    {
+      "row": 668,
+      "icon": "Crawfish",
+      "keyword": "crawdads",
+      "rule": "exclude live-animal/creek/aquarium/fishing contexts when clearly not food"
+    },
+    {
+      "row": 743,
+      "icon": "Congee",
+      "keyword": "jook",
+      "rule": "exclude names/usernames if clearly not food"
+    },
+    {
+      "row": 780,
+      "icon": "Kimchi",
+      "keyword": "kimchi",
+      "rule": "exclude brand/usernames if clearly not food; kimchi fried rice"
+    },
+    {
+      "row": 1113,
+      "icon": "Rice and Peas",
+      "keyword": "rice and peas",
+      "rule": "exclude clearly generic ingredient-list mentions when not referring to the dish/side"
+    },
+    {
+      "row": 1219,
+      "icon": "Collard Greens",
+      "keyword": "collards",
+      "rule": "exclude surnames/usernames if clearly not food"
+    },
+    {
+      "row": 2572,
+      "icon": "Popcorn",
+      "keyword": "popcorn",
+      "rule": "exclude popcorn ceiling / popcorn button / figurative non-food uses; home theater popcorn bucket"
+    },
+    {
+      "row": 3119,
+      "icon": "Champagne",
+      "keyword": "champagne toast",
+      "rule": "exclude ceremonial-toast context when no beverage is intended"
+    },
+    {
+      "row": 5967,
+      "icon": "Duck Eggs",
+      "keyword": "duck egg",
+      "rule": "exclude sports-score slang when clearly non-food"
+    },
+    {
+      "row": 7140,
+      "icon": "Fitness",
+      "keyword": "feeling flexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7141,
+      "icon": "Fitness",
+      "keyword": "body feels flexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7142,
+      "icon": "Fitness",
+      "keyword": "inflexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7143,
+      "icon": "Fitness",
+      "keyword": "feeling stiff and inflexible",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7144,
+      "icon": "Fitness",
+      "keyword": "can't move freely",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7145,
+      "icon": "Fitness",
+      "keyword": "muscles feel good",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7146,
+      "icon": "Fitness",
+      "keyword": "body feels good after workout",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7147,
+      "icon": "Fitness",
+      "keyword": "recovered muscles",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7148,
+      "icon": "Fitness",
+      "keyword": "cooled down",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7149,
+      "icon": "Fitness",
+      "keyword": "body settling after workout",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7150,
+      "icon": "Fitness",
+      "keyword": "post workout cooldown",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7151,
+      "icon": "Fitness",
+      "keyword": "feeling coordinated",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7152,
+      "icon": "Fitness",
+      "keyword": "movements feel coordinated",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7153,
+      "icon": "Fitness",
+      "keyword": "body moving well",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 7156,
+      "icon": "Fitness",
+      "keyword": "exercise",
+      "rule": "exclude schoolwork, workbook, writing, math, and practice-question meanings unless physical training context is present; exercise ball; exercise bike"
+    },
+    {
+      "row": 7399,
+      "icon": "Baseball Bat",
+      "keyword": "baseball bat",
+      "rule": "exclude animal bat unless baseball equipment context is explicit"
+    },
+    {
+      "row": 7530,
+      "icon": "Hockey Stick",
+      "keyword": "hockey stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7537,
+      "icon": "Field Hockey Stick",
+      "keyword": "field hockey stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7544,
+      "icon": "Lacrosse Stick",
+      "keyword": "lacrosse stick",
+      "rule": "exclude generic stick/adhere meanings unless the full object phrase is present"
+    },
+    {
+      "row": 7559,
+      "icon": "Cricket Bat",
+      "keyword": "cricket bat",
+      "rule": "exclude animal bat unless baseball equipment context is explicit"
+    },
+    {
+      "row": 8262,
+      "icon": "Vinyl Record",
+      "keyword": "vinyl record",
+      "rule": "exclude verb record and achievement record unless physical media context is explicit"
+    },
+    {
+      "row": 8926,
+      "icon": "Bed",
+      "keyword": "light sleep",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8927,
+      "icon": "Bed",
+      "keyword": "slept lightly",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8928,
+      "icon": "Bed",
+      "keyword": "shallow sleep",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8929,
+      "icon": "Bed",
+      "keyword": "felt great waking early",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 8930,
+      "icon": "Bed",
+      "keyword": "night owl mode",
+      "rule": "do not infer this state solely from an activity or situation; require explicit body/energy wording"
+    },
+    {
+      "row": 9229,
+      "icon": "Medication Bottle",
+      "keyword": "started medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9230,
+      "icon": "Medication Bottle",
+      "keyword": "began new medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9231,
+      "icon": "Medication Bottle",
+      "keyword": "started medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9232,
+      "icon": "Medication Bottle",
+      "keyword": "new prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues; prescription pad"
+    },
+    {
+      "row": 9233,
+      "icon": "Medication Bottle",
+      "keyword": "got a prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9234,
+      "icon": "Medication Bottle",
+      "keyword": "doctor prescribed medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9235,
+      "icon": "Medication Bottle",
+      "keyword": "prescription refill",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9236,
+      "icon": "Medication Bottle",
+      "keyword": "refilled medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9237,
+      "icon": "Medication Bottle",
+      "keyword": "refilled prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9238,
+      "icon": "Medication Bottle",
+      "keyword": "medication changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9239,
+      "icon": "Medication Bottle",
+      "keyword": "changed medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9240,
+      "icon": "Medication Bottle",
+      "keyword": "doctor changed prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9241,
+      "icon": "Medication Bottle",
+      "keyword": "dose changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9242,
+      "icon": "Medication Bottle",
+      "keyword": "dosage changed",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9243,
+      "icon": "Medication Bottle",
+      "keyword": "medication dose adjustment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9244,
+      "icon": "Medication Bottle",
+      "keyword": "stopped medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9245,
+      "icon": "Medication Bottle",
+      "keyword": "stopped taking medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9246,
+      "icon": "Medication Bottle",
+      "keyword": "discontinued medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9247,
+      "icon": "Medication Bottle",
+      "keyword": "missed dose",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9248,
+      "icon": "Medication Bottle",
+      "keyword": "forgot medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9249,
+      "icon": "Medication Bottle",
+      "keyword": "missed my medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9250,
+      "icon": "Medication Bottle",
+      "keyword": "medication side effect",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9251,
+      "icon": "Medication Bottle",
+      "keyword": "side effects from medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9252,
+      "icon": "Medication Bottle",
+      "keyword": "medicine caused side effect",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9253,
+      "icon": "Medication Bottle",
+      "keyword": "reaction to medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9254,
+      "icon": "Medication Bottle",
+      "keyword": "medicine reaction",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9255,
+      "icon": "Medication Bottle",
+      "keyword": "drug reaction",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9256,
+      "icon": "Medication Bottle",
+      "keyword": "took over the counter medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9257,
+      "icon": "Medication Bottle",
+      "keyword": "otc medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9258,
+      "icon": "Medication Bottle",
+      "keyword": "took cold medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9259,
+      "icon": "Medication Bottle",
+      "keyword": "took pain reliever",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9260,
+      "icon": "Medication Bottle",
+      "keyword": "took pain medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9261,
+      "icon": "Medication Bottle",
+      "keyword": "took ibuprofen type medicine",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9262,
+      "icon": "Medication Bottle",
+      "keyword": "started antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9263,
+      "icon": "Medication Bottle",
+      "keyword": "began antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9264,
+      "icon": "Medication Bottle",
+      "keyword": "antibiotic prescription",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9265,
+      "icon": "Medication Bottle",
+      "keyword": "finished antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9266,
+      "icon": "Medication Bottle",
+      "keyword": "completed antibiotics",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9267,
+      "icon": "Medication Bottle",
+      "keyword": "antibiotic course complete",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9268,
+      "icon": "Medication Bottle",
+      "keyword": "used inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9269,
+      "icon": "Medication Bottle",
+      "keyword": "took inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9270,
+      "icon": "Medication Bottle",
+      "keyword": "needed inhaler",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9271,
+      "icon": "Medication Bottle",
+      "keyword": "used epipen",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9272,
+      "icon": "Medication Bottle",
+      "keyword": "epinephrine injector used",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9273,
+      "icon": "Medication Bottle",
+      "keyword": "emergency allergy injection",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9274,
+      "icon": "Medication Bottle",
+      "keyword": "nebulizer treatment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9275,
+      "icon": "Medication Bottle",
+      "keyword": "used nebulizer",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9276,
+      "icon": "Medication Bottle",
+      "keyword": "breathing treatment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9277,
+      "icon": "Medication Bottle",
+      "keyword": "prescription not covered",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9278,
+      "icon": "Medication Bottle",
+      "keyword": "insurance denied medication",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 9279,
+      "icon": "Medication Bottle",
+      "keyword": "medicine not covered",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12378,
+      "icon": "Medical Clinic",
+      "keyword": "prenatal appointment",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12379,
+      "icon": "Medical Clinic",
+      "keyword": "prenatal checkup",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12380,
+      "icon": "Medical Clinic",
+      "keyword": "pregnancy doctor visit",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12437,
+      "icon": "Medical Clinic",
+      "keyword": "medical payment plan",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    },
+    {
+      "row": 12438,
+      "icon": "Medical Clinic",
+      "keyword": "hospital payment plan",
+      "rule": "do not infer this concept from unrelated behavior, demographic information, or indirect clues"
+    }
+  ],
+  "cross_icon_conflicts": [
+    {
+      "keyword": "conch shell",
+      "candidates": [
+        "Conch Shell",
+        "Shell"
+      ],
+      "winner": "Shell",
+      "auto_active": true
+    },
+    {
+      "keyword": "coral reef",
+      "candidates": [
+        "Coral",
+        "Coral Reef"
+      ],
+      "winner": "Coral Reef",
+      "auto_active": true
+    },
+    {
+      "keyword": "counter stool",
+      "candidates": [
+        "Bar Stool",
+        "Stool"
+      ],
+      "winner": "Bar Stool",
+      "auto_active": true
+    },
+    {
+      "keyword": "cruise port",
+      "candidates": [
+        "Cruise Terminal",
+        "Port"
+      ],
+      "winner": "Cruise Terminal",
+      "auto_active": true
+    },
+    {
+      "keyword": "hiking compass",
+      "candidates": [
+        "Compass",
+        "Pocket Compass"
+      ],
+      "winner": "Pocket Compass",
+      "auto_active": true
+    },
+    {
+      "keyword": "large rock",
+      "candidates": [
+        "Boulder",
+        "Rock"
+      ],
+      "winner": "Boulder",
+      "auto_active": true
+    },
+    {
+      "keyword": "looked at the stars",
+      "candidates": [
+        "Star",
+        "Telescope"
+      ],
+      "winner": "Star",
+      "auto_active": true
+    },
+    {
+      "keyword": "pocket compass",
+      "candidates": [
+        "Compass",
+        "Pocket Compass"
+      ],
+      "winner": "Pocket Compass",
+      "auto_active": true
+    },
+    {
+      "keyword": "rain cloud",
+      "candidates": [
+        "Cloud",
+        "Rain Cloud"
+      ],
+      "winner": "Cloud",
+      "auto_active": true
+    },
+    {
+      "keyword": "ran on the treadmill",
+      "candidates": [
+        "Running",
+        "Treadmill"
+      ],
+      "winner": "Treadmill",
+      "auto_active": true
+    },
+    {
+      "keyword": "rock formation",
+      "candidates": [
+        "Rock",
+        "Rock Formation"
+      ],
+      "winner": "Rock Formation",
+      "auto_active": true
+    },
+    {
+      "keyword": "steel toe boots",
+      "candidates": [
+        "Steel-Toe Boot",
+        "Work Boots"
+      ],
+      "winner": "Steel-Toe Boot",
+      "auto_active": true
+    },
+    {
+      "keyword": "storm cloud",
+      "candidates": [
+        "Cloud",
+        "Rain Cloud"
+      ],
+      "winner": "Rain Cloud",
+      "auto_active": true
+    },
+    {
+      "keyword": "suitcases",
+      "candidates": [
+        "Suitcase",
+        "Travel Luggage"
+      ],
+      "winner": "Suitcase",
+      "auto_active": true
+    },
+    {
+      "keyword": "toast with jam",
+      "candidates": [
+        "Jam",
+        "Jam Toast"
+      ],
+      "winner": "Jam Toast",
+      "auto_active": true
+    }
+  ],
+  "reflect_categories": [
+    {
+      "order": 1,
+      "key": "emotion_and_feeling",
+      "label": "Emotions & Feelings",
+      "items": 30,
+      "subcategories": []
+    },
+    {
+      "order": 2,
+      "key": "food_drink",
+      "label": "Food & Drink",
+      "items": 1490,
+      "subcategories": [
+        {
+          "key": "fruit",
+          "label": "Fruit",
+          "items": 84
+        },
+        {
+          "key": "vegetables",
+          "label": "Vegetables",
+          "items": 114
+        },
+        {
+          "key": "breakfast_brunch",
+          "label": "Breakfast & Brunch",
+          "items": 104
+        },
+        {
+          "key": "bread_bakery",
+          "label": "Bread & Bakery",
+          "items": 25
+        },
+        {
+          "key": "dairy_eggs",
+          "label": "Dairy & Eggs",
+          "items": 32
+        },
+        {
+          "key": "desserts_sweets",
+          "label": "Desserts & Sweets",
+          "items": 121
+        },
+        {
+          "key": "snacks",
+          "label": "Snacks",
+          "items": 20
+        },
+        {
+          "key": "beverages",
+          "label": "Beverages",
+          "items": 121
+        },
+        {
+          "key": "fast_food_takeout",
+          "label": "Fast Food & Takeout",
+          "items": 30
+        },
+        {
+          "key": "meals_main_dishes",
+          "label": "Meals & Main Dishes",
+          "items": 282
+        },
+        {
+          "key": "meat_poultry",
+          "label": "Meat & Poultry",
+          "items": 132
+        },
+        {
+          "key": "seafood",
+          "label": "Seafood",
+          "items": 37
+        },
+        {
+          "key": "rice_noodles_grains",
+          "label": "Rice, Noodles & Grains",
+          "items": 42
+        },
+        {
+          "key": "ingredients_pantry",
+          "label": "Ingredients & Pantry",
+          "items": 65
+        },
+        {
+          "key": "sauces_condiments_spices",
+          "label": "Sauces, Condiments & Spices",
+          "items": 115
+        },
+        {
+          "key": "cooking_dining",
+          "label": "Cooking & Dining",
+          "items": 113
+        },
+        {
+          "key": "restaurants_food_places",
+          "label": "Restaurants & Food Places",
+          "items": 53
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "key": "chores_home_care",
+      "label": "Chores & Home Care",
+      "items": 684,
+      "subcategories": [
+        {
+          "key": "home_spaces_household_items",
+          "label": "Home Spaces & Household Items",
+          "items": 178
+        },
+        {
+          "key": "cleaning_laundry",
+          "label": "Cleaning & Laundry",
+          "items": 88
+        },
+        {
+          "key": "storage_organization",
+          "label": "Storage & Organization",
+          "items": 113
+        },
+        {
+          "key": "repairs_diy",
+          "label": "Repairs & DIY",
+          "items": 97
+        },
+        {
+          "key": "home_utilities_maintenance",
+          "label": "Home Utilities & Maintenance",
+          "items": 46
+        },
+        {
+          "key": "pet_care",
+          "label": "Pet Care",
+          "items": 80
+        },
+        {
+          "key": "baby_parenting",
+          "label": "Baby & Parenting",
+          "items": 82
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "key": "self_care_hygiene",
+      "label": "Health & Self-Care",
+      "items": 454,
+      "subcategories": [
+        {
+          "key": "physical_health_recovery",
+          "label": "Physical Health & Recovery",
+          "items": 150
+        },
+        {
+          "key": "medical_care_appointments",
+          "label": "Medical Care & Appointments",
+          "items": 71
+        },
+        {
+          "key": "self_care_grooming",
+          "label": "Self-Care & Grooming",
+          "items": 163
+        },
+        {
+          "key": "safety_emergency",
+          "label": "Safety & Emergency",
+          "items": 70
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "key": "work_productivity",
+      "label": "Work & Productivity",
+      "items": 298,
+      "subcategories": []
+    },
+    {
+      "order": 6,
+      "key": "entertainment_leisure",
+      "label": "Entertainment & Leisure",
+      "items": 240,
+      "subcategories": [
+        {
+          "key": "movies_tv_streaming",
+          "label": "Movies, TV & Streaming",
+          "items": 16
+        },
+        {
+          "key": "music_live_performance",
+          "label": "Music & Live Performance",
+          "items": 31
+        },
+        {
+          "key": "games_gaming",
+          "label": "Games & Gaming",
+          "items": 30
+        },
+        {
+          "key": "toys_collectibles_puzzles",
+          "label": "Toys, Collectibles & Puzzles",
+          "items": 26
+        },
+        {
+          "key": "attractions_leisure_venues",
+          "label": "Attractions & Leisure Venues",
+          "items": 49
+        },
+        {
+          "key": "parties_holidays_celebrations",
+          "label": "Parties, Holidays & Celebrations",
+          "items": 88
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "key": "exercise_movement",
+      "label": "Exercise & Movement",
+      "items": 252,
+      "subcategories": [
+        {
+          "key": "fitness_gym",
+          "label": "Fitness & Gym",
+          "items": 72
+        },
+        {
+          "key": "water_sports",
+          "label": "Water Sports",
+          "items": 22
+        },
+        {
+          "key": "outdoor_adventure_recreation",
+          "label": "Outdoor Adventure & Recreation",
+          "items": 31
+        },
+        {
+          "key": "running_walking",
+          "label": "Running & Walking",
+          "items": 5
+        },
+        {
+          "key": "mind_body_dance",
+          "label": "Mind-Body & Dance",
+          "items": 15
+        },
+        {
+          "key": "team_ball_sports",
+          "label": "Team & Ball Sports",
+          "items": 35
+        },
+        {
+          "key": "racket_paddle_sports",
+          "label": "Racket & Paddle Sports",
+          "items": 15
+        },
+        {
+          "key": "winter_skating_sports",
+          "label": "Winter & Skating Sports",
+          "items": 19
+        },
+        {
+          "key": "combat_target_sports",
+          "label": "Combat & Target Sports",
+          "items": 38
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "key": "social_relationships",
+      "label": "Social & Relationships",
+      "items": 127,
+      "subcategories": [
+        {
+          "key": "love_close_relationships",
+          "label": "Love & Close Relationships",
+          "items": 7
+        },
+        {
+          "key": "family_life_milestones",
+          "label": "Family & Life Milestones",
+          "items": 10
+        },
+        {
+          "key": "friends_community",
+          "label": "Friends & Community",
+          "items": 18
+        },
+        {
+          "key": "communication_connection",
+          "label": "Communication & Connection",
+          "items": 8
+        },
+        {
+          "key": "faith_spirituality_culture",
+          "label": "Faith, Spirituality & Culture",
+          "items": 84
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "key": "travel_commute",
+      "label": "Travel & Getting Around",
+      "items": 360,
+      "subcategories": [
+        {
+          "key": "driving_cars",
+          "label": "Driving & Cars",
+          "items": 103
+        },
+        {
+          "key": "public_transit_rail",
+          "label": "Public Transit & Rail",
+          "items": 27
+        },
+        {
+          "key": "flights_airports",
+          "label": "Flights & Airports",
+          "items": 19
+        },
+        {
+          "key": "water_travel",
+          "label": "Water Travel",
+          "items": 20
+        },
+        {
+          "key": "walking_cycling_local_mobility",
+          "label": "Walking, Cycling & Local Mobility",
+          "items": 26
+        },
+        {
+          "key": "lodging_stays",
+          "label": "Lodging & Stays",
+          "items": 29
+        },
+        {
+          "key": "destinations_landmarks_sightseeing",
+          "label": "Destinations, Landmarks & Sightseeing",
+          "items": 79
+        },
+        {
+          "key": "planning_documents_travel_gear",
+          "label": "Planning, Documents & Travel Gear",
+          "items": 57
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "key": "nature_outdoors",
+      "label": "Nature & Outdoors",
+      "items": 634,
+      "subcategories": [
+        {
+          "key": "animals_wildlife",
+          "label": "Animals & Wildlife",
+          "items": 173
+        },
+        {
+          "key": "plants_flowers",
+          "label": "Plants & Flowers",
+          "items": 88
+        },
+        {
+          "key": "gardening_yard",
+          "label": "Gardening & Yard",
+          "items": 87
+        },
+        {
+          "key": "weather_seasons",
+          "label": "Weather & Seasons",
+          "items": 49
+        },
+        {
+          "key": "parks_trails_green_spaces",
+          "label": "Parks, Trails & Green Spaces",
+          "items": 23
+        },
+        {
+          "key": "mountains_forests_wilderness",
+          "label": "Mountains, Forests & Wilderness",
+          "items": 20
+        },
+        {
+          "key": "ocean_beach_coastal",
+          "label": "Ocean, Beach & Coastal",
+          "items": 18
+        },
+        {
+          "key": "lakes_rivers_waterfalls",
+          "label": "Lakes, Rivers & Waterfalls",
+          "items": 17
+        },
+        {
+          "key": "farms_countryside",
+          "label": "Farms & Countryside",
+          "items": 37
+        },
+        {
+          "key": "camping_outdoor_gear",
+          "label": "Camping & Outdoor Gear",
+          "items": 54
+        },
+        {
+          "key": "natural_landforms_wonders",
+          "label": "Natural Landforms & Wonders",
+          "items": 68
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "key": "learning_hobbies",
+      "label": "Learning & Hobbies",
+      "items": 403,
+      "subcategories": [
+        {
+          "key": "school_study",
+          "label": "School & Study",
+          "items": 77
+        },
+        {
+          "key": "reading_writing",
+          "label": "Reading & Writing",
+          "items": 22
+        },
+        {
+          "key": "arts_crafts",
+          "label": "Arts & Crafts",
+          "items": 106
+        },
+        {
+          "key": "music_instruments",
+          "label": "Music & Instruments",
+          "items": 100
+        },
+        {
+          "key": "photography_video_content_creation",
+          "label": "Photography, Video & Content Creation",
+          "items": 36
+        },
+        {
+          "key": "making_collecting_diy_hobbies",
+          "label": "Making, Collecting & DIY Hobbies",
+          "items": 56
+        },
+        {
+          "key": "science_discovery",
+          "label": "Science & Discovery",
+          "items": 6
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "key": "shopping_errands",
+      "label": "Shopping & Errands",
+      "items": 467,
+      "subcategories": [
+        {
+          "key": "clothing_accessories",
+          "label": "Clothing & Accessories",
+          "items": 189
+        },
+        {
+          "key": "bags_wallets_personal_items",
+          "label": "Bags, Wallets & Personal Items",
+          "items": 51
+        },
+        {
+          "key": "grocery_food_shopping",
+          "label": "Grocery & Food Shopping",
+          "items": 18
+        },
+        {
+          "key": "beauty_health_pharmacy",
+          "label": "Beauty, Health & Pharmacy",
+          "items": 10
+        },
+        {
+          "key": "home_furniture_hardware",
+          "label": "Home, Furniture & Hardware",
+          "items": 12
+        },
+        {
+          "key": "electronics_mobile",
+          "label": "Electronics & Mobile",
+          "items": 19
+        },
+        {
+          "key": "books_crafts_hobby_stores",
+          "label": "Books, Crafts & Hobby Stores",
+          "items": 13
+        },
+        {
+          "key": "sports_outdoor_stores",
+          "label": "Sports & Outdoor Stores",
+          "items": 4
+        },
+        {
+          "key": "money_documents_administration",
+          "label": "Money, Documents & Administration",
+          "items": 64
+        },
+        {
+          "key": "general_retail_service_errands",
+          "label": "General Retail & Service Errands",
+          "items": 87
+        }
+      ]
+    }
+  ]
+}

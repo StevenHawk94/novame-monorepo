@@ -24,11 +24,13 @@ type Props = {
   amount: number;
   /** Optional total lifetime. Omitted preserves the original ~1.45s timing. */
   durationMs?: number;
+  /** Override only for compact reward slots; other surfaces keep the 34pt rise. */
+  riseDistance?: number;
   /** Called after the animation finishes — unmount from the parent. */
   onDone?: () => void;
 };
 
-export function CloverBurst({ amount, durationMs, onDone }: Props) {
+export function CloverBurst({ amount, durationMs, riseDistance = 34, onDone }: Props) {
   const progress = useSharedValue(0);
   const fade = useSharedValue(0);
 
@@ -56,7 +58,7 @@ export function CloverBurst({ amount, durationMs, onDone }: Props) {
   const style = useAnimatedStyle(() => ({
     opacity: fade.value,
     transform: [
-      { translateY: -34 * progress.value },
+      { translateY: -riseDistance * progress.value },
       { scale: 0.7 + 0.3 * fade.value },
     ],
   }));

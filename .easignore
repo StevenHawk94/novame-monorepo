@@ -82,3 +82,6 @@ __pycache__/
 
 # Original Tap Your Day sheet; only the five cropped WebPs are runtime assets.
 /tools/item-source/tap-your-day/
+
+# Source-only New Lens workbook; runtime content is already generated.
+/tools/New_Lens_Content.xlsx

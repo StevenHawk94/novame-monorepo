@@ -20,11 +20,14 @@ pages without touching earlier icons, use for example:
 Use `--full` only for an intentional complete rebuild.
 Run `python3 tools/build-item-data-v19.py` after workbook matching-rule changes.
 
-The current rule source is `Icon_Mapping_Core_Tables_v32.xlsx`. This data-only
+The current rule source is `Icon_Mapping_Core_Tables_v33.xlsx`. This data-only
 revision keeps all 5,439 icon IDs, artwork, and Reflect category assignments.
 The data builder does not rewrite the image map or recrop images. Do not run the
 image builder for keyword-only updates. Validation is recorded in
-`items-v32-data-qa.json`; the v31 image QA still describes the unchanged artwork.
+`items-v33-data-qa.json`; the v31 image QA still describes the unchanged artwork.
+v33 adds 1,275 explicit AUTO / Phrase triggers across 51 icons while preserving
+v32's bare-word restrictions, exclusions, and conflict resolutions. Running and
+Neutral retain their existing coverage without another expansion.
 
 `Icon_Mapping.keywords_mapping` supplies icon metadata; `Keyword_Safety` is the
 authority for executable matching rules. `NEVER_AUTO` entries are not promoted

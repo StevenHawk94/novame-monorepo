@@ -10,7 +10,7 @@ function idForName(name: string): string {
   return found[0];
 }
 
-describe('real dictionary smoke (stable catalog and v32 matching rules)', () => {
+describe('real dictionary smoke (stable catalog and v33 matching rules)', () => {
   it('has the complete 5,439-item catalog plus five selection-only people', () => {
     expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5444);
   });
@@ -67,7 +67,7 @@ describe('real dictionary smoke (stable catalog and v32 matching rules)', () => 
     expect(ITEM_DICTIONARY.synonyms['steel toe boots']).toBe(idForName('Steel-Toe Boot'));
   });
 
-  it('keeps the final 49 bundled icon identities in the v32 catalog', () => {
+  it('keeps the final 49 bundled icon identities in the v33 catalog', () => {
     expect(ITEM_DICTIONARY.items['memory.5392_chicken_nuggets']?.displayName).toBe('Chicken Nuggets');
     expect(ITEM_DICTIONARY.items['memory.5440_water_heater']?.displayName).toBe('Water Heater');
     expect(matchItems('I replaced the water heater', ITEM_DICTIONARY).map((item) => item.displayName))
