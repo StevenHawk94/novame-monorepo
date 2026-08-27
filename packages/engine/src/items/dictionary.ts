@@ -8,5 +8,6 @@
 import type { ItemDictionary } from './item-matcher';
 
 import raw from './dictionary.json';
+import { TAP_PERSON_ITEMS } from './tap-person-items';
 
-export const ITEM_DICTIONARY: ItemDictionary = raw as ItemDictionary;
+export const ITEM_DICTIONARY: ItemDictionary = { ...raw, items: { ...raw.items, ...TAP_PERSON_ITEMS } } as ItemDictionary;

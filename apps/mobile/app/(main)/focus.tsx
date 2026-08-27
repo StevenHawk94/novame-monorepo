@@ -7,6 +7,7 @@ import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-au
 
 import { FOCUS_SCENES, type FocusScene } from '@novame/domain';
 import { haptics } from '../../src/lib/haptics';
+import { useCompletionSound } from '../../src/lib/use-completion-sound';
 import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { submitFocus } from '../../src/lib/focus-api';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
@@ -46,6 +47,7 @@ function fmtTime(seconds: number): string {
 export default function FocusScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { play: playCompletionSound, stop: stopCompletionSound } = useCompletionSound();
 
   const [phase, setPhase] = useState<Phase>('select');
   const [scene, setScene] = useState<FocusScene | null>(null);
@@ -77,6 +79,7 @@ export default function FocusScreen() {
     if (phase !== 'play' || creditedRef.current) return;
     if (status.didJustFinish) {
       creditedRef.current = true;
+      playCompletionSound();
       setCompleted(true);
       setReward(XP_RULES.focus.award);
       void haptics.medium();
@@ -94,11 +97,12 @@ export default function FocusScreen() {
         });
       }
     }
-  }, [status.didJustFinish, phase, scene]);
+  }, [status.didJustFinish, phase, scene, playCompletionSound]);
 
   const startScene = useCallback(
     (s: FocusScene) => {
       if (!s.free && !isPaid) return; // locked
+      stopCompletionSound();
       void haptics.medium();
       creditedRef.current = false;
       setCompleted(false);
@@ -111,7 +115,7 @@ export default function FocusScreen() {
         void onFocusVoiceListened(s.id, resolved.index);
       });
     },
-    [isPaid],
+    [isPaid, stopCompletionSound],
   );
 
   // Autoplay once the (async-resolved) source is loaded in play phase. `audio`
@@ -126,11 +130,12 @@ export default function FocusScreen() {
   }, [phase, status.isLoaded, audio, player]);
 
   const exit = useCallback(() => {
+    stopCompletionSound();
     player.pause();
     setPhase('select');
     setScene(null);
     setAudio(null);
-  }, [player]);
+  }, [player, stopCompletionSound]);
 
   // ---- SELECT (design: "What are you preparing for?") ----
   if (phase === 'select') {

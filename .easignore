@@ -79,3 +79,6 @@ __pycache__/
 # Development-only memory-item source sheets, workbooks, previews, and QA.
 # Runtime uses apps/mobile/assets/items/each plus generated dictionary/maps.
 /tools/item-source/memory-items/
+
+# Original Tap Your Day sheet; only the five cropped WebPs are runtime assets.
+/tools/item-source/tap-your-day/

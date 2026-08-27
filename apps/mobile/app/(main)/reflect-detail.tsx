@@ -241,6 +241,8 @@ export default function ReflectDetailScreen() {
           memories={editorMemories}
           isPaid={isPaid}
           shared={editor.shared}
+          allowUseMyWords={editor.mode === 'typing'}
+          tapYourDay={editor.mode === 'prompt'}
           onChange={setEditorMemories}
           onDone={() => void saveEditor()}
           saving={savingEditor}

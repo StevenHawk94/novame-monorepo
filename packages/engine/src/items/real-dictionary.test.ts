@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { matchItems } from './item-matcher';
 import { ITEM_DICTIONARY } from './dictionary';
+import { TAP_PERSON_ITEMS } from './tap-person-items';
 
 function idForName(name: string): string {
   const found = Object.entries(ITEM_DICTIONARY.items).find(([, item]) => item.displayName === name);
@@ -10,8 +11,8 @@ function idForName(name: string): string {
 }
 
 describe('real dictionary smoke (v31 catalog and matching rules)', () => {
-  it('has the complete 5,439-item catalog', () => {
-    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5439);
+  it('has the complete 5,439-item catalog plus five selection-only people', () => {
+    expect(Object.keys(ITEM_DICTIONARY.items).length).toBe(5444);
   });
 
   it('keeps every synonym and exclusion referentially valid', () => {
@@ -25,9 +26,10 @@ describe('real dictionary smoke (v31 catalog and matching rules)', () => {
   });
 
   it('retains the three core app-facing fields', () => {
-    for (const item of Object.values(ITEM_DICTIONARY.items)) {
+    for (const [id, item] of Object.entries(ITEM_DICTIONARY.items)) {
       expect(item.displayName.length).toBeGreaterThan(0);
-      expect(item.keywords?.length).toBeGreaterThan(0);
+      if (TAP_PERSON_ITEMS[id]) expect(item.keywords).toEqual([]);
+      else expect(item.keywords?.length).toBeGreaterThan(0);
       expect(item.visualConcept?.length).toBeGreaterThan(0);
     }
   });

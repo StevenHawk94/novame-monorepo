@@ -22,6 +22,7 @@ import { matchItems } from '@novame/engine';
 import {
   getReflectStateToday,
   prepareReflect,
+  SELECTION_UNAVAILABLE_MESSAGE,
   type MatchedItem,
   type PreparedReflect,
   type ReflectError,
@@ -45,6 +46,7 @@ const ERROR_MESSAGE: Record<ReflectError, string> = {
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',
   plus_required: 'Shared Memories are available with Burrow Plus.',
+  selection_unavailable: SELECTION_UNAVAILABLE_MESSAGE,
   network: 'Couldn’t save that. Check your connection and try again.',
 };
 

@@ -1,6 +1,6 @@
 import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
-import { XP_RULES } from '@novame/engine'
+import { MAX_REFLECT_ITEMS, XP_RULES } from '@novame/engine'
 
 import { isoWeek, serviceClient } from '@/lib/reflect-draft'
 import { runReflectAnalyzer, REFLECT_ANALYZER_VERSION } from '@/lib/reflect-ai'
@@ -109,12 +109,16 @@ export async function POST(request) {
       }
     }
 
-    const safeMemories = Array.isArray(memories) ? memories.slice(0, 100).map((memory) => ({
+    if ((Array.isArray(memories) && memories.length > MAX_REFLECT_ITEMS)
+      || (Array.isArray(visibility) && visibility.length > MAX_REFLECT_ITEMS)) {
+      return NextResponse.json({ error: 'too_many_items' }, { status: 400 })
+    }
+    const safeMemories = Array.isArray(memories) ? memories.map((memory) => ({
       itemId: typeof memory?.itemId === 'string' ? memory.itemId : '',
       text: typeof memory?.text === 'string' ? memory.text.slice(0, 500) : '',
       source: ['manual', 'ai', 'use_my_words'].includes(memory?.source) ? memory.source : 'manual',
     })).filter((memory) => memory.itemId) : []
-    const safeVisibility = Array.isArray(visibility) ? visibility.slice(0, 100).map((entry) => ({
+    const safeVisibility = Array.isArray(visibility) ? visibility.map((entry) => ({
       itemId: typeof entry?.itemId === 'string' ? entry.itemId : '',
       visible: entry?.visible !== false,
     })).filter((entry) => entry.itemId) : []

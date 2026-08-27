@@ -13,6 +13,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { ConfettiBurst } from '@/components/main/confetti-burst';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { haptics } from '@/lib/haptics';
+import { useCompletionSound } from '@/lib/use-completion-sound';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import {
   checkTask,
@@ -53,6 +54,7 @@ const QUEST_CELEBRATION_SOURCE = Platform.select({
  */
 export default function QuestsScreen() {
   const router = useRouter();
+  const { play: playCompletionSound } = useCompletionSound();
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   // Optimistic check-off (2026-08-07): the row completes instantly with
   // confetti; the server call reconciles silently in the background.
@@ -126,6 +128,7 @@ export default function QuestsScreen() {
 
     // Optimistic: complete the row NOW — confetti, haptic, +clovers.
     void haptics.success();
+    playCompletionSound();
     setShowConfetti(true);
     setShowLottie(true);
     const prevStatus = status;

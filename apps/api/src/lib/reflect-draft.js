@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { matchItems } from '@novame/engine'
+import { matchItems, tapYourDaySelectionLimit, tapYourDayChoice } from '@novame/engine'
 
 import { getMergedDictionary } from '@/lib/remote-items'
 import {
@@ -33,6 +33,9 @@ export async function resolveDraftInput(supabase, input) {
   const body = typeof input.body === 'string' ? input.body.trim() : ''
   if (body.length > MAX_BODY_CHARS) return { error: 'too_long' }
   if (mode === 'typing' && !body) return { error: 'empty' }
+  const selectionLimit = tapYourDaySelectionLimit(input.selectionVersion)
+  const isTapYourDay = selectionLimit > 0 && mode === 'prompt'
+  if (input.selectionVersion != null && !isTapYourDay) return { error: 'invalid_selection_version' }
 
   const dictionary = await getMergedDictionary(supabase)
   let matches = []
@@ -44,26 +47,30 @@ export async function resolveDraftInput(supabase, input) {
     if (!Array.isArray(input.selectedItems) || input.selectedItems.length === 0) {
       return { error: 'empty' }
     }
+    if (isTapYourDay && input.selectedItems.length > selectionLimit) return { error: 'too_many_items' }
     const seen = new Set()
     const categoryCounts = new Map()
-    for (const selected of input.selectedItems.slice(0, 100)) {
+    for (const selected of input.selectedItems.slice(0, isTapYourDay ? selectionLimit : 100)) {
       const itemId = typeof selected?.itemId === 'string' ? selected.itemId : ''
       if (!itemId || seen.has(itemId)) continue
       const item = dictionary.items[itemId]
       if (!item) return { error: 'unknown_item' }
+      const choice = isTapYourDay ? tapYourDayChoice(itemId, input.selectionVersion) : null
+      if (isTapYourDay && !choice) return { error: 'invalid_selection_item' }
       const category = item.category || 'Uncategorized'
       const count = (categoryCounts.get(category) || 0) + 1
-      if (count > MAX_ITEMS_PER_REFLECT_CATEGORY) return { error: 'too_many_items_in_category' }
+      if (!isTapYourDay && count > MAX_ITEMS_PER_REFLECT_CATEGORY) return { error: 'too_many_items_in_category' }
       categoryCounts.set(category, count)
       seen.add(itemId)
       matches.push({
         itemId,
-        displayName: item.displayName,
+        displayName: choice?.label || item.displayName,
         rarity: item.rarity,
-        label: item.displayName,
-        // Guided selection is explicitly associated with the optional context.
-        // Free users may copy those exact words without an AI call.
-        sourceExcerpt: body || '',
+        label: choice?.label || item.displayName,
+        // A chosen representative icon is not a keyword match. The accepted
+        // choice label is server-owned evidence; the note remains separate.
+        sourceExcerpt: isTapYourDay ? '' : body || '',
+        ...(choice ? { selectionLabel: choice.label, selectionKind: choice.kind } : {}),
       })
     }
   }
@@ -78,11 +85,14 @@ function firstWords(value, maxWords = 30) {
 
 export function createMemoryFallbacks({ body, matches }) {
   if (!body.trim()) return {}
-  return Object.fromEntries(matches.map((item) => [
-    item.itemId,
-    neutralizeReflectMemoryCopy(firstWords(item.sourceExcerpt || body))
-      || firstWords(item.displayName),
-  ]).filter(([, value]) => value))
+  return Object.fromEntries(matches.map((item) => {
+    // On an outage, retain the chosen fact, never copy an unrelated note to
+    // every item (nor infer a specific fish from a Meat & Seafood icon).
+    const description = item.selectionLabel
+      ? (item.selectionLabel === 'Just Me' ? 'Time alone.' : `${item.selectionLabel}.`)
+      : neutralizeReflectMemoryCopy(firstWords(item.sourceExcerpt || body)) || firstWords(item.displayName)
+    return [item.itemId, description]
+  }).filter(([, value]) => value))
 }
 
 export async function createMemoryCopy({ body, matches, generateBunny }) {
@@ -96,6 +106,7 @@ export async function createMemoryCopy({ body, matches, generateBunny }) {
         id: item.itemId,
         name: item.displayName,
         evidence: item.sourceExcerpt || '',
+        ...(item.selectionLabel ? { selectionLabel: item.selectionLabel, selectionKind: item.selectionKind } : {}),
       })),
     })
     const memories = Object.fromEntries(matches.map((item) => {

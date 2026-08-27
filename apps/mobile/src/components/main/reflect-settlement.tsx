@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
+import LottieView from 'lottie-react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,8 +36,59 @@ import {
 } from '@/lib/reflect-api';
 import { emitOfficialRatingRequest, recordReflectClaimForRating } from '@/lib/official-rating-prompt';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { useMemoryEditorKeyboard } from '@/lib/use-memory-editor-keyboard';
+import { useCompletionSound } from '@/lib/use-completion-sound';
 
 import { RC } from './reflect-shared';
+
+// A single, prebuilt double-density composition; never stack two full-screen views.
+const REFLECT_CELEBRATION_SOURCE = require('../../../assets/animations/reflect-dense.json');
+
+const ReflectCelebration = memo(function ReflectCelebration() {
+  const animation = useRef<LottieView>(null);
+  const loaded = useRef(false);
+  const laidOut = useRef(false);
+  const started = useRef(false);
+  const [finished, setFinished] = useState(false);
+  useEffect(() => {
+    if (finished) return;
+    const fallback = setTimeout(() => setFinished(true), 8000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') setFinished(true);
+    });
+    return () => { clearTimeout(fallback); subscription.remove(); };
+  }, [finished]);
+  const playWhenReady = useCallback(() => {
+    if (!loaded.current || !laidOut.current || started.current || !animation.current) return;
+    started.current = true;
+    animation.current.play();
+  }, []);
+
+  if (finished) return null;
+  return (
+    <View pointerEvents="none" style={styles.celebrationLayer}>
+      <LottieView
+        ref={animation}
+        source={REFLECT_CELEBRATION_SOURCE}
+        loop={false}
+        renderMode={Platform.OS === 'android' ? 'HARDWARE' : 'AUTOMATIC'}
+        hardwareAccelerationAndroid={Platform.OS === 'android'}
+        resizeMode="contain"
+        style={StyleSheet.absoluteFill}
+        onLayout={(event) => {
+          laidOut.current = event.nativeEvent.layout.width > 0 && event.nativeEvent.layout.height > 0;
+          playWhenReady();
+        }}
+        onAnimationLoaded={() => { loaded.current = true; playWhenReady(); }}
+        onAnimationFinish={(cancelled) => { if (!cancelled) setFinished(true); }}
+        onAnimationFailure={(error) => {
+          console.warn('[reflect] celebration animation failed:', error);
+          setFinished(true);
+        }}
+      />
+    </View>
+  );
+});
 
 const INVALID_AI_MEMORY = [
   /\bno (?:specific )?memor(?:y|ies)\b/i,
@@ -95,6 +148,8 @@ export function MemoryEditorSheet({
   memories,
   isPaid,
   shared,
+  allowUseMyWords = true,
+  tapYourDay = false,
   onChange,
   onDone,
   saving = false,
@@ -103,11 +158,15 @@ export function MemoryEditorSheet({
   memories: ReflectMemoryDraft[];
   isPaid: boolean;
   shared: boolean;
+  allowUseMyWords?: boolean;
+  tapYourDay?: boolean;
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
   saving?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const editorKeyboard = useMemoryEditorKeyboard();
+  const closeEditor = () => { Keyboard.dismiss(); onDone(); };
   const byId = useMemo(() => new Map(memories.map((memory) => [memory.itemId, memory])), [memories]);
   const update = (itemId: string, patch: Partial<ReflectMemoryDraft>) => {
     onChange(memories.map((memory) => memory.itemId === itemId ? { ...memory, ...patch } : memory));
@@ -128,7 +187,7 @@ export function MemoryEditorSheet({
       presentationStyle="overFullScreen"
       statusBarTranslucent
       navigationBarTranslucent
-      onRequestClose={onDone}
+      onRequestClose={closeEditor}
     >
       <KeyboardAvoidingView style={styles.modalRoot} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View
@@ -146,34 +205,46 @@ export function MemoryEditorSheet({
                     Items with memories will be saved to your hub. Tap to edit.
                   </Text>
                 </View>
-                {!isPaid && memories.some((memory) => !memory.text.trim()) && items.some((item) => item.sourceExcerpt?.trim()) && (
+                {allowUseMyWords && !isPaid && memories.some((memory) => !memory.text.trim()) && items.some((item) => item.sourceExcerpt?.trim()) && (
                   <Pressable onPress={useWords} style={styles.useWordsButton}>
                     <Text style={styles.useWordsText}>Use My Words</Text>
                   </Pressable>
                 )}
               </View>
+              <View ref={editorKeyboard.viewportRef} collapsable={false} style={styles.editorScroll}
+                onLayout={editorKeyboard.onViewportLayout}>
               <ScrollView
+                ref={editorKeyboard.scrollRef}
                 style={styles.editorScroll}
                 contentContainerStyle={styles.editorRows}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                 nestedScrollEnabled
                 onScrollBeginDrag={Keyboard.dismiss}
+                onScroll={editorKeyboard.onScroll}
+                scrollEventThrottle={16}
+                onContentSizeChange={editorKeyboard.onContentSizeChange}
                 showsVerticalScrollIndicator={false}
               >
                 {items.map((item) => {
                   const memory = byId.get(item.itemId)!;
                   return (
                     <View key={item.itemId} style={styles.editorRow}>
-                      <ItemSprite itemId={item.itemId} size={54} radius={13} />
+                      <ItemSprite itemId={item.itemId} size={54} radius={13} tapYourDay={tapYourDay} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.editorName}>{item.displayName}</Text>
                         <TextInput
+                          ref={(node) => editorKeyboard.setInputRef(item.itemId, node)}
                           value={memory.text}
                           placeholder="Type here"
                           placeholderTextColor="#B7AEA6"
                           multiline
-                          style={styles.editorInput}
+                          textAlignVertical="top"
+                          style={[styles.editorInput, { maxHeight: editorKeyboard.inputMaxHeight }]}
+                          onFocus={() => editorKeyboard.onFocus(item.itemId)}
+                          onBlur={() => editorKeyboard.onBlur(item.itemId)}
+                          onLayout={editorKeyboard.revealFocused}
+                          onContentSizeChange={editorKeyboard.revealFocused}
                           onChangeText={(text) => update(item.itemId, { text: text.slice(0, 500), source: 'manual' })}
                         />
                       </View>
@@ -190,11 +261,12 @@ export function MemoryEditorSheet({
                   );
                 })}
               </ScrollView>
+              </View>
               <OffsetCard
                 color={RC.yellowDrop}
                 offset={4}
                 radius={22}
-                onPress={onDone}
+                onPress={closeEditor}
                 disabled={saving}
                 cardStyle={styles.doneButton}
               >
@@ -212,11 +284,13 @@ export function MemoryEditorSheet({
 function ShareItemsSheet({
   items,
   memories,
+  tapYourDay = false,
   onChange,
   onDone,
 }: {
   items: MatchedItem[];
   memories: ReflectMemoryDraft[];
+  tapYourDay?: boolean;
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
 }) {
@@ -257,7 +331,7 @@ function ShareItemsSheet({
                   onPress={() => toggle(item.itemId)}
                   style={[styles.shareReviewItem, hidden.has(item.itemId) && styles.hiddenItem]}
                 >
-                  <ItemSprite itemId={item.itemId} size={52} radius={13} />
+                  <ItemSprite itemId={item.itemId} size={52} radius={13} tapYourDay={tapYourDay} />
                   {hidden.has(item.itemId) && (
                     <MaterialIcons name="visibility-off" size={17} color="#FFFFFF" style={styles.removeBadge} />
                   )}
@@ -305,6 +379,8 @@ export function ReflectSettlementView({
   const insets = useSafeAreaInsets();
   const tier = useSubscriptionTier();
   const isPaid = tier !== 'free';
+  const { play: playCompletionSound } = useCompletionSound();
+  useEffect(() => { playCompletionSound(draft.draftId); }, [draft.draftId, playCompletionSound]);
   // Prepare normally supplies Plus copy. Still run one blank-only enrichment
   // pass so an AI timeout, a concurrent idempotent retry, or an in-page
   // purchase can recover without replacing anything the user typed.
@@ -325,8 +401,10 @@ export function ReflectSettlementView({
   const [rewardToast, setRewardToast] = useState(true);
   const handleRewardDone = useCallback(() => setRewardToast(false), []);
 
+  useEffect(() => { Keyboard.dismiss(); }, []);
+
   useEffect(() => {
-    if (!isPaid || enriched.current) return;
+    if (!isPaid || !draft.hasContext || enriched.current) return;
     enriched.current = true;
     const empty = memories.filter((memory) => !memory.text.trim()).map((memory) => memory.itemId);
     if (empty.length === 0) return;
@@ -341,7 +419,7 @@ export function ReflectSettlementView({
       }
       setEnriching(false);
     });
-  }, [draft.draftId, isPaid]);
+  }, [draft.draftId, draft.hasContext, isPaid]);
 
   const savedCount = memories.filter((memory) => memory.text.trim()).length;
   const hiddenCount = shared ? 0 : memories.filter((memory) => !memory.visible).length;
@@ -388,17 +466,16 @@ export function ReflectSettlementView({
             <Text style={styles.plusBadgeText}>Burrow Plus</Text>
           </View>
         )}
-        <View style={styles.celebrationAnchor}>
+        <View pointerEvents="none" style={styles.rewardSlot}>
           {rewardToast && (
-            <View pointerEvents="none" style={styles.rewardBurst}>
-              <CloverBurst amount={30} durationMs={2000} onDone={handleRewardDone} />
-            </View>
+            <CloverBurst amount={30} durationMs={2000} onDone={handleRewardDone} />
           )}
-          <Text style={styles.celebration}>🎉</Text>
         </View>
+        <Text style={styles.celebration}>🎉</Text>
         <Text style={styles.savedTitle}>REFLECTION SAVED</Text>
         <Text style={styles.savedSub}>Your full reflection is private in My Logs.</Text>
 
+        <View style={styles.summaryRegion}>
         <SpringPop boundedBounce>
           <Pressable onPress={() => { void haptics.pageOpen(); setEditorOpen(true); }} style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>{draft.matchedItems.length} Items {itemWord}</Text>
@@ -413,11 +490,12 @@ export function ReflectSettlementView({
             </Text>
             <View style={styles.summaryItems}>
               {draft.matchedItems.map((item) => (
-                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} />
+                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} tapYourDay={draft.mode === 'prompt'} />
               ))}
             </View>
           </Pressable>
         </SpringPop>
+        </View>
 
         {!shared && (
           <Pressable onPress={() => { void haptics.pageOpen(); setShareOpen(true); }} style={styles.shareCard}>
@@ -451,6 +529,7 @@ export function ReflectSettlementView({
           </OffsetCard>
         </View>
       </ScrollView>
+      <ReflectCelebration />
 
       {editorOpen && (
         <MemoryEditorSheet
@@ -458,6 +537,8 @@ export function ReflectSettlementView({
           memories={memories}
           isPaid={isPaid}
           shared={shared}
+          allowUseMyWords={draft.mode === 'typing'}
+          tapYourDay={draft.mode === 'prompt'}
           onChange={setMemories}
           onDone={() => { void haptics.pageClose(); setEditorOpen(false); }}
         />
@@ -466,6 +547,7 @@ export function ReflectSettlementView({
         <ShareItemsSheet
           items={draft.matchedItems}
           memories={memories}
+          tapYourDay={draft.mode === 'prompt'}
           onChange={setMemories}
           onDone={() => { void haptics.pageClose(); setShareOpen(false); }}
         />
@@ -524,14 +606,18 @@ const styles = StyleSheet.create({
   doneText: { color: '#5A4419', fontSize: 18, fontFamily: 'Inter_800ExtraBold' },
   editorFoot: { marginTop: 10, textAlign: 'center', color: '#2A2118', fontSize: 12, fontFamily: 'Inter_700Bold' },
   settlement: { flex: 1 },
-  settlementScroll: { paddingVertical: 8, gap: 13 },
+  settlementScroll: { flexGrow: 1, paddingVertical: 8, gap: 13 },
   plusBadge: { alignSelf: 'flex-start', backgroundColor: '#54351E', borderRadius: 16, paddingHorizontal: 15, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', gap: 7 },
   plusBadgeIcon: { width: 20, height: 20 },
   plusBadgeText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
-  celebrationAnchor: { position: 'relative', alignItems: 'center', overflow: 'visible', marginTop: 18 },
+  // CloverBurst rises 34pt. Reserve its full travel plus shadow INSIDE the
+  // scroll content, never above the safe viewport. Keep the slot after fade.
+  rewardSlot: { minHeight: 96, paddingTop: 44, paddingBottom: 8, alignItems: 'center', justifyContent: 'flex-end' },
+  celebrationLayer: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   celebration: { fontSize: 42, textAlign: 'center' },
   savedTitle: { color: '#FFFFFF', textAlign: 'center', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
   savedSub: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontFamily: 'Inter_700Bold', marginBottom: 8 },
+  summaryRegion: { flexGrow: 1, justifyContent: 'center', paddingVertical: 12 },
   summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 25, padding: 18, alignItems: 'center' },
   summaryTitle: { color: '#12100E', fontSize: 23, fontFamily: 'Inter_800ExtraBold' },
   summarySub: { color: '#2A2118', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 8 },
@@ -546,5 +632,4 @@ const styles = StyleSheet.create({
   joinText: { color: '#633A21', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
   finishButton: { backgroundColor: '#FF8A47', alignItems: 'center', paddingVertical: 16 },
   finishText: { color: '#FFFFFF', fontSize: 19, fontFamily: 'Inter_800ExtraBold' },
-  rewardBurst: { position: 'absolute', bottom: 42, left: 0, right: 0, zIndex: 60, alignItems: 'center' },
 });

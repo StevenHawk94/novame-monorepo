@@ -1,0 +1,512 @@
+[
+  {
+    "label": "At Home",
+    "itemId": "memory.1452_home",
+    "kind": "activity"
+  },
+  {
+    "label": "Work",
+    "itemId": "memory.1541_workplace",
+    "kind": "activity"
+  },
+  {
+    "label": "School",
+    "itemId": "memory.1551_school",
+    "kind": "activity"
+  },
+  {
+    "label": "Studying",
+    "itemId": "memory.3002_workbook",
+    "kind": "activity"
+  },
+  {
+    "label": "Commuting",
+    "itemId": "memory.2127_bus",
+    "kind": "activity"
+  },
+  {
+    "label": "Errands",
+    "itemId": "memory.2345_checklist_card",
+    "kind": "activity"
+  },
+  {
+    "label": "Shopping",
+    "itemId": "memory.5389_shopping",
+    "kind": "activity"
+  },
+  {
+    "label": "Life Admin",
+    "itemId": "memory.2950_planner",
+    "kind": "activity"
+  },
+  {
+    "label": "Appointments",
+    "itemId": "memory.1435_appointment_book",
+    "kind": "activity"
+  },
+  {
+    "label": "Travel",
+    "itemId": "memory.2207_travel_luggage",
+    "kind": "activity"
+  },
+  {
+    "label": "Chores",
+    "itemId": "memory.3990_cleaning_caddy",
+    "kind": "activity"
+  },
+  {
+    "label": "Cooking",
+    "itemId": "memory.1399_cooking",
+    "kind": "activity"
+  },
+  {
+    "label": "Baking",
+    "itemId": "memory.0005_baking",
+    "kind": "activity"
+  },
+  {
+    "label": "Home Projects",
+    "itemId": "memory.1436_toolbox",
+    "kind": "activity"
+  },
+  {
+    "label": "Gardening",
+    "itemId": "memory.1400_gardening",
+    "kind": "activity"
+  },
+  {
+    "label": "Pet Care",
+    "itemId": "memory.1441_pet_bowl",
+    "kind": "activity"
+  },
+  {
+    "label": "Caregiving",
+    "itemId": "memory.1417_hugging",
+    "kind": "activity"
+  },
+  {
+    "label": "Health Care",
+    "itemId": "memory.3461_first_aid_kit",
+    "kind": "activity"
+  },
+  {
+    "label": "Outdoors",
+    "itemId": "memory.1486_park",
+    "kind": "activity"
+  },
+  {
+    "label": "Gym",
+    "itemId": "memory.1299_fitness",
+    "kind": "activity"
+  },
+  {
+    "label": "Sports",
+    "itemId": "memory.1325_basketball",
+    "kind": "activity"
+  },
+  {
+    "label": "Walking",
+    "itemId": "memory.1297_walking",
+    "kind": "activity"
+  },
+  {
+    "label": "Running",
+    "itemId": "memory.0004_running",
+    "kind": "activity"
+  },
+  {
+    "label": "Cycling",
+    "itemId": "memory.1306_bicycle",
+    "kind": "activity"
+  },
+  {
+    "label": "Yoga",
+    "itemId": "memory.1304_yoga",
+    "kind": "activity"
+  },
+  {
+    "label": "Hiking",
+    "itemId": "memory.1298_hiking",
+    "kind": "activity"
+  },
+  {
+    "label": "Swimming",
+    "itemId": "memory.1307_swimming",
+    "kind": "activity"
+  },
+  {
+    "label": "Socializing",
+    "itemId": "memory.1403_picnic",
+    "kind": "activity"
+  },
+  {
+    "label": "Date",
+    "itemId": "memory.1491_restaurant",
+    "kind": "activity"
+  },
+  {
+    "label": "Calls & Chats",
+    "itemId": "memory.5388_messaging",
+    "kind": "activity"
+  },
+  {
+    "label": "Parties",
+    "itemId": "memory.2217_party",
+    "kind": "activity"
+  },
+  {
+    "label": "Events",
+    "itemId": "memory.2261_event_ticket",
+    "kind": "activity"
+  },
+  {
+    "label": "Volunteering",
+    "itemId": "memory.1594_volunteer_center",
+    "kind": "activity"
+  },
+  {
+    "label": "Movies",
+    "itemId": "memory.1363_movie_theater",
+    "kind": "activity"
+  },
+  {
+    "label": "TV",
+    "itemId": "memory.1362_television",
+    "kind": "activity"
+  },
+  {
+    "label": "Gaming",
+    "itemId": "memory.1368_game_controller",
+    "kind": "activity"
+  },
+  {
+    "label": "Reading",
+    "itemId": "memory.0006_book",
+    "kind": "activity"
+  },
+  {
+    "label": "Music",
+    "itemId": "memory.5387_music",
+    "kind": "activity"
+  },
+  {
+    "label": "Podcasts",
+    "itemId": "memory.1364_podcast",
+    "kind": "activity"
+  },
+  {
+    "label": "Social Media",
+    "itemId": "memory.5385_social_media",
+    "kind": "activity"
+  },
+  {
+    "label": "Relaxing",
+    "itemId": "memory.1421_bed",
+    "kind": "activity"
+  },
+  {
+    "label": "Art & Crafts",
+    "itemId": "memory.4827_artist_paint_palette",
+    "kind": "activity"
+  },
+  {
+    "label": "Writing",
+    "itemId": "memory.2876_notebook",
+    "kind": "activity"
+  },
+  {
+    "label": "Photography",
+    "itemId": "memory.1397_camera",
+    "kind": "activity"
+  },
+  {
+    "label": "Making Music",
+    "itemId": "memory.1367_making_music",
+    "kind": "activity"
+  },
+  {
+    "label": "DIY",
+    "itemId": "memory.4042_claw_hammer",
+    "kind": "activity"
+  },
+  {
+    "label": "Learning",
+    "itemId": "memory.3006_globe",
+    "kind": "activity"
+  },
+  {
+    "label": "Meditation",
+    "itemId": "memory.1430_meditation",
+    "kind": "activity"
+  },
+  {
+    "label": "Self-Care",
+    "itemId": "memory.1426_skincare",
+    "kind": "activity"
+  },
+  {
+    "label": "Breakfast",
+    "itemId": "memory.0358_breakfast_platter",
+    "kind": "food"
+  },
+  {
+    "label": "Rice & Noodles",
+    "itemId": "memory.0056_rice_bowl",
+    "kind": "food"
+  },
+  {
+    "label": "Pizza & Pasta",
+    "itemId": "memory.0003_pizza",
+    "kind": "food"
+  },
+  {
+    "label": "Sandwiches & Wraps",
+    "itemId": "memory.0009_sandwich",
+    "kind": "food"
+  },
+  {
+    "label": "Salads & Bowls",
+    "itemId": "memory.0079_salad",
+    "kind": "food"
+  },
+  {
+    "label": "Soup",
+    "itemId": "memory.0078_soup",
+    "kind": "food"
+  },
+  {
+    "label": "Meat & Seafood",
+    "itemId": "memory.0076_seafood_boil",
+    "kind": "food"
+  },
+  {
+    "label": "Takeout",
+    "itemId": "memory.5390_food_delivery",
+    "kind": "food"
+  },
+  {
+    "label": "Fruit",
+    "itemId": "memory.2844_fruit_bowl",
+    "kind": "food"
+  },
+  {
+    "label": "Snacks",
+    "itemId": "memory.1258_rice_crackers",
+    "kind": "food"
+  },
+  {
+    "label": "Dessert",
+    "itemId": "memory.0455_ice_cream",
+    "kind": "food"
+  },
+  {
+    "label": "Coffee",
+    "itemId": "memory.0002_coffee",
+    "kind": "food"
+  },
+  {
+    "label": "Tea",
+    "itemId": "memory.0510_tea",
+    "kind": "food"
+  },
+  {
+    "label": "Juice & Smoothies",
+    "itemId": "memory.0520_juice",
+    "kind": "food"
+  },
+  {
+    "label": "Soft Drinks",
+    "itemId": "memory.0537_soda",
+    "kind": "food"
+  },
+  {
+    "label": "Alcohol",
+    "itemId": "memory.0557_beer",
+    "kind": "food"
+  },
+  {
+    "label": "Water",
+    "itemId": "memory.0507_water",
+    "kind": "food"
+  },
+  {
+    "label": "Just Me",
+    "itemId": "memory.2304_compact_mirror",
+    "kind": "person"
+  },
+  {
+    "label": "Partner",
+    "itemId": "memory.1418_holding_hands",
+    "kind": "person"
+  },
+  {
+    "label": "Family",
+    "itemId": "memory.2335_photo_album",
+    "kind": "person"
+  },
+  {
+    "label": "Friends",
+    "itemId": "memory.1369_board_game",
+    "kind": "person"
+  },
+  {
+    "label": "Work & School",
+    "itemId": "memory.1542_meeting_room",
+    "kind": "person"
+  },
+  {
+    "label": "Pets",
+    "itemId": "memory.3747_dog",
+    "kind": "person"
+  },
+  {
+    "label": "Happy",
+    "itemId": "memory.5355_happy",
+    "kind": "feeling"
+  },
+  {
+    "label": "Calm",
+    "itemId": "memory.5356_calm",
+    "kind": "feeling"
+  },
+  {
+    "label": "Cool",
+    "itemId": "memory.5357_cool",
+    "kind": "feeling"
+  },
+  {
+    "label": "Excited",
+    "itemId": "memory.5358_excited",
+    "kind": "feeling"
+  },
+  {
+    "label": "Angelic",
+    "itemId": "memory.5359_angelic",
+    "kind": "feeling"
+  },
+  {
+    "label": "Shy Smile",
+    "itemId": "memory.5360_shy_smile",
+    "kind": "feeling"
+  },
+  {
+    "label": "Blowing a Kiss",
+    "itemId": "memory.5361_blowing_a_kiss",
+    "kind": "feeling"
+  },
+  {
+    "label": "In Love",
+    "itemId": "memory.5362_in_love",
+    "kind": "feeling"
+  },
+  {
+    "label": "Neutral",
+    "itemId": "memory.5363_neutral",
+    "kind": "feeling"
+  },
+  {
+    "label": "Playful",
+    "itemId": "memory.5364_playful",
+    "kind": "feeling"
+  },
+  {
+    "label": "Laughing",
+    "itemId": "memory.5365_laughing",
+    "kind": "feeling"
+  },
+  {
+    "label": "Surprised",
+    "itemId": "memory.5366_surprised",
+    "kind": "feeling"
+  },
+  {
+    "label": "Crying",
+    "itemId": "memory.5367_crying",
+    "kind": "feeling"
+  },
+  {
+    "label": "Worried",
+    "itemId": "memory.5368_worried",
+    "kind": "feeling"
+  },
+  {
+    "label": "Dizzy",
+    "itemId": "memory.5369_dizzy",
+    "kind": "feeling"
+  },
+  {
+    "label": "Sad",
+    "itemId": "memory.5370_sad",
+    "kind": "feeling"
+  },
+  {
+    "label": "Angry",
+    "itemId": "memory.5371_angry",
+    "kind": "feeling"
+  },
+  {
+    "label": "Anxious",
+    "itemId": "memory.5372_anxious",
+    "kind": "feeling"
+  },
+  {
+    "label": "Lonely",
+    "itemId": "memory.5373_lonely",
+    "kind": "feeling"
+  },
+  {
+    "label": "Tearful",
+    "itemId": "memory.5374_tearful",
+    "kind": "feeling"
+  },
+  {
+    "label": "Bandaged",
+    "itemId": "memory.5375_bandaged",
+    "kind": "feeling"
+  },
+  {
+    "label": "Frustrated",
+    "itemId": "memory.5376_frustrated",
+    "kind": "feeling"
+  },
+  {
+    "label": "Mischievous",
+    "itemId": "memory.5377_mischievous",
+    "kind": "feeling"
+  },
+  {
+    "label": "Nauseous",
+    "itemId": "memory.5378_nauseous",
+    "kind": "feeling"
+  },
+  {
+    "label": "Sleepy",
+    "itemId": "memory.5379_sleepy",
+    "kind": "feeling"
+  },
+  {
+    "label": "Celebrating",
+    "itemId": "memory.5380_celebrating",
+    "kind": "feeling"
+  },
+  {
+    "label": "Money Excited",
+    "itemId": "memory.5381_money_excited",
+    "kind": "feeling"
+  },
+  {
+    "label": "Flirty",
+    "itemId": "memory.5382_flirty",
+    "kind": "feeling"
+  },
+  {
+    "label": "Annoyed",
+    "itemId": "memory.5383_annoyed",
+    "kind": "feeling"
+  },
+  {
+    "label": "Silly",
+    "itemId": "memory.5384_silly",
+    "kind": "feeling"
+  }
+]

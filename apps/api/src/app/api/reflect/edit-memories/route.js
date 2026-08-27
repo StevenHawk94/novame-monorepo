@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient } from '@/lib/reflect-draft'
+import { MAX_REFLECT_ITEMS } from '@novame/engine'
 
 export const runtime = 'edge'
 
@@ -21,11 +22,11 @@ export async function GET(request) {
     }
     const supabase = serviceClient()
     const { data: reflect } = await supabase.from('reflects')
-      .select('id, shared_with_user_id').eq('id', reflectId).eq('user_id', userId).maybeSingle()
+      .select('id, mode, shared_with_user_id').eq('id', reflectId).eq('user_id', userId).maybeSingle()
     if (!reflect) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const [{ data: matched }, { data: memories }] = await Promise.all([
       supabase.from('reflect_items')
-        .select('item_id, position, source_excerpt, visible_to_paired, items(display_name)')
+        .select('item_id, position, match_label, source_excerpt, visible_to_paired, items(display_name)')
         .eq('reflect_id', reflectId).eq('user_id', userId).order('position'),
       supabase.from('item_memories')
         .select('item_id, description, raw_excerpt, refined_desc, memory_source')
@@ -35,11 +36,12 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       shared: !!reflect.shared_with_user_id,
+      mode: reflect.mode,
       items: (matched || []).map((item) => {
         const memory = memoryByItem.get(item.item_id)
         return {
           itemId: item.item_id,
-          displayName: item.items?.display_name || item.item_id,
+          displayName: (reflect.mode === 'prompt' && item.match_label) || item.items?.display_name || item.item_id,
           sourceExcerpt: item.source_excerpt || '',
           text: memory?.description || memory?.refined_desc || memory?.raw_excerpt || '',
           source: memory?.memory_source || 'manual',
@@ -63,7 +65,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing reflectId or edits' }, { status: 400 })
     }
     const supabase = serviceClient()
-    const edits = input.edits.slice(0, 100).map((edit) => ({
+    if (input.edits.length > MAX_REFLECT_ITEMS) {
+      return NextResponse.json({ error: 'too_many_items' }, { status: 400 })
+    }
+    const edits = input.edits.map((edit) => ({
       itemId: typeof edit?.itemId === 'string' ? edit.itemId : '',
       text: typeof edit?.text === 'string' ? edit.text.trim().slice(0, 500) : '',
       source: ['manual', 'ai', 'use_my_words'].includes(edit?.source) ? edit.source : 'manual',

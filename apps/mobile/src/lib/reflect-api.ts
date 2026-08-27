@@ -44,6 +44,8 @@ export interface ReflectMemoryDraft {
 
 export interface PreparedReflect {
   draftId: string;
+  mode: 'typing' | 'prompt' | 'items';
+  hasContext: boolean;
   matchedItems: MatchedItem[];
   aiMemories: Record<string, string>;
   bubble: string | null;
@@ -79,7 +81,10 @@ export type ReflectError =
   | 'too_long' // body over 5000 chars
   | 'empty' // nothing typed
   | 'plus_required' // Shared Memories creation is a Plus feature
+  | 'selection_unavailable' // mobile selection format is newer than the API
   | 'network'; // request failed / server error
+
+export const SELECTION_UNAVAILABLE_MESSAGE = 'The server needs an update to save these selections. Your selections are still here. Please try again after the service is updated.';
 
 export type SubmitResult =
   | { ok: true; snapshot: ReflectSnapshot }
@@ -188,6 +193,7 @@ export async function prepareReflect(params: {
   sourceKit?: 'new_lens';
   friendUserId?: string;
   mode?: 'typing' | 'prompt' | 'items';
+  selectionVersion?: string;
   selectedItems?: { itemId: string }[];
   removedItemIds?: string[];
   idempotencyKey?: string;
@@ -220,15 +226,26 @@ export async function prepareReflect(params: {
       sourceKit: params.sourceKit,
       friendUserId: params.friendUserId,
       mode,
+      selectionVersion: params.selectionVersion,
       selectedItems: params.selectedItems,
       removedItemIds: params.removedItemIds,
       idempotencyKey: params.idempotencyKey ?? randomUUID(),
     });
     if (!wire.success || !wire.draftId) return { ok: false, error: 'network' };
+    if (params.selectionVersion) {
+      const returnedIds = new Set((wire.matches ?? []).map((item) => item.itemId));
+      // Never silently proceed with an older API's truncated selection list.
+      if (params.selectedItems?.some((item) => !returnedIds.has(item.itemId))) {
+        console.warn('[reflect/prepare] server did not retain all selected items');
+        return { ok: false, error: 'selection_unavailable' };
+      }
+    }
     return {
       ok: true,
       draft: {
         draftId: wire.draftId,
+        mode,
+        hasContext: body.length > 0,
         matchedItems: wire.matches ?? [],
         aiMemories: wire.aiMemories ?? {},
         bubble: wire.bubble ?? null,
@@ -237,15 +254,29 @@ export async function prepareReflect(params: {
       },
     };
   } catch (error) {
+    const code = error instanceof ApiError && typeof error.body === 'object' && error.body && 'error' in error.body
+      ? error.body.error : '';
+    // Status/code/count only: never log reflection text, user IDs or tokens.
+    console.warn('[reflect/prepare] request failed', {
+      status: error instanceof ApiError ? error.status : undefined,
+      code: typeof code === 'string' && /^[a-z_]{1,64}$/.test(code) ? code : 'request_failed',
+      selectedCount: params.selectedItems?.length ?? 0,
+    });
+    // Older deployed APIs do not know the new selection-only people IDs either.
+    // Report a catalog/version mismatch, not a connection failure; never drop picks.
+    if (params.selectionVersion && error instanceof ApiError && error.status === 400
+      && (code === 'too_many_items_in_category' || code === 'invalid_selection_version'
+        || code === 'unknown_item' || code === 'invalid_selection_item')) {
+      return { ok: false, error: 'selection_unavailable' };
+    }
     if (error instanceof ApiError && error.status === 403) return { ok: false, error: 'plus_required' };
     if (error instanceof ApiError && error.status === 409) {
-      const code = typeof error.body === 'object' && error.body && 'error' in error.body
-        ? error.body.error : '';
       if (code === 'daily_limit_reached') {
         writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
         return { ok: false, error: 'daily_limit' };
       }
     }
+    if (code === 'empty' || code === 'too_long') return { ok: false, error: code };
     return { ok: false, error: 'network' };
   }
 }
@@ -452,6 +483,8 @@ export async function editReflectMemories(
 
 export interface ReflectMemoryEditorData {
   shared: boolean;
+  /** Optional for older servers; selected flows never support Use My Words. */
+  mode?: 'typing' | 'prompt' | 'items';
   items: Array<{
     itemId: string;
     displayName: string;
@@ -490,7 +523,7 @@ export async function fetchReflectMemories(
         `/api/reflect/edit-memories?userId=${encodeURIComponent(userId)}&reflectId=${encodeURIComponent(reflectId)}`,
       );
       if (!result.success) return null;
-      const normalized = { shared: result.shared, items: result.items };
+      const normalized = { shared: result.shared, mode: result.mode, items: result.items };
       reflectMemoryCache.set(cacheKey, normalized);
       return normalized;
     } catch {
