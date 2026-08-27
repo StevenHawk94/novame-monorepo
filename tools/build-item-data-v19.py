@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate runtime item data from the v31 rules over stable memory icon IDs."""
+"""Generate runtime item data from the v32 rules over stable memory icon IDs."""
 
 from __future__ import annotations
 
@@ -14,16 +14,17 @@ from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "tools" / "item-source" / "memory-items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v31.xlsx"
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v32.xlsx"
 DICTIONARY = ROOT / "packages" / "engine" / "src" / "items" / "dictionary.json"
 IMAGE_MAP = ROOT / "apps" / "mobile" / "src" / "lib" / "item-images.g.ts"
 GUIDED_CATALOG = ROOT / "apps" / "mobile" / "src" / "lib" / "guided-catalog.g.ts"
-QA_PATH = SOURCE_DIR / "items-v31-data-qa.json"
+QA_PATH = SOURCE_DIR / "items-v32-data-qa.json"
 ICON_COUNT = 5439
-# v31 changes matching and safety rules without adding or renaming icons.
+# v32 changes matching and safety rules without adding or renaming icons.
 # The deployed catalog is therefore unchanged; this generator refreshes only
 # bundled runtime data and generated TypeScript catalogs.
-WRITE_IMAGE_MAP = True
+# Keep the existing artwork map byte-for-byte unchanged on this data-only update.
+WRITE_IMAGE_MAP = False
 
 
 CATEGORY_KEYS = {
@@ -48,6 +49,23 @@ CONFLICT_WINNERS = {
     "ran on the treadmill": "Treadmill",
     "steel toe boots": "Steel-Toe Boot",
     "suitcases": "Suitcase",
+    # v32 adds explicit phrases to broad icons that already have more specific
+    # owners. Follow the workbook's specific-carrier suppression notes.
+    "coral reef": "Coral Reef",
+    "counter stool": "Bar Stool",
+    "cruise port": "Cruise Terminal",
+    "hiking compass": "Pocket Compass",
+    "large rock": "Boulder",
+    "pocket compass": "Pocket Compass",
+    "rock formation": "Rock Formation",
+    "storm cloud": "Rain Cloud",
+    "toast with jam": "Jam Toast",
+    # Looking at stars does not establish that a telescope was used.
+    "looked at the stars": "Star",
+    # These specific siblings still have non-executable prose exclusions.
+    # Use v32's explicit AUTO carrier; do not bypass those safety restrictions.
+    "conch shell": "Shell",
+    "rain cloud": "Cloud",
 }
 
 # Four Keyword_Safety labels refer to retired names that are not present in
@@ -352,7 +370,8 @@ def main() -> None:
     GUIDED_CATALOG.write_text("\n".join(guided_lines) + "\n", encoding="utf-8")
 
     qa = {
-        "schema": "memory-items-v31-data-qa@1",
+        "schema": "memory-items-v32-data-qa@1",
+        "source_workbook": WORKBOOK.name,
         "items": len(runtime_items),
         "executable_keyword_rows": executable_rows,
         "unique_executable_keywords": len(synonyms),

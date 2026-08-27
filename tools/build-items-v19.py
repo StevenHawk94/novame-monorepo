@@ -37,7 +37,8 @@ from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "tools" / "item-source" / "memory-items"
-WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v31.xlsx"
+# v32 retains the v31 artwork identities; only the source workbook has moved on.
+WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v32.xlsx"
 OUTPUT_DIR = ROOT / "apps" / "mobile" / "assets" / "items" / "each"
 PREVIEW_PATH = SOURCE_DIR / "standardized-preview.html"
 QA_PATH = SOURCE_DIR / "items-v31-image-qa.json"
