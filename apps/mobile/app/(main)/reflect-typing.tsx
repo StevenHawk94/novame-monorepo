@@ -20,6 +20,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { REFLECT_PROMPTS } from '@novame/domain';
 import { matchItems } from '@novame/engine';
+import { itemRuleContext } from '@/lib/item-rule-cache';
 
 import {
   getReflectStateToday,
@@ -36,7 +37,6 @@ import { haptics } from '../../src/lib/haptics';
 import { useCompletionSound } from '@/lib/use-completion-sound';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
-import { mergedItemDictionary } from '../../src/lib/remote-items';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import { RC, ReflectTopBar } from '../../src/components/main/reflect-shared';
@@ -80,6 +80,7 @@ export default function ReflectTypingScreen() {
   const [phase, setPhase] = useState<Phase>(presetPrompt ? 'write' : 'pick');
   const [promptId, setPromptId] = useState<number | null>(presetPrompt ? 9 : null);
   const [body, setBody] = useState('');
+  const [matching] = useState(itemRuleContext);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<ReflectError | null>(null);
   const [draft, setDraft] = useState<PreparedReflect | null>(null);
@@ -105,7 +106,7 @@ export default function ReflectTypingScreen() {
   // Live match while typing: debounce 250ms, run the shared engine locally.
   useEffect(() => {
     const t = setTimeout(() => {
-      const matches = matchItems(body, mergedItemDictionary());
+      const matches = matchItems(body, matching.dictionary);
       setLiveMatched(matches);
     }, 250);
     return () => clearTimeout(t);
@@ -140,6 +141,7 @@ export default function ReflectTypingScreen() {
       body,
       sourceKit,
       mode: 'typing',
+      matchingVersion: matching.version,
       removedItemIds: [...removedIds],
       idempotencyKey: saveKey,
     });
@@ -222,13 +224,14 @@ export default function ReflectTypingScreen() {
                 onPress={() => {
                   if (shownMatches.length > 0) {
                     void haptics.pageOpen();
+                    Keyboard.dismiss();
                     setEditOpen(true);
                   }
                 }}
                 disabled={shownMatches.length === 0}
                 style={styles.matchBar}
               >
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
+                <ScrollView horizontal keyboardShouldPersistTaps="always" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
                   {shownMatches.length === 0 ? (
                     <Text style={styles.matchEmpty}>Items will appear as you write…</Text>
                   ) : (

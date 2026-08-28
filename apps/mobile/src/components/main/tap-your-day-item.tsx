@@ -25,7 +25,7 @@ export function TapYourDayItem({ choice, width, iconSize = 58, selected = false,
   const size = Math.max(1, Math.min(iconSize, width - 6));
   const content = <>
     <View style={[styles.icon, { width: size + 6, height: size + 6 }, selected && styles.selected]}>
-      <ItemSprite itemId={choice.itemId} size={size} radius={11} tapYourDay />
+      <ItemSprite itemId={choice.itemId} size={size} radius={11} tapYourDay={!(choice as TapYourDayChoice & { custom?: boolean }).custom} />
       {selected && <View style={styles.check}><MaterialIcons name="check" size={12} color="#FFFFFF" /></View>}
     </View>
     {showLabel && <Text style={styles.label}>{choice.label}</Text>}

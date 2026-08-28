@@ -128,7 +128,8 @@ export async function persistReflectAnalyzerResult(supabase, {
       attempts: 0,
       error: null,
       processed_at: null,
-    }, { onConflict: 'reflect_id' })
+      evidence_version: 2,
+    }, { onConflict: 'reflect_id', ignoreDuplicates: true })
     if (learningError) {
       // This admin-only learning queue must never block a user's Connection
       // update after the durable analysis row has already been saved.

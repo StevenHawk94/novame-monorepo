@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { TAP_YOUR_DAY_CHOICES, TAP_YOUR_DAY_QUESTIONS, TAP_YOUR_DAY_VERSION } from '@novame/engine';
+import { TAP_YOUR_DAY_QUESTIONS, CUSTOM_TAP_SELECTION_VERSION, type TapYourDayChoice, type CustomTapItem } from '@novame/engine';
+import { useCustomTapItems } from '@/lib/custom-tap-items';
+import { CustomTapItemSheet } from '@/components/main/custom-tap-item-sheet';
 
 import { getReflectStateToday, prepareReflect, SELECTION_UNAVAILABLE_MESSAGE, type PreparedReflect, type ReflectError } from '@/lib/reflect-api';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
@@ -22,6 +24,7 @@ import { ReflectSettlementView } from '@/components/main/reflect-settlement';
 
 const MAX_CHARS = 5000;
 type Phase = 'steps' | 'note' | 'result';
+type DayChoice = TapYourDayChoice & Partial<CustomTapItem>;
 
 /** Four skippable questions. Section labels are headings, never navigation tabs. */
 export default function ReflectGuidedScreen() {
@@ -33,7 +36,9 @@ export default function ReflectGuidedScreen() {
   const isPaid = tier !== 'free';
   const [phase, setPhase] = useState<Phase>('steps');
   const [step, setStep] = useState(0);
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const custom = useCustomTapItems();
+  const [addOpen, setAddOpen] = useState(false);
+  const [selected, setSelected] = useState<Map<string, DayChoice>>(() => new Map());
   const [note, setNote] = useState('');
   const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
@@ -47,7 +52,16 @@ export default function ReflectGuidedScreen() {
   const submitLock = useRef(false);
   useReflectExitGuard(submitting);
   const question = TAP_YOUR_DAY_QUESTIONS[step];
-  const selectedList = useMemo(() => TAP_YOUR_DAY_CHOICES.filter((choice) => selected.has(choice.itemId)), [selected]);
+  const selectedList = useMemo(() => [...selected.values()], [selected]);
+  const groups = useMemo(() => {
+    // Custom entries supplement the catalog; they never remove a built-in choice.
+    const rows = question.groups.map(g => ({ ...g, choices: [...g.choices] as DayChoice[] }));
+    for (const item of custom.items.filter(c => c.kind === question.kind)) {
+      const existing = rows.find(g => g.title === item.group);
+      if (existing) existing.choices.push(item); else rows.push({ title: item.group, choices: [item] });
+    }
+    return rows.filter(g => g.choices.length);
+  }, [question, custom.items]);
   const { cellWidth } = tapItemGridMetrics(gridWidth, fontScale);
 
   useFocusEffect(useCallback(() => {
@@ -59,15 +73,21 @@ export default function ReflectGuidedScreen() {
   }, [step, phase]);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
-  function toggle(itemId: string, label: string) {
+  function isSelected(choice: DayChoice) {
+    const current = selected.get(choice.itemId);
+    return current?.label === choice.label && !!current?.custom === !!choice.custom;
+  }
+  function toggle(choice: DayChoice) {
     void haptics.light();
     requestKey.current = null;
     setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
+      const next = new Map(current);
+      const prior = next.get(choice.itemId);
+      if (prior?.label === choice.label && !!prior?.custom === !!choice.custom) next.delete(choice.itemId);
+      else next.set(choice.itemId, choice);
       return next;
     });
-    setToast(label);
+    setToast(choice.label);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 1000);
   }
@@ -90,8 +110,8 @@ export default function ReflectGuidedScreen() {
     requestKey.current ??= randomUUID();
     try {
       const result = await prepareReflect({
-        promptId: 9, body: note, mode: 'prompt', selectionVersion: TAP_YOUR_DAY_VERSION,
-        selectedItems: selectedList.map(({ itemId }) => ({ itemId })),
+        promptId: 9, body: note, mode: 'prompt', selectionVersion: CUSTOM_TAP_SELECTION_VERSION,
+        selectedItems: selectedList,
         idempotencyKey: requestKey.current,
       });
       if (!result.ok) {
@@ -119,7 +139,10 @@ export default function ReflectGuidedScreen() {
       <View pointerEvents="none" style={styles.scrim} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} enabled={phase !== 'result'}>
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
-          {phase !== 'result' && <ReflectTopBar onBack={onBack} />}
+          {phase !== 'result' && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <ReflectTopBar onBack={onBack} />
+            {phase === 'steps' && <Pressable disabled={!custom.ready} onPress={() => { void haptics.light(); setAddOpen(true); }} style={{ backgroundColor: '#50351D', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Inter_700Bold' }}>＋ Add</Text></Pressable>}
+          </View>}
           {remaining <= 0 && phase !== 'result' ? (
             <View style={styles.center}>
               <Text style={styles.title}>That’s three for today</Text>
@@ -129,13 +152,13 @@ export default function ReflectGuidedScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{question.title}</Text>
               <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.sections} showsVerticalScrollIndicator={false}>
-                {question.groups.map((section, index) => (
+                {groups.map((section, index) => (
                   <View key={step + '-' + index} style={styles.section}>
                     {!!section.title && <View style={styles.sectionPill}><Text style={styles.sectionTitle}>{section.title}</Text></View>}
                     <View style={styles.gridCard} onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}>
                       {gridWidth > 0 && section.choices.map((choice) => (
-                        <TapYourDayItem key={choice.itemId} choice={choice} width={cellWidth}
-                          selected={selected.has(choice.itemId)} onPress={() => toggle(choice.itemId, choice.label)} />
+                        <TapYourDayItem key={`${choice.itemId}:${!!choice.custom}`} choice={choice} width={cellWidth}
+                          selected={isSelected(choice)} onPress={() => toggle(choice)} />
                       ))}
                     </View>
                   </View>
@@ -189,6 +212,9 @@ export default function ReflectGuidedScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      {addOpen && <CustomTapItemSheet question={question} onClose={() => setAddOpen(false)} onSave={item => {
+        custom.save(item); requestKey.current = null; setSelected(old => new Map(old).set(item.itemId, item));
+      }} />}
       <ReflectCelebration active={phase === 'result'} />
     </View>
   );

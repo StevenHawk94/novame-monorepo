@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getMergedDictionary } from '@/lib/remote-items'
+import { ITEM_DICTIONARY, applyItemRules } from '@novame/engine'
+import { readItemRules } from '@/lib/item-rule-store'
 import { recordItemLearningConcepts } from '@/lib/item-learning'
 
 export const runtime = 'nodejs'
@@ -16,25 +17,23 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
-  const { data: jobs, error } = await supabase.from('item_learning_jobs')
-    .select('id, concepts, matched_item_ids, attempts')
-    .in('status', ['pending', 'failed'])
-    .lt('attempts', 3)
-    .order('created_at', { ascending: true })
-    .limit(100)
+  const { data: jobs, error } = await supabase.rpc('claim_item_learning_jobs')
   if (error) return NextResponse.json({ error: 'query_failed' }, { status: 500 })
   if (!jobs?.length) return NextResponse.json({ ok: true, processed: 0 })
 
-  const dictionary = await getMergedDictionary(supabase)
+  const dictionary = applyItemRules(ITEM_DICTIONARY, (await readItemRules(supabase)).rules)
   let processed = 0
   for (const job of jobs) {
-    await supabase.from('item_learning_jobs').update({
-      status: 'processing', attempts: Number(job.attempts || 0) + 1,
-    }).eq('id', job.id)
     try {
+      const { data: reflect, error: reflectError } = await supabase.from('reflects').select('user_id').eq('id', job.reflect_id).maybeSingle()
+      if (reflectError) throw reflectError
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('subscription_tier,ai_consent_at').eq('id', reflect?.user_id).maybeSingle()
+      if (profileError) throw profileError
       const matched = (Array.isArray(job.matched_item_ids) ? job.matched_item_ids : [])
         .map((itemId) => ({ itemId }))
-      await recordItemLearningConcepts(supabase, job.concepts, dictionary, matched)
+      if (profile?.ai_consent_at && profile.subscription_tier !== 'free') {
+        await recordItemLearningConcepts(supabase, job.concepts, dictionary, matched, { reflectId: job.reflect_id, userId: reflect.user_id })
+      }
       await supabase.from('item_learning_jobs').update({
         status: 'completed', error: null, processed_at: new Date().toISOString(),
       }).eq('id', job.id)
@@ -47,4 +46,3 @@ export async function GET(request) {
   }
   return NextResponse.json({ ok: true, processed })
 }
-

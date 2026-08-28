@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import unicodedata
 from collections import defaultdict
@@ -189,6 +190,7 @@ def main() -> None:
     candidates = defaultdict(list)
     never_auto = 0
     never_auto_keywords = set()
+    never_auto_items = defaultdict(list)
     unresolved_exclusions = []
     executable_rows = 0
     for excel_row, row in enumerate(safety_rows, start=2):
@@ -208,6 +210,7 @@ def main() -> None:
         if mode == "NEVER_AUTO":
             never_auto += 1
             never_auto_keywords.add(keyword)
+            never_auto_items[keyword].append(items_by_name[name]['id'])
             continue
         if mode not in {"AUTO", "AUTO_UNLESS_EXCLUDED"}:
             raise ValueError(f"Unknown Trigger_Mode at Keyword_Safety row {excel_row}: {mode}")
@@ -264,6 +267,13 @@ def main() -> None:
 
     dictionary = {"items": runtime_items, "synonyms": synonyms, "exclusions": exclusions}
     DICTIONARY.write_text(json.dumps(dictionary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # Small, exact safety index for reviewed overrides and admin markers.
+    # Never infer a safety rule from a fuzzy icon-name comparison.
+    never_auto_index = {k: sorted(set(v)) for k, v in sorted(never_auto_items.items())}
+    # Safety-only edits must invalidate semantic decisions and rule snapshots too.
+    digest = hashlib.sha256(DICTIONARY.read_bytes() + json.dumps(never_auto_index, sort_keys=True).encode()).hexdigest()[:16]
+    metadata = {'version': 'v33-' + digest, 'neverAuto': never_auto_index}
+    (DICTIONARY.parent / 'rule-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
 
     image_lines = [
         "/**",

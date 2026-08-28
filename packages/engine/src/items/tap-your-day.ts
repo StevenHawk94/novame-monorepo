@@ -2,7 +2,7 @@ import legacyChoices from './tap-your-day-v1.json';
 
 /** Curated choices, not keyword matches. Keep labels separate from representative art. */
 export const TAP_YOUR_DAY_VERSION = 'tap-your-day-v2';
-export const MAX_REFLECT_ITEMS = 131;
+export const MAX_REFLECT_ITEMS = 191;
 
 export type TapYourDayKind = 'activity' | 'food' | 'person' | 'feeling';
 export interface TapYourDayChoice { label: string; itemId: string }
@@ -198,11 +198,13 @@ const choicesById = new Map(TAP_YOUR_DAY_CHOICES.map((choice) => [choice.itemId,
 // Frozen v1 vocabulary: an older installed client keeps its original meanings.
 const legacyById = new Map(legacyChoices.map((choice) => [choice.itemId, choice]));
 export function tapYourDaySelectionLimit(version: unknown) {
+  if (version === 'tap-your-day-v3') return MAX_REFLECT_ITEMS;
   if (version === TAP_YOUR_DAY_VERSION) return TAP_YOUR_DAY_CHOICES.length;
   if (version === 'tap-your-day-v1') return legacyChoices.length;
   return 0;
 }
 export function tapYourDayChoice(itemId: string, version = TAP_YOUR_DAY_VERSION) {
+  if (version === 'tap-your-day-v3') return choicesById.get(itemId);
   if (version === TAP_YOUR_DAY_VERSION) return choicesById.get(itemId);
   if (version === 'tap-your-day-v1') return legacyById.get(itemId);
   return undefined;

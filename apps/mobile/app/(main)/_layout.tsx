@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { ratingNavigationListeners } from '@/lib/rating-navigation';
 
 import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
 import { HomeEntryGate } from '@/components/main/home-entry-gate';
@@ -23,6 +24,7 @@ export default function MainLayout() {
   return (
     <HomeEntryGate>
       <Stack
+        screenListeners={ratingNavigationListeners}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: '#4C331B' },

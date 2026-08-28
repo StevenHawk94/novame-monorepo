@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@novame/core'],
+  transpilePackages: ['@novame/core', '@novame/engine'],
   reactStrictMode: true,
   images: {
     remotePatterns: [

@@ -1,0 +1,2076 @@
+{
+  "version": "v33-8a1a98aedd3763b1",
+  "neverAuto": {
+    "a little lighter": [
+      "memory.2320_lighter"
+    ],
+    "a normal day": [
+      "memory.5363_neutral"
+    ],
+    "accepted": [
+      "memory.5355_happy"
+    ],
+    "activity log": [
+      "memory.3678_log"
+    ],
+    "adjusting": [
+      "memory.5363_neutral"
+    ],
+    "all right": [
+      "memory.5363_neutral"
+    ],
+    "alright": [
+      "memory.5363_neutral"
+    ],
+    "anime": [
+      "memory.1362_television"
+    ],
+    "anime series": [
+      "memory.1362_television"
+    ],
+    "app running": [
+      "memory.0004_running"
+    ],
+    "arizona cardinals": [
+      "memory.3802_cardinal"
+    ],
+    "assured": [
+      "memory.5355_happy"
+    ],
+    "at bat": [
+      "memory.3739_bat"
+    ],
+    "ate chicken": [
+      "memory.3817_chicken"
+    ],
+    "ate crab": [
+      "memory.3870_crab"
+    ],
+    "ate turkey": [
+      "memory.3816_turkey"
+    ],
+    "audio book": [
+      "memory.1364_podcast"
+    ],
+    "average": [
+      "memory.5363_neutral"
+    ],
+    "awful": [
+      "memory.5370_sad"
+    ],
+    "bad": [
+      "memory.5370_sad"
+    ],
+    "bank": [
+      "memory.1577_bank"
+    ],
+    "bank account": [
+      "memory.1577_bank"
+    ],
+    "bank balance": [
+      "memory.1577_bank"
+    ],
+    "bank branch": [
+      "memory.3679_branch"
+    ],
+    "bank deposit": [
+      "memory.1577_bank"
+    ],
+    "bank on": [
+      "memory.1577_bank"
+    ],
+    "bank on it": [
+      "memory.1577_bank"
+    ],
+    "bank statement": [
+      "memory.1577_bank"
+    ],
+    "bank transfer": [
+      "memory.1577_bank"
+    ],
+    "banks": [
+      "memory.1577_bank"
+    ],
+    "bar": [
+      "memory.1534_bar"
+    ],
+    "bar cart": [
+      "memory.1534_bar"
+    ],
+    "bar chart": [
+      "memory.1534_bar"
+    ],
+    "bar clamp": [
+      "memory.1534_bar"
+    ],
+    "bar mitzvah": [
+      "memory.1534_bar"
+    ],
+    "bar stool": [
+      "memory.1534_bar",
+      "memory.2721_stool"
+    ],
+    "bars": [
+      "memory.1534_bar"
+    ],
+    "baseball": [
+      "memory.1328_baseball_bat"
+    ],
+    "baseball bat": [
+      "memory.3739_bat"
+    ],
+    "baseball pitcher": [
+      "memory.3959_pitcher"
+    ],
+    "bat": [
+      "memory.3739_bat"
+    ],
+    "bat an eye": [
+      "memory.3739_bat"
+    ],
+    "bat mitzvah": [
+      "memory.3739_bat"
+    ],
+    "bats": [
+      "memory.3739_bat"
+    ],
+    "battery running down": [
+      "memory.0004_running"
+    ],
+    "beading needle": [
+      "memory.3491_needle"
+    ],
+    "bear": [
+      "memory.3719_bear"
+    ],
+    "bear hug": [
+      "memory.3719_bear"
+    ],
+    "bear market": [
+      "memory.3719_bear"
+    ],
+    "bear responsibility": [
+      "memory.3719_bear"
+    ],
+    "bear the cost": [
+      "memory.3719_bear"
+    ],
+    "bear with me": [
+      "memory.3719_bear"
+    ],
+    "bears": [
+      "memory.3719_bear"
+    ],
+    "bears repeating": [
+      "memory.3719_bear"
+    ],
+    "bears the name": [
+      "memory.3719_bear"
+    ],
+    "becoming lighter": [
+      "memory.2320_lighter"
+    ],
+    "behind bars": [
+      "memory.1534_bar"
+    ],
+    "belonging": [
+      "memory.5355_happy"
+    ],
+    "block": [
+      "memory.1484_block"
+    ],
+    "block a number": [
+      "memory.1484_block"
+    ],
+    "block chain": [
+      "memory.1484_block"
+    ],
+    "block of text": [
+      "memory.1484_block"
+    ],
+    "block someone": [
+      "memory.1484_block"
+    ],
+    "blockchain": [
+      "memory.1484_block"
+    ],
+    "blocked": [
+      "memory.5370_sad"
+    ],
+    "blocked someone": [
+      "memory.1484_block"
+    ],
+    "blocks": [
+      "memory.1484_block"
+    ],
+    "blood bank": [
+      "memory.1577_bank"
+    ],
+    "blood in stool": [
+      "memory.2721_stool"
+    ],
+    "body mole": [
+      "memory.0204_mole"
+    ],
+    "body wrap": [
+      "memory.0011_wrap"
+    ],
+    "book a hotel": [
+      "memory.0006_book"
+    ],
+    "book a rental car": [
+      "memory.0006_book"
+    ],
+    "book a reservation": [
+      "memory.0006_book"
+    ],
+    "book a ride": [
+      "memory.0006_book"
+    ],
+    "book a ticket": [
+      "memory.0006_book"
+    ],
+    "book a tour": [
+      "memory.0006_book"
+    ],
+    "book flights": [
+      "memory.0006_book"
+    ],
+    "book hotel": [
+      "memory.0006_book"
+    ],
+    "book it": [
+      "memory.0006_book"
+    ],
+    "book online": [
+      "memory.0006_book"
+    ],
+    "book through the app": [
+      "memory.0006_book"
+    ],
+    "book tickets": [
+      "memory.0006_book"
+    ],
+    "boxed": [
+      "memory.1342_boxing_gloves"
+    ],
+    "brain is running": [
+      "memory.0004_running"
+    ],
+    "brain running": [
+      "memory.0004_running"
+    ],
+    "branch": [
+      "memory.3679_branch"
+    ],
+    "branch of science": [
+      "memory.3679_branch"
+    ],
+    "branch office": [
+      "memory.3679_branch"
+    ],
+    "branch out": [
+      "memory.3679_branch"
+    ],
+    "branches": [
+      "memory.3679_branch"
+    ],
+    "building block": [
+      "memory.1484_block"
+    ],
+    "building foundation": [
+      "memory.3355_foundation"
+    ],
+    "butcher block": [
+      "memory.1484_block"
+    ],
+    "buzzing": [
+      "memory.5358_excited"
+    ],
+    "called me honey": [
+      "memory.0680_honey"
+    ],
+    "candy bar": [
+      "memory.1534_bar"
+    ],
+    "cannot bear": [
+      "memory.3719_bear"
+    ],
+    "capable": [
+      "memory.5357_cool"
+    ],
+    "car running": [
+      "memory.0004_running"
+    ],
+    "car wrap": [
+      "memory.0011_wrap"
+    ],
+    "cardinal": [
+      "memory.3802_cardinal"
+    ],
+    "cardinal direction": [
+      "memory.3802_cardinal"
+    ],
+    "cardinal rule": [
+      "memory.3802_cardinal"
+    ],
+    "cardinals": [
+      "memory.3802_cardinal"
+    ],
+    "catholic cardinal": [
+      "memory.3802_cardinal"
+    ],
+    "caught in the rain": [
+      "memory.2282_umbrella"
+    ],
+    "charging dock": [
+      "memory.2195_dock"
+    ],
+    "charging port": [
+      "memory.2194_port"
+    ],
+    "charitable foundation": [
+      "memory.3355_foundation"
+    ],
+    "chicken": [
+      "memory.3817_chicken"
+    ],
+    "chicken breast": [
+      "memory.3817_chicken"
+    ],
+    "chicken dinner": [
+      "memory.3817_chicken"
+    ],
+    "chicken out": [
+      "memory.3817_chicken"
+    ],
+    "chicken sandwich": [
+      "memory.3817_chicken"
+    ],
+    "chicken soup": [
+      "memory.3817_chicken"
+    ],
+    "chicken wings": [
+      "memory.3817_chicken"
+    ],
+    "chill": [
+      "memory.5363_neutral"
+    ],
+    "chopper": [
+      "memory.2170_helicopter"
+    ],
+    "church cardinal": [
+      "memory.3802_cardinal"
+    ],
+    "click the mouse": [
+      "memory.3742_mouse"
+    ],
+    "cliff": [
+      "memory.3699_cliff"
+    ],
+    "cliff called": [
+      "memory.3699_cliff"
+    ],
+    "cliff notes": [
+      "memory.3699_cliff"
+    ],
+    "cliff said": [
+      "memory.3699_cliff"
+    ],
+    "cliff texted": [
+      "memory.3699_cliff"
+    ],
+    "cliff told me": [
+      "memory.3699_cliff"
+    ],
+    "cloud": [
+      "memory.3704_cloud"
+    ],
+    "cloud account": [
+      "memory.3704_cloud"
+    ],
+    "cloud backup": [
+      "memory.3704_cloud"
+    ],
+    "cloud computing": [
+      "memory.3704_cloud"
+    ],
+    "cloud nine": [
+      "memory.3704_cloud"
+    ],
+    "cloud platform": [
+      "memory.3704_cloud"
+    ],
+    "cloud server": [
+      "memory.3704_cloud"
+    ],
+    "cloud service": [
+      "memory.3704_cloud"
+    ],
+    "cloud storage": [
+      "memory.3704_cloud"
+    ],
+    "clouds": [
+      "memory.3704_cloud"
+    ],
+    "code block": [
+      "memory.1484_block"
+    ],
+    "code branch": [
+      "memory.3679_branch"
+    ],
+    "cold turkey": [
+      "memory.3816_turkey"
+    ],
+    "collected": [
+      "memory.5363_neutral"
+    ],
+    "colored": [
+      "memory.1376_drawing"
+    ],
+    "company branch": [
+      "memory.3679_branch"
+    ],
+    "company seal": [
+      "memory.3781_seal"
+    ],
+    "compass": [
+      "memory.3259_compass"
+    ],
+    "compass direction": [
+      "memory.3259_compass"
+    ],
+    "compass tool in app": [
+      "memory.3259_compass"
+    ],
+    "compasses": [
+      "memory.3259_compass"
+    ],
+    "composed": [
+      "memory.5357_cool"
+    ],
+    "computer dock": [
+      "memory.2195_dock"
+    ],
+    "computer mouse": [
+      "memory.3742_mouse"
+    ],
+    "computer port": [
+      "memory.2194_port"
+    ],
+    "computer running": [
+      "memory.0004_running"
+    ],
+    "concrete foundation": [
+      "memory.3355_foundation"
+    ],
+    "considerably lighter": [
+      "memory.2320_lighter"
+    ],
+    "console gaming": [
+      "memory.1368_game_controller"
+    ],
+    "cool": [
+      "memory.5357_cool"
+    ],
+    "coral": [
+      "memory.3690_coral"
+    ],
+    "coral called": [
+      "memory.3690_coral"
+    ],
+    "coral color": [
+      "memory.3690_coral"
+    ],
+    "coral dress": [
+      "memory.3690_coral"
+    ],
+    "coral lipstick": [
+      "memory.3690_coral"
+    ],
+    "coral said": [
+      "memory.3690_coral"
+    ],
+    "could not bear": [
+      "memory.3719_bear"
+    ],
+    "crab": [
+      "memory.3870_crab"
+    ],
+    "crab about": [
+      "memory.3870_crab"
+    ],
+    "crab cake": [
+      "memory.3870_crab"
+    ],
+    "crab dip": [
+      "memory.3870_crab"
+    ],
+    "crab legs": [
+      "memory.3870_crab"
+    ],
+    "crab meat": [
+      "memory.3870_crab"
+    ],
+    "crab rangoon": [
+      "memory.3870_crab"
+    ],
+    "crabby mood": [
+      "memory.3870_crab"
+    ],
+    "crabs": [
+      "memory.3870_crab"
+    ],
+    "cricket bat": [
+      "memory.3739_bat"
+    ],
+    "crunch": [
+      "memory.1299_fitness"
+    ],
+    "crystal": [
+      "memory.3685_crystal"
+    ],
+    "crystal called": [
+      "memory.3685_crystal"
+    ],
+    "crystal clear": [
+      "memory.3685_crystal"
+    ],
+    "crystal glass": [
+      "memory.3685_crystal"
+    ],
+    "crystal oscillator": [
+      "memory.3685_crystal"
+    ],
+    "crystal said": [
+      "memory.3685_crystal"
+    ],
+    "crystal stemware": [
+      "memory.3685_crystal"
+    ],
+    "crystals": [
+      "memory.3685_crystal"
+    ],
+    "daisy": [
+      "memory.3630_daisy"
+    ],
+    "daisy called": [
+      "memory.3630_daisy"
+    ],
+    "daisy said": [
+      "memory.3630_daisy"
+    ],
+    "daisy texted": [
+      "memory.3630_daisy"
+    ],
+    "daisy told me": [
+      "memory.3630_daisy"
+    ],
+    "data stream": [
+      "memory.1900_stream"
+    ],
+    "decent": [
+      "memory.5363_neutral"
+    ],
+    "did my nails": [
+      "memory.3400_nail_polish"
+    ],
+    "directions": [
+      "memory.1439_car"
+    ],
+    "dock": [
+      "memory.2195_dock"
+    ],
+    "dock connector": [
+      "memory.2195_dock"
+    ],
+    "dock my pay": [
+      "memory.2195_dock"
+    ],
+    "dock station": [
+      "memory.2195_dock"
+    ],
+    "docked pay": [
+      "memory.2195_dock"
+    ],
+    "docks": [
+      "memory.2195_dock"
+    ],
+    "door jamb": [
+      "memory.0675_jam"
+    ],
+    "door seal": [
+      "memory.3781_seal"
+    ],
+    "driven": [
+      "memory.5358_excited"
+    ],
+    "duck": [
+      "memory.3815_duck"
+    ],
+    "duck breast": [
+      "memory.3815_duck"
+    ],
+    "duck down": [
+      "memory.3815_duck"
+    ],
+    "duck eggs": [
+      "memory.3815_duck"
+    ],
+    "duck out": [
+      "memory.3815_duck"
+    ],
+    "duck sauce": [
+      "memory.3815_duck"
+    ],
+    "duck the question": [
+      "memory.3815_duck"
+    ],
+    "duck under": [
+      "memory.3815_duck"
+    ],
+    "ducks": [
+      "memory.3815_duck"
+    ],
+    "duct tape": [
+      "memory.3815_duck"
+    ],
+    "dude ranch dressing": [
+      "memory.1941_ranch"
+    ],
+    "eat lighter": [
+      "memory.2320_lighter"
+    ],
+    "egg shell": [
+      "memory.3688_shell"
+    ],
+    "electrified": [
+      "memory.5358_excited"
+    ],
+    "embroidery needle": [
+      "memory.3491_needle"
+    ],
+    "emotional compass": [
+      "memory.3259_compass"
+    ],
+    "engaged": [
+      "memory.2515_engagement_ring"
+    ],
+    "engine running": [
+      "memory.0004_running"
+    ],
+    "error log": [
+      "memory.3678_log"
+    ],
+    "eye iris": [
+      "memory.3643_iris"
+    ],
+    "facial mole": [
+      "memory.0204_mole"
+    ],
+    "fair": [
+      "memory.5363_neutral"
+    ],
+    "feel lighter": [
+      "memory.2320_lighter"
+    ],
+    "feeling jelly": [
+      "memory.0676_jelly"
+    ],
+    "feels lighter": [
+      "memory.2320_lighter"
+    ],
+    "felt lighter": [
+      "memory.2320_lighter"
+    ],
+    "fenced": [
+      "memory.1341_fencing_foil"
+    ],
+    "fine": [
+      "memory.5363_neutral"
+    ],
+    "fiscal cliff": [
+      "memory.3699_cliff"
+    ],
+    "five star": [
+      "memory.3715_star"
+    ],
+    "flew": [
+      "memory.2167_airplane"
+    ],
+    "flexible": [
+      "memory.1299_fitness"
+    ],
+    "flying": [
+      "memory.2167_airplane"
+    ],
+    "food bank": [
+      "memory.1577_bank"
+    ],
+    "food log": [
+      "memory.3678_log"
+    ],
+    "foundation": [
+      "memory.3355_foundation"
+    ],
+    "foundation grant": [
+      "memory.3355_foundation"
+    ],
+    "foundation of": [
+      "memory.3355_foundation"
+    ],
+    "foundation repair": [
+      "memory.3355_foundation"
+    ],
+    "foundations": [
+      "memory.3355_foundation"
+    ],
+    "fried chicken": [
+      "memory.3817_chicken"
+    ],
+    "gaming": [
+      "memory.1368_game_controller"
+    ],
+    "gaming mouse": [
+      "memory.3742_mouse"
+    ],
+    "gave a toast": [
+      "memory.0323_toast"
+    ],
+    "getting lighter": [
+      "memory.2320_lighter"
+    ],
+    "gift wrap": [
+      "memory.0011_wrap"
+    ],
+    "git branch": [
+      "memory.3679_branch"
+    ],
+    "going to book": [
+      "memory.0006_book"
+    ],
+    "gold star sticker": [
+      "memory.3715_star"
+    ],
+    "government branch": [
+      "memory.3679_branch"
+    ],
+    "ground turkey": [
+      "memory.3816_turkey"
+    ],
+    "hard stool": [
+      "memory.2721_stool"
+    ],
+    "hey honey": [
+      "memory.0680_honey"
+    ],
+    "hi honey": [
+      "memory.0680_honey"
+    ],
+    "hit snooze": [
+      "memory.1421_bed"
+    ],
+    "honey": [
+      "memory.0680_honey"
+    ],
+    "honey color": [
+      "memory.0680_honey"
+    ],
+    "honey colored": [
+      "memory.0680_honey"
+    ],
+    "honey locust": [
+      "memory.0680_honey"
+    ],
+    "hoops": [
+      "memory.1325_basketball"
+    ],
+    "horrible": [
+      "memory.5370_sad"
+    ],
+    "house foundation": [
+      "memory.3355_foundation"
+    ],
+    "in a jam": [
+      "memory.0675_jam"
+    ],
+    "inner compass": [
+      "memory.3259_compass"
+    ],
+    "iris": [
+      "memory.3643_iris"
+    ],
+    "iris called": [
+      "memory.3643_iris"
+    ],
+    "iris recognition": [
+      "memory.3643_iris"
+    ],
+    "iris said": [
+      "memory.3643_iris"
+    ],
+    "iris scan": [
+      "memory.3643_iris"
+    ],
+    "ivy": [
+      "memory.3621_ivy"
+    ],
+    "ivy called": [
+      "memory.3621_ivy"
+    ],
+    "ivy league": [
+      "memory.3621_ivy"
+    ],
+    "ivy said": [
+      "memory.3621_ivy"
+    ],
+    "ivy texted": [
+      "memory.3621_ivy"
+    ],
+    "ivy told me": [
+      "memory.3621_ivy"
+    ],
+    "jam": [
+      "memory.0675_jam"
+    ],
+    "jam packed": [
+      "memory.0675_jam"
+    ],
+    "jam session": [
+      "memory.0675_jam"
+    ],
+    "jasmine": [
+      "memory.3651_jasmine"
+    ],
+    "jasmine called": [
+      "memory.3651_jasmine"
+    ],
+    "jasmine said": [
+      "memory.3651_jasmine"
+    ],
+    "jasmine tea": [
+      "memory.3651_jasmine"
+    ],
+    "jasmine texted": [
+      "memory.3651_jasmine"
+    ],
+    "jasmine told me": [
+      "memory.3651_jasmine"
+    ],
+    "jelly": [
+      "memory.0676_jelly"
+    ],
+    "jelly sandals": [
+      "memory.0676_jelly"
+    ],
+    "jelly shoes": [
+      "memory.0676_jelly"
+    ],
+    "knife block": [
+      "memory.1484_block"
+    ],
+    "laptop dock": [
+      "memory.2195_dock"
+    ],
+    "lighter": [
+      "memory.2320_lighter"
+    ],
+    "lighter color": [
+      "memory.2320_lighter"
+    ],
+    "lighter hair": [
+      "memory.2320_lighter"
+    ],
+    "lighter meal": [
+      "memory.2320_lighter"
+    ],
+    "lighter mood": [
+      "memory.2320_lighter"
+    ],
+    "lighter note": [
+      "memory.2320_lighter"
+    ],
+    "lighter option": [
+      "memory.2320_lighter"
+    ],
+    "lighter schedule": [
+      "memory.2320_lighter"
+    ],
+    "lighter shade": [
+      "memory.2320_lighter"
+    ],
+    "lighter side": [
+      "memory.2320_lighter"
+    ],
+    "lighter than": [
+      "memory.2320_lighter"
+    ],
+    "lighter tone": [
+      "memory.2320_lighter"
+    ],
+    "lighter touch": [
+      "memory.2320_lighter"
+    ],
+    "lighter traffic": [
+      "memory.2320_lighter"
+    ],
+    "lighter version": [
+      "memory.2320_lighter"
+    ],
+    "lighter weight": [
+      "memory.2320_lighter"
+    ],
+    "lighter workload": [
+      "memory.2320_lighter"
+    ],
+    "lily": [
+      "memory.3632_lily"
+    ],
+    "lily called": [
+      "memory.3632_lily"
+    ],
+    "lily said": [
+      "memory.3632_lily"
+    ],
+    "lily texted": [
+      "memory.3632_lily"
+    ],
+    "lily told me": [
+      "memory.3632_lily"
+    ],
+    "listened to an audiobook": [
+      "memory.1364_podcast"
+    ],
+    "live stream": [
+      "memory.1900_stream"
+    ],
+    "log": [
+      "memory.3678_log"
+    ],
+    "log in": [
+      "memory.3678_log"
+    ],
+    "log into": [
+      "memory.3678_log"
+    ],
+    "log off": [
+      "memory.3678_log"
+    ],
+    "log out": [
+      "memory.3678_log"
+    ],
+    "log the issue": [
+      "memory.3678_log"
+    ],
+    "logs": [
+      "memory.3678_log"
+    ],
+    "look lighter": [
+      "memory.2320_lighter"
+    ],
+    "looked lighter": [
+      "memory.2320_lighter"
+    ],
+    "looks lighter": [
+      "memory.2320_lighter"
+    ],
+    "loose stool": [
+      "memory.2721_stool"
+    ],
+    "lovely": [
+      "memory.5355_happy"
+    ],
+    "low": [
+      "memory.5370_sad"
+    ],
+    "machine running": [
+      "memory.0004_running"
+    ],
+    "made a toast": [
+      "memory.0323_toast"
+    ],
+    "made it lighter": [
+      "memory.2320_lighter"
+    ],
+    "maintenance log": [
+      "memory.3678_log"
+    ],
+    "make a toast": [
+      "memory.0323_toast"
+    ],
+    "memory bank": [
+      "memory.1577_bank"
+    ],
+    "mental block": [
+      "memory.1484_block"
+    ],
+    "mice": [
+      "memory.3742_mouse"
+    ],
+    "mice click": [
+      "memory.3742_mouse"
+    ],
+    "mild": [
+      "memory.5363_neutral"
+    ],
+    "military branch": [
+      "memory.3679_branch"
+    ],
+    "mind is running": [
+      "memory.0004_running"
+    ],
+    "mind running": [
+      "memory.0004_running"
+    ],
+    "mole": [
+      "memory.0204_mole"
+    ],
+    "mole animal": [
+      "memory.0204_mole"
+    ],
+    "mole biopsy": [
+      "memory.0204_mole"
+    ],
+    "mole removal": [
+      "memory.0204_mole"
+    ],
+    "mole trap": [
+      "memory.0204_mole"
+    ],
+    "moles": [
+      "memory.0204_mole"
+    ],
+    "moral compass": [
+      "memory.3259_compass"
+    ],
+    "mouse": [
+      "memory.3742_mouse"
+    ],
+    "mouse cursor": [
+      "memory.3742_mouse"
+    ],
+    "mouse pad": [
+      "memory.3742_mouse"
+    ],
+    "mouthwash": [
+      "memory.1422_toothbrush"
+    ],
+    "moved back home": [
+      "memory.1437_moving_box"
+    ],
+    "movie star": [
+      "memory.3715_star"
+    ],
+    "much lighter": [
+      "memory.2320_lighter"
+    ],
+    "music stream": [
+      "memory.1900_stream"
+    ],
+    "my honey": [
+      "memory.0680_honey"
+    ],
+    "my nail": [
+      "memory.4114_nail"
+    ],
+    "nail": [
+      "memory.4114_nail"
+    ],
+    "nails": [
+      "memory.4114_nail"
+    ],
+    "need to book": [
+      "memory.0006_book"
+    ],
+    "needle": [
+      "memory.3491_needle"
+    ],
+    "needle felting": [
+      "memory.3491_needle"
+    ],
+    "needle nose pliers": [
+      "memory.3491_needle"
+    ],
+    "needles": [
+      "memory.3491_needle"
+    ],
+    "network port": [
+      "memory.2194_port"
+    ],
+    "neutral": [
+      "memory.5363_neutral"
+    ],
+    "neutral color": [
+      "memory.5363_neutral"
+    ],
+    "neutral colors": [
+      "memory.5363_neutral"
+    ],
+    "neutral gear": [
+      "memory.5363_neutral"
+    ],
+    "neutral ground": [
+      "memory.5363_neutral"
+    ],
+    "neutral opinion": [
+      "memory.5363_neutral"
+    ],
+    "neutral position": [
+      "memory.5363_neutral"
+    ],
+    "neutral tone": [
+      "memory.5363_neutral"
+    ],
+    "neutral wire": [
+      "memory.5363_neutral"
+    ],
+    "new nail": [
+      "memory.4114_nail"
+    ],
+    "no service": [
+      "memory.2627_router"
+    ],
+    "nonprofit foundation": [
+      "memory.3355_foundation"
+    ],
+    "normal": [
+      "memory.5363_neutral"
+    ],
+    "nose running": [
+      "memory.0004_running"
+    ],
+    "nut": [
+      "memory.4116_nut"
+    ],
+    "nuts": [
+      "memory.4116_nut"
+    ],
+    "official seal": [
+      "memory.3781_seal"
+    ],
+    "ok": [
+      "memory.5363_neutral"
+    ],
+    "okay": [
+      "memory.5363_neutral"
+    ],
+    "on campus": [
+      "memory.1552_college"
+    ],
+    "one mole": [
+      "memory.0204_mole"
+    ],
+    "online bank": [
+      "memory.1577_bank"
+    ],
+    "orange": [
+      "memory.0862_orange"
+    ],
+    "orange chicken": [
+      "memory.0862_orange"
+    ],
+    "orange color": [
+      "memory.0862_orange"
+    ],
+    "orange hair": [
+      "memory.0862_orange"
+    ],
+    "orange juice": [
+      "memory.0862_orange"
+    ],
+    "orange light": [
+      "memory.0862_orange"
+    ],
+    "orange paint": [
+      "memory.0862_orange"
+    ],
+    "orange shirt": [
+      "memory.0862_orange"
+    ],
+    "orange tree": [
+      "memory.0862_orange"
+    ],
+    "pack lighter": [
+      "memory.2320_lighter"
+    ],
+    "painted my nails": [
+      "memory.5351_nail_care"
+    ],
+    "paper jam": [
+      "memory.0675_jam"
+    ],
+    "petroleum jelly": [
+      "memory.0676_jelly"
+    ],
+    "picked something up": [
+      "memory.1433_parcel"
+    ],
+    "picking something up": [
+      "memory.1433_parcel"
+    ],
+    "pickup errand": [
+      "memory.1433_parcel"
+    ],
+    "pine needle": [
+      "memory.3491_needle"
+    ],
+    "pitcher": [
+      "memory.3959_pitcher"
+    ],
+    "pitcher on the mound": [
+      "memory.3959_pitcher"
+    ],
+    "pitcher threw": [
+      "memory.3959_pitcher"
+    ],
+    "pitchers": [
+      "memory.3959_pitcher"
+    ],
+    "plain": [
+      "memory.5363_neutral"
+    ],
+    "plastic wrap": [
+      "memory.0011_wrap"
+    ],
+    "played baseball": [
+      "memory.1328_baseball_bat"
+    ],
+    "played checkers": [
+      "memory.1370_card_game"
+    ],
+    "played chess": [
+      "memory.1370_card_game"
+    ],
+    "played dominoes": [
+      "memory.1370_card_game"
+    ],
+    "played mahjong": [
+      "memory.1370_card_game"
+    ],
+    "playing chicken": [
+      "memory.3817_chicken"
+    ],
+    "political compass": [
+      "memory.3259_compass"
+    ],
+    "politically neutral": [
+      "memory.5363_neutral"
+    ],
+    "pop star": [
+      "memory.3715_star"
+    ],
+    "poppy": [
+      "memory.3639_poppy"
+    ],
+    "poppy called": [
+      "memory.3639_poppy"
+    ],
+    "poppy said": [
+      "memory.3639_poppy"
+    ],
+    "poppy seeds": [
+      "memory.3639_poppy"
+    ],
+    "poppy texted": [
+      "memory.3639_poppy"
+    ],
+    "poppy told me": [
+      "memory.3639_poppy"
+    ],
+    "port": [
+      "memory.2194_port"
+    ],
+    "port number": [
+      "memory.2194_port"
+    ],
+    "port the app": [
+      "memory.2194_port"
+    ],
+    "port wine": [
+      "memory.2194_port"
+    ],
+    "ports": [
+      "memory.2194_port"
+    ],
+    "power bank": [
+      "memory.1577_bank"
+    ],
+    "pretty decent": [
+      "memory.5363_neutral"
+    ],
+    "prices rose": [
+      "memory.3628_rose"
+    ],
+    "printer jam": [
+      "memory.0675_jam"
+    ],
+    "proposed": [
+      "memory.2515_engagement_ring"
+    ],
+    "proposed a toast": [
+      "memory.0323_toast"
+    ],
+    "protective": [
+      "memory.5355_happy"
+    ],
+    "protein bar": [
+      "memory.1534_bar"
+    ],
+    "provider running late": [
+      "memory.1755_medical_clinic"
+    ],
+    "pumped": [
+      "memory.5358_excited"
+    ],
+    "raise a toast": [
+      "memory.0323_toast"
+    ],
+    "raise the bar": [
+      "memory.1534_bar"
+    ],
+    "ran": [
+      "memory.0004_running"
+    ],
+    "ran the vacuum": [
+      "memory.1438_house"
+    ],
+    "ranch": [
+      "memory.1941_ranch"
+    ],
+    "ranch dip": [
+      "memory.1941_ranch"
+    ],
+    "ranch dressing": [
+      "memory.1941_ranch"
+    ],
+    "ranch sauce": [
+      "memory.1941_ranch"
+    ],
+    "ranch seasoning": [
+      "memory.1941_ranch"
+    ],
+    "raven": [
+      "memory.3799_raven"
+    ],
+    "raven and i": [
+      "memory.3799_raven"
+    ],
+    "raven called": [
+      "memory.3799_raven"
+    ],
+    "raven said": [
+      "memory.3799_raven"
+    ],
+    "raven texted": [
+      "memory.3799_raven"
+    ],
+    "raven told me": [
+      "memory.3799_raven"
+    ],
+    "ray": [
+      "memory.3792_ray"
+    ],
+    "ray called": [
+      "memory.3792_ray"
+    ],
+    "ray of light": [
+      "memory.3792_ray"
+    ],
+    "ray said": [
+      "memory.3792_ray"
+    ],
+    "ray tracing": [
+      "memory.3792_ray"
+    ],
+    "rays": [
+      "memory.3792_ray"
+    ],
+    "record player needle": [
+      "memory.3491_needle"
+    ],
+    "reflected": [
+      "memory.3043_journal"
+    ],
+    "relief pitcher": [
+      "memory.3959_pitcher"
+    ],
+    "relish": [
+      "memory.0695_relish"
+    ],
+    "relish every minute": [
+      "memory.0695_relish"
+    ],
+    "relish the challenge": [
+      "memory.0695_relish"
+    ],
+    "relish the moment": [
+      "memory.0695_relish"
+    ],
+    "relish the opportunity": [
+      "memory.0695_relish"
+    ],
+    "relish the thought": [
+      "memory.0695_relish"
+    ],
+    "reserved": [
+      "memory.5363_neutral"
+    ],
+    "respect": [
+      "memory.5355_happy"
+    ],
+    "rinsed with mouthwash": [
+      "memory.1422_toothbrush"
+    ],
+    "river bank": [
+      "memory.1577_bank"
+    ],
+    "robin": [
+      "memory.3800_robin"
+    ],
+    "robin and i": [
+      "memory.3800_robin"
+    ],
+    "robin called": [
+      "memory.3800_robin"
+    ],
+    "robin said": [
+      "memory.3800_robin"
+    ],
+    "robin texted": [
+      "memory.3800_robin"
+    ],
+    "robin told me": [
+      "memory.3800_robin"
+    ],
+    "rock": [
+      "memory.3683_rock"
+    ],
+    "rock band": [
+      "memory.3683_rock"
+    ],
+    "rock climbing": [
+      "memory.3683_rock"
+    ],
+    "rock collection": [
+      "memory.3683_rock"
+    ],
+    "rock concert": [
+      "memory.3683_rock"
+    ],
+    "rock music": [
+      "memory.3683_rock"
+    ],
+    "rock solid": [
+      "memory.3683_rock"
+    ],
+    "rock the boat": [
+      "memory.3683_rock"
+    ],
+    "rocking chair": [
+      "memory.3683_rock"
+    ],
+    "rocks": [
+      "memory.3683_rock"
+    ],
+    "rose": [
+      "memory.3628_rose"
+    ],
+    "rose above": [
+      "memory.3628_rose"
+    ],
+    "rose called": [
+      "memory.3628_rose"
+    ],
+    "rose color": [
+      "memory.3628_rose"
+    ],
+    "rose early": [
+      "memory.3628_rose"
+    ],
+    "rose from": [
+      "memory.3628_rose"
+    ],
+    "rose gold": [
+      "memory.3628_rose"
+    ],
+    "rose said": [
+      "memory.3628_rose"
+    ],
+    "rose to": [
+      "memory.3628_rose"
+    ],
+    "rose water": [
+      "memory.3628_rose"
+    ],
+    "rose wine": [
+      "memory.3628_rose"
+    ],
+    "rpg": [
+      "memory.1368_game_controller"
+    ],
+    "run": [
+      "memory.0004_running"
+    ],
+    "running": [
+      "memory.0004_running"
+    ],
+    "running a business": [
+      "memory.0004_running"
+    ],
+    "running a company": [
+      "memory.0004_running"
+    ],
+    "running a fever": [
+      "memory.0004_running"
+    ],
+    "running a meeting": [
+      "memory.0004_running"
+    ],
+    "running a program": [
+      "memory.0004_running"
+    ],
+    "running a server": [
+      "memory.0004_running"
+    ],
+    "running a system": [
+      "memory.0004_running"
+    ],
+    "running a team": [
+      "memory.0004_running"
+    ],
+    "running a test": [
+      "memory.0004_running"
+    ],
+    "running an app": [
+      "memory.0004_running"
+    ],
+    "running back": [
+      "memory.0004_running"
+    ],
+    "running behind": [
+      "memory.0004_running"
+    ],
+    "running clock": [
+      "memory.0004_running"
+    ],
+    "running code": [
+      "memory.0004_running"
+    ],
+    "running cold": [
+      "memory.0004_running"
+    ],
+    "running commentary": [
+      "memory.0004_running"
+    ],
+    "running errands": [
+      "memory.0004_running"
+    ],
+    "running fine": [
+      "memory.0004_running"
+    ],
+    "running for office": [
+      "memory.0004_running"
+    ],
+    "running hot": [
+      "memory.0004_running"
+    ],
+    "running joke": [
+      "memory.0004_running"
+    ],
+    "running late": [
+      "memory.0004_running"
+    ],
+    "running list": [
+      "memory.0004_running"
+    ],
+    "running low": [
+      "memory.0004_running"
+    ],
+    "running low on": [
+      "memory.0004_running"
+    ],
+    "running makeup": [
+      "memory.0004_running"
+    ],
+    "running mascara": [
+      "memory.0004_running"
+    ],
+    "running nose": [
+      "memory.0004_running"
+    ],
+    "running on empty": [
+      "memory.0004_running"
+    ],
+    "running on fumes": [
+      "memory.0004_running"
+    ],
+    "running out": [
+      "memory.0004_running"
+    ],
+    "running out of money": [
+      "memory.0004_running"
+    ],
+    "running out of time": [
+      "memory.0004_running"
+    ],
+    "running shoes": [
+      "memory.0004_running"
+    ],
+    "running short": [
+      "memory.0004_running"
+    ],
+    "running short on": [
+      "memory.0004_running"
+    ],
+    "running smoothly": [
+      "memory.0004_running"
+    ],
+    "running store": [
+      "memory.0004_running"
+    ],
+    "running tests": [
+      "memory.0004_running"
+    ],
+    "running the numbers": [
+      "memory.0004_running"
+    ],
+    "running through my mind": [
+      "memory.0004_running"
+    ],
+    "running time": [
+      "memory.0004_running"
+    ],
+    "running total": [
+      "memory.0004_running"
+    ],
+    "running track": [
+      "memory.0004_running"
+    ],
+    "running water": [
+      "memory.0004_running"
+    ],
+    "running well": [
+      "memory.0004_running"
+    ],
+    "sage": [
+      "memory.1021_sage"
+    ],
+    "sage advice": [
+      "memory.1021_sage"
+    ],
+    "sage called": [
+      "memory.1021_sage"
+    ],
+    "sage counsel": [
+      "memory.1021_sage"
+    ],
+    "sage green": [
+      "memory.1021_sage"
+    ],
+    "sage said": [
+      "memory.1021_sage"
+    ],
+    "saved to the cloud": [
+      "memory.3704_cloud"
+    ],
+    "school day": [
+      "memory.1555_classroom"
+    ],
+    "scrolling short videos": [
+      "memory.1362_television"
+    ],
+    "seal": [
+      "memory.3781_seal"
+    ],
+    "seal it": [
+      "memory.3781_seal"
+    ],
+    "seal the deal": [
+      "memory.3781_seal"
+    ],
+    "seal the envelope": [
+      "memory.3781_seal"
+    ],
+    "seals": [
+      "memory.3781_seal"
+    ],
+    "search bar": [
+      "memory.1534_bar"
+    ],
+    "seen": [
+      "memory.5355_happy"
+    ],
+    "server running": [
+      "memory.0004_running"
+    ],
+    "set my alarm": [
+      "memory.1421_bed"
+    ],
+    "sewing needle": [
+      "memory.3491_needle"
+    ],
+    "shell": [
+      "memory.3688_shell"
+    ],
+    "shell account": [
+      "memory.3688_shell"
+    ],
+    "shell command": [
+      "memory.3688_shell"
+    ],
+    "shell company": [
+      "memory.3688_shell"
+    ],
+    "shell environment": [
+      "memory.3688_shell"
+    ],
+    "shell out": [
+      "memory.3688_shell"
+    ],
+    "shell script": [
+      "memory.3688_shell"
+    ],
+    "shells": [
+      "memory.3688_shell"
+    ],
+    "shining": [
+      "memory.5358_excited"
+    ],
+    "short form video": [
+      "memory.1362_television"
+    ],
+    "short form videos": [
+      "memory.1362_television"
+    ],
+    "significantly lighter": [
+      "memory.2320_lighter"
+    ],
+    "skin mole": [
+      "memory.0204_mole"
+    ],
+    "sleep lighter": [
+      "memory.2320_lighter"
+    ],
+    "sleep log": [
+      "memory.3678_log"
+    ],
+    "slightly lighter": [
+      "memory.2320_lighter"
+    ],
+    "so jelly": [
+      "memory.0676_jelly"
+    ],
+    "so so": [
+      "memory.5363_neutral"
+    ],
+    "soft": [
+      "memory.5363_neutral"
+    ],
+    "softball bat": [
+      "memory.3739_bat"
+    ],
+    "software port": [
+      "memory.2194_port"
+    ],
+    "sports star": [
+      "memory.3715_star"
+    ],
+    "spy mole": [
+      "memory.0204_mole"
+    ],
+    "st louis cardinals": [
+      "memory.3802_cardinal"
+    ],
+    "stable": [
+      "memory.5363_neutral"
+    ],
+    "star": [
+      "memory.3715_star"
+    ],
+    "star employee": [
+      "memory.3715_star"
+    ],
+    "star player": [
+      "memory.3715_star"
+    ],
+    "star rating": [
+      "memory.3715_star"
+    ],
+    "star the message": [
+      "memory.3715_star"
+    ],
+    "stars": [
+      "memory.3715_star"
+    ],
+    "starting pitcher": [
+      "memory.3959_pitcher"
+    ],
+    "status bar": [
+      "memory.1534_bar"
+    ],
+    "steady": [
+      "memory.5363_neutral"
+    ],
+    "step stool": [
+      "memory.2721_stool"
+    ],
+    "stool": [
+      "memory.2721_stool"
+    ],
+    "stool sample": [
+      "memory.2721_stool"
+    ],
+    "stools": [
+      "memory.2721_stool"
+    ],
+    "stream": [
+      "memory.1900_stream"
+    ],
+    "stream a movie": [
+      "memory.1900_stream"
+    ],
+    "stream deck": [
+      "memory.1900_stream"
+    ],
+    "stream music": [
+      "memory.1900_stream"
+    ],
+    "stream online": [
+      "memory.1900_stream"
+    ],
+    "streaming service": [
+      "memory.1900_stream"
+    ],
+    "streams": [
+      "memory.1900_stream"
+    ],
+    "strong": [
+      "memory.5357_cool"
+    ],
+    "strong foundation": [
+      "memory.3355_foundation"
+    ],
+    "struggling": [
+      "memory.5370_sad"
+    ],
+    "sun ray": [
+      "memory.3792_ray"
+    ],
+    "sun rose": [
+      "memory.3628_rose"
+    ],
+    "sup": [
+      "memory.1310_paddleboard"
+    ],
+    "supported": [
+      "memory.5355_happy"
+    ],
+    "system log": [
+      "memory.3678_log"
+    ],
+    "system running": [
+      "memory.0004_running"
+    ],
+    "talk turkey": [
+      "memory.3816_turkey"
+    ],
+    "teddy bear": [
+      "memory.3719_bear"
+    ],
+    "temperature rose": [
+      "memory.3628_rose"
+    ],
+    "terminal shell": [
+      "memory.3688_shell"
+    ],
+    "that rocks": [
+      "memory.3683_rock"
+    ],
+    "the usual": [
+      "memory.5363_neutral"
+    ],
+    "thoughts are running": [
+      "memory.0004_running"
+    ],
+    "thoughts running": [
+      "memory.0004_running"
+    ],
+    "toast": [
+      "memory.0323_toast"
+    ],
+    "toast to": [
+      "memory.0323_toast"
+    ],
+    "too chicken": [
+      "memory.3817_chicken"
+    ],
+    "toy block": [
+      "memory.1484_block"
+    ],
+    "traffic jam": [
+      "memory.0675_jam"
+    ],
+    "travel lighter": [
+      "memory.2320_lighter"
+    ],
+    "tree topper star": [
+      "memory.3715_star"
+    ],
+    "tried to book": [
+      "memory.0006_book"
+    ],
+    "trip to turkey": [
+      "memory.3816_turkey"
+    ],
+    "trivia": [
+      "memory.1370_card_game"
+    ],
+    "trusting": [
+      "memory.5355_happy"
+    ],
+    "turkey": [
+      "memory.3816_turkey"
+    ],
+    "turkey bacon": [
+      "memory.3816_turkey"
+    ],
+    "turkey breast": [
+      "memory.3816_turkey"
+    ],
+    "turkey dinner": [
+      "memory.3816_turkey"
+    ],
+    "turkey sandwich": [
+      "memory.3816_turkey"
+    ],
+    "turkey trip": [
+      "memory.3816_turkey"
+    ],
+    "ultraviolet": [
+      "memory.3644_violet"
+    ],
+    "uncomfortable": [
+      "memory.5370_sad"
+    ],
+    "understood": [
+      "memory.5355_happy"
+    ],
+    "usb port": [
+      "memory.2194_port"
+    ],
+    "used mouthwash": [
+      "memory.1422_toothbrush"
+    ],
+    "vacuum seal": [
+      "memory.3781_seal"
+    ],
+    "vacuumed": [
+      "memory.1438_house"
+    ],
+    "vacuuming": [
+      "memory.1438_house"
+    ],
+    "vehicle wrap": [
+      "memory.0011_wrap"
+    ],
+    "video stream": [
+      "memory.1900_stream"
+    ],
+    "violet": [
+      "memory.3644_violet"
+    ],
+    "violet called": [
+      "memory.3644_violet"
+    ],
+    "violet color": [
+      "memory.3644_violet"
+    ],
+    "violet light": [
+      "memory.3644_violet"
+    ],
+    "violet said": [
+      "memory.3644_violet"
+    ],
+    "viva": [
+      "memory.1361_exam"
+    ],
+    "want to book": [
+      "memory.0006_book"
+    ],
+    "watched anime": [
+      "memory.1362_television"
+    ],
+    "watched reels": [
+      "memory.1362_television"
+    ],
+    "watched shorts": [
+      "memory.1362_television"
+    ],
+    "water lily": [
+      "memory.3632_lily"
+    ],
+    "way lighter": [
+      "memory.2320_lighter"
+    ],
+    "wedding toast": [
+      "memory.0323_toast"
+    ],
+    "went to bat": [
+      "memory.3739_bat"
+    ],
+    "whole turkey": [
+      "memory.3816_turkey"
+    ],
+    "window seal": [
+      "memory.3781_seal"
+    ],
+    "wireless mouse": [
+      "memory.3742_mouse"
+    ],
+    "wise sage": [
+      "memory.1021_sage"
+    ],
+    "word wrap": [
+      "memory.0011_wrap"
+    ],
+    "wore my retainer": [
+      "memory.1422_toothbrush"
+    ],
+    "workout log": [
+      "memory.3678_log"
+    ],
+    "wrap": [
+      "memory.0011_wrap"
+    ],
+    "wrap around": [
+      "memory.0011_wrap"
+    ],
+    "wrap dress": [
+      "memory.0011_wrap"
+    ],
+    "wrap it up": [
+      "memory.0011_wrap"
+    ],
+    "wrap up": [
+      "memory.0011_wrap"
+    ],
+    "wraps": [
+      "memory.0011_wrap"
+    ],
+    "writer's block": [
+      "memory.1484_block"
+    ],
+    "writers block": [
+      "memory.1484_block"
+    ],
+    "x ray": [
+      "memory.3792_ray"
+    ],
+    "yoga block": [
+      "memory.1484_block"
+    ],
+    "you rock": [
+      "memory.3683_rock"
+    ]
+  }
+}

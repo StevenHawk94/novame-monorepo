@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AppState, InteractionManager } from 'react-native';
+import { AppState } from 'react-native';
 import { useSegments } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 
 import { subscribeOfficialRatingRequest } from '@/lib/official-rating-prompt';
+import { useRatingTransitionBusy } from '@/lib/rating-navigation';
+import { useAppDialogVisible } from '@/components/ui/app-dialog';
 
 let requestInFlight = false;
 
@@ -22,7 +24,7 @@ async function requestOfficialRating(): Promise<void> {
 }
 
 /**
- * Waits only until Claim navigation has settled before requesting the native
+ * Waits until Claim navigation and app alerts have settled before requesting the native
  * store dialog. Any modal route (including the Free reflection paywall) keeps
  * the request pending until it closes.
  */
@@ -31,6 +33,8 @@ export function OfficialRatingGate() {
   const routeKey = useMemo(() => segments.join('/'), [segments]);
   const [pending, setPending] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
+  const transitionBusy = useRatingTransitionBusy();
+  const dialogVisible = useAppDialogVisible();
 
   useEffect(() => subscribeOfficialRatingRequest(() => setPending(true)), []);
 
@@ -41,18 +45,20 @@ export function OfficialRatingGate() {
 
   useEffect(() => {
     const routeSegments = routeKey.split('/');
-    const modalOpen = routeSegments.includes('(modals)');
-    if (!pending || appState !== 'active' || modalOpen) return;
+    // Reflect uses a native fullScreenModal, not the '(modals)' route group.
+    // Defer until a base tab is visible AND native dismissal has completed.
+    // The timer holds no overlay, navigation lock, or interaction handle.
+    if (!pending || appState !== 'active' || !routeSegments.includes('(tabs)') || transitionBusy || dialogVisible) return;
 
-    const interaction = InteractionManager.runAfterInteractions(() => {
+    const timer = setTimeout(() => {
       setPending(false);
       void requestOfficialRating();
-    });
+    }, 1200);
 
     return () => {
-      interaction.cancel();
+      clearTimeout(timer);
     };
-  }, [appState, pending, routeKey]);
+  }, [appState, pending, routeKey, transitionBusy, dialogVisible]);
 
   return null;
 }

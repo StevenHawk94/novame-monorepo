@@ -55,6 +55,8 @@ export interface ItemMatch {
   /** The source sentence containing the first accepted hit. Used by the
    *  non-AI "Use My Words" memory action. */
   sourceExcerpt?: string;
+  /** Exact accepted rules, for mismatch review; never the full journal. */
+  matchedKeywords?: string[];
 }
 
 const NEGATORS = new Set([
@@ -163,7 +165,7 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
   const { items, synonyms, exclusions = {} } = dict;
   const tokens = tokenize(text);
   const maxLen = maxPhraseLen(synonyms);
-  const hits = new Map<string, { itemId: string; tokenIndex: number; label: string }>();
+  const hits = new Map<string, { itemId: string; tokenIndex: number; label: string; keywords: Set<string> }>();
   const consumed = new Array(tokens.length).fill(false);
 
   for (let i = 0; i < tokens.length; i++) {
@@ -189,8 +191,9 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
       }
 
       if (!hits.has(itemId)) {
-        hits.set(itemId, { itemId, tokenIndex: i, label: buildLabel(tokens, i, items[itemId].displayName) });
+        hits.set(itemId, { itemId, tokenIndex: i, label: buildLabel(tokens, i, items[itemId].displayName), keywords: new Set() });
       }
+      hits.get(itemId)!.keywords.add(phrase);
       for (let k = i; k < i + len; k++) consumed[k] = true;
       break;
     }
@@ -209,5 +212,6 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
     rarity: items[h.itemId].rarity,
     label: h.label,
     sourceExcerpt: sourceSentence(text, tokens[h.tokenIndex]?.start ?? 0),
+    matchedKeywords: [...h.keywords],
   }));
 }

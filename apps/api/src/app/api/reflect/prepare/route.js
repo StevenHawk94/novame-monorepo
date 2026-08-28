@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
-import { XP_RULES } from '@novame/engine'
+import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
 import { createMemoryFallbacks, isoWeek, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
 
@@ -49,6 +49,22 @@ export async function POST(request) {
     })
     let draft = reserved?.draft
     if (!draft) throw new Error('save_not_confirmed')
+    // Admin evidence only. Confirmed removal never changes matching rules.
+    // Do not accept client-provided keywords or store the journal in this queue.
+    const reflectId = draft.saved_reflect_id || draft.finalized_reflect_id
+    if (reflectId && resolved.removedMatches?.length && draft.body === resolved.body) {
+      const rows = resolved.removedMatches.flatMap(item => (item.matchedKeywords || []).slice(0, 10).map(keyword => ({
+        reflect_id: reflectId, item_id: item.itemId, icon_name: item.displayName,
+        keyword, catalog_version: ITEM_CATALOG_VERSION, rule_revision: input.matchingVersion?.revision || 0,
+      })))
+      after(async () => {
+        if (!rows.length) return
+        const { error: feedbackError } = await supabase.from('item_match_removals').upsert(rows, {
+          onConflict: 'reflect_id,item_id,keyword', ignoreDuplicates: true,
+        })
+        if (feedbackError) console.warn('[item-learning] removal feedback failed:', feedbackError.message)
+      })
+    }
     if (isPaid && profile.ai_consent_at && draft.body) {
       draft = await generateSavedReflectCopy(supabase, draft, input.userId)
     }

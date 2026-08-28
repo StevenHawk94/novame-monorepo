@@ -39,6 +39,7 @@ function mobileHarness(post) {
 }
 const legacyChoices = require('../packages/engine/src/items/tap-your-day-v1.json');
 const catalog = load('packages/engine/src/items/tap-your-day.ts', { './tap-your-day-v1.json': legacyChoices });
+const customCatalog = load('packages/engine/src/items/custom-tap-items.ts');
 const personItems = load('packages/engine/src/items/tap-person-items.ts').TAP_PERSON_ITEMS;
 const rawDictionary = require('../packages/engine/src/items/dictionary.json');
 const dictionary = load('packages/engine/src/items/dictionary.ts', { './dictionary.json': rawDictionary, './tap-person-items': { TAP_PERSON_ITEMS: personItems } }).ITEM_DICTIONARY;
@@ -47,6 +48,7 @@ const draftInput = (body = '') => ({ mode: 'prompt', selectionVersion: catalog.T
 function aiHarness(result = { items: {}, bunnyText: null }) {
   const calls = [];
   const ai = load('apps/api/src/lib/reflect-ai.js', {
+    './item-learning-evidence': { itemLearningHints: () => [], cleanLearningSignals: () => [] },
     './ai': {
       callAI: async (input) => {
         calls.push(input);
@@ -58,8 +60,9 @@ function aiHarness(result = { items: {}, bunnyText: null }) {
   });
   const draft = load('apps/api/src/lib/reflect-draft.js', {
     '@supabase/supabase-js': { createClient() { throw new Error('Live DB access forbidden'); } },
-    '@novame/engine': { ...catalog, matchItems: () => [{ itemId: 'memory.0002_coffee', displayName: 'Coffee', sourceExcerpt: 'Made coffee.' }] },
+    '@novame/engine': { ...catalog, ...customCatalog, matchItems: () => [{ itemId: 'memory.0002_coffee', displayName: 'Coffee', sourceExcerpt: 'Made coffee.' }] },
     '@/lib/remote-items': { getMergedDictionary: async () => dictionary },
+    '@/lib/item-rule-store': { dictionaryForRevision: async () => dictionary },
     '@/lib/reflect-ai': ai,
   });
   return { ai, draft, calls };
@@ -154,6 +157,19 @@ test('all choices survive resolution, including the 30 feelings and last two pic
   assert.equal(resolved.matches.at(-1).displayName, 'Silly');
   assert.ok(resolved.matches.every((item) => item.sourceExcerpt === ''));
   assert.equal(resolved.matches.find((item) => item.itemId === 'tap.person.pets').selectionLabel, 'Pets');
+});
+test('custom v3 selection keeps its user name/icon and invalid identities are rejected', async () => {
+  const { draft } = aiHarness();
+  const selection = {itemId:'memory.0002_coffee',label:'Morning espresso ritual',group:'DAILY RHYTHM',kind:'activity',custom:true};
+  const input = {...draftInput('A good morning.'),selectionVersion:customCatalog.CUSTOM_TAP_SELECTION_VERSION,selectedItems:[selection]};
+  const value = await draft.resolveDraftInput(null,input);
+  assert.equal(value.matches[0].itemId,selection.itemId);
+  assert.equal(value.matches[0].displayName,selection.label);
+  assert.equal(value.matches[0].selectionLabel,selection.label);
+  assert.equal(value.matches[0].custom,true);
+  assert.equal((await draft.resolveDraftInput(null,{...input,selectedItems:[{...selection,itemId:'not-real'}]})).error,'unknown_item');
+  assert.equal((await draft.resolveDraftInput(null,{...input,selectedItems:[{...selection,label:''}]})).error,'invalid_selection_item');
+  assert.equal((await draft.resolveDraftInput(null,{...input,selectionVersion:'tap-your-day-v2'})).error,'invalid_selection_item');
 });
 test('mobile prepare sends all 131 selections and their version without truncation', async () => {
   const mobile = mobileHarness(async (url, body) => {

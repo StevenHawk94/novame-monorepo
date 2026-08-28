@@ -33,7 +33,7 @@ before(async () => {
       body text,local_date date,mode text,source_kit text,friend_user_id uuid,matches jsonb default '[]',ai_memories jsonb default '{}',
       bubble text,finalized_reflect_id uuid,created_at timestamptz default now(),expires_at timestamptz default now()+interval '24 hours',
       unique(user_id,idempotency_key));
-    insert into items select 'i'||n from generate_series(1,150) n;
+    insert into items select 'i'||n from generate_series(1,200) n;
   `);
   const submit = read('20260723000027_pairing_reflect_modes.sql');
   await db.exec(submit.slice(submit.indexOf('create or replace function public.submit_reflect(')));
@@ -120,14 +120,15 @@ test('process death does not lose the saved baseline; saved settlements can fini
   await db.query("update reflect_drafts set expires_at=now()-interval '2 days' where id=$1",[d.id]);
   assert.equal((await complete(id,d.id)).reflect_id,d.saved_reflect_id);
   const legacy = randomUUID();
-  await db.query("insert into reflect_drafts(id,user_id,idempotency_key,prompt_id,body,local_date,mode,matches) values($1,$2,$3,9,'old',current_date,'typing','[]')",[legacy,id,randomUUID()]);
+  // Use the same explicit client date, not the database host's timezone.
+  await db.query("insert into reflect_drafts(id,user_id,idempotency_key,prompt_id,body,local_date,mode,matches) values($1,$2,$3,9,'old',$4,'typing','[]')",[legacy,id,randomUUID(),d.local_date]);
   const old=await rpc("select finalize_reflect_draft($1,$2,'[]','[]',30,'2026-W35') result",[id,legacy]);
   assert.ok(old.reflect_id); assert.equal(old.reflects_today,2);
 });
-test('the model claim is durable and single-use; all 131 selections survive reservation',async()=>{
-  const id=await user(), matches=Array.from({length:131},(_,i)=>({itemId:'i'+(i+1)}));
+test('the model claim is durable and single-use; all 191 curated/custom selections survive reservation',async()=>{
+  const id=await user(), matches=Array.from({length:191},(_,i)=>({itemId:'i'+(i+1)}));
   const {draft:d}=await begin(id,randomUUID(),{matches,mode:'prompt'}, {});
-  assert.equal((await row('select count(*)::int n from reflect_items where reflect_id=$1',[d.saved_reflect_id])).n,131);
+  assert.equal((await row('select count(*)::int n from reflect_items where reflect_id=$1',[d.saved_reflect_id])).n,191);
   const claim=()=>db.query('update reflect_drafts set ai_claimed_at=now() where id=$1 and ai_claimed_at is null and finalized_reflect_id is null returning id',[d.id]);
   const [a,b]=await Promise.all([claim(),claim()]);
   assert.equal(a.rows.length+b.rows.length,1);

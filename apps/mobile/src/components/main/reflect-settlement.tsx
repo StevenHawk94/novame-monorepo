@@ -66,15 +66,16 @@ export function MatchedItemsReviewSheet({
   onRemove: (itemId: string) => void;
   onDone: () => void;
 }) {
+  const [removed, setRemoved] = useState<Set<string>>(() => new Set());
   return (
     <View style={styles.overlay}>
       <View style={styles.modalCard}>
         <Text style={styles.reviewTitle}>See an Item that doesn’t fit?{`\n`}Tap to remove it.</Text>
-        <ScrollView contentContainerStyle={styles.itemGrid} showsVerticalScrollIndicator={false}>
-          {items.map((item) => (
+        <ScrollView keyboardShouldPersistTaps="always" contentContainerStyle={styles.itemGrid} showsVerticalScrollIndicator={false}>
+          {items.filter(item => !removed.has(item.itemId)).map((item) => (
             <Pressable
               key={item.itemId}
-              onPress={() => { void haptics.light(); onRemove(item.itemId); }}
+              onPress={() => { void haptics.light(); setRemoved(old => new Set(old).add(item.itemId)); }}
               style={({ pressed }) => [styles.reviewItem, pressed && { opacity: 0.55 }]}
             >
               <ItemSprite itemId={item.itemId} size={58} radius={14} />
@@ -86,7 +87,7 @@ export function MatchedItemsReviewSheet({
           color="#CBBDAA"
           offset={4}
           radius={22}
-          onPress={onDone}
+          onPress={() => { removed.forEach(onRemove); onDone(); }}
           style={styles.brownButtonWrap}
           cardStyle={styles.brownButton}
         >
@@ -184,7 +185,7 @@ export function MemoryEditorSheet({
                   const memory = byId.get(item.itemId)!;
                   return (
                     <View key={item.itemId} style={styles.editorRow}>
-                      <ItemSprite itemId={item.itemId} size={54} radius={13} tapYourDay={tapYourDay} />
+                      <ItemSprite itemId={item.itemId} size={54} radius={13} tapYourDay={tapYourDay && !item.custom} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.editorName}>{item.displayName}</Text>
                         <TextInput
@@ -285,7 +286,7 @@ function ShareItemsSheet({
                   onPress={() => toggle(item.itemId)}
                   style={[styles.shareReviewItem, hidden.has(item.itemId) && styles.hiddenItem]}
                 >
-                  <ItemSprite itemId={item.itemId} size={52} radius={13} tapYourDay={tapYourDay} />
+                  <ItemSprite itemId={item.itemId} size={52} radius={13} tapYourDay={tapYourDay && !item.custom} />
                   {hidden.has(item.itemId) && (
                     <MaterialIcons name="visibility-off" size={17} color="#FFFFFF" style={styles.removeBadge} />
                   )}
@@ -499,7 +500,7 @@ export function ReflectSettlementView({
             </Text>
             <View style={styles.summaryItems}>
               {draft.matchedItems.map((item) => (
-                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} tapYourDay={draft.mode === 'prompt'} />
+                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} tapYourDay={draft.mode === 'prompt' && !item.custom} />
               ))}
             </View>
           </Pressable>

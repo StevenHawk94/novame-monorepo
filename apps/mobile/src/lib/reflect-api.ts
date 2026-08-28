@@ -35,6 +35,8 @@ export interface MatchedItem {
   rarity: string;
   label: string;
   sourceExcerpt?: string;
+  custom?: boolean;
+  matchedKeywords?: string[];
 }
 
 export type MemorySource = 'manual' | 'ai' | 'use_my_words' | 'legacy';
@@ -205,7 +207,8 @@ export async function prepareReflect(params: {
   friendUserId?: string;
   mode?: 'typing' | 'prompt' | 'items';
   selectionVersion?: string;
-  selectedItems?: { itemId: string }[];
+  matchingVersion?: { catalog: string; revision: number };
+  selectedItems?: { itemId: string; label?: string; kind?: string; group?: string; custom?: boolean }[];
   removedItemIds?: string[];
   idempotencyKey?: string;
 }): Promise<PrepareResult> {
@@ -243,6 +246,7 @@ export async function prepareReflect(params: {
       friendUserId: params.friendUserId,
       mode,
       selectionVersion: params.selectionVersion,
+      matchingVersion: params.matchingVersion,
       selectedItems: params.selectedItems,
       removedItemIds: params.removedItemIds,
       idempotencyKey: params.idempotencyKey ?? randomUUID(),

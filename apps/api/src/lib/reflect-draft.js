@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import { matchItems, tapYourDaySelectionLimit, tapYourDayChoice } from '@novame/engine'
+import { matchItems, tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem, CUSTOM_TAP_SELECTION_VERSION } from '@novame/engine'
 
-import { getMergedDictionary } from '@/lib/remote-items'
+import { dictionaryForRevision } from '@/lib/item-rule-store'
 import {
   isUsableReflectMemoryCopy,
   neutralizeReflectMemoryCopy,
@@ -37,12 +37,15 @@ export async function resolveDraftInput(supabase, input) {
   const isTapYourDay = selectionLimit > 0 && mode === 'prompt'
   if (input.selectionVersion != null && !isTapYourDay) return { error: 'invalid_selection_version' }
 
-  const dictionary = await getMergedDictionary(supabase)
+  const dictionary = await dictionaryForRevision(supabase, input.matchingVersion)
   let matches = []
+  let removedMatches = []
   if (mode === 'typing') {
     const removed = new Set(Array.isArray(input.removedItemIds)
       ? input.removedItemIds.filter((value) => typeof value === 'string') : [])
-    matches = matchItems(body, dictionary).filter((match) => !removed.has(match.itemId))
+    const accepted = matchItems(body, dictionary)
+    matches = accepted.filter(match => !removed.has(match.itemId))
+    removedMatches = accepted.filter(match => removed.has(match.itemId))
   } else {
     if (!Array.isArray(input.selectedItems) || input.selectedItems.length === 0) {
       return { error: 'empty' }
@@ -53,9 +56,13 @@ export async function resolveDraftInput(supabase, input) {
     for (const selected of input.selectedItems.slice(0, isTapYourDay ? selectionLimit : 100)) {
       const itemId = typeof selected?.itemId === 'string' ? selected.itemId : ''
       if (!itemId || seen.has(itemId)) continue
+      if (!Object.prototype.hasOwnProperty.call(dictionary.items, itemId)) return { error: 'unknown_item' }
+      if (selected.custom === true && input.selectionVersion !== CUSTOM_TAP_SELECTION_VERSION) return { error: 'invalid_selection_item' }
       const item = dictionary.items[itemId]
       if (!item) return { error: 'unknown_item' }
-      const choice = isTapYourDay ? tapYourDayChoice(itemId, input.selectionVersion) : null
+      const choice = input.selectionVersion === CUSTOM_TAP_SELECTION_VERSION && selected.custom === true
+        ? cleanCustomTapItem(selected, dictionary)
+        : isTapYourDay ? tapYourDayChoice(itemId, input.selectionVersion) : null
       if (isTapYourDay && !choice) return { error: 'invalid_selection_item' }
       const category = item.category || 'Uncategorized'
       const count = (categoryCounts.get(category) || 0) + 1
@@ -68,13 +75,14 @@ export async function resolveDraftInput(supabase, input) {
         rarity: item.rarity,
         label: choice?.label || item.displayName,
         // A chosen representative icon is not a keyword match. The accepted
-        // choice label is server-owned evidence; the note remains separate.
+        // curated label is server-owned; custom labels are validated user data.
+        // The optional note remains separate from both.
         sourceExcerpt: isTapYourDay ? '' : body || '',
-        ...(choice ? { selectionLabel: choice.label, selectionKind: choice.kind } : {}),
+        ...(choice ? { selectionLabel: choice.label, selectionKind: choice.kind, ...(choice.custom ? { custom: true } : {}) } : {}),
       })
     }
   }
-  return { mode, body, matches }
+  return { mode, body, matches, removedMatches }
 }
 
 function firstWords(value, maxWords = 30) {

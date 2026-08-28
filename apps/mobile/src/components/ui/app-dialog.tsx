@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 
@@ -33,8 +33,15 @@ interface DialogState {
 
 let present: ((d: DialogState) => void) | null = null;
 let pendingWhileUnmounted: DialogState | null = null;
+let dialogVisible = false;
+const dialogListeners = new Set<() => void>();
+function markVisible(value: boolean) { dialogVisible = value; dialogListeners.forEach(fn => fn()); }
+export function useAppDialogVisible() {
+  return useSyncExternalStore(fn => { dialogListeners.add(fn); return () => { dialogListeners.delete(fn); }; }, () => dialogVisible, () => false);
+}
 
 export function appAlert(title: string, message?: string, buttons?: AppAlertButton[]): void {
+  markVisible(true);
   const dialog: DialogState = {
     title,
     message,
@@ -55,6 +62,7 @@ export function AppDialogHost() {
     }
     return () => {
       present = null;
+      markVisible(false);
     };
   }, []);
 
@@ -71,6 +79,7 @@ export function AppDialogHost() {
       void haptics.pageClose();
     }
     setDialog(null);
+    markVisible(false);
     b.onPress?.();
   };
 

@@ -17,6 +17,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { matchItems } from '@novame/engine';
+import { itemRuleContext } from '@/lib/item-rule-cache';
 
 import {
   RC,
@@ -37,7 +38,6 @@ import { haptics } from '@/lib/haptics';
 import { useCompletionSound } from '@/lib/use-completion-sound';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS } from '@/lib/icons';
-import { mergedItemDictionary } from '@/lib/remote-items';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
 import {
   getReflectStateToday,
@@ -74,6 +74,7 @@ export default function SharedMemoryCreateScreen() {
   const [pairLoading, setPairLoading] = useState(!routeFriendId && !cachedPartnerId);
   const [phase, setPhase] = useState<Phase>('write');
   const [text, setText] = useState('');
+  const [matching] = useState(itemRuleContext);
   const [submitting, setSubmitting] = useState(false);
   const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
@@ -102,7 +103,7 @@ export default function SharedMemoryCreateScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLiveMatched(matchItems(text, mergedItemDictionary()));
+      setLiveMatched(matchItems(text, matching.dictionary));
     }, 250);
     return () => clearTimeout(timer);
   }, [text]);
@@ -137,6 +138,7 @@ export default function SharedMemoryCreateScreen() {
       body: text,
       friendUserId,
       mode: 'typing',
+      matchingVersion: matching.version,
       removedItemIds: [...removedIds],
       idempotencyKey: saveKey,
     });
@@ -221,13 +223,14 @@ export default function SharedMemoryCreateScreen() {
                 onPress={() => {
                   if (shownMatches.length > 0) {
                     void haptics.pageOpen();
+                    Keyboard.dismiss();
                     setEditOpen(true);
                   }
                 }}
                 disabled={shownMatches.length === 0}
                 style={styles.matchBar}
               >
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
+                <ScrollView horizontal keyboardShouldPersistTaps="always" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
                   {shownMatches.length === 0 ? (
                     <Text style={styles.matchEmpty}>Items will appear as you write…</Text>
                   ) : shownMatches.map((match) => (

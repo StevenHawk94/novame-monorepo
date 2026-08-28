@@ -3,10 +3,11 @@
  *
  * Items are now fully generated into @novame/engine plus the mobile bundle's
  * per-item WebP map. The retired R2 `Items/` folder no longer exists, so these
- * compatibility exports deliberately stay local-only and perform no network
- * request. Existing consumers keep the same cache/matching call shape.
+ * images remain local-only. A small, separately cached reviewed-rule snapshot
+ * can refresh in the background; no page TTL or asset download policy changes.
  */
 import { ITEM_DICTIONARY, type ItemDictionary } from '@novame/engine';
+import { itemRuleContext, refreshItemRules } from './item-rule-cache';
 
 export interface RemoteItem {
   id: string;
@@ -18,7 +19,7 @@ export interface RemoteItem {
 }
 
 export function refreshRemoteItems(): Promise<boolean> {
-  return Promise.resolve(true);
+  return refreshItemRules();
 }
 
 export function remoteItems(): RemoteItem[] {
@@ -35,7 +36,7 @@ export function remoteImageUri(_id: string): string {
 }
 
 export function mergedItemDictionary(): ItemDictionary {
-  return ITEM_DICTIONARY;
+  return itemRuleContext().dictionary;
 }
 
 export function itemDisplayName(id: string): string {

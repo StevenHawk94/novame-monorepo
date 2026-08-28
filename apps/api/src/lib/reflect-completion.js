@@ -21,6 +21,7 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
     const { data: profile } = await supabase.from('profiles')
       .select('subscription_tier, ai_consent_at').eq('id', userId).single()
     if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at) return
+    if (!draft.body?.trim()) return
 
     context = await loadReflectAnalyzerContext(supabase, {
       userId, visibleToFriend: result.shared_to_friends !== false, localDate: draft.local_date,
@@ -29,7 +30,7 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
       reflectId: result.reflect_id,
       journal: draft.body,
       matchedIcons: (draft.matches || []).map((item) => ({
-        id: item.itemId, name: item.displayName,
+        id: item.itemId, name: item.displayName, acceptedKeywords: item.matchedKeywords || [],
       })),
       connectionEnabled: context.connectionEnabled,
       currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
