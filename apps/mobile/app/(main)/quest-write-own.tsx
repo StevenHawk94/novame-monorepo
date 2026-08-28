@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useScreenOperation } from '@/lib/use-screen-operation';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PLAN_DAYS } from '@novame/domain';
 
@@ -33,6 +34,8 @@ export default function QuestWriteOwnScreen() {
   const router = useRouter();
   const [tasks, setTasks] = useState<string[]>(() => Array(PLAN_DAYS).fill(''));
   const [submitting, setSubmitting] = useState(false);
+  const operation = useScreenOperation();
+  useFocusEffect(useCallback(() => { setSubmitting(false); }, []));
 
   const filled = tasks.filter((t) => t.trim().length > 0).length;
   const ready = filled === PLAN_DAYS && !submitting;
@@ -43,15 +46,21 @@ export default function QuestWriteOwnScreen() {
 
   async function onStart() {
     if (!ready) return;
+    const run = operation.begin();
+    if (!run) return;
     void haptics.medium();
     setSubmitting(true);
     const res = await startPlan('write_own', 'My Own Plan', tasks.map((t) => t.trim()));
+    if (!run.isCurrent()) return;
     if (res.ok) {
       await fetchQuestStatus({ force: true });
+      if (!run.isCurrent()) return;
+      run.finish();
       router.back();
       return;
     }
     setSubmitting(false);
+    run.finish();
     if (res.error === 'already_active') {
       appAlert('You already have an active plan', 'Finish or wait for it to end before starting a new one.');
     } else {

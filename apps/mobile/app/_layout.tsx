@@ -21,6 +21,7 @@ import {
 import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
+import { observeSessionIdentity } from '@/lib/session-lifecycle';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { initIAP, cleanupIAP } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
@@ -43,6 +44,7 @@ import { AppDialogHost } from '@/components/ui/app-dialog';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
+import { observeHomeEntryAppState } from '@/lib/home-entry-readiness';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import { touchActivity } from '@/lib/activity';
 import { checkContentVersionInBackground } from '@/lib/content-version';
@@ -107,14 +109,15 @@ const PREWARM_TIMEOUT_MS = 3000;
  *      backgrounded (saves battery, avoids stale state on resume).
  *
  * 2. onAuthStateChange listener (global lifecycle):
- *    - SIGNED_IN  → router.replace to /(main)/(tabs), except an anonymous
- *      UUID prepared while the onboarding flow is still in progress
+ *    - SIGNED_IN with a different UUID → route into the new account, except
+ *      an anonymous UUID prepared while onboarding is still in progress.
+ *      Recovery of the same UUID must not reset caches or the current page.
  *    - SIGNED_OUT → router.replace to /(auth)/sign-in
  *    - This is what makes sign-out from any screen (e.g. Me page)
  *      automatically navigate back to auth. Individual screens do
  *      not call router themselves on auth changes.
- *    - INITIAL_SESSION fires once on startup; we ignore it here
- *      because app/index.tsx handles startup redirect explicitly
+ *    - INITIAL_SESSION records ownership without navigating;
+ *      app/index.tsx handles startup redirect explicitly
  *      via getCurrentSession() (avoids race between this listener
  *      and the initial Redirect).
  */
@@ -277,6 +280,7 @@ function RootLayout() {
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
     const handleAppStateChange = (state: AppStateStatus) => {
+      observeHomeEntryAppState(state);
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
         // R2 assets are warmed only while the app is in use. The queue
@@ -313,7 +317,13 @@ function RootLayout() {
     const {
       data: { subscription: authSub },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        observeSessionIdentity(session?.user?.id ?? null);
+        return;
+      }
       if (event === 'SIGNED_IN') {
+        const sameIdentity = observeSessionIdentity(session?.user?.id ?? null);
+        if (sameIdentity) return;
         const isAnonymous =
           (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
 
@@ -335,11 +345,11 @@ function RootLayout() {
           return;
         }
 
-        // SIGNED_IN fires without a preceding SIGNED_OUT more often than you
-        // would expect: a force-quit leaves the Supabase session in
-        // AsyncStorage, an expo-dev-client hot restart reuses it, and Apple
-        // Sign In can re-authenticate as a different account outright. So this
-        // path has to scrub, not just SIGNED_OUT.
+        // Only a DIFFERENT identity reaches this point. Supabase also emits
+        // SIGNED_IN when recovering the same session; that must not clear
+        // caches or replace a page the user is currently interacting with.
+        // Switching to an existing Apple/Google/email account still scrubs
+        // the outgoing owner's caches even without a preceding SIGNED_OUT.
         //
         // Every 'user'-scoped key goes, not the four this handler happened to
         // name. Which keys those are is decided in shared/storage/keys.ts, once,
@@ -382,6 +392,7 @@ function RootLayout() {
         // and missing Me page header on first frame after sign-in.
         router.replace('/(auth)/signing-in');
       } else if (event === 'SIGNED_OUT') {
+        observeSessionIdentity(null);
         void stopSubscriptionRealtime().catch((error) => {
           console.warn('[layout] entitlement realtime sign-out failed:', error);
         });
@@ -416,7 +427,7 @@ function RootLayout() {
         debugAccountKeysRemaining('SIGNED_OUT');
         router.replace('/(auth)/sign-in');
       }
-      // INITIAL_SESSION / TOKEN_REFRESHED / USER_UPDATED: no-op here.
+      // TOKEN_REFRESHED / USER_UPDATED do not navigate or clear caches.
     });
 
     return () => {

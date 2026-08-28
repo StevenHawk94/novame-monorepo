@@ -76,6 +76,7 @@ test('custom choices persist by account, and a stale save cannot cross an auth c
   const values=new Map(), slots=[], effects=[];let cursor=0,auth;
   const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],next=>{slots[i]=next}]},useRef(value){const i=cursor++;return slots[i]??=( {current:value} )},useEffect(fn){effects.push(fn)}};
   const mod=load('apps/mobile/src/lib/custom-tap-items.ts',{
+    '../shared/storage/keys': { kCustomTapItems: { keyFor: id => `custom-tap-items:v1:${id}` } },
     react,'@novame/engine':{...engine,...load('packages/engine/src/items/custom-tap-items.ts')},
     './storage':{storage:{getString:key=>values.get(key),set:(key,value)=>values.set(key,value)}},
     './supabase':{supabase:{auth:{getSession:async()=>({data:{session:{user:{id:'a'}}}}),onAuthStateChange(fn){auth=fn;return{data:{subscription:{unsubscribe(){}}}}}}}},
@@ -96,14 +97,20 @@ test('automatic rating waits outside modal transitions and never renders a block
   function gate({route=['(main)','(tabs)','home'],transition=false,dialog=false}={}){
     const effects=[],timers=new Map();let state=0,calls=0,resolveAction;
     const mod=load('apps/mobile/src/components/rating/official-rating-gate.tsx',{
-      react:{useMemo:fn=>fn(),useState:()=>[state++===0?true:'active',()=>{}],useEffect:fn=>effects.push(fn)},
+      react:{useMemo:fn=>fn(),useRef:current=>({current}),useState:initial=>[state++===0?true:initial,()=>{}],useEffect:fn=>effects.push(fn)},
       'react-native':{AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
       'expo-router':{useSegments:()=>route},
       'expo-store-review':{hasAction:()=>new Promise(resolve=>{resolveAction=resolve}),requestReview:async()=>{calls++}},
       '@/lib/official-rating-prompt':{subscribeOfficialRatingRequest:()=>()=>{}},
-      '@/lib/rating-navigation':{useRatingTransitionBusy:()=>transition},
+      '@/lib/reflection-paywall-count':{subscribeReflectionPaywallRequest:()=>()=>{}},
+      '@/lib/rating-navigation':{useRatingTransitionBusy:()=>transition,isNavigationTransitionBusy:()=>transition},
       '@/components/ui/app-dialog':{useAppDialogVisible:()=>dialog},
-    },{setTimeout:(fn,ms)=>{assert.equal(ms,1200);timers.set(1,fn);return 1},clearTimeout:id=>timers.delete(id)});
+      '@/lib/use-subscription-tier':{useSubscriptionTierState:()=> 'free'},
+      '@/lib/modal-coordinator':{useActiveModalSlot:()=>undefined},
+      '@/lib/overlay-presence':{useOverlayPresent:()=>false,isOverlayPresent:()=>false},
+      '@/lib/async-lifecycle':{withDeadline:work=>work},
+    },{requestAnimationFrame:fn=>{timers.set(1,fn);return 1},cancelAnimationFrame:id=>timers.delete(id),
+      clearTimeout(){},setTimeout(){assert.fail('No fixed rating delay');}});
     assert.equal(mod.OfficialRatingGate(),null);
     const cleanups=effects.map(fn=>fn());
     return{timers,cleanups,resolve:()=>resolveAction(true),calls:()=>calls};

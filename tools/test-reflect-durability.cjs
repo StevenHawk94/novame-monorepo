@@ -90,10 +90,11 @@ function guideHarness() {
       Modal:'Modal',Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x,absoluteFillObject:{}},
     },
     'expo-image':{Image:'Image',useImage:()=>image},
+    '@/components/ui/screen-overlay':{ScreenOverlay:'Modal'},
     'expo-router':{useFocusEffect:fn=>react.useEffect(()=>focused?fn():undefined,[fn,focused])},
     '@/lib/icons':{ICONS:{}},'@/lib/haptics':{},
     '@/lib/feature-guides':{shouldShowFeatureGuide:()=>!completed,completeFeatureGuide:()=>completed++},
-    '@/lib/modal-coordinator':{useActiveModalSlot:()=>active,requestModalSlot:()=>active='guide',releaseModalSlot:()=>active=null},
+    '@/lib/modal-coordinator':{useActiveModalSlot:()=>active,ownsModalSlot:()=>active==='guide',requestModalSlot:()=>active='guide',releaseModalSlot:()=>active=null},
   },{
     setTimeout(fn){timers.set(++nextTimer,fn);return nextTimer;},clearTimeout:id=>timers.delete(id),
   });
@@ -104,18 +105,17 @@ function guideHarness() {
   };
 }
 function nodes(node){return !node||typeof node!=='object'?[]:[node,...[node.props?.children].flat(Infinity).flatMap(nodes)];}
-test('guide waits for decoded icon AND actual onDisplay before any popup animation; dismiss completes it once',()=>{
+test('guide waits for decoded icon before presentation, never opens an invisible modal waiting for onDisplay',()=>{
   const h=guideHarness();h.render();assert.equal(h.render().props.visible,false);assert.equal(h.shown(),0);
   h.imageReady();h.render();h.render();let tree=h.render();
-  assert.equal(tree.props.visible,true);assert.equal(h.shown(),0);
-  nodes(tree).find(n=>n.type==='Image').props.onDisplay();tree=h.render();assert.equal(h.shown(),1);
-  tree.props.onRequestClose();h.render();assert.equal(h.completed(),1);
+  assert.equal(tree.props.visible,true);assert.equal(h.shown(),1);
+  tree.props.onRequestClose();tree.props.onRequestClose();h.render();assert.equal(h.completed(),1);
   h.focus(false);h.render();h.focus(true);h.render();assert.equal(h.render().props.visible,false);
 });
-test('a failed native display releases the invisible modal without marking the guide seen',()=>{
-  const h=guideHarness();h.imageReady();h.render();h.render();h.render();
-  for(const fn of [...h.timers.values()])fn();
-  assert.equal(h.render().props.visible,false);assert.equal(h.completed(),0);assert.equal(h.shown(),0);
+test('leaving before dismissal releases the guide without marking it seen or leaving an overlay',()=>{
+  const h=guideHarness();h.render();assert.equal(h.render().props.visible,false);
+  h.imageReady();h.render();h.render();h.render();h.focus(false);h.render();
+  assert.equal(h.render().props.visible,false);assert.equal(h.completed(),0);assert.equal(h.timers.size,0);
 });
 test('all three flows disable native dismiss and protect both submission and settlement',()=>{
   const layout=fs.readFileSync(path.join(root,'apps/mobile/app/(main)/_layout.tsx'),'utf8');

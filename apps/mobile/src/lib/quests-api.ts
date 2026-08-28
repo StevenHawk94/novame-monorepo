@@ -10,6 +10,8 @@ import { kQuestCustomGeneration, kQuestStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { withDeadline } from './async-lifecycle';
+import { sessionEpoch, subscribeSessionIdentity } from './session-lifecycle';
 
 export interface QuestTask {
   text: string;
@@ -45,6 +47,11 @@ const QUEST_STATUS_TTL_MS = 15 * 60 * 1000;
 let statusInflight: Promise<QuestStatus> | null = null;
 let statusForcedFollowup: Promise<QuestStatus> | null = null;
 let statusCacheRevision = 0;
+subscribeSessionIdentity(() => {
+  statusInflight = null;
+  statusForcedFollowup = null;
+  statusCacheRevision += 1;
+});
 
 function todayLocal(): string {
   const d = new Date();
@@ -92,37 +99,46 @@ export function fetchQuestStatus(options?: { force?: boolean }): Promise<QuestSt
   if (statusInflight) {
     if (!options?.force) return statusInflight;
     if (!statusForcedFollowup) {
-      statusForcedFollowup = statusInflight
-        .then(() => fetchQuestStatus({ force: true }))
-        .finally(() => { statusForcedFollowup = null; });
+      const epoch = sessionEpoch();
+      const followup: Promise<QuestStatus> = statusInflight
+        .catch(() => getCachedStatus())
+        .then(() => {
+          if (statusForcedFollowup === followup) statusForcedFollowup = null;
+          return epoch === sessionEpoch() ? fetchQuestStatus({ force: true }) : getCachedStatus();
+        })
+        .finally(() => { if (statusForcedFollowup === followup) statusForcedFollowup = null; });
+      statusForcedFollowup = followup;
     }
     return statusForcedFollowup;
   }
 
   const revisionAtStart = statusCacheRevision;
-  statusInflight = (async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user?.id;
-    if (!userId) return getCachedStatus();
+  const epoch = sessionEpoch();
+  const request = (async () => {
     try {
-      const data = await apiClient.get<{ success?: boolean; active?: boolean; plan?: ActiveQuestPlan }>(
+      const { data: sess } = await withDeadline(supabase.auth.getSession());
+      const userId = sess.session?.user?.id;
+      if (!userId || epoch !== sessionEpoch()) return getCachedStatus();
+      const data = await withDeadline(apiClient.get<{ success?: boolean; active?: boolean; plan?: ActiveQuestPlan }>(
         `/api/quests/status?userId=${encodeURIComponent(userId)}&localDate=${localDate}`,
-      );
+      ));
       if (!data.success) return getCachedStatus();
       const state: QuestStatus = { active: !!data.active, plan: data.plan };
       // A task mutation that happened after this GET started is newer than
       // this snapshot. Keep the confirmed mutation cache instead.
-      if (revisionAtStart !== statusCacheRevision) return getCachedStatus();
+      if (epoch !== sessionEpoch() || revisionAtStart !== statusCacheRevision) return getCachedStatus();
       const next: QuestStatusCache = { state, fetchedAtMs: Date.now(), localDate };
       storage.set(kQuestStatus.name, JSON.stringify(next));
       return state;
     } catch {
       return getCachedStatus();
-    } finally {
-      statusInflight = null;
     }
   })();
-  return statusInflight;
+  const flight = request.finally(() => {
+    if (statusInflight === flight) statusInflight = null;
+  });
+  statusInflight = flight;
+  return flight;
 }
 
 
@@ -132,14 +148,15 @@ export type StartResult =
 
 /** Commit a 7-day plan from the chosen tasks. Server enforces one active plan. */
 export async function startPlan(themeKey: string, title: string, tasks: string[]): Promise<StartResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
+  const epoch = sessionEpoch();
   try {
-    const data = await apiClient.post<{ success?: boolean; error?: string; planId?: string }>(
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
+    const data = await withDeadline(apiClient.post<{ success?: boolean; error?: string; planId?: string }>(
       '/api/quests/start',
       { userId, themeKey, title, tasks, localDate: todayLocal() },
-    );
+    ), 20000);
     if (data.success && data.planId) return { ok: true, planId: data.planId };
     if (data.error === 'already_active' || data.error === 'no_tasks') return { ok: false, error: data.error };
     return { ok: false, error: 'network' };
@@ -155,14 +172,15 @@ export type CheckResult =
 
 /** Check off one task (one per calendar day). Server pays clovers + any bonus. */
 export async function checkTask(taskIndex: number): Promise<CheckResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
+  const epoch = sessionEpoch();
   try {
-    const data = await apiClient.post<{
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
+    const data = await withDeadline(apiClient.post<{
       success?: boolean; error?: string; reward?: number; bonus?: number; replayed?: boolean;
       allDone?: boolean; cloversEarned?: number; checkedCount?: number;
-    }>('/api/quests/check', { userId, taskIndex, localDate: todayLocal() });
+    }>('/api/quests/check', { userId, taskIndex, localDate: todayLocal() }), 20000);
     if (data.success) {
       return {
         ok: true, reward: data.reward ?? 0, bonus: data.bonus ?? 0, replayed: !!data.replayed,
@@ -235,15 +253,17 @@ export async function fetchCachedCustomTasks(): Promise<string[] | null> {
   const local = getCachedCustomTasks();
   if (local) return local;
 
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return null;
+  const epoch = sessionEpoch();
   try {
-    const data = await apiClient.get<{
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return null;
+    const data = await withDeadline(apiClient.get<{
       success?: boolean;
       tasks?: string[] | null;
       expiresAt?: string;
-    }>(`/api/quests/custom?userId=${encodeURIComponent(userId)}`);
+    }>(`/api/quests/custom?userId=${encodeURIComponent(userId)}`));
+    if (epoch !== sessionEpoch()) return null;
     if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0) {
       cacheCustomTasks(data.tasks, data.expiresAt);
       return data.tasks;
@@ -261,11 +281,12 @@ export async function fetchCachedCustomTasks(): Promise<string[] | null> {
  * that maps to 'plus_required' here so the screen can route to the paywall.
  */
 export async function generateCustomTasks(goal: string): Promise<CustomTasksResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
+  const epoch = sessionEpoch();
   try {
-    const data = await apiClient.post<{
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
+    const data = await withDeadline(apiClient.post<{
       success?: boolean;
       error?: string;
       tasks?: string[];
@@ -273,7 +294,8 @@ export async function generateCustomTasks(goal: string): Promise<CustomTasksResu
     }>(
       '/api/quests/custom',
       { userId, goal },
-    );
+    ), 90000);
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
     if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0) {
       cacheCustomTasks(data.tasks, data.expiresAt);
       return { ok: true, tasks: data.tasks };

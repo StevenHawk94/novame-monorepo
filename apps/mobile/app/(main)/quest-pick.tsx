@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useScreenOperation } from '@/lib/use-screen-operation';
 import { MaterialIcons } from '@expo/vector-icons';
 import { QUEST_THEME_BY_KEY, TASKS_TO_PICK } from '@novame/domain';
 
@@ -66,6 +67,8 @@ export default function QuestPickScreen() {
   const [draft, setDraft] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const operation = useScreenOperation();
+  useFocusEffect(useCallback(() => { setSubmitting(false); }, []));
 
   const items = useMemo(
     () => [
@@ -115,16 +118,22 @@ export default function QuestPickScreen() {
 
   async function onStart() {
     if (!ready || submitting || (!theme && !customTasks)) return;
+    const run = operation.begin();
+    if (!run) return;
     setSubmitting(true);
     const byId = new Map(items.map((it) => [it.id, it.text]));
     const picked = selected.map((id) => byId.get(id)).filter((t): t is string => !!t);
     const res = await startPlan(themeKey ?? 'custom', planTitle, picked);
+    if (!run.isCurrent()) return;
     if (res.ok) {
       await fetchQuestStatus({ force: true });
+      if (!run.isCurrent()) return;
+      run.finish();
       router.back();
       return;
     }
     setSubmitting(false);
+    run.finish();
     if (res.error === 'already_active') {
       appAlert('You already have an active plan', 'Finish or wait for it to end before starting a new one.');
     } else {

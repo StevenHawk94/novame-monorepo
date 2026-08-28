@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
+import { useScreenOperation } from '@/lib/use-screen-operation';
+import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -59,11 +62,23 @@ export default function OutfitClosetScreen() {
   const [busy, setBusy] = useState(false);
   // Blocking "Outfits Switching" overlay while the equipped video downloads.
   const [switching, setSwitching] = useState(false);
+  const operation = useScreenOperation();
+  const closing = useRef(false);
+  const closeScreen = () => {
+    if (closing.current) return;
+    closing.current = true;
+    operation.invalidate();
+    setSwitching(false);
+    router.back();
+  };
 
   useEffect(() => subscribeCosmetics(setCosmetics), []);
 
   useFocusEffect(
     useCallback(() => {
+      closing.current = false;
+      setBusy(false);
+      setSwitching(false);
       void fetchOutfitCatalog().then(setCatalog);
       void fetchCosmetics().then(setCosmetics);
     }, []),
@@ -84,21 +99,36 @@ export default function OutfitClosetScreen() {
    * navigates back so Home picks the clip up on focus.
    */
   async function equipAndReturn(o: OutfitDef) {
+    if (closing.current) return;
+    const run = operation.begin();
+    if (!run) return;
+    setBusy(true);
+    try {
     setEquippedOutfitKey(o.key);
     setEquipped(o.key);
-    const cached = await getCachedOutfitVideoUri(o.key, o.assetVersion);
+    const cached = await withDeadline(getCachedOutfitVideoUri(o.key, o.assetVersion), 3000);
+    if (!run.isCurrent()) return;
     if (!cached) {
       setSwitching(true);
-      const uri = await ensureOutfitVideoCached(o);
+      const uri = await withDeadline(ensureOutfitVideoCached(o), 12000).catch(() => null);
+      if (!run.isCurrent()) return;
       setSwitching(false);
       if (!uri) {
         appAlert('Slow network', 'The outfit will finish downloading in the background.');
       }
     }
-    router.back();
+    closeScreen();
+    } catch (error) {
+      if (run.isCurrent()) {
+        setSwitching(false);
+        setBusy(false);
+        appAlert('Could not switch outfit', 'Please try again. Downloads will continue in the background.');
+      }
+    } finally { run.finish(); }
   }
 
   async function buy(o: OutfitDef) {
+    if (closing.current) return;
     if (o.plusOnly && !isPaid) {
       void haptics.pageOpen();
       router.push('/(main)/(modals)/subscription-paywall');
@@ -109,8 +139,12 @@ export default function OutfitClosetScreen() {
       appAlert('Not enough clovers', `You need ${o.price} clovers for ${o.name}.`);
       return;
     }
+    const run = operation.begin();
+    if (!run) return;
     setBusy(true);
-    const res = await purchaseCosmetic('outfit', o.key);
+    const res = await withDeadline(purchaseCosmetic('outfit', o.key), 20000).catch(() => ({ ok: false as const, error: 'network' }));
+    run.finish();
+    if (!run.isCurrent()) return;
     setBusy(false);
     if (res.ok) {
       void haptics.success();
@@ -141,7 +175,7 @@ export default function OutfitClosetScreen() {
       void haptics.success();
       setEquippedOutfitKey(null);
       setEquipped(null);
-      router.back();
+      closeScreen();
       return;
     }
     if (equipped === preview.key) return;
@@ -179,7 +213,7 @@ export default function OutfitClosetScreen() {
           }}
         />
         <Pressable
-          onPress={() => { void haptics.light(); router.back(); }}
+          onPress={() => { void haptics.light(); closeScreen(); }}
           style={[styles.closeBtn, { top: insets.top + 8 }]}
           hitSlop={12}
         >

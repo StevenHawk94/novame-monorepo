@@ -21,6 +21,9 @@ import {
 } from '../shared/storage/keys';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { beginKitCompletion, isKitCompletionPending } from './kit-completion-state';
+import { sessionEpoch } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 
 export interface QuietWinsSnapshot {
   completionId: string;
@@ -49,6 +52,7 @@ function localDateStr(): string {
 
 /** Whether Quiet Wins is done for today (resets across a day boundary). */
 export function isQuietWinsDoneToday(): boolean {
+  if (isKitCompletionPending('quiet_wins', localDateStr())) return true;
   const raw = storage.getString(kQuietWinsState.name);
   if (!raw) return false;
   try {
@@ -59,8 +63,8 @@ export function isQuietWinsDoneToday(): boolean {
   }
 }
 
-function markDoneToday(): void {
-  storage.set(kQuietWinsState.name, JSON.stringify({ date: localDateStr(), done: true }));
+function markDoneToday(date: string): void {
+  storage.set(kQuietWinsState.name, JSON.stringify({ date, done: true }));
 }
 
 function feedbackBankKey(checkedIds: string[]): string {
@@ -110,19 +114,22 @@ interface WireSnapshot {
  * on success (and on already_done, since either way the day is spent).
  */
 export async function submitQuietWins(checkedIds: string[]): Promise<QuietWinsResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
-
+  const today = localDateStr();
+  const epoch = sessionEpoch();
+  const release = beginKitCompletion('quiet_wins', today);
   try {
-    const data = await apiClient.post<WireSnapshot>('/api/kit/quiet-wins', {
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
+    const data = await withDeadline(apiClient.post<WireSnapshot>('/api/kit/quiet-wins', {
       userId,
       checkedIds,
-      localDate: localDateStr(),
-    });
+      localDate: today,
+    }), 20_000);
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
 
     if (data.error === 'already_done_this_period') {
-      markDoneToday();
+      markDoneToday(today);
       return { ok: false, error: 'already_done' };
     }
     if (data.error === 'companion_not_initialized') {
@@ -132,7 +139,7 @@ export async function submitQuietWins(checkedIds: string[]): Promise<QuietWinsRe
       return { ok: false, error: 'network' };
     }
 
-    markDoneToday();
+    markDoneToday(today);
     return {
       ok: true,
       snapshot: {
@@ -142,10 +149,12 @@ export async function submitQuietWins(checkedIds: string[]): Promise<QuietWinsRe
       },
     };
   } catch (e) {
-    if (e instanceof ApiError && e.status === 409) {
-      markDoneToday();
+    if (epoch === sessionEpoch() && e instanceof ApiError && e.status === 409) {
+      markDoneToday(today);
       return { ok: false, error: 'already_done' };
     }
     return { ok: false, error: 'network' };
+  } finally {
+    release();
   }
 }

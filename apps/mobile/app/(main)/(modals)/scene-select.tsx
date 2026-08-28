@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
+import { useScreenOperation } from '@/lib/use-screen-operation';
+import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -40,6 +43,8 @@ import {
 export default function SceneSelectScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const operation = useScreenOperation();
+  const { invalidate } = operation;
   const isPaid = useSubscriptionTier() !== 'free';
   const assetRevision = useR2AssetRevision();
 
@@ -55,6 +60,8 @@ export default function SceneSelectScreen() {
   useFocusEffect(
     useCallback(() => {
       closingRef.current = false;
+      setBusy(false);
+      setSwitching(false);
       void fetchSceneCatalog().then(setCatalog);
       void fetchCosmetics().then(setCosmetics);
     }, []),
@@ -63,8 +70,11 @@ export default function SceneSelectScreen() {
   const closeScreen = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
+    invalidate();
+    setBusy(false);
+    setSwitching(false);
     router.back();
-  }, [router]);
+  }, [router, invalidate]);
 
   // Thumbs are tiny and can warm together. Full-size scenes are intentionally
   // limited to the current/owned set and warmed one at a time (current first),
@@ -96,13 +106,18 @@ export default function SceneSelectScreen() {
   /** Switch scene: cached art returns immediately; only a cache miss blocks. */
   async function useScene(key: string, imageUrl: string | null) {
     if (closingRef.current) return;
+    const run = operation.begin();
+    if (!run) return;
+    setBusy(true);
+    try {
     setSelectedScene(key);
     setCurrent(key);
     if (imageUrl) {
       let cachedPath: string | null = null;
       try {
-        cachedPath = await ExpoImage.getCachePathAsync(imageUrl);
+        cachedPath = await withDeadline(ExpoImage.getCachePathAsync(imageUrl), 3000);
       } catch { /* a failed cache lookup is handled as a cache miss */ }
+      if (!run.isCurrent() || closingRef.current) return;
 
       if (cachedPath) {
         // Do not hold the user in the modal. This disk hit also warms the
@@ -111,18 +126,27 @@ export default function SceneSelectScreen() {
       } else {
         setSwitching(true);
         try {
-          await ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' });
+          await withDeadline(ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' }), 12000);
         } catch { /* falls back to on-demand load on Home */ }
+        if (!run.isCurrent() || closingRef.current) return;
         setSwitching(false);
       }
     }
     void haptics.success();
     closeScreen();
+    } finally {
+      if (run.isCurrent()) setBusy(false);
+      run.finish();
+    }
   }
 
   async function buyAndUse(s: SceneDef) {
+    const run = operation.begin();
+    if (!run) return;
     setBusy(true);
-    const res = await purchaseCosmetic('scene', s.key);
+    const res = await withDeadline(purchaseCosmetic('scene', s.key), 20000).catch(() => ({ ok: false as const, error: 'network' }));
+    run.finish();
+    if (!run.isCurrent() || closingRef.current) return;
     setBusy(false);
     if (res.ok) {
       setCosmetics(getCachedCosmetics());

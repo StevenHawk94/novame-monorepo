@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScreenOverlay as Modal } from './screen-overlay';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';

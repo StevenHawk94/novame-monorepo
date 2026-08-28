@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -7,6 +7,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { OffsetCard } from '@/components/ui/offset-card';
+import { androidTabHeaderTypography, MEMORIES_TITLE_TYPOGRAPHY } from '@/components/ui/tab-header-typography';
 import {
   fetchMoreBags,
   getCachedBags,
@@ -334,7 +335,8 @@ export default function BagsScreen() {
         <View style={styles.header}>
           <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
           <View style={styles.titleWrap}>
-            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            <Text style={styles.title} numberOfLines={Platform.OS === 'android' ? undefined : 1}
+              adjustsFontSizeToFit={Platform.OS !== 'android'} minimumFontScale={0.75}>
               Memories Hub
             </Text>
           </View>
@@ -452,7 +454,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 10 },
   headerIcon: { width: 56, height: 56 },
   titleWrap: { flex: 1 },
-  title: { fontSize: 27, lineHeight: 33, fontFamily: 'Inter_800ExtraBold', color: '#4A2E17' },
+  title: { ...MEMORIES_TITLE_TYPOGRAPHY, color: '#4A2E17', ...androidTabHeaderTypography.title },
   headerButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     minHeight: 56, backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,

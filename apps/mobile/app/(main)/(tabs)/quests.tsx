@@ -1,20 +1,21 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Platform, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import LottieView from 'lottie-react-native';
 import { CLOVERS_PER_TASK, COMPLETION_BONUS, themesForScope, type QuestTheme } from '@novame/domain';
 
 import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
+import { androidTabHeaderTypography } from '@/components/ui/tab-header-typography';
 import { GridBackground } from '@/components/ui/grid-background';
-import { ConfettiBurst } from '@/components/main/confetti-burst';
+import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { haptics } from '@/lib/haptics';
 import { useCompletionSound } from '@/lib/use-completion-sound';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
+import { sessionEpoch } from '@/lib/session-lifecycle';
 import {
   checkTask,
   cacheQuestStatus,
@@ -37,10 +38,7 @@ const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = 
   write_own: { icon: ICONS.ThemeWriteOwn, color: '#7BB661' },
 };
 const FALLBACK_ART = { icon: ICONS.ThemeCustom, color: '#F2C14E' };
-const QUEST_CELEBRATION_SOURCE = Platform.select({
-  android: require('../../../assets/animations/Confetti.json'),
-  default: require('../../../assets/animations/Confetti.lottie'),
-});
+const QUEST_CELEBRATION_SOURCE = require('../../../assets/animations/quest-dense.json');
 
 /**
  * Weekly Quests (design 2026-07-23: mock layout on the app's dark-brown
@@ -56,18 +54,32 @@ export default function QuestsScreen() {
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   // Optimistic check-off (2026-08-07): the row completes instantly with
   // confetti; the server call reconciles silently in the background.
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [showLottie, setShowLottie] = useState(false);
+  const [celebrationRun, setCelebrationRun] = useState({ key: 0, active: false });
+  const celebrationPlaying = useRef(false);
+  const celebrationKey = useRef(0);
+  const screenActive = useRef(true);
+  const pendingPlanReward = useRef<number | null>(null);
   const checkInFlight = useRef(false);
   const statusRevision = useRef(0);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      screenActive.current = true;
       const revision = statusRevision.current;
+      const epoch = sessionEpoch();
       void fetchQuestStatus().then((next) => {
-        if (revision === statusRevision.current) setStatus(next);
+        if (screenActive.current && epoch === sessionEpoch() && revision === statusRevision.current) setStatus(next);
       });
+      return () => {
+        screenActive.current = false;
+        pendingPlanReward.current = null;
+        // A tab is retained, not unmounted. Consume its visual event on exit;
+        // returning to Quests must never replay a previous task completion.
+        celebrationPlaying.current = false;
+        celebrationKey.current += 1;
+        setCelebrationRun({ key: celebrationKey.current, active: false });
+      };
     }, []),
   );
 
@@ -108,13 +120,17 @@ export default function QuestsScreen() {
       return;
     }
     checkInFlight.current = true;
+    const epoch = sessionEpoch();
     statusRevision.current += 1;
 
     // Optimistic: complete the row NOW — confetti, haptic, +clovers.
     void haptics.success();
     playCompletionSound();
-    setShowConfetti(true);
-    setShowLottie(true);
+    if (celebrationPlaying.current) celebrationKey.current += 1;
+    celebrationPlaying.current = true;
+    // Reveal the preloaded composition; a retry during a running effect gets
+    // a fresh run without allowing the old completion callback to stop it.
+    setCelebrationRun({ key: celebrationKey.current, active: true });
     const prevStatus = status;
     const finishingPlan = status.plan.checkedCount + 1 === status.plan.tasks.length;
     const expectedAward = CLOVERS_PER_TASK + (finishingPlan ? COMPLETION_BONUS : 0);
@@ -133,7 +149,9 @@ export default function QuestsScreen() {
     cacheQuestStatus(optimisticStatus);
     // Background reconcile: confirm with the server, roll back on rejection.
     void (async () => {
+      try {
       const res = await checkTask(index);
+      if (epoch !== sessionEpoch()) return;
       if (!res.ok) {
         setStatus(prevStatus);
         cacheQuestStatus(prevStatus);
@@ -143,11 +161,13 @@ export default function QuestsScreen() {
         // authoritative completed state without asking the user to retry.
         const revision = statusRevision.current;
         const authoritative = await fetchQuestStatus({ force: true });
+        if (epoch !== sessionEpoch()) return;
         if (revision === statusRevision.current) setStatus(authoritative);
         const serverConfirmed = !!authoritative.plan?.tasks[index]?.done
           || (finishingPlan && !authoritative.active);
         checkInFlight.current = false;
         if (serverConfirmed) return;
+        if (!screenActive.current) return;
         if (res.error === 'already_checked_today') {
           appAlert('Come back tomorrow', 'You can complete one task per day.');
         } else {
@@ -158,8 +178,13 @@ export default function QuestsScreen() {
       checkInFlight.current = false;
       award.commit(res.cloversEarned);
       if (res.allDone) {
-        appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
-        void fetchQuestStatus({ force: true }).then(setStatus);
+        // Commit the reward immediately, but don't cover the falling confetti
+        // with a dialog when a fast response completes the seventh task.
+        if (screenActive.current) {
+          if (celebrationPlaying.current) pendingPlanReward.current = res.cloversEarned;
+          else appAlert('Plan complete!', `You earned ${res.cloversEarned} clovers.`);
+        }
+        void fetchQuestStatus({ force: true }).then(next => { if (epoch === sessionEpoch()) setStatus(next); });
         return;
       }
       // Align the count with the server's authoritative value.
@@ -169,26 +194,37 @@ export default function QuestsScreen() {
       };
       cacheQuestStatus(confirmedStatus);
       setStatus(confirmedStatus);
+      } catch (error) {
+        if (epoch !== sessionEpoch()) return;
+        award.rollback();
+        setStatus(prevStatus);
+        cacheQuestStatus(prevStatus);
+        if (screenActive.current) appAlert('Could not complete that', 'Please check your connection and try again.');
+        console.warn('[quests] completion failed:', error);
+      } finally {
+        checkInFlight.current = false;
+      }
     })();
   }
 
   // Same keyed sibling in BOTH page states. Finishing the seventh task may
   // switch to the picker while paper is still falling; don't unmount it.
-  const celebration = (showConfetti || showLottie) ? (
+  const celebration = (
     <View key="quest-celebration" style={styles.celebration} pointerEvents="none">
-      {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
-      {showLottie && (
-        <LottieView source={QUEST_CELEBRATION_SOURCE} autoPlay loop={false}
-          resizeMode="contain"
-          onAnimationFinish={(cancelled) => { if (!cancelled) setShowLottie(false); }}
-          onAnimationFailure={(error) => {
-            console.warn('[quests] celebration animation failed:', error);
-            setShowLottie(false);
-          }}
-          style={styles.confettiLottie} />
-      )}
+      <ReflectCelebration key={celebrationRun.key} active={celebrationRun.active} source={QUEST_CELEBRATION_SOURCE}
+        onComplete={() => {
+          if (!celebrationPlaying.current || celebrationKey.current !== celebrationRun.key) return;
+          celebrationPlaying.current = false;
+          celebrationKey.current += 1;
+          setCelebrationRun({ key: celebrationKey.current, active: false });
+          if (pendingPlanReward.current !== null && screenActive.current) {
+            const reward = pendingPlanReward.current;
+            pendingPlanReward.current = null;
+            appAlert('Plan complete!', `You earned ${reward} clovers.`);
+          }
+        }} />
     </View>
-  ) : null;
+  );
 
   // ---- Active plan: 7-day checklist ----
   if (status.active && status.plan) {
@@ -364,16 +400,13 @@ const styles = StyleSheet.create({
   celebration: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  confettiLottie: { width: 320, height: 320 },
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
   header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: CREAM },
+  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: CREAM, ...androidTabHeaderTypography.title },
   titleIcon: { width: 42, height: 42 },
-  subtitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6 },
+  subtitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6, ...androidTabHeaderTypography.subtitle },
 
   cardGap: { marginBottom: 12 },
   rowGap: { marginBottom: 8 },

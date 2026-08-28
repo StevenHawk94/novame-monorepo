@@ -1,12 +1,8 @@
 /**
  * Tame Enemy data + submission.
  *
- * The eight monsters and battle numbers live in the shared engine (MONSTERS,
- * damageFor, applyHit, monsterTier, MONSTER_HP), so the battle resolves
- * client-side and the server only records the completion. status() decorates
- * the monsters with each user's per-dimension skill count and tamed-before
- * flag; the skill pool for a battle is fetched from the skills cache, filtered
- * by the monster's dimension.
+ * The battle resolves client-side. A successful server completion updates the
+ * existing local status immediately, including each monster's tame count.
  */
 import { MONSTERS } from '@novame/engine';
 
@@ -14,6 +10,18 @@ import { kTameEnemyState, kTameStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { sessionEpoch } from './session-lifecycle';
+
+let statusRevision = 0;
+let statusRequest = 0;
+const pendingTames = new Set<{ epoch: number }>();
+
+export function subscribeTameStatus(listener: () => void): () => void {
+  const subscription = storage.addOnValueChangedListener(key => {
+    if (key === kTameStatus.name) listener();
+  });
+  return () => subscription.remove();
+}
 
 export interface MonsterStatus {
   id: string;
@@ -41,8 +49,7 @@ function localDateStr(): string {
 export const FREE_DAILY_TAMES = 3;
 
 /** Count one completed tame toward today's local tally. */
-export function markTameEnemyDoneToday(): void {
-  const today = localDateStr();
+function markTameEnemyDoneToday(today: string): void {
   let count = 0;
   const raw = storage.getString(kTameEnemyState.name);
   if (raw) {
@@ -58,6 +65,17 @@ export function markTameEnemyDoneToday(): void {
 
 /** Whether all daily tames are spent (local view; server is truth). */
 export function isTameEnemyDoneToday(): boolean {
+  // A Plus user can tame all eight monsters; do not apply Free's three-tame
+  // tally after a current authoritative per-enemy status is available.
+  const statusRaw = storage.getString(kTameStatus.name);
+  if (statusRaw) {
+    try {
+      const status = JSON.parse(statusRaw) as TameStatusPayload;
+      if (status.statusDate === localDateStr() && status.perEnemyDaily) {
+        return status.doneToday;
+      }
+    } catch { /* Fall back to the local Free tally. */ }
+  }
   const raw = storage.getString(kTameEnemyState.name);
   if (!raw) return false;
   try {
@@ -79,6 +97,8 @@ export interface TameStatusPayload {
   doneToday: boolean;
   perEnemyDaily: boolean;
   battlePoints: number;
+  /** Daily flags expire locally; lifetime counts and points stay cached. */
+  statusDate?: string;
 }
 
 /**
@@ -96,11 +116,18 @@ export function getCachedTameStatus(): TameStatusPayload {
         // Identity fields (name/prep/tamed) always come from the engine so
         // copy renames apply instantly, stale cache or not.
         const byId = new Map(MONSTERS.map((m) => [m.id, m]));
+        const staleDay = !!parsed.statusDate && parsed.statusDate !== localDateStr();
         const monsters = parsed.monsters.map((m) => {
           const def = byId.get(m.id);
-          return def ? { ...m, name: def.name, prep: def.prep, tamed: def.tamed } : m;
+          const current = def ? { ...m, name: def.name, prep: def.prep, tamed: def.tamed } : m;
+          return staleDay ? { ...current, tamedToday: false } : current;
         });
-        return { ...parsed, monsters, doneToday: parsed.doneToday || isTameEnemyDoneToday() };
+        return {
+          ...parsed, monsters,
+          doneToday: parsed.perEnemyDaily
+            ? !staleDay && parsed.doneToday
+            : (!staleDay && parsed.doneToday) || isTameEnemyDoneToday(),
+        };
       }
     } catch {
       // fall through to the synthesized default
@@ -125,20 +152,27 @@ export function getCachedTameStatus(): TameStatusPayload {
 }
 
 export async function fetchTameStatus(): Promise<TameStatusPayload> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { monsters: [], doneToday: false, perEnemyDaily: false, battlePoints: 0 };
-
+  const epoch = sessionEpoch();
+  const revision = statusRevision;
+  const request = ++statusRequest;
+  const today = localDateStr();
   try {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return getCachedTameStatus();
     const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean; battlePoints?: number }>(
-      `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
+      `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${today}`,
     );
+    // An entry-time GET must not undo a completion that finished meanwhile.
+    if (epoch !== sessionEpoch() || revision !== statusRevision || request !== statusRequest
+      || [...pendingTames].some(pending => pending.epoch === epoch)) return getCachedTameStatus();
     if (!data.success || !data.monsters) return getCachedTameStatus();
     const payload: TameStatusPayload = {
       monsters: data.monsters,
       doneToday: !!data.doneToday,
       perEnemyDaily: !!data.perEnemyDaily,
       battlePoints: data.battlePoints ?? 0,
+      statusDate: today,
     };
     storage.set(kTameStatus.name, JSON.stringify(payload));
     return payload;
@@ -160,11 +194,15 @@ export async function submitTame(params: {
   battleTotalPoints?: number;
   milestoneBonus?: number;
 }> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'no_session' };
-
+  const epoch = sessionEpoch();
+  const today = localDateStr();
+  const pending = { epoch };
+  pendingTames.add(pending);
+  statusRevision += 1;
   try {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'no_session' };
     const data = await apiClient.post<{
       success?: boolean;
       error?: string;
@@ -178,16 +216,28 @@ export async function submitTame(params: {
       monsterId: params.monsterId,
       skillsUsed: params.skillsUsed,
       hits: params.hits,
-      localDate: localDateStr(),
+      localDate: today,
     });
-    if (data.error) return { ok: false, error: data.error };
-    if (typeof data.battleTotalPoints === 'number') {
-      const cached = getCachedTameStatus();
-      storage.set(
-        kTameStatus.name,
-        JSON.stringify({ ...cached, battlePoints: data.battleTotalPoints }),
-      );
-    }
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'session_changed' };
+    if (data.error || !data.success) return { ok: false, error: data.error ?? 'network' };
+    statusRevision += 1;
+    markTameEnemyDoneToday(today);
+    const cached = getCachedTameStatus();
+    const monsters = cached.monsters.map(monster => monster.id === params.monsterId ? {
+      ...monster,
+      tamedCount: Math.max(0, Number(monster.tamedCount ?? (monster.tamedBefore ? 1 : 0)) || 0) + 1,
+      tamedBefore: true,
+      tamedToday: today === localDateStr(),
+    } : monster);
+    storage.set(kTameStatus.name, JSON.stringify({
+      ...cached,
+      monsters,
+      statusDate: localDateStr(),
+      doneToday: cached.perEnemyDaily
+        ? monsters.every(monster => monster.tamedToday)
+        : isTameEnemyDoneToday(),
+      battlePoints: typeof data.battleTotalPoints === 'number' ? data.battleTotalPoints : cached.battlePoints,
+    }));
     return {
       ok: true,
       xpAwarded: data.xp_awarded,
@@ -198,6 +248,9 @@ export async function submitTame(params: {
     };
   } catch {
     return { ok: false, error: 'network' };
+  } finally {
+    pendingTames.delete(pending);
+    statusRevision += 1;
   }
 }
 

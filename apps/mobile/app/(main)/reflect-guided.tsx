@@ -8,6 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { TAP_YOUR_DAY_QUESTIONS, CUSTOM_TAP_SELECTION_VERSION, type TapYourDayChoice, type CustomTapItem } from '@novame/engine';
 import { useCustomTapItems } from '@/lib/custom-tap-items';
 import { CustomTapItemSheet } from '@/components/main/custom-tap-item-sheet';
+import { canAddCustomTapItem, customTapGroupsForQuestion } from '@/lib/custom-tap-catalog';
 
 import { getReflectStateToday, prepareReflect, SELECTION_UNAVAILABLE_MESSAGE, type PreparedReflect, type ReflectError } from '@/lib/reflect-api';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
@@ -53,15 +54,7 @@ export default function ReflectGuidedScreen() {
   useReflectExitGuard(submitting);
   const question = TAP_YOUR_DAY_QUESTIONS[step];
   const selectedList = useMemo(() => [...selected.values()], [selected]);
-  const groups = useMemo(() => {
-    // Custom entries supplement the catalog; they never remove a built-in choice.
-    const rows = question.groups.map(g => ({ ...g, choices: [...g.choices] as DayChoice[] }));
-    for (const item of custom.items.filter(c => c.kind === question.kind)) {
-      const existing = rows.find(g => g.title === item.group);
-      if (existing) existing.choices.push(item); else rows.push({ title: item.group, choices: [item] });
-    }
-    return rows.filter(g => g.choices.length);
-  }, [question, custom.items]);
+  const groups = useMemo(() => customTapGroupsForQuestion(question, custom.items), [question, custom.items]);
   const { cellWidth } = tapItemGridMetrics(gridWidth, fontScale);
 
   useFocusEffect(useCallback(() => {
@@ -141,7 +134,7 @@ export default function ReflectGuidedScreen() {
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <ReflectTopBar onBack={onBack} />
-            {phase === 'steps' && <Pressable disabled={!custom.ready} onPress={() => { void haptics.light(); setAddOpen(true); }} style={{ backgroundColor: '#50351D', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Inter_700Bold' }}>＋ Add</Text></Pressable>}
+            {phase === 'steps' && canAddCustomTapItem(question) && <Pressable disabled={!custom.ready} onPress={() => { void haptics.light(); setAddOpen(true); }} style={{ backgroundColor: '#50351D', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Inter_700Bold' }}>＋ Add</Text></Pressable>}
           </View>}
           {remaining <= 0 && phase !== 'result' ? (
             <View style={styles.center}>

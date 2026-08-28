@@ -3,12 +3,12 @@ import {
   Animated,
   Image as NativeImage,
   Easing,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { ScreenOverlay } from '@/components/ui/screen-overlay';
 import { Image as ExpoImage, useImage } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 
@@ -23,6 +23,7 @@ import {
   releaseModalSlot,
   requestModalSlot,
   useActiveModalSlot,
+  ownsModalSlot,
 } from '@/lib/modal-coordinator';
 
 interface GuideCopy {
@@ -85,6 +86,7 @@ export function FeatureGuideModal({
   enabled?: boolean;
 }) {
   const activeModal = useActiveModalSlot();
+  const owner = `guide:${guide}`;
   const requestedRef = useRef(false);
   const retryIcon = useRef<(() => void) | null>(null);
   const icon = useImage(NativeImage.resolveAssetSource(GUIDES[guide].icon).uri, {
@@ -100,22 +102,24 @@ export function FeatureGuideModal({
     useCallback(() => {
       if (!enabled || !shouldShowFeatureGuide(guide)) return undefined;
       if (!icon) { retryIcon.current?.(); return undefined; }
-      setIconDisplayed(false);
+      // useImage already supplies a decoded ImageRef. Do not open an invisible
+      // modal and wait for an onDisplay event before allowing any interaction.
+      setIconDisplayed(true);
       backdropOpacity.setValue(0);
       cardOpacity.setValue(0);
       requestedRef.current = true;
-      requestModalSlot('guide');
+      requestModalSlot('guide', owner);
       return () => {
         requestedRef.current = false;
         setVisible(false);
-        releaseModalSlot('guide');
+        releaseModalSlot('guide', owner);
       };
-    }, [enabled, guide, icon, backdropOpacity, cardOpacity]),
+    }, [enabled, guide, icon, owner, backdropOpacity, cardOpacity]),
   );
 
   useEffect(() => {
-    setVisible(requestedRef.current && activeModal === 'guide');
-  }, [activeModal, icon, enabled]);
+    setVisible(requestedRef.current && activeModal === 'guide' && ownsModalSlot(owner));
+  }, [activeModal, icon, enabled, owner]);
 
   useEffect(() => {
     if (!visible || !iconDisplayed) return;
@@ -159,29 +163,18 @@ export function FeatureGuideModal({
     return () => animation.stop();
   }, [backdropOpacity, cardOpacity, cardScale, visible, iconDisplayed]);
 
-  useEffect(() => {
-    if (!visible || iconDisplayed) return;
-    // A rendering failure must not leave an invisible modal blocking the app.
-    // Do not mark the guide completed: another visit may retry it.
-    const timer = setTimeout(() => {
-      requestedRef.current = false;
-      setVisible(false);
-      releaseModalSlot('guide');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [visible, iconDisplayed]);
-
   const dismiss = useCallback(() => {
+    if (!requestedRef.current) return;
     if (iconDisplayed) completeFeatureGuide(guide);
     requestedRef.current = false;
     setVisible(false);
-    releaseModalSlot('guide');
-  }, [guide, iconDisplayed]);
+    releaseModalSlot('guide', owner);
+  }, [guide, iconDisplayed, owner]);
 
   const copy = GUIDES[guide];
 
   return (
-    <Modal
+    <ScreenOverlay
       transparent
       visible={visible}
       animationType="none"
@@ -214,7 +207,7 @@ export function FeatureGuideModal({
           </Pressable>
         </Animated.View>
       </View>
-    </Modal>
+    </ScreenOverlay>
   );
 }
 

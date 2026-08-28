@@ -15,6 +15,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
 import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
+import { subscribeKitCompletion } from '@/lib/kit-completion-state';
 
 const COMPANION_PANEL_BG = '#F9D9B2';
 
@@ -68,6 +69,12 @@ export function CompanionSheet() {
   const closingRef = useRef(false);
 
   useEffect(() => subscribeCosmetics((state) => setBalance(state.balance)), []);
+  useEffect(() => {
+    const refresh = () => setDoneState(readDoneState());
+    const unsubscribe = subscribeKitCompletion(refresh);
+    refresh();
+    return unsubscribe;
+  }, []);
 
   // The sheet is now a real route beneath Kit routes. Returning from a Kit
   // focuses this still-mounted screen, so its scroll/state never flashes away

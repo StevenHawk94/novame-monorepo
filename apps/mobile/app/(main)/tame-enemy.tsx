@@ -26,7 +26,7 @@ import { haptics } from '../../src/lib/haptics';
 import { Image as ExpoImage } from 'expo-image';
 
 import {
-  fetchTameStatus, getCachedTameStatus, submitTame, markTameEnemyDoneToday,
+  fetchTameStatus, getCachedTameStatus, subscribeTameStatus, submitTame,
   MONSTER_EMOJI, MONSTER_TAMED_EMOJI, type MonsterStatus,
 } from '../../src/lib/tame-enemy-api';
 import { MONSTER_ART } from '../../src/lib/monster-images';
@@ -113,16 +113,24 @@ export default function TameEnemyScreen() {
     transform: [{ scale: resultScale.value }],
   }));
 
-  useFocusEffect(
-    useCallback(() => {
-      void fetchTameStatus().then((r) => {
-        setMonsters(r.monsters);
-        setDoneToday(r.doneToday);
-        setPerEnemyDaily(r.perEnemyDaily);
-        setBattlePoints(r.battlePoints);
-      });
-    }, []),
-  );
+  const refreshCachedStatus = useCallback(() => {
+    const status = getCachedTameStatus();
+    setMonsters(status.monsters);
+    setDoneToday(status.doneToday);
+    setPerEnemyDaily(status.perEnemyDaily);
+    setBattlePoints(status.battlePoints);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeTameStatus(refreshCachedStatus);
+    refreshCachedStatus();
+    return unsubscribe;
+  }, [refreshCachedStatus]);
+
+  useFocusEffect(useCallback(() => {
+    refreshCachedStatus();
+    void fetchTameStatus();
+  }, [refreshCachedStatus]));
 
   useEffect(() => () => {
     if (hitTimer.current) clearTimeout(hitTimer.current);
@@ -233,7 +241,6 @@ export default function TameEnemyScreen() {
         if (typeof res.battleTotalPoints === 'number') {
           setBattlePoints(res.battleTotalPoints);
         }
-        markTameEnemyDoneToday();
         award.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
       } else {
         award.rollback();

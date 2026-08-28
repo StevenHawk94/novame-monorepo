@@ -4,7 +4,6 @@ import {
   AppState,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -13,9 +12,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
+import { useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { appAlert } from '@/components/ui/app-dialog';
@@ -34,6 +35,8 @@ import {
   type ReflectSnapshot,
 } from '@/lib/reflect-api';
 import { emitOfficialRatingRequest, recordReflectClaimForRating } from '@/lib/official-rating-prompt';
+import { recordReflectionPaywallClaim } from '@/lib/reflection-paywall-count';
+import { markNavigationTransitionPending } from '@/lib/rating-navigation';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { useMemoryEditorKeyboard } from '@/lib/use-memory-editor-keyboard';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
@@ -358,15 +361,18 @@ export function ReflectSettlementView({
   const finishLock = useRef(false);
   const [completed, setCompleted] = useState<ReflectSnapshot | null>(null);
   const delivered = useRef(false);
+  const route = useRoute();
   useReflectExitGuard(!completed);
   // Navigation happens only after the guard has been lifted by a committed render.
   useEffect(() => {
     if (!completed || delivered.current) return;
     delivered.current = true;
     releaseReflectSettlement(draft.draftId);
+    if (Platform.OS !== 'web') markNavigationTransitionPending(route.key);
+    recordReflectionPaywallClaim(!isPaid);
     onFinalized(completed);
     if (recordReflectClaimForRating()) emitOfficialRatingRequest();
-  }, [completed, draft.draftId, onFinalized]);
+  }, [completed, draft.draftId, isPaid, onFinalized, route.key]);
 
   function persistMemories(next: ReflectMemoryDraft[]) {
     memoriesRef.current = next;

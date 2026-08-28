@@ -61,21 +61,20 @@ export default function ReflectionPlusPaywallModal() {
           <View style={styles.columns}>
             <View style={styles.column}>
               <View style={styles.freeBadge}><Text style={styles.freeBadgeText}>Free</Text></View>
-              <Text style={styles.columnCaption}>Memory Detail You See</Text>
+              <Text style={styles.columnCaption}>Memories Need Your Input</Text>
               <View style={styles.itemCard}>
                 <ExpoImage
                   source={PARK_ICON}
                   style={styles.itemImage}
                   contentFit="contain"
                 />
-                <Text style={styles.itemName}>Park</Text>
+                <Text style={styles.plusDetail}>[Input your memory]</Text>
               </View>
-              <Text style={styles.note}>(You need to manually input detail)</Text>
             </View>
 
             <View style={styles.column}>
               <View style={styles.plusBadge}><Text style={styles.plusBadgeText}>Plus</Text></View>
-              <Text style={styles.columnCaption}>Memory Detail You See</Text>
+              <Text style={styles.columnCaption}>Auto Summarize Reflections into Memories</Text>
               <View style={styles.itemCard}>
                 <ExpoImage
                   source={PARK_ICON}
@@ -86,18 +85,16 @@ export default function ReflectionPlusPaywallModal() {
                   The park I went to tonight where I met my college friend James!
                 </Text>
               </View>
-              <Text style={styles.note}>(Auto extract from your reflection)</Text>
             </View>
           </View>
         </View>
 
         <Text style={styles.promise}>
-          Turn reflection into details memories on each items{`\n`}
-          for both of you, automatically!
+          And more features to help you live your life while staying close to your person.
         </Text>
 
         <Pressable onPress={openPlans} style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}>
-          <Text style={styles.ctaText}>Start Free Trial</Text>
+          <Text style={styles.ctaText}>Try for Free</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -136,22 +133,17 @@ const styles = StyleSheet.create({
   plusBadge: { backgroundColor: '#FF742F', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 4 },
   plusBadgeText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
   columnCaption: {
-    color: '#FFFFFF', fontSize: 10.5, lineHeight: 14, fontFamily: 'Inter_700Bold',
-    textAlign: 'center', marginTop: 10, marginBottom: 8,
+    color: '#FFFFFF', fontSize: 12, lineHeight: 17, fontFamily: 'Inter_700Bold',
+    textAlign: 'center', marginTop: 8, marginBottom: 10, minHeight: 51,
   },
   itemCard: {
-    width: '100%', minHeight: 170, backgroundColor: CREAM, borderRadius: 16,
-    paddingHorizontal: 10, paddingVertical: 12, alignItems: 'center', justifyContent: 'space-between',
+    width: '100%', flex: 1, backgroundColor: CREAM, borderRadius: 16,
+    paddingHorizontal: 8, paddingVertical: 12, alignItems: 'center', gap: 6,
   },
-  itemImage: { width: 88, height: 88 },
-  itemName: { color: INK, fontSize: 18, fontFamily: 'Inter_700Bold', marginBottom: 4 },
+  itemImage: { width: '100%', maxWidth: 124, aspectRatio: 1 },
   plusDetail: {
-    color: INK, fontSize: 11, lineHeight: 14, fontFamily: 'Inter_700Bold',
-    textAlign: 'center', marginTop: 2,
-  },
-  note: {
-    color: '#FFFFFF', fontSize: 8.5, lineHeight: 12, fontFamily: 'Inter_600SemiBold',
-    textAlign: 'center', marginTop: 12,
+    color: INK, fontSize: 12, lineHeight: 16, fontFamily: 'Inter_700Bold',
+    textAlign: 'center',
   },
   promise: {
     color: '#24170D', fontSize: 14.5, lineHeight: 20, fontFamily: 'Inter_800ExtraBold',

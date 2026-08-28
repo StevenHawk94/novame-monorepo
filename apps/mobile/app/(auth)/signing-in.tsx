@@ -11,7 +11,7 @@ import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
-import { deferHomeEntryNotification, getHomeEntryState } from '@/lib/home-entry-readiness';
+import { beginHomeEntry, deferHomeEntryNotification } from '@/lib/home-entry-readiness';
 
 /** Bounded auth bootstrap. Remote assets always warm in the background. */
 const MIN_DISPLAY_MS = 600;
@@ -43,15 +43,11 @@ export default function SigningInScreen() {
       const elapsed = Date.now() - start;
       setTimeout(() => {
         if (!cancelled) {
-          const preparingFirstHome = getHomeEntryState().pending;
-          if (preparingFirstHome && params.after === 'notification-settings') {
+          beginHomeEntry();
+          if (params.after === 'notification-settings') {
             deferHomeEntryNotification();
           }
-          router.replace(
-            params.after === 'notification-settings' && !preparingFirstHome
-              ? '/(main)/(modals)/notification-settings'
-              : '/(main)/(tabs)',
-          );
+          router.replace('/(main)/(tabs)');
         }
       }, Math.max(0, MIN_DISPLAY_MS - elapsed));
     };
@@ -99,9 +95,8 @@ export default function SigningInScreen() {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      // Remote assets remain background work. On first onboarding completion,
-      // HomeEntryGate keeps this loading look until bundled visuals display in
-      // the actual Home views; returning launches remain cache-first.
+      // HomeEntryGate keeps this loading look until the actual Home visuals
+      // display. Existing local assets and data caches are reused unchanged.
       goHome();
     })();
 

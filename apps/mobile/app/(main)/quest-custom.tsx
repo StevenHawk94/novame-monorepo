@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useScreenOperation } from '@/lib/use-screen-operation';
+import { sessionEpoch } from '@/lib/session-lifecycle';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
@@ -34,11 +36,14 @@ export default function QuestCustomScreen() {
   const [goal, setGoal] = useState('');
   const [generating, setGenerating] = useState(false);
   const goalRef = useRef('');
+  const operation = useScreenOperation();
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    setGenerating(false);
     let active = true;
+    const epoch = sessionEpoch();
     void fetchCachedCustomTasks().then((tasks) => {
-      if (!active) return;
+      if (!active || epoch !== sessionEpoch()) return;
       // Server recovery is intentionally silent. Never replace work the user
       // already started typing while a reinstall/cross-device lookup runs.
       if (tasks?.length && goalRef.current.length === 0) {
@@ -55,15 +60,19 @@ export default function QuestCustomScreen() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [router]));
 
   const canGenerate = goal.trim().length >= 4 && !generating;
 
   async function onGenerate() {
     if (!canGenerate) return;
+    const run = operation.begin();
+    if (!run) return;
     void haptics.medium();
     setGenerating(true);
     const res = await generateCustomTasks(goal.trim());
+    if (!run.isCurrent()) return;
+    run.finish();
     setGenerating(false);
     if (res.ok) {
       router.replace({

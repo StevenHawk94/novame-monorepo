@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
-import { ratingNavigationListeners } from '@/lib/rating-navigation';
+import { ratingNavigationListeners, resetNavigationTransitions } from '@/lib/rating-navigation';
 
 import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
 import { HomeEntryGate } from '@/components/main/home-entry-gate';
@@ -10,8 +12,9 @@ import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recov
  *
  * useStudyClaimDetector() went with the willpower system (D5).
  *
- * Focus/Reflect entry pickers are transparent stack layers so their explicit
- * swipe-down interaction reveals Home beneath them. Their input/session child
+ * Focus/Reflect entry pickers use ordinary stack cards, not separately presented
+ * transparent native modals. Navigation owns both their visible exit and touch
+ * release, avoiding an invisible modal container over Home. Their input/session child
  * routes remain fullScreenModal and do not mount that gesture; losing an
  * unpublished reflection to a stray swipe is not recoverable.
  *
@@ -21,6 +24,12 @@ import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recov
  */
 export default function MainLayout() {
   useReflectSettlementRecovery();
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active') resetNavigationTransitions();
+    });
+    return () => { subscription.remove(); resetNavigationTransitions(); };
+  }, []);
   return (
     <HomeEntryGate>
       <Stack
@@ -62,10 +71,10 @@ export default function MainLayout() {
         <Stack.Screen
           name="reflect"
           options={{
-            presentation: 'transparentModal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
+            animationDuration: 250,
             gestureEnabled: false,
-            contentStyle: { backgroundColor: 'transparent' },
           }}
         />
         <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
@@ -74,10 +83,10 @@ export default function MainLayout() {
         <Stack.Screen
           name="focus"
           options={{
-            presentation: 'transparentModal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
+            animationDuration: 250,
             gestureEnabled: false,
-            contentStyle: { backgroundColor: 'transparent' },
           }}
         />
       </Stack>

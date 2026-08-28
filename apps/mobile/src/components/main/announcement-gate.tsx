@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
+import { sessionEpoch } from '@/lib/session-lifecycle';
+import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
@@ -39,54 +43,63 @@ export function AnnouncementGate() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [announcementUserId, setAnnouncementUserId] = useState<string | null>(null);
   const lastCheckRef = useRef(0);
+  const focused = useIsFocused();
+  const focusedRef = useRef(focused);
+  focusedRef.current = focused;
+  const checking = useRef(false);
+  const readId = useRef<string | null>(null);
+  const [appState, setAppState] = useState(AppState.currentState);
   // Long admin messages scroll instead of pushing the CTA off short screens.
   const { height: winHeight } = useWindowDimensions();
 
   const check = useCallback(async () => {
+    if (!focusedRef.current || AppState.currentState !== 'active' || checking.current) return;
     const now = Date.now();
     if (now - lastCheckRef.current < THROTTLE_MS) return;
+    const epoch = sessionEpoch();
+    checking.current = true;
+    try {
+      const session = await withDeadline(getCurrentSession());
+      const userId = session?.user?.id;
+      if (!userId || !focusedRef.current || epoch !== sessionEpoch()) return;
 
-    const session = await getCurrentSession();
-    const userId = session?.user?.id;
-    if (!userId) return;
-
-    const next = await prepareUnreadAnnouncement(userId);
-    if (next) {
-      // Only a fully prepared announcement consumes the throttle window. A
-      // slow/failed image remains eligible for the next foreground retry.
-      lastCheckRef.current = now;
-      setAnnouncementUserId(userId);
-      setAnnouncement(next);
-      // Coordinator (announcement > claim > skin): request a slot; do NOT
-      // mark read here. markRead fires only when we actually become the
-      // active modal and render (see effect below), so a queued-but-hidden
-      // announcement is never marked seen.
-      requestModalSlot('announcement');
-    }
+      const next = await withDeadline(prepareUnreadAnnouncement(userId));
+      if (!focusedRef.current || epoch !== sessionEpoch()) return;
+      if (next) {
+        // Only a fully prepared announcement consumes the throttle window. A
+        // slow/failed image remains eligible for the next foreground retry.
+        lastCheckRef.current = now;
+        setAnnouncementUserId(userId);
+        setAnnouncement(next);
+        // Request a slot without marking it read; only onShow does that.
+      }
+    } catch (error) { console.warn('[announcement] preparation failed:', error); }
+    finally { checking.current = false; }
   }, []);
 
   const active = useActiveModalSlot();
-  const isActive = active === 'announcement';
+  const isActive = focused && appState === 'active' && active === 'announcement';
 
   const announcementId = announcement?.id;
   useEffect(() => {
-    if (!isActive || !announcementId || !announcementUserId) return;
-    void markAnnouncementRead(announcementUserId, announcementId);
-  }, [isActive, announcementId, announcementUserId]);
+    if (focused && appState === 'active' && announcement) requestModalSlot('announcement');
+    return () => releaseModalSlot('announcement');
+  }, [focused, appState, announcement]);
 
   // Release the slot when this gate unmounts (e.g. user navigates away from
   // Home) so a stuck request never blocks claim/skin.
   useEffect(() => {
-    return () => releaseModalSlot('announcement');
+    return () => { focusedRef.current = false; releaseModalSlot('announcement'); };
   }, []);
 
   useEffect(() => {
-    void check(); // mount
+    if (focused) void check();
     const sub = AppState.addEventListener('change', (state) => {
+      setAppState(state);
       if (state === 'active') void check();
     });
     return () => sub.remove();
-  }, [check]);
+  }, [check, focused]);
 
   // Only render when we are the active (highest-priority requested) modal.
   if (!announcement || !isActive) return null;
@@ -106,6 +119,12 @@ export function AnnouncementGate() {
       visible
       animationType="fade"
       onRequestClose={close}
+      onShow={() => {
+        if (announcementId && announcementUserId && readId.current !== announcementId) {
+          readId.current = announcementId;
+          void markAnnouncementRead(announcementUserId, announcementId);
+        }
+      }}
     >
       <View style={styles.backdrop}>
         <Pressable style={styles.card} onPress={() => {}}>

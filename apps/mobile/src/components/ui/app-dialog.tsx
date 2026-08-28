@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FullWindowOverlay } from 'react-native-screens';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScreenOverlay as Modal } from './screen-overlay';
 
 import { haptics } from '@/lib/haptics';
 
@@ -115,15 +115,7 @@ export function AppDialogHost() {
     </View>
   );
 
-  // iOS: (modals)-group screens are NATIVE modals (presentation: 'modal').
-  // An RN <Modal> mounted at the root cannot present on top of one — the
-  // dialog never appears and its half-mounted host eats every touch.
-  // FullWindowOverlay renders in a window above all view controllers, so
-  // the dialog shows over any screen. Android keeps <Modal> (a Dialog
-  // window: always on top, and it gives us hardware-back handling).
-  if (Platform.OS === 'ios') {
-    return <FullWindowOverlay>{content}</FullWindowOverlay>;
-  }
+  // The shared host registers this surface so automatic prompts cannot race it.
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => press(cancelBtn ?? dialog.buttons[0])}>
       {content}

@@ -1,6 +1,6 @@
 /**
- * One in-memory hand-off, armed only by finishing onboarding. This is not an
- * asset/data cache and never changes a TTL, session, or returning-user launch.
+ * In-memory visual hand-off for onboarding, cold launch and long resume.
+ * This is not an asset/data cache and never changes a TTL or session.
  * Readiness comes from the actual mounted Home, not a throw-away prefetch view.
  */
 export const HOME_ENTRY_ASSETS = [
@@ -12,13 +12,35 @@ export type HomeEntryAsset = typeof HOME_ENTRY_ASSETS[number];
 type FollowUp = 'notification-settings' | null;
 type EntryState = {
   pending: boolean;
+  resumeRequired: boolean;
   attempt: number;
   ready: readonly HomeEntryAsset[];
   failed: boolean;
   after: FollowUp;
 };
-let state: EntryState = { pending: false, attempt: 0, ready: [], failed: false, after: null };
+let state: EntryState = { pending: false, resumeRequired: false, attempt: 0, ready: [], failed: false, after: null };
 const listeners = new Set<() => void>();
+// Keep the established long-background threshold; do not refresh data caches.
+export const HOME_RESUME_AFTER_MS = 30 * 60_000;
+let backgroundAt: number | null = null;
+
+export function isHomeEntryRoute(segments: readonly string[]): boolean {
+  return segments[0] === '(main)' && segments[1] === '(tabs)'
+    && (segments.length === 2 || (segments.length === 3 && segments[2] === 'index'));
+}
+
+/** Inactive (StoreKit, Face ID, notification shade) is not a long background. */
+export function observeHomeEntryAppState(value: string, now = Date.now()): void {
+  if (value === 'background' && backgroundAt === null) backgroundAt = now;
+  if (value !== 'active') return;
+  const elapsed = backgroundAt === null ? 0 : now - backgroundAt;
+  backgroundAt = null;
+  if (elapsed < HOME_RESUME_AFTER_MS) return;
+  // Queue while another screen is open; never dismiss an unfinished activity.
+  // Invalidate old native callbacks if backgrounding interrupted the gate.
+  publish({ ...state, pending: false, resumeRequired: true,
+    ready: [], failed: false });
+}
 
 export const getHomeEntryState = (): EntryState => state;
 export function subscribeHomeEntry(listener: () => void): () => void {
@@ -31,7 +53,7 @@ function publish(next: EntryState): void {
 }
 export function beginHomeEntry(): void {
   if (state.pending) return;
-  publish({ pending: true, attempt: state.attempt + 1, ready: [], failed: false, after: null });
+  publish({ ...state, pending: true, resumeRequired: false, attempt: state.attempt + 1, ready: [], failed: false });
 }
 export function deferHomeEntryNotification(): void {
   if (state.pending) publish({ ...state, after: 'notification-settings' });

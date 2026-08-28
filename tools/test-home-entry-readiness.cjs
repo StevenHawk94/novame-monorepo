@@ -26,7 +26,8 @@ function load(file, imports = {}, globals = {}) {
 }
 function harness() {
   const api = load(stateFile), frames = new Map(), timers = new Map(), appListeners = new Set(), backListeners = new Set(), routes = [];
-  let next = 0, owner, cursor;
+  let next = 0, owner, cursor, segments = ['(main)', '(tabs)'], externalOverlay = false;
+  const overlays = new Set();
   const same = (a, b) => a && b && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
   const react = {
     createElement: (type, props, ...children) => jsx(type, { ...props, ...(children.length ? { children } : {}) }, props?.key),
@@ -35,6 +36,7 @@ function harness() {
       scope.slots[i] ??= { value: typeof initial === 'function' ? initial() : initial };
       return [scope.slots[i].value, (v) => { scope.slots[i].value = v; }];
     },
+    useRef(initial) { const i = cursor++; return owner.slots[i] ??= { current: initial }; },
     useEffect(fn, deps) {
       const i = cursor++, old = owner.slots[i];
       if (same(old?.deps, deps)) return;
@@ -42,6 +44,7 @@ function harness() {
       owner.effects.push(() => { old?.cleanup?.(); slot.cleanup = fn(); });
     },
   };
+  react.useLayoutEffect = react.useEffect;
   const appState = { currentState: 'active', addEventListener(_event, fn) { appListeners.add(fn); return { remove: () => appListeners.delete(fn) }; } };
   const components = load(gateFile, {
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
@@ -50,10 +53,15 @@ function harness() {
       BackHandler: { addEventListener(_event, fn) { backListeners.add(fn); return { remove: () => backListeners.delete(fn) }; } },
       StyleSheet: { create: (x) => x, absoluteFillObject: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 } },
     },
-    'expo-image': { Image: 'Image' }, 'expo-router': { router: { push: (route) => routes.push(route) } },
+    'expo-image': { Image: 'Image' }, 'expo-router': { router: { push: (route) => routes.push(route) }, useSegments: () => segments },
     '@/lib/home-entry-readiness': api, '@/lib/use-home-entry': { useHomeEntry: api.getHomeEntryState },
     '@/lib/icons': { ICONS: { obBunnyHead: 1 } }, '@/lib/haptics': { haptics: { light() {} } },
     '@/components/ui/grid-background': { GridBackground: 'Grid' },
+    '@/lib/splash': { hideSplashOnce() {} },
+    '@/lib/overlay-presence': {
+      useOverlayPresent: () => externalOverlay || overlays.size > 0,
+      registerOverlay(owner) { overlays.add(owner); return () => overlays.delete(owner); },
+    },
   }, {
     requestAnimationFrame(fn) { frames.set(++next, fn); return next; }, cancelAnimationFrame(id) { frames.delete(id); },
     setTimeout(fn, ms) { timers.set(++next, { fn, ms }); return next; }, clearTimeout(id) { timers.delete(id); },
@@ -67,6 +75,7 @@ function harness() {
   }
   return {
     ...api, ...components, component, frames, timers, routes, appListeners, backListeners,
+    overlays, route(value) { segments = value; }, otherOverlay(value) { externalOverlay = value; },
     ready() { const { attempt } = api.getHomeEntryState(); api.HOME_ENTRY_ASSETS.forEach((asset) => api.markHomeEntryAsset(asset, attempt)); },
     frame() { const batch = [...frames.values()]; frames.clear(); batch.forEach((fn) => fn()); },
     expire(ms) { for (const [id, t] of [...timers]) if (t.ms === ms) { timers.delete(id); t.fn(); } },
@@ -74,7 +83,7 @@ function harness() {
   };
 }
 
-test('returning users never wait; finishing first Home preserves the same native keys', () => {
+test('ordinary tab returns do not rearm; releasing a prepared Home preserves the native views', () => {
   const h = harness(), home = jsx('Home', {}), gate = h.component(h.HomeEntryGate, { children: home });
   let tree = gate.render();
   assert.equal(tree.props.children[0].props.children, home);
@@ -90,6 +99,7 @@ test('returning users never wait; finishing first Home preserves the same native
   assert.equal(tree.props.children[1], null);
   assert.equal(h.timers.size, 0);
   gate.unmount(); assert.equal(h.appListeners.size, 0); assert.equal(h.backListeners.size, 0);
+  assert.equal(h.overlays.size, 0);
 });
 
 test('all 12 display/layout signals are required; duplicate callbacks cannot release early', () => {
@@ -190,9 +200,83 @@ test('entry is armed before auth redirects; first Home mounts before notificatio
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('markIntroSeen()'));
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('await ensureSession()'));
   const signing = read('apps/mobile/app/(auth)/signing-in.tsx');
-  assert.match(signing, /params.after === 'notification-settings' && !preparingFirstHome/);
+  assert.match(signing, /beginHomeEntry\(\);[\s\S]*deferHomeEntryNotification\(\);[\s\S]*router.replace\('\/\(main\)\/\(tabs\)'\)/);
+  const index = read('apps/mobile/app/index.tsx');
+  assert.match(index, /beginHomeEntry\(\);\s*setRoute\('main'\)/);
+  assert.match(read('apps/mobile/app/_layout.tsx'), /observeHomeEntryAppState\(state\)/);
   assert.match(read('apps/mobile/app/(main)/_layout.tsx'), /<HomeEntryGate>[\s\S]*<Stack[\s\S]*<\/HomeEntryGate>/);
   assert.doesNotMatch(read(stateFile), /storage|supabase|fetch\(/);
+});
+
+test('short background and long inactive system dialogs do not request Home loading', () => {
+  const h = harness();
+  h.observeHomeEntryAppState('inactive', 0);
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS * 2);
+  assert.equal(h.getHomeEntryState().resumeRequired, false);
+  h.observeHomeEntryAppState('background', 0);
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS - 1);
+  assert.equal(h.getHomeEntryState().resumeRequired, false);
+});
+
+test('long resume queues behind an activity; Home waits for a fresh set of display events once', () => {
+  const h = harness(), gate = h.component(h.HomeEntryGate, { children: jsx('Stack', {}) });
+  h.route(['(main)', 'reflect-guided']); gate.render();
+  h.observeHomeEntryAppState('background', 0);
+  h.observeHomeEntryAppState('background', 100); // duplicate does not reset the clock
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS);
+  assert.equal(h.getHomeEntryState().resumeRequired, true);
+  let tree = gate.render();
+  assert.equal(tree.props.children[1], null);
+  assert.equal(tree.props.children[0].props.pointerEvents, 'auto');
+  assert.equal(h.timers.size, 0);
+  h.route(['(main)', '(tabs)']); gate.render(); tree = gate.render();
+  assert.equal(tree.props.children[0].props.pointerEvents, 'none');
+  assert.equal(h.getHomeEntryState().ready.length, 0);
+  assert.equal(h.overlays.size, 1);
+  h.ready(); gate.render(); h.frame(); h.frame(); gate.render();
+  assert.equal(h.overlays.size, 0);
+  assert.equal(h.getHomeEntryState().pending, false);
+  const attempt = h.getHomeEntryState().attempt;
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS * 3); gate.render();
+  assert.equal(h.getHomeEntryState().attempt, attempt);
+  gate.unmount();
+});
+
+test('long resume waits for an already visible editor to close without covering it', () => {
+  const h = harness(), gate = h.component(h.HomeEntryGate, { children: null });
+  h.otherOverlay(true);
+  h.observeHomeEntryAppState('background', 0);
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS);
+  assert.equal(gate.render().props.children[1], null);
+  assert.equal(h.getHomeEntryState().pending, false);
+  h.otherOverlay(false); gate.render();
+  assert.equal(h.getHomeEntryState().pending, true);
+  assert.ok(gate.render().props.children[1]);
+  gate.unmount(); assert.equal(h.overlays.size, 0);
+});
+
+test('long background interrupts a partly ready attempt and discards its stale callbacks', () => {
+  const h = harness(); h.beginHomeEntry(); h.deferHomeEntryNotification();
+  const image = h.HomeEntryImage({ asset: 'scene' });
+  h.observeHomeEntryAppState('background', 0);
+  h.observeHomeEntryAppState('active', h.HOME_RESUME_AFTER_MS);
+  h.beginHomeEntry(); image.props.onDisplay();
+  assert.equal(h.getHomeEntryState().ready.length, 0);
+  assert.equal(h.getHomeEntryState().after, 'notification-settings');
+});
+
+test('loading cover belongs to Home only, so external routes have no invisible click lock', () => {
+  const h = harness(); h.beginHomeEntry();
+  const gate = h.component(h.HomeEntryGate, { children: jsx('Stack', {}) }); gate.render();
+  assert.equal(h.overlays.size, 1);
+  h.route(['(main)', '(modals)', 'me']);
+  const tree = gate.render();
+  assert.equal(tree.props.children[1], null);
+  assert.equal(tree.props.children[0].props.pointerEvents, 'auto');
+  assert.equal(h.overlays.size, 0);
+  assert.equal(h.backListeners.size, 0);
+  assert.equal(h.timers.size, 0);
+  gate.unmount();
 });
 
 test('Home observes background/top icons, final button layout, tab icons, and actual video first frame', () => {

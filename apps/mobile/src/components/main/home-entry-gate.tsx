@@ -1,16 +1,18 @@
-import { useEffect, useState, type PropsWithChildren } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { ActivityIndicator, AppState, BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 
 import {
   failHomeEntry, finishHomeEntry, homeEntryIsReady, markHomeEntryAsset,
-  retryHomeEntry, type HomeEntryAsset,
+  beginHomeEntry, isHomeEntryRoute, retryHomeEntry, type HomeEntryAsset,
 } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { ICONS } from '@/lib/icons';
 import { haptics } from '@/lib/haptics';
 import { GridBackground } from '@/components/ui/grid-background';
+import { hideSplashOnce } from '@/lib/splash';
+import { registerOverlay, useOverlayPresent } from '@/lib/overlay-presence';
 
 /** Images must be displayed in their final native view, not merely downloaded. */
 export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImageProps & { asset: HomeEntryAsset }) {
@@ -29,9 +31,21 @@ export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImagePro
 /** Cover Home AND its tab bar while the same views paint at their final size. */
 export function HomeEntryGate({ children }: PropsWithChildren) {
   const entry = useHomeEntry();
+  const atHome = isHomeEntryRoute(useSegments());
+  const otherOverlay = useOverlayPresent();
+  const overlayOwner = useRef({}).current;
+  const visible = atHome && entry.pending;
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [after, setAfter] = useState<'notification-settings' | null>(null);
   const ready = homeEntryIsReady();
+
+  useLayoutEffect(() => {
+    if (atHome && entry.resumeRequired && !otherOverlay) beginHomeEntry();
+  }, [atHome, entry.resumeRequired, otherOverlay]);
+
+  useLayoutEffect(() => {
+    if (visible) return registerOverlay(overlayOwner);
+  }, [visible, overlayOwner]);
 
   useEffect(() => () => {
     // Auth/navigation may interrupt this first mount. Its native views no
@@ -47,50 +61,50 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   }, [entry.pending, after]);
 
   useEffect(() => {
-    if (!entry.pending) return;
+    if (!visible) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
-  }, [entry.pending]);
+  }, [visible]);
 
   useEffect(() => {
-    if (!entry.pending || !foreground || !ready) return;
+    if (!visible || !foreground || !ready) return;
     // Leave a paint between the last native display/layout event and reveal.
     // Backgrounding or unmounting cancels both queued frames.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => setAfter(finishHomeEntry(entry.attempt)));
     });
     return () => cancelAnimationFrame(frame);
-  }, [entry.pending, entry.attempt, foreground, ready]);
+  }, [visible, entry.attempt, foreground, ready]);
 
   useEffect(() => {
-    if (!entry.pending || !foreground || ready || entry.failed) return;
+    if (!visible || !foreground || ready || entry.failed) return;
     // A corrupt asset / missing native callback must not mean an endless
     // spinner. Retry remounts only the visual assets, not auth or navigation.
     const timer = setTimeout(() => failHomeEntry(entry.attempt), 12000);
     return () => clearTimeout(timer);
-  }, [entry.pending, entry.attempt, foreground, ready, entry.failed]);
+  }, [visible, entry.attempt, foreground, ready, entry.failed]);
 
   useEffect(() => {
-    if (entry.pending || !foreground || !after) return;
+    if (entry.pending || !atHome || !foreground || !after) return;
     const frame = requestAnimationFrame(() => {
       setAfter(null);
       router.push('/(main)/(modals)/notification-settings');
     });
     return () => cancelAnimationFrame(frame);
-  }, [entry.pending, foreground, after]);
+  }, [entry.pending, atHome, foreground, after]);
 
   return (
     <View style={styles.root}>
       <View
         style={styles.root}
-        pointerEvents={entry.pending ? 'none' : 'auto'}
-        accessibilityElementsHidden={entry.pending}
-        importantForAccessibility={entry.pending ? 'no-hide-descendants' : 'auto'}
+        pointerEvents={visible ? 'none' : 'auto'}
+        accessibilityElementsHidden={visible}
+        importantForAccessibility={visible ? 'no-hide-descendants' : 'auto'}
       >
         {children}
       </View>
-      {entry.pending ? (
-        <View style={styles.cover} accessibilityViewIsModal>
+      {visible ? (
+        <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
           <GridBackground />
           <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
           {entry.failed ? (

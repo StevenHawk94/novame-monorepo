@@ -246,7 +246,7 @@ test('image readiness uses onDisplay and errors; GIF stays paused while staged/b
   tree.props.onDisplay(); tree = image.render();
   assert.equal(ready.length, 1); assert.ok(!calls.includes('play'));
   provider.type.context.value = { ...provider.type.context.value, playing: true };
-  tree = image.render(); assert.equal(calls.at(-1), 'play'); assert.equal(tree.props.autoplay, true);
+  tree = image.render(); h.frame(); assert.equal(calls.at(-1), 'play'); assert.equal(tree.props.autoplay, true);
   provider.type.context.value = { ...provider.type.context.value, playing: false };
   image.render(); assert.equal(calls.at(-1), 'stop');
   image.unmount(); page.unmount();
@@ -254,6 +254,79 @@ test('image readiness uses onDisplay and errors; GIF stays paused while staged/b
   tree = errorImage.render(); tree.props.onError({ error: 'missing bundle asset' });
   assert.equal(ready.length, 2);
   errorImage.unmount();
+});
+
+test('Android preloaded GIF resumes with its render listener still attached', () => {
+  const h = harness();
+  h.native.Platform.OS = 'android';
+  const page = h.component(h.OnboardingPage, { id: 'how', imageCount: 1 });
+  const provider = page.render(), context = provider.type.context;
+  context.value = { playing: false, imageReady() {} };
+  const image = h.component(h.OnboardingImage, { source: 42, animated: true });
+  let tree = image.render();
+  // Model expo-image 3.0.11 + FrameAnimationDrawable 3.0.5: native
+  // autoplay=false hard-stops/removes the listener; pause/resume do not reattach.
+  let attached = false, paused = false, drawing = false, starts = 0;
+  tree.props.ref.current = {
+    async startAnimating() {
+      starts++;
+      if (paused) paused = false;
+      else attached = true;
+      drawing = attached;
+    },
+    async stopAnimating() { paused = true; drawing = false; },
+  };
+  function nativeDisplay() {
+    attached = true; paused = false; drawing = true;
+    tree.props.onDisplay();
+    if (!tree.props.autoplay) { attached = false; drawing = false; }
+    tree = image.render();
+  }
+  nativeDisplay();
+  assert.equal(tree.props.autoplay, true, 'avoid Android hard-stop on preloaded resources');
+  assert.equal(attached, true);
+  assert.equal(drawing, false, 'offscreen staged page must remain paused');
+  context.value = { ...context.value, playing: true };
+  tree = image.render();
+  assert.equal(drawing, false, 'wait for native reveal commit');
+  h.frame();
+  assert.equal(drawing, true, 'revealed GIF must actually draw, not merely call resume');
+  // A native drawable delivered again while paused must be paused again too.
+  context.value = { ...context.value, playing: false };
+  tree = image.render();
+  assert.equal(drawing, false);
+  nativeDisplay();
+  assert.equal(drawing, false, 'replacement drawable cannot run in the background');
+  context.value = { ...context.value, playing: true };
+  tree = image.render(); h.frame();
+  assert.equal(drawing, true);
+  // If a page is left before the queued start, it must not restart offscreen.
+  nativeDisplay();
+  const previousStarts = starts;
+  context.value = { ...context.value, playing: false };
+  tree = image.render(); h.frame();
+  assert.equal(starts, previousStarts);
+  assert.equal(drawing, false);
+  context.value = { ...context.value, playing: true };
+  image.render(); image.unmount(); h.frame();
+  assert.equal(drawing, false);
+  assert.equal(h.frames.size, 0);
+  page.unmount();
+});
+
+test('static onboarding images never start animation on either platform', () => {
+  for (const platform of ['ios', 'android']) {
+    const h = harness(); h.native.Platform.OS = platform;
+    const image = h.component(h.OnboardingImage, { source: 42 });
+    let tree = image.render();
+    tree.props.ref.current = {
+      startAnimating() { assert.fail('static image started'); },
+      stopAnimating() { assert.fail('static image paused'); },
+    };
+    tree.props.onDisplay(); tree = image.render(); h.frame();
+    assert.equal(tree.props.autoplay, false);
+    image.unmount();
+  }
 });
 
 // Render the actual screen's JSX with only external services stubbed, so the

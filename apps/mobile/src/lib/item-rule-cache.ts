@@ -1,7 +1,8 @@
 import { ITEM_CATALOG_VERSION, ITEM_DICTIONARY, applyItemRules, type ItemRuleSnapshot } from '@novame/engine';
 import { storage } from './storage';
 import { apiClient } from './api';
-const key = `reviewed-item-rules:${ITEM_CATALOG_VERSION}`;
+import { kReviewedItemRules } from '../shared/storage/keys';
+const key = kReviewedItemRules.keyFor(ITEM_CATALOG_VERSION);
 const empty: ItemRuleSnapshot = { catalog: ITEM_CATALOG_VERSION, revision: 0, rules: [] };
 function read(): ItemRuleSnapshot {
   try { const v = JSON.parse(storage.getString(key) || 'null'); return v?.catalog === ITEM_CATALOG_VERSION && Number.isSafeInteger(v.revision) && Array.isArray(v.rules) ? v : empty; } catch { return empty; }

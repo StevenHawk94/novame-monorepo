@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AppState,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useSegments } from 'expo-router';
+import { useHomeEntry } from '@/lib/use-home-entry';
+import { isHomeEntryRoute } from '@/lib/home-entry-readiness';
+import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
+import { createOperationScope, withDeadline } from '@/lib/async-lifecycle';
+import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
+import { requestModalSlot, releaseModalSlot, useActiveModalSlot } from '@/lib/modal-coordinator';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 
@@ -34,20 +40,37 @@ type PickerProps = {
 export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const busy = useRef(false);
+  const operation = useRef(createOperationScope()).current;
 
   useEffect(() => {
+    setSending(false);
+    busy.current = false;
     if (!visible) setSelected(null);
-  }, [visible]);
+    return () => operation.invalidate();
+  }, [visible, operation]);
+
+  function close() {
+    operation.invalidate();
+    busy.current = false;
+    onClose();
+  }
 
   async function submit() {
-    if (selected === null || sending) return;
+    if (!visible || selected === null || busy.current) return;
+    busy.current = true;
+    const current = operation.begin();
+    const epoch = sessionEpoch();
     setSending(true);
-    const result = await sendGoodVibe(selected, replyToId);
+    const result = await withDeadline(sendGoodVibe(selected, replyToId), 20000)
+      .catch(() => ({ ok: false, error: 'network' }));
+    if (!current() || epoch !== sessionEpoch()) return;
+    busy.current = false;
     setSending(false);
     if (result.ok) {
       void haptics.success();
       onSent?.();
-      onClose();
+      close();
       return;
     }
     if (result.error === 'daily_limit') {
@@ -60,12 +83,12 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
       <View style={styles.backdrop}>
         <View style={styles.pickerCard}>
           <View style={styles.modalTitleRow}>
             <Text style={styles.modalTitle}>Select Your Message</Text>
-            <Pressable onPress={() => { void haptics.pageClose(); onClose(); }} hitSlop={12} style={styles.closeIcon}>
+            <Pressable onPress={() => { void haptics.pageClose(); close(); }} hitSlop={12} style={styles.closeIcon}>
               <MaterialIcons name="close" size={24} color="#FFF8E9" />
             </Pressable>
           </View>
@@ -121,6 +144,19 @@ export function GoodVibesInboxGate() {
   const checkingRef = useRef(false);
   const vibeRef = useRef<GoodVibeInboxItem | null>(null);
   const replyToIdRef = useRef<string | null>(null);
+  const mounted = useRef(true);
+  const dismissed = useRef(new Set<string>());
+  const segments = useSegments();
+  const homeEntry = useHomeEntry();
+  const active = useActiveModalSlot();
+  const [appState, setAppState] = useState(AppState.currentState);
+  const homeLoading = isHomeEntryRoute(segments) && (homeEntry.pending || homeEntry.resumeRequired);
+  const eligible = (segments as readonly string[]).includes('(tabs)') && appState === 'active' && !homeLoading;
+
+  useEffect(() => {
+    if (eligible && (vibe || replyToId)) requestModalSlot('good-vibe');
+    return () => releaseModalSlot('good-vibe');
+  }, [eligible, vibe, replyToId]);
 
   const check = useCallback(async () => {
     // Never consume a message while iOS has the app backgrounded. Timers can
@@ -133,42 +169,57 @@ export function GoodVibesInboxGate() {
       || checkingRef.current
     ) return;
     checkingRef.current = true;
+    const epoch = sessionEpoch();
     try {
-      const incoming = await fetchUnreadGoodVibe();
-      if (incoming) {
+      const incoming = await withDeadline(fetchUnreadGoodVibe());
+      if (mounted.current && epoch === sessionEpoch() && incoming && !dismissed.current.has(incoming.id)) {
         vibeRef.current = incoming;
         setVibe(incoming);
       }
-    } finally {
+    } catch (error) { console.warn('[good-vibes] inbox failed:', error); }
+    finally {
       checkingRef.current = false;
     }
   }, []);
 
   useEffect(() => {
+    mounted.current = true;
     void check();
     const subscription = AppState.addEventListener('change', (state) => {
+      setAppState(state);
       if (state === 'active') void check();
     });
 
     const unsubscribeRealtime = subscribeGoodVibeRealtime(() => {
       void check();
     });
+    const unsubscribeIdentity = subscribeSessionIdentity(() => {
+      vibeRef.current = null;
+      replyToIdRef.current = null;
+      dismissed.current.clear();
+      setVibe(null);
+      setReplyToId(null);
+    });
 
     return () => {
+      mounted.current = false;
+      releaseModalSlot('good-vibe');
       subscription.remove();
       unsubscribeRealtime();
+      unsubscribeIdentity();
     };
   }, [check]);
 
   function acknowledge(delivered: GoodVibeInboxItem | null) {
     if (!delivered) return;
+    dismissed.current.add(delivered.id);
     // Keep the fetch gate closed until read_at is persisted. Clearing the
     // Modal state causes this effect to run again immediately, otherwise the
     // same still-unread row can flash a second time during that short window.
     checkingRef.current = true;
-    void markGoodVibeRead(delivered.id).finally(() => {
+    void withDeadline(markGoodVibeRead(delivered.id)).catch(() => {}).finally(() => {
       checkingRef.current = false;
-      void check();
+      if (mounted.current) void check();
     });
   }
 
@@ -196,7 +247,7 @@ export function GoodVibesInboxGate() {
 
   return (
     <>
-      <Modal visible={!!vibe} transparent animationType="fade" onRequestClose={dismiss}>
+      <Modal visible={!!vibe && eligible && active === 'good-vibe'} transparent animationType="fade" onRequestClose={dismiss}>
         <View style={styles.backdrop}>
           <View style={styles.inboxCard}>
             <Pressable onPress={dismissFromButton} hitSlop={12} style={styles.inboxClose}>
@@ -233,7 +284,7 @@ export function GoodVibesInboxGate() {
         </View>
       </Modal>
       <GoodVibesPicker
-        visible={!!replyToId}
+        visible={!!replyToId && eligible && active === 'good-vibe'}
         replyToId={replyToId ?? undefined}
         onClose={() => {
           replyToIdRef.current = null;
@@ -243,9 +294,10 @@ export function GoodVibesInboxGate() {
         onSent={() => {
           if (replyToId) {
             checkingRef.current = true;
-            void markGoodVibeRead(replyToId).finally(() => {
+            dismissed.current.add(replyToId);
+            void withDeadline(markGoodVibeRead(replyToId)).catch(() => {}).finally(() => {
               checkingRef.current = false;
-              void check();
+              if (mounted.current) void check();
             });
           }
           replyToIdRef.current = null;

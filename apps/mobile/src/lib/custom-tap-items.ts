@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { cleanCustomTapItem, ITEM_DICTIONARY, MAX_CUSTOM_TAP_ITEMS, type CustomTapItem } from '@novame/engine';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { kCustomTapItems } from '../shared/storage/keys';
 
-const key = (userId: string) => `custom-tap-items:v1:${userId}`;
+const key = kCustomTapItems.keyFor;
 function read(userId: string): CustomTapItem[] {
   try {
     const values = JSON.parse(storage.getString(key(userId)) || '[]');

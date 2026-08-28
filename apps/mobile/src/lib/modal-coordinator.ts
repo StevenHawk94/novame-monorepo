@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { isOverlayPresent, subscribeOverlayPresence } from './overlay-presence';
+import { isNavigationTransitionBusy, subscribeNavigationTransitions } from './rating-navigation';
 
 /**
  * Global modal coordinator.
@@ -12,8 +14,7 @@ import { useEffect, useState } from 'react';
  * Serial, NON-PREEMPTIVE arbiter. Each surface REQUESTS a slot. At most one is
  * "active" (shown) at a time. KEY RULE: once a slot becomes active it is LOCKED
  * until it releases -- a later request, even higher priority, does NOT preempt
- * the visible modal. This is required because each surface is a native RN
- * <Modal>; swapping the active slot while one is on screen unmounts it
+ * the visible modal. Swapping the active slot while one is on screen unmounts it
  * mid-flight (e.g. study-claim tearing down during its server call) and causes
  * native Modal transition glitches. Preemption was the bug behind "claim shows
  * its loading then vanishes when the announcement GET resolves late."
@@ -36,31 +37,33 @@ import { useEffect, useState } from 'react';
  * active + rendering, never at request time.
  */
 
-export type ModalKind = 'announcement' | 'claim' | 'skin' | 'guide';
+export type ModalKind = 'announcement' | 'claim' | 'skin' | 'guide' | 'good-vibe';
 
 const PRIORITY: Record<ModalKind, number> = {
   announcement: 3,
   claim: 2,
   skin: 1,
   guide: 0,
+  'good-vibe': 1,
 };
 
 const SETTLE_MS = 200;
 
 type Listener = (active: ModalKind | undefined) => void;
 
-const _requested = new Set<ModalKind>();
+const _requested = new Map<string, ModalKind>();
 const _listeners = new Set<Listener>();
 
 // The currently-shown slot (locked until it releases). undefined = none shown.
 let _active: ModalKind | undefined = undefined;
+let _activeOwner: string | undefined;
 let _settleTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Highest-priority among currently-requested slots, or undefined if none. */
-function highestRequested(): ModalKind | undefined {
-  let best: ModalKind | undefined;
-  for (const kind of _requested) {
-    if (best === undefined || PRIORITY[kind] > PRIORITY[best]) best = kind;
+function highestRequested(): string | undefined {
+  let best: string | undefined;
+  for (const [owner, kind] of _requested) {
+    if (best === undefined || PRIORITY[kind] > PRIORITY[_requested.get(best)!]) best = owner;
   }
   return best;
 }
@@ -81,20 +84,22 @@ function scheduleSettle(): void {
     _settleTimer = null;
 
     // If the active slot is still requested, it stays locked -- no change.
-    if (_active !== undefined && _requested.has(_active)) return;
+    if (_activeOwner !== undefined && _requested.has(_activeOwner)) return;
+    if (isOverlayPresent() || isNavigationTransitionBusy()) return;
 
     // Active slot is gone (released) or there was none: promote the best.
     const next = highestRequested();
-    if (next === _active) return;
-    _active = next;
+    if (next === _activeOwner) return;
+    _activeOwner = next;
+    _active = next === undefined ? undefined : _requested.get(next);
     emit();
   }, SETTLE_MS);
 }
 
 /** Register that `kind` wants to show. Idempotent. */
-export function requestModalSlot(kind: ModalKind): void {
-  if (_requested.has(kind)) return;
-  _requested.add(kind);
+export function requestModalSlot(kind: ModalKind, owner: string = kind): void {
+  if (_requested.has(owner)) return;
+  _requested.set(owner, kind);
   scheduleSettle();
 }
 
@@ -104,11 +109,12 @@ export function requestModalSlot(kind: ModalKind): void {
  * settle window (lets a near-simultaneous higher-priority pending win the next
  * turn deterministically).
  */
-export function releaseModalSlot(kind: ModalKind): void {
-  if (!_requested.has(kind)) return;
-  _requested.delete(kind);
-  if (_active === kind) {
+export function releaseModalSlot(kind: ModalKind, owner: string = kind): void {
+  if (_requested.get(owner) !== kind) return;
+  _requested.delete(owner);
+  if (_activeOwner === owner) {
     _active = undefined;
+    _activeOwner = undefined;
     emit(); // hide immediately; next slot promoted after settle
   }
   scheduleSettle();
@@ -118,6 +124,9 @@ export function releaseModalSlot(kind: ModalKind): void {
 export function peekActiveModalSlot(): ModalKind | undefined {
   return _active;
 }
+export const ownsModalSlot = (owner: string) => _activeOwner === owner;
+subscribeOverlayPresence(scheduleSettle);
+subscribeNavigationTransitions(scheduleSettle);
 
 /**
  * React hook: subscribe to the active slot. Pure subscriber -- no per-hook

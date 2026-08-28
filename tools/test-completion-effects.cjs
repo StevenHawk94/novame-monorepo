@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
-const { buildDenseConfetti } = require('./build-reflect-confetti.cjs');
+const { buildDenseConfetti, buildQuestConfetti } = require('./build-reflect-confetti.cjs');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 // Drain promises across the VM/native-boundary test realms, not just one microtask.
@@ -150,7 +150,15 @@ test('sound wiring is completion-only: Quest guard, Focus didJustFinish, Reflect
     const screen = read(`apps/mobile/app/(main)/${file}.tsx`);
     assert.match(screen, /const \{ play: playCompletionSound \} = useCompletionSound\(\)/);
     assert.match(screen, /onPresented=\{playCompletionSound\}/);
-    assert.match(screen, /<\/KeyboardAvoidingView>\s*<ReflectCelebration active=\{phase === 'result'\}/);
+    const screenAst = ast(`apps/mobile/app/(main)/${file}.tsx`);
+    const celebration = descendants(screenAst).find(node => ts.isJsxSelfClosingElement(node)
+      && node.tagName.getText(screenAst) === 'ReflectCelebration');
+    assert.ok(celebration, `${file} preloads its celebration`);
+    assert.match(celebration.getText(screenAst), /active=\{phase === 'result'\}/);
+    // A sibling sheet may appear between the KAV and the animation; only the
+    // full-screen parent matters, not their order in the source text.
+    assert.ok(ts.isJsxElement(celebration.parent));
+    assert.equal(celebration.parent.openingElement.tagName.getText(screenAst), 'View');
   }
   assert.ok(fs.statSync(path.join(root, 'apps/mobile/assets/music/reflection-finished.mp3')).size > 0);
 });
@@ -174,4 +182,26 @@ test('single native confetti composition has exactly double the particles, with 
       assert.notDeepEqual(asset.layers[2 * i + 1].ks.p, before.layers[i].ks.p);
     }
   }
+});
+test('Quest confetti differs only in palette and name, never paths, density, or timing', () => {
+  const reflect = JSON.parse(read('apps/mobile/assets/animations/reflect-dense.json'));
+  const quest = JSON.parse(read('apps/mobile/assets/animations/quest-dense.json'));
+  assert.deepEqual(buildQuestConfetti(reflect), quest);
+  const palettes = [];
+  function withoutPalette(composition) {
+    const copy = structuredClone(composition), colors = new Set();
+    delete copy.nm;
+    function visit(value) {
+      if (!value || typeof value !== 'object') return;
+      if (value.ty === 'fl' || value.ty === 'st') {
+        colors.add(value.c.k.slice(0, 3).map(v => Math.round(v * 255)).join(','));
+        value.c.k = [0, 0, 0, ...value.c.k.slice(3)];
+      }
+      Object.values(value).forEach(visit);
+    }
+    visit(copy); palettes.push([...colors].sort()); return copy;
+  }
+  assert.deepEqual(withoutPalette(reflect), withoutPalette(quest));
+  assert.notDeepEqual(palettes[0], palettes[1]);
+  assert.deepEqual(palettes[1], ['242,193,78', '242,160,61', '123,182,97', '107,163,214'].sort());
 });

@@ -3,7 +3,7 @@ import {
   useContext, useEffect, useId, useMemo, useRef, useState,
   type ReactElement, type ReactNode,
 } from 'react';
-import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Image, type ImageProps } from 'expo-image';
 import { hideSplashOnce } from '../../lib/splash';
 
@@ -139,26 +139,36 @@ export function OnboardingImage({ animated = false, ...props }: ImageProps & { a
   const page = useContext(PageContext);
   const key = useId();
   const imageRef = useRef<Image>(null);
-  const [displayed, setDisplayed] = useState(false);
+  const [displayRevision, setDisplayRevision] = useState(0);
   const playing = page?.playing ?? true;
 
   useEffect(() => {
-    if (!animated || !displayed) return;
+    if (!animated || displayRevision === 0) return;
     const image = imageRef.current;
-    // Changing autoplay alone doesn't start an already-decoded GIF on SDK 54.
-    if (playing) void image?.startAnimating().catch(() => {});
-    else void image?.stopAnimating().catch(() => {});
-    return () => { void image?.stopAnimating().catch(() => {}); };
-  }, [animated, displayed, playing]);
+    // Keep the drawable attached while staging: Android's autoplay=false calls
+    // Drawable.stop() (detaches its render listener), but stopAnimating() only
+    // pauses. Mixing those paths leaves resume() with no listener to draw into.
+    // Apply playback after the native reveal/resource assignment has committed.
+    const frame = playing
+      ? requestAnimationFrame(() => { void image?.startAnimating().catch(() => {}); })
+      : null;
+    if (!playing) void image?.stopAnimating().catch(() => {});
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      void image?.stopAnimating().catch(() => {});
+    };
+  }, [animated, displayRevision, playing]);
 
   return (
     <Image
       {...props}
       ref={imageRef}
       transition={0}
-      autoplay={animated && playing}
+      autoplay={animated && (Platform.OS === 'android' || playing)}
       onDisplay={() => {
-        setDisplayed(true);
+        // Native resource replacement may happen more than once (e.g. resume).
+        // Reapply play/pause to each new drawable, not just the first load.
+        setDisplayRevision((revision) => revision + 1);
         page?.imageReady(key);
         props.onDisplay?.();
       }}

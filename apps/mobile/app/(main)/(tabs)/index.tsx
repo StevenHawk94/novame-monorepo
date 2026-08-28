@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -7,7 +7,6 @@ import { requireAiConsent } from '@/lib/ai-consent';
 import { prioritizeR2Image } from '@/lib/download-queue';
 import { useR2AssetRevision } from '@/lib/use-r2-asset-revision';
 import { haptics } from '@/lib/haptics';
-import { hideSplashOnce } from '@/lib/splash';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
@@ -27,6 +26,7 @@ import { prefetchAppData } from '@/lib/prefetch';
 import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
+import { useNavigationAction } from '@/lib/use-navigation-action';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -61,7 +61,7 @@ export default function HomeScreen() {
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
   const aiBubbleRef = useRef(aiBubble);
-  const openingEntryRef = useRef(false);
+  const navigate = useNavigationAction();
   const [measuredLayoutParts, setMeasuredLayoutParts] = useState<string[]>([]);
   const [homeLayout, setHomeLayout] = useState({
     safeHeight: 0,
@@ -108,10 +108,6 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, [aiBubble, applyAiBubble]);
 
-  const onFirstPaint = useCallback(() => {
-    hideSplashOnce();
-  }, []);
-
   const recordLayout = useCallback((part: Partial<typeof homeLayout>) => {
     setMeasuredLayoutParts((current) => {
       const added = Object.keys(part).filter((key) => !current.includes(key));
@@ -126,20 +122,13 @@ export default function HomeScreen() {
   }, []);
 
   const onSafeLayout = useCallback((event: LayoutChangeEvent) => {
-    onFirstPaint();
     recordLayout({ safeHeight: event.nativeEvent.layout.height });
-  }, [onFirstPaint, recordLayout]);
+  }, [recordLayout]);
 
   useFocusEffect(
     useCallback(() => {
-      // Focus can return before a native modal's dismissal animation ends.
-      // Keep Home entry points locked until native interactions settle so a
-      // Scene/Outfit modal cannot be presented while the bunny sheet is still
-      // being dismissed.
-      let cancelled = false;
-      const unlockTask = InteractionManager.runAfterInteractions(() => {
-        if (!cancelled) openingEntryRef.current = false;
-      });
+      // Cache refreshes are independent of the bounded navigation tap guard.
+      // A slow read or a queued automatic prompt never disables Home.
       setCosmeticTick((t) => t + 1);
       applyAiBubble(visibleAiBubble(subscriptionTier));
       void fetchCompanion().then((c) => {
@@ -149,10 +138,6 @@ export default function HomeScreen() {
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-      return () => {
-        cancelled = true;
-        unlockTask.cancel();
-      };
     }, [applyAiBubble, subscriptionTier]),
   );
 
@@ -160,34 +145,26 @@ export default function HomeScreen() {
     setBubbles((prev) => prev.filter((b) => b.id !== bubbleId));
   }, []);
 
-  const onReflect = () => {
-    if (openingEntryRef.current) return;
+  const onReflect = () => navigate(() => {
     // Lock before the consent gate: onPressIn + onPress can both fire for one
     // physical tap, and the gate returns early for a first-time user.
-    openingEntryRef.current = true;
     if (!requireAiConsent('/(main)/reflect')) return;
     void haptics.pageOpen();
     router.push('/(main)/reflect');
-  };
-  const onFocus = () => {
-    if (openingEntryRef.current) return;
-    openingEntryRef.current = true;
+  });
+  const onFocus = () => navigate(() => {
     void haptics.pageOpen();
     router.push('/(main)/focus');
-  };
-  const onPetTap = () => {
-    if (openingEntryRef.current) return;
-    openingEntryRef.current = true;
+  });
+  const onPetTap = () => navigate(() => {
     void haptics.pageOpen();
     router.push('/(main)/companion-sheet');
-  };
+  });
 
-  const openHomeModal = (route: '/(main)/(modals)/me' | '/(main)/(modals)/skin-select' | '/(main)/(modals)/scene-select') => {
-    if (openingEntryRef.current) return;
-    openingEntryRef.current = true;
+  const openHomeModal = (route: '/(main)/(modals)/me' | '/(main)/(modals)/skin-select' | '/(main)/(modals)/scene-select') => navigate(() => {
     void haptics.pageOpen();
     router.push(route);
-  };
+  });
 
   const sceneImg = getHomeSceneSource();
   // Short screens (iPhone SE) can't spare 140pt above the companion — scale
@@ -209,7 +186,7 @@ export default function HomeScreen() {
   }, [homeEntry.pending, homeEntry.attempt, homeLayout, measuredLayoutParts, entriesTop]);
 
   return (
-    <View style={styles.root} onLayout={onFirstPaint}>
+    <View style={styles.root}>
       <HomeEntryImage
         asset="scene"
         source={sceneImg}
@@ -261,8 +238,9 @@ export default function HomeScreen() {
             </View>
             <CompanionVideo
               key={homeEntry.attempt}
+              waitForInitialAsset={homeEntry.attempt > 0}
               onPress={onPetTap}
-              onReady={() => { onFirstPaint(); markHomeEntryAsset('companion', homeEntry.attempt); }}
+              onReady={() => markHomeEntryAsset('companion', homeEntry.attempt)}
               onError={() => failHomeEntry(homeEntry.attempt)}
             />
           </View>

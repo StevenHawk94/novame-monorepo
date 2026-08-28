@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { createOperationScope, withDeadline } from '@/lib/async-lifecycle';
+import { sessionEpoch } from '@/lib/session-lifecycle';
+import { appAlert } from '@/components/ui/app-dialog';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 
@@ -56,12 +59,25 @@ export default function FocusScreen() {
   const [reward, setReward] = useState(0);
   const creditedRef = useRef(false);
   const selectScrollOffsetRef = useRef(0);
+  const playback = useRef(createOperationScope()).current;
+  const focused = useRef(false);
 
   // One player for the whole screen; the source resolves async when a scene
   // starts (bundled track 1, prefetched cache file, or an R2 stream).
-  const [audio, setAudio] = useState<{ source: FocusVoiceSource; index: number } | null>(null);
+  const [audio, setAudio] = useState<{ source: FocusVoiceSource; index: number; sceneId: string } | null>(null);
   const player = useAudioPlayer(audio?.source ?? null);
   const status = useAudioPlayerStatus(player);
+  const latestPlayer = useRef(player);
+  latestPlayer.current = player;
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    return () => {
+      focused.current = false;
+      playback.invalidate();
+      // expo-audio may already have released the native player on unmount.
+      try { latestPlayer.current.pause(); } catch { /* already disposed */ }
+    };
+  }, [playback]));
 
   // Keep playback available in silent mode, but stop it when the app backgrounds.
   useEffect(() => {
@@ -69,14 +85,14 @@ export default function FocusScreen() {
       shouldPlayInBackground: false,
       playsInSilentMode: true,
       interruptionMode: 'duckOthers',
-    });
+    }).catch(error => console.warn('[focus] audio mode failed:', error));
   }, []);
 
   // Completion fires only when the track has actually finished playing
   // (didJustFinish), not a couple seconds early -- the settle screen should
   // appear when the audio ends, not before it does. Credit once.
   useEffect(() => {
-    if (phase !== 'play' || creditedRef.current) return;
+    if (!focused.current || phase !== 'play' || creditedRef.current || !audio || audio.sceneId !== scene?.id) return;
     if (status.didJustFinish) {
       creditedRef.current = true;
       playCompletionSound();
@@ -84,24 +100,34 @@ export default function FocusScreen() {
       setReward(XP_RULES.focus.award);
       void haptics.medium();
       if (scene) {
+        const current = playback.begin();
+        const epoch = sessionEpoch();
         const award = optimisticCloverAward(XP_RULES.focus.award);
-        void submitFocus({ sceneId: scene.id, trackIndex: audio?.index ?? 1 }).then((result) => {
+        void withDeadline(submitFocus({ sceneId: scene.id, trackIndex: audio?.index ?? 1 }), 20000).then((result) => {
+          if (epoch !== sessionEpoch()) return;
           if (result.ok) {
             const actual = result.xpAwarded ?? 0;
-            setReward(actual);
+            if (current()) setReward(actual);
             award.commit(actual);
           } else {
-            setReward(0);
+            if (current()) setReward(0);
             award.rollback();
           }
+        }).catch(() => {
+          if (epoch !== sessionEpoch()) return;
+          award.rollback();
+          if (current()) setReward(0);
         });
       }
     }
-  }, [status.didJustFinish, phase, scene, playCompletionSound]);
+  }, [status.didJustFinish, phase, scene, audio, playCompletionSound, playback]);
 
   const startScene = useCallback(
     (s: FocusScene) => {
-      if (!s.free && !isPaid) return; // locked
+      if (!focused.current || (!s.free && !isPaid)) return; // locked or closing
+      const current = playback.begin();
+      latestPlayer.current.pause();
+      setAudio(null);
       stopCompletionSound();
       void haptics.medium();
       creditedRef.current = false;
@@ -109,13 +135,19 @@ export default function FocusScreen() {
       setReward(0);
       setScene(s);
       setPhase('play');
-      void getFocusVoiceSource(s.id).then((resolved) => {
-        setAudio(resolved);
+      void withDeadline(getFocusVoiceSource(s.id)).then((resolved) => {
+        if (!current()) return;
+        setAudio({ ...resolved, sceneId: s.id });
         // Listening has begun: discover new uploads + prefetch tomorrow's track.
         void onFocusVoiceListened(s.id, resolved.index);
+      }).catch(() => {
+        if (!current()) return;
+        setPhase('select');
+        setScene(null);
+        appAlert('Could not start audio', 'Please try again.');
       });
     },
-    [isPaid, stopCompletionSound],
+    [isPaid, stopCompletionSound, playback],
   );
 
   // Autoplay once the (async-resolved) source is loaded in play phase. `audio`
@@ -123,19 +155,20 @@ export default function FocusScreen() {
   // resolved source lands, and the old effect closure would call play() on the
   // stale one — the "have to tap play" bug.
   useEffect(() => {
-    if (phase === 'play' && audio && status.isLoaded && !status.playing && !completed) {
+    if (focused.current && phase === 'play' && audio && status.isLoaded && !status.playing && !completed) {
       player.play();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, status.isLoaded, audio, player]);
 
   const exit = useCallback(() => {
+    playback.invalidate();
     stopCompletionSound();
     player.pause();
     setPhase('select');
     setScene(null);
     setAudio(null);
-  }, [player, stopCompletionSound]);
+  }, [player, stopCompletionSound, playback]);
 
   // ---- SELECT (design: "What are you preparing for?") ----
   if (phase === 'select') {

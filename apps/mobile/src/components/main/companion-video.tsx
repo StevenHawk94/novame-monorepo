@@ -38,20 +38,26 @@ import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
  */
 const WATCHDOG_DELAY_MS = 300;
 
+type CompanionSource = number | { uri: string; isAnimated?: boolean };
 type Props = { onPress?: () => void; onReady?: () => void; onError?: () => void };
+type PreparedProps = Props & { initialSource?: CompanionSource; initialOutfitKey?: string | null };
 
-function AndroidCompanion({ onPress, onReady, onError }: Props) {
-  const [source, setSource] = useState<number | { uri: string; isAnimated?: boolean }>(DEFAULT_COMPANION_VIDEO);
+function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOutfitKey }: PreparedProps) {
+  const [source, setSource] = useState<CompanionSource>(initialSource ?? DEFAULT_COMPANION_VIDEO);
+  const loadedOutfitKey = useRef(initialOutfitKey ?? null);
 
   const syncSource = useCallback(() => {
     const key = getEquippedOutfitKey();
+    if (key === loadedOutfitKey.current) return;
     if (!key) {
+      loadedOutfitKey.current = null;
       setSource(DEFAULT_COMPANION_VIDEO);
       return;
     }
 
     const useAnimatedSource = (resolved: Awaited<ReturnType<typeof resolveEquippedOutfitVideo>>) => {
       if (!resolved || getEquippedOutfitKey() !== resolved.key) return;
+      loadedOutfitKey.current = resolved.key;
       // expo-image cannot always infer animation from a cache path without an
       // extension on Android. Mark the locally cached WebP explicitly.
       setSource({ uri: resolved.uri, isAnimated: true });
@@ -98,8 +104,8 @@ function AndroidCompanion({ onPress, onReady, onError }: Props) {
   );
 }
 
-function AppleCompanionVideo({ onPress, onReady, onError }: Props) {
-  const player = useVideoPlayer(DEFAULT_COMPANION_VIDEO, (p) => {
+function AppleCompanionVideo({ onPress, onReady, onError, initialSource, initialOutfitKey }: PreparedProps) {
+  const player = useVideoPlayer(initialSource ?? DEFAULT_COMPANION_VIDEO, (p) => {
     p.loop = true;
     p.muted = true;
     p.audioMixingMode = 'mixWithOthers';
@@ -160,7 +166,7 @@ function AppleCompanionVideo({ onPress, onReady, onError }: Props) {
   // stutters; until it's ready — or when nothing is equipped — the bundled
   // default keeps playing. replaceAsync swaps without remounting the player,
   // so the loop/mute/mixing settings carry over.
-  const loadedOutfitKey = useRef<string | null>(null);
+  const loadedOutfitKey = useRef<string | null>(initialOutfitKey ?? null);
   const syncOutfitVideo = useCallback(() => {
     const want = getEquippedOutfitKey();
     if (want === loadedOutfitKey.current) return;
@@ -212,10 +218,41 @@ function AppleCompanionVideo({ onPress, onReady, onError }: Props) {
   );
 }
 
-export function CompanionVideo(props: Props) {
+/**
+ * Resolve the equipped clip before mounting its final native view behind the
+ * entry cover. A default frame/static outfit preview must not release the gate
+ * ahead of the actual selected animation. No other library assets are awaited.
+ */
+function PreparedHomeCompanion(props: Props) {
+  const [prepared, setPrepared] = useState<{ source: CompanionSource; key: string | null } | null>(() =>
+    getEquippedOutfitKey() ? null : { source: DEFAULT_COMPANION_VIDEO, key: null });
+  const onError = useRef(props.onError);
+  onError.current = props.onError;
+  useEffect(() => {
+    if (prepared) return;
+    let active = true;
+    void resolveEquippedOutfitVideo().then(resolved => {
+      if (!active) return;
+      if (!resolved || resolved.key !== getEquippedOutfitKey()) {
+        onError.current?.();
+        return;
+      }
+      setPrepared({ key: resolved.key, source: { uri: resolved.uri, isAnimated: true } });
+    }).catch(() => { if (active) onError.current?.(); });
+    return () => { active = false; };
+  }, [prepared]);
+  if (!prepared) return null;
+  return <NativeCompanion {...props} initialSource={prepared.source} initialOutfitKey={prepared.key} />;
+}
+
+function NativeCompanion(props: PreparedProps) {
   return Platform.OS === 'android'
     ? <AndroidCompanion {...props} />
     : <AppleCompanionVideo {...props} />;
+}
+
+export function CompanionVideo({ waitForInitialAsset = false, ...props }: Props & { waitForInitialAsset?: boolean }) {
+  return waitForInitialAsset ? <PreparedHomeCompanion {...props} /> : <NativeCompanion {...props} />;
 }
 
 const styles = StyleSheet.create({

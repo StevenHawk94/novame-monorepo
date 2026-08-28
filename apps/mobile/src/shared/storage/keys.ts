@@ -99,6 +99,12 @@ export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
 /** Durable settlement edits, replayed only for their owning UUID. Not a TTL cache. */
 export const kReflectSettlement = definePrefixKey('burrow_reflect_settlement:', 'user');
 
+/** Tap Your Day names/groups are private, UUID-scoped local preferences. */
+export const kCustomTapItems = definePrefixKey('custom-tap-items:v1:', 'user');
+
+/** Public admin-reviewed matching rules, versioned by catalog, shared by accounts. */
+export const kReviewedItemRules = definePrefixKey('reviewed-item-rules:', 'device');
+
 /** Clovers balance + unlocked cosmetics (cache-first). */
 export const kCosmeticUnlocks = defineKey('novame_cosmetic_unlocks', 'user');
 

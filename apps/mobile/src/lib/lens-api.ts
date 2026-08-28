@@ -17,6 +17,9 @@ import { kNewLensState } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { beginKitCompletion, isKitCompletionPending } from './kit-completion-state';
+import { sessionEpoch } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 
 export interface LensCard {
   cardId: string;
@@ -74,6 +77,7 @@ function writeState(s: CachedState): void {
 
 /** Whether New Lens is done for today (resets across a day boundary). */
 export function isNewLensDoneToday(): boolean {
+  if (isKitCompletionPending('new_lens', localDateStr())) return true;
   const s = readState();
   return s.date === localDateStr() && s.done === true;
 }
@@ -130,13 +134,14 @@ export async function submitLens(
   card: LensCard,
   response: 'resonates' | 'different',
 ): Promise<LensSubmitResult> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
-
   const today = localDateStr();
+  const epoch = sessionEpoch();
+  const release = beginKitCompletion('new_lens', today);
   try {
-    const data = await apiClient.post<{
+    const { data: sess } = await withDeadline(supabase.auth.getSession());
+    const userId = sess.session?.user?.id;
+    if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'network' };
+    const data = await withDeadline(apiClient.post<{
       success?: boolean;
       error?: string;
       companion_xp?: number;
@@ -148,10 +153,11 @@ export async function submitLens(
       cardOrder: card.sortOrder,
       response,
       localDate: today,
-    });
+    }), 20_000);
+    if (epoch !== sessionEpoch()) return { ok: false, error: 'network' };
 
     if (data.error === 'already_done_this_period') {
-      markDoneToday();
+      markDoneToday(today);
       return { ok: false, error: 'already_done' };
     }
     if (data.error === 'companion_not_initialized') {
@@ -162,8 +168,8 @@ export async function submitLens(
     }
 
     // Success: mark done, and pre-fetch the now-next card for tomorrow.
-    markDoneToday();
-    void prefetchNext(userId, theme);
+    markDoneToday(today);
+    void prefetchNext(userId, theme, epoch);
     return {
       ok: true,
       response,
@@ -171,26 +177,28 @@ export async function submitLens(
       xpAwarded: data.xp_awarded ?? 0,
     };
   } catch (e) {
-    if (e instanceof ApiError && e.status === 409) {
-      markDoneToday();
+    if (epoch === sessionEpoch() && e instanceof ApiError && e.status === 409) {
+      markDoneToday(today);
       return { ok: false, error: 'already_done' };
     }
     return { ok: false, error: 'network' };
+  } finally {
+    release();
   }
 }
 
-function markDoneToday(): void {
+function markDoneToday(today: string): void {
   const s = readState();
-  const today = localDateStr();
   // Reset nextCards if crossing a day boundary; keep otherwise.
   const nextCards = s.date === today ? s.nextCards : {};
   writeState({ contentVersion: LENS_CONTENT_VERSION, date: today, done: true, nextCards });
 }
 
 /** Fetch the now-next card after a completion and stash it for tomorrow. */
-async function prefetchNext(userId: string, theme: string): Promise<void> {
+async function prefetchNext(userId: string, theme: string, epoch: number): Promise<void> {
   try {
     const next = await fetchNextCard(userId, theme);
+    if (epoch !== sessionEpoch()) return;
     const s = readState();
     if (next) {
       s.nextCards[theme] = next;

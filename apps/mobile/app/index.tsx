@@ -6,10 +6,11 @@ import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { hideSplashOnce } from '@/lib/splash';
+import { beginHomeEntry } from '@/lib/home-entry-readiness';
 
 /**
- * Entry router. Remote assets warm in the background and never block launch;
- * every first screen has a bundled fallback for its initial paint.
+ * Entry router. Home mounts under its visual readiness cover; only its visible
+ * assets are awaited, never the whole remote library or unrelated API caches.
  *
  * GUEST MODE (2026-07-26): the app never forces a login. A signed-in (or
  * anonymous) completed session goes home; a fresh install goes to onboarding.
@@ -51,6 +52,7 @@ export default function Index() {
       const isAnonymous =
         (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
       if (session && (!isAnonymous || introSeen)) {
+        beginHomeEntry();
         setRoute('main');
       } else if (!introSeen) {
         setRoute('onboarding');
