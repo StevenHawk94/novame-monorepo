@@ -1,4 +1,5 @@
 import { ITEM_DICTIONARY, ITEM_CATALOG_VERSION, applyItemRules } from '@novame/engine'
+import { getMergedDictionary } from './remote-items'
 const cache = new Map()
 export async function readItemRules(supabase, revision = null) {
   const key = revision == null ? 'latest' : String(revision)
@@ -15,7 +16,8 @@ export async function dictionaryForRevision(supabase, version) {
   // Old installed apps retain exactly the bundle rules they previewed.
   if (!version) return ITEM_DICTIONARY
   if (version.catalog !== ITEM_CATALOG_VERSION || !Number.isSafeInteger(version.revision) || version.revision < 0) throw new Error('invalid_rule_version')
-  if (version.revision === 0) return ITEM_DICTIONARY
+  const base = await getMergedDictionary(typeof version.itemsVersion === 'string' ? version.itemsVersion : '0')
+  if (version.revision === 0) return base
   const snapshot = await readItemRules(supabase, version.revision)
-  return applyItemRules(ITEM_DICTIONARY, snapshot.rules)
+  return applyItemRules(base, snapshot.rules)
 }

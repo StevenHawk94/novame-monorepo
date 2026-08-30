@@ -15,13 +15,15 @@
  * assets/items/, then run tools/slice-item-images.py to refresh both the
  * per-item webps and the generated map.
  */
-import { memo } from 'react';
+import { memo, useEffect, useSyncExternalStore } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
-import { ITEM_DICTIONARY } from '@novame/engine';
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 import { TAP_PERSON_IMAGES } from '../../lib/tap-person-images';
+import { mergedItemDictionary, remoteImageUri } from '../../lib/remote-items';
+import { prioritizeR2Image } from '../../lib/download-queue';
+import { getCachedRemoteItemManifest, subscribeRemoteItemManifest } from '../../lib/item-manifest-cache';
 
 type Props = {
   itemId: string;
@@ -35,9 +37,19 @@ type Props = {
 // Memoized: sprite tiles appear by the dozen in grids and feeds; props are
 // value-stable, so memo turns tab re-renders into no-ops for every tile.
 export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
-  const art = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+  useSyncExternalStore(
+    subscribeRemoteItemManifest,
+    () => getCachedRemoteItemManifest()?.version ?? '0',
+    () => '0',
+  );
+  const remoteUri = remoteImageUri(itemId);
+  const bundledArt = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+  const art = remoteUri ? { uri: remoteUri } : bundledArt;
+  useEffect(() => {
+    if (remoteUri) prioritizeR2Image(remoteUri);
+  }, [remoteUri]);
   if (art == null) {
-    const item = ITEM_DICTIONARY.items[itemId];
+    const item = mergedItemDictionary().items[itemId];
     return (
       <View
         style={[
@@ -61,7 +73,8 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
         style,
       ]}
     >
-      <Image source={art} style={{ width: size, height: size }} contentFit="contain" />
+      <Image source={art} placeholder={remoteUri ? bundledArt : undefined}
+        placeholderContentFit="contain" style={{ width: size, height: size }} contentFit="contain" />
     </View>
   );
 });

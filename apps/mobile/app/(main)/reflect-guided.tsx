@@ -22,6 +22,7 @@ import { OffsetCard } from '@/components/ui/offset-card';
 import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } from '@/components/main/tap-your-day-item';
 import { RC, ReflectTopBar } from '@/components/main/reflect-shared';
 import { ReflectSettlementView } from '@/components/main/reflect-settlement';
+import { itemRuleContext } from '@/lib/item-rule-cache';
 
 const MAX_CHARS = 5000;
 type Phase = 'steps' | 'note' | 'result';
@@ -44,6 +45,7 @@ export default function ReflectGuidedScreen() {
   const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
   const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
   const [submitting, setSubmitting] = useState(false);
+  const [matching] = useState(itemRuleContext);
   const [error, setError] = useState<ReflectError | null>(null);
   const [gridWidth, setGridWidth] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
@@ -112,6 +114,7 @@ export default function ReflectGuidedScreen() {
     try {
       const result = await prepareReflect({
         promptId: 9, body: note, mode: 'prompt', selectionVersion: CUSTOM_TAP_SELECTION_VERSION,
+        matchingVersion: matching.version,
         selectedItems: selectedList,
         idempotencyKey: requestKey.current,
       });

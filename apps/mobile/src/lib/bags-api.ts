@@ -91,12 +91,13 @@ const itemDetailsInflight = new Map<string, Promise<CollectedItem | null>>();
  *  edited since) fall back to a generic label so nothing crashes. */
 function decorate(w: WireItem): CollectedItem {
   const def = ITEM_DICTIONARY.items[w.itemId];
+  const remote = remoteItemDef(w.itemId);
   return {
     itemId: w.itemId,
-    displayName: def?.displayName ?? remoteItemDef(w.itemId)?.name ?? w.itemId,
-    rarity: def?.rarity ?? 'common',
+    displayName: remote?.name ?? def?.displayName ?? w.itemId,
+    rarity: remote?.rarity ?? def?.rarity ?? 'common',
     emoji: def?.emoji ?? '\ud83d\udce6',
-    category: def?.category ?? 'other',
+    category: remote?.category ?? def?.category ?? 'other',
     count: w.count,
     firstSeenAt: w.firstSeenAt,
     memories: w.memories,

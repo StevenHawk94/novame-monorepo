@@ -1,6 +1,5 @@
-/** Production R2 catalog schema. Runtime binary assets live only in the
- * Outfits, Maps and platform Character Videos folders; Focus Voice and
- * Announcements are discovered through their feature APIs. */
+/** Cosmetic production catalog. Dynamic Items deliberately use their own
+ * immutable manifest selected by content-version.itemsVersion. */
 export type ManifestVersion = 'v1';
 
 export type AssetManifest = {

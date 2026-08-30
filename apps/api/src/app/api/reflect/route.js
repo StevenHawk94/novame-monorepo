@@ -48,7 +48,7 @@ export async function POST(request) {
 
     const {
       userId, promptId, body: rawBody, localDate, sourceKit, friendUserId,
-      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, selectionVersion,
+      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, selectionVersion, matchingVersion,
     } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -74,7 +74,8 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
-    const DICT = await getMergedDictionary(supabase)
+    const DICT = await getMergedDictionary(typeof matchingVersion?.itemsVersion === 'string'
+      ? matchingVersion.itemsVersion : '0')
     const removedForTyping = new Set(Array.isArray(removedItemIds)
       ? removedItemIds.filter((x) => typeof x === 'string') : [])
     const preliminaryMatches = mode === 'typing'

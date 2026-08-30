@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { cleanCustomTapItem, ITEM_DICTIONARY, MAX_CUSTOM_TAP_ITEMS, type CustomTapItem } from '@novame/engine';
+import { cleanCustomTapItem, MAX_CUSTOM_TAP_ITEMS, type CustomTapItem } from '@novame/engine';
 import { storage } from './storage';
 import { supabase } from './supabase';
 import { kCustomTapItems } from '../shared/storage/keys';
+import { mergedItemDictionary } from './remote-items';
 
 const key = kCustomTapItems.keyFor;
 function read(userId: string): CustomTapItem[] {
   try {
     const values = JSON.parse(storage.getString(key(userId)) || '[]');
-    return Array.isArray(values) ? values.map(v => cleanCustomTapItem(v, ITEM_DICTIONARY)).filter((v): v is CustomTapItem => !!v).slice(0, MAX_CUSTOM_TAP_ITEMS) : [];
+    return Array.isArray(values) ? values.map(v => cleanCustomTapItem(v, mergedItemDictionary())).filter((v): v is CustomTapItem => !!v).slice(0, MAX_CUSTOM_TAP_ITEMS) : [];
   } catch { return []; }
 }
 
@@ -32,7 +33,7 @@ export function useCustomTapItems() {
   }, []);
   const save = (item: CustomTapItem) => {
     if (!owner || owner !== currentOwner.current) throw new Error('Your account is still loading. Please try again.');
-    const clean = cleanCustomTapItem(item, ITEM_DICTIONARY);
+    const clean = cleanCustomTapItem(item, mergedItemDictionary());
     if (!clean) throw new Error('Please enter a name and choose an item.');
     const prior = read(owner);
     if (prior.length >= MAX_CUSTOM_TAP_ITEMS && !prior.some(v => v.itemId === item.itemId)) {

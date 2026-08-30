@@ -1,10 +1,9 @@
 /**
  * Foreground-only R2 completion queue.
  *
- * Runtime inventory is intentionally limited to the folders that exist in
- * the production bucket: Announcements, Character Videos(-Android), Focus
- * Voice, Maps and Outfits. The retired Cards/Product Assets manifest fields
- * are never read here.
+ * Runtime inventory is limited to production folders: Announcements,
+ * Character Videos(-Android), Focus Voice, Maps, Outfits, and versioned Item
+ * overlays. The 5,439 bundled item images remain the offline baseline.
  *
  * Pages keep their existing cache-first behavior. This queue only warms the
  * same expo-image / file-system caches in the background, retries missing
@@ -29,10 +28,27 @@ import {
   type SceneDef,
 } from './scenes';
 import { syncAllFocusVoiceAssets } from './focus-voice';
+import { getCachedRemoteItemManifest, remoteItemAssetUrl } from './item-manifest-cache';
+import type { RemoteItemManifest } from '@novame/engine';
 
 const MAX_CONCURRENCY = 2;
 const ATTEMPT_TIMEOUT_MS = 30_000;
 const MAX_RETRY_BACKOFF_MS = 5 * 60_000;
+
+// Lower number = earlier. Keep this list aligned with the Admin publishing
+// guide: catalog → grid thumbs → worn previews → changed/new item art → full
+// scene art → platform animation → Focus Voice backfill.
+const PRIORITY = {
+  urgent: -100,
+  catalog: -40,
+  outfitThumb: 0,
+  sceneThumb: 5,
+  outfitPreview: 10,
+  itemIcon: 15,
+  sceneFull: 20,
+  outfitAnimation: 25,
+  focusVoice: 40,
+} as const;
 
 type QueueTask = {
   key: string;
@@ -111,6 +127,13 @@ function pickNext(): QueueTask | null {
   for (const task of tasks.values()) {
     if (task.status !== 'queued' || task.nextAttemptAt > now) continue;
     if (!best || task.priority < best.priority) best = task;
+  }
+  if (best?.key === 'focus-voice:all') {
+    const now = Date.now();
+    const hasEarlierWork = [...tasks.values()].some((task) =>
+      task.key !== best?.key && task.priority < PRIORITY.focusVoice
+      && (task.status === 'active' || (task.status === 'queued' && task.nextAttemptAt <= now)));
+    if (hasEarlierWork) return null;
   }
   return best;
 }
@@ -200,7 +223,7 @@ export function enqueueR2Image(url: string, priority = 20): void {
 
 /** User-visible image failed or is about to be used: move it to the front. */
 export function prioritizeR2Image(url: string): void {
-  enqueueR2Image(url, -100);
+  enqueueR2Image(url, PRIORITY.urgent);
   const task = tasks.get(`image:${url}`);
   if (task && task.status !== 'active') {
     task.status = 'queued';
@@ -210,12 +233,12 @@ export function prioritizeR2Image(url: string): void {
 }
 
 function stageOutfit(outfit: OutfitDef): void {
-  enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), 5);
-  enqueueR2Image(outfitAssetUrl(outfit.bunny, outfit.assetVersion), 8);
+  enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), PRIORITY.outfitThumb);
+  enqueueR2Image(outfitAssetUrl(outfit.bunny, outfit.assetVersion), PRIORITY.outfitPreview);
   const version = outfit.assetVersion ?? 'unversioned';
   addTask({
     key: `outfit-video:${outfit.key}:${version}`,
-    priority: 12,
+    priority: PRIORITY.outfitAnimation,
     isReady: async () => Boolean(
       await getCachedOutfitVideoUri(outfit.key, outfit.assetVersion),
     ),
@@ -224,8 +247,16 @@ function stageOutfit(outfit: OutfitDef): void {
 }
 
 function stageScene(scene: SceneDef): void {
-  enqueueR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion), 5);
-  enqueueR2Image(sceneAssetUrl(scene.image, scene.assetVersion), 15);
+  enqueueR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion), PRIORITY.sceneThumb);
+  enqueueR2Image(sceneAssetUrl(scene.image, scene.assetVersion), PRIORITY.sceneFull);
+}
+
+export function stageRemoteItemImages(
+  manifest: RemoteItemManifest | null = getCachedRemoteItemManifest(),
+): void {
+  for (const item of manifest?.items ?? []) {
+    enqueueR2Image(remoteItemAssetUrl(item.imageKey, item.assetVersion), PRIORITY.itemIcon);
+  }
 }
 
 async function refreshRuntimeCatalogs(): Promise<boolean> {
@@ -235,6 +266,11 @@ async function refreshRuntimeCatalogs(): Promise<boolean> {
   ]);
   for (const outfit of outfits) stageOutfit(outfit);
   for (const scene of scenes) stageScene(scene);
+  addTask({
+    key: 'focus-voice:all',
+    priority: PRIORITY.focusVoice,
+    run: syncAllFocusVoiceAssets,
+  });
   return outfits.length > 0 && scenes.length > 0;
 }
 
@@ -243,20 +279,14 @@ function stageRuntimeInventory(): void {
   const cachedScenes = getCachedSceneCatalog();
   for (const outfit of cachedOutfits) stageOutfit(outfit);
   for (const scene of cachedScenes) stageScene(scene);
+  stageRemoteItemImages();
 
   addTask({
     key: 'catalogs:runtime',
-    priority: -10,
+    priority: PRIORITY.catalog,
     run: refreshRuntimeCatalogs,
   });
 
-  // Focus Voice has no bucket manifest. Its sync function discovers the
-  // sequential numbered tracks with cheap HEAD probes, then caches every one.
-  addTask({
-    key: 'focus-voice:all',
-    priority: 30,
-    run: syncAllFocusVoiceAssets,
-  });
   pump();
 }
 
@@ -318,7 +348,7 @@ export function bumpToFront(filename: string): void {
   const encoded = encodeURIComponent(filename);
   for (const task of tasks.values()) {
     if (task.key.includes(filename) || task.key.includes(encoded)) {
-      task.priority = -100;
+      task.priority = PRIORITY.urgent;
       if (task.status !== 'active') {
         task.status = 'queued';
         task.nextAttemptAt = Date.now();

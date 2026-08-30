@@ -1,5 +1,7 @@
 import { fetchManifestFromR2 } from './asset-cache';
-import { stageLatestManifest } from './download-queue';
+import { stageLatestManifest, stageRemoteItemImages } from './download-queue';
+import { fetchRemoteItemManifest } from './item-manifest-cache';
+import { getCachedRemoteItemManifest } from './item-manifest-cache';
 import { storage } from './storage';
 import { kContentVersions } from '../shared/storage/keys';
 
@@ -48,9 +50,16 @@ export function checkContentVersionInBackground(): Promise<void> {
       const saved = readVersions();
       const next = { ...saved };
 
-      // Items are bundle-owned now; remember the pointer without requesting
-      // the retired R2 Items manifest. A new item catalog ships with the app.
-      if (remoteItems !== '0') next.itemsVersion = remoteItems;
+      if (remoteItems !== '0' && (
+        remoteItems !== saved.itemsVersion
+        || getCachedRemoteItemManifest()?.version !== remoteItems
+      )) {
+        const manifest = await fetchRemoteItemManifest(remoteItems);
+        if (manifest?.version === remoteItems) {
+          stageRemoteItemImages(manifest);
+          next.itemsVersion = remoteItems;
+        }
+      }
 
       if (remoteAssets !== '0' && remoteAssets !== saved.assetsVersion) {
         try {

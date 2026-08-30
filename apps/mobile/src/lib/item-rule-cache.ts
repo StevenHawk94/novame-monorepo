@@ -1,17 +1,34 @@
-import { ITEM_CATALOG_VERSION, ITEM_DICTIONARY, applyItemRules, type ItemRuleSnapshot } from '@novame/engine';
+import { ITEM_CATALOG_VERSION, ITEM_DICTIONARY, applyItemRules, applyRemoteItemManifest, type ItemRuleSnapshot } from '@novame/engine';
 import { storage } from './storage';
 import { apiClient } from './api';
 import { kReviewedItemRules } from '../shared/storage/keys';
+import { getCachedRemoteItemManifest, subscribeRemoteItemManifest } from './item-manifest-cache';
 const key = kReviewedItemRules.keyFor(ITEM_CATALOG_VERSION);
 const empty: ItemRuleSnapshot = { catalog: ITEM_CATALOG_VERSION, revision: 0, rules: [] };
 function read(): ItemRuleSnapshot {
   try { const v = JSON.parse(storage.getString(key) || 'null'); return v?.catalog === ITEM_CATALOG_VERSION && Number.isSafeInteger(v.revision) && Array.isArray(v.rules) ? v : empty; } catch { return empty; }
 }
 let snapshot = read();
-let dictionary = applyItemRules(ITEM_DICTIONARY, snapshot.rules);
+let dictionary = applyItemRules(applyRemoteItemManifest(ITEM_DICTIONARY, getCachedRemoteItemManifest()), snapshot.rules);
 let checkedAt = 0;
 let pending: Promise<boolean> | null = null;
-export function itemRuleContext() { return { dictionary, version: { catalog: snapshot.catalog, revision: snapshot.revision } }; }
+function rebuildDictionary() {
+  dictionary = applyItemRules(
+    applyRemoteItemManifest(ITEM_DICTIONARY, getCachedRemoteItemManifest()),
+    snapshot.rules,
+  );
+}
+subscribeRemoteItemManifest(rebuildDictionary);
+export function itemRuleContext() {
+  return {
+    dictionary,
+    version: {
+      catalog: snapshot.catalog,
+      revision: snapshot.revision,
+      itemsVersion: getCachedRemoteItemManifest()?.version ?? '0',
+    },
+  };
+}
 /** One small request per 30 minutes while used; never per keystroke or item. */
 export function refreshItemRules(): Promise<boolean> {
   if (pending) return pending;
@@ -21,7 +38,7 @@ export function refreshItemRules(): Promise<boolean> {
   const timer = setTimeout(() => controller.abort(), 5000);
   pending = apiClient.get<ItemRuleSnapshot>(`/api/item-rules?catalog=${ITEM_CATALOG_VERSION}`, { signal: controller.signal }).then(next => {
     if (next.catalog !== ITEM_CATALOG_VERSION || !Number.isSafeInteger(next.revision) || !Array.isArray(next.rules)) return false;
-    snapshot = next; dictionary = applyItemRules(ITEM_DICTIONARY, next.rules);
+    snapshot = next; rebuildDictionary();
     storage.set(key, JSON.stringify(next)); return true;
   }).catch(() => false).finally(() => { clearTimeout(timer); pending = null; });
   return pending;

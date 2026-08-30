@@ -207,7 +207,7 @@ export async function prepareReflect(params: {
   friendUserId?: string;
   mode?: 'typing' | 'prompt' | 'items';
   selectionVersion?: string;
-  matchingVersion?: { catalog: string; revision: number };
+  matchingVersion?: { catalog: string; revision: number; itemsVersion?: string };
   selectedItems?: { itemId: string; label?: string; kind?: string; group?: string; custom?: boolean }[];
   removedItemIds?: string[];
   idempotencyKey?: string;

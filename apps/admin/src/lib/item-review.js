@@ -1,4 +1,5 @@
-import { ITEM_DICTIONARY, ITEM_CATALOG_VERSION, NEVER_AUTO_ITEMS, normalizeItemKeyword, applyItemRules } from '@novame/engine'
+import { ITEM_DICTIONARY, ITEM_CATALOG_VERSION, NEVER_AUTO_ITEMS, normalizeItemKeyword, applyItemRules, applyRemoteItemManifest } from '@novame/engine'
+import { loadCurrentItemManifest } from './item-manifest'
 
 export async function reviewSnapshot(db) {
   const { data, error } = await db.rpc('item_rule_snapshot', { p_catalog: ITEM_CATALOG_VERSION })
@@ -8,7 +9,9 @@ export async function reviewSnapshot(db) {
 export async function publishReview(db, input, adminId) {
   const snapshot = await reviewSnapshot(db)
   if (input.revision !== snapshot.revision) throw new Error('Rules changed. Refresh before reviewing.')
-  const dictionary = applyItemRules(ITEM_DICTIONARY, snapshot.rules)
+  const remote = await loadCurrentItemManifest()
+  const publishedBase = applyRemoteItemManifest(ITEM_DICTIONARY, remote.manifest)
+  const dictionary = applyItemRules(publishedBase, snapshot.rules)
   let keyword, itemId, action, candidateId = null, removalId = null
   if (input.action === 'publish') {
     const { data: row, error } = await db.from('item_learning_candidates').select('*').eq('id', input.id).single()
@@ -20,8 +23,8 @@ export async function publishReview(db, input, adminId) {
     if (!Object.prototype.hasOwnProperty.call(dictionary.items, itemId)) throw new Error('Choose an existing item ID.')
     if (!keyword.includes(' ') || NEVER_AUTO_ITEMS[keyword]?.includes(itemId)) throw new Error('An ambiguous bare word or NEVER_AUTO rule cannot be enabled here. Use a safe contextual phrase.')
     if (dictionary.synonyms[keyword] && dictionary.synonyms[keyword] !== itemId) throw new Error('This keyword already belongs to another icon.')
-    if (ITEM_DICTIONARY.synonyms[keyword] && ITEM_DICTIONARY.synonyms[keyword] !== itemId) throw new Error('A disabled keyword still belongs to its original catalog icon. Edit the source catalog to transfer ownership.')
-    if (ITEM_DICTIONARY.exclusions?.[keyword]?.length) throw new Error('This phrase has exclusion rules. Review it in the source catalog instead of replacing its safety policy.')
+    if (publishedBase.synonyms[keyword] && publishedBase.synonyms[keyword] !== itemId) throw new Error('A disabled keyword still belongs to another catalog icon. Edit the source catalog or Item Manifest to transfer ownership.')
+    if (publishedBase.exclusions?.[keyword]?.length) throw new Error('This phrase has exclusion rules. Review it in the source catalog or Item Manifest instead of replacing its safety policy.')
     action = 'enable'; candidateId = row.id
   } else if (input.action === 'disable') {
     const { data: row, error } = await db.from('item_match_removals').select('*').eq('id', input.id).single()

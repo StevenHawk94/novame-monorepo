@@ -3,9 +3,9 @@ import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollVi
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ITEM_DICTIONARY, matchItems, type CustomTapItem, type TapYourDayQuestion } from '@novame/engine';
+import { matchItems, type CustomTapItem, type TapYourDayQuestion } from '@novame/engine';
 import { CUSTOM_TAP_GROUPS, CUSTOM_TAP_ICON_CATEGORIES, customTapDestination } from '@/lib/custom-tap-catalog';
-import { mergedItemDictionary } from '@/lib/remote-items';
+import { mergedItemDictionary, remoteIdsForPromptCategory } from '@/lib/remote-items';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { haptics } from '@/lib/haptics';
 
@@ -21,7 +21,10 @@ export function CustomTapItemSheet({ question, onClose, onSave }: {
   const [error, setError] = useState('');
   const matches = useMemo(() => label.trim() ? matchItems(label, mergedItemDictionary()).map(m => m.itemId) : [], [label]);
   const browse = CUSTOM_TAP_ICON_CATEGORIES.find(category => category.key === catalog);
-  const ids = browse?.itemIds || matches;
+  const dictionary = mergedItemDictionary();
+  const ids = browse
+    ? [...new Set([...browse.itemIds, ...remoteIdsForPromptCategory(browse.key), ...remoteIdsForPromptCategory(browse.label)])]
+    : matches;
   const destination = customTapDestination(group);
   const canSave = !!itemId && !!label.trim() && !!destination;
 
@@ -81,8 +84,8 @@ export function CustomTapItemSheet({ question, onClose, onSave }: {
             </Pressable>
             <FlatList data={ids} numColumns={4} keyExtractor={id => id} keyboardShouldPersistTaps="always" initialNumToRender={24} windowSize={5}
               style={s.list} contentContainerStyle={s.iconsContent} renderItem={({ item: id }) =>
-                <Pressable style={[s.cell, itemId === id && s.selected]} onPress={() => { Keyboard.dismiss(); setItemId(id); void haptics.light(); }} accessibilityRole="radio" accessibilityState={{ selected: itemId === id }} accessibilityLabel={ITEM_DICTIONARY.items[id]?.displayName}>
-                  <ItemSprite itemId={id} size={54} radius={10} /><Text style={s.caption}>{ITEM_DICTIONARY.items[id]?.displayName}</Text>
+                <Pressable style={[s.cell, itemId === id && s.selected]} onPress={() => { Keyboard.dismiss(); setItemId(id); void haptics.light(); }} accessibilityRole="radio" accessibilityState={{ selected: itemId === id }} accessibilityLabel={dictionary.items[id]?.displayName}>
+                  <ItemSprite itemId={id} size={54} radius={10} /><Text style={s.caption}>{dictionary.items[id]?.displayName}</Text>
                 </Pressable>} />
           </>}
           {!!error && <Text style={s.error}>{error}</Text>}

@@ -423,6 +423,9 @@ export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
 /** asset-cache.ts: independent six-hour freshness timestamp for the R2 manifest. */
 export const kAssetManifestFetchedAt = defineKey('asset-manifest:fetched-at', 'device');
 
+/** Immutable remote Item overlay selected by content-version.itemsVersion. */
+export const kRemoteItemManifest = defineKey('remote-item-manifest:v1', 'device');
+
 /**
  * seek-questions-cache.ts: STORAGE_KEY_PREFIX, read as `keyForFilter(filter)`.
  * The public Seek feed. No userId in the key, no user data in the value.

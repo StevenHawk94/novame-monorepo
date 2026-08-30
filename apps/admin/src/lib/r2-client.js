@@ -136,6 +136,7 @@ export async function r2HeadObject(key) {
     );
     return {
       size: resp.ContentLength ?? null,
+      contentType: resp.ContentType ?? null,
       lastModified: resp.LastModified ? resp.LastModified.toISOString() : null,
     };
   } catch (e) {
@@ -204,7 +205,15 @@ const CONTENT_VERSION_KEY = 'content-version.json';
  * deliberately no-store: clients only download large manifests/assets when
  * one of these two values changes.
  */
-export async function r2BumpContentVersion(kind) {
+export async function r2GetContentVersion() {
+  try {
+    return JSON.parse(new TextDecoder().decode(await r2GetObjectBytes(CONTENT_VERSION_KEY)));
+  } catch {
+    return { itemsVersion: '0', assetsVersion: '0' };
+  }
+}
+
+export async function r2BumpContentVersion(kind, explicitVersion) {
   let current = {};
   try {
     current = JSON.parse(
@@ -219,7 +228,7 @@ export async function r2BumpContentVersion(kind) {
     assetsVersion: String(current.assetsVersion || '0'),
     updatedAt: new Date().toISOString(),
   };
-  if (kind === 'items') next.itemsVersion = stamp;
+  if (kind === 'items') next.itemsVersion = explicitVersion || stamp;
   if (kind === 'assets') next.assetsVersion = stamp;
   await r2PutObject({
     key: CONTENT_VERSION_KEY,

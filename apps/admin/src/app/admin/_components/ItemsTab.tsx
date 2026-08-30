@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import ItemPublisher from './ItemPublisher';
 
 type Candidate = { id:string; kind:string; concept:string; source_phrase?:string; suggested_item_id?:string; suggested_icon_name?:string; occurrence_count:number; status:string; evidence_version:number; bare_word_disabled:boolean };
 type Removal = { id:string; icon_name:string; keyword:string; status:string };
@@ -50,6 +51,7 @@ export default function ItemsTab() {
         <a className="underline" href="/api/admin/item-learning?export=1">Export reviewed rules</a>
         <span className="text-sm">Revision {data?.snapshot.revision ?? '…'}</span></div>
     </header>
+    <ItemPublisher />
     {error && <p role="alert" className="p-3 bg-red-50 text-red-800 rounded">{error}</p>}
     <div className="grid lg:grid-cols-2 gap-5">{candidates('missing_icon','Missing Icons')}{candidates('missing_keyword','Missing Keywords')}</div>
     <section className="bg-white border rounded-lg p-4 space-y-3"><h3 className="font-bold">Confirmed Item Removals</h3><p className="text-sm text-gray-600">Review whether the match was wrong; removal may just be personal preference. Each row is an actual accepted triggering keyword.</p>

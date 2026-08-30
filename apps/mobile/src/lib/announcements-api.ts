@@ -83,7 +83,9 @@ export function prepareUnreadAnnouncement(
     if (!announcement || !imageUrl) return null;
     // Keep retrying an R2 announcement image in the foreground even if the
     // five-second display deadline below is missed this time.
-    enqueueR2Image(imageUrl, 0);
+    // Announcements are the only content allowed to jump ahead of every
+    // standard warm-up tier because the message is time-sensitive.
+    enqueueR2Image(imageUrl, -200);
     if (!await prefetchImageBeforeDeadline(imageUrl)) return null;
     preparedByUser.set(userId, announcement);
     return announcement;

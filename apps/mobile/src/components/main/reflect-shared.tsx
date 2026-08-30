@@ -26,15 +26,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { router } from 'expo-router';
 
-import { ITEM_DICTIONARY } from '@novame/engine';
-
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { setReflectVisibility, type ReflectSnapshot } from '@/lib/reflect-api';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { SpringPop } from '@/components/ui/spring-pop';
 import { ItemSprite } from '@/components/ui/item-sprite';
-import { itemDisplayName } from '@/lib/remote-items';
+import { itemDisplayName, mergedItemDictionary } from '@/lib/remote-items';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import {
   incrementReflectionPaywallCount,
@@ -63,8 +61,9 @@ export const RC = {
 /** Item ids of one or more categories, in sheet order (row, then col). */
 export function itemIdsForCategories(categories: string[]): string[] {
   const out: string[] = [];
+  const dictionary = mergedItemDictionary();
   for (const cat of categories) {
-    const ids = Object.entries(ITEM_DICTIONARY.items)
+    const ids = Object.entries(dictionary.items)
       .filter(([, def]) => def.category === cat)
       .sort((a, b) => a[1].displayName.localeCompare(b[1].displayName))
       .map(([id]) => id);

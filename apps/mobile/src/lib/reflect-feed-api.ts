@@ -3,12 +3,11 @@
  * the items collected that day. Private -- friends never see this (they get the
  * emoji glimpse only). Item emoji resolved from the shared dictionary by id.
  */
-import { ITEM_DICTIONARY } from '@novame/engine';
-
 import { apiClient } from './api';
 import { storage } from './storage';
 import { kReflectFeed } from '../shared/storage/keys';
 import { supabase } from './supabase';
+import { mergedItemDictionary } from './remote-items';
 
 export interface FeedDay {
   date: string;
@@ -35,7 +34,7 @@ const REFLECT_FEED_TTL_MS = 15 * 60 * 1000;
 let feedInflight: Promise<FeedDay[]> | null = null;
 
 function emojiFor(itemId: string): string {
-  return ITEM_DICTIONARY.items[itemId]?.emoji ?? '✨';
+  return mergedItemDictionary().items[itemId]?.emoji ?? '✨';
 }
 
 function readCache(): ReflectFeedCache | null {

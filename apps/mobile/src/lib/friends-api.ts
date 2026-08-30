@@ -4,7 +4,6 @@
  * dictionary by id), never their reflections. Invite by a stable code; add
  * creates a pending request the other side accepts.
  */
-import { ITEM_DICTIONARY } from '@novame/engine';
 import { syncWidgetLatestFriend } from './widget-sync';
 
 import { apiClient } from './api';
@@ -15,6 +14,7 @@ import { localDateKey, patchAnalysisCache, readAnalysisCache } from './connectio
 import { shouldResumeAfterAbsence } from './analysis-refresh-policy';
 import { fetchSubscriptionTier } from './subscription';
 import { cacheTheirItemsFromFeed } from './bags-api';
+import { mergedItemDictionary } from './remote-items';
 
 export interface FriendCard {
   userId: string;
@@ -139,7 +139,7 @@ export function localDateStr(): string {
 }
 
 function emojiFor(itemId: string): string {
-  return ITEM_DICTIONARY.items[itemId]?.emoji ?? '✨';
+  return mergedItemDictionary().items[itemId]?.emoji ?? '✨';
 }
 
 export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStatus> {

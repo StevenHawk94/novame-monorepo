@@ -17,13 +17,12 @@
  * mount therefore yields the same set all day — only the popped ids need
  * persisting (kHomeBubblesState, user scope).
  */
-import { ITEM_DICTIONARY } from '@novame/engine';
-
 import { apiClient } from './api';
 import { fetchFriendFeed } from './friends-api';
 import { storage } from './storage';
 import { supabase } from './supabase';
 import { kHomeBubblesState } from '../shared/storage/keys';
+import { mergedItemDictionary } from './remote-items';
 
 export const MAX_BUBBLES = 6;
 
@@ -126,7 +125,7 @@ export async function loadTodayBubbles(): Promise<MemoryBubble[]> {
         const id = `${e.friendUserId}:${itemId}`;
         if (seen.has(id)) continue; // newest occurrence of an item wins
         seen.add(id);
-        const entry = ITEM_DICTIONARY.items[itemId];
+        const entry = mergedItemDictionary().items[itemId];
         const name = entry?.displayName ?? 'A little memory';
         // A REAL memory only: item-pick reflects store the item's own name as
         // the description — that's not a written memory, so no card for it.

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { ITEM_DICTIONARY, applyItemRules } from '@novame/engine'
+import { applyItemRules } from '@novame/engine'
+import { getLatestMergedDictionary } from '@/lib/remote-items'
 import { readItemRules } from '@/lib/item-rule-store'
 import { recordItemLearningConcepts } from '@/lib/item-learning'
 
@@ -21,7 +22,7 @@ export async function GET(request) {
   if (error) return NextResponse.json({ error: 'query_failed' }, { status: 500 })
   if (!jobs?.length) return NextResponse.json({ ok: true, processed: 0 })
 
-  const dictionary = applyItemRules(ITEM_DICTIONARY, (await readItemRules(supabase)).rules)
+  const dictionary = applyItemRules(await getLatestMergedDictionary(), (await readItemRules(supabase)).rules)
   let processed = 0
   for (const job of jobs) {
     try {

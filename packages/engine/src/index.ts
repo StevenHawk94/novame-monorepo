@@ -16,3 +16,4 @@ export * from './battle/monsters';
 export * from './skills/card-matcher';
 export * from './items/custom-tap-items';
 export * from './items/item-rules';
+export * from './items/remote-manifest';
