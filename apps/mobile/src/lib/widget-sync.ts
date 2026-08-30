@@ -4,25 +4,47 @@ import { Asset } from 'expo-asset';
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
 import { getDefaultAvatar } from './avatar';
-import type { FeedEntry } from './friends-api';
+import { remoteImageUri } from './remote-items';
+import type { FeedEntry, PairingStatus } from './friends-api';
 
 /**
- * Pushes the newest friend-feed entry to the iOS home-screen widget:
- * name, timestamp, the friend's avatar (their uploaded photo, else the
- * bundled default portrait picked from their userId) and up to 6 item
- * images, all via the App Group container.
- * Fire-and-forget: no-ops on Android, Expo Go, or an empty feed.
+ * Pushes the complete Paired state to the iOS home-screen widget:
+ * unpaired, paired-with-no-shared-moment, or the newest shared moment.
+ * Fire-and-forget: no-ops on Android and Expo Go.
  */
-export async function syncWidgetLatestFriend(feed: FeedEntry[]): Promise<void> {
-  if (Platform.OS !== 'ios' || feed.length === 0) return;
+export async function syncWidgetLatestFriend(
+  feed: FeedEntry[],
+  pairing: PairingStatus | null = null,
+): Promise<void> {
+  if (Platform.OS !== 'ios') return;
+  const partner = pairing?.paired ? pairing.partner : null;
+  // Never let a previous partner's cached row leak into a new pairing.
+  const eligible = partner
+    ? feed.filter((entry) => entry.friendUserId === partner.userId)
+    : feed;
   // The feed arrives unread-first, not newest-first — pick the true latest.
-  const latest = feed.reduce((a, b) => (a.createdAt >= b.createdAt ? a : b));
+  const latest = eligible.length > 0
+    ? eligible.reduce((a, b) => (a.createdAt >= b.createdAt ? a : b))
+    : null;
   try {
+    if (!latest) {
+      await nativeSyncLatestFriendReflect(JSON.stringify({
+        state: partner ? 'empty' : 'unpaired',
+        name: partner?.displayName ?? '',
+        createdAt: '',
+        avatar: null,
+        items: [],
+        totalItems: 0,
+      }));
+      return;
+    }
     const items = await Promise.all(
       latest.itemIds.slice(0, 6).map(async (itemId, i) => {
-        let src: string | null = null;
+        // A published R2 replacement/addition wins over the bundled fallback,
+        // matching ItemSprite everywhere else in the app.
+        let src: string | null = remoteImageUri(itemId) || null;
         const mod = ITEM_IMAGES[itemId];
-        if (mod) {
+        if (!src && mod) {
           try {
             const asset = Asset.fromModule(mod);
             if (!asset.localUri) await asset.downloadAsync();
@@ -50,10 +72,12 @@ export async function syncWidgetLatestFriend(feed: FeedEntry[]): Promise<void> {
     }
     await nativeSyncLatestFriendReflect(
       JSON.stringify({
+        state: 'latest',
         name: latest.friendName,
         createdAt: latest.createdAt,
         avatar: avatarSrc ? { src: avatarSrc } : null,
         items,
+        totalItems: latest.itemIds.length,
       }),
     );
   } catch {

@@ -359,7 +359,7 @@ export function fetchFriendFeedPage(
           byOwner.set(entry.friendUserId, current);
         }
         for (const [ownerUserId, entries] of byOwner) cacheTheirItemsFromFeed(ownerUserId, entries);
-        void syncWidgetLatestFriend(feed);
+        void syncWidgetLatestFriend(feed, getCachedPairing());
       }
       return page;
     } catch (error) {
@@ -857,18 +857,27 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
   const cached = getCachedPairing();
   if (!options?.force && cached?.fetchedAt
     && Date.now() - cached.fetchedAt < PAIRING_CACHE_MAX_AGE_MS) {
+    void syncWidgetLatestFriend(getCachedFriendFeed(), cached);
     return Promise.resolve(cached);
   }
   if (pairingRequest) return pairingRequest;
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
-    if (!userId) return { paired: false, partner: null } satisfies PairingStatus;
+    if (!userId) {
+      const status = { paired: false, partner: null } satisfies PairingStatus;
+      void syncWidgetLatestFriend([], status);
+      return status;
+    }
     try {
       const data = await apiClient.get<{ success?: boolean } & PairingStatus>(
         `/api/friends/pair?userId=${encodeURIComponent(userId)}`,
       );
-      if (!data.success) return getCachedPairing() ?? { paired: false, partner: null };
+      if (!data.success) {
+        const status = getCachedPairing() ?? { paired: false, partner: null };
+        void syncWidgetLatestFriend(getCachedFriendFeed(), status);
+        return status;
+      }
       const status: PairingStatus = {
         paired: !!data.paired,
         partner: data.partner ?? null,
@@ -879,9 +888,12 @@ export function fetchPairing(options?: { force?: boolean }): Promise<PairingStat
         fetchedAt: Date.now(),
       };
       storage.set(kPairingStatus.name, JSON.stringify(status));
+      void syncWidgetLatestFriend(getCachedFriendFeed(), status);
       return status;
     } catch {
-      return getCachedPairing() ?? { paired: false, partner: null };
+      const status = getCachedPairing() ?? { paired: false, partner: null };
+      void syncWidgetLatestFriend(getCachedFriendFeed(), status);
+      return status;
     }
   })().finally(() => { pairingRequest = null; });
   pairingRequest = request;
@@ -938,6 +950,7 @@ export async function unsetPairing(): Promise<boolean> {
     storage.remove(kFriendsFeed.name);
     storage.remove(kSharedBoxState.name);
     storage.remove(kConnInsights.name);
+    void syncWidgetLatestFriend([], { paired: false, partner: null });
     return true;
   } catch {
     return false;

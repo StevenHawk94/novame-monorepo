@@ -5,7 +5,8 @@ import WidgetKit
  * Bridge between the RN app and the NovaMe home-screen widget.
  *
  * `syncLatestFriendReflect(payloadJson)` receives
- *   { name, createdAt, avatar?: { src }, items: [{ src?, emoji }] }
+ *   { state, name, createdAt, avatar?: { src },
+ *     items: [{ src?, emoji }], totalItems }
  *   (items already capped at 6)
  * where `src` is a local file URI (release / expo-asset) or a Metro http URL
  * (dev). Each image is copied into the App Group container, the rewritten
@@ -61,9 +62,11 @@ public class WidgetSyncModule: Module {
       }
 
       var out: [String: Any] = [
+        "state": obj["state"] ?? "latest",
         "name": obj["name"] ?? "",
         "createdAt": obj["createdAt"] ?? "",
         "items": outItems,
+        "totalItems": obj["totalItems"] ?? outItems.count,
       ]
       if let outAvatar { out["avatar"] = outAvatar }
       guard
