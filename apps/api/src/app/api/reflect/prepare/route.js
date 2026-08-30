@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
 import { createMemoryFallbacks, isoWeek, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -22,8 +23,7 @@ export async function POST(request) {
     const supabase = serviceClient()
     const resolved = await resolveDraftInput(supabase, input)
     if (resolved.error) return NextResponse.json({ error: resolved.error }, { status: 400 })
-    const localDate = /^\d{4}-\d{2}-\d{2}$/.test(input.localDate || '')
-      ? input.localDate : new Date().toISOString().slice(0, 10)
+    const localDate = await resolveUserLocalDate(supabase, input.userId)
     const { data: profile } = await supabase.from('profiles')
       .select('subscription_tier, ai_consent_at').eq('id', input.userId).single()
     if (!profile) return NextResponse.json({ error: 'profile_not_found' }, { status: 404 })

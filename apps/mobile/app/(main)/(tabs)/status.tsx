@@ -106,9 +106,22 @@ export default function ConnectionDashboardScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 380;
-  const cachedResult = getCachedInsights();
-  const cachedInsightValue = cachedResult?.ok ? validInsights(cachedResult.insights) : null;
-  const cachedPaid = getCachedSubscriptionTier() !== 'free';
+  // Read the cache exactly once for this mounted tab. The Connection cache also
+  // contains append-only History, so doing this in the render body used to
+  // synchronously parse an increasingly large JSON document after each state
+  // update and made this tab feel slower than its siblings.
+  const [initialCache] = useState(() => {
+    const result = getCachedInsights();
+    const paid = getCachedSubscriptionTier() !== 'free';
+    return {
+      result,
+      paid,
+      insights: result?.ok ? validInsights(result.insights) : null,
+    };
+  });
+  const cachedResult = initialCache.result;
+  const cachedInsightValue = initialCache.insights;
+  const cachedPaid = initialCache.paid;
 
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [isPaid, setIsPaid] = useState(cachedPaid);
@@ -258,6 +271,7 @@ export default function ConnectionDashboardScreen() {
           offset={4}
           radius={20}
           disabled={!partner}
+          accessibilityLabel="Open Connection History"
           onPress={() => {
             if (!partner) return;
             void haptics.pageOpen();
@@ -320,6 +334,8 @@ export default function ConnectionDashboardScreen() {
               <Pressable
                 style={st.plusCard}
                 onPress={openPlus}
+                accessibilityRole="button"
+                accessibilityLabel="Join Plus to unlock Connection details"
               >
                 <MaterialIcons name="lock" size={22} color="#FFFFFF" />
                 <View style={{ flex: 1 }}>
@@ -362,17 +378,23 @@ export default function ConnectionDashboardScreen() {
       </View>
 
       {refreshingLatest && pairing?.paired && partner && (
-        <View style={st.loadingOverlay} pointerEvents="auto">
-          <View style={st.loadingCard}>
-            <ActivityIndicator size="large" color="#8C523D" />
-            <Text style={st.loadingTitle}>Updating the latest moments...</Text>
-            <Text style={st.loadingText}>Looking at their newest reflection for anything worth adding.</Text>
+        <View
+          style={[st.refreshToastWrap, { top: insets.top + 94 }]}
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+        >
+          <View style={st.refreshToast}>
+            <ActivityIndicator size="small" color="#8C523D" />
+            <View style={{ flex: 1 }}>
+              <Text style={st.refreshToastTitle}>Checking for their latest updates...</Text>
+              <Text style={st.refreshToastText}>You can keep using Connection while this refreshes.</Text>
+            </View>
           </View>
         </View>
       )}
       <FeatureGuideModal
         guide="connection"
-        enabled={!!pairing?.paired && !!partner && !refreshingLatest}
+        enabled={!!pairing?.paired && !!partner}
       />
     </View>
   );
@@ -459,16 +481,17 @@ const st = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: 'rgba(122,74,58,0.16)', marginTop: 14, paddingTop: 13,
   },
   actionText: { flex: 1, fontSize: 14.5, lineHeight: 21, fontFamily: 'Inter_600SemiBold', color: '#5B3B29' },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject, zIndex: 50, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(24,16,12,0.55)', paddingHorizontal: 28,
+  refreshToastWrap: {
+    position: 'absolute', zIndex: 50, left: 16, right: 16, alignItems: 'center',
   },
-  loadingCard: {
-    width: '100%', maxWidth: 360, borderRadius: 28, backgroundColor: '#FFF6E4',
-    paddingHorizontal: 28, paddingVertical: 34, alignItems: 'center',
-    shadowColor: '#000000', shadowOpacity: 0.28, shadowRadius: 24, shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
+  refreshToast: {
+    width: '100%', maxWidth: 390, minHeight: 58, borderRadius: 18,
+    backgroundColor: '#FFF6E4', paddingHorizontal: 16, paddingVertical: 11,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: 1, borderColor: 'rgba(140,82,61,0.18)',
+    shadowColor: '#4E301D', shadowOpacity: 0.18, shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 }, elevation: 6,
   },
-  loadingTitle: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#4E301D', marginTop: 18, textAlign: 'center' },
-  loadingText: { fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#7B6250', marginTop: 8, textAlign: 'center' },
+  refreshToastTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4E301D' },
+  refreshToastText: { fontSize: 11.5, lineHeight: 16, fontFamily: 'Inter_500Medium', color: '#7B6250', marginTop: 2 },
 });

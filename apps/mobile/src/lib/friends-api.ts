@@ -68,6 +68,9 @@ interface FriendsFeedCache {
   feed: FeedEntry[];
   fetchedAtMs: number;
   localDate: string;
+  hasMore: boolean;
+  nextBeforeCreatedAt?: string | null;
+  nextBeforeId?: string | null;
 }
 
 let friendsStatusRequest: Promise<FriendsStatus> | null = null;
@@ -89,8 +92,13 @@ function readFriendsFeedCache(): FriendsFeedCache | null {
     const raw = storage.getString(kFriendsFeed.name);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as FriendsFeedCache | FeedEntry[];
-    if (Array.isArray(parsed)) return { feed: parsed, fetchedAtMs: 0, localDate: '' };
-    if (Array.isArray(parsed.feed)) return parsed;
+    if (Array.isArray(parsed)) return { feed: parsed, fetchedAtMs: 0, localDate: '', hasMore: false };
+    if (Array.isArray(parsed.feed)) return {
+      ...parsed,
+      hasMore: parsed.hasMore === true,
+      nextBeforeCreatedAt: parsed.nextBeforeCreatedAt ?? null,
+      nextBeforeId: parsed.nextBeforeId ?? null,
+    };
   } catch { /* fall through */ }
   return null;
 }
@@ -105,7 +113,24 @@ export function getCachedFriendFeed(): FeedEntry[] {
   return readFriendsFeedCache()?.feed ?? [];
 }
 
-function localDateStr(): string {
+export interface FriendFeedPage {
+  feed: FeedEntry[];
+  hasMore: boolean;
+  nextBeforeCreatedAt?: string | null;
+  nextBeforeId?: string | null;
+}
+
+export function getCachedFriendFeedPage(): FriendFeedPage {
+  const cached = readFriendsFeedCache();
+  return {
+    feed: cached?.feed ?? [],
+    hasMore: cached?.hasMore === true,
+    nextBeforeCreatedAt: cached?.nextBeforeCreatedAt ?? null,
+    nextBeforeId: cached?.nextBeforeId ?? null,
+  };
+}
+
+export function localDateStr(): string {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -282,26 +307,48 @@ export function fetchFriendFeed(
   range?: { start: string; end: string },
   options?: { force?: boolean },
 ): Promise<FeedEntry[]> {
+  return fetchFriendFeedPage(range, options).then((page) => page.feed);
+}
+
+/** First six visible reflections. Cached pages paint immediately. */
+export function fetchFriendFeedPage(
+  range?: { start: string; end: string },
+  options?: { force?: boolean },
+): Promise<FriendFeedPage> {
   const today = localDateStr();
   const cached = readFriendsFeedCache();
   if (!range && !options?.force && cached && cached.localDate === today
     && Date.now() - cached.fetchedAtMs < FRIENDS_CACHE_MAX_AGE_MS) {
-    return Promise.resolve(cached.feed);
+    return Promise.resolve(getCachedFriendFeedPage());
   }
-  if (!range && friendsFeedRequest) return friendsFeedRequest;
+  if (!range && friendsFeedRequest) return friendsFeedRequest.then(() => getCachedFriendFeedPage());
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
-    if (!userId) return [];
+    if (!userId) return { feed: [], hasMore: false } satisfies FriendFeedPage;
     try {
-      const data = await apiClient.get<{ success?: boolean; feed?: Omit<FeedEntry, 'emoji'>[] }>(
+      const data = await apiClient.get<{
+        success?: boolean;
+        feed?: Omit<FeedEntry, 'emoji'>[];
+        hasMore?: boolean;
+        nextBeforeCreatedAt?: string | null;
+        nextBeforeId?: string | null;
+      }>(
         `/api/friends/feed?userId=${encodeURIComponent(userId)}${range ? `&start=${range.start}&end=${range.end}` : ''}`,
       );
-      if (!data.success || !data.feed) return range ? [] : getCachedFriendFeed();
+      if (!data.success || !data.feed) return range
+        ? { feed: [], hasMore: false }
+        : getCachedFriendFeedPage();
       const feed = data.feed.map((e) => ({ ...e, emoji: e.itemIds.map(emojiFor) }));
+      const page: FriendFeedPage = {
+        feed,
+        hasMore: data.hasMore === true,
+        nextBeforeCreatedAt: data.nextBeforeCreatedAt ?? null,
+        nextBeforeId: data.nextBeforeId ?? null,
+      };
       if (!range) {
         storage.set(kFriendsFeed.name, JSON.stringify({
-          feed,
+          ...page,
           fetchedAtMs: Date.now(),
           localDate: today,
         } satisfies FriendsFeedCache));
@@ -314,15 +361,58 @@ export function fetchFriendFeed(
         for (const [ownerUserId, entries] of byOwner) cacheTheirItemsFromFeed(ownerUserId, entries);
         void syncWidgetLatestFriend(feed);
       }
-      return feed;
-    } catch {
-      return range ? [] : getCachedFriendFeed();
+      return page;
+    } catch (error) {
+      if (range) throw error;
+      return getCachedFriendFeedPage();
     }
   })().finally(() => {
     if (!range) friendsFeedRequest = null;
   });
-  if (!range) friendsFeedRequest = request;
+  if (!range) friendsFeedRequest = request.then((page) => page.feed);
   return request;
+}
+
+/** Load the next six reflections. The caller owns range-specific accumulated state. */
+export async function fetchMoreFriendFeed(
+  current: FriendFeedPage,
+  range?: { start: string; end: string },
+): Promise<FriendFeedPage> {
+  if (!current.hasMore || !current.nextBeforeCreatedAt) return current;
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return current;
+  const params = new URLSearchParams({
+    userId,
+    beforeCreatedAt: current.nextBeforeCreatedAt,
+  });
+  if (current.nextBeforeId) params.set('beforeId', current.nextBeforeId);
+  if (range) { params.set('start', range.start); params.set('end', range.end); }
+  try {
+    const data = await apiClient.get<{
+      success?: boolean;
+      feed?: Omit<FeedEntry, 'emoji'>[];
+      hasMore?: boolean;
+      nextBeforeCreatedAt?: string | null;
+      nextBeforeId?: string | null;
+    }>(`/api/friends/feed?${params.toString()}`);
+    if (!data.success || !Array.isArray(data.feed)) return current;
+    const incoming = data.feed.map((entry) => ({ ...entry, emoji: entry.itemIds.map(emojiFor) }));
+    const byReflect = new Map(current.feed.map((entry) => [entry.reflectId, entry]));
+    for (const entry of incoming) byReflect.set(entry.reflectId, entry);
+    const next: FriendFeedPage = {
+      feed: [...byReflect.values()],
+      hasMore: data.hasMore === true,
+      nextBeforeCreatedAt: data.nextBeforeCreatedAt ?? null,
+      nextBeforeId: data.nextBeforeId ?? null,
+    };
+    // Keep only the newest six rows in MMKV so every fresh visit paints the
+    // requested default page. Deeper pages live in screen state and are loaded
+    // again only when the user scrolls.
+    return next;
+  } catch {
+    return current;
+  }
 }
 
 /** Move the unread cursor for one friend (fire-and-forget safe). */
@@ -422,6 +512,31 @@ export async function fetchUnreadGoodVibe(): Promise<GoodVibeInboxItem | null> {
     );
     return result.vibe ?? null;
   } catch { return null; }
+}
+
+/**
+ * Server-owned daily status for the Good Vibes entry point. `null` means the
+ * status could not be checked, so callers can preserve the server-side send
+ * guard without incorrectly claiming that the user has already sent today.
+ */
+export interface GoodVibeDailyStatus {
+  sentToday: boolean;
+  localDate: string;
+}
+
+export async function fetchGoodVibeDailyStatus(): Promise<GoodVibeDailyStatus | null> {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return null;
+  try {
+    const result = await apiClient.get<{ success?: boolean; sentToday?: boolean; localDate?: string }>(
+      `/api/friends/good-vibes?userId=${encodeURIComponent(userId)}&localDate=${localDateStr()}`,
+    );
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(result.localDate ?? '')) return null;
+    return { sentToday: result.sentToday === true, localDate: result.localDate! };
+  } catch {
+    return null;
+  }
 }
 
 export async function sendGoodVibe(messageIndex: number, replyToId?: string): Promise<{ ok: boolean; error?: string }> {
@@ -923,7 +1038,10 @@ export interface ConnectionHistoryCard extends ConnectionInsightCard {
 }
 
 export type ConnectionHistoryResult =
-  | { ok: true; paired: boolean; unavailable?: boolean; cards: ConnectionHistoryCard[] }
+  | {
+    ok: true; paired: boolean; unavailable?: boolean; cards: ConnectionHistoryCard[];
+    hasMore?: boolean; nextBeforeCreatedAt?: string | null; nextBeforeId?: string | null;
+  }
   | { ok: false; error: 'plus_required' | 'network' };
 
 type ConnectionHistoryListener = (result: ConnectionHistoryResult) => void;
@@ -1041,10 +1159,13 @@ export async function fetchConnectionHistory(options?: {
   end?: string | null;
   incremental?: boolean;
   force?: boolean;
+  beforeCreatedAt?: string | null;
+  beforeId?: string | null;
+  append?: boolean;
 }): Promise<ConnectionHistoryResult> {
   const cacheable = !options?.start && !options?.end;
   const cached = cacheable ? getCachedConnectionHistory() : null;
-  if (!options?.force && !options?.incremental && cached) return cached;
+  if (!options?.force && !options?.incremental && !options?.beforeCreatedAt && cached) return cached;
   if (cacheable && connectionHistoryRequest) return connectionHistoryRequest;
 
   const request = (async (): Promise<ConnectionHistoryResult> => {
@@ -1054,6 +1175,8 @@ export async function fetchConnectionHistory(options?: {
     const params = new URLSearchParams({ userId });
     if (options?.start) params.set('start', options.start);
     if (options?.end) params.set('end', options.end);
+    if (options?.beforeCreatedAt) params.set('beforeCreatedAt', options.beforeCreatedAt);
+    if (options?.beforeId) params.set('beforeId', options.beforeId);
     if (cacheable && options?.incremental && cached?.ok && cached.cards.length > 0) {
       params.set('since', cached.cards.reduce((latest, card) => (
         card.createdAt > latest ? card.createdAt : latest
@@ -1065,6 +1188,9 @@ export async function fetchConnectionHistory(options?: {
         paired?: boolean;
         unavailable?: boolean;
         cards?: ConnectionHistoryCard[];
+        hasMore?: boolean;
+        nextBeforeCreatedAt?: string | null;
+        nextBeforeId?: string | null;
         error?: string;
       }>(`/api/friends/insights/history?${params.toString()}`);
       if (result.success) {
@@ -1072,9 +1198,15 @@ export async function fetchConnectionHistory(options?: {
           ok: true,
           paired: result.paired === true,
           unavailable: result.unavailable === true,
-          cards: cacheable && options?.incremental && cached?.ok
+          cards: cacheable && cached?.ok && result.paired === true && result.unavailable !== true
             ? mergeConnectionHistoryCards(cached.cards, Array.isArray(result.cards) ? result.cards : [])
             : (Array.isArray(result.cards) ? result.cards : []),
+          hasMore: cacheable && options?.incremental && cached?.ok
+            ? cached.hasMore === true : result.hasMore === true,
+          nextBeforeCreatedAt: cacheable && options?.incremental && cached?.ok
+            ? cached.nextBeforeCreatedAt ?? null : result.nextBeforeCreatedAt ?? null,
+          nextBeforeId: cacheable && options?.incremental && cached?.ok
+            ? cached.nextBeforeId ?? null : result.nextBeforeId ?? null,
         };
         if (cacheable) {
           patchAnalysisCache({ history: next, historyFetchedAt: Date.now() });
@@ -1093,4 +1225,16 @@ export async function fetchConnectionHistory(options?: {
 
   if (cacheable) connectionHistoryRequest = request;
   return request;
+}
+
+export function fetchMoreConnectionHistory(
+  current: ConnectionHistoryResult,
+): Promise<ConnectionHistoryResult> {
+  if (!current.ok || !current.hasMore || !current.nextBeforeCreatedAt) return Promise.resolve(current);
+  return fetchConnectionHistory({
+    force: true,
+    append: true,
+    beforeCreatedAt: current.nextBeforeCreatedAt,
+    beforeId: current.nextBeforeId,
+  });
 }

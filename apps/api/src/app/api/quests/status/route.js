@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -47,7 +48,7 @@ export async function GET(request) {
     if (!plan) return NextResponse.json({ success: true, active: false })
 
     // Day number from started_on to localDate (1-based).
-    const today = localDate || new Date().toISOString().slice(0, 10)
+    const today = await resolveUserLocalDate(supabase, userId)
     const start = new Date(plan.started_on + 'T00:00:00Z')
     const now = new Date(today + 'T00:00:00Z')
     const dayNum = Math.floor((now - start) / (24 * 60 * 60 * 1000)) + 1

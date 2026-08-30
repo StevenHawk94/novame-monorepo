@@ -290,7 +290,7 @@ export async function prepareReflect(params: {
     // Older deployed APIs do not know the new selection-only people IDs either.
     // Report a catalog/version mismatch, not a connection failure; never drop picks.
     if (params.selectionVersion && error instanceof ApiError && error.status === 400
-      && (code === 'too_many_items_in_category' || code === 'invalid_selection_version'
+      && (code === 'too_many_items' || code === 'too_many_items_in_category' || code === 'invalid_selection_version'
         || code === 'unknown_item' || code === 'invalid_selection_item')) {
       return { ok: false, error: 'selection_unavailable' };
     }

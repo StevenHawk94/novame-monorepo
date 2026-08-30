@@ -34,3 +34,8 @@ authority for executable matching rules. `NEVER_AUTO` entries are not promoted
 to triggers, and non-executable prose exclusions remain fail-closed. Cross-icon
 keyword collisions must be explicitly resolved in `CONFLICT_WINNERS`, rather
 than silently selecting whichever spreadsheet row happens to come last.
+
+Fifteen Tap Your Day artworks are now the canonical files for their existing
+memory item IDs. `build-items-v19.py` reapplies these promotions after a full or
+affected targeted rebuild; do not restore the retired presentation-only runtime
+map. The five `tap.person.*` choices remain separate selection-only items.

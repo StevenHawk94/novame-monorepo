@@ -25,6 +25,7 @@ import html
 import json
 import os
 import re
+import shutil
 import unicodedata
 from collections import defaultdict
 from pathlib import Path
@@ -44,6 +45,27 @@ PREVIEW_PATH = SOURCE_DIR / "standardized-preview.html"
 QA_PATH = SOURCE_DIR / "items-v31-image-qa.json"
 PREVIEW_IMAGE_DIR = Path(os.path.relpath(OUTPUT_DIR, PREVIEW_PATH.parent)).as_posix()
 
+# These 15 artworks were promoted from Tap Your Day presentation overrides to
+# the canonical item files. Reapply them after any affected rebuild so a future
+# --full or targeted image refresh cannot silently restore the retired art.
+CANONICAL_ART_PROMOTIONS: dict[str, Path] = {
+    "memory.3006_globe": OUTPUT_DIR / "memory.5431_book_light.webp",
+    "memory.1421_bed": OUTPUT_DIR / "memory.1457_bedroom.webp",
+    "memory.2127_bus": OUTPUT_DIR / "memory.1439_car.webp",
+    "memory.0718_rice_noodles": OUTPUT_DIR / "memory.0050_ramen.webp",
+    "memory.1541_workplace": ROOT / "apps/mobile/assets/items/tap-person/Work.webp",
+    "memory.1435_appointment_book": ROOT / "apps/mobile/assets/items/tap-person/Appointment.webp",
+    "memory.1304_yoga": ROOT / "apps/mobile/assets/items/tap-person/Yoga.webp",
+    "memory.1403_picnic": ROOT / "apps/mobile/assets/items/tap-person/Socializing.webp",
+    "memory.1491_restaurant": ROOT / "apps/mobile/assets/items/tap-person/Date.webp",
+    "memory.2261_event_ticket": ROOT / "apps/mobile/assets/items/tap-person/Event.webp",
+    "memory.1594_volunteer_center": ROOT / "apps/mobile/assets/items/tap-person/Volunteering.webp",
+    "memory.1363_movie_theater": ROOT / "apps/mobile/assets/items/tap-person/Movie.webp",
+    "memory.1362_television": ROOT / "apps/mobile/assets/items/tap-person/TV.webp",
+    "memory.5385_social_media": ROOT / "apps/mobile/assets/items/tap-person/social-media.webp",
+    "memory.2876_notebook": ROOT / "apps/mobile/assets/items/tap-person/Writing.webp",
+}
+
 GRID = 7
 CANVAS = 256
 SAFE_SIZE = 200
@@ -61,6 +83,10 @@ def slugify(value: str) -> str:
     if not value:
         raise ValueError("Icon_name produced an empty slug")
     return value
+
+
+def item_row(item_id: str) -> int:
+    return int(item_id.split(".", 1)[1].split("_", 1)[0])
 
 
 def source_pages(source_dir: Path, *, require_full_catalog: bool) -> list[tuple[int, int, Path]]:
@@ -578,6 +604,25 @@ def main() -> None:
 
     if len(written_files) != len(rows_to_write):
         raise ValueError(f"Expected {len(rows_to_write)} written files, found {len(written_files)}")
+
+    promoted = []
+    for target_id, source_path in CANONICAL_ART_PROMOTIONS.items():
+        target_path = OUTPUT_DIR / f"{target_id}.webp"
+        source_row = item_row(source_path.stem) if source_path.parent == OUTPUT_DIR else None
+        affected = (
+            args.full
+            or item_row(target_id) in rows_to_write
+            or (source_row is not None and source_row in rows_to_write)
+        )
+        if not affected:
+            continue
+        if not source_path.exists():
+            raise ValueError(f"Missing canonical promotion source: {source_path}")
+        shutil.copyfile(source_path, target_path)
+        promoted.append(target_id)
+    if promoted:
+        print(f"reapplied {len(promoted)} canonical Tap Your Day artworks")
+
     disk_files = {path.name for path in OUTPUT_DIR.glob("memory.*.webp")}
     unexpected = sorted(disk_files - expected_all_files)
     missing = sorted(expected_all_files - disk_files)

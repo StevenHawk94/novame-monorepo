@@ -103,9 +103,9 @@ export default function MyLogsScreen() {
                 <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
                 <Text style={styles.cardDate}>{e.dateLabel}</Text>
               </View>
-              <Text style={styles.cardBody} numberOfLines={4}>
-                {e.body.trim() || 'You did not type anything on this reflection.'}
-              </Text>
+              {!!e.body.trim() && (
+                <Text style={styles.cardBody} numberOfLines={4}>{e.body.trim()}</Text>
+              )}
               <View style={styles.itemRow}>
                 {e.items.slice(0, 5).map((id, i) => (
                   <View key={i} style={styles.itemTile}>

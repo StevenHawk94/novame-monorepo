@@ -19,6 +19,26 @@ async function requireUser(request) {
   return verifyToken(token)
 }
 
+function dateInTimeZone(timeZone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date())
+    const part = (type) => parts.find((value) => value.type === type)?.value
+    return `${part('year')}-${part('month')}-${part('day')}`
+  } catch {
+    return new Date().toISOString().slice(0, 10)
+  }
+}
+
+function daysBetweenDateKeys(from, to) {
+  const utc = (value) => {
+    const [year, month, day] = value.split('-').map(Number)
+    return Date.UTC(year, month - 1, day)
+  }
+  return Math.max(0, Math.floor((utc(to) - utc(from)) / 86400000))
+}
+
 /**
  * The 1:1 pairing (2026-07-23 需求: 那个愿意共享生活点滴、不在身边的人).
  * Built on friendships — you can only pair with an accepted friend; each user
@@ -38,24 +58,26 @@ export async function GET(request) {
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const supabase = serviceClient()
-    const { data: row } = await supabase
-      .from('pairings')
-      .select('partner_user_id, relationship, relationship_since, created_at')
-      .eq('user_id', userId)
-      .maybeSingle()
+    const [{ data: row, error: pairError }, { data: viewer, error: viewerError }] = await Promise.all([
+      supabase.from('pairings')
+        .select('partner_user_id, relationship, relationship_since, created_at')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase.from('profiles').select('timezone_name').eq('id', userId).maybeSingle(),
+    ])
+    if (pairError || viewerError) throw pairError || viewerError
     if (!row) return NextResponse.json({ success: true, paired: false, partner: null })
 
-    const { data: prof } = await supabase
+    const { data: prof, error: profileError } = await supabase
       .from('profiles')
       .select('id, display_name, avatar_url, is_default_avatar')
       .eq('id', row.partner_user_id)
       .maybeSingle()
+    if (profileError) throw profileError
     // Duration: since the relationship's stated start when given, else since
     // the pairing itself.
     const sinceIso = row.relationship_since || (row.created_at ? row.created_at.slice(0, 10) : null)
-    const days = sinceIso
-      ? Math.max(0, Math.floor((Date.now() - new Date(`${sinceIso}T00:00:00Z`).getTime()) / 86400000))
-      : 0
+    const days = sinceIso ? daysBetweenDateKeys(sinceIso, dateInTimeZone(viewer?.timezone_name)) : 0
     return NextResponse.json({
       success: true,
       paired: true,

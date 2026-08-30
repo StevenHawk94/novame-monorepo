@@ -5,7 +5,7 @@ import { randomUUID } from 'expo-crypto';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { TAP_YOUR_DAY_QUESTIONS, CUSTOM_TAP_SELECTION_VERSION, type TapYourDayChoice, type CustomTapItem } from '@novame/engine';
+import { TAP_YOUR_DAY_QUESTIONS, CUSTOM_TAP_SELECTION_VERSION, MAX_TAP_YOUR_DAY_SELECTIONS, type TapYourDayChoice, type CustomTapItem } from '@novame/engine';
 import { useCustomTapItems } from '@/lib/custom-tap-items';
 import { CustomTapItemSheet } from '@/components/main/custom-tap-item-sheet';
 import { canAddCustomTapItem, customTapGroupsForQuestion } from '@/lib/custom-tap-catalog';
@@ -73,6 +73,14 @@ export default function ReflectGuidedScreen() {
   function toggle(choice: DayChoice) {
     void haptics.light();
     requestKey.current = null;
+    const prior = selected.get(choice.itemId);
+    const removing = prior?.label === choice.label && !!prior?.custom === !!choice.custom;
+    if (!removing && selected.size >= MAX_TAP_YOUR_DAY_SELECTIONS) {
+      setToast(`You can select up to ${MAX_TAP_YOUR_DAY_SELECTIONS} items.`);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 1800);
+      return;
+    }
     setSelected((current) => {
       const next = new Map(current);
       const prior = next.get(choice.itemId);
@@ -80,7 +88,7 @@ export default function ReflectGuidedScreen() {
       else next.set(choice.itemId, choice);
       return next;
     });
-    setToast(choice.label);
+    setToast(removing ? `${choice.label} removed` : choice.label);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 1000);
   }
@@ -158,6 +166,7 @@ export default function ReflectGuidedScreen() {
                 ))}
               </ScrollView>
               <View style={{ paddingBottom: insets.bottom + 12 }}>
+                <Text style={styles.selectionCount}>{selected.size} / {MAX_TAP_YOUR_DAY_SELECTIONS} selected</Text>
                 <Text style={styles.hint}>You can pass if nothing you want to select here</Text>
                 <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={onNext} cardStyle={styles.yellowBtn}>
                   <Text style={styles.yellowBtnText}>Next</Text>
@@ -206,7 +215,14 @@ export default function ReflectGuidedScreen() {
         </View>
       </KeyboardAvoidingView>
       {addOpen && <CustomTapItemSheet question={question} onClose={() => setAddOpen(false)} onSave={item => {
-        custom.save(item); requestKey.current = null; setSelected(old => new Map(old).set(item.itemId, item));
+        custom.save(item); requestKey.current = null;
+        if (!selected.has(item.itemId) && selected.size >= MAX_TAP_YOUR_DAY_SELECTIONS) {
+          setToast(`Saved. You can select up to ${MAX_TAP_YOUR_DAY_SELECTIONS} items per reflection.`);
+          if (toastTimer.current) clearTimeout(toastTimer.current);
+          toastTimer.current = setTimeout(() => setToast(null), 2200);
+          return;
+        }
+        setSelected(old => new Map(old).set(item.itemId, item));
       }} />}
       <ReflectCelebration active={phase === 'result'} />
     </View>
@@ -223,6 +239,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#493219', textAlign: 'center' },
   gridCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: TAP_GRID_PADDING, flexDirection: 'row', flexWrap: 'wrap', gap: TAP_ITEM_GAP },
   hint: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', textAlign: 'center', marginVertical: 12, lineHeight: 19 },
+  selectionCount: { fontSize: 12.5, fontFamily: 'Inter_700Bold', color: '#FFF4D6', textAlign: 'center', marginTop: 8 },
   yellowBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },
   yellowBtnText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },
   toastWrap: { position: 'absolute', left: 12, right: 12, bottom: 112, alignItems: 'center' },

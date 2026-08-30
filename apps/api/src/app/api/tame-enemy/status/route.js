@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { MONSTERS } from '@novame/engine'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -20,7 +21,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const localDate = searchParams.get('localDate')
+    const requestedLocalDate = searchParams.get('localDate')
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
@@ -37,6 +38,7 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+    const localDate = await resolveUserLocalDate(supabase, userId)
 
     // Skills grouped by dimension (the per-monster pool size).
     const { data: skills } = await supabase

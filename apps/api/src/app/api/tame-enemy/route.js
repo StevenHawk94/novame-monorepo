@@ -5,6 +5,7 @@ import {
   XP_RULES, TAME_POINTS_PER_COMPLETION,
   BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD,
 } from '@novame/engine'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -55,7 +56,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const dateStr = localDate || new Date().toISOString().slice(0, 10)
+    const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
     const usedIds = Array.isArray(skillsUsed) ? skillsUsed : []
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { CLOVERS_PER_TASK, PLAN_DAYS } from '@novame/domain'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'nodejs'
 
@@ -50,7 +51,7 @@ export async function POST(request) {
       .maybeSingle()
     if (existing) return NextResponse.json({ error: 'already_active' }, { status: 409 })
 
-    const today = localDate || new Date().toISOString().slice(0, 10)
+    const today = await resolveUserLocalDate(supabase, userId)
     const { data: plan, error } = await supabase
       .from('quest_plans')
       .insert({

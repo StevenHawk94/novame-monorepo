@@ -107,7 +107,6 @@ export function MemoryEditorSheet({
   isPaid,
   shared,
   allowUseMyWords = true,
-  tapYourDay = false,
   onChange,
   onDone,
   saving = false,
@@ -117,7 +116,6 @@ export function MemoryEditorSheet({
   isPaid: boolean;
   shared: boolean;
   allowUseMyWords?: boolean;
-  tapYourDay?: boolean;
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
   saving?: boolean;
@@ -188,7 +186,7 @@ export function MemoryEditorSheet({
                   const memory = byId.get(item.itemId)!;
                   return (
                     <View key={item.itemId} style={styles.editorRow}>
-                      <ItemSprite itemId={item.itemId} size={54} radius={13} tapYourDay={tapYourDay && !item.custom} />
+                      <ItemSprite itemId={item.itemId} size={54} radius={13} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.editorName}>{item.displayName}</Text>
                         <TextInput
@@ -242,13 +240,11 @@ export function MemoryEditorSheet({
 function ShareItemsSheet({
   items,
   memories,
-  tapYourDay = false,
   onChange,
   onDone,
 }: {
   items: MatchedItem[];
   memories: ReflectMemoryDraft[];
-  tapYourDay?: boolean;
   onChange: (memories: ReflectMemoryDraft[]) => void;
   onDone: () => void;
 }) {
@@ -289,7 +285,7 @@ function ShareItemsSheet({
                   onPress={() => toggle(item.itemId)}
                   style={[styles.shareReviewItem, hidden.has(item.itemId) && styles.hiddenItem]}
                 >
-                  <ItemSprite itemId={item.itemId} size={52} radius={13} tapYourDay={tapYourDay && !item.custom} />
+                  <ItemSprite itemId={item.itemId} size={52} radius={13} />
                   {hidden.has(item.itemId) && (
                     <MaterialIcons name="visibility-off" size={17} color="#FFFFFF" style={styles.removeBadge} />
                   )}
@@ -506,7 +502,7 @@ export function ReflectSettlementView({
             </Text>
             <View style={styles.summaryItems}>
               {draft.matchedItems.map((item) => (
-                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} tapYourDay={draft.mode === 'prompt' && !item.custom} />
+                <ItemSprite key={item.itemId} itemId={item.itemId} size={58} radius={14} />
               ))}
             </View>
           </Pressable>
@@ -553,7 +549,6 @@ export function ReflectSettlementView({
           isPaid={isPaid}
           shared={shared}
           allowUseMyWords={draft.mode === 'typing'}
-          tapYourDay={draft.mode === 'prompt'}
           onChange={editMemories}
           onDone={() => { void haptics.pageClose(); setEditorOpen(false); }}
         />
@@ -562,7 +557,6 @@ export function ReflectSettlementView({
         <ShareItemsSheet
           items={draft.matchedItems}
           memories={memories}
-          tapYourDay={draft.mode === 'prompt'}
           onChange={editMemories}
           onDone={() => { void haptics.pageClose(); setShareOpen(false); }}
         />

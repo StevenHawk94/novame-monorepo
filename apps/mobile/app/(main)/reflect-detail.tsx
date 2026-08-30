@@ -71,6 +71,7 @@ export default function ReflectDetailScreen() {
       const r = day.reflects.find((x) => x.id === reflectId);
       if (r) return {
         body: r.body,
+        mode: r.mode,
         dateLabel: formatDayLabel(day.date),
         sharedToFriends: r.sharedToFriends,
         itemIds: r.itemIds,
@@ -186,19 +187,22 @@ export default function ReflectDetailScreen() {
               <Text style={styles.date}>{entry.dateLabel}</Text>
             </View>
           )}
-          <Text style={styles.body}>
-            {entry
-              ? entry.body.trim() || 'You did not type anything on this reflection.'
-              : 'This reflection is no longer available.'}
-          </Text>
+          {entry ? (
+            <Text style={styles.body}>
+              {entry.body.trim() || 'You did not write anything for this reflection.'}
+            </Text>
+          ) : (
+            <Text style={styles.body}>This reflection is no longer available.</Text>
+          )}
         </View>
 
         {/* Every item matched/selected by this reflection. */}
         {gathered.length > 0 && (
           <View style={styles.memCard}>
             <View style={styles.memTitleRow}>
-              <Image source={ICONS.memory} style={styles.memTitleIcon} resizeMode="contain" />
-              <Text style={styles.memTitle}>{entry?.hasMemories ? 'Memories Created' : 'Items Reflected'}</Text>
+              <Text style={styles.memTitle}>
+                {entry?.mode === 'typing' ? 'Items Matched' : 'Items Selected'}
+              </Text>
             </View>
             {/* Wrapping grid: every item visible, growing downward (no side-scroll). */}
             <View style={styles.memRow}>
@@ -242,7 +246,6 @@ export default function ReflectDetailScreen() {
           isPaid={isPaid}
           shared={editor.shared}
           allowUseMyWords={editor.mode === 'typing'}
-          tapYourDay={editor.mode === 'prompt'}
           onChange={setEditorMemories}
           onDone={() => void saveEditor()}
           saving={savingEditor}
@@ -264,7 +267,6 @@ const styles = StyleSheet.create({
 
   memCard: { backgroundColor: '#FDF9F1', borderRadius: 26, padding: 20 },
   memTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  memTitleIcon: { width: 30, height: 30 },
   memTitle: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
   memRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 4 },
   memItem: { alignItems: 'center', gap: 6 },

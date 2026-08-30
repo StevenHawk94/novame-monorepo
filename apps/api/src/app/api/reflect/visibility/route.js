@@ -7,11 +7,9 @@ export const runtime = 'edge'
 /**
  * POST /api/reflect/visibility { userId, reflectId, visible }
  *
- * The result page's bottom toggle (2026-07-24 design): whether the paired
- * partner (and friends) can see this reflect's memory DETAILS. Item icons
- * stay visible either way — the flag only gates excerpts/details on the
- * friend surfaces (feed details, reflect detail). Defaults to true at submit;
- * this flips it after the fact.
+ * Legacy whole-reflect visibility toggle. Per-item settlement controls now
+ * write visible_to_paired independently; when every item is hidden, the
+ * partner feed omits the reflection instead of showing an empty update.
  */
 export async function POST(request) {
   try {

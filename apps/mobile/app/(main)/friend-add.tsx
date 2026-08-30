@@ -5,6 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
@@ -216,12 +217,17 @@ export default function FriendAddScreen() {
             </View>
 
             <Text style={styles.modalQ}>What is your relationship with them?</Text>
-            <View style={styles.relGrid}>
-              {RELATIONSHIPS.map((r) => {
+            <FixedColumnGrid
+              data={RELATIONSHIPS}
+              columns={2}
+              columnGap={10}
+              rowGap={10}
+              style={styles.relGrid}
+              keyExtractor={(value) => value}
+              renderItem={(r) => {
                 const on = relationship === r;
                 return (
                   <Pressable
-                    key={r}
                     onPress={() => {
                       void haptics.light();
                       setInviteDraft((current) => ({ ...current, relationship: r }));
@@ -231,8 +237,8 @@ export default function FriendAddScreen() {
                     <Text style={[styles.relPillText, on && styles.relPillTextOn]} numberOfLines={1}>{r}</Text>
                   </Pressable>
                 );
-              })}
-            </View>
+              }}
+            />
 
             <Text style={styles.modalQ}>When is the first time you be in the relationship?</Text>
             <Pressable
@@ -372,9 +378,9 @@ const styles = StyleSheet.create({
   },
   foundName: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   modalQ: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 10 },
-  relGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  relGrid: { marginBottom: 16 },
   relPill: {
-    width: '47%', backgroundColor: '#FFFFFF', borderRadius: 22,
+    width: '100%', backgroundColor: '#FFFFFF', borderRadius: 22,
     paddingVertical: 13, alignItems: 'center',
   },
   relPillOn: { backgroundColor: '#4A3220' },

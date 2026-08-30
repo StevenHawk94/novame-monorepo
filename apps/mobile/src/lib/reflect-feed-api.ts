@@ -15,6 +15,7 @@ export interface FeedDay {
   reflects: {
     id: string;
     body: string;
+    mode: 'typing' | 'prompt' | 'items';
     sharedToFriends: boolean;
     itemIds: string[];
     hasMemories: boolean;
@@ -24,10 +25,12 @@ export interface FeedDay {
 }
 
 interface ReflectFeedCache {
+  schemaVersion?: number;
   days: FeedDay[];
   fetchedAtMs: number;
 }
 
+const REFLECT_FEED_SCHEMA_VERSION = 2;
 const REFLECT_FEED_TTL_MS = 15 * 60 * 1000;
 let feedInflight: Promise<FeedDay[]> | null = null;
 
@@ -48,17 +51,25 @@ function readCache(): ReflectFeedCache | null {
   }
 }
 
+function isCurrentCache(cache: ReflectFeedCache | null): cache is ReflectFeedCache {
+  return !!cache && cache.schemaVersion === REFLECT_FEED_SCHEMA_VERSION && cache.days.every((day) =>
+    day.reflects.every((reflect) =>
+      typeof reflect.hasMemories === 'boolean'
+      && ['typing', 'prompt', 'items'].includes(reflect.mode),
+    ),
+  );
+}
+
 /** Cached feed for cache-first render (returns [] if none). */
 export function getCachedFeed(): FeedDay[] {
-  return readCache()?.days ?? [];
+  const cached = readCache();
+  return isCurrentCache(cached) ? cached.days : [];
 }
 
 export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay[]> {
   const cached = readCache();
-  const cacheHasMemoryStatus = cached?.days.every((day) =>
-    day.reflects.every((reflect) => typeof reflect.hasMemories === 'boolean'),
-  );
-  if (!options?.force && cached && cacheHasMemoryStatus && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
+  const cacheIsCurrent = isCurrentCache(cached);
+  if (!options?.force && cached && cacheIsCurrent && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
     return Promise.resolve(cached.days);
   }
   if (feedInflight) return feedInflight;
@@ -75,6 +86,7 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
           reflects: {
             id: string;
             body: string;
+            mode?: 'typing' | 'prompt' | 'items';
             sharedToFriends: boolean;
             itemIds?: string[];
             hasMemories?: boolean;
@@ -83,19 +95,34 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
         }[];
       }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
       if (!data.success || !data.days) return getCachedFeed();
+      const responseHasReflectModes = data.days.every((day) => day.reflects.every((reflect) =>
+        ['typing', 'prompt', 'items'].includes(reflect.mode ?? ''),
+      ));
       const days = data.days.map((d) => ({
         ...d,
         reflects: d.reflects.map((reflect) => ({
           ...reflect,
+          mode: ['typing', 'prompt', 'items'].includes(reflect.mode ?? '')
+            ? reflect.mode as 'typing' | 'prompt' | 'items'
+            : 'typing',
           itemIds: reflect.itemIds ?? [],
           hasMemories: reflect.hasMemories === true,
         })),
         itemEmoji: d.itemIds.map(emojiFor),
       }));
-      storage.set(
-        kReflectFeed.name,
-        JSON.stringify({ days, fetchedAtMs: Date.now() } satisfies ReflectFeedCache),
-      );
+      // Do not turn an old API response without `mode` into a valid-looking
+      // cache. Once the API is deployed, the next focus fetches the typed data
+      // immediately instead of preserving the compatibility fallback for 15m.
+      if (responseHasReflectModes) {
+        storage.set(
+          kReflectFeed.name,
+          JSON.stringify({
+            schemaVersion: REFLECT_FEED_SCHEMA_VERSION,
+            days,
+            fetchedAtMs: Date.now(),
+          } satisfies ReflectFeedCache),
+        );
+      }
       return days;
     } catch {
       return getCachedFeed();

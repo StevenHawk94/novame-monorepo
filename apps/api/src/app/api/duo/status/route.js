@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { secureCode } from '@/lib/secure-random'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
@@ -54,9 +55,7 @@ export async function GET(request) {
         .maybeSingle()
       // Lazy-create if missing (apple-iap best-effort may have failed).
       if (!duo) {
-        const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-        let code = ''
-        for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
+        const code = secureCode(8)
         const { data: created } = await supabase
           .from('duo_memberships')
           .insert({ owner_id: userId, invite_code: code, status: 'pending' })

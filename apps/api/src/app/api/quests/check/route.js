@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { CLOVERS_PER_TASK, COMPLETION_BONUS } from '@novame/domain'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'nodejs'
 
@@ -47,7 +48,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const today = localDate || new Date().toISOString().slice(0, 10)
+    const today = await resolveUserLocalDate(supabase, userId)
     const { data: result, error: rpcError } = await supabase.rpc('check_quest_task', {
       p_user_id: userId,
       p_task_index: taskIndex,

@@ -36,17 +36,18 @@ export async function GET(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const { data: pairing } = await supabase
+    const { data: pairing, error: pairingError } = await supabase
       .from('pairings')
       .select('partner_user_id')
       .eq('user_id', userId)
       .maybeSingle()
+    if (pairingError) throw pairingError
     if (!pairing) {
       return NextResponse.json({ success: true, paired: false, partner: null, items: [] })
     }
     const partnerId = pairing.partner_user_id
 
-    const [{ data: prof }, { data: reflects }] = await Promise.all([
+    const [{ data: prof, error: profileError }, { data: reflects, error: reflectsError }] = await Promise.all([
       supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').eq('id', partnerId).maybeSingle(),
       supabase
         .from('reflects')
@@ -54,11 +55,12 @@ export async function GET(request) {
         .eq('user_id', partnerId)
         .eq('local_date', date),
     ])
+    if (profileError || reflectsError) throw profileError || reflectsError
 
     let items = []
     const reflectIds = (reflects || []).map((r) => r.id)
     if (reflectIds.length > 0) {
-      const { data: memories } = await supabase
+      const { data: memories, error: itemsError } = await supabase
         .from('reflect_items')
         .select('item_id, reflect_id, created_at, position')
         .eq('user_id', partnerId)
@@ -66,6 +68,7 @@ export async function GET(request) {
         .in('reflect_id', reflectIds)
         .order('created_at', { ascending: true })
         .order('position', { ascending: true })
+      if (itemsError) throw itemsError
       items = (memories || []).map((m) => ({
         itemId: m.item_id,
         reflectId: m.reflect_id,

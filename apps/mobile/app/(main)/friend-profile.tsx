@@ -123,7 +123,7 @@ export default function FriendProfileScreen() {
                   </View>
                 )}
                 <View style={{ flex: 1 }} />
-                {e.sharesDetails && e.details && e.details.length > 0 && (
+                {e.sharesDetails && (
                   <Pressable onPress={() => openDetail(e)} style={styles.detailsBtn}>
                     <Text style={styles.detailsText}>Details</Text>
                     <MaterialIcons name="chevron-right" size={18} color="#FFFFFF" />

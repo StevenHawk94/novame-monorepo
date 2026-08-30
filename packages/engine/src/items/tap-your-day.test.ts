@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ITEM_DICTIONARY } from './dictionary';
-import { MAX_REFLECT_ITEMS, TAP_YOUR_DAY_CHOICES, TAP_YOUR_DAY_QUESTIONS, tapYourDayChoice } from './tap-your-day';
+import { MAX_REFLECT_ITEMS, MAX_TAP_YOUR_DAY_SELECTIONS, TAP_YOUR_DAY_CHOICES, TAP_YOUR_DAY_QUESTIONS, tapYourDayChoice, tapYourDaySelectionLimit } from './tap-your-day';
 
 describe('Tap Your Day curated catalog', () => {
   it('contains four fixed questions with all 131 unique selections', () => {
     expect(TAP_YOUR_DAY_QUESTIONS.map((q) => q.groups.flatMap((g) => g.choices).length)).toEqual([49, 47, 5, 30]);
     expect(TAP_YOUR_DAY_CHOICES).toHaveLength(131);
-    expect(MAX_REFLECT_ITEMS).toBe(191);
+    expect(MAX_TAP_YOUR_DAY_SELECTIONS).toBe(30);
+    expect(MAX_REFLECT_ITEMS).toBeGreaterThan(MAX_TAP_YOUR_DAY_SELECTIONS);
+    expect(tapYourDaySelectionLimit('tap-your-day-v3')).toBe(30);
     expect(new Set(TAP_YOUR_DAY_CHOICES.map((c) => c.itemId)).size).toBe(131);
     expect(new Set(TAP_YOUR_DAY_CHOICES.map((c) => c.label)).size).toBe(131);
   });

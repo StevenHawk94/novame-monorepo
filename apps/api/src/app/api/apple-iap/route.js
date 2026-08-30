@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { secureCode } from '@/lib/secure-random'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { decodeTransaction } from 'app-store-server-api'
@@ -266,9 +267,7 @@ export async function POST(request) {
         .maybeSingle()
       if (!existingDuo) {
         // 8-char code, unambiguous alphabet.
-        const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-        let code = ''
-        for (let i = 0; i < 8; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
+        const code = secureCode(8)
         const { error: duoErr } = await supabase
           .from('duo_memberships')
           .insert({ owner_id: userId, invite_code: code, status: 'pending' })

@@ -133,11 +133,11 @@ test('Tap Your Day labels wrap below the icon; the entire choice remains selecta
     assert.equal(label.props.numberOfLines, undefined); // no clipping of long names
     assert.equal(tree.props.accessibilityState.checked, true);
     assert.equal(all.find((node) => node.type === 'ItemSprite').props.itemId, choice.itemId);
-    assert.equal(all.find((node) => node.type === 'ItemSprite').props.tapYourDay, true);
+    assert.equal(all.find((node) => node.type === 'ItemSprite').props.tapYourDay, undefined);
     tree.props.onPress(); assert.equal(presses, 1);
     const preview = TapYourDayItem({ choice, width: 80, iconSize: 44 });
     assert.equal(preview.type, 'View');
-    assert.equal(nodes(preview).find((node) => node.type === 'ItemSprite').props.tapYourDay, true);
+    assert.equal(nodes(preview).find((node) => node.type === 'ItemSprite').props.tapYourDay, undefined);
     assert.equal(nodes(preview).find((node) => node.type === 'Text').props.children, choice.label);
   }
 });
@@ -150,7 +150,7 @@ test('final-note preview hides names but retains new artwork and accessible item
   assert.equal(preview.props.accessibilityRole, 'image');
   const sprite = nodes(preview).find((node) => node.type === 'ItemSprite');
   assert.equal(sprite.props.itemId, choice.itemId);
-  assert.equal(sprite.props.tapYourDay, true);
+  assert.equal(sprite.props.tapYourDay, undefined);
   assert.equal(sprite.props.size, 44);
   const source = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-guided.tsx'), 'utf8');
   assert.match(source, /iconSize=\{44\} showLabel=\{false\}/);
@@ -195,23 +195,19 @@ function settlementTree(h, count = 2, shared = false, mode = 'prompt') {
     itemWord: 'Selected', shared, onPresented() {}, onFinalized() {},
   });
 }
-test('settlement and editor use Tap Your Day art only for curated choices', () => {
+test('settlement and editor always use canonical item art without mode overrides', () => {
   for (const mode of ['typing', 'prompt', 'items']) {
     const h = settlementHarness(), all = nodes(settlementTree(h, 2, mode === 'items', mode));
-    assert.ok(all.filter((node) => node.type === 'ItemSprite').every((node) => node.props.tapYourDay === (mode === 'prompt')));
+    assert.ok(all.filter((node) => node.type === 'ItemSprite').every((node) => node.props.tapYourDay === undefined));
   }
-  for (const tapYourDay of [undefined, false, true]) {
-    const tree = settlementHarness().MemoryEditorSheet({
-      items: [{ itemId: 'one', displayName: 'One' }], memories: [{ itemId: 'one', text: '', visible: true }],
-      isPaid: false, shared: false, tapYourDay, onChange() {}, onDone() {},
-    });
-    assert.equal(nodes(tree).find((node) => node.type === 'ItemSprite').props.tapYourDay, tapYourDay === true);
-  }
+  const tree = settlementHarness().MemoryEditorSheet({
+    items: [{ itemId: 'one', displayName: 'One' }], memories: [{ itemId: 'one', text: '', visible: true }],
+    isPaid: false, shared: false, onChange() {}, onDone() {},
+  });
+  assert.equal(nodes(tree).find((node) => node.type === 'ItemSprite').props.tapYourDay, undefined);
   const source = fs.readFileSync(path.join(root, settlementFile), 'utf8');
-  for (const component of ['MemoryEditorSheet', 'ShareItemsSheet']) {
-    assert.match(source, new RegExp('<' + component + '[\\s\\S]*?tapYourDay=\\{draft.mode === \'prompt\'\\}'));
-  }
-  assert.match(fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-detail.tsx'), 'utf8'), /tapYourDay=\{editor.mode === 'prompt'\}/);
+  assert.doesNotMatch(source, /tapYourDay/);
+  assert.doesNotMatch(fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-detail.tsx'), 'utf8'), /tapYourDay/);
 });
 test('all settlement sizes retain the full list, flow footer, and reserved upward reward space', () => {
   for (const platform of ['ios', 'android'])

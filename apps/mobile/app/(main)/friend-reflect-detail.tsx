@@ -55,12 +55,14 @@ export default function FriendReflectDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {details.map((d, i) => (
+        {details.length > 0 ? details.map((d, i) => (
           <View key={`${d.itemId}:${i}`} style={styles.memCard}>
             <ItemSprite itemId={d.itemId} size={72} radius={14} />
             <Text style={styles.memText}>{d.text}</Text>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.emptyText}>No memories created today.</Text>
+        )}
       </ScrollView>
     </CaveShell>
   );
@@ -72,6 +74,10 @@ const styles = StyleSheet.create({
   time: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
 
   scroll: { gap: 14, paddingBottom: 80 },
+  emptyText: {
+    paddingVertical: 48, paddingHorizontal: 20, textAlign: 'center',
+    fontSize: 16, lineHeight: 24, fontFamily: 'Inter_600SemiBold', color: '#8A7A63',
+  },
   memCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', borderRadius: 22, borderWidth: 1.5, borderColor: '#E5C8B8',

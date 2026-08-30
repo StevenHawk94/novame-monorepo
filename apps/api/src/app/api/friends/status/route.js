@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { secureCode } from '@/lib/secure-random'
+import { dateKeyInTimeZone } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
 /** A short, shareable invite code: 6 chars, no ambiguous 0/O/1/I/L. */
 function makeCode() {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)]
-  return code
+  return secureCode(6)
 }
 
 /**
@@ -26,7 +25,6 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const localDate = searchParams.get('localDate')
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
@@ -45,11 +43,12 @@ export async function GET(request) {
     )
 
     // Ensure a stable invite code (generate once if missing).
-    const { data: me } = await supabase
+    const { data: me, error: meError } = await supabase
       .from('profiles')
       .select('invite_code, display_name')
       .eq('id', userId)
       .maybeSingle()
+    if (meError) throw meError
     let inviteCode = me?.invite_code
     if (!inviteCode) {
       // Try a few times to avoid a rare collision.
@@ -61,24 +60,27 @@ export async function GET(request) {
           .eq('id', userId)
           .is('invite_code', null)
         if (!upErr) {
-          const { data: check } = await supabase
+          const { data: check, error: checkError } = await supabase
             .from('profiles').select('invite_code').eq('id', userId).maybeSingle()
+          if (checkError) throw checkError
           inviteCode = check?.invite_code
         }
       }
     }
 
     // Friendships involving me.
-    const { data: rows } = await supabase
+    const { data: rows, error: rowsError } = await supabase
       .from('friendships')
       .select('id, user_a, user_b, status, requested_by, created_at, relationship')
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+    if (rowsError) throw rowsError
 
-    const { data: pairing } = await supabase
+    const { data: pairing, error: pairingError } = await supabase
       .from('pairings')
       .select('partner_user_id')
       .eq('user_id', userId)
       .maybeSingle()
+    if (pairingError) throw pairingError
     const activePartnerId = pairing?.partner_user_id || null
     const acceptedIds = activePartnerId ? [activePartnerId] : []
     const pending = [] // requests waiting for ME to accept
@@ -93,32 +95,23 @@ export async function GET(request) {
     }
 
     // Friend identities + today's collected item ids (emoji resolved on client).
-    const dateStr = localDate || new Date().toISOString().slice(0, 10)
     const friends = []
     if (acceptedIds.length > 0) {
-      const { data: profs } = await supabase
-        .from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', acceptedIds)
+      const { data: profs, error: profsError } = await supabase
+        .from('profiles').select('id, display_name, avatar_url, is_default_avatar, timezone_name').in('id', acceptedIds)
+      if (profsError) throw profsError
       const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
 
-      // Today = the friend's reflect local_date. Item icons are ALWAYS
-      // visible to friends (2026-07-24: the per-reflect toggle only gates
-      // details, which this endpoint never carries) — one query, all friends.
-      const { data: todaysReflects } = await supabase
-        .from('reflects')
-        .select('id, user_id')
-        .in('user_id', acceptedIds)
-        .eq('local_date', dateStr)
-      const reflectIdsByFriend = new Map()
-      for (const r of todaysReflects || []) {
-        if (!reflectIdsByFriend.has(r.user_id)) reflectIdsByFriend.set(r.user_id, [])
-        reflectIdsByFriend.get(r.user_id).push(r.id)
-      }
-
       for (const fid of acceptedIds) {
-        const rids = reflectIdsByFriend.get(fid) || []
+        // "Today" belongs to the author, not the viewing phone's clock.
+        const friendDate = dateKeyInTimeZone(profById[fid]?.timezone_name)
+        const { data: todaysReflects, error: reflectsError } = await supabase
+          .from('reflects').select('id').eq('user_id', fid).eq('local_date', friendDate)
+        if (reflectsError) throw reflectsError
+        const rids = (todaysReflects || []).map((row) => row.id)
         let items = []
         if (rids.length > 0) {
-          const { data } = await supabase
+          const { data, error: itemsError } = await supabase
             .from('reflect_items')
             .select('item_id, created_at, position')
             .eq('user_id', fid)
@@ -126,6 +119,7 @@ export async function GET(request) {
             .in('reflect_id', rids)
             .order('created_at', { ascending: true })
             .order('position', { ascending: true })
+          if (itemsError) throw itemsError
           items = data || []
         }
         friends.push({
@@ -142,7 +136,8 @@ export async function GET(request) {
     const pendingOut = []
     if (pending.length > 0) {
       const ids = pending.map((p) => p.userId)
-      const { data: profs } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      const { data: profs, error: profsError } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      if (profsError) throw profsError
       const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
       for (const p of pending) {
         pendingOut.push({
@@ -160,7 +155,8 @@ export async function GET(request) {
     const sent = []
     if (sentRaw.length > 0) {
       const ids = sentRaw.map((p) => p.userId)
-      const { data: profs } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      const { data: profs, error: profsError } = await supabase.from('profiles').select('id, display_name, avatar_url, is_default_avatar').in('id', ids)
+      if (profsError) throw profsError
       const profById = Object.fromEntries((profs || []).map((p) => [p.id, p]))
       for (const p of sentRaw) {
         sent.push({

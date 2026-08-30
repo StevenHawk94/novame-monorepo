@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { DIMENSION_IDS, trueNorthGemHits } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -58,7 +59,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const dateStr = localDate || new Date().toISOString().slice(0, 10)
+    const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
     const gemHits = trueNorthGemHits(ranking)
 

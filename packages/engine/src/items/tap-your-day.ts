@@ -2,7 +2,14 @@ import legacyChoices from './tap-your-day-v1.json';
 
 /** Curated choices, not keyword matches. Keep labels separate from representative art. */
 export const TAP_YOUR_DAY_VERSION = 'tap-your-day-v2';
-export const MAX_REFLECT_ITEMS = 191;
+/** Product limit for one Tap Your Day reflection. */
+export const MAX_TAP_YOUR_DAY_SELECTIONS = 30;
+/**
+ * Transport-safety ceiling above the entire bundled 5,439-item catalog.
+ * This is not a product/display limit and never truncates visible items; it
+ * only rejects a malformed request containing more rows than the catalog.
+ */
+export const MAX_REFLECT_ITEMS = 6000;
 
 export type TapYourDayKind = 'activity' | 'food' | 'person' | 'feeling';
 export interface TapYourDayChoice { label: string; itemId: string }
@@ -198,9 +205,9 @@ const choicesById = new Map(TAP_YOUR_DAY_CHOICES.map((choice) => [choice.itemId,
 // Frozen v1 vocabulary: an older installed client keeps its original meanings.
 const legacyById = new Map(legacyChoices.map((choice) => [choice.itemId, choice]));
 export function tapYourDaySelectionLimit(version: unknown) {
-  if (version === 'tap-your-day-v3') return MAX_REFLECT_ITEMS;
-  if (version === TAP_YOUR_DAY_VERSION) return TAP_YOUR_DAY_CHOICES.length;
-  if (version === 'tap-your-day-v1') return legacyChoices.length;
+  if (version === 'tap-your-day-v3') return MAX_TAP_YOUR_DAY_SELECTIONS;
+  if (version === TAP_YOUR_DAY_VERSION) return MAX_TAP_YOUR_DAY_SELECTIONS;
+  if (version === 'tap-your-day-v1') return MAX_TAP_YOUR_DAY_SELECTIONS;
   return 0;
 }
 export function tapYourDayChoice(itemId: string, version = TAP_YOUR_DAY_VERSION) {

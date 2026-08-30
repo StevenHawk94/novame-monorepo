@@ -22,7 +22,6 @@ import { Image } from 'expo-image';
 import { ITEM_DICTIONARY } from '@novame/engine';
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 import { TAP_PERSON_IMAGES } from '../../lib/tap-person-images';
-import { TAP_YOUR_DAY_IMAGES } from '../../lib/tap-your-day-images';
 
 type Props = {
   itemId: string;
@@ -30,15 +29,13 @@ type Props = {
   radius?: number;
   /** Tile background behind the transparent art. Default: the app's lavender. */
   tileColor?: string;
-  /** Opt into curated Tap Your Day artwork without changing matched-item art. */
-  tapYourDay?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 // Memoized: sprite tiles appear by the dozen in grids and feeds; props are
 // value-stable, so memo turns tab re-renders into no-ops for every tile.
-export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', tapYourDay = false, style }: Props) {
-  const art = (tapYourDay ? TAP_YOUR_DAY_IMAGES[itemId] : undefined) ?? TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
+  const art = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
   if (art == null) {
     const item = ITEM_DICTIONARY.items[itemId];
     return (

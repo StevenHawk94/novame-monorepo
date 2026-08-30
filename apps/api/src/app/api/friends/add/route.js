@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'edge'
 
 async function activePairing(supabase, uid) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('pairings')
     .select('partner_user_id')
     .eq('user_id', uid)
     .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -54,13 +56,25 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    const [userRate, ipRate] = await Promise.all([
+      rateLimit(supabase, `friend-code:${preview === true ? 'preview' : 'send'}:u:${userId}`, preview === true ? 30 : 10, 3600),
+      rateLimit(supabase, `friend-code:ip:${clientIp(request)}`, 80, 3600),
+    ])
+    if (!userRate.allowed || !ipRate.allowed) {
+      return NextResponse.json({ error: 'rate_limited' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.max(userRate.resetIn, ipRate.resetIn, 1)) },
+      })
+    }
+
     // Resolve the code to a user.
     const normalized = code.trim().toUpperCase()
-    const { data: target } = await supabase
+    const { data: target, error: targetError } = await supabase
       .from('profiles')
       .select('id, display_name, avatar_url, is_default_avatar')
       .eq('invite_code', normalized)
       .maybeSingle()
+    if (targetError) throw targetError
     if (!target) {
       return NextResponse.json({ error: 'code_not_found' }, { status: 404 })
     }
@@ -101,12 +115,13 @@ export async function POST(request) {
     const [ua, ub] = userId < target.id ? [userId, target.id] : [target.id, userId]
 
     // Already a row for this pair?
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('friendships')
       .select('id, status')
       .eq('user_a', ua)
       .eq('user_b', ub)
       .maybeSingle()
+    if (existingError) throw existingError
     if (existing?.status === 'pending') {
       return NextResponse.json({ error: 'already_pending' }, { status: 409 })
     }

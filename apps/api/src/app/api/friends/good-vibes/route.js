@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -49,24 +50,31 @@ export async function GET(request) {
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const url = new URL(request.url)
     const userId = url.searchParams.get('userId')
-    const localDate = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('localDate') || '')
-      ? url.searchParams.get('localDate') : new Date().toISOString().slice(0, 10)
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = client()
-    const { data: vibe } = await supabase.from('good_vibes')
-      .select('id, sender_user_id, message_index, message, message_type, reply_to_id, created_at')
-      .eq('recipient_user_id', userId).is('read_at', null)
-      .order('created_at', { ascending: false }).limit(1).maybeSingle()
-    if (!vibe) return NextResponse.json({ success: true, vibe: null })
-    const { data: sender } = await supabase.from('profiles')
+    const localDate = await resolveUserLocalDate(supabase, userId)
+    const [
+      { data: vibe, error: vibeError },
+      { data: sentToday, error: sentTodayError },
+    ] = await Promise.all([
+      supabase.from('good_vibes')
+        .select('id, sender_user_id, message_index, message, message_type, reply_to_id, created_at')
+        .eq('recipient_user_id', userId).is('read_at', null)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('good_vibes').select('id').eq('sender_user_id', userId)
+        .eq('sender_local_date', localDate).limit(1).maybeSingle(),
+    ])
+    if (vibeError) throw vibeError
+    if (sentTodayError) throw sentTodayError
+    if (!vibe) return NextResponse.json({ success: true, vibe: null, sentToday: !!sentToday, localDate })
+    const { data: sender, error: senderError } = await supabase.from('profiles')
       .select('display_name, avatar_url, is_default_avatar').eq('id', vibe.sender_user_id).maybeSingle()
+    if (senderError) throw senderError
     let canReply = vibe.message_type === 'initial'
     if (canReply) {
-      const [{ data: existingReply }, { data: sentToday }] = await Promise.all([
-        supabase.from('good_vibes').select('id').eq('reply_to_id', vibe.id).limit(1).maybeSingle(),
-        supabase.from('good_vibes').select('id').eq('sender_user_id', userId)
-          .eq('sender_local_date', localDate).limit(1).maybeSingle(),
-      ])
+      const { data: existingReply, error: existingReplyError } = await supabase.from('good_vibes')
+        .select('id').eq('reply_to_id', vibe.id).limit(1).maybeSingle()
+      if (existingReplyError) throw existingReplyError
       canReply = !existingReply && !sentToday
     }
     return NextResponse.json({ success: true, vibe: {
@@ -74,7 +82,7 @@ export async function GET(request) {
       senderAvatarUrl: sender?.avatar_url || '', senderIsDefaultAvatar: sender?.is_default_avatar !== false,
       messageIndex: vibe.message_index, message: vibe.message, createdAt: vibe.created_at,
       messageType: vibe.message_type, canReply,
-    } })
+    }, sentToday: !!sentToday, localDate })
   } catch (err) {
     console.error('[good-vibes] GET:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
@@ -85,7 +93,7 @@ export async function POST(request) {
   try {
     const verified = await viewer(request)
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { userId, action, vibeId, messageIndex, localDate, replyToId } = await request.json()
+    const { userId, action, vibeId, messageIndex, replyToId } = await request.json()
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = client()
     if (action === 'read') {
@@ -96,8 +104,9 @@ export async function POST(request) {
     if (!Number.isInteger(messageIndex) || !MESSAGES[messageIndex]) {
       return NextResponse.json({ error: 'invalid_message' }, { status: 400 })
     }
-    const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(localDate || '') ? localDate : new Date().toISOString().slice(0, 10)
-    const { data: pairing } = await supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
+    const safeDate = await resolveUserLocalDate(supabase, userId)
+    const { data: pairing, error: pairingError } = await supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
+    if (pairingError) throw pairingError
     if (!pairing) return NextResponse.json({ error: 'not_paired' }, { status: 409 })
     let recipientUserId = pairing.partner_user_id
     let messageType = 'initial'

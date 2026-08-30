@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
+import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
 import { useScreenOperation } from '@/lib/use-screen-operation';
 import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
@@ -32,6 +33,10 @@ import {
   setEquippedOutfitKey,
   type OutfitDef,
 } from '../../../src/lib/outfits';
+
+type OutfitGridItem =
+  | { kind: 'default' }
+  | { kind: 'outfit'; outfit: OutfitDef };
 
 // outfits-background.webp is 550×400; shown full-bleed width, uncropped,
 // pinned to the very top of the screen (design 2026-07-30). NO spaces in
@@ -196,6 +201,10 @@ export default function OutfitClosetScreen() {
         ? 'Use'
         : String(preview.price);
   const showActionClover = preview !== null && !isInUse && !owned(preview);
+  const gridItems: OutfitGridItem[] = [
+    { kind: 'default' },
+    ...catalog.map((outfit) => ({ kind: 'outfit' as const, outfit })),
+  ];
 
   return (
     <View style={styles.root}>
@@ -236,30 +245,38 @@ export default function OutfitClosetScreen() {
           <Text style={styles.panelHeaderText}>Bunny Closet</Text>
         </View>
 
-        <View style={styles.grid}>
-          {/* slot 0: no outfit — the bunny's default look */}
-          <Pressable
-            onPress={() => { void haptics.selection(); setPreviewKey(null); }}
-            style={[styles.card, styles.noneCard, previewKey === null && styles.cardSelected]}
-          >
-            <View style={styles.noneIconWrap}>
-              <MaterialIcons name="block" size={52} color="#4A3220" />
-            </View>
-            {equipped === null ? (
-              <View style={styles.inUseBadge}>
-                <Text style={styles.inUseText}>In Use</Text>
-              </View>
-            ) : (
-              <Text style={styles.ownedText}>Default</Text>
-            )}
-          </Pressable>
-          {catalog.map((o) => {
+        <FixedColumnGrid
+          data={gridItems}
+          columns={3}
+          columnGap={12}
+          rowGap={16}
+          keyExtractor={(entry) => entry.kind === 'default' ? 'default' : entry.outfit.key}
+          renderItem={(entry) => {
+            if (entry.kind === 'default') {
+              return (
+                <Pressable
+                  onPress={() => { void haptics.selection(); setPreviewKey(null); }}
+                  style={[styles.card, styles.noneCard, previewKey === null && styles.cardSelected]}
+                >
+                  <View style={styles.noneIconWrap}>
+                    <MaterialIcons name="block" size={52} color="#4A3220" />
+                  </View>
+                  {equipped === null ? (
+                    <View style={styles.inUseBadge}>
+                      <Text style={styles.inUseText}>In Use</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.ownedText}>Default</Text>
+                  )}
+                </Pressable>
+              );
+            }
+            const o = entry.outfit;
             const isActive = equipped === o.key;
             const isSelected = previewKey === o.key;
             const plusLocked = o.plusOnly && !isPaid;
             return (
               <Pressable
-                key={o.key}
                 onPress={() => {
                   if (plusLocked) {
                     // Free user on a Plus outfit: straight to the paywall.
@@ -299,8 +316,8 @@ export default function OutfitClosetScreen() {
                 )}
               </Pressable>
             );
-          })}
-        </View>
+          }}
+        />
 
         {catalog.length === 0 && (
           <Text style={styles.emptyText}>Loading the closet…</Text>
@@ -372,9 +389,8 @@ const styles = StyleSheet.create({
   headerIcon: { width: 34, height: 34 },
   panelHeaderText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '3.5%' },
   card: {
-    width: '31%', marginBottom: 16, alignItems: 'center',
+    width: '100%', alignItems: 'center',
     backgroundColor: '#FBF3DF', borderRadius: 22, borderWidth: 2.5, borderColor: '#E3B7A0',
     paddingVertical: 12, paddingHorizontal: 8, gap: 8,
   },

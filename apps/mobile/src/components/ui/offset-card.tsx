@@ -19,6 +19,7 @@ type Props = {
   cardStyle?: StyleProp<ViewStyle>;
   onPress?: () => void;
   disabled?: boolean;
+  accessibilityLabel?: string;
   children: ReactNode;
 };
 
@@ -30,6 +31,7 @@ export function OffsetCard({
   cardStyle,
   onPress,
   disabled,
+  accessibilityLabel,
   children,
 }: Props) {
   const face = (
@@ -45,6 +47,9 @@ export function OffsetCard({
         <Pressable
           onPress={onPress}
           disabled={disabled}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          accessibilityState={{ disabled: !!disabled }}
           style={({ pressed }) => [pressed && !disabled && { transform: [{ translateY: offset / 2 }] }]}
         >
           {face}

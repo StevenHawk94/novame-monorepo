@@ -35,19 +35,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fail-closed gate, two ways in (unset envs => nobody can use this route):
-    //  1. x-dev-tier-secret header matching DEV_TIER_SECRET — survives the
-    //     anonymous-account UUID churn (every reinstall mints a new user id),
-    //     so the [DEV] tier button keeps working without env updates.
-    //  2. UUID allowlist (DEV_TIER_TESTER_IDS / ADMIN_USER_IDS).
-    const secret = (process.env.DEV_TIER_SECRET || '').trim()
-    const secretOk = !!secret && (request.headers.get('x-dev-tier-secret') || '').trim() === secret
+    // Fail closed. A secret embedded in a mobile bundle is public and would
+    // allow arbitrary users to self-upgrade, so only server-side UUID
+    // allowlists are accepted.
     const testerIds = [
       ...(process.env.DEV_TIER_TESTER_IDS || '').split(','),
       ...(process.env.ADMIN_USER_IDS || '').split(','),
     ].map(s => s.trim()).filter(Boolean)
-    if (!secretOk && !testerIds.includes(verified.id)) {
-      console.warn('[dev/set-tier] rejected: user', verified.id, 'no valid secret and not in DEV_TIER_TESTER_IDS/ADMIN_USER_IDS')
+    if (!testerIds.includes(verified.id)) {
+      console.warn('[dev/set-tier] rejected: user not in DEV_TIER_TESTER_IDS/ADMIN_USER_IDS')
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     if (tier !== 'free' && tier !== 'plus') {

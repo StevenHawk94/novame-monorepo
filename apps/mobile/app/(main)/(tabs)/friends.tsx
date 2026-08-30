@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
@@ -18,9 +18,9 @@ import { DateRangeCalendar } from '@/components/ui/date-range-calendar';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { GoodVibesPicker } from '@/components/main/good-vibes';
 import {
-  fetchFriends, fetchFriendFeed, markFriendRead,
-  getCachedFriends, getCachedFriendFeed, getCachedPairing, fetchPairing,
-  fetchSharePrivacy, setSharePrivacy, respondFriend,
+  fetchFriends, fetchFriendFeedPage, fetchMoreFriendFeed, markFriendRead,
+  getCachedFriends, getCachedFriendFeedPage, getCachedPairing, fetchPairing,
+  fetchGoodVibeDailyStatus, fetchSharePrivacy, localDateStr, setSharePrivacy, respondFriend,
   type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest, type MemoryDetailsMode,
 } from '@/lib/friends-api';
 import { subscribeFriendshipRealtime, subscribePairingRealtime } from '@/lib/pairing-realtime';
@@ -59,14 +59,23 @@ export default function FriendsScreen() {
   const pairCols = Math.max(5, Math.floor((pairRowWidth + 8) / (56 + 8)) + 1);
   const pairTile = Math.floor((pairRowWidth - (pairCols - 1) * 8) / pairCols);
   // Cache-first: paint the last visit instantly, refresh in the background.
+  const [initialFeedPage] = useState(() => getCachedFriendFeedPage());
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
-  const [feed, setFeed] = useState<FeedEntry[]>(() => getCachedFriendFeed());
+  const [feed, setFeed] = useState<FeedEntry[]>(initialFeedPage.feed);
+  const [feedHasMore, setFeedHasMore] = useState(initialFeedPage.hasMore);
+  const [nextFeedCreatedAt, setNextFeedCreatedAt] = useState(initialFeedPage.nextBeforeCreatedAt ?? null);
+  const [nextFeedId, setNextFeedId] = useState(initialFeedPage.nextBeforeId ?? null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [howItWorks, setHowItWorks] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
   const [vibesOpen, setVibesOpen] = useState(false);
+  const [goodVibeStatus, setGoodVibeStatus] = useState<{
+    sentToday: boolean;
+    localDate: string;
+  } | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [privacyMode, setPrivacyMode] = useState<MemoryDetailsMode>('custom');
   const [privacySaving, setPrivacySaving] = useState(false);
@@ -74,13 +83,20 @@ export default function FriendsScreen() {
 
   const load = useCallback(() => {
     void fetchFriends().then(setStatus);
+    void fetchGoodVibeDailyStatus().then((dailyStatus) => {
+      if (dailyStatus) setGoodVibeStatus(dailyStatus);
+    });
     void fetchPairing().then((nextPairing) => {
       setPairing(nextPairing);
       if (!nextPairing.paired) {
         setFeed([]);
         return;
       }
-      void fetchFriendFeed().then(setFeed);
+      void fetchFriendFeedPage().then((page) => {
+        setFeed(page.feed); setFeedHasMore(page.hasMore);
+        setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
+        setNextFeedId(page.nextBeforeId ?? null);
+      });
     });
   }, []);
   useFocusEffect(load);
@@ -92,6 +108,10 @@ export default function FriendsScreen() {
     setStatus(snapshot.friends);
     setPairing(snapshot.pairing);
     setFeed(snapshot.pairing.paired ? snapshot.feed : []);
+    const cached = getCachedFriendFeedPage();
+    setFeedHasMore(snapshot.pairing.paired && cached.hasMore);
+    setNextFeedCreatedAt(cached.nextBeforeCreatedAt ?? null);
+    setNextFeedId(cached.nextBeforeId ?? null);
   }), []);
 
   // A newly-created invitation is not a pairing row yet, so it has its own
@@ -120,11 +140,28 @@ export default function FriendsScreen() {
   }
 
   async function showRange(start: string | null, end: string | null) {
-    if (!start) {
-      setFeed(await fetchFriendFeed());
-      return;
+    try {
+      const page = await fetchFriendFeedPage(start ? { start, end: end ?? start } : undefined, { force: !!start });
+      setFeed(page.feed); setFeedHasMore(page.hasMore);
+      setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
+      setNextFeedId(page.nextBeforeId ?? null);
+    } catch {
+      appAlert('Couldn’t load that date range', 'Check your connection and try again. Your current feed is still here.');
     }
-    setFeed(await fetchFriendFeed({ start, end: end ?? start }));
+  }
+
+  async function loadMoreFeed() {
+    if (loadingMore || !feedHasMore || !nextFeedCreatedAt) return;
+    setLoadingMore(true);
+    const range = rangeStart ? { start: rangeStart, end: rangeEnd ?? rangeStart } : undefined;
+    const next = await fetchMoreFriendFeed({
+      feed, hasMore: feedHasMore,
+      nextBeforeCreatedAt: nextFeedCreatedAt, nextBeforeId: nextFeedId,
+    }, range);
+    setFeed(next.feed); setFeedHasMore(next.hasMore);
+    setNextFeedCreatedAt(next.nextBeforeCreatedAt ?? null);
+    setNextFeedId(next.nextBeforeId ?? null);
+    setLoadingMore(false);
   }
 
   async function onAccept(req: PendingRequest) {
@@ -144,29 +181,49 @@ export default function FriendsScreen() {
     setAcceptingId(null);
   }
 
+  async function openGoodVibes() {
+    void haptics.pageOpen();
+    let dailyStatus = goodVibeStatus;
+    if (!dailyStatus || dailyStatus.localDate !== localDateStr()) {
+      dailyStatus = await fetchGoodVibeDailyStatus();
+      if (dailyStatus) setGoodVibeStatus(dailyStatus);
+    }
+    if (!dailyStatus) {
+      appAlert('Could not check Good Vibes', 'Please check your connection and try again.');
+      return;
+    }
+    if (dailyStatus?.sentToday === true) {
+      appAlert('Good Vibes sent', "You've already sent a Good Vibe today. Come back tomorrow!");
+      return;
+    }
+    setVibesOpen(true);
+  }
+
 
   function onFeedRow(e: FeedEntry) {
     if (e.unread) {
       void markFriendRead(e.friendUserId);
       setFeed((cur) => cur.map((x) => (x.friendUserId === e.friendUserId ? { ...x, unread: false } : x)));
     }
-    // No detail screen when the friend hasn't shared details (details null)
-    // or this reflect carries no written text (empty/blank entries).
-    if (e.details && e.details.some((d) => d.text && d.text.trim().length > 0)) {
-      void haptics.pageOpen();
-      router.push({
-        pathname: '/(main)/friend-reflect-detail' as never,
-        params: {
-          friendUserId: e.friendUserId,
-          friendName: e.friendName,
-          createdAt: e.createdAt,
-          detailsJson: JSON.stringify(e.details),
-        },
-      } as never);
-    } else {
+    // Privacy is an explicit profile setting, not an inference from whether a
+    // memory sentence exists. A Tap Your Day reflect can legitimately contain
+    // shared item icons with no typed/AI memory; that opens the normal detail
+    // page and shows its empty state. Only Hide All Details is private.
+    if (!e.sharesDetails) {
       void haptics.light();
       appAlert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
+      return;
     }
+    void haptics.pageOpen();
+    router.push({
+      pathname: '/(main)/friend-reflect-detail' as never,
+      params: {
+        friendUserId: e.friendUserId,
+        friendName: e.friendName,
+        createdAt: e.createdAt,
+        detailsJson: JSON.stringify(e.details ?? []),
+      },
+    } as never);
   }
 
   const pendingCount = status.pending.length;
@@ -227,10 +284,7 @@ export default function FriendsScreen() {
                   color="#C9A97C"
                   offset={4}
                   radius={18}
-                  onPress={() => {
-                    void haptics.pageOpen();
-                    setVibesOpen(true);
-                  }}
+                  onPress={() => void openGoodVibes()}
                   cardStyle={styles.vibesButton}
                 >
                   <MaterialIcons name="favorite" size={22} color="#FF721F" />
@@ -241,6 +295,12 @@ export default function FriendsScreen() {
               <ScrollView
                 style={styles.feedList}
                 showsVerticalScrollIndicator={false}
+                scrollEventThrottle={160}
+                onScroll={({ nativeEvent }) => {
+                  const distance = nativeEvent.contentSize.height
+                    - nativeEvent.layoutMeasurement.height - nativeEvent.contentOffset.y;
+                  if (distance < 180) void loadMoreFeed();
+                }}
                 contentContainerStyle={[
                   styles.feedScroll,
                   shownFeed.length === 0 && styles.emptyFeedScroll,
@@ -285,6 +345,7 @@ export default function FriendsScreen() {
                     </Pressable>
                   ))
                 )}
+                {loadingMore && <ActivityIndicator style={{ marginVertical: 18 }} color="#80583B" />}
               </ScrollView>
             </View>
           </>
@@ -382,7 +443,11 @@ export default function FriendsScreen() {
         onClose={() => setCalendarOpen(false)}
         onDone={(start, end) => void showRange(start, end)}
       />
-      <GoodVibesPicker visible={vibesOpen} onClose={() => setVibesOpen(false)} />
+      <GoodVibesPicker
+        visible={vibesOpen}
+        onClose={() => setVibesOpen(false)}
+        onSent={() => setGoodVibeStatus({ sentToday: true, localDate: localDateStr() })}
+      />
       <PrivacySheet
         visible={privacyOpen}
         mode={privacyMode}

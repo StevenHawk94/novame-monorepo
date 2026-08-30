@@ -10,6 +10,7 @@ import { DateRangeCalendar } from '@/components/ui/date-range-calendar';
 import { GridBackground } from '@/components/ui/grid-background';
 import {
   fetchConnectionHistory,
+  fetchMoreConnectionHistory,
   getCachedConnectionHistory,
   subscribeConnectionHistory,
   type ConnectionHistoryCard,
@@ -64,6 +65,14 @@ export default function ConnectionHistoryScreen() {
     initialHistory?.ok ? initialHistory.cards : [],
   );
   const [loading, setLoading] = useState(isPaid && !initialHistory);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHistory?.ok && initialHistory.hasMore === true);
+  const [nextBeforeCreatedAt, setNextBeforeCreatedAt] = useState(
+    initialHistory?.ok ? initialHistory.nextBeforeCreatedAt ?? null : null,
+  );
+  const [nextBeforeId, setNextBeforeId] = useState(
+    initialHistory?.ok ? initialHistory.nextBeforeId ?? null : null,
+  );
   const [error, setError] = useState<'network' | 'unavailable' | 'unpaired' | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
@@ -82,6 +91,9 @@ export default function ConnectionHistoryScreen() {
       setError('unavailable');
     } else {
       setCards(result.cards);
+      setHasMore(result.hasMore === true);
+      setNextBeforeCreatedAt(result.nextBeforeCreatedAt ?? null);
+      setNextBeforeId(result.nextBeforeId ?? null);
       setError(null);
     }
   }, []);
@@ -123,6 +135,29 @@ export default function ConnectionHistoryScreen() {
       : shortDate(appliedStart)
     : null;
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !nextBeforeCreatedAt) return;
+    setLoadingMore(true);
+    try {
+      const result = await fetchMoreConnectionHistory({
+        ok: true, paired: true, cards, hasMore,
+        nextBeforeCreatedAt, nextBeforeId,
+      });
+      applyResult(result);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [applyResult, cards, hasMore, loadingMore, nextBeforeCreatedAt, nextBeforeId]);
+
+  // If the current tab/date filter has no card in the loaded chunk, continue
+  // paging until one appears or history is exhausted. This keeps filtering
+  // correct without downloading the full archive on every open.
+  useEffect(() => {
+    if (isPaid && !loading && !error && shown.length === 0 && hasMore && !loadingMore) {
+      void loadMore();
+    }
+  }, [error, hasMore, isPaid, loadMore, loading, loadingMore, shown.length]);
+
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.headerSafe} edges={['top']}>
@@ -131,6 +166,8 @@ export default function ConnectionHistoryScreen() {
             onPress={() => { void haptics.pageClose(); router.back(); }}
             style={styles.backButton}
             hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
             <MaterialIcons name="arrow-back" size={27} color="#FFFFFF" />
           </Pressable>
@@ -152,6 +189,8 @@ export default function ConnectionHistoryScreen() {
             }}
             style={styles.calendarButton}
             hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Filter Connection History by date"
           >
             <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
           </Pressable>
@@ -171,6 +210,8 @@ export default function ConnectionHistoryScreen() {
                 key={item.key}
                 onPress={() => { void haptics.light(); setTab(item.key); }}
                 style={[styles.tab, tab === item.key && styles.tabActive]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === item.key }}
               >
                 <Text style={[styles.tabText, tab === item.key && styles.tabTextActive]}>{item.label}</Text>
               </Pressable>
@@ -215,6 +256,12 @@ export default function ConnectionHistoryScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[styles.list, shown.length === 0 && styles.emptyList]}
+            scrollEventThrottle={160}
+            onScroll={({ nativeEvent }) => {
+              const remaining = nativeEvent.contentSize.height
+                - nativeEvent.layoutMeasurement.height - nativeEvent.contentOffset.y;
+              if (remaining < 180) void loadMore();
+            }}
           >
             {!!activeRangeLabel && (
               <View style={styles.rangePill}>
@@ -246,6 +293,7 @@ export default function ConnectionHistoryScreen() {
                 </Text>
               </View>
             )}
+            {loadingMore && <ActivityIndicator style={{ marginVertical: 16 }} color="#8C523D" />}
           </ScrollView>
         )}
       </View>

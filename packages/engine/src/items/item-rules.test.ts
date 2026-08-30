@@ -22,7 +22,7 @@ describe('reviewed matching rules', () => {
   it('validates custom selections and keeps legacy limits', () => {
     expect(cleanCustomTapItem({itemId:'a',label:'  Track training ',group:'Movement',kind:'activity',custom:true},base)?.label).toBe('Track training');
     expect(cleanCustomTapItem({itemId:'unknown',label:'x',group:'x',kind:'activity'},base)).toBeNull();
-    expect(tapYourDaySelectionLimit('tap-your-day-v2')).toBe(131);
-    expect(tapYourDaySelectionLimit('tap-your-day-v3')).toBe(191);
+    expect(tapYourDaySelectionLimit('tap-your-day-v2')).toBe(30);
+    expect(tapYourDaySelectionLimit('tap-your-day-v3')).toBe(30);
   });
 });

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
-import { matchItems, XP_RULES } from '@novame/engine'
+import { matchItems, XP_RULES, MAX_REFLECT_ITEMS, tapYourDaySelectionLimit } from '@novame/engine'
 import {
   REFLECT_ANALYZER_VERSION,
   REFLECT_COPY_VERSION,
@@ -11,11 +11,11 @@ import {
 } from '@/lib/reflect-ai'
 import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from '@/lib/reflect-analysis-store'
 import { recordAIUsage } from '@/lib/ai-usage'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
 const MAX_BODY_CHARS = 5000
-const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
 
 /** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
 function isoWeek(dateStr) {
@@ -48,7 +48,7 @@ export async function POST(request) {
 
     const {
       userId, promptId, body: rawBody, localDate, sourceKit, friendUserId,
-      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes,
+      mode: rawMode, selectedItems, removedItemIds, visibleToFriend, itemNotes, selectionVersion,
     } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -87,22 +87,19 @@ export async function POST(request) {
       if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
         return NextResponse.json({ error: 'No items selected' }, { status: 400 })
       }
+      const tapLimit = mode === 'prompt' ? tapYourDaySelectionLimit(selectionVersion) : 0
+      if (tapLimit > 0 && selectedItems.length > tapLimit) {
+        return NextResponse.json({ error: 'too_many_items', limit: tapLimit }, { status: 400 })
+      }
+      if (tapLimit === 0 && selectedItems.length > MAX_REFLECT_ITEMS) {
+        return NextResponse.json({ error: 'too_many_items' }, { status: 400 })
+      }
       const seen = new Set()
-      const categoryCounts = new Map()
-      for (const s of selectedItems.slice(0, 100)) {
+      for (const s of selectedItems) {
         const id = typeof s?.itemId === 'string' ? s.itemId : null
         if (!id || seen.has(id)) continue
         const def = DICT.items[id]
         if (!def) return NextResponse.json({ error: 'Unknown item', itemId: id }, { status: 400 })
-        const category = def.category || 'Uncategorized'
-        const categoryCount = (categoryCounts.get(category) || 0) + 1
-        if (categoryCount > MAX_ITEMS_PER_REFLECT_CATEGORY) {
-          return NextResponse.json({
-            error: 'too_many_items_in_category', category,
-            limit: MAX_ITEMS_PER_REFLECT_CATEGORY,
-          }, { status: 400 })
-        }
-        categoryCounts.set(category, categoryCount)
         seen.add(id)
         const note = typeof s.note === 'string' ? s.note.trim().slice(0, 200) : ''
         picks.push({ itemId: id, displayName: def.displayName, rarity: def.rarity, label: note || def.displayName })
@@ -131,7 +128,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
 
-    const dateStr = localDate || new Date().toISOString().slice(0, 10)
+    const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
 
     // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,

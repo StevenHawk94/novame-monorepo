@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { secureRandomInt } from '@/lib/secure-random'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
@@ -136,14 +137,14 @@ export async function POST(request) {
         try {
           const customerRes = await fetch(`${AIRWALLEX_BASE_URL}/api/v1/pa/customers/create`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: userEmail || `${userId}@app.local`, merchant_customer_id: userId, request_id: `cust-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, metadata: { user_id: userId } }),
+            body: JSON.stringify({ email: userEmail || `${userId}@app.local`, merchant_customer_id: userId, request_id: `cust-${Date.now()}-${crypto.randomUUID()}`, metadata: { user_id: userId } }),
           })
           if (customerRes.ok) customerId = (await customerRes.json()).id
         } catch (e) { console.warn('Customer create failed:', e.message) }
       }
 
       const safeAmount = Math.round(paymentAmount * 100) / 100;
-      const safeOrderId = `${Date.now()}${Math.floor(Math.random() * 100)}`.padEnd(15, '0');
+      const safeOrderId = `${Date.now()}${String(secureRandomInt(100)).padStart(2, '0')}`;
 
       const piBody = {
         amount: safeAmount, 

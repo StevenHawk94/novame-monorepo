@@ -161,6 +161,9 @@ function TabButton({ icon, asset, label, isFocused, labelColor, activeBackground
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isFocused }}
       style={[styles.tabBtn, isFocused && { backgroundColor: activeBackground }]}
     >
       <HomeEntryImage asset={asset} source={icon} style={styles.tabIcon} contentFit="contain" />

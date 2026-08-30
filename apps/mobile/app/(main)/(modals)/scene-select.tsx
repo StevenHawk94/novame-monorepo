@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
+import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
 import { useScreenOperation } from '@/lib/use-screen-operation';
 import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
@@ -32,6 +33,10 @@ import {
   type CosmeticsState,
 } from '../../../src/lib/cosmetics-api';
 
+type SceneGridItem =
+  | { kind: 'default' }
+  | { kind: 'scene'; scene: SceneDef };
+
 /**
  * Unlock New Scenes (mock 1:1, 2026-07-30). Brown page: white close circle,
  * clover balance pill, centered title + Maps sticker, then a cream panel
@@ -54,6 +59,10 @@ export default function SceneSelectScreen() {
   const [busy, setBusy] = useState(false);
   const [switching, setSwitching] = useState(false);
   const closingRef = useRef(false);
+  const gridItems: SceneGridItem[] = [
+    { kind: 'default' },
+    ...catalog.map((scene) => ({ kind: 'scene' as const, scene })),
+  ];
 
   useEffect(() => subscribeCosmetics(setCosmetics), []);
 
@@ -218,29 +227,37 @@ export default function SceneSelectScreen() {
           <Text style={styles.title}>Unlock New Scenes</Text>
         </View>
         <View style={styles.panel}>
-          <View style={styles.grid}>
-            {/* slot 0: the free bundled default */}
-            <Pressable
-              onPress={() => {
-                if (busy || switching || isCurrent(DEFAULT_SCENE_KEY)) return;
-                void haptics.selection();
-                void useScene(DEFAULT_SCENE_KEY, null);
-              }}
-              style={styles.cell}
-            >
-              <ExpoImage source={DEFAULT_SCENE_THUMB} style={styles.thumb} contentFit="cover" />
-              <Text style={styles.cellName} numberOfLines={2}>Mushroom Wood</Text>
-              {isCurrent(DEFAULT_SCENE_KEY) ? (
-                <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
-              ) : (
-                <Text style={styles.ownedText}>Free</Text>
-              )}
-            </Pressable>
-
-            {catalog.map((s) => {
+          <FixedColumnGrid
+            data={gridItems}
+            columns={3}
+            columnGap={12}
+            rowGap={20}
+            keyExtractor={(entry) => entry.kind === 'default' ? 'default' : entry.scene.key}
+            renderItem={(entry) => {
+              if (entry.kind === 'default') {
+                return (
+                  <Pressable
+                    onPress={() => {
+                      if (busy || switching || isCurrent(DEFAULT_SCENE_KEY)) return;
+                      void haptics.selection();
+                      void useScene(DEFAULT_SCENE_KEY, null);
+                    }}
+                    style={styles.cell}
+                  >
+                    <ExpoImage source={DEFAULT_SCENE_THUMB} style={styles.thumb} contentFit="cover" />
+                    <Text style={styles.cellName} numberOfLines={2}>Mushroom Wood</Text>
+                    {isCurrent(DEFAULT_SCENE_KEY) ? (
+                      <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
+                    ) : (
+                      <Text style={styles.ownedText}>Free</Text>
+                    )}
+                  </Pressable>
+                );
+              }
+              const s = entry.scene;
               const plusLocked = s.plusOnly && !isPaid;
               return (
-                <Pressable key={s.key} onPress={() => onTap(s)} style={styles.cell}>
+                <Pressable onPress={() => onTap(s)} style={styles.cell}>
                   <ExpoImage
                     source={{ uri: sceneAssetUrl(s.thumb, s.assetVersion) }}
                     style={styles.thumb}
@@ -267,8 +284,8 @@ export default function SceneSelectScreen() {
                   )}
                 </Pressable>
               );
-            })}
-          </View>
+            }}
+          />
         </View>
       </ScrollView>
 
@@ -318,8 +335,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF3DF', borderRadius: 30, borderWidth: 4, borderColor: '#E8B54D',
     paddingHorizontal: 14, paddingVertical: 18,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '3.5%' },
-  cell: { width: '30%', alignItems: 'center', marginBottom: 20 },
+  cell: { width: '100%', alignItems: 'center' },
   thumb: { width: '100%', aspectRatio: 1, borderRadius: 22 },
   cellName: {
     fontSize: 13, fontFamily: 'Inter_800ExtraBold', color: '#4A3220',

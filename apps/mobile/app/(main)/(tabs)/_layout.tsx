@@ -23,7 +23,11 @@ export default function TabsLayout() {
       <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
       <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
       <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-      <Tabs.Screen name="status" options={{ title: 'Connection' }} />
+      {/* Connection has the heaviest cached card tree. Pre-mount it behind Home
+          so the first press swaps screens immediately instead of paying the
+          module/render cost after the tap. Network refresh still starts only
+          when the screen is actually focused. */}
+      <Tabs.Screen name="status" options={{ title: 'Connection', lazy: false }} />
     </Tabs>
   );
 }

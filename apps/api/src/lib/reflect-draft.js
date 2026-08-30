@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
-import { matchItems, tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem, CUSTOM_TAP_SELECTION_VERSION } from '@novame/engine'
+import {
+  matchItems, tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem,
+  CUSTOM_TAP_SELECTION_VERSION, MAX_REFLECT_ITEMS,
+} from '@novame/engine'
 
 import { dictionaryForRevision } from '@/lib/item-rule-store'
 import {
@@ -9,7 +12,6 @@ import {
 } from '@/lib/reflect-ai'
 
 export const MAX_BODY_CHARS = 5000
-export const MAX_ITEMS_PER_REFLECT_CATEGORY = 8
 
 export function serviceClient() {
   return createClient(
@@ -51,9 +53,11 @@ export async function resolveDraftInput(supabase, input) {
       return { error: 'empty' }
     }
     if (isTapYourDay && input.selectedItems.length > selectionLimit) return { error: 'too_many_items' }
+    // Other Reflect modes have no product/display cap. This ceiling only
+    // rejects abnormal request payloads; selections are never sliced or hidden.
+    if (!isTapYourDay && input.selectedItems.length > MAX_REFLECT_ITEMS) return { error: 'too_many_items' }
     const seen = new Set()
-    const categoryCounts = new Map()
-    for (const selected of input.selectedItems.slice(0, isTapYourDay ? selectionLimit : 100)) {
+    for (const selected of input.selectedItems) {
       const itemId = typeof selected?.itemId === 'string' ? selected.itemId : ''
       if (!itemId || seen.has(itemId)) continue
       if (!Object.prototype.hasOwnProperty.call(dictionary.items, itemId)) return { error: 'unknown_item' }
@@ -64,10 +68,6 @@ export async function resolveDraftInput(supabase, input) {
         ? cleanCustomTapItem(selected, dictionary)
         : isTapYourDay ? tapYourDayChoice(itemId, input.selectionVersion) : null
       if (isTapYourDay && !choice) return { error: 'invalid_selection_item' }
-      const category = item.category || 'Uncategorized'
-      const count = (categoryCounts.get(category) || 0) + 1
-      if (!isTapYourDay && count > MAX_ITEMS_PER_REFLECT_CATEGORY) return { error: 'too_many_items_in_category' }
-      categoryCounts.set(category, count)
       seen.add(itemId)
       matches.push({
         itemId,

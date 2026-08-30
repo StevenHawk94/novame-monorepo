@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
 import { XP_RULES } from '@novame/engine'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 /** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
 function isoWeek(dateStr) {
@@ -131,7 +132,7 @@ export async function POST(request) {
     // this warns and skips.
     let xpAwarded = 0
     try {
-      const dateStr = new Date().toISOString().slice(0, 10)
+      const dateStr = await resolveUserLocalDate(supabase, userId)
       const { data: pay, error: payErr } = await supabase.rpc('submit_kit', {
         p_user_id: userId,
         p_kit: 'visit_master',

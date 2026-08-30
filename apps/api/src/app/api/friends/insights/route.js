@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { generateBrief } from '@/lib/connection-brief'
+import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
 
@@ -34,12 +35,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date') || '')
-      ? searchParams.get('date') : new Date().toISOString().slice(0, 10)
     const intentView = searchParams.get('intent') === 'view'
     const forceResume = searchParams.get('resume') === '1'
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } })
+    const date = await resolveUserLocalDate(supabase, userId)
 
     const { data: me, error: meError } = await supabase.from('profiles')
       .select('subscription_tier, connection_resume_required')

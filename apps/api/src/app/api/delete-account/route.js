@@ -69,10 +69,11 @@ export async function POST(request) {
     console.log('Starting account deletion for user:', userId)
     
     // 1. 删除用户的 wisdoms 相关的音频文件
-    const { data: wisdoms } = await supabase
+    const { data: wisdoms, error: wisdomListError } = await supabase
       .from('wisdoms')
       .select('id, audio_url')
       .eq('user_id', userId)
+    if (wisdomListError) throw wisdomListError
     
     if (wisdoms && wisdoms.length > 0) {
       // 尝试删除 Storage 中的音频文件
@@ -83,11 +84,10 @@ export async function POST(request) {
             const urlParts = wisdom.audio_url.split('/audio/')
             if (urlParts.length > 1) {
               const filePath = urlParts[1]
-              await supabase.storage.from('audio').remove([filePath])
+              const { error: storageError } = await supabase.storage.from('audio').remove([filePath])
+              if (storageError) throw storageError
             }
-          } catch (e) {
-            console.log('Failed to delete audio file:', e.message)
-          }
+          } catch (e) { throw new Error(`audio_cleanup_failed: ${e.message}`) }
         }
       }
     }
@@ -98,11 +98,7 @@ export async function POST(request) {
       .delete()
       .eq('user_id', userId)
     
-    if (wisdomsError) {
-      console.error('Failed to delete wisdoms:', wisdomsError)
-    } else {
-      console.log('Deleted wisdoms for user:', userId)
-    }
+    if (wisdomsError) throw wisdomsError
     
     // 3. 删除用户提交的 seek_questions
     //
@@ -117,11 +113,7 @@ export async function POST(request) {
       .delete()
       .eq('submitted_by_user_id', userId)
     
-    if (questionsError) {
-      console.error('Failed to delete seek_questions:', questionsError)
-    } else {
-      console.log('Deleted seek_questions for user:', userId)
-    }
+    if (questionsError) throw questionsError
     
     // 4. 删除用户的 liked wisdoms 记录
     const { error: likedError } = await supabase
@@ -129,37 +121,32 @@ export async function POST(request) {
       .delete()
       .eq('user_id', userId)
     
-    if (likedError) {
-      console.error('Failed to delete liked wisdoms:', likedError)
-    }
+    if (likedError) throw likedError
     
     // 5. 删除用户的 liked defaults 记录
-    try {
-      await supabase
-        .from('user_liked_defaults')
-        .delete()
-        .eq('user_id', userId)
-    } catch (e) {
-      console.log('user_liked_defaults table may not exist')
-    }
+    const { error: likedDefaultsError } = await supabase
+      .from('user_liked_defaults')
+      .delete()
+      .eq('user_id', userId)
+    if (likedDefaultsError) throw likedDefaultsError
     
     // 6. 删除用户头像
-    try {
-      const { data: profile } = await supabase
+    {
+      const { data: profile, error: avatarProfileError } = await supabase
         .from('profiles')
         .select('avatar_url')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
+      if (avatarProfileError) throw avatarProfileError
       
       if (profile?.avatar_url && profile.avatar_url.includes(`/${userId}/`)) {
         const urlParts = profile.avatar_url.split('/avatars/')
         if (urlParts.length > 1) {
           const filePath = urlParts[1]
-          await supabase.storage.from('avatars').remove([filePath])
+          const { error: avatarStorageError } = await supabase.storage.from('avatars').remove([filePath])
+          if (avatarStorageError) throw avatarStorageError
         }
       }
-    } catch (e) {
-      console.log('Failed to delete avatar:', e.message)
     }
     
     // 7. 删除用户 profile
@@ -168,21 +155,14 @@ export async function POST(request) {
       .delete()
       .eq('id', userId)
     
-    if (profileError) {
-      console.error('Failed to delete profile:', profileError)
-    } else {
-      console.log('Deleted profile for user:', userId)
-    }
+    // This single statement atomically applies every ON DELETE cascade. Do not
+    // continue to auth deletion unless the relational delete is confirmed.
+    if (profileError) throw profileError
     
     // 8. 删除 Supabase Auth 用户
     const { error: authError } = await supabase.auth.admin.deleteUser(userId)
     
-    if (authError) {
-      console.error('Failed to delete auth user:', authError)
-      // 即使 Auth 删除失败，数据已经删除，仍返回成功
-    } else {
-      console.log('Deleted auth user:', userId)
-    }
+    if (authError) throw authError
     
     console.log('Account deletion completed for user:', userId)
     
@@ -193,6 +173,8 @@ export async function POST(request) {
     
   } catch (error) {
     console.error('Delete account error:', error)
-    return Response.json({ error: error.message }, { status: 500 })
+    // Never report success for partial deletion. The client can retry safely;
+    // deletes and storage removals are idempotent.
+    return Response.json({ error: 'Account deletion is incomplete. Please try again.' }, { status: 500 })
   }
 }

@@ -38,13 +38,14 @@ export async function GET(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    const { data: reflects } = await supabase
+    const { data: reflects, error: reflectsError } = await supabase
       .from('reflects')
-      .select('id, body, local_date, created_at, shared_to_friends')
+      .select('id, body, mode, local_date, created_at, shared_to_friends')
       .eq('user_id', userId)
       .order('local_date', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(90)
+    if (reflectsError) throw reflectsError
 
     // All matched/selected items belong in the private log, even when the
     // user deliberately left their memory description blank.
@@ -52,7 +53,7 @@ export async function GET(request) {
     const itemsByReflect = {}
     const reflectsWithMemories = new Set()
     if (reflectIds.length > 0) {
-      const [{ data: matchedItems }, { data: memories }] = await Promise.all([
+      const [{ data: matchedItems, error: itemsError }, { data: memories, error: memoriesError }] = await Promise.all([
         supabase
           .from('reflect_items')
           .select('reflect_id, item_id, position')
@@ -65,6 +66,7 @@ export async function GET(request) {
           .eq('user_id', userId)
           .in('reflect_id', reflectIds),
       ])
+      if (itemsError || memoriesError) throw itemsError || memoriesError
       for (const m of matchedItems || []) {
         if (!itemsByReflect[m.reflect_id]) itemsByReflect[m.reflect_id] = []
         itemsByReflect[m.reflect_id].push(m.item_id)
@@ -86,6 +88,7 @@ export async function GET(request) {
       day.reflects.push({
         id: r.id,
         body: r.body,
+        mode: r.mode,
         sharedToFriends: r.shared_to_friends !== false,
         itemIds: reflectionItemIds,
         hasMemories: reflectsWithMemories.has(r.id),

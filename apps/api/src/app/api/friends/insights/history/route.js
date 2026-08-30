@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
+const PAGE_SIZE = 24
 
 const MODULE_KEYS = new Set([
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
@@ -25,6 +26,8 @@ const isoTimestamp = (value) => {
   const parsed = Date.parse(value)
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null
 }
+const uuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || '')
+  ? value : null
 const copy = (value, max) => typeof value === 'string' && value.trim()
   ? value.trim().slice(0, max) : null
 
@@ -57,11 +60,17 @@ export async function GET(request) {
     const start = isoDate(searchParams.get('start'))
     const end = isoDate(searchParams.get('end'))
     const since = isoTimestamp(searchParams.get('since'))
+    const beforeCreatedAt = isoTimestamp(searchParams.get('beforeCreatedAt'))
+    const beforeId = uuid(searchParams.get('beforeId'))
     if ((searchParams.get('start') && !start) || (searchParams.get('end') && !end) || (start && end && start > end)) {
       return NextResponse.json({ error: 'invalid_date_range' }, { status: 400 })
     }
     if (searchParams.get('since') && !since) {
       return NextResponse.json({ error: 'invalid_since' }, { status: 400 })
+    }
+    if ((searchParams.get('beforeCreatedAt') && !beforeCreatedAt)
+      || (searchParams.get('beforeId') && !beforeId)) {
+      return NextResponse.json({ error: 'invalid_cursor' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -78,7 +87,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
     if (!pairing?.partner_user_id) {
-      return NextResponse.json({ success: true, paired: false, cards: [] })
+      return NextResponse.json({ success: true, paired: false, cards: [], hasMore: false })
     }
 
     const partnerId = pairing.partner_user_id
@@ -89,35 +98,39 @@ export async function GET(request) {
     const mode = partner?.memory_details_mode
       || (partner?.share_memory_details === false ? 'none' : 'custom')
     if (mode === 'none' || !partner?.ai_consent_at) {
-      return NextResponse.json({ success: true, paired: true, unavailable: true, cards: [] })
+      return NextResponse.json({ success: true, paired: true, unavailable: true, cards: [], hasMore: false })
     }
 
     const [ua, ub] = userId < partnerId ? [userId, partnerId] : [partnerId, userId]
-    const rows = []
-    const pageSize = 500
-    for (let from = 0; from < 10000; from += pageSize) {
-      let query = supabase.from('connection_card_history')
-        .select('id, module_key, card_index, card, for_date, created_at')
-        .eq('user_a', ua).eq('user_b', ub).eq('for_user', userId)
-        .order('for_date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .order('card_index', { ascending: true })
-        .range(from, from + pageSize - 1)
-      if (start) query = query.gte('for_date', start)
-      if (end) query = query.lte('for_date', end)
-      // Inclusive by design: multiple cards can share a timestamp. The client
-      // merges by immutable history id, so no tied row can be skipped.
-      if (since) query = query.gte('created_at', since)
-      const { data, error } = await query
-      if (error) throw error
-      rows.push(...(data || []))
-      if (!data || data.length < pageSize) break
+    let query = supabase.from('connection_card_history')
+      .select('id, module_key, card_index, card, for_date, created_at')
+      .eq('user_a', ua).eq('user_b', ub).eq('for_user', userId)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(PAGE_SIZE + 1)
+    if (start) query = query.gte('for_date', start)
+    if (end) query = query.lte('for_date', end)
+    // Inclusive for realtime catch-up: immutable ids de-duplicate timestamp ties.
+    if (since) query = query.gte('created_at', since)
+    if (beforeCreatedAt && beforeId) {
+      query = query.or(`created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeId})`)
+    } else if (beforeCreatedAt) {
+      query = query.lt('created_at', beforeCreatedAt)
     }
+    const { data, error } = await query
+    if (error) throw error
+    const rows = data || []
+    const hasMore = rows.length > PAGE_SIZE
+    const page = rows.slice(0, PAGE_SIZE)
+    const last = page[page.length - 1]
 
     return NextResponse.json({
       success: true,
       paired: true,
-      cards: rows.map(publicCard).filter(Boolean),
+      cards: page.map(publicCard).filter(Boolean),
+      hasMore,
+      nextBeforeCreatedAt: hasMore ? last?.created_at || null : null,
+      nextBeforeId: hasMore ? last?.id || null : null,
     })
   } catch (error) {
     console.error('[friends/insights/history] unexpected:', error?.message || error)
