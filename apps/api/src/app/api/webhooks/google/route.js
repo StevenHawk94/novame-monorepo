@@ -39,25 +39,33 @@ function getSupabase() {
   )
 }
 
-async function getGoogleAccessToken() {
+function getServiceAccountCredentials() {
   const keyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY
     || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
-  let credentials
   if (keyJson) {
-    credentials = JSON.parse(keyJson)
-  } else if (process.env.GOOGLE_PLAY_SA_EMAIL && process.env.GOOGLE_PLAY_SA_PRIVATE_KEY) {
-    credentials = {
-      client_email: process.env.GOOGLE_PLAY_SA_EMAIL,
-      private_key: process.env.GOOGLE_PLAY_SA_PRIVATE_KEY,
+    try {
+      const key = JSON.parse(keyJson)
+      if (key.client_email && key.private_key) {
+        return { email: key.client_email, privateKey: key.private_key }
+      }
+    } catch (error) {
+      console.error('[Google webhook] invalid service-account JSON:', error.message)
     }
-  } else {
-    throw new Error('Google Play service account is not configured')
   }
+
+  const email = process.env.GOOGLE_PLAY_SA_EMAIL
+  const privateKey = process.env.GOOGLE_PLAY_SA_PRIVATE_KEY
+  return email && privateKey ? { email, privateKey } : null
+}
+
+async function getGoogleAccessToken() {
+  const credentials = getServiceAccountCredentials()
+  if (!credentials) throw new Error('Google Play service account is not configured')
 
   const auth = new GoogleAuth({
     credentials: {
-      client_email: credentials.client_email,
-      private_key: credentials.private_key.replace(/\\n/g, '\n'),
+      client_email: credentials.email,
+      private_key: credentials.privateKey.replace(/\\n/g, '\n'),
     },
     scopes: ['https://www.googleapis.com/auth/androidpublisher'],
   })
