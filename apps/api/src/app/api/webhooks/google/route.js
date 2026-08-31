@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { GoogleAuth } from 'google-auth-library'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 /** Google Play RTDN push endpoint. The notification is only a wake-up signal;
  * every entitlement decision below is re-derived from subscriptionsv2.get. */
@@ -41,49 +42,29 @@ function getSupabase() {
 async function getGoogleAccessToken() {
   const keyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY
     || process.env.GOOGLE_PLAY_SERVICE_ACCOUNT
-  if (!keyJson) throw new Error('Google Play service account is not configured')
+  let credentials
+  if (keyJson) {
+    credentials = JSON.parse(keyJson)
+  } else if (process.env.GOOGLE_PLAY_SA_EMAIL && process.env.GOOGLE_PLAY_SA_PRIVATE_KEY) {
+    credentials = {
+      client_email: process.env.GOOGLE_PLAY_SA_EMAIL,
+      private_key: process.env.GOOGLE_PLAY_SA_PRIVATE_KEY,
+    }
+  } else {
+    throw new Error('Google Play service account is not configured')
+  }
 
-  const key = JSON.parse(keyJson)
-  const now = Math.floor(Date.now() / 1000)
-  const encode = value => btoa(JSON.stringify(value))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-  const header = encode({ alg: 'RS256', typ: 'JWT' })
-  const claim = encode({
-    iss: key.client_email,
-    scope: 'https://www.googleapis.com/auth/androidpublisher',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
+  const auth = new GoogleAuth({
+    credentials: {
+      client_email: credentials.client_email,
+      private_key: credentials.private_key.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
   })
-  const signInput = `${header}.${claim}`
-  const pemBody = key.private_key
-    .replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s/g, '')
-  const keyData = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
-  const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8', keyData,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false, ['sign'],
-  )
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signInput),
-  )
-  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: `${signInput}.${sig}`,
-    }),
-  })
-  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${tokenRes.status}`)
-  const tokenData = await tokenRes.json()
-  if (!tokenData.access_token) throw new Error('Google OAuth response missing access_token')
-  return tokenData.access_token
+  const client = await auth.getClient()
+  const token = await client.getAccessToken()
+  if (!token?.token) throw new Error('Google OAuth response missing access token')
+  return token.token
 }
 
 async function fetchSubscription(accessToken, purchaseToken) {
@@ -217,7 +198,10 @@ export async function POST(request) {
       throw new Error('Google purchase token is not bound to a NovaMe user')
     }
 
-    if (ACTIVE_STATES.has(subscription.subscriptionState)) {
+    const canceledButPaid = subscription.subscriptionState === 'SUBSCRIPTION_STATE_CANCELED'
+      && periodEnd
+      && new Date(periodEnd).getTime() > Date.now()
+    if (ACTIVE_STATES.has(subscription.subscriptionState) || canceledButPaid) {
       if (!periodEnd) throw new Error('Active Google subscription missing expiryTime')
       const { data: applied, error: applyErr } = await supabase.rpc('apply_store_subscription', {
         p_user_id: userId,
@@ -234,6 +218,16 @@ export async function POST(request) {
       if (applyErr) throw new Error(`atomic subscription apply failed: ${applyErr.message}`)
       if (!applied?.success) throw new Error(`subscription apply rejected: ${applied?.error || 'unknown'}`)
 
+      if (canceledButPaid) {
+        const { error: cancelErr } = await supabase.from('subscriptions').update({
+          status: 'cancelled',
+          google_auto_renewing: false,
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        }).eq('user_id', userId)
+        if (cancelErr) throw new Error(`cancellation update failed: ${cancelErr.message}`)
+      }
+
       if (subscription.acknowledgementState === 'ACKNOWLEDGEMENT_STATE_PENDING') {
         await acknowledgeSubscription(accessToken, productId, purchaseToken)
       }
@@ -244,14 +238,6 @@ export async function POST(request) {
       // A pending replacement can point at a still-valid linked subscription.
       // It grants nothing, but must not revoke that existing entitlement.
       console.log(`[Google webhook] ${subscription.subscriptionState} — no entitlement change for user ${userId}`)
-    } else if (subscription.subscriptionState === 'SUBSCRIPTION_STATE_CANCELED' && periodEnd && new Date(periodEnd).getTime() > Date.now()) {
-      const { error } = await supabase.from('subscriptions').update({
-        status: 'cancelled',
-        google_auto_renewing: false,
-        current_period_end: periodEnd,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', userId)
-      if (error) throw new Error(`cancellation update failed: ${error.message}`)
     } else if (
       subscription.subscriptionState === 'SUBSCRIPTION_STATE_ON_HOLD'
       || subscription.subscriptionState === 'SUBSCRIPTION_STATE_PAUSED'

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { GoogleAuth } from 'google-auth-library'
 import crypto from 'node:crypto'
 
 // nodejs runtime: RS256 service-account JWT signing uses node crypto.
@@ -50,10 +51,6 @@ const ACTIVE_STATES = new Set([
   'SUBSCRIPTION_STATE_IN_GRACE_PERIOD',
 ])
 
-function b64url(buf) {
-  return Buffer.from(buf).toString('base64url')
-}
-
 function obfuscatedAccountId(userId) {
   return crypto.createHash('sha256').update(`novame:${userId}`).digest('hex')
 }
@@ -69,6 +66,25 @@ function selectCurrentLineItem(sub) {
   })[0]
 }
 
+class GooglePlayApiError extends Error {
+  constructor(operation, status, reason) {
+    super(`${operation} failed (${status})`)
+    this.name = 'GooglePlayApiError'
+    this.operation = operation
+    this.status = status
+    this.reason = reason
+  }
+}
+
+async function googleErrorReason(res) {
+  try {
+    const body = await res.json()
+    return body?.error?.status || body?.error?.message || null
+  } catch {
+    return null
+  }
+}
+
 async function acknowledgeSubscription(accessToken, productId, purchaseToken) {
   const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`
   const res = await fetch(url, {
@@ -79,37 +95,92 @@ async function acknowledgeSubscription(accessToken, productId, purchaseToken) {
     },
     body: '{}',
   })
-  if (!res.ok) throw new Error(`Google acknowledgement failed: ${res.status}`)
+  if (!res.ok) {
+    throw new GooglePlayApiError(
+      'subscriptions.acknowledge',
+      res.status,
+      await googleErrorReason(res),
+    )
+  }
 }
 
-/** Service-account OAuth token via a self-signed RS256 JWT grant. */
-async function getAccessToken(email, privateKey) {
-  const now = Math.floor(Date.now() / 1000)
-  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const claims = b64url(JSON.stringify({
-    iss: email,
-    scope: 'https://www.googleapis.com/auth/androidpublisher',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  }))
-  const signer = crypto.createSign('RSA-SHA256')
-  signer.update(`${header}.${claims}`)
-  const signature = signer.sign(privateKey.replace(/\\n/g, '\n'), 'base64url')
-  const assertion = `${header}.${claims}.${signature}`
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    }),
+/** Use Google's maintained auth client instead of hand-rolling JWT exchange. */
+async function getAccessToken(credentials) {
+  const auth = new GoogleAuth({
+    credentials: {
+      client_email: credentials.email,
+      private_key: credentials.privateKey.replace(/\\n/g, '\n'),
+    },
+    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
   })
-  if (!res.ok) throw new Error(`oauth token exchange failed: ${res.status}`)
-  const data = await res.json()
-  if (!data.access_token) throw new Error('oauth response missing access_token')
-  return data.access_token
+  const client = await auth.getClient()
+  const token = await client.getAccessToken()
+  if (!token?.token) throw new Error('Google OAuth response missing access token')
+  return token.token
+}
+
+async function fetchSubscription(accessToken, purchaseToken) {
+  const res = await fetch(
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) {
+    throw new GooglePlayApiError(
+      'subscriptionsv2.get',
+      res.status,
+      await googleErrorReason(res),
+    )
+  }
+  return res.json()
+}
+
+function googleFailureResponse(error) {
+  const status = error instanceof GooglePlayApiError ? error.status : null
+  const reason = error instanceof GooglePlayApiError ? error.reason : null
+  console.error('[google-iap] Google Play API failure', {
+    operation: error instanceof GooglePlayApiError ? error.operation : 'oauth',
+    status,
+    reason,
+    packageName: PACKAGE_NAME,
+  })
+
+  if (status === 404) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: 'PURCHASE_NOT_FOUND',
+        error: 'Google Play could not find this purchase for the installed app.',
+      },
+      { status: 422 },
+    )
+  }
+  if (status === 401 || status === 403 || status === null) {
+    return NextResponse.json(
+      {
+        success: false,
+        code: 'GOOGLE_PLAY_CONFIGURATION_ERROR',
+        error: 'Google Play verification is temporarily unavailable.',
+      },
+      { status: 503 },
+    )
+  }
+  return NextResponse.json(
+    {
+      success: false,
+      code: 'GOOGLE_PLAY_TEMPORARY_UNAVAILABLE',
+      error: 'Google Play verification is temporarily unavailable.',
+    },
+    { status: status === 429 || (status && status >= 500) ? 503 : 502 },
+  )
+}
+
+function isEntitledState(sub, periodEnd) {
+  if (ACTIVE_STATES.has(sub.subscriptionState)) return true
+  // A cancelled auto-renewing subscription remains entitled until its paid
+  // period expires. Cancellation stops renewal; it does not revoke access.
+  return sub.subscriptionState === 'SUBSCRIPTION_STATE_CANCELED'
+    && Boolean(periodEnd)
+    && new Date(periodEnd).getTime() > Date.now()
 }
 
 function getServiceAccountCredentials() {
@@ -136,12 +207,20 @@ export async function POST(request) {
     const token = authHeader.replace(/^Bearer\s+/i, '').trim()
     const verified = await verifyToken(token)
     if (!verified) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+      console.warn('[google-iap] auth rejected', { hasBearerToken: Boolean(token) })
+      return NextResponse.json(
+        { success: false, code: 'AUTH_INVALID', error: 'Your session needs to be refreshed.' },
+        { status: 401 },
+      )
     }
 
     const { userId, purchaseToken } = await request.json()
     if (verified.id !== userId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+      console.warn('[google-iap] auth account mismatch')
+      return NextResponse.json(
+        { success: false, code: 'AUTH_ACCOUNT_CHANGED', error: 'The purchase was started by another account.' },
+        { status: 409 },
+      )
     }
     if (!purchaseToken || typeof purchaseToken !== 'string') {
       return NextResponse.json(
@@ -163,32 +242,51 @@ export async function POST(request) {
     let sub
     let accessToken
     try {
-      accessToken = await getAccessToken(credentials.email, credentials.privateKey)
-      const res = await fetch(
-        `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      )
-      if (!res.ok) {
-        console.warn('[google-iap] rejected: verification failed', res.status)
-        return NextResponse.json(
-          { success: false, error: 'Invalid purchase token' },
-          { status: 401 }
-        )
-      }
-      sub = await res.json()
+      accessToken = await getAccessToken(credentials)
+      sub = await fetchSubscription(accessToken, purchaseToken)
     } catch (e) {
-      console.error('[google-iap] verification error:', e && e.message)
+      return googleFailureResponse(e)
+    }
+
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_PENDING') {
       return NextResponse.json(
-        { success: false, error: 'Verification failed' },
-        { status: 502 }
+        {
+          success: false,
+          pending: true,
+          code: 'PURCHASE_PENDING',
+          state: sub.subscriptionState,
+          error: 'Your payment is still pending in Google Play.',
+        },
+        { status: 202 },
+      )
+    }
+    if (sub.subscriptionState === 'SUBSCRIPTION_STATE_PENDING_PURCHASE_CANCELED') {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PURCHASE_PENDING_CANCELED',
+          state: sub.subscriptionState,
+          error: 'The pending Google Play purchase was canceled.',
+        },
+        { status: 409 },
       )
     }
 
-    if (!ACTIVE_STATES.has(sub.subscriptionState)) {
-      console.warn('[google-iap] rejected: state', sub.subscriptionState)
+    const line = selectCurrentLineItem(sub)
+    const periodEnd = line?.expiryTime
+      ? new Date(line.expiryTime).toISOString()
+      : null
+
+    if (!isEntitledState(sub, periodEnd)) {
+      console.warn('[google-iap] purchase is not entitled', { state: sub.subscriptionState })
       return NextResponse.json(
-        { success: false, error: `Subscription not active (${sub.subscriptionState})` },
-        { status: 401 }
+        {
+          success: false,
+          code: 'SUBSCRIPTION_NOT_ENTITLED',
+          state: sub.subscriptionState,
+          error: 'This Google Play subscription is not currently entitled.',
+        },
+        { status: 409 },
       )
     }
 
@@ -205,7 +303,6 @@ export async function POST(request) {
       )
     }
 
-    const line = selectCurrentLineItem(sub)
     const productId = line?.productId
     const basePlanId = line?.offerDetails?.basePlanId
     const tier = SUBSCRIPTION_TO_TIER[productId]
@@ -217,9 +314,17 @@ export async function POST(request) {
     }
     const billingCycle = SUBSCRIPTION_TO_CYCLE[productId]
     const planType = SUBSCRIPTION_TO_PLAN_TYPE[productId]
-    const periodEnd = line?.expiryTime
-      ? new Date(line.expiryTime).toISOString()
-      : new Date(Date.now() + (billingCycle === 'yearly' ? 365 : 30) * 86400000).toISOString()
+    if (!periodEnd) {
+      console.error('[google-iap] entitled subscription missing authoritative expiryTime')
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'GOOGLE_PLAY_INVALID_RESPONSE',
+          error: 'Google Play returned an incomplete subscription record.',
+        },
+        { status: 502 },
+      )
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -290,15 +395,30 @@ export async function POST(request) {
       try {
         await acknowledgeSubscription(accessToken, productId, purchaseToken)
       } catch (ackError) {
-        console.error('[google-iap] acknowledgement failed:', ackError.message)
-        return NextResponse.json(
-          { success: false, error: 'Purchase recorded but acknowledgement is pending' },
-          { status: 502 }
-        )
+        // Entitlement is already durably recorded. Return success so the app
+        // can finishTransaction (which also acknowledges on Android). RTDN is
+        // idempotent and will retry the server acknowledgement independently.
+        console.error('[google-iap] acknowledgement pending after entitlement grant', {
+          status: ackError instanceof GooglePlayApiError ? ackError.status : null,
+          reason: ackError instanceof GooglePlayApiError ? ackError.reason : null,
+        })
+        return NextResponse.json({
+          success: true,
+          tier,
+          billingCycle,
+          periodEnd,
+          acknowledgementPending: true,
+        })
       }
     }
 
-    return NextResponse.json({ success: true, tier, billingCycle, periodEnd })
+    return NextResponse.json({
+      success: true,
+      tier,
+      billingCycle,
+      periodEnd,
+      acknowledgementPending: false,
+    })
   } catch (err) {
     console.error('[google-iap] unexpected:', err && err.message)
     return NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 })
