@@ -79,7 +79,7 @@ class GooglePlayApiError extends Error {
 async function googleErrorReason(res) {
   try {
     const body = await res.json()
-    return body?.error?.status || body?.error?.message || null
+    return body?.error?.message || body?.error?.status || null
   } catch {
     return null
   }
@@ -134,7 +134,7 @@ async function fetchSubscription(accessToken, purchaseToken) {
   return res.json()
 }
 
-function googleFailureResponse(error) {
+function googleFailureResponse(error, serviceAccountEmail) {
   const status = error instanceof GooglePlayApiError ? error.status : null
   const reason = error instanceof GooglePlayApiError ? error.reason : null
   console.error('[google-iap] Google Play API failure', {
@@ -142,6 +142,7 @@ function googleFailureResponse(error) {
     status,
     reason,
     packageName: PACKAGE_NAME,
+    serviceAccountEmail,
   })
 
   if (status === 404) {
@@ -245,7 +246,7 @@ export async function POST(request) {
       accessToken = await getAccessToken(credentials)
       sub = await fetchSubscription(accessToken, purchaseToken)
     } catch (e) {
-      return googleFailureResponse(e)
+      return googleFailureResponse(e, credentials.email)
     }
 
     if (sub.subscriptionState === 'SUBSCRIPTION_STATE_PENDING') {
