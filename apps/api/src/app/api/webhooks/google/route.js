@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { GoogleAuth } from 'google-auth-library'
+import { GoogleAuth, OAuth2Client } from 'google-auth-library'
 
 export const runtime = 'nodejs'
 
@@ -30,6 +30,64 @@ const ACTIVE_STATES = new Set([
   'SUBSCRIPTION_STATE_ACTIVE',
   'SUBSCRIPTION_STATE_IN_GRACE_PERIOD',
 ])
+const PUBSUB_AUTH_REQUIRED = process.env.GOOGLE_PUBSUB_REQUIRE_AUTH === 'true'
+const PUBSUB_AUDIENCE = process.env.GOOGLE_PUBSUB_PUSH_AUDIENCE
+const PUBSUB_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL
+const pubSubOidcClient = new OAuth2Client()
+
+async function authenticatePubSubPush(request) {
+  if (!PUBSUB_AUTH_REQUIRED) return { ok: true, enforced: false }
+
+  if (!PUBSUB_AUDIENCE || !PUBSUB_SERVICE_ACCOUNT_EMAIL) {
+    console.error('[Google webhook] Pub/Sub OIDC enforcement is enabled but config is incomplete')
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { received: false, error: 'Webhook authentication is not configured' },
+        { status: 503 },
+      ),
+    }
+  }
+
+  const authorization = request.headers.get('authorization') || ''
+  const match = authorization.match(/^Bearer\s+(.+)$/i)
+  if (!match) {
+    console.warn('[Google webhook] rejected push without bearer token')
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { received: false, error: 'Unauthorized push' },
+        { status: 401 },
+      ),
+    }
+  }
+
+  try {
+    // verifyIdToken validates Google's signature, issuer, expiry, and audience.
+    const ticket = await pubSubOidcClient.verifyIdToken({
+      idToken: match[1],
+      audience: PUBSUB_AUDIENCE,
+    })
+    const payload = ticket.getPayload()
+    if (
+      !payload
+      || payload.email !== PUBSUB_SERVICE_ACCOUNT_EMAIL
+      || payload.email_verified !== true
+    ) {
+      throw new Error('unexpected Pub/Sub service-account identity')
+    }
+    return { ok: true, enforced: true }
+  } catch (error) {
+    console.warn('[Google webhook] rejected invalid Pub/Sub OIDC token:', error.message)
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { received: false, error: 'Unauthorized push' },
+        { status: 401 },
+      ),
+    }
+  }
+}
 
 function getSupabase() {
   return createClient(
@@ -151,6 +209,9 @@ async function resolveUserId(supabase, purchaseToken, linkedPurchaseToken, subsc
 
 export async function POST(request) {
   try {
+    const authenticated = await authenticatePubSubPush(request)
+    if (!authenticated.ok) return authenticated.response
+
     const body = await request.json()
     const messageData = body?.message?.data
     if (!messageData) {
