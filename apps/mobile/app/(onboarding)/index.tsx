@@ -155,7 +155,7 @@ export default function OnboardingScreen() {
       setPurchasing(false);
       setPurchased(false);
       appAlert(
-        'Purchase didn’t go through',
+        error.code === 'pending' ? 'Payment Pending' : 'Purchase didn’t go through',
         error.message || 'You can subscribe anytime from the app.',
       );
     });

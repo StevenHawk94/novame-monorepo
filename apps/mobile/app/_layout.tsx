@@ -23,7 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
 import { observeSessionIdentity } from '@/lib/session-lifecycle';
 import { hasSeenIntro } from '@/lib/onboarding';
-import { initIAP, cleanupIAP } from '@/lib/iap';
+import { initIAP, cleanupIAP, reconcileAvailablePurchases } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
 import {
   resumeSubscriptionRealtime,
@@ -292,6 +292,10 @@ function RootLayout() {
         void resumeSubscriptionRealtime().catch((error) => {
           console.warn('[layout] entitlement realtime resume failed:', error);
         });
+        // Google Play can complete a pending purchase while the app is in the
+        // background. Re-query on every foreground entry so entitlement and
+        // acknowledgement recover without another Subscribe tap.
+        void reconcileAvailablePurchases();
         void resumePairingRealtime().catch((error) => {
           console.warn('[layout] pairing realtime resume failed:', error);
         });
@@ -319,10 +323,12 @@ function RootLayout() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION') {
         observeSessionIdentity(session?.user?.id ?? null);
+        if (session?.user?.id) setTimeout(() => void reconcileAvailablePurchases(), 0);
         return;
       }
       if (event === 'SIGNED_IN') {
         const sameIdentity = observeSessionIdentity(session?.user?.id ?? null);
+        if (session?.user?.id) setTimeout(() => void reconcileAvailablePurchases(), 0);
         if (sameIdentity) return;
         const isAnonymous =
           (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;

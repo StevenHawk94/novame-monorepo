@@ -151,7 +151,7 @@ export default function SubscriptionPaywallModal() {
     const offError = onPurchaseError((err) => {
       setBusy('idle');
       appAlert(
-        'Purchase Failed',
+        err.code === 'pending' ? 'Payment Pending' : 'Purchase Failed',
         err.message || 'Something went wrong with the purchase. Please try again.',
       );
     });
@@ -186,6 +186,13 @@ export default function SubscriptionPaywallModal() {
         ]);
       } else if (result.ownershipConflict) {
         appAlert('Purchase Linked to Another Account', result.ownershipConflict.message);
+      } else if (result.pending) {
+        appAlert(
+          'Payment Pending',
+          'Google Play is still processing your payment. Plus will activate automatically after Google confirms it.',
+        );
+      } else if (result.error) {
+        appAlert('Restore Not Finished', result.error);
       } else {
         appAlert(
           'Nothing to Restore',

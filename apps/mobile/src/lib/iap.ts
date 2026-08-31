@@ -159,6 +159,9 @@ let initialized = false;
 let initIAPInFlight: Promise<void> | null = null;
 let purchaseUpdateSub: { remove: () => void } | null = null;
 let purchaseErrorSub: { remove: () => void } | null = null;
+let reconciliationInFlight: Promise<boolean> | null = null;
+let alreadyOwnedRecoveryInFlight: Promise<boolean> | null = null;
+let recentAlreadyOwnedRecovery: { at: number; recovered: boolean } | null = null;
 
 // Stage 5.IAP fix: tracks transactionIds we have already processed in
 // this app launch. Sandbox + Apple replay any unfinished transactions
@@ -191,6 +194,100 @@ type PurchaseErrorCallback = (error: PurchaseError) => void;
 const completeCallbacks = new Set<PurchaseCompleteCallback>();
 const errorCallbacks = new Set<PurchaseErrorCallback>();
 let pendingOwnershipError: PurchaseError | null = null;
+
+class PurchasePendingError extends Error {
+  constructor(message = 'Your payment is still pending in Google Play. Plus will activate automatically after Google confirms it.') {
+    super(message);
+    this.name = 'PurchasePendingError';
+  }
+}
+
+type IapApiErrorBody = {
+  code?: unknown;
+  error?: unknown;
+  pending?: unknown;
+};
+
+function apiErrorBody(error: unknown): IapApiErrorBody | null {
+  if (!(error instanceof ApiError) || !error.body || typeof error.body !== 'object') return null;
+  return error.body as IapApiErrorBody;
+}
+
+function isAndroidPurchasePending(purchase: Purchase): boolean {
+  return Platform.OS === 'android' && purchase.purchaseState === 'pending';
+}
+
+function purchaseFailureMessage(error: unknown): string {
+  if (error instanceof PurchasePendingError) return error.message;
+  const body = apiErrorBody(error);
+  const code = typeof body?.code === 'string' ? body.code : null;
+  switch (code) {
+    case 'GOOGLE_PLAY_CONFIGURATION_ERROR':
+    case 'GOOGLE_PLAY_TEMPORARY_UNAVAILABLE':
+      return 'Google Play confirmed the order, but Burrow could not finish syncing it yet. Your purchase is safe and will be restored automatically; please try Restore Purchases shortly.';
+    case 'PURCHASE_NOT_FOUND':
+      return 'Google Play has not made this order available to Burrow yet. Please wait a moment, then use Restore Purchases.';
+    case 'PURCHASE_PENDING_CANCELED':
+      return 'The pending Google Play payment was canceled. You have not been charged by Burrow.';
+    case 'SUBSCRIPTION_NOT_ENTITLED':
+      return 'Google Play does not currently show this subscription as active.';
+    case 'AUTH_ACCOUNT_CHANGED':
+      return 'Your account changed while the purchase was open. Return to the Burrow account that started the purchase and restore it.';
+    default:
+      if (typeof body?.error === 'string' && body.error) return body.error;
+      if (error instanceof Error && error.message && !(error instanceof ApiError)) return error.message;
+      return 'We could not finish syncing your purchase. Your order will be restored automatically; you can also use Restore Purchases.';
+  }
+}
+
+async function recoverAlreadyOwnedPurchase(productId?: string | null): Promise<boolean> {
+  if (recentAlreadyOwnedRecovery && Date.now() - recentAlreadyOwnedRecovery.at < 5_000) {
+    return recentAlreadyOwnedRecovery.recovered;
+  }
+  if (alreadyOwnedRecoveryInFlight) return alreadyOwnedRecoveryInFlight;
+  alreadyOwnedRecoveryInFlight = (async () => {
+    userInitiatedInFlight = false;
+    purchaseAccountIdInFlight = null;
+    if (userInitiatedTimer) {
+      clearTimeout(userInitiatedTimer);
+      userInitiatedTimer = null;
+    }
+
+    const restored = await restoreSubscriptions();
+    if (restored.restored && restored.tier) {
+      const cycle = restored.cycle ?? (productId && isIOSProductId(productId)
+        ? PRODUCT_TO_CYCLE[productId]
+        : 'yearly');
+      for (const cb of completeCallbacks) {
+        try {
+          cb({ tier: restored.tier, cycle });
+        } catch (callbackError) {
+          console.warn('[iap] completeCallback threw:', callbackError);
+        }
+      }
+      return true;
+    }
+
+    const message = restored.pending
+      ? new PurchasePendingError().message
+      : restored.error
+        ?? 'Google Play already has this subscription. Use Restore Purchases to finish syncing it with Burrow.';
+    handlePurchaseError(createPurchaseError({
+      code: restored.pending ? ErrorCode.Pending : ErrorCode.PurchaseVerificationFailed,
+      message,
+      productId: productId ?? undefined,
+      platform: 'android',
+    }));
+    return false;
+  })();
+  try {
+    const recovered = await alreadyOwnedRecoveryInFlight;
+    recentAlreadyOwnedRecovery = { at: Date.now(), recovered };
+    return recovered;
+  } finally {
+    alreadyOwnedRecoveryInFlight = null;
+  }
+}
 
 type StoreEnvironment = 'sandbox' | 'production' | 'unknown';
 
@@ -311,109 +408,59 @@ async function initializeIAP(): Promise<void> {
     return;
   }
 
-  // Stage 5.IAP fix (Bug #7 + #8): recover any unfinished StoreKit
-  // transactions BEFORE registering the listener. This drains the
-  // replay queue in silent mode (server upload + finishTransaction,
-  // but no onPurchaseComplete fired -- so the paywall doesn't see a
-  // ghost success). Without this step, every cold app launch was
-  // showing "Subscription Active to Ultra" because an old sandbox
-  // ultra transaction was stuck in the queue.
-  //
-  // Reference: hyochan/expo-iap discussion #177 -- "On app startup,
-  // call getAvailablePurchases() to load any pending/restore-able
-  // transactions. Validate each on your server (source of truth for
-  // subscription status). Call finishTransaction() for each to clear
-  // the queue."
-  try {
-    const pending = await getAvailablePurchases();
-    if (pending && pending.length > 0) {
-      console.log(
-        `[iap] recovering ${pending.length} unfinished transaction(s) from StoreKit queue`,
-      );
-      for (const purchase of pending) {
-        const txnId = String(purchase.id);
-        if (processedTransactionIds.has(txnId)) continue;
-        processedTransactionIds.add(txnId);
-        try {
-          await uploadPurchaseToServer(purchase);
-          await finishTransaction({ purchase, isConsumable: false });
-          console.log('[iap] recovered transaction', txnId, purchase.productId);
-        } catch (e) {
-          console.warn('[iap] recovery failed for', txnId, e);
-          const conflict = purchaseOwnershipConflict(e);
-          if (conflict) {
-            await finishOwnershipConflict(purchase, conflict);
-            notifyOwnershipConflict(conflict, purchase.productId);
-            continue;
-          }
-          // Stage 6 fix: distinguish INFRASTRUCTURE failures (no
-          // session / network down / supabase unavailable) from
-          // BUSINESS failures (server rejected the transaction).
-          //
-          // Infrastructure failures during initIAP recovery are
-          // common: the listener registers very early in app boot,
-          // before supabase.auth has restored the session from MMKV.
-          // The first uploadPurchaseToServer call throws "No active
-          // session for IAP upload" -- a transient race, NOT a
-          // problem with the transaction itself.
-          //
-          // Old behavior: kept the txnId in processedTransactionIds
-          // anyway "to avoid spam." Consequence: when the user
-          // later tapped Subscribe, StoreKit returned the same
-          // unfinished transaction (because finishTransaction never
-          // ran), the listener fired, saw the id in the set, and
-          // returned silently. paywall.onPurchaseComplete never
-          // fired -> paywall stuck on "Processing..." until the 5s
-          // safety net, but never closed.
-          //
-          // New behavior: for transient errors we recognise as
-          // infrastructure (session missing, network), DROP the id
-          // from the set. The listener will get a fresh shot later
-          // (e.g. when the user actually taps Subscribe and
-          // StoreKit re-delivers the unfinished transaction).
-          const msg =
-            e instanceof Error ? e.message : typeof e === 'string' ? e : '';
-          const isTransient =
-            msg.includes('No active session') ||
-            msg.includes('Network request failed') ||
-            msg.includes('fetch failed') ||
-            msg.includes('NetworkError');
-          if (isTransient) {
-            processedTransactionIds.delete(txnId);
-            console.log(
-              '[iap] recovery error is transient, releasing txnId for retry:',
-              txnId,
-            );
-          }
-          // Release every non-conflict failure for a later retry. initIAP is
-          // single-flight, so this cannot create concurrent duplicate POSTs;
-          // keeping the id here would make a later user-initiated retry get
-          // skipped and leave its paywall waiting forever.
-          if (!isTransient) processedTransactionIds.delete(txnId);
-        }
-      }
-      // After recovery, refresh the cached tier so the user sees
-      // their accurate state on Me page.
-      await refreshSubscriptionCache();
-    }
-  } catch (e) {
-    console.warn('[iap] queue recovery failed:', e);
-  }
-
-  // Global listener -- fires for NEW user-initiated purchases AND
-  // future auto-renewals. Stale-replay protection happens via
-  // processedTransactionIds set above.
+  // Install listeners before querying purchases so a state transition that
+  // happens during cold-start recovery cannot be missed.
   purchaseUpdateSub = purchaseUpdatedListener((purchase) => {
     void handlePurchaseUpdate(purchase);
   });
 
   purchaseErrorSub = purchaseErrorListener((error) => {
+    if (Platform.OS === 'android' && error.code === ErrorCode.AlreadyOwned) {
+      void recoverAlreadyOwnedPurchase(error.productId);
+      return;
+    }
     handlePurchaseError(error);
   });
-  // Initialization is complete only after recovery and both listeners are
-  // installed. Purchase surfaces awaiting initIAP can now safely launch the
-  // native store sheet without racing listener registration.
   initialized = true;
+
+  // Recover active/unacknowledged transactions silently. The same idempotent
+  // reconciliation runs again on auth restoration and every foreground entry.
+  await reconcileAvailablePurchasesInternal();
+}
+
+async function reconcileAvailablePurchasesInternal(): Promise<boolean> {
+  if (reconciliationInFlight) return reconciliationInFlight;
+  reconciliationInFlight = (async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session?.user?.id) return false;
+
+    let restored = false;
+    const purchases = await getAvailablePurchases();
+    for (const purchase of purchases ?? []) {
+      if (!getPurchaseEntitlement(purchase) || isAndroidPurchasePending(purchase)) continue;
+      const txnId = String(purchase.id);
+      const before = processedTransactionIds.has(txnId);
+      await handlePurchaseUpdate(purchase);
+      if (!before && processedTransactionIds.has(txnId)) restored = true;
+    }
+    if (restored) await refreshSubscriptionCache({ preserveExisting: true });
+    return restored;
+  })();
+  try {
+    return await reconciliationInFlight;
+  } catch (error) {
+    console.warn('[iap] purchase reconciliation failed:', error);
+    return false;
+  } finally {
+    reconciliationInFlight = null;
+  }
+}
+
+/** Reconcile purchases after auth restore and whenever the app returns active. */
+export async function reconcileAvailablePurchases(): Promise<boolean> {
+  if (!initialized) await initIAP();
+  if (!initialized) return false;
+  return reconcileAvailablePurchasesInternal();
 }
 
 /**
@@ -439,6 +486,7 @@ export async function cleanupIAP(): Promise<void> {
       /* ignore -- shutdown best-effort */
     }
     initialized = false;
+    processedTransactionIds.clear();
   }
 }
 
@@ -678,6 +726,15 @@ export async function purchaseSubscription(
     if (errCode === ErrorCode.UserCancelled) {
       return { kind: 'cancelled' };
     }
+    if (Platform.OS === 'android' && errCode === ErrorCode.AlreadyOwned) {
+      // Play already owns the SKU when a previous verification/acknowledgement
+      // attempt was interrupted. Reconcile that purchase instead of asking the
+      // user to buy it again.
+      const recovered = await recoverAlreadyOwnedPurchase(productId);
+      return recovered
+        ? { kind: 'completed', productId }
+        : { kind: 'cancelled' };
+    }
     throw e;
   }
 }
@@ -698,7 +755,10 @@ export async function purchaseSubscription(
 export async function restoreSubscriptions(): Promise<{
   restored: boolean;
   tier?: PricingTierKey;
+  cycle?: SubscriptionCycle;
   ownershipConflict?: PurchaseOwnershipConflict;
+  pending?: boolean;
+  error?: string;
 }> {
   if (!initialized) {
     try {
@@ -716,11 +776,18 @@ export async function restoreSubscriptions(): Promise<{
     }
 
     let highestTier: PricingTierKey | undefined;
+    let restoredCycle: SubscriptionCycle | undefined;
     let ownershipConflict: PurchaseOwnershipConflict | undefined;
+    let sawPending = false;
+    let firstError: string | undefined;
     for (const purchase of purchases) {
       const productId = purchase.productId;
       const entitlement = getPurchaseEntitlement(purchase);
       if (!entitlement) continue;
+      if (isAndroidPurchasePending(purchase)) {
+        sawPending = true;
+        continue;
+      }
       try {
         await uploadPurchaseToServer(purchase);
       } catch (e) {
@@ -731,6 +798,8 @@ export async function restoreSubscriptions(): Promise<{
           continue;
         }
         console.warn('[iap] restore upload failed for', productId, e);
+        if (e instanceof PurchasePendingError) sawPending = true;
+        firstError ??= purchaseFailureMessage(e);
         continue;
       }
       try {
@@ -739,16 +808,22 @@ export async function restoreSubscriptions(): Promise<{
         /* non-fatal */
       }
       highestTier = pickHigherTier(highestTier, entitlement.tier);
+      restoredCycle = entitlement.cycle;
     }
 
     if (highestTier) {
       await refreshSubscriptionCache();
-      return { restored: true, tier: highestTier };
+      return { restored: true, tier: highestTier, cycle: restoredCycle };
     }
-    return { restored: false, ownershipConflict };
+    return {
+      restored: false,
+      ownershipConflict,
+      pending: sawPending,
+      error: firstError,
+    };
   } catch (e) {
     console.warn('[iap] restoreSubscriptions failed:', e);
-    return { restored: false };
+    return { restored: false, error: purchaseFailureMessage(e) };
   }
 }
 
@@ -759,6 +834,28 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   const entitlement = getPurchaseEntitlement(purchase);
   if (!entitlement) {
     console.warn('[iap] unknown productId:', productId);
+    return;
+  }
+
+  // Google explicitly forbids granting or acknowledging while a purchase is
+  // pending. Play will emit it again as PURCHASED and foreground recovery also
+  // queries it, so keeping it unfinished is intentional.
+  if (isAndroidPurchasePending(purchase)) {
+    const wasUserInitiated = userInitiatedInFlight;
+    userInitiatedInFlight = false;
+    purchaseAccountIdInFlight = null;
+    if (userInitiatedTimer) {
+      clearTimeout(userInitiatedTimer);
+      userInitiatedTimer = null;
+    }
+    if (wasUserInitiated) {
+      handlePurchaseError(createPurchaseError({
+        code: ErrorCode.Pending,
+        message: new PurchasePendingError().message,
+        productId,
+        platform: 'android',
+      }));
+    }
     return;
   }
 
@@ -803,9 +900,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
     // dedup set so a future retry can attempt again.
     processedTransactionIds.delete(txnId);
     if (wasUserInitiated) {
-      const message = e instanceof Error && e.message
-        ? e.message
-        : 'We could not verify your purchase. It will be restored automatically; please check your connection and try again.';
+      const message = purchaseFailureMessage(e);
       handlePurchaseError(createPurchaseError({
         code: ErrorCode.PurchaseVerificationFailed,
         message,
@@ -923,6 +1018,9 @@ type AppleIapResponse = {
   billingCycle?: string;
   periodEnd?: string;
   storeEnvironment?: StoreEnvironment;
+  pending?: boolean;
+  code?: string;
+  acknowledgementPending?: boolean;
   error?: string;
 };
 
@@ -991,8 +1089,36 @@ async function uploadPurchaseToServer(
         expiresDate: expiresIso,
         jws,
       };
-  const data = await apiClient.post<AppleIapResponse>(endpoint, body);
+  let data: AppleIapResponse;
+  try {
+    data = await apiClient.post<AppleIapResponse>(endpoint, body);
+  } catch (error) {
+    const response = apiErrorBody(error);
+    // A stale Supabase access token must not strand a completed store order.
+    // Refresh exactly once, verify that the user identity did not change, then
+    // retry the same idempotent purchase token.
+    if (
+      Platform.OS === 'android'
+      && error instanceof ApiError
+      && error.status === 401
+      && response?.code === 'AUTH_INVALID'
+    ) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshed.session) throw error;
+      if (refreshed.session.user.id !== userId) {
+        throw new Error(
+          'Your account changed while the purchase was being verified. Return to the account that started it and restore purchases.',
+        );
+      }
+      data = await apiClient.post<AppleIapResponse>(endpoint, body);
+    } else {
+      throw error;
+    }
+  }
 
+  if (data.pending || data.code === 'PURCHASE_PENDING') {
+    throw new PurchasePendingError(data.error);
+  }
   if (!data.success) {
     throw new Error(data.error ?? 'iap upload returned !success');
   }
