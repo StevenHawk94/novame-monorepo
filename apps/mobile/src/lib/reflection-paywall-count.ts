@@ -1,7 +1,25 @@
 import { storage } from '@/lib/storage';
-import { kReflectionPaywallCount } from '@/shared/storage';
+import { kReflectionPaywallCount, kReflectionPaywallNextVariant } from '@/shared/storage';
 
 const listeners = new Set<() => void>();
+
+export type ReflectionPaywallVariant = '1' | '2';
+
+/** Read without consuming so a rejected navigation does not skip a variant. */
+export function getNextReflectionPaywallVariant(): ReflectionPaywallVariant {
+  return storage.getString(kReflectionPaywallNextVariant.name) === '2' ? '2' : '1';
+}
+
+/** Advance only after that modal has actually mounted (idempotent/CAS-like). */
+export function recordReflectionPaywallVariantShown(variant: ReflectionPaywallVariant): void {
+  try {
+    if (getNextReflectionPaywallVariant() !== variant) return;
+    storage.set(kReflectionPaywallNextVariant.name, variant === '1' ? '2' : '1');
+  } catch (error) {
+    // Variant rotation is promotional state and must never block the paywall.
+    console.warn('[reflection-paywall] variant write failed:', error);
+  }
+}
 
 export function incrementReflectionPaywallCount(): number {
   const raw = storage.getString(kReflectionPaywallCount.name);

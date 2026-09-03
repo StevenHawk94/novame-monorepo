@@ -82,7 +82,7 @@ export default function FriendAddScreen() {
           : res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
           : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
           : res.error === 'already_friends' ? "You're already friends."
-          : res.error === 'already_pending' ? 'A request is already pending with them.'
+          : res.error === 'already_pending' ? 'You already have a pending invitation. You can send a new one after it is accepted or expires.'
           : res.error === 'cannot_add_self' ? "That's your own ID!"
           : res.error === 'friend_limit_reached' ? 'Your friend slots are full. Burrow Plus holds 99.'
           : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
@@ -112,7 +112,7 @@ export default function FriendAddScreen() {
         res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
         : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
         : res.error === 'already_friends' ? "You're already friends."
-        : res.error === 'already_pending' ? 'A request is already pending with them.'
+        : res.error === 'already_pending' ? 'You already have a pending invitation. You can send a new one after it is accepted or expires.'
         : res.error === 'friend_limit_reached' ? 'Your friend slot is still in use. Refresh and try again.'
         : res.error === 'target_friend_limit_reached' ? 'Their friend slot is full right now.'
         : 'Something went wrong. Try again.';

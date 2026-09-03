@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { Image as ExpoImage } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GridBackground } from '@/components/ui/grid-background';
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
+import {
+  recordReflectionPaywallVariantShown,
+  type ReflectionPaywallVariant,
+} from '@/lib/reflection-paywall-count';
 
 const PARK_ICON = require('../../../assets/items/each/memory.1486_park.webp');
 
@@ -14,8 +19,23 @@ const INK = '#4A2F17';
 const BROWN = '#4A3220';
 const CREAM = '#FFF7E8';
 
+const V1_BENEFITS = [
+  'Better memories organization for every reflection.',
+  'Know when to reach out, and when to give them space',
+  'Understand whether they need comfort, encouragement, or someone to listen',
+  'Take better care of yourself, and create more moments worth remembering and sharing.',
+  'More time having real conversations',
+  'Never miss the moments when they need you most.',
+] as const;
+
 export default function ReflectionPlusPaywallModal() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ variant?: string | string[] }>();
+  const requestedVariant = Array.isArray(params.variant) ? params.variant[0] : params.variant;
+  const variant: ReflectionPaywallVariant = requestedVariant === '2' ? '2' : '1';
+
+  // Consume the alternating slot only after navigation committed this screen.
+  useEffect(() => recordReflectionPaywallVariantShown(variant), [variant]);
 
   const close = () => {
     void haptics.light();
@@ -38,13 +58,50 @@ export default function ReflectionPlusPaywallModal() {
         <MaterialIcons name="close" size={24} color="#FFFFFF" />
       </Pressable>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + 78, paddingBottom: insets.bottom + 18 },
-        ]}
-      >
+      {variant === '1' ? (
+        <>
+          <ScrollView
+            style={styles.v1Scroll}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.v1Content,
+              { paddingTop: insets.top + 82 },
+            ]}
+          >
+            <Text style={styles.v1Title}>Get Burrow Plus</Text>
+            <Text style={styles.v1Subtitle}>
+              Plus user get 2x significant improvement in how close they feel to their person.
+            </Text>
+
+            <View style={styles.v1BenefitsCard}>
+              <View style={styles.v1SectionBadge}>
+                <Text style={styles.v1SectionBadgeText}>PLUS FOR BOTH OF YOU</Text>
+              </View>
+              <View style={styles.v1BenefitsList}>
+                {V1_BENEFITS.map((benefit) => (
+                  <View key={benefit} style={styles.v1BenefitRow}>
+                    <MaterialIcons name="check-circle" size={25} color="#FFFFFF" />
+                    <Text style={styles.v1BenefitText}>{benefit}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={[styles.v1Footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <Pressable onPress={openPlans} style={({ pressed }) => [styles.cta, styles.v1Cta, pressed && styles.ctaPressed]}>
+              <Text style={styles.ctaText}>Try for Free</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 78, paddingBottom: insets.bottom + 18 },
+          ]}
+        >
         <Text style={styles.title}>Join Plus to enjoy all the premium features</Text>
         <Text style={styles.subtitle}>
           One Plus subscription unlocks the full experience for both of you.
@@ -96,7 +153,8 @@ export default function ReflectionPlusPaywallModal() {
         <Pressable onPress={openPlans} style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}>
           <Text style={styles.ctaText}>Try for Free</Text>
         </Pressable>
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -109,6 +167,35 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   content: { flexGrow: 1, paddingHorizontal: 22 },
+  v1Scroll: { flex: 1 },
+  v1Content: { flexGrow: 1, paddingHorizontal: 22, paddingBottom: 20 },
+  v1Title: {
+    color: INK, fontSize: 31, lineHeight: 39, fontFamily: 'Inter_800ExtraBold',
+    textAlign: 'center', paddingHorizontal: 4,
+  },
+  v1Subtitle: {
+    color: '#24170D', fontSize: 16, lineHeight: 23, fontFamily: 'Inter_500Medium',
+    textAlign: 'center', marginTop: 22, paddingHorizontal: 18,
+  },
+  v1BenefitsCard: {
+    backgroundColor: 'rgba(89,62,39,0.78)', borderRadius: 18,
+    marginTop: 36, paddingHorizontal: 22, paddingTop: 22, paddingBottom: 24,
+  },
+  v1SectionBadge: {
+    minHeight: 48, borderRadius: 14, backgroundColor: '#FFF0D2',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
+  },
+  v1SectionBadgeText: {
+    color: INK, fontSize: 15, fontFamily: 'Inter_800ExtraBold', textAlign: 'center',
+  },
+  v1BenefitsList: { gap: 24, marginTop: 24 },
+  v1BenefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  v1BenefitText: {
+    flex: 1, color: '#FFFFFF', fontSize: 16, lineHeight: 22,
+    fontFamily: 'Inter_800ExtraBold',
+  },
+  v1Footer: { paddingHorizontal: 22, paddingTop: 12 },
+  v1Cta: { marginTop: 0 },
   title: {
     color: INK, fontSize: 29, lineHeight: 37, fontFamily: 'Inter_800ExtraBold',
     textAlign: 'center', paddingHorizontal: 4,

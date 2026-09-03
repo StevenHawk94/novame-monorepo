@@ -35,6 +35,9 @@ export interface PendingRequest {
   isDefaultAvatar?: boolean;
   /** The relationship proposed on the invitation (2026-07-24 pairing flow). */
   relationship?: string | null;
+  /** Kept optional so an older persisted cache remains readable after upgrade. */
+  createdAt?: string;
+  expiresAt?: string;
 }
 
 export interface SentRequest {
@@ -45,6 +48,7 @@ export interface SentRequest {
   /** false only when they uploaded a real avatar; default art renders client-side. */
   isDefaultAvatar?: boolean;
   createdAt: string;
+  expiresAt?: string;
 }
 
 export interface FriendsStatus {
@@ -57,6 +61,26 @@ export interface FriendsStatus {
 
 const EMPTY_STATUS: FriendsStatus = { inviteCode: null, friends: [], pending: [], sent: [] };
 const FRIENDS_CACHE_MAX_AGE_MS = 5 * 60_000;
+const PAIRING_INVITATION_TTL_MS = 48 * 60 * 60_000;
+
+function invitationIsActive(request: { createdAt?: string; expiresAt?: string }): boolean {
+  const explicitExpiry = request.expiresAt ? Date.parse(request.expiresAt) : Number.NaN;
+  const createdAt = request.createdAt ? Date.parse(request.createdAt) : Number.NaN;
+  const expiresAt = Number.isFinite(explicitExpiry)
+    ? explicitExpiry
+    : Number.isFinite(createdAt)
+      ? createdAt + PAIRING_INVITATION_TTL_MS
+      : Number.POSITIVE_INFINITY;
+  return expiresAt > Date.now();
+}
+
+function withoutExpiredInvitations(status: FriendsStatus): FriendsStatus {
+  return {
+    ...status,
+    pending: status.pending.filter(invitationIsActive),
+    sent: status.sent.filter(invitationIsActive),
+  };
+}
 
 interface FriendsStatusCache {
   status: FriendsStatus;
@@ -106,7 +130,8 @@ function readFriendsFeedCache(): FriendsFeedCache | null {
 
 /** Last good status — the tab paints this instantly, then revalidates. */
 export function getCachedFriends(): FriendsStatus {
-  return readFriendsStatusCache()?.status ?? EMPTY_STATUS;
+  const status = readFriendsStatusCache()?.status ?? EMPTY_STATUS;
+  return withoutExpiredInvitations(status);
 }
 
 /** Last good Messages feed. */
@@ -176,7 +201,7 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
         sent?: SentRequest[];
       }>(`/api/friends/status?userId=${encodeURIComponent(userId)}&localDate=${today}`);
       if (!data.success) return getCachedFriends();
-      const status: FriendsStatus = {
+      const status = withoutExpiredInvitations({
         inviteCode: data.inviteCode ?? null,
         friends: (data.friends || []).map((f) => ({
           ...f,
@@ -184,7 +209,7 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
         })),
         pending: data.pending || [],
         sent: data.sent || [],
-      };
+      });
       storage.set(kFriendsStatus.name, JSON.stringify({
         status,
         fetchedAtMs: Date.now(),

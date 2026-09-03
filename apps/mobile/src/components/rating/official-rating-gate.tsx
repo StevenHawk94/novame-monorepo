@@ -4,7 +4,7 @@ import { router, useSegments } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 
 import { subscribeOfficialRatingRequest } from '@/lib/official-rating-prompt';
-import { subscribeReflectionPaywallRequest } from '@/lib/reflection-paywall-count';
+import { getNextReflectionPaywallVariant, subscribeReflectionPaywallRequest } from '@/lib/reflection-paywall-count';
 import { isNavigationTransitionBusy, useRatingTransitionBusy } from '@/lib/rating-navigation';
 import { useAppDialogVisible } from '@/components/ui/app-dialog';
 import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
@@ -101,7 +101,10 @@ export function OfficialRatingGate() {
         eligibility.current.paywall = false;
         eligibility.current.rating = false;
         try {
-          router.push('/(main)/(modals)/reflection-plus-paywall' as never);
+          router.push({
+            pathname: '/(main)/(modals)/reflection-plus-paywall',
+            params: { variant: getNextReflectionPaywallVariant() },
+          } as never);
           // Recovery only: no delay before opening and no screen-wide lock.
           // If navigation is rejected, the next eligible visit can retry.
           clearTimeout(presentationRecovery.current);

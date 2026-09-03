@@ -8,7 +8,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
-import { HowItWorksOverlay } from '@/components/main/how-it-works-overlay';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { BACKGROUNDS, FRIEND_ICONS, ICONS } from '@/lib/icons';
 import { ItemSprite } from '@/components/ui/item-sprite';
@@ -49,7 +48,7 @@ export default function FriendsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const maxTiles = width < 400 ? 3 : 4;
   // Paired-card tile sizing (mock 2026-08-08): tiles fill the full row width
   // edge-to-edge. Inner width = window − panel margins/padding − card padding;
@@ -67,7 +66,6 @@ export default function FriendsScreen() {
   const [nextFeedId, setNextFeedId] = useState(initialFeedPage.nextBeforeId ?? null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
-  const [howItWorks, setHowItWorks] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
@@ -82,7 +80,10 @@ export default function FriendsScreen() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    void fetchFriends().then(setStatus);
+    // Invitations expire after 48 hours. Bypass the normal short cache whenever
+    // this screen regains focus so an expired request cannot keep the UI stuck
+    // in Pending after the user returns to Paired.
+    void fetchFriends({ force: true }).then(setStatus);
     void fetchGoodVibeDailyStatus().then((dailyStatus) => {
       if (dailyStatus) setGoodVibeStatus(dailyStatus);
     });
@@ -118,6 +119,27 @@ export default function FriendsScreen() {
   // small invalidation event. This updates the pending badge/list immediately
   // without refreshing the feed or changing the normal five-minute cache.
   useEffect(() => subscribeFriendshipRealtime(setStatus), []);
+
+  const nextInvitationExpiryAt = [...status.pending, ...status.sent].reduce((earliest, request) => {
+    const expiresAt = request.expiresAt
+      ? Date.parse(request.expiresAt)
+      : request.createdAt
+        ? Date.parse(request.createdAt) + 48 * 60 * 60_000
+        : Number.POSITIVE_INFINITY;
+    return Number.isFinite(expiresAt) ? Math.min(earliest, expiresAt) : earliest;
+  }, Number.POSITIVE_INFINITY);
+
+  // Keep an already-open Paired page correct at the exact expiry boundary.
+  // The API performs the authoritative cleanup; this timer only schedules the
+  // refresh instead of trying to mutate relationship state on-device.
+  useEffect(() => {
+    if (!Number.isFinite(nextInvitationExpiryAt)) return undefined;
+    const delay = Math.max(0, nextInvitationExpiryAt - Date.now() + 250);
+    const timer = setTimeout(() => {
+      void fetchFriends({ force: true }).then(setStatus);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [nextInvitationExpiryAt]);
 
   function onPrivacyGear() {
     void haptics.pageOpen();
@@ -174,6 +196,9 @@ export default function FriendsScreen() {
       load();
     } else if (res.error === 'already_paired' || res.error === 'requester_already_paired') {
       appAlert('Pairing unavailable', 'One of you is already paired. Refresh to see the latest status.');
+      load();
+    } else if (res.error === 'invitation_expired') {
+      appAlert('Invitation expired', 'This invitation was not accepted within 48 hours. Ask your friend to send a new one.');
       load();
     } else {
       appAlert('Could not accept', 'Please check your connection and try again.');
@@ -271,10 +296,10 @@ export default function FriendsScreen() {
 
         {paired ? (
           <>
-            {/* cream messages panel BELOW the banner art (mock 2026-08-08):
-                the meadow/mailbox stays fully visible; the feed scrolls
-                inside the panel underneath it. */}
-            <View style={[styles.panel, { marginTop: Math.max(110, Math.round(height * 0.17)) }]}>
+            {/* Fill the usable space below the paired tools. Equal 8pt gaps
+                above the icons and below them keep the panel aligned to the
+                safe area while leaving the maximum room for reflections. */}
+            <View style={styles.panel}>
               <View style={styles.panelHeader}>
                 <View style={styles.listDot}>
                   <MaterialIcons name="menu" size={13} color="#FFFFFF" />
@@ -375,8 +400,14 @@ export default function FriendsScreen() {
               </ScrollView>
             ) : (
               <View style={styles.emptyWrap}>
-                {addPill}
-                {status.sent.length > 0 ? (
+                {status.sent.length === 0 ? (
+                  <View style={styles.defaultInviteContent}>
+                    {addPill}
+                    <Text style={styles.emptyInvite}>
+                      Pair with some you care and love,{'\n'}then create memories together!
+                    </Text>
+                  </View>
+                ) : (
                   <View style={styles.sentList}>
                     {status.sent.map((req) => (
                       <View key={req.friendshipId} style={styles.pendingCard}>
@@ -387,18 +418,11 @@ export default function FriendsScreen() {
                         </View>
                       </View>
                     ))}
+                    <Text style={styles.emptyInvite}>
+                      Pair with some you care and love,{'\n'}then create memories together!
+                    </Text>
                   </View>
-                ) : null}
-                <Text style={styles.emptyInvite}>
-                  Pair with some you care and love,{'\n'}then create memories together!
-                </Text>
-                <Pressable
-                  onPress={() => { void haptics.pageOpen(); setHowItWorks(true); }}
-                  style={({ pressed }) => [styles.demoBtn, pressed && { opacity: 0.85 }]}
-                >
-                  <MaterialIcons name="auto-awesome" size={17} color="#FFF6E8" />
-                  <Text style={styles.demoBtnText}>How It Works</Text>
-                </Pressable>
+                )}
               </View>
             )}
             {shownFeed.length > 0 && (
@@ -434,7 +458,6 @@ export default function FriendsScreen() {
           </View>
         )}
       </SafeAreaView>
-      {howItWorks && <HowItWorksOverlay onClose={() => setHowItWorks(false)} />}
       <DateRangeCalendar
         visible={calendarOpen}
         start={rangeStart}
@@ -518,9 +541,9 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#6B4226' },
 
-  headerRow: { height: 52, justifyContent: 'center' },
+  headerRow: { height: 56, justifyContent: 'center' },
   headerRowOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 2 },
-  headerIcons: { position: 'absolute', right: 10, top: 0, flexDirection: 'row', gap: 6 },
+  headerIcons: { position: 'absolute', right: 10, top: 8, flexDirection: 'row', gap: 6 },
   iconBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   gearIcon: { width: 44, height: 44 },
   calendarHeaderIcon: { width: 44, height: 44 },
@@ -535,27 +558,15 @@ const styles = StyleSheet.create({
   addPillText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
   pillUnderTitle: { marginTop: 6 },
 
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  defaultInviteContent: { width: '100%', alignItems: 'center', justifyContent: 'center', gap: 22 },
   emptyInvite: {
     fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF',
     textAlign: 'center', lineHeight: 27,
   },
-  demoBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,246,232,0.18)', borderWidth: 1.5, borderColor: 'rgba(255,246,232,0.55)',
-    borderRadius: 22, paddingHorizontal: 18, paddingVertical: 11,
-  },
-  demoBtnText: { fontSize: 15, fontFamily: 'Inter_700Bold', color: '#FFF6E8' },
-  demoEndBtn: { backgroundColor: '#4A3220', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
-  demoEndText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_700Bold' },
-  demoHint: {
-    fontSize: 12.5, fontFamily: 'Inter_500Medium', color: '#8A7A63',
-    textAlign: 'center', lineHeight: 18, marginBottom: 4, paddingHorizontal: 8,
-  },
-
   pendingWrap: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 24, gap: 16 },
   pendingTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
-  sentList: { alignSelf: 'stretch', paddingHorizontal: 16, gap: 12 },
+  sentList: { alignSelf: 'stretch', paddingHorizontal: 16, gap: 22 },
   sentBadge: { backgroundColor: '#F0E7D8', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
   sentBadgeText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#8A6B3F' },
   pendingCard: {
@@ -571,7 +582,7 @@ const styles = StyleSheet.create({
   acceptText: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   panel: {
-    flex: 1, marginHorizontal: 12, marginTop: 16, marginBottom: 8,
+    flex: 1, marginHorizontal: 12, marginTop: 8, marginBottom: 8,
     backgroundColor: '#F5EBDD', borderRadius: 30, padding: 14,
   },
   panelHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },

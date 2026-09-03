@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { expirePairingInvitations } from '@/lib/pairing-invitations'
 
 export const runtime = 'edge'
 
@@ -100,6 +101,11 @@ export async function POST(request) {
       ? relationshipSince
       : null
 
+    // An invitation occupies the requester's only outgoing slot for 48 hours.
+    // Expire the old lease before checking that slot so the user can start a
+    // fresh invitation immediately after the deadline.
+    await expirePairingInvitations(supabase, userId)
+
     // Pairings, not historical friendship rows, are the source of truth for
     // the single active relationship. Unpairing intentionally preserves all
     // friendship and memory data, so old accepted rows must not consume a
@@ -110,6 +116,18 @@ export async function POST(request) {
     ])
     if (mine) return NextResponse.json({ error: 'already_paired' }, { status: 409 })
     if (theirs) return NextResponse.json({ error: 'target_already_paired' }, { status: 409 })
+
+    const { data: outgoing, error: outgoingError } = await supabase
+      .from('friendships')
+      .select('id')
+      .eq('status', 'pending')
+      .eq('requested_by', userId)
+      .limit(1)
+      .maybeSingle()
+    if (outgoingError) throw outgoingError
+    if (outgoing) {
+      return NextResponse.json({ error: 'already_pending' }, { status: 409 })
+    }
 
     // Canonical order.
     const [ua, ub] = userId < target.id ? [userId, target.id] : [target.id, userId]
@@ -134,6 +152,9 @@ export async function POST(request) {
         created_at: new Date().toISOString(),
       }).eq('id', existing.id)
       if (updateErr) {
+        if (updateErr.code === '23505') {
+          return NextResponse.json({ error: 'already_pending' }, { status: 409 })
+        }
         console.error('[friends/add] reinvite error:', updateErr.message)
         return NextResponse.json({ error: 'Failed' }, { status: 500 })
       }
@@ -145,6 +166,9 @@ export async function POST(request) {
       relationship: rel, relationship_since: since,
     })
     if (insErr) {
+      if (insErr.code === '23505') {
+        return NextResponse.json({ error: 'already_pending' }, { status: 409 })
+      }
       console.error('[friends/add] insert error:', insErr.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }

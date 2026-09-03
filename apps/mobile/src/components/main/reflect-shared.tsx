@@ -34,6 +34,7 @@ import { ItemSprite } from '@/components/ui/item-sprite';
 import { itemDisplayName, mergedItemDictionary } from '@/lib/remote-items';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import {
+  getNextReflectionPaywallVariant,
   incrementReflectionPaywallCount,
   shouldShowReflectionPaywall,
 } from '@/lib/reflection-paywall-count';
@@ -323,7 +324,10 @@ export function ReflectResultView({
     if (requestOfficialRating) emitOfficialRatingRequest();
     if (showReflectionPaywall) {
       setTimeout(() => {
-        router.push('/(main)/(modals)/reflection-plus-paywall' as never);
+        router.push({
+          pathname: '/(main)/(modals)/reflection-plus-paywall',
+          params: { variant: getNextReflectionPaywallVariant() },
+        } as never);
       }, 1000);
     }
   }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { autoGrantDuoBothWays } from '@/lib/duo-auto'
+import { expirePairingInvitations, PAIRING_INVITATION_TTL_MS } from '@/lib/pairing-invitations'
 
 export const runtime = 'edge'
 
@@ -40,7 +41,7 @@ export async function POST(request) {
 
     const { data: fr } = await supabase
       .from('friendships')
-      .select('id, user_a, user_b, status, requested_by, relationship, relationship_since, accepted_at')
+      .select('id, user_a, user_b, status, requested_by, relationship, relationship_since, accepted_at, created_at')
       .eq('id', friendshipId)
       .maybeSingle()
     if (!fr) {
@@ -50,6 +51,10 @@ export async function POST(request) {
     const isParty = fr.user_a === userId || fr.user_b === userId
     if (!isParty || fr.requested_by === userId || fr.status !== 'pending') {
       return NextResponse.json({ error: 'not_allowed' }, { status: 403 })
+    }
+    if (new Date(fr.created_at).getTime() + PAIRING_INVITATION_TTL_MS <= Date.now()) {
+      await expirePairingInvitations(supabase, userId)
+      return NextResponse.json({ error: 'invitation_expired' }, { status: 410 })
     }
 
     if (action === 'accept') {

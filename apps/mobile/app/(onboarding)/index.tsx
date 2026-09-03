@@ -126,14 +126,6 @@ const BLOCKER_FEEDBACK: Record<string, { title: string; body: string }> = {
   },
 };
 
-// Ob8 mirrors the four Connection sections users see after pairing.
-const INSIGHT_PILLS = [
-  { label: 'Catch what you missed', icon: ICONS.connect1 },
-  { label: 'Understand their world lately', icon: ICONS.connect2 },
-  { label: 'Find a natural way in', icon: ICONS.connect3 },
-  { label: 'See what’s unfolding between you', icon: ICONS.connect4 },
-];
-
 // Ob5's tappable sample reflection (Mom's card). Keep these IDs on the
 // current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
 // art and render as empty tiles.
@@ -595,7 +587,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </OnboardingPage>
 
-        <OnboardingPage id="insights" imageCount={INSIGHT_PILLS.length}>
+        <OnboardingPage id="insights" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>The little things tell a bigger story</Text>
@@ -603,14 +595,7 @@ export default function OnboardingScreen() {
               Turns everyday reflections into moments worth noticing, natural ways to reach out,
               and playful patterns between you.
             </Text>
-            <View style={styles.insightGrid}>
-              {INSIGHT_PILLS.map((t) => (
-                <View key={t.label} style={styles.insightPill}>
-                  <OnboardingImage source={t.icon} style={styles.insightIcon} contentFit="contain" />
-                  <Text style={styles.insightPillText} numberOfLines={2}>{t.label}</Text>
-                </View>
-              ))}
-            </View>
+            <OnboardingImage source={ICONS.obInsights} style={styles.insightsImage} contentFit="contain" />
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -1069,19 +1054,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center',
   },
   howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
-  // Same visual system as the Connection tab's unpaired teaser pills.
-  insightGrid: {
-    width: '100%', gap: 14, marginTop: 30,
-  },
-  insightPill: {
-    width: '100%', backgroundColor: '#FFFFFF', borderRadius: 18,
-    flexDirection: 'row', alignItems: 'center', gap: 9,
-    paddingVertical: 14, paddingHorizontal: 22, minHeight: 68,
-    shadowColor: '#C9A97C', shadowOpacity: 0.8, shadowRadius: 0, shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  insightIcon: { width: 38, height: 38 },
-  insightPillText: { flex: 1, fontSize: 16, fontFamily: 'Inter_700Bold', color: '#161311' },
+  insightsImage: { width: '100%', aspectRatio: 1, alignSelf: 'center', marginTop: 24 },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },

@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { secureCode } from '@/lib/secure-random'
 import { dateKeyInTimeZone } from '@/lib/user-local-date'
+import { expirePairingInvitations, pairingInvitationExpiresAt } from '@/lib/pairing-invitations'
 
 export const runtime = 'edge'
 
@@ -68,6 +69,11 @@ export async function GET(request) {
       }
     }
 
+    // Pending invitations are leases, not permanent relationship state. Clear
+    // expired rows before building this response so both parties return to the
+    // default flow after 48 hours.
+    await expirePairingInvitations(supabase, userId)
+
     // Friendships involving me.
     const { data: rows, error: rowsError } = await supabase
       .from('friendships')
@@ -88,9 +94,21 @@ export async function GET(request) {
     for (const r of rows || []) {
       const other = r.user_a === userId ? r.user_b : r.user_a
       if (r.status === 'pending' && r.requested_by !== userId) {
-        pending.push({ friendshipId: r.id, userId: other, relationship: r.relationship ?? null })
+        pending.push({
+          friendshipId: r.id,
+          userId: other,
+          relationship: r.relationship ?? null,
+          createdAt: r.created_at,
+          expiresAt: pairingInvitationExpiresAt(r.created_at),
+        })
       } else if (r.status === 'pending' && r.requested_by === userId) {
-        sentRaw.push({ friendshipId: r.id, userId: other, createdAt: r.created_at, relationship: r.relationship ?? null })
+        sentRaw.push({
+          friendshipId: r.id,
+          userId: other,
+          createdAt: r.created_at,
+          expiresAt: pairingInvitationExpiresAt(r.created_at),
+          relationship: r.relationship ?? null,
+        })
       }
     }
 
@@ -147,6 +165,8 @@ export async function GET(request) {
           avatarUrl: profById[p.userId]?.avatar_url || '',
           isDefaultAvatar: profById[p.userId]?.is_default_avatar !== false,
           relationship: p.relationship ?? null,
+          createdAt: p.createdAt,
+          expiresAt: p.expiresAt,
         })
       }
     }
@@ -166,6 +186,7 @@ export async function GET(request) {
           avatarUrl: profById[p.userId]?.avatar_url || '',
           isDefaultAvatar: profById[p.userId]?.is_default_avatar !== false,
           createdAt: p.createdAt,
+          expiresAt: p.expiresAt,
         })
       }
     }
