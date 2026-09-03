@@ -71,3 +71,6 @@ AuthKey_*.p8
 # UI design reference images (local only, 48MB)
 design-refs/
 __pycache__/
+# Firebase Admin / FCM V1 service-account private keys (never commit)
+**/*firebase-adminsdk*.json
+**/firebase-fcm-service-account*.json

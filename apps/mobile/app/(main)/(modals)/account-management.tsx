@@ -214,7 +214,7 @@ export default function AccountManagementModal() {
 
   const handleSaveName = async () => {
     if (!userId || busy) return;
-    const trimmed = nameInput.trim().slice(0, 16);
+    const trimmed = nameInput.trim().slice(0, 15);
     if (!trimmed) {
       setStatus({ kind: 'error', text: 'Display name cannot be empty.' });
       return;
@@ -434,15 +434,15 @@ export default function AccountManagementModal() {
           <View style={styles.sectionBody}>
             <TextInput
               value={nameInput}
-              onChangeText={(t) => setNameInput(t.slice(0, 16))}
+              onChangeText={(t) => setNameInput(t.slice(0, 15))}
               placeholder="Your name"
               placeholderTextColor="#B8A588"
-              maxLength={16}
+              maxLength={15}
               style={styles.input}
               autoCapitalize="words"
               autoCorrect={false}
             />
-            <Text style={styles.charCount}>{nameInput.length}/16</Text>
+            <Text style={styles.charCount}>{nameInput.length}/15</Text>
             <PrimaryBtn label="Save" busy={busy} onPress={handleSaveName} />
           </View>
         ) : null}

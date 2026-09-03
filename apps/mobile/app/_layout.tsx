@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -62,7 +62,11 @@ import {
   clearOnSignOut,
   debugAccountKeysRemaining,
 } from '@/shared/storage';
-import { syncRemoteNotificationRegistration } from '@/lib/notification-settings';
+import {
+  reconcileDailyReminderSchedule,
+  syncRemoteNotificationRegistration,
+} from '@/lib/notification-settings';
+import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -158,6 +162,7 @@ function RootLayout() {
   // covers cold starts (process launch), where INITIAL_SESSION is
   // a no-op on the onAuthStateChange listener.
   const [isReady, setIsReady] = useState(false);
+  const handledNotificationResponses = useRef(new Set<string>());
 
   // Force-update (hard update) gate. Checked in the background on mount,
   // INDEPENDENT of the prewarm gate above -- checkForceUpdate() fails open on
@@ -214,6 +219,34 @@ function RootLayout() {
         setFontsLoaded(true);
       });
   }, []);
+
+  useEffect(() => {
+    if (!isReady || !fontsLoaded) return;
+    let active = true;
+    const openNotification = (response: Notifications.NotificationResponse | null) => {
+      if (!active || !response) return;
+      const data = response.notification.request.content.data as { type?: unknown } | null;
+      if (data?.type !== 'partner_reflect') return;
+      const responseId = response.notification.request.identifier;
+      if (handledNotificationResponses.current.has(responseId)) return;
+      handledNotificationResponses.current.add(responseId);
+      emitHomeRefresh();
+      // Let expo-router finish mounting its root navigator on a cold launch,
+      // then select Home. The pending refresh pulse survives if Home has not
+      // mounted yet and forces a network read as soon as it does.
+      setTimeout(() => {
+        if (active) router.navigate('/(main)/(tabs)' as never);
+      }, 0);
+      Notifications.clearLastNotificationResponse();
+    };
+
+    openNotification(Notifications.getLastNotificationResponse());
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(openNotification);
+    return () => {
+      active = false;
+      responseSubscription.remove();
+    };
+  }, [fontsLoaded, isReady]);
 
   // Cold start restores the local session, then renders immediately. Remote
   // caches refresh in the background under their own lazy TTLs, so a slow
@@ -300,6 +333,7 @@ function RootLayout() {
         // force-close naturally resumes only the still-missing files.
         resumeDownloadQueue();
         void touchActivity();
+        void reconcileDailyReminderSchedule();
         void syncRemoteNotificationRegistration();
         void checkContentVersionInBackground();
         void resumeSubscriptionRealtime().catch((error) => {

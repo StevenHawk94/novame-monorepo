@@ -7,20 +7,34 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Shader
 import android.net.Uri
+import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.max
 
 class BurrowWidgetProvider : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     ids.forEach { updateWidget(context, manager, it) }
+  }
+
+  override fun onAppWidgetOptionsChanged(
+    context: Context,
+    manager: AppWidgetManager,
+    widgetId: Int,
+    newOptions: Bundle,
+  ) {
+    updateWidget(context, manager, widgetId)
   }
 
   companion object {
@@ -53,26 +67,56 @@ class BurrowWidgetProvider : AppWidgetProvider() {
       ).also { if (it !== decoded) decoded.recycle() }
     }.getOrNull()
 
-    private fun gridBackground(): Bitmap {
-      // Fixed low-resolution texture keeps the complete RemoteViews payload
-      // comfortably below Binder limits while fitXY adapts to launcher sizes.
-      val width = 320
-      val height = 150
+    private fun decodeCircularAvatar(path: String, targetPx: Int): Bitmap? = runCatching {
+      val source = decodeWidgetBitmap(path, targetPx * 2) ?: return@runCatching null
+      val output = Bitmap.createBitmap(targetPx, targetPx, Bitmap.Config.ARGB_8888)
+      val shader = BitmapShader(source, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+      val scale = max(targetPx.toFloat() / source.width, targetPx.toFloat() / source.height)
+      shader.setLocalMatrix(Matrix().apply {
+        setScale(scale, scale)
+        postTranslate(
+          (targetPx - source.width * scale) / 2f,
+          (targetPx - source.height * scale) / 2f,
+        )
+      })
+      Canvas(output).drawCircle(
+        targetPx / 2f,
+        targetPx / 2f,
+        targetPx / 2f,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader },
+      )
+      source.recycle()
+      output
+    }.getOrNull()
+
+    private fun widgetSizeDp(manager: AppWidgetManager, widgetId: Int): Pair<Int, Int> {
+      val options = manager.getAppWidgetOptions(widgetId)
+      // AppWidgetManager reports these dimensions in dp. Drawing at that
+      // logical size keeps the bitmap small enough for Binder while matching
+      // the launcher's exact aspect ratio, so square grid cells stay square.
+      val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 320)
+        .coerceIn(250, 600)
+      val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 80)
+        .coerceIn(56, 160)
+      return width to height
+    }
+
+    private fun gridBackground(width: Int, height: Int): Bitmap {
       val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
       val canvas = Canvas(bitmap)
       val rounded = Path().apply {
         addRoundRect(0f, 0f, width.toFloat(), height.toFloat(), 24f, 24f, Path.Direction.CW)
       }
       canvas.clipPath(rounded)
-      canvas.drawColor(android.graphics.Color.rgb(248, 218, 177))
+      canvas.drawColor(android.graphics.Color.rgb(249, 220, 184))
       val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.argb(105, 255, 247, 232)
-        strokeWidth = 1.5f
+        color = android.graphics.Color.rgb(255, 236, 200)
+        strokeWidth = 2f
       }
-      var x = 22f
-      while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), paint); x += 28f }
-      var y = 22f
-      while (y < height) { canvas.drawLine(0f, y, width.toFloat(), y, paint); y += 28f }
+      var x = 0f
+      while (x <= width) { canvas.drawLine(x, 0f, x, height.toFloat(), paint); x += 25f }
+      var y = 0f
+      while (y <= height) { canvas.drawLine(0f, y, width.toFloat(), y, paint); y += 25f }
       return bitmap
     }
 
@@ -102,20 +146,22 @@ class BurrowWidgetProvider : AppWidgetProvider() {
 
     fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
       val views = RemoteViews(context.packageName, R.layout.burrow_widget)
-      views.setImageViewBitmap(R.id.widget_grid_background, gridBackground())
+      val (widgetWidth, widgetHeight) = widgetSizeDp(manager, widgetId)
+      views.setImageViewBitmap(R.id.widget_grid_background, gridBackground(widgetWidth, widgetHeight))
       val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(PAYLOAD_KEY, null)
       val payload = runCatching { raw?.let(::JSONObject) }.getOrNull()
       val state = payload?.optString("state") ?: "unpaired"
       val name = payload?.optString("name").orEmpty()
       val title = when (state) {
         "unpaired" -> "A PLACE FOR TWO"
-        else -> "${name.ifBlank { "YOUR PERSON" }.uppercase()}’S DAY"
+        else -> name.ifBlank { "Your person" }
       }
       views.setTextViewText(R.id.widget_name, title)
       views.setTextViewText(R.id.widget_time, relativeTime(payload?.optString("createdAt").orEmpty()))
 
+      views.setImageViewBitmap(R.id.widget_avatar, null)
       payload?.optString("avatarFile")?.takeIf { it.isNotBlank() }?.let { path ->
-        decodeWidgetBitmap(path, 96)?.let { views.setImageViewBitmap(R.id.widget_avatar, it) }
+        decodeCircularAvatar(path, 96)?.let { views.setImageViewBitmap(R.id.widget_avatar, it) }
       }
       val items = payload?.optJSONArray("items")
       val hasItems = state == "latest" && items != null && items.length() > 0

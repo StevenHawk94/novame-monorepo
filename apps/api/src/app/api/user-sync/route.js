@@ -3,11 +3,11 @@ import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
-// 从邮箱提取用户名（最多16字符）
+// Derive a display name using the same 15-character product limit.
 function getDisplayNameFromEmail(email) {
   if (!email) return null
   const prefix = email.split('@')[0] || ''
-  return prefix.slice(0, 16)
+  return prefix.slice(0, 15)
 }
 
 function getSupabaseAdmin() {
@@ -392,8 +392,7 @@ export async function POST(request) {
       updates.custom_categories = customCategories
     }
     if (displayName !== undefined) {
-      // 限制用户名最多16字符
-      updates.display_name = displayName ? displayName.slice(0, 16) : displayName
+      updates.display_name = displayName ? displayName.slice(0, 15) : displayName
     }
     if (birthday !== undefined) {
       updates.birthday = birthday

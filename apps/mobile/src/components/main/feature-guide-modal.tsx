@@ -108,6 +108,7 @@ export function FeatureGuideModal({
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(0.78)).current;
+  const entranceAnimation = useRef<Animated.CompositeAnimation | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -118,22 +119,26 @@ export function FeatureGuideModal({
       setIconDisplayed(true);
       backdropOpacity.setValue(0);
       cardOpacity.setValue(0);
+      cardScale.setValue(0.78);
       requestedRef.current = true;
       requestModalSlot('guide', owner);
       return () => {
+        entranceAnimation.current?.stop();
+        entranceAnimation.current = null;
         requestedRef.current = false;
         setVisible(false);
         releaseModalSlot('guide', owner);
       };
-    }, [enabled, guide, icon, manual, owner, backdropOpacity, cardOpacity]),
+    }, [enabled, guide, icon, manual, owner, backdropOpacity, cardOpacity, cardScale]),
   );
 
   useEffect(() => {
     setVisible(requestedRef.current && activeModal === 'guide' && ownsModalSlot(owner));
   }, [activeModal, icon, enabled, owner]);
 
-  useEffect(() => {
-    if (!visible || !iconDisplayed) return;
+  const playEntrance = useCallback(() => {
+    if (!requestedRef.current || !iconDisplayed) return;
+    entranceAnimation.current?.stop();
     backdropOpacity.setValue(0);
     cardOpacity.setValue(0);
     cardScale.setValue(0.78);
@@ -170,9 +175,17 @@ export function FeatureGuideModal({
         }),
       ]),
     ]);
-    animation.start();
-    return () => animation.stop();
-  }, [backdropOpacity, cardOpacity, cardScale, visible, iconDisplayed]);
+    entranceAnimation.current = animation;
+    animation.start(({ finished }) => {
+      if (finished && entranceAnimation.current === animation) entranceAnimation.current = null;
+    });
+  }, [backdropOpacity, cardOpacity, cardScale, iconDisplayed]);
+
+  useEffect(() => {
+    if (visible) return;
+    entranceAnimation.current?.stop();
+    entranceAnimation.current = null;
+  }, [visible]);
 
   const dismiss = useCallback(() => {
     if (!requestedRef.current) return;
@@ -198,6 +211,7 @@ export function FeatureGuideModal({
       statusBarTranslucent
       navigationBarTranslucent
       onRequestClose={dismiss}
+      onShow={playEntrance}
     >
       <View style={styles.root} accessibilityViewIsModal>
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />

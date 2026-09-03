@@ -40,12 +40,17 @@
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
+// Keep one coalesced pulse when Home is not mounted yet (notably a cold-start
+// notification tap). A plain event emitter loses that signal before the tab
+// subscribes, which leaves Home rendering its five-minute feed cache.
+let pendingRefresh = false;
 
 /**
  * Triggers all subscribers to refresh their home-tab data.
  * Called by record.tsx and subscription-paywall.tsx on close paths.
  */
 export function emitHomeRefresh(): void {
+  pendingRefresh = true;
   for (const l of listeners) {
     try {
       l();
@@ -54,6 +59,13 @@ export function emitHomeRefresh(): void {
       console.warn('[home-refresh-signal] listener threw:', e);
     }
   }
+}
+
+/** Consume a refresh that arrived while Home was hidden or unmounted. */
+export function consumeHomeRefresh(): boolean {
+  const pending = pendingRefresh;
+  pendingRefresh = false;
+  return pending;
 }
 
 /**

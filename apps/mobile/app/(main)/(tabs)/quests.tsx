@@ -10,6 +10,7 @@ import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { androidTabHeaderTypography } from '@/components/ui/tab-header-typography';
 import { GridBackground } from '@/components/ui/grid-background';
+import { CloverBurst } from '@/components/main/clover-burst';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { haptics } from '@/lib/haptics';
@@ -55,8 +56,10 @@ export default function QuestsScreen() {
   // Optimistic check-off (2026-08-07): the row completes instantly with
   // confetti; the server call reconciles silently in the background.
   const [celebrationRun, setCelebrationRun] = useState({ key: 0, active: false });
+  const [rewardRun, setRewardRun] = useState<{ key: number; taskAmount: number; bonusAmount: number } | null>(null);
   const celebrationPlaying = useRef(false);
   const celebrationKey = useRef(0);
+  const rewardKey = useRef(0);
   const screenActive = useRef(true);
   const pendingPlanReward = useRef<number | null>(null);
   const checkInFlight = useRef(false);
@@ -79,6 +82,8 @@ export default function QuestsScreen() {
         celebrationPlaying.current = false;
         celebrationKey.current += 1;
         setCelebrationRun({ key: celebrationKey.current, active: false });
+        rewardKey.current += 1;
+        setRewardRun(null);
       };
     }, []),
   );
@@ -133,7 +138,15 @@ export default function QuestsScreen() {
     setCelebrationRun({ key: celebrationKey.current, active: true });
     const prevStatus = status;
     const finishingPlan = status.plan.checkedCount + 1 === status.plan.tasks.length;
-    const expectedAward = CLOVERS_PER_TASK + (finishingPlan ? COMPLETION_BONUS : 0);
+    const taskReward = status.plan.tasks[index]?.reward ?? CLOVERS_PER_TASK;
+    rewardKey.current += 1;
+    const currentRewardKey = rewardKey.current;
+    setRewardRun({
+      key: currentRewardKey,
+      taskAmount: taskReward,
+      bonusAmount: finishingPlan ? COMPLETION_BONUS : 0,
+    });
+    const expectedAward = taskReward + (finishingPlan ? COMPLETION_BONUS : 0);
     const award = optimisticCloverAward(expectedAward);
     const tasks = status.plan.tasks.map((t, i) => (i === index ? { ...t, done: true } : t));
     const optimisticStatus: QuestStatus = {
@@ -167,6 +180,7 @@ export default function QuestsScreen() {
           || (finishingPlan && !authoritative.active);
         checkInFlight.current = false;
         if (serverConfirmed) return;
+        setRewardRun((current) => current?.key === currentRewardKey ? null : current);
         if (!screenActive.current) return;
         if (res.error === 'already_checked_today') {
           appAlert('Come back tomorrow', 'You can complete one task per day.');
@@ -199,6 +213,7 @@ export default function QuestsScreen() {
         award.rollback();
         setStatus(prevStatus);
         cacheQuestStatus(prevStatus);
+        setRewardRun((current) => current?.key === currentRewardKey ? null : current);
         if (screenActive.current) appAlert('Could not complete that', 'Please check your connection and try again.');
         console.warn('[quests] completion failed:', error);
       } finally {
@@ -225,6 +240,34 @@ export default function QuestsScreen() {
         }} />
     </View>
   );
+
+  // Match the reward language used by Small Wins and New Lens. On day seven,
+  // keep the task reward and the weekly bonus as two distinct animations so
+  // neither award is hidden inside a combined total.
+  const rewardAnimation = useMemo(() => {
+    if (!rewardRun) return null;
+    const finish = () => {
+      setRewardRun((current) => current?.key === rewardRun.key ? null : current);
+    };
+    return (
+      <View key={`quest-reward-${rewardRun.key}`} style={styles.rewardOverlay} pointerEvents="none">
+        <View style={styles.rewardBurstStack}>
+          <CloverBurst
+            key={`quest-task-reward-${rewardRun.key}`}
+            amount={rewardRun.taskAmount}
+            onDone={rewardRun.bonusAmount > 0 ? undefined : finish}
+          />
+          {rewardRun.bonusAmount > 0 && (
+            <CloverBurst
+              key={`quest-bonus-reward-${rewardRun.key}`}
+              amount={rewardRun.bonusAmount}
+              onDone={finish}
+            />
+          )}
+        </View>
+      </View>
+    );
+  }, [rewardRun]);
 
   // ---- Active plan: 7-day checklist ----
   if (status.active && status.plan) {
@@ -307,6 +350,7 @@ export default function QuestsScreen() {
           <View style={{ height: 24 }} />
         </ScrollView>
         {celebration}
+        {rewardAnimation}
         <FeatureGuideModal guide="quests" />
       </SafeAreaView>
     );
@@ -378,6 +422,7 @@ export default function QuestsScreen() {
       </ScrollView>
       <FeatureGuideModal guide="quests" />
       {celebration}
+      {rewardAnimation}
     </SafeAreaView>
   );
 }
@@ -400,6 +445,16 @@ const styles = StyleSheet.create({
   celebration: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100,
+  },
+  rewardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rewardBurstStack: {
+    alignItems: 'center',
+    gap: 12,
   },
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
   header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },

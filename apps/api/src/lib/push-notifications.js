@@ -5,11 +5,15 @@ const retryAt = (attempts) => new Date(
 ).toISOString()
 
 export async function enqueuePartnerReflectNotification(supabase, userId, reflectId) {
-  const [{ data: visible }, { data: pairing }] = await Promise.all([
+  const [visibleResult, pairingResult] = await Promise.all([
     supabase.from('reflect_items').select('item_id').eq('user_id', userId)
       .eq('reflect_id', reflectId).eq('visible_to_paired', true).limit(1),
     supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle(),
   ])
+  if (visibleResult.error) throw visibleResult.error
+  if (pairingResult.error) throw pairingResult.error
+  const visible = visibleResult.data
+  const pairing = pairingResult.data
   if (!visible?.length || !pairing?.partner_user_id) return false
   const { error } = await supabase.from('notification_outbox').upsert({
     recipient_user_id: pairing.partner_user_id,
@@ -45,7 +49,10 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
       if (tokenError) throw tokenError
       if (!tokens?.length) {
         await supabase.from('notification_outbox').update({
-          status: 'sent', sent_at: now, locked_at: null, last_error: 'no_registered_device',
+          status: attempts >= 6 ? 'failed' : 'retry',
+          next_attempt_at: retryAt(attempts),
+          locked_at: null,
+          last_error: 'no_registered_device',
         }).eq('id', row.id)
         continue
       }
@@ -65,6 +72,7 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
           body: 'A little more of your person’s day is here for you.',
           sound: 'default',
           channelId: 'partner-updates',
+          data: { type: 'partner_reflect', route: 'home' },
         }))),
       })
       if (!response.ok) throw new Error(`expo_push_http_${response.status}`)

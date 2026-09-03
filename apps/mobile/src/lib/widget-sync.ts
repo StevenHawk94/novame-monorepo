@@ -3,6 +3,7 @@ import { Image as ExpoImage } from 'expo-image';
 
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
+import { TAP_PERSON_IMAGES } from './tap-person-images';
 import { getDefaultAvatar } from './avatar';
 import { remoteImageUri } from './remote-items';
 import type { FeedEntry, PairingStatus } from './friends-api';
@@ -48,7 +49,10 @@ export async function syncWidgetLatestFriend(
           // an older bundled icon from lingering after an admin replacement.
           src = await ExpoImage.getCachePathAsync(src) ?? src;
         }
-        const mod = ITEM_IMAGES[itemId];
+        // Tap Your Day uses its own curated asset table. Without this lookup,
+        // those ids fell through to dictionary emoji (for example Family ->
+        // the system 🐰), so the widget did not match the in-app Paired UI.
+        const mod = ITEM_IMAGES[itemId] ?? TAP_PERSON_IMAGES[itemId];
         if (!src && mod) {
           try {
             const asset = Asset.fromModule(mod);

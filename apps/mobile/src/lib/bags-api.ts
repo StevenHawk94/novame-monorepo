@@ -17,6 +17,7 @@ import { supabase } from './supabase';
 const MINE_CACHE_MAX_AGE_MS = 15 * 60_000;
 const THEIR_CACHE_MAX_AGE_MS = 5 * 60_000;
 const BAGS_PAGE_SIZE = 100;
+const THEIR_CACHE_VERSION = 4;
 
 export interface ItemMemory {
   excerpt: string;
@@ -175,7 +176,7 @@ function readTheirCache(): TheirBagsCache | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as TheirBagsCache;
-    if (parsed.version !== 3) {
+    if (parsed.version !== THEIR_CACHE_VERSION) {
       storage.remove(kTheirBagsState.name);
       return null;
     }
@@ -342,7 +343,7 @@ export function cacheTheirItemsFromFeed(
   for (const entry of entries) {
     // The Paired feed can contain matched items without a saved Memory. Theirs
     // mirrors the partner's Mine collection, so only a visible, non-blank
-    // memory detail is allowed to create or increment a tile.
+    // memory detail is allowed to create a missing tile.
     const visibleMemoryByItem = new Map(
       (entry.details ?? [])
         .map((detail) => [detail.itemId, detail.text.trim()] as const)
@@ -353,11 +354,14 @@ export function cacheTheirItemsFromFeed(
       const stableKey = `${entry.reflectId}:${itemId}`;
       const alreadyIncluded = seenKeys.has(stableKey);
       if (current) {
-        if (!alreadyIncluded) current.count += 1;
+        // Feed and Bags are fetched independently and commonly contain the
+        // same just-published reflect. The feed cannot know the authoritative
+        // all-history count, so incrementing here briefly painted x2 before
+        // the Bags endpoint corrected it back to x1. Preserve the server
+        // count and only cache the visible detail optimistically.
         if (!alreadyIncluded) {
           current.memories = [{ excerpt: detail, rawExcerpt: detail, reflectId: entry.reflectId, createdAt: entry.createdAt }, ...current.memories];
         }
-        if (entry.createdAt > current.firstSeenAt) current.firstSeenAt = entry.createdAt;
       } else {
         const created: WireItem = {
           itemId,
@@ -373,10 +377,12 @@ export function cacheTheirItemsFromFeed(
   }
   items.sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt));
   storage.set(kTheirBagsState.name, JSON.stringify({
-    version: 3,
+    version: THEIR_CACHE_VERSION,
     ownerUserId,
     items,
-    fetchedAt: cached?.ownerUserId === ownerUserId ? cached.fetchedAt : 0,
+    // A feed update means the collection count may have changed. Force the
+    // next Memories visit to obtain authoritative grouped counts.
+    fetchedAt: 0,
     historyComplete: cached?.ownerUserId === ownerUserId ? cached.historyComplete ?? false : false,
     nextBeforeFirstSeenAt: cached?.ownerUserId === ownerUserId ? cached.nextBeforeFirstSeenAt ?? null : null,
     nextBeforeItemId: cached?.ownerUserId === ownerUserId ? cached.nextBeforeItemId ?? null : null,
@@ -458,7 +464,7 @@ async function fetchBagsFirstPage(
     if (scope === 'their') {
       const previous = readTheirCache();
       storage.set(kTheirBagsState.name, JSON.stringify({
-        version: 3,
+        version: THEIR_CACHE_VERSION,
         ownerUserId: data.ownerUserId ?? null,
         // A first-page response is authoritative. Do not merge old rows back:
         // privacy edits and deleted/blank Memories must disappear immediately.
@@ -544,7 +550,7 @@ export async function fetchMoreBags(
       const latest = readTheirCache();
       const sameOwner = Boolean(latest && latest.ownerUserId === data.ownerUserId);
       storage.set(kTheirBagsState.name, JSON.stringify({
-        version: 3,
+        version: THEIR_CACHE_VERSION,
         ownerUserId: data.ownerUserId ?? null,
         items: mergeWireItems(sameOwner && latest ? latest.items : [], data.items),
         fetchedAt: sameOwner && latest ? latest.fetchedAt : Date.now(),

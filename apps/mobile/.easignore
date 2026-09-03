@@ -57,6 +57,10 @@ video-manifest.json
 *.p8
 AuthKey_*.p8
 
+# Firebase Admin / FCM V1 service-account private keys
+**/*firebase-adminsdk*.json
+**/firebase-fcm-service-account*.json
+
 # Original Tap Your Day sheet; only the five cropped WebPs are runtime assets.
 /tools/item-source/tap-your-day/
 

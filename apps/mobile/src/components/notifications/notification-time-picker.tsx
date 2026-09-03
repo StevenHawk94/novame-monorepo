@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -149,27 +149,9 @@ function StepButton({
   direction: 'up' | 'down';
   onPress: () => void;
 }) {
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const repeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stop = () => {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-    if (repeatTimer.current) clearInterval(repeatTimer.current);
-    holdTimer.current = null;
-    repeatTimer.current = null;
-  };
-
-  useEffect(() => stop, []);
-
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => {
-        holdTimer.current = setTimeout(() => {
-          repeatTimer.current = setInterval(onPress, 80);
-        }, 350);
-      }}
-      onPressOut={stop}
       style={({ pressed }) => [styles.stepButton, pressed && { opacity: 0.6 }]}
     >
       <MaterialIcons

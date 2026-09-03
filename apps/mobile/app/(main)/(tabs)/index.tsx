@@ -33,6 +33,7 @@ import { storage } from '@/lib/storage';
 import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
 import { syncWidgetLatestFriend } from '@/lib/widget-sync';
 import { getCachedFriendFeed } from '@/lib/friends-api';
+import { consumeHomeRefresh, subscribeHomeRefresh } from '@/lib/home-refresh-signal';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -142,6 +143,26 @@ export default function HomeScreen() {
     recordLayout({ safeHeight: event.nativeEvent.layout.height });
   }, [recordLayout]);
 
+  const refreshHomeBubbles = useCallback(async (force = false) => {
+    const nextBubbles = await loadTodayBubbles({ force });
+    setBubbles(nextBubbles);
+    const pairing = getCachedPairing();
+    const page = getCachedFriendFeedPage();
+    const partner = pairing?.paired ? pairing.partner : null;
+    if (!partner || nextBubbles.length === 0 || page.hasMore || page.feed.length !== 1) return;
+    if (storage.getString(kFirstPartnerReflectGuide.name) === partner.userId) return;
+    setFirstPartnerReflect({ partnerId: partner.userId, name: partner.displayName || 'YOUR PERSON' });
+  }, []);
+
+  // Notification taps and modal close paths can reveal Home without causing a
+  // tab focus transition. Refresh immediately and bypass the five-minute feed
+  // cache; consumeHomeRefresh also preserves cold-start taps until this screen
+  // has mounted.
+  useEffect(() => subscribeHomeRefresh(() => {
+    consumeHomeRefresh();
+    void refreshHomeBubbles(true);
+  }), [refreshHomeBubbles]);
+
   useFocusEffect(
     useCallback(() => {
       // Cache refreshes are independent of the bounded navigation tap guard.
@@ -151,19 +172,11 @@ export default function HomeScreen() {
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
-      void loadTodayBubbles().then((nextBubbles) => {
-        setBubbles(nextBubbles);
-        const pairing = getCachedPairing();
-        const page = getCachedFriendFeedPage();
-        const partner = pairing?.paired ? pairing.partner : null;
-        if (!partner || nextBubbles.length === 0 || page.hasMore || page.feed.length !== 1) return;
-        if (storage.getString(kFirstPartnerReflectGuide.name) === partner.userId) return;
-        setFirstPartnerReflect({ partnerId: partner.userId, name: partner.displayName || 'YOUR PERSON' });
-      });
+      void refreshHomeBubbles(consumeHomeRefresh());
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-    }, [applyAiBubble, subscriptionTier]),
+    }, [applyAiBubble, refreshHomeBubbles, subscriptionTier]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -307,7 +320,7 @@ export default function HomeScreen() {
           guide="memories"
           manual
           enabled={!homeEntry.pending && !!firstPartnerReflect}
-          title={`${firstPartnerReflect?.name ?? 'YOUR PERSON'} JUST REFLECTED FOR THE FIRST TIME`}
+          title={`${firstPartnerReflect?.name ?? 'your person'} just reflected for the first time`}
           body="Every reflection becomes a bubble of little moments. Pop one to see what’s inside."
           button="Pop a Bubble"
           onDismiss={() => {

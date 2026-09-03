@@ -76,6 +76,7 @@ interface FriendsFeedCache {
 let friendsStatusRequest: Promise<FriendsStatus> | null = null;
 let friendsStatusForcedFollowup: Promise<FriendsStatus> | null = null;
 let friendsFeedRequest: Promise<FeedEntry[]> | null = null;
+let friendsFeedForcedFollowup: Promise<FeedEntry[]> | null = null;
 
 function readFriendsStatusCache(): FriendsStatusCache | null {
   try {
@@ -321,7 +322,18 @@ export function fetchFriendFeedPage(
     && Date.now() - cached.fetchedAtMs < FRIENDS_CACHE_MAX_AGE_MS) {
     return Promise.resolve(getCachedFriendFeedPage());
   }
-  if (!range && friendsFeedRequest) return friendsFeedRequest.then(() => getCachedFriendFeedPage());
+  if (!range && friendsFeedRequest) {
+    if (!options?.force) return friendsFeedRequest.then(() => getCachedFriendFeedPage());
+    // A push tap is an explicit invalidation signal. If an older feed request
+    // is already in flight, queue exactly one forced follow-up rather than
+    // reusing the stale snapshot that caused the missing Home bubbles.
+    if (!friendsFeedForcedFollowup) {
+      friendsFeedForcedFollowup = friendsFeedRequest
+        .then(() => fetchFriendFeed(undefined, { force: true }))
+        .finally(() => { friendsFeedForcedFollowup = null; });
+    }
+    return friendsFeedForcedFollowup.then(() => getCachedFriendFeedPage());
+  }
   const request = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;

@@ -111,12 +111,12 @@ export async function submitBubblePop(bubble: MemoryBubble): Promise<number> {
  * ordered, capped at MAX_BUBBLES, minus the ones already popped. Network
  * failure or zero friends simply yields [] — Home renders nothing extra.
  */
-export async function loadTodayBubbles(): Promise<MemoryBubble[]> {
+export async function loadTodayBubbles(options?: { force?: boolean }): Promise<MemoryBubble[]> {
   try {
     // Feed-based (2026-08-08): newest publishes win — fresh reflects replace
     // older bubbles — and each item carries its memory text when the friend
     // shares one (the card shows only then; otherwise a pop is just a pop).
-    const feed = await fetchFriendFeed();
+    const feed = await fetchFriendFeed(undefined, options);
     const newestFirst = [...feed].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const candidates: MemoryBubble[] = [];
     const seen = new Set<string>();

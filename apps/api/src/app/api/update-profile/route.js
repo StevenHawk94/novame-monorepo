@@ -74,8 +74,8 @@ export async function POST(request) {
     }
     
     if (displayName !== undefined) {
-      // 限制用户名最多16字符
-      updateData.display_name = displayName ? displayName.slice(0, 16) : displayName
+      // Display names are capped consistently with both mobile entry points.
+      updateData.display_name = displayName ? displayName.slice(0, 15) : displayName
     }
     
     if (avatarUrl !== undefined) {
@@ -142,7 +142,7 @@ export async function POST(request) {
           .from('profiles')
           .insert({
             id: userId,
-            display_name: displayName ? displayName.slice(0, 16) : '',
+            display_name: displayName ? displayName.slice(0, 15) : '',
             avatar_url: avatarUrl || null,
             birthday: birthday || null,
             created_at: new Date().toISOString(),

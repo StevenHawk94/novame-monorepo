@@ -36,9 +36,15 @@ import { supabase } from './supabase';
  */
 
 const STORAGE_KEY = 'novame_notification_settings';
-const ANDROID_CHANNEL_ID = 'daily-reminders';
+// Android channel importance cannot be raised after a channel has been
+// created. A versioned id moves existing daily reminders off the earlier
+// DEFAULT channel and onto the visible, heads-up HIGH channel below.
+const ANDROID_CHANNEL_ID = 'daily-reminders-v2';
+// Keep the remote-push id backward compatible with already released clients.
 const ANDROID_PARTNER_CHANNEL_ID = 'partner-updates';
 let lastRemoteRegistrationAt = 0;
+let dailyScheduleReconcile: Promise<boolean> | null = null;
+const DAILY_SCHEDULE_VERSION = 2;
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -50,6 +56,7 @@ export type NotificationSettings = {
    * disabled or never scheduled.
    */
   identifier: string | null;
+  scheduleVersion?: number;
 };
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -57,6 +64,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   hour: 20, // 8:00 PM default, matches old web
   min: 0,
   identifier: null,
+  scheduleVersion: DAILY_SCHEDULE_VERSION,
 };
 
 // ---- mmkv read / write ----
@@ -71,6 +79,7 @@ export function getNotificationSettings(): NotificationSettings {
       hour: typeof parsed.hour === 'number' ? parsed.hour : DEFAULT_SETTINGS.hour,
       min: typeof parsed.min === 'number' ? parsed.min : DEFAULT_SETTINGS.min,
       identifier: parsed.identifier ?? null,
+      scheduleVersion: typeof parsed.scheduleVersion === 'number' ? parsed.scheduleVersion : 0,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -114,12 +123,18 @@ async function ensureAndroidNotificationChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: 'Daily reminders',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    sound: 'default',
+    enableVibrate: true,
     vibrationPattern: [0, 180],
   });
   await Notifications.setNotificationChannelAsync(ANDROID_PARTNER_CHANNEL_ID, {
     name: 'Partner updates',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    sound: 'default',
+    enableVibrate: true,
     vibrationPattern: [0, 180],
   });
 }
@@ -196,21 +211,23 @@ export async function scheduleDailyReminder(
   hour: number,
   min: number,
 ): Promise<void> {
+  if (await checkNotificationPermission() !== 'granted') {
+    throw new Error('notification_permission_not_granted');
+  }
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23
+    || !Number.isInteger(min) || min < 0 || min > 59) {
+    throw new Error('invalid_notification_time');
+  }
   await ensureAndroidNotificationChannel();
   const current = getNotificationSettings();
-  if (current.identifier) {
-    try {
-      await Notifications.cancelScheduledNotificationAsync(current.identifier);
-    } catch {
-      // Cancelling a missing identifier is a no-op; ignore.
-    }
-  }
-
   const identifier = await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Burrow',
       body: buildBody(),
       sound: 'default',
+      ...(Platform.OS === 'android'
+        ? { priority: Notifications.AndroidNotificationPriority.HIGH }
+        : {}),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -220,12 +237,54 @@ export async function scheduleDailyReminder(
     },
   });
 
+  // Do not discard a known-good reminder until the replacement has been
+  // accepted by the native scheduler. This also turns silent native failures
+  // into a visible error instead of persisting a reminder that cannot fire.
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  if (!scheduled.some((notification) => notification.identifier === identifier)) {
+    throw new Error('notification_schedule_not_registered');
+  }
+  if (current.identifier && current.identifier !== identifier) {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(current.identifier);
+    } catch {
+      // Cancelling a missing identifier is a no-op; ignore.
+    }
+  }
+
   setNotificationSettings({
     enabled: true,
     hour,
     min,
     identifier,
+    scheduleVersion: DAILY_SCHEDULE_VERSION,
   });
+}
+
+/** Repair legacy or OS-pruned reminders when the app returns to foreground.
+ * This migrates existing users onto the current Android notification channel
+ * without asking them to toggle their reminder off and on manually. */
+export function reconcileDailyReminderSchedule(): Promise<boolean> {
+  if (dailyScheduleReconcile) return dailyScheduleReconcile;
+  dailyScheduleReconcile = (async () => {
+    const current = getNotificationSettings();
+    if (!current.enabled) return true;
+    if (await checkNotificationPermission() !== 'granted') return false;
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const registered = Boolean(
+      current.identifier
+      && scheduled.some((notification) => notification.identifier === current.identifier),
+    );
+    if (registered && current.scheduleVersion === DAILY_SCHEDULE_VERSION) return true;
+    await scheduleDailyReminder(current.hour, current.min);
+    return true;
+  })().catch((error) => {
+    console.warn('[notifications] daily reminder reconciliation failed:', error);
+    return false;
+  }).finally(() => {
+    dailyScheduleReconcile = null;
+  });
+  return dailyScheduleReconcile;
 }
 
 /**
@@ -247,5 +306,6 @@ export async function cancelDailyReminder(): Promise<void> {
     hour: current.hour,
     min: current.min,
     identifier: null,
+    scheduleVersion: DAILY_SCHEDULE_VERSION,
   });
 }

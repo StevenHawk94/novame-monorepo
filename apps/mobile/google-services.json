@@ -1,0 +1,166 @@
+{
+  "project_info": {
+    "project_number": "966579113880",
+    "project_id": "soulsayit-app",
+    "storage_bucket": "soulsayit-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966579113880:android:7dd5ff0e04dc4ad88365ed",
+        "android_client_info": {
+          "package_name": "com.burrow.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2ErxNVChdyp35XZwTofdSPloW-4uNhOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966579113880-aj8f90quugpg09i5a57eh4hgb28qabmd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.novame.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966579113880:android:c677b8dbf987c6cd8365ed",
+        "android_client_info": {
+          "package_name": "com.novame.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "966579113880-56614g9n8qr5qlmdodu6e0je0376s67f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.novame.app",
+            "certificate_hash": "f21373ff9e0ca6a0c1c2f0ee460eeae6d9b84a4e"
+          }
+        },
+        {
+          "client_id": "966579113880-ta1gg5m468joufk5gsfvvj9bu5qojedn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.novame.app",
+            "certificate_hash": "e400110920d94b8ff6b5da4ffadcec371499a22c"
+          }
+        },
+        {
+          "client_id": "966579113880-vilihqrbsbgqi5fn9eo5t99ct3o59e1m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.novame.app",
+            "certificate_hash": "55d565f4ec62cf584372c4f193be06fbd0870fc2"
+          }
+        },
+        {
+          "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2ErxNVChdyp35XZwTofdSPloW-4uNhOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966579113880-aj8f90quugpg09i5a57eh4hgb28qabmd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.novame.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966579113880:android:9dcb72307169afa38365ed",
+        "android_client_info": {
+          "package_name": "com.visdom.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "966579113880-772o19e0bqat1be5t16touk54q51agtl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.visdom.app",
+            "certificate_hash": "e400110920d94b8ff6b5da4ffadcec371499a22c"
+          }
+        },
+        {
+          "client_id": "966579113880-qbm6b2rl60imkpnt9olah38gtbfja1e6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.visdom.app",
+            "certificate_hash": "55d565f4ec62cf584372c4f193be06fbd0870fc2"
+          }
+        },
+        {
+          "client_id": "966579113880-ukvc1voukjngtntcqnlrj88lues9ekei.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.visdom.app",
+            "certificate_hash": "f21373ff9e0ca6a0c1c2f0ee460eeae6d9b84a4e"
+          }
+        },
+        {
+          "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2ErxNVChdyp35XZwTofdSPloW-4uNhOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966579113880-aj8f90quugpg09i5a57eh4hgb28qabmd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.novame.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

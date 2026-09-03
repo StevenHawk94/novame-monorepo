@@ -351,7 +351,7 @@ export default function OnboardingScreen() {
     void supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user?.id;
       if (!uid) return;
-      if (name.trim()) void updateDisplayName(uid, name.trim().slice(0, 16)).catch(() => {});
+      if (name.trim()) void updateDisplayName(uid, name.trim().slice(0, 15)).catch(() => {});
       if (who && blocker) void reportOnboardingChoices(uid, who, blocker).catch(() => {});
     });
     if (purchased) {
@@ -783,7 +783,8 @@ export default function OnboardingScreen() {
                 placeholder="Type here"
                 placeholderTextColor="#B7A88F"
                 value={name}
-                onChangeText={(t) => setName(t.slice(0, 30))}
+                onChangeText={(t) => setName(t.slice(0, 15))}
+                maxLength={15}
                 textAlign="center"
                 maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
               />
