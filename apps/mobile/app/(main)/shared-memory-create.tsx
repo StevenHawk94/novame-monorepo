@@ -9,8 +9,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -26,6 +24,7 @@ import {
 import { MatchedItemsReviewSheet, ReflectSettlementView } from '@/components/main/reflect-settlement';
 import { appAlert } from '@/components/ui/app-dialog';
 import { ItemSprite } from '@/components/ui/item-sprite';
+import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { fetchBags } from '@/lib/bags-api';
 import { setReflectBubble } from '@/lib/bubble-store';

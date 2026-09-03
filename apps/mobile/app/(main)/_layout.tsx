@@ -6,6 +6,7 @@ import { ratingNavigationListeners, resetNavigationTransitions } from '@/lib/rat
 import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
 import { HomeEntryGate } from '@/components/main/home-entry-gate';
 import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recovery';
+import { AndroidCompactTypographyProvider } from '@/components/ui/android-compact-typography';
 
 /**
  * Authenticated app layout.
@@ -31,66 +32,68 @@ export default function MainLayout() {
     return () => { subscription.remove(); resetNavigationTransitions(); };
   }, []);
   return (
-    <HomeEntryGate>
-      <Stack
-        screenListeners={ratingNavigationListeners}
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: '#4C331B' },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
-        <Stack.Screen
-          name="item-sheet"
-          options={{
-            presentation: 'transparentModal',
-            animation: 'slide_from_bottom',
-            gestureEnabled: false,
-            contentStyle: { backgroundColor: 'transparent' },
+    <AndroidCompactTypographyProvider>
+      <HomeEntryGate>
+        <Stack
+          screenListeners={ratingNavigationListeners}
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#4C331B' },
           }}
-        />
-        <Stack.Screen
-          name="ai-consent"
-          options={{ presentation: 'transparentModal', animation: 'fade' }}
-        />
-        <Stack.Screen
-          name="companion-sheet"
-          options={{
-            presentation: 'transparentModal',
-            animation: 'slide_from_bottom',
-            gestureEnabled: false,
-            contentStyle: { backgroundColor: 'transparent' },
-          }}
-        />
-        <Stack.Screen name="quiet-wins" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        <Stack.Screen name="new-lens" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        <Stack.Screen name="true-north" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        <Stack.Screen name="tame-enemy" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        <Stack.Screen name="visit-master" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
-        <Stack.Screen
-          name="reflect"
-          options={{
-            presentation: 'card',
-            animation: 'slide_from_bottom',
-            animationDuration: 250,
-            gestureEnabled: false,
-          }}
-        />
-        <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-        <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-        <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-        <Stack.Screen
-          name="focus"
-          options={{
-            presentation: 'card',
-            animation: 'slide_from_bottom',
-            animationDuration: 250,
-            gestureEnabled: false,
-          }}
-        />
-      </Stack>
-      <OfficialRatingGate />
-    </HomeEntryGate>
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
+          <Stack.Screen
+            name="item-sheet"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+              gestureEnabled: true,
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
+          <Stack.Screen
+            name="ai-consent"
+            options={{ presentation: 'transparentModal', animation: 'fade' }}
+          />
+          <Stack.Screen
+            name="companion-sheet"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+              gestureEnabled: true,
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
+          <Stack.Screen name="quiet-wins" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen name="new-lens" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen name="true-north" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen name="tame-enemy" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen name="visit-master" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: true }} />
+          <Stack.Screen
+            name="reflect"
+            options={{
+              presentation: 'card',
+              animation: 'slide_from_bottom',
+              animationDuration: 250,
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+          <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+          <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+          <Stack.Screen
+            name="focus"
+            options={{
+              presentation: 'card',
+              animation: 'slide_from_bottom',
+              animationDuration: 250,
+              gestureEnabled: false,
+            }}
+          />
+        </Stack>
+        <OfficialRatingGate />
+      </HomeEntryGate>
+    </AndroidCompactTypographyProvider>
   );
 }

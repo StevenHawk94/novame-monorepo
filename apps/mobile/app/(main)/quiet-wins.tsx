@@ -4,7 +4,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +20,7 @@ import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 import { haptics } from '../../src/lib/haptics';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 
 type Phase = 'pick' | 'done';
 

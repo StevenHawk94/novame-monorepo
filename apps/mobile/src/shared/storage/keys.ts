@@ -274,6 +274,12 @@ export const kFeatureGuidesPending = defineKey('burrow_feature_guides_pending', 
 /** One-time feature walkthrough completion state for the signed-in account. */
 export const kFeatureGuideState = defineKey('burrow_feature_guide_state', 'user');
 
+/** Partner id whose first visible Reflect bubble guide has been acknowledged. */
+export const kFirstPartnerReflectGuide = defineKey(
+  'burrow_first_partner_reflect_guide',
+  'user',
+);
+
 /** Whether the pre-auth onboarding intro has been seen on THIS phone. Device
  *  scope, not user/preauth: it must survive sign-out so a returning user goes
  *  straight to sign-in, never re-watches the intro (C4 decision B). Set true

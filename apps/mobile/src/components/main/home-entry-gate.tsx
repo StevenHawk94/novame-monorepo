@@ -93,8 +93,15 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
     return () => cancelAnimationFrame(frame);
   }, [entry.pending, atHome, foreground, after]);
 
+  // Deep links (including the home-screen widget) may cold-launch straight
+  // into Paired instead of Home. Those routes have no Home asset gate, so
+  // release the native splash as soon as their authenticated shell lays out
+  // rather than waiting for the 10-second defensive fallback.
   return (
-    <View style={styles.root}>
+    <View
+      style={styles.root}
+      onLayout={!atHome ? hideSplashOnce : undefined}
+    >
       <View
         style={styles.root}
         pointerEvents={visible ? 'none' : 'auto'}

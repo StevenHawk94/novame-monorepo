@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import { Asset } from 'expo-asset';
+import { Image as ExpoImage } from 'expo-image';
 
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
@@ -8,15 +8,14 @@ import { remoteImageUri } from './remote-items';
 import type { FeedEntry, PairingStatus } from './friends-api';
 
 /**
- * Pushes the complete Paired state to the iOS home-screen widget:
+ * Pushes the complete Paired state to the native home-screen widget:
  * unpaired, paired-with-no-shared-moment, or the newest shared moment.
- * Fire-and-forget: no-ops on Android and Expo Go.
+ * Fire-and-forget: no-ops only when the optional native module is absent.
  */
 export async function syncWidgetLatestFriend(
   feed: FeedEntry[],
   pairing: PairingStatus | null = null,
 ): Promise<void> {
-  if (Platform.OS !== 'ios') return;
   const partner = pairing?.paired ? pairing.partner : null;
   // Never let a previous partner's cached row leak into a new pairing.
   const eligible = partner
@@ -43,6 +42,12 @@ export async function syncWidgetLatestFriend(
         // A published R2 replacement/addition wins over the bundled fallback,
         // matching ItemSprite everywhere else in the app.
         let src: string | null = remoteImageUri(itemId) || null;
+        if (src) {
+          // Reuse the exact R2 bytes already rendered by ItemSprite. This
+          // avoids a second network race in the widget process and prevents
+          // an older bundled icon from lingering after an admin replacement.
+          src = await ExpoImage.getCachePathAsync(src) ?? src;
+        }
         const mod = ITEM_IMAGES[itemId];
         if (!src && mod) {
           try {

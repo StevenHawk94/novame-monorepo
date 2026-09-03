@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { appAlert } from '@/components/ui/app-dialog';
@@ -28,7 +29,8 @@ import {
 export default function ConnectAccountScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const params = useLocalSearchParams<{ after?: string }>();
+  const params = useLocalSearchParams<{ after?: string; source?: string; authError?: string }>();
+  const handledAuthError = useRef<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   // 'enter' → email form; 'verify' → the 6-digit code sent to that email.
@@ -37,21 +39,46 @@ export default function ConnectAccountScreen() {
   // account the address already belongs to (smart-connect fallback).
   const [emailMode, setEmailMode] = useState<PasswordlessEmailMode>('change');
   const [busy, setBusy] = useState(false);
+  const [exitApproved, setExitApproved] = useState(false);
   // Cache-first: paint the bound state instantly from the stored value; the
   // getUser() fetch below only reconciles (and updates the cache).
   const [connectedAs, setConnectedAs] = useState<string | null>(
     () => storage.getString(kConnectedAccount.name) ?? null,
   );
 
-  const finish = () => {
-    if (params.after === 'notification-settings') {
-      void haptics.pageOpen();
-      router.replace('/(main)/(modals)/notification-settings' as never);
-    } else {
-      void haptics.pageClose();
-      router.back();
-    }
-  };
+  const finish = useCallback(() => {
+    // The guard below also sees programmatic navigation. Disable it first,
+    // then navigate on the next task so React has committed the new state.
+    setExitApproved(true);
+    setTimeout(() => {
+      if (params.after === 'notification-settings') {
+        void haptics.pageOpen();
+        router.replace('/(main)/(modals)/notification-settings' as never);
+      } else {
+        void haptics.pageClose();
+        router.back();
+      }
+    }, 0);
+  }, [params.after, router]);
+
+  const confirmClose = useCallback(() => {
+    appAlert(
+      'Keep your account safe',
+      'We strongly recommend connecting an account. This helps keep your data and memories safe and recoverable if you change phones, reinstall the app, or clear app data.',
+      [
+        { text: 'Close Anyway', style: 'cancel', onPress: finish },
+        { text: 'Keep Connecting' },
+      ],
+    );
+  }, [finish]);
+
+  // Cover the close button, Android system Back and iOS modal swipe-down.
+  // Menu-opened account settings remain freely dismissible; this extra layer
+  // applies only to the account prompt immediately following a purchase.
+  usePreventRemove(
+    params.source === 'post-purchase' && !connectedAs && !exitApproved,
+    confirmClose,
+  );
 
   const continueAfterAccountRestore = () => {
     void haptics.pageOpen();
@@ -78,6 +105,12 @@ export default function ConnectAccountScreen() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!params.authError || handledAuthError.current === params.authError) return;
+    handledAuthError.current = params.authError;
+    appAlert('Could not connect', params.authError);
+  }, [params.authError]);
 
   /** Post-link: fetch the (new) bound email once and remember it. */
   function refreshConnected() {
@@ -153,7 +186,7 @@ export default function ConnectAccountScreen() {
     <View style={styles.root}>
       <GridBackground />
       <View style={[styles.inner, { paddingTop: insets.top + 14 }]}>
-        <Pressable onPress={finish} style={styles.closeCircle} hitSlop={10}>
+        <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
           <MaterialIcons name="close" size={22} color="#FFFFFF" />
         </Pressable>
 

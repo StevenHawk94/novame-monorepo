@@ -32,6 +32,7 @@ import {
 import { ICONS } from '@/lib/icons';
 import { haptics } from '@/lib/haptics';
 import { refreshRemoteItems } from '@/lib/remote-items';
+import { subscribePairingRealtime } from '@/lib/pairing-realtime';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 type CollectionTab = 'mine' | 'their' | 'ours';
@@ -249,6 +250,22 @@ export default function BagsScreen() {
     theirLoadingMore,
     visibleCount,
   ]);
+
+  useEffect(() => {
+    return subscribePairingRealtime((snapshot) => {
+      const nextPartner = snapshot.pairing.paired ? snapshot.pairing.partner : null;
+      setPairing(snapshot.pairing);
+      if (!nextPartner) {
+        setTheirItems([]);
+        setTheirHistoryComplete(true);
+        return;
+      }
+      // Realtime carries only an invalidation. pairing-realtime has already
+      // refreshed the protected Bags endpoint before publishing this snapshot.
+      setTheirItems(getCachedTheirBags(nextPartner.userId));
+      setTheirHistoryComplete(isBagsHistoryComplete('their', nextPartner.userId));
+    });
+  }, []);
 
   useEffect(() => {
     if (!partner) return;

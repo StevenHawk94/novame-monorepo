@@ -17,11 +17,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
+import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { router } from 'expo-router';

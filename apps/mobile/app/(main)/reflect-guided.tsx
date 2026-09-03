@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
@@ -23,6 +23,8 @@ import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } fr
 import { RC, ReflectTopBar } from '@/components/main/reflect-shared';
 import { ReflectSettlementView } from '@/components/main/reflect-settlement';
 import { itemRuleContext } from '@/lib/item-rule-cache';
+import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
+import { getAdaptiveFrameMetrics } from '@/components/layout/adaptive-app-frame';
 
 const MAX_CHARS = 5000;
 type Phase = 'steps' | 'note' | 'result';
@@ -31,7 +33,7 @@ type DayChoice = TapYourDayChoice & Partial<CustomTapItem>;
 /** Four skippable questions. Section labels are headings, never navigation tabs. */
 export default function ReflectGuidedScreen() {
   const insets = useSafeAreaInsets();
-  const { height, fontScale } = useWindowDimensions();
+  const { width: windowWidth, height, fontScale } = useWindowDimensions();
   const router = useRouter();
   const { play: playCompletionSound } = useCompletionSound();
   const tier = useSubscriptionTier();
@@ -47,7 +49,6 @@ export default function ReflectGuidedScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [matching] = useState(itemRuleContext);
   const [error, setError] = useState<ReflectError | null>(null);
-  const [gridWidth, setGridWidth] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -57,6 +58,11 @@ export default function ReflectGuidedScreen() {
   const question = TAP_YOUR_DAY_QUESTIONS[step];
   const selectedList = useMemo(() => [...selected.values()], [selected]);
   const groups = useMemo(() => customTapGroupsForQuestion(question, custom.items), [question, custom.items]);
+  // The root has 18dp horizontal padding on each side. Compute the content
+  // width before the first paint instead of waiting for gridCard.onLayout.
+  // Waiting produced one visible Android frame containing only empty white
+  // cards; iOS happened to hide that frame behind its transition animation.
+  const gridWidth = Math.max(1, getAdaptiveFrameMetrics(windowWidth, height).width - 36);
   const { cellWidth } = tapItemGridMetrics(gridWidth, fontScale);
 
   useFocusEffect(useCallback(() => {
@@ -159,8 +165,8 @@ export default function ReflectGuidedScreen() {
                 {groups.map((section, index) => (
                   <View key={step + '-' + index} style={styles.section}>
                     {!!section.title && <View style={styles.sectionPill}><Text style={styles.sectionTitle}>{section.title}</Text></View>}
-                    <View style={styles.gridCard} onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}>
-                      {gridWidth > 0 && section.choices.map((choice) => (
+                    <View style={styles.gridCard}>
+                      {section.choices.map((choice) => (
                         <TapYourDayItem key={`${choice.itemId}:${!!choice.custom}`} choice={choice} width={cellWidth}
                           selected={isSelected(choice)} onPress={() => toggle(choice)} />
                       ))}
@@ -168,9 +174,8 @@ export default function ReflectGuidedScreen() {
                   </View>
                 ))}
               </ScrollView>
-              <View style={{ paddingBottom: insets.bottom + 12 }}>
-                <Text style={styles.selectionCount}>{selected.size} / {MAX_TAP_YOUR_DAY_SELECTIONS} selected</Text>
-                <Text style={styles.hint}>You can pass if nothing you want to select here</Text>
+              <View style={[styles.stepsFooter, { paddingBottom: insets.bottom + 12 }]}>
+                <Text style={[styles.hint, styles.passHint]}>You can pass if nothing you want to select here</Text>
                 <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={onNext} cardStyle={styles.yellowBtn}>
                   <Text style={styles.yellowBtnText}>Next</Text>
                 </OffsetCard>
@@ -242,7 +247,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#493219', textAlign: 'center' },
   gridCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: TAP_GRID_PADDING, flexDirection: 'row', flexWrap: 'wrap', gap: TAP_ITEM_GAP },
   hint: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', textAlign: 'center', marginVertical: 12, lineHeight: 19 },
-  selectionCount: { fontSize: 12.5, fontFamily: 'Inter_700Bold', color: '#FFF4D6', textAlign: 'center', marginTop: 8 },
+  stepsFooter: { paddingTop: 2 },
+  passHint: { marginTop: 2, marginBottom: 8 },
   yellowBtn: { backgroundColor: RC.yellow, alignItems: 'center', paddingVertical: 17 },
   yellowBtnText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#5A4419' },
   toastWrap: { position: 'absolute', left: 12, right: 12, bottom: 112, alignItems: 'center' },

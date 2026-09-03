@@ -27,6 +27,12 @@ import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { useNavigationAction } from '@/lib/use-navigation-action';
+import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
+import { getCachedFriendFeedPage, getCachedPairing } from '@/lib/friends-api';
+import { storage } from '@/lib/storage';
+import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
+import { syncWidgetLatestFriend } from '@/lib/widget-sync';
+import { getCachedFriendFeed } from '@/lib/friends-api';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -57,6 +63,10 @@ export default function HomeScreen() {
   const subscriptionTier = useSubscriptionTierState();
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
+  const [firstPartnerReflect, setFirstPartnerReflect] = useState<{
+    partnerId: string;
+    name: string;
+  } | null>(null);
   const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
@@ -85,6 +95,13 @@ export default function HomeScreen() {
   useEffect(() => {
     applyAiBubble(visibleAiBubble(subscriptionTier));
   }, [applyAiBubble, subscriptionTier]);
+
+  useEffect(() => {
+    // R2 icon replacements finish asynchronously after the feed itself. Push
+    // the newly cached image paths into both native widgets on that revision,
+    // instead of leaving the widget on its previous bundled image.
+    void syncWidgetLatestFriend(getCachedFriendFeed(), getCachedPairing());
+  }, [r2AssetRevision]);
 
   // Reflect finalization writes MMKV before its route closes. Subscribe to
   // that local write so Home is already showing the new line when revealed,
@@ -134,7 +151,15 @@ export default function HomeScreen() {
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
-      void loadTodayBubbles().then(setBubbles);
+      void loadTodayBubbles().then((nextBubbles) => {
+        setBubbles(nextBubbles);
+        const pairing = getCachedPairing();
+        const page = getCachedFriendFeedPage();
+        const partner = pairing?.paired ? pairing.partner : null;
+        if (!partner || nextBubbles.length === 0 || page.hasMore || page.feed.length !== 1) return;
+        if (storage.getString(kFirstPartnerReflectGuide.name) === partner.userId) return;
+        setFirstPartnerReflect({ partnerId: partner.userId, name: partner.displayName || 'YOUR PERSON' });
+      });
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
@@ -278,6 +303,20 @@ export default function HomeScreen() {
         {/* Friend memory bubbles float over the scene; box-none so the pet,
             top bar, and Focus/Reflect stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
+        <FeatureGuideModal
+          guide="memories"
+          manual
+          enabled={!homeEntry.pending && !!firstPartnerReflect}
+          title={`${firstPartnerReflect?.name ?? 'YOUR PERSON'} JUST REFLECTED FOR THE FIRST TIME`}
+          body="Every reflection becomes a bubble of little moments. Pop one to see what’s inside."
+          button="Pop a Bubble"
+          onDismiss={() => {
+            if (firstPartnerReflect) {
+              storage.set(kFirstPartnerReflectGuide.name, firstPartnerReflect.partnerId);
+            }
+            setFirstPartnerReflect(null);
+          }}
+        />
         {!homeEntry.pending && <AnnouncementGate />}
 
       </SafeAreaView>

@@ -5,12 +5,12 @@ import {
   Easing,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { ScreenOverlay } from '@/components/ui/screen-overlay';
 import { Image as ExpoImage, useImage } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 
 import { ICONS } from '@/lib/icons';
 import { haptics } from '@/lib/haptics';
@@ -81,9 +81,20 @@ const GUIDES: Record<FeatureGuideId, GuideCopy> = {
 export function FeatureGuideModal({
   guide,
   enabled = true,
+  title,
+  body,
+  button,
+  manual = false,
+  onDismiss,
 }: {
   guide: FeatureGuideId;
   enabled?: boolean;
+  title?: string;
+  body?: string;
+  button?: string;
+  /** Event-driven guides manage eligibility/persistence in their parent. */
+  manual?: boolean;
+  onDismiss?: () => void;
 }) {
   const activeModal = useActiveModalSlot();
   const owner = `guide:${guide}`;
@@ -100,7 +111,7 @@ export function FeatureGuideModal({
 
   useFocusEffect(
     useCallback(() => {
-      if (!enabled || !shouldShowFeatureGuide(guide)) return undefined;
+      if (!enabled || (!manual && !shouldShowFeatureGuide(guide))) return undefined;
       if (!icon) { retryIcon.current?.(); return undefined; }
       // useImage already supplies a decoded ImageRef. Do not open an invisible
       // modal and wait for an onDisplay event before allowing any interaction.
@@ -114,7 +125,7 @@ export function FeatureGuideModal({
         setVisible(false);
         releaseModalSlot('guide', owner);
       };
-    }, [enabled, guide, icon, owner, backdropOpacity, cardOpacity]),
+    }, [enabled, guide, icon, manual, owner, backdropOpacity, cardOpacity]),
   );
 
   useEffect(() => {
@@ -165,13 +176,19 @@ export function FeatureGuideModal({
 
   const dismiss = useCallback(() => {
     if (!requestedRef.current) return;
-    if (iconDisplayed) completeFeatureGuide(guide);
+    if (iconDisplayed && !manual) completeFeatureGuide(guide);
     requestedRef.current = false;
     setVisible(false);
     releaseModalSlot('guide', owner);
-  }, [guide, iconDisplayed, owner]);
+    onDismiss?.();
+  }, [guide, iconDisplayed, manual, onDismiss, owner]);
 
-  const copy = GUIDES[guide];
+  const copy = {
+    ...GUIDES[guide],
+    ...(title ? { title } : {}),
+    ...(body ? { body } : {}),
+    ...(button ? { button } : {}),
+  };
 
   return (
     <ScreenOverlay

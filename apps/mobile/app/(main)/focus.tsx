@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { createOperationScope, withDeadline } from '@/lib/async-lifecycle';
@@ -23,6 +23,7 @@ import {
   FOCUS_VOICE_BUNDLED, getFocusVoiceSource, onFocusVoiceListened, type FocusVoiceSource,
 } from '../../src/lib/focus-voice';
 import { XP_RULES } from '@novame/engine';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 
 // Focus voice rotation (2026-08-08): track 1 per scene is bundled, later
 // tracks stream/prefetch from R2 — see src/lib/focus-voice.ts.

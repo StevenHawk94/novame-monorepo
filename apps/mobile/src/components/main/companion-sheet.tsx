@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/co
 import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { subscribeKitCompletion } from '@/lib/kit-completion-state';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 
 const COMPANION_PANEL_BG = '#F9D9B2';
 

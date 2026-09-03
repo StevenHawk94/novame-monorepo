@@ -135,7 +135,6 @@ func relativeLabel(_ date: Date?, now: Date) -> String {
 
 private let cardText = Color(red: 0.16, green: 0.16, blue: 0.16)
 private let mutedText = Color(red: 0.37, green: 0.27, blue: 0.20)
-private let tileFill = Color(red: 0.965, green: 0.933, blue: 0.875) // #F6EEDF
 private let avatarFill = Color(red: 0.957, green: 0.945, blue: 0.973)
 private let gridBase = Color(red: 0.976, green: 0.863, blue: 0.722) // #F9DCB8
 private let gridLine = Color(red: 1.0, green: 0.925, blue: 0.784)   // #FFECC8
@@ -184,34 +183,34 @@ struct EmptyWidgetView: View {
 struct ItemTile: View {
   let image: UIImage?
   let emoji: String
+  let size: CGFloat
 
   var body: some View {
     ZStack {
-      RoundedRectangle(cornerRadius: 12, style: .continuous).fill(tileFill)
       if let image {
         Image(uiImage: image)
           .resizable()
           .scaledToFit()
-          .frame(width: 36, height: 36)
+          .frame(width: size, height: size)
       } else {
-        Text(emoji).font(.system(size: 24))
+        Text(emoji).font(.system(size: size * 0.55))
       }
     }
-    .frame(width: 44, height: 44)
+    .frame(width: size, height: size)
   }
 }
 
 struct OverflowTile: View {
   let count: Int
+  let size: CGFloat
 
   var body: some View {
     ZStack {
-      RoundedRectangle(cornerRadius: 12, style: .continuous).fill(tileFill)
       Text("+\(count)")
-        .font(.system(size: 15, weight: .bold))
+        .font(.system(size: max(15, size * 0.34), weight: .bold))
         .foregroundColor(cardText)
     }
-    .frame(width: 44, height: 44)
+    .frame(width: size, height: size)
     .accessibilityLabel("\(count) more items")
   }
 }
@@ -256,15 +255,29 @@ struct LatestReflectView: View {
           .font(.system(size: 11, weight: .medium))
           .foregroundColor(mutedText)
       }
-      HStack(spacing: 8) {
-        ForEach(0..<visibleTileCount, id: \.self) { i in
-          ItemTile(image: reflect.tiles[i].image, emoji: reflect.tiles[i].emoji)
+      GeometryReader { geometry in
+        let spacing: CGFloat = 8
+        let tileSize = max(1, (geometry.size.width - spacing * CGFloat(maxSlots - 1)) / CGFloat(maxSlots))
+        HStack(spacing: spacing) {
+          ForEach(0..<maxSlots, id: \.self) { slot in
+            if slot < visibleTileCount {
+              ItemTile(
+                image: reflect.tiles[slot].image,
+                emoji: reflect.tiles[slot].emoji,
+                size: tileSize
+              )
+            } else if slot == visibleTileCount && overflowCount > 0 {
+              OverflowTile(count: overflowCount, size: tileSize)
+            } else {
+              Color.clear
+                .frame(width: tileSize, height: tileSize)
+                .accessibilityHidden(true)
+            }
+          }
         }
-        if overflowCount > 0 {
-          OverflowTile(count: overflowCount)
-        }
-        Spacer(minLength: 0)
+        .frame(width: geometry.size.width, alignment: .leading)
       }
+      .frame(minHeight: 44, maxHeight: 54)
     }
   }
 }

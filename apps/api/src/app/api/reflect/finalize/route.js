@@ -5,6 +5,7 @@ import { MAX_REFLECT_ITEMS, XP_RULES } from '@novame/engine'
 import { isoWeek, serviceClient } from '@/lib/reflect-draft'
 import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
 import { sanitizeSettlementMemories } from '@/lib/reflect-settlement'
+import { drainPushNotificationOutbox, enqueuePartnerReflectNotification } from '@/lib/push-notifications'
 
 export const runtime = 'edge'
 export const maxDuration = 60
@@ -82,6 +83,17 @@ export async function POST(request) {
     // next Connection visit retry only this latest reflection.
     if (!result?.already_finalized && draft.body?.trim()) {
       after(() => analyzeFinalizedReflect({ userId, draft, result }))
+    }
+
+    if (!result?.already_finalized && result?.reflect_id) {
+      after(async () => {
+        try {
+          const queued = await enqueuePartnerReflectNotification(supabase, userId, result.reflect_id)
+          if (queued) await drainPushNotificationOutbox(supabase, 10)
+        } catch (error) {
+          console.error('[reflect/finalize] partner notification:', error?.message || error)
+        }
+      })
     }
 
     await supabase.rpc('broadcast_reflect_feed_change', { p_user_id: userId })

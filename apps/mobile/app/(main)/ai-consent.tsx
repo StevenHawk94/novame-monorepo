@@ -35,8 +35,8 @@
  * is the only place that should push this modal — call sites should
  * never construct the URL manually.
  */
-import { useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, BackHandler, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,7 +53,7 @@ const STAR_YELLOW = '#F2C14E';
 
 export default function AiConsentModal() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ next?: string }>();
+  const params = useLocalSearchParams<{ next?: string; cancelTo?: string }>();
   const next = params.next ?? '/(main)/(tabs)';
 
   const [agreed, setAgreed] = useState(false);
@@ -63,8 +63,22 @@ export default function AiConsentModal() {
     void haptics.light();
     // X close path: do NOT persist. User stays unagreed; the modal
     // re-appears on the next AI-touching flow trigger.
-    if (router.canGoBack()) router.back();
+    if (params.cancelTo) {
+      router.dismissTo(params.cancelTo as never);
+    } else if (router.canGoBack()) {
+      router.back();
+    }
   };
+
+  useEffect(() => {
+    if (!params.cancelTo) return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      void haptics.light();
+      router.dismissTo(params.cancelTo as never);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [params.cancelTo]);
 
   const handleToggle = () => {
     void haptics.light();

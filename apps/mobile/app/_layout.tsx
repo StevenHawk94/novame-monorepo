@@ -7,7 +7,9 @@ import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AdaptiveAppFrame } from '@/components/layout/adaptive-app-frame';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import * as Font from 'expo-font';
 import {
   Inter_400Regular,
@@ -60,6 +62,16 @@ import {
   clearOnSignOut,
   debugAccountKeysRemaining,
 } from '@/shared/storage';
+import { syncRemoteNotificationRegistration } from '@/lib/notification-settings';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Per expo-splash-screen official docs: call preventAutoHideAsync in
 // the global scope of the module that owns the root component, NOT
@@ -288,6 +300,7 @@ function RootLayout() {
         // force-close naturally resumes only the still-missing files.
         resumeDownloadQueue();
         void touchActivity();
+        void syncRemoteNotificationRegistration();
         void checkContentVersionInBackground();
         void resumeSubscriptionRealtime().catch((error) => {
           console.warn('[layout] entitlement realtime resume failed:', error);
@@ -323,12 +336,18 @@ function RootLayout() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION') {
         observeSessionIdentity(session?.user?.id ?? null);
-        if (session?.user?.id) setTimeout(() => void reconcileAvailablePurchases(), 0);
+        if (session?.user?.id) setTimeout(() => {
+          void reconcileAvailablePurchases();
+          void syncRemoteNotificationRegistration();
+        }, 0);
         return;
       }
       if (event === 'SIGNED_IN') {
         const sameIdentity = observeSessionIdentity(session?.user?.id ?? null);
-        if (session?.user?.id) setTimeout(() => void reconcileAvailablePurchases(), 0);
+        if (session?.user?.id) setTimeout(() => {
+          void reconcileAvailablePurchases();
+          void syncRemoteNotificationRegistration({ force: true });
+        }, 0);
         if (sameIdentity) return;
         const isAnonymous =
           (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
@@ -462,30 +481,32 @@ function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <SafeAreaProvider>
-          <ThemeProvider>
-            <ErrorBoundary>
-              <Stack
-                screenOptions={{
-                  // Global default = the app's deep brown. The native
-                  // splash->JS handoff gap on first launch (and the index.tsx
-                  // redirect window) shows this navigator content background;
-                  // brown keeps it seamless with the Home/Quests ground
-                  // (2026-07-30 — was black, read as a purple flash).
-                  headerShown: false,
-                  contentStyle: { backgroundColor: '#4C331B' },
-                  animation: 'none',
-                }}
-              />
-              {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
-              <StatusBar style="dark" />
-              <GoodVibesInboxGate />
-              <AppDialogHost />
-            </ErrorBoundary>
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </BottomSheetModalProvider>
+      <AdaptiveAppFrame>
+        <BottomSheetModalProvider>
+          <SafeAreaProvider>
+            <ThemeProvider>
+              <ErrorBoundary>
+                <Stack
+                  screenOptions={{
+                    // Global default = the app's deep brown. The native
+                    // splash->JS handoff gap on first launch (and the index.tsx
+                    // redirect window) shows this navigator content background;
+                    // brown keeps it seamless with the Home/Quests ground
+                    // (2026-07-30 — was black, read as a purple flash).
+                    headerShown: false,
+                    contentStyle: { backgroundColor: '#4C331B' },
+                    animation: 'none',
+                  }}
+                />
+                {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+                <StatusBar style="dark" />
+                <GoodVibesInboxGate />
+                <AppDialogHost />
+              </ErrorBoundary>
+            </ThemeProvider>
+          </SafeAreaProvider>
+        </BottomSheetModalProvider>
+      </AdaptiveAppFrame>
     </GestureHandlerRootView>
   );
 }

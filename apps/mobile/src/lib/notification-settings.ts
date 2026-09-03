@@ -1,7 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 import { storage } from './storage';
+import { apiClient } from './api';
+import { supabase } from './supabase';
 
 /**
  * Notification settings -- Stage 3.10.2 C2.
@@ -34,6 +37,8 @@ import { storage } from './storage';
 
 const STORAGE_KEY = 'novame_notification_settings';
 const ANDROID_CHANNEL_ID = 'daily-reminders';
+const ANDROID_PARTNER_CHANNEL_ID = 'partner-updates';
+let lastRemoteRegistrationAt = 0;
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -112,6 +117,11 @@ async function ensureAndroidNotificationChannel(): Promise<void> {
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 180],
   });
+  await Notifications.setNotificationChannelAsync(ANDROID_PARTNER_CHANNEL_ID, {
+    name: 'Partner updates',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+  });
 }
 
 export async function checkNotificationPermission(): Promise<PermissionResult> {
@@ -136,7 +146,38 @@ export async function requestNotificationPermission(): Promise<PermissionResult>
       allowSound: true,
     },
   });
-  return checkNotificationPermission();
+  const result = await checkNotificationPermission();
+  if (result === 'granted') void syncRemoteNotificationRegistration({ force: true });
+  return result;
+}
+
+/** Register silently only after the OS permission exists. The daily local
+ * reminder and partner-update remote push therefore share one explicit opt-in. */
+export async function syncRemoteNotificationRegistration(
+  options?: { force?: boolean },
+): Promise<boolean> {
+  if (!options?.force && Date.now() - lastRemoteRegistrationAt < 6 * 60 * 60_000) return true;
+  if (await checkNotificationPermission() !== 'granted') return false;
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  if (!userId) return false;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId
+    ?? Constants.easConfig?.projectId;
+  if (!projectId) return false;
+  try {
+    await ensureAndroidNotificationChannel();
+    const token = await Notifications.getExpoPushTokenAsync({ projectId });
+    await apiClient.post('/api/notifications/register', {
+      userId,
+      token: token.data,
+      platform: Platform.OS,
+    });
+    lastRemoteRegistrationAt = Date.now();
+    return true;
+  } catch (error) {
+    console.warn('[notifications] remote registration failed:', error);
+    return false;
+  }
 }
 
 // ---- schedule / cancel ----

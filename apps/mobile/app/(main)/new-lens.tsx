@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -12,6 +12,8 @@ import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
 import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { SpringPop } from '../../src/components/ui/spring-pop';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
+import { requireAiConsent } from '@/lib/ai-consent';
 
 type Phase = 'theme' | 'card' | 'loading' | 'done';
 
@@ -62,12 +64,15 @@ export default function NewLensScreen() {
     if (response === 'resonates') {
       setPhase('done');
     } else {
-      // Route immediately; saving and Clover reconciliation continue silently.
-      void haptics.pageOpen();
-      router.replace({
-        pathname: '/(main)/reflect',
-        params: { presetPrompt: NEW_LENS_PROMPT, sourceKit: 'new_lens' },
-      });
+      const target = `/(main)/reflect?presetPrompt=${encodeURIComponent(NEW_LENS_PROMPT)}&sourceKit=new_lens`;
+      if (requireAiConsent(target, { cancelTo: '/(main)/(tabs)' })) {
+        // Route immediately; saving and Clover reconciliation continue silently.
+        void haptics.pageOpen();
+        router.replace({
+          pathname: '/(main)/reflect',
+          params: { presetPrompt: NEW_LENS_PROMPT, sourceKit: 'new_lens' },
+        });
+      }
     }
 
     void submitLens(activeTheme, card, response).then((res) => {

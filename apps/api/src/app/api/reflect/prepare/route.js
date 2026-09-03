@@ -21,11 +21,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'invalid_idempotency_key' }, { status: 400 })
     }
     const supabase = serviceClient()
-    const resolved = await resolveDraftInput(supabase, input)
+    // Matching rules, timezone resolution and entitlement lookup are
+    // independent. Running them together removes two network round trips from
+    // the Save Reflection spinner, which was most visible for Free accounts.
+    const [resolved, localDate, profileResult] = await Promise.all([
+      resolveDraftInput(supabase, input),
+      resolveUserLocalDate(supabase, input.userId),
+      supabase.from('profiles').select('subscription_tier, ai_consent_at')
+        .eq('id', input.userId).single(),
+    ])
     if (resolved.error) return NextResponse.json({ error: resolved.error }, { status: 400 })
-    const localDate = await resolveUserLocalDate(supabase, input.userId)
-    const { data: profile } = await supabase.from('profiles')
-      .select('subscription_tier, ai_consent_at').eq('id', input.userId).single()
+    const { data: profile } = profileResult
     if (!profile) return NextResponse.json({ error: 'profile_not_found' }, { status: 404 })
     const isPaid = (profile.subscription_tier || 'free') !== 'free'
     if (input.friendUserId && !isPaid) return NextResponse.json({ error: 'plus_required' }, { status: 403 })

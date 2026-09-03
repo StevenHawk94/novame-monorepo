@@ -185,7 +185,11 @@ export function ItemSheet({
                 {loadingMoreDetails ? (
                   <ActivityIndicator style={styles.detailsLoader} color="#8A6240" />
                 ) : null}
-                {scope !== 'ours' && !item.memoriesComplete && !loadingMoreDetails ? (
+                {scope !== 'ours'
+                  && !item.memoriesComplete
+                  && !!item.nextMemoryBeforeCreatedAt
+                  && !!item.nextMemoryBeforeId
+                  && !loadingMoreDetails ? (
                   <Pressable
                     onPress={loadMoreDetails}
                     style={({ pressed }) => [styles.loadMoreButton, pressed && { opacity: 0.72 }]}

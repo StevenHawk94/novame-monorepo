@@ -1,0 +1,45 @@
+# Vercel builds the API project from this monorepo root. Keep only the API and
+# the workspace packages it imports; mobile assets/native outputs are released
+# through EAS and must never be uploaded with the API deployment.
+
+# Other applications and non-runtime project material
+/apps/admin/
+/apps/mobile/
+/docs/
+/supabase/
+/tools/
+/CODEBASE.md
+/README.md
+/gen-manifest.log
+/.easignore
+
+# Workspace packages not used by apps/api
+/packages/api-client/
+/packages/ui-tokens/
+
+# Dependencies, framework output, caches, and VCS metadata
+**/node_modules/
+**/.next/
+**/.turbo/
+**/.expo/
+**/.vercel/
+**/.git/
+**/dist/
+**/build/
+**/*.tsbuildinfo
+
+# Local configuration, credentials, logs, and generated archives
+**/.env
+**/.env.local
+**/.env.*.local
+**/*.p8
+**/AuthKey_*.p8
+**/*.keystore
+**/*.ipa
+**/*.apk
+**/*.aab
+**/*.zip
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+**/__pycache__/

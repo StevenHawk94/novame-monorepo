@@ -9,7 +9,10 @@ export async function getRemoteItemManifest(version) {
   if (cached && Date.now() - cached.at < 60_000) return cached.value
   try {
     const response = await fetch(`${R2_BASE}/Items/manifests/${encodeURIComponent(version)}.json`, {
-      cache: 'no-store',
+      // Versioned manifests are immutable. Let the Vercel/CDN cache absorb
+      // this read so Free users do not wait on a fresh R2 round trip before
+      // every durable Save Reflection transaction.
+      cache: 'force-cache',
     })
     if (!response.ok) throw new Error(`item_manifest_http_${response.status}`)
     const value = await response.json()

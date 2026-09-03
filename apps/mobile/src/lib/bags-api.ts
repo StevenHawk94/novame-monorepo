@@ -61,6 +61,7 @@ interface MineBagsCache {
 }
 
 interface TheirBagsCache {
+  version?: number;
   ownerUserId: string | null;
   items: WireItem[];
   fetchedAt: number;
@@ -144,16 +145,10 @@ export function getCachedBags(): CollectedItem[] {
 }
 
 export function getCachedTheirBags(expectedOwnerUserId?: string): CollectedItem[] {
-  const raw = storage.getString(kTheirBagsState.name);
-  if (!raw) return [];
-  try {
-    const cached = JSON.parse(raw) as TheirBagsCache;
-    if (!Array.isArray(cached.items)) return [];
-    if (expectedOwnerUserId && cached.ownerUserId !== expectedOwnerUserId) return [];
-    return cached.items.map(decorate);
-  } catch {
-    return [];
-  }
+  const cached = readTheirCache();
+  if (!cached) return [];
+  if (expectedOwnerUserId && cached.ownerUserId !== expectedOwnerUserId) return [];
+  return cached.items.map(decorate);
 }
 
 function readMineCache(): MineBagsCache | null {
@@ -180,6 +175,10 @@ function readTheirCache(): TheirBagsCache | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as TheirBagsCache;
+    if (parsed.version !== 3) {
+      storage.remove(kTheirBagsState.name);
+      return null;
+    }
     return Array.isArray(parsed.items)
       ? { ...parsed, fetchedAt: parsed.fetchedAt ?? 0, historyComplete: parsed.historyComplete ?? false }
       : null;
@@ -341,14 +340,21 @@ export function cacheTheirItemsFromFeed(
     }
   }
   for (const entry of entries) {
-    for (const itemId of entry.itemIds) {
+    // The Paired feed can contain matched items without a saved Memory. Theirs
+    // mirrors the partner's Mine collection, so only a visible, non-blank
+    // memory detail is allowed to create or increment a tile.
+    const visibleMemoryByItem = new Map(
+      (entry.details ?? [])
+        .map((detail) => [detail.itemId, detail.text.trim()] as const)
+        .filter(([itemId, text]) => entry.itemIds.includes(itemId) && text.length > 0),
+    );
+    for (const [itemId, detail] of visibleMemoryByItem) {
       const current = byId.get(itemId);
       const stableKey = `${entry.reflectId}:${itemId}`;
       const alreadyIncluded = seenKeys.has(stableKey);
-      const detail = entry.details?.find((candidate) => candidate.itemId === itemId)?.text;
       if (current) {
         if (!alreadyIncluded) current.count += 1;
-        if (!alreadyIncluded && detail) {
+        if (!alreadyIncluded) {
           current.memories = [{ excerpt: detail, rawExcerpt: detail, reflectId: entry.reflectId, createdAt: entry.createdAt }, ...current.memories];
         }
         if (entry.createdAt > current.firstSeenAt) current.firstSeenAt = entry.createdAt;
@@ -357,7 +363,7 @@ export function cacheTheirItemsFromFeed(
           itemId,
           count: 1,
           firstSeenAt: entry.createdAt,
-          memories: detail ? [{ excerpt: detail, rawExcerpt: detail, reflectId: entry.reflectId, createdAt: entry.createdAt }] : [],
+          memories: [{ excerpt: detail, rawExcerpt: detail, reflectId: entry.reflectId, createdAt: entry.createdAt }],
         };
         items.push(created);
         byId.set(itemId, created);
@@ -367,6 +373,7 @@ export function cacheTheirItemsFromFeed(
   }
   items.sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt));
   storage.set(kTheirBagsState.name, JSON.stringify({
+    version: 3,
     ownerUserId,
     items,
     fetchedAt: cached?.ownerUserId === ownerUserId ? cached.fetchedAt : 0,
@@ -450,24 +457,17 @@ async function fetchBagsFirstPage(
     }
     if (scope === 'their') {
       const previous = readTheirCache();
-      const previousItems = previous && previous.ownerUserId === data.ownerUserId
-        ? previous.items
-        : [];
-      const merged = mergeWireItems(previousItems, data.items);
-      const hasDeeperCachedHistory = previousItems.length > data.items.length;
       storage.set(kTheirBagsState.name, JSON.stringify({
+        version: 3,
         ownerUserId: data.ownerUserId ?? null,
-        items: merged,
+        // A first-page response is authoritative. Do not merge old rows back:
+        // privacy edits and deleted/blank Memories must disappear immediately.
+        // Older pages can be fetched again with the returned cursor.
+        items: data.items,
         fetchedAt: Date.now(),
-        historyComplete: hasDeeperCachedHistory
-          ? previous?.historyComplete ?? false
-          : data.hasMore !== true,
-        nextBeforeFirstSeenAt: hasDeeperCachedHistory
-          ? previous?.nextBeforeFirstSeenAt ?? null
-          : data.nextBeforeFirstSeenAt ?? null,
-        nextBeforeItemId: hasDeeperCachedHistory
-          ? previous?.nextBeforeItemId ?? null
-          : data.nextBeforeItemId ?? null,
+        historyComplete: data.hasMore !== true,
+        nextBeforeFirstSeenAt: data.nextBeforeFirstSeenAt ?? null,
+        nextBeforeItemId: data.nextBeforeItemId ?? null,
         // Preserve hidden feed-row keys across authoritative refreshes. The
         // bags API intentionally omits private details, so it cannot recreate
         // this ledger by itself.
@@ -544,6 +544,7 @@ export async function fetchMoreBags(
       const latest = readTheirCache();
       const sameOwner = Boolean(latest && latest.ownerUserId === data.ownerUserId);
       storage.set(kTheirBagsState.name, JSON.stringify({
+        version: 3,
         ownerUserId: data.ownerUserId ?? null,
         items: mergeWireItems(sameOwner && latest ? latest.items : [], data.items),
         fetchedAt: sameOwner && latest ? latest.fetchedAt : Date.now(),

@@ -24,6 +24,7 @@ import {
   markNotifPromptedAfterPurchase,
 } from '@/lib/notification-settings';
 import { ICONS } from '@/lib/icons';
+import { DEFAULT_PLUS_BENEFITS } from '@/lib/plus-benefits';
 import { GridBackground } from '@/components/ui/grid-background';
 
 /**
@@ -107,6 +108,31 @@ export default function SubscriptionPaywallModal() {
         // next native modal can never appear underneath the closing alert.
         setTimeout(openNotificationSetup, 200);
       };
+      const openAccountConnection = () => {
+        void haptics.pageOpen();
+        router.push({
+          pathname: '/(main)/(modals)/connect-account',
+          params: {
+            source: 'post-purchase',
+            ...(promptNotif ? { after: 'notification-settings' } : {}),
+          },
+        } as never);
+      };
+      const confirmSkipAccountConnection = () => {
+        // Let the first AppDialog fully release its overlay before presenting
+        // the second confirmation. This avoids a one-frame invisible touch
+        // blocker on Android while keeping the warning effectively immediate.
+        setTimeout(() => {
+          appAlert(
+            'Keep your account safe',
+            'We strongly recommend connecting an account. This helps keep your data and memories safe and recoverable if you change phones, reinstall the app, or clear app data.',
+            [
+              { text: 'Close Anyway', style: 'cancel', onPress: continueToNotificationSetup },
+              { text: 'Connect Account', onPress: openAccountConnection },
+            ],
+          );
+        }, 150);
+      };
 
       // Resolve account state after dismissing the paywall, then present only
       // one surface at a time. The notification setup is continued from the
@@ -132,16 +158,10 @@ export default function SubscriptionPaywallModal() {
             'Keep your Plus safe',
             'Connect an account so your subscription and memories are never lost — even if you change phones.',
             [
-              { text: 'Later', style: 'cancel', onPress: continueToNotificationSetup },
+              { text: 'Later', style: 'cancel', onPress: confirmSkipAccountConnection },
               {
                 text: 'Connect Now',
-                onPress: () => {
-                  void haptics.pageOpen();
-                  router.push({
-                    pathname: '/(main)/(modals)/connect-account',
-                    params: promptNotif ? { after: 'notification-settings' } : {},
-                  } as never);
-                },
+                onPress: openAccountConnection,
               },
             ],
           );
@@ -260,18 +280,15 @@ export default function SubscriptionPaywallModal() {
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>Burrow Plus</Text>
-                {[
-                  'Turn reflections into shared memories',
-                  'See gentle connection insights',
-                  'Stay present without adding pressure',
-                  'Keep full control of what you share',
-                  'Access to all plus features',
-                ].map((t) => (
-                  <View key={t} style={styles.benefitRow}>
-                    <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.benefitTitle}>{t}</Text>
+                {DEFAULT_PLUS_BENEFITS.map((t, index) => (
+                  <View key={t}>
+                    <View style={styles.benefitRow}>
+                      <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.benefitTitle}>{t}</Text>
+                      </View>
                     </View>
+                    {index < DEFAULT_PLUS_BENEFITS.length - 1 && <View style={styles.benefitDivider} />}
                   </View>
                 ))}
               </View>
@@ -336,7 +353,9 @@ export default function SubscriptionPaywallModal() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.ctaText}>
-                  {isPaid ? 'Manage Subscription' : plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
+                  {isPaid
+                    ? 'Manage Subscription'
+                    : plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
                 </Text>
               )}
             </Pressable>
@@ -395,7 +414,8 @@ const styles = StyleSheet.create({
   plusCard: { backgroundColor: 'rgba(90,64,40,0.85)', borderRadius: 26, padding: 20, marginTop: 44 },
   lockImg: { width: 62, height: 62, alignSelf: 'center', marginTop: -52, marginBottom: 4 },
   plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
-  benefitRow: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
+  benefitRow: { flexDirection: 'row', gap: 12, paddingVertical: 14, alignItems: 'center' },
+  benefitDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.18)' },
   benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   planCard: {
@@ -409,7 +429,6 @@ const styles = StyleSheet.create({
   planStrike: { textDecorationLine: 'line-through', color: '#8A7A63' },
   trialBadge: { backgroundColor: BTN, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 },
   trialBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-
   legalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12 },
   legalText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK, textAlign: 'center' },
   restoreBtn: { alignItems: 'center', paddingVertical: 12 },

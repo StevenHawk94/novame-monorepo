@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutRectangle } from 'react-native';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -24,6 +24,7 @@ import {
 import { ICONS } from '../../src/lib/icons';
 import { haptics } from '../../src/lib/haptics';
 import { Image as ExpoImage } from 'expo-image';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 
 import {
   fetchTameStatus, getCachedTameStatus, subscribeTameStatus, submitTame,

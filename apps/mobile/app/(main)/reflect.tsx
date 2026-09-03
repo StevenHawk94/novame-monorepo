@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +12,9 @@ import { useSubscriptionTier } from '../../src/lib/use-subscription-tier';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { SwipeDownToDismiss } from '../../src/components/ui/swipe-down-to-dismiss';
 import { FeatureGuideModal } from '../../src/components/main/feature-guide-modal';
+import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
+import { TAP_YOUR_DAY_QUESTIONS } from '@novame/engine';
+import { warmItemSprites } from '@/components/ui/item-sprite';
 
 const TAN_OFFSET = '#E5B57E';
 
@@ -39,6 +42,14 @@ export default function ReflectEntryScreen() {
     // Cloud additions are only checked when the user enters an item-consuming
     // feature. Cached rules and art remain available immediately.
     void refreshRemoteItems();
+    // The first Tap Your Day question is entirely curated and bounded. Decode
+    // its bundled placeholders before the user taps the card so Android never
+    // has to reveal a half-painted grid during the route transition.
+    void warmItemSprites(
+      TAP_YOUR_DAY_QUESTIONS[0]?.groups.flatMap((group) =>
+        group.choices.map((choice) => choice.itemId),
+      ) ?? [],
+    );
   }, []);
 
   useEffect(() => {
@@ -61,7 +72,7 @@ export default function ReflectEntryScreen() {
     {
       key: 'prompt',
       title: 'Tap Your Day',
-      text: 'Capture the little things, one tap at a time.',
+      text: 'Tap moments from your day.',
       icon: ICONS.reflectEntry2,
       route: '/(main)/reflect-guided' as const,
     },

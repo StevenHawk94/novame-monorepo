@@ -2,7 +2,7 @@
   "expo": {
     "name": "Burrow",
     "slug": "novame-mobile",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "novame",
@@ -35,7 +35,7 @@
         "backgroundColor": "#F8E2C1"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
+      "predictiveBackGestureEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS",

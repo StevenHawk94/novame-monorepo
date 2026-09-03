@@ -34,6 +34,46 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
+type LoadedImage = Awaited<ReturnType<typeof Image.loadAsync>>;
+const warmedBundledArt = new Map<string, LoadedImage>();
+let warmRequest: Promise<void> | null = null;
+
+/**
+ * Decode the first Tap Your Day page while the user is still choosing a
+ * Reflect method. Android otherwise has to decode dozens of local WebPs during
+ * the route transition. The loaded native references are deliberately kept:
+ * this page is frequently revisited and the compact 96px decode is bounded to
+ * the requested curated ids, never the full 5,439-icon catalog.
+ */
+export function warmItemSprites(itemIds: readonly string[]): Promise<void> {
+  if (warmRequest) return warmRequest;
+  const missing = [...new Set(itemIds)].filter((itemId) => {
+    const source = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+    return source != null && !warmedBundledArt.has(itemId);
+  });
+  if (missing.length === 0) return Promise.resolve();
+
+  warmRequest = (async () => {
+    // Small batches avoid a decode spike on lower-memory Android devices.
+    for (let index = 0; index < missing.length; index += 6) {
+      await Promise.all(missing.slice(index, index + 6).map(async (itemId) => {
+        const source = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+        if (source == null || warmedBundledArt.has(itemId)) return;
+        try {
+          const image = await Image.loadAsync(source, { maxWidth: 96, maxHeight: 96 });
+          warmedBundledArt.set(itemId, image);
+        } catch {
+          // Rendering still falls back to the original bundled source.
+        }
+      }));
+    }
+  })().finally(() => {
+    warmRequest = null;
+  });
+
+  return warmRequest;
+}
+
 // Memoized: sprite tiles appear by the dozen in grids and feeds; props are
 // value-stable, so memo turns tab re-renders into no-ops for every tile.
 export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math.round(size * 0.22), tileColor = '#F4F1F8', style }: Props) {
@@ -44,7 +84,8 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
   );
   const remoteUri = remoteImageUri(itemId);
   const bundledArt = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
-  const art = remoteUri ? { uri: remoteUri } : bundledArt;
+  const warmedArt = warmedBundledArt.get(itemId);
+  const art = remoteUri ? { uri: remoteUri } : warmedArt ?? bundledArt;
   useEffect(() => {
     if (remoteUri) prioritizeR2Image(remoteUri);
   }, [remoteUri]);
@@ -73,7 +114,7 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
         style,
       ]}
     >
-      <Image source={art} placeholder={remoteUri ? bundledArt : undefined}
+      <Image source={art} placeholder={remoteUri ? warmedArt ?? bundledArt : undefined}
         placeholderContentFit="contain" style={{ width: size, height: size }} contentFit="contain" />
     </View>
   );

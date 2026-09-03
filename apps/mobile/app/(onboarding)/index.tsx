@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { Linking, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, useWindowDimensions, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,6 +40,7 @@ import {
   markNotifPromptedAfterPurchase,
   shouldPromptNotifAfterPurchase,
 } from '../../src/lib/notification-settings';
+import { DEFAULT_PLUS_BENEFITS } from '../../src/lib/plus-benefits';
 
 /**
  * Burrow story flow on the beige grid: hook → who/what-blocks questions →
@@ -52,6 +53,44 @@ import {
 const INK = '#4A2F17';
 const CARD = '#FFF4E3';
 const BTN = '#4A3220';
+
+/**
+ * Android renders this copy noticeably larger across common display-density
+ * and font-scale combinations. Keep iOS typography unchanged, while Android
+ * scales between 70% on compact phones and 90% on roomy phones/foldables.
+ * Both axes participate so a wide but short landscape/foldable window does
+ * not accidentally receive oversized type.
+ */
+const OnboardingTextScaleContext = createContext(1);
+
+function androidOnboardingTextScale(width: number, height: number): number {
+  if (Platform.OS !== 'android') return 1;
+  const shortSide = Math.min(width, height);
+  const longSide = Math.max(width, height);
+  const availableRatio = Math.min(shortSide / 430, longSide / 932);
+  const room = Math.max(0, Math.min(1, (availableRatio - 0.78) / 0.22));
+  return 0.7 + room * 0.2;
+}
+
+function Text({ style, maxFontSizeMultiplier, ...props }: ComponentProps<typeof NativeText>) {
+  const scale = useContext(OnboardingTextScaleContext);
+  const flat = StyleSheet.flatten(style);
+  const fontSize = typeof flat?.fontSize === 'number' ? flat.fontSize * scale : undefined;
+  const lineHeight = typeof flat?.lineHeight === 'number' ? flat.lineHeight * scale : undefined;
+
+  return (
+    <NativeText
+      {...props}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? (Platform.OS === 'android' ? 1.15 : undefined)}
+      style={[
+        style,
+        Platform.OS === 'android' && (fontSize !== undefined || lineHeight !== undefined)
+          ? { fontSize, lineHeight }
+          : null,
+      ]}
+    />
+  );
+}
 
 const WHO_OPTIONS = [
   { key: 'partner', icon: ICONS.obWhoPartner, label: 'My partner' },
@@ -121,6 +160,17 @@ const FLOW: Step[] = [
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const onboardingTextScale = useMemo(
+    () => androidOnboardingTextScale(width, height),
+    [height, width],
+  );
+  const androidNameInputType = Platform.OS === 'android'
+    ? { fontSize: 17 * onboardingTextScale }
+    : null;
+  const androidCodeInputType = Platform.OS === 'android'
+    ? { fontSize: 22 * onboardingTextScale }
+    : null;
   const router = useRouter();
   const [idx, setIdx] = useState(0);
   const [who, setWho] = useState<string | null>(null);
@@ -221,6 +271,17 @@ export default function OnboardingScreen() {
       pathname: '/(auth)/signing-in',
       params: promptNotification ? { after: 'notification-settings' } : {},
     } as never);
+  }
+
+  function confirmSkipPurchasedAccountConnection() {
+    appAlert(
+      'Keep your account safe',
+      'We strongly recommend connecting an account. This helps keep your data and memories safe and recoverable if you change phones, reinstall the app, or clear app data.',
+      [
+        { text: 'Close Anyway', style: 'cancel', onPress: finishPurchasedOnboarding },
+        { text: 'Keep Connecting' },
+      ],
+    );
   }
 
   async function onStartPlan() {
@@ -371,6 +432,7 @@ export default function OnboardingScreen() {
   );
 
   return (
+    <OnboardingTextScaleContext.Provider value={onboardingTextScale}>
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
       <GridBackground />
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
@@ -626,18 +688,15 @@ export default function OnboardingScreen() {
                   <Text style={styles.plusTitle}>Burrow</Text>
                   <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
                 </View>
-                {[
-                  'Turn reflections into shared memories',
-                  'See gentle connection insights',
-                  'Stay present without adding pressure',
-                  'Keep full control of what you share',
-                  'Access to all plus features',
-                ].map((t) => (
-                  <View key={t} style={styles.benefitRow}>
-                    <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.benefitTitle}>{t}</Text>
+                {DEFAULT_PLUS_BENEFITS.map((t, index) => (
+                  <View key={t}>
+                    <View style={styles.benefitRow}>
+                      <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.benefitTitle}>{t}</Text>
+                      </View>
                     </View>
+                    {index < DEFAULT_PLUS_BENEFITS.length - 1 && <View style={styles.benefitDivider} />}
                   </View>
                 ))}
               </View>
@@ -720,12 +779,13 @@ export default function OnboardingScreen() {
               </Text>
               <OnboardingImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, androidNameInputType]}
                 placeholder="Type here"
                 placeholderTextColor="#B7A88F"
                 value={name}
                 onChangeText={(t) => setName(t.slice(0, 30))}
                 textAlign="center"
+                maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
               />
               <View style={{ flex: 1 }} />
               <Btn label="Start" onPress={() => void onFinishName()} busy={finishing} />
@@ -737,7 +797,7 @@ export default function OnboardingScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <Pressable
-                onPress={() => { void haptics.pageOpen(); finishPurchasedOnboarding(); }}
+                onPress={() => { void haptics.pageOpen(); confirmSkipPurchasedAccountConnection(); }}
                 style={styles.closeCircle}
                 hitSlop={10}
               >
@@ -767,13 +827,14 @@ export default function OnboardingScreen() {
               {linkPhase === 'enter' ? (
                 <>
                   <TextInput
-                    style={[styles.nameInput, { marginTop: 6, textAlign: 'center' }]}
+                    style={[styles.nameInput, { marginTop: 6, textAlign: 'center' }, androidNameInputType]}
                     placeholder="you@example.com"
                     placeholderTextColor="#B7A88F"
                     value={linkEmail}
                     onChangeText={setLinkEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
                   />
                   <Pressable
                     onPress={() => void onLinkEmail()}
@@ -791,7 +852,7 @@ export default function OnboardingScreen() {
                     We sent a 6-digit code to {linkEmail.trim()}. Enter it below.
                   </Text>
                   <TextInput
-                    style={[styles.nameInput, styles.linkCodeInput]}
+                    style={[styles.nameInput, styles.linkCodeInput, androidCodeInputType]}
                     placeholder="123456"
                     placeholderTextColor="#B7A88F"
                     value={linkCode}
@@ -799,6 +860,7 @@ export default function OnboardingScreen() {
                     keyboardType="number-pad"
                     autoFocus
                     maxLength={6}
+                    maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
                   />
                   <Pressable
                     onPress={() => void onVerifyLinkCode()}
@@ -881,6 +943,7 @@ export default function OnboardingScreen() {
         </View>
       </Modal>
     </View>
+    </OnboardingTextScaleContext.Provider>
   );
 }
 
@@ -1034,7 +1097,8 @@ const styles = StyleSheet.create({
   plusTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   plusChip: { backgroundColor: '#3B2A1C', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
   plusChipText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
-  benefitRow: { flexDirection: 'row', gap: 12, marginBottom: 14, alignItems: 'flex-start' },
+  benefitRow: { flexDirection: 'row', gap: 12, paddingVertical: 14, alignItems: 'center' },
+  benefitDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.18)' },
   benefitTitle: { fontSize: 16.5, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   planCard: {

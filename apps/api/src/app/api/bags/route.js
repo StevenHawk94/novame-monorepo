@@ -4,11 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'edge'
 
+const validUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || '')
+const memoryText = (row) => [row.description, row.refined_desc, row.raw_excerpt]
+  .find((value) => typeof value === 'string' && value.trim())?.trim() || ''
+
 /**
  * GET /api/bags?userId=xxx&scope=mine|their
  *
- * The Bags tab's data: the items a user has collected (user_items). Display
- * info (name, rarity, emoji/sprite) is NOT here:
+ * The Bags tab's data: Mine comes from user_items; Theirs is the partner's
+ * non-empty Memory items after sharing filters. Display info is NOT here:
  * it's derived client-side from the shared dictionary by item_id, so the emoji
  * placeholder swaps to sprite art with no API change.
  *
@@ -37,9 +41,15 @@ export async function GET(request) {
     const beforeCreatedAt = requestedMemoryBefore && Number.isFinite(Date.parse(requestedMemoryBefore))
       ? requestedMemoryBefore
       : null
-    const beforeMemoryId = searchParams.get('beforeMemoryId')
+    const requestedBeforeMemoryId = searchParams.get('beforeMemoryId')
+    const beforeMemoryId = requestedBeforeMemoryId && validUuid(requestedBeforeMemoryId)
+      ? requestedBeforeMemoryId
+      : null
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    }
+    if (requestedBeforeMemoryId && !beforeMemoryId) {
+      return NextResponse.json({ error: 'Invalid memory cursor' }, { status: 400 })
     }
 
     const authHeader = request.headers.get('authorization') || ''
@@ -79,21 +89,25 @@ export async function GET(request) {
       targetUserId = pairing.partner_user_id
     }
 
-    // Item details are loaded only after the user opens a tile. The raw page
-    // is keyset-paginated before privacy filtering, so one request always has
-    // bounded database and response cost even after years of reflections.
-    if (detailItemId) {
-      let detailMode = 'all'
-      if (readingPartner) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('share_memory_details, memory_details_mode')
-          .eq('id', targetUserId)
-          .maybeSingle()
-        detailMode = profile?.memory_details_mode
-          || (profile?.share_memory_details === false ? 'none' : 'custom')
+    let detailMode = 'all'
+    if (readingPartner) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('share_memory_details, memory_details_mode')
+        .eq('id', targetUserId)
+        .maybeSingle()
+      if (profileError) {
+        console.error('[bags] partner privacy error:', profileError.message)
+        return NextResponse.json({ error: 'Failed' }, { status: 500 })
       }
+      detailMode = profile?.memory_details_mode
+        || (profile?.share_memory_details === false ? 'none' : 'custom')
+    }
 
+    // Item details are loaded only after the user opens a tile. Partner pages
+    // are filtered inside Postgres before keyset pagination, so hidden or
+    // blank rows cannot create empty pages or leak through page cursors.
+    if (detailItemId) {
       if (detailMode === 'none') {
         return NextResponse.json({
           success: true,
@@ -106,73 +120,63 @@ export async function GET(request) {
         })
       }
 
-      let memoryQuery = supabase
-        .from('item_memories')
-        .select('id, item_id, reflect_id, raw_excerpt, refined_desc, description, memory_source, created_at')
-        .eq('user_id', targetUserId)
-        .eq('item_id', detailItemId)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(memoryPageSize + 1)
-      if (beforeCreatedAt && beforeMemoryId) {
-        memoryQuery = memoryQuery.or(
-          `created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeMemoryId})`,
-        )
-      } else if (beforeCreatedAt) {
-        memoryQuery = memoryQuery.lt('created_at', beforeCreatedAt)
+      let rawRows
+      let memoryError
+      if (readingPartner) {
+        const result = await supabase.rpc('get_visible_partner_item_memories', {
+          p_owner_user_id: targetUserId,
+          p_item_id: detailItemId,
+          p_require_reflect_share: detailMode === 'custom',
+          p_limit: memoryPageSize + 1,
+          p_before_created_at: beforeCreatedAt,
+          p_before_memory_id: beforeMemoryId,
+        })
+        rawRows = result.data
+        memoryError = result.error
+      } else {
+        let memoryQuery = supabase
+          .from('item_memories')
+          .select('id, item_id, reflect_id, raw_excerpt, refined_desc, description, memory_source, created_at')
+          .eq('user_id', targetUserId)
+          .eq('item_id', detailItemId)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(memoryPageSize + 1)
+        if (beforeCreatedAt && beforeMemoryId) {
+          memoryQuery = memoryQuery.or(
+            `created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeMemoryId})`,
+          )
+        } else if (beforeCreatedAt) {
+          memoryQuery = memoryQuery.lt('created_at', beforeCreatedAt)
+        }
+        const result = await memoryQuery
+        rawRows = result.data
+        memoryError = result.error
       }
-
-      const { data: rawRows, error: memoryError } = await memoryQuery
       if (memoryError) {
         console.error('[bags] item details error:', memoryError.message)
         return NextResponse.json({ error: 'Failed' }, { status: 500 })
       }
       const hasMore = (rawRows || []).length > memoryPageSize
       const pageRows = (rawRows || []).slice(0, memoryPageSize)
-      let visibleRows = pageRows
-
-      // Per-item hiding is always authoritative for a partner. A hidden item
-      // is absent entirely, not merely stripped of its description.
-      if (readingPartner && pageRows.length > 0) {
-        const reflectIds = [...new Set(pageRows.map((row) => row.reflect_id).filter(Boolean))]
-        const { data: visibleItems } = await supabase.from('reflect_items')
-          .select('reflect_id, item_id')
-          .eq('user_id', targetUserId)
-          .eq('item_id', detailItemId)
-          .eq('visible_to_paired', true)
-          .in('reflect_id', reflectIds)
-        const visibleKeys = new Set((visibleItems || []).map((row) => `${row.reflect_id}:${row.item_id}`))
-        visibleRows = visibleRows.filter((row) => visibleKeys.has(`${row.reflect_id}:${row.item_id}`))
-      }
-
-      if (detailMode === 'custom') {
-        const reflectIds = [...new Set(pageRows.map((row) => row.reflect_id).filter(Boolean))]
-        if (reflectIds.length > 0) {
-          const { data: visible } = await supabase
-            .from('reflects')
-            .select('id')
-            .in('id', reflectIds)
-            .or('shared_to_friends.neq.false,shared_to_friends.is.null')
-          const visibleIds = new Set((visible || []).map((row) => row.id))
-          visibleRows = visibleRows.filter((row) => visibleIds.has(row.reflect_id))
-        } else {
-          visibleRows = []
-        }
-      }
 
       return NextResponse.json({
         success: true,
         ownerUserId: targetUserId,
         itemId: detailItemId,
-        memories: visibleRows.map((row) => ({
-          excerpt: row.description || row.refined_desc || row.raw_excerpt,
-          rawExcerpt: row.description || row.raw_excerpt,
-          // A partner may expose the memory description, never a route/key to
-          // their private reflection detail. The mobile UI also hides Details
-          // for Their, making this privacy boundary defense-in-depth.
-          ...(readingPartner ? {} : { reflectId: row.reflect_id }),
-          createdAt: row.created_at,
-        })),
+        memories: pageRows.flatMap((row) => {
+          const text = memoryText(row)
+          if (!text) return []
+          return [{
+            excerpt: text,
+            rawExcerpt: text,
+            // A partner may expose the memory description, never a route/key
+            // to their private reflection detail. The mobile UI also hides
+            // Details for Their, making this boundary defense-in-depth.
+            ...(readingPartner ? {} : { reflectId: row.reflect_id }),
+            createdAt: row.created_at,
+          }]
+        }),
         hasMore,
         nextBeforeCreatedAt: hasMore && pageRows.length > 0
           ? pageRows[pageRows.length - 1].created_at
@@ -183,41 +187,57 @@ export async function GET(request) {
       })
     }
 
-    let ownedQuery = supabase
-      .from('user_items')
-      .select('item_id, count, first_seen_at')
-      .eq('user_id', targetUserId)
-      .order('first_seen_at', { ascending: false })
-      .order('item_id', { ascending: false })
-      .limit(pageSize + 1)
-    if (beforeFirstSeenAt && beforeItemId) {
-      ownedQuery = ownedQuery.or(
-        `first_seen_at.lt.${beforeFirstSeenAt},and(first_seen_at.eq.${beforeFirstSeenAt},item_id.lt.${beforeItemId})`,
-      )
-    } else if (beforeFirstSeenAt) {
-      // Backward compatibility for clients that still send the old timestamp-
-      // only cursor. New clients always send both parts of the stable keyset.
-      ownedQuery = ownedQuery.lt('first_seen_at', beforeFirstSeenAt)
+    if (readingPartner && detailMode === 'none') {
+      return NextResponse.json({
+        success: true,
+        ownerUserId: targetUserId,
+        items: [],
+        hasMore: false,
+        nextBeforeFirstSeenAt: null,
+        nextBeforeItemId: null,
+      })
     }
 
-    const { data: ownedRaw, error: e1 } = await ownedQuery
+    let ownedRaw
+    let e1
+    if (readingPartner) {
+      const result = await supabase.rpc('get_visible_partner_memory_items', {
+        p_owner_user_id: targetUserId,
+        p_require_reflect_share: detailMode === 'custom',
+        p_limit: pageSize + 1,
+        p_before_first_seen_at: beforeFirstSeenAt,
+        p_before_item_id: beforeItemId,
+      })
+      ownedRaw = result.data
+      e1 = result.error
+    } else {
+      let ownedQuery = supabase
+        .from('user_items')
+        .select('item_id, count, first_seen_at')
+        .eq('user_id', targetUserId)
+        .order('first_seen_at', { ascending: false })
+        .order('item_id', { ascending: false })
+        .limit(pageSize + 1)
+      if (beforeFirstSeenAt && beforeItemId) {
+        ownedQuery = ownedQuery.or(
+          `first_seen_at.lt.${beforeFirstSeenAt},and(first_seen_at.eq.${beforeFirstSeenAt},item_id.lt.${beforeItemId})`,
+        )
+      } else if (beforeFirstSeenAt) {
+        // Backward compatibility for clients that still send the old timestamp-
+        // only cursor. New clients always send both parts of the stable keyset.
+        ownedQuery = ownedQuery.lt('first_seen_at', beforeFirstSeenAt)
+      }
+      const result = await ownedQuery
+      ownedRaw = result.data
+      e1 = result.error
+    }
     if (e1) {
-      console.error('[bags] user_items error:', e1.message)
+      console.error('[bags] collection query error:', e1.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })
     }
 
     const hasMore = (ownedRaw || []).length > pageSize
-    let owned = (ownedRaw || []).slice(0, pageSize)
-    if (readingPartner && owned.length > 0) {
-      const itemIds = owned.map((row) => row.item_id)
-      const { data: visibleItems } = await supabase.from('reflect_items')
-        .select('item_id')
-        .eq('user_id', targetUserId)
-        .eq('visible_to_paired', true)
-        .in('item_id', itemIds)
-      const allowed = new Set((visibleItems || []).map((row) => row.item_id))
-      owned = owned.filter((row) => allowed.has(row.item_id))
-    }
+    const owned = (ownedRaw || []).slice(0, pageSize)
     const items = owned.map((it) => ({
       itemId: it.item_id,
       count: it.count,

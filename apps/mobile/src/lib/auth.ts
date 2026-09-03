@@ -1,5 +1,4 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as WebBrowser from 'expo-web-browser';
 import {
   GoogleSignin,
   statusCodes,
@@ -209,6 +208,12 @@ export type GoogleSignInResult =
   | { kind: 'unsupported' }
   | { kind: 'error'; message: string };
 
+type GoogleIdTokenResult =
+  | { kind: 'success'; token: string; accessToken?: string }
+  | { kind: 'cancelled' }
+  | { kind: 'unsupported' }
+  | { kind: 'error'; message: string };
+
 let googleSigninConfigured = false;
 
 /**
@@ -238,12 +243,86 @@ function configureGoogleSignin(): void {
       'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not set. Add it to apps/mobile/.env.local.',
     );
   }
+  if (Platform.OS === 'ios' && !iosClientId) {
+    throw new Error(
+      'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID is not set. Add it to apps/mobile/.env.local.',
+    );
+  }
   GoogleSignin.configure({
     webClientId,
     iosClientId,
     scopes: ['email', 'profile'],
   });
   googleSigninConfigured = true;
+}
+
+/**
+ * Opens Google's native account picker exactly once and returns the same
+ * credential that can be used for either identity linking or sign-in.
+ *
+ * Keeping credential acquisition separate is important for Connect Account:
+ * if the Google identity already belongs to a previous Burrow account, we can
+ * recover that account with the token we already have instead of opening a
+ * second prompt (or falling back to a browser OAuth callback).
+ */
+async function requestGoogleIdToken(): Promise<GoogleIdTokenResult> {
+  try {
+    configureGoogleSignin();
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : 'Google sign-in not configured',
+    };
+  }
+
+  try {
+    // Required on Android; the library treats this as a no-op on iOS.
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  } catch {
+    return { kind: 'unsupported' };
+  }
+
+  let response: Awaited<ReturnType<typeof GoogleSignin.signIn>>;
+  try {
+    response = await GoogleSignin.signIn();
+  } catch (e) {
+    const err = e as { code?: string; message?: string };
+    if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+      return { kind: 'cancelled' };
+    }
+    if (err.code === statusCodes.IN_PROGRESS) {
+      return { kind: 'error', message: 'Sign-in already in progress.' };
+    }
+    if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      return { kind: 'unsupported' };
+    }
+    return {
+      kind: 'error',
+      message: err.message ?? 'Google sign-in failed',
+    };
+  }
+
+  // SDK v14+ returns { type: 'success' | 'cancelled', data: {...} }.
+  if (response.type === 'cancelled') {
+    return { kind: 'cancelled' };
+  }
+  const token = response.data?.idToken;
+  if (!token) {
+    return { kind: 'error', message: 'No ID token returned from Google.' };
+  }
+
+  // Supabase accepts the access token alongside the ID token and may require
+  // it when an ID token contains an at_hash claim. Failure to fetch it is not
+  // fatal for the normal Google mobile ID token, so preserve the working
+  // sign-in path and send it whenever the native SDK makes it available.
+  let accessToken: string | undefined;
+  try {
+    accessToken = (await GoogleSignin.getTokens()).accessToken;
+  } catch {
+    accessToken = undefined;
+  }
+
+  return { kind: 'success', token, accessToken };
 }
 
 /**
@@ -271,61 +350,15 @@ function configureGoogleSignin(): void {
  *     is enabled in Supabase dashboard.
  */
 export async function signInWithGoogle(): Promise<GoogleSignInResult> {
-  try {
-    configureGoogleSignin();
-  } catch (e) {
-    return {
-      kind: 'error',
-      message: e instanceof Error ? e.message : 'Google sign-in not configured',
-    };
-  }
-
-  try {
-    // hasPlayServices: required on Android, no-op on iOS.
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  } catch (e) {
-    return {
-      kind: 'unsupported',
-    };
-  }
-
-  let response: Awaited<ReturnType<typeof GoogleSignin.signIn>>;
-  try {
-    response = await GoogleSignin.signIn();
-  } catch (e) {
-    const err = e as { code?: string; message?: string };
-    if (err.code === statusCodes.SIGN_IN_CANCELLED) {
-      return { kind: 'cancelled' };
-    }
-    if (err.code === statusCodes.IN_PROGRESS) {
-      return { kind: 'error', message: 'Sign-in already in progress.' };
-    }
-    if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-      return { kind: 'unsupported' };
-    }
-    return {
-      kind: 'error',
-      message: err.message ?? 'Google sign-in failed',
-    };
-  }
-
-  // SDK v14+ returns { type: 'success' | 'cancelled', data: {...} }.
-  if (response.type === 'cancelled') {
-    return { kind: 'cancelled' };
-  }
-  const idToken = response.data?.idToken;
-  if (!idToken) {
-    return {
-      kind: 'error',
-      message: 'No idToken returned from Google.',
-    };
-  }
+  const credential = await requestGoogleIdToken();
+  if (credential.kind !== 'success') return credential;
 
   // Hand off to Supabase. No nonce passed — Skip Nonce Check is enabled
   // in the Supabase dashboard for the Google provider.
   const { data, error } = await supabase.auth.signInWithIdToken({
     provider: 'google',
-    token: idToken,
+    token: credential.token,
+    access_token: credential.accessToken,
   });
   if (error) {
     return { kind: 'error', message: error.message };
@@ -384,57 +417,6 @@ export async function ensureSession(): Promise<boolean> {
     return await ensureSessionInFlight;
   } finally {
     ensureSessionInFlight = null;
-  }
-}
-
-// ---- Anonymous-account linking (onboarding "Connect Your Account") ----
-
-/**
- * Links the CURRENT (anonymous) session to a provider identity via
- * Supabase's linkIdentity OAuth flow in an auth browser session. This is the
- * supported way to convert a guest without minting a new user (native
- * signInWithIdToken would sign into a different account and orphan the
- * guest's data). Requires the provider to be enabled in the Supabase
- * dashboard with novame://auth-callback in the allowed redirect URLs.
- */
-export async function linkIdentityWithProvider(
-  provider: 'apple' | 'google',
-): Promise<{ ok: boolean; cancelled?: boolean; error?: string }> {
-  try {
-    const redirectTo = 'novame://auth-callback';
-    const { data, error } = await supabase.auth.linkIdentity({
-      provider,
-      options: { redirectTo, skipBrowserRedirect: true },
-    });
-    if (error || !data?.url) {
-      return { ok: false, error: error?.message ?? 'Could not start linking' };
-    }
-    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    if (res.type !== 'success' || !res.url) {
-      return { ok: false, cancelled: true };
-    }
-    const url = new URL(res.url);
-    const errDesc = url.searchParams.get('error_description');
-    if (errDesc) return { ok: false, error: errDesc };
-    const code = url.searchParams.get('code');
-    if (code) {
-      const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
-      if (exErr) return { ok: false, error: exErr.message };
-    } else {
-      const params = new URLSearchParams(url.hash.replace(/^#/, ''));
-      const access_token = params.get('access_token');
-      const refresh_token = params.get('refresh_token');
-      if (access_token && refresh_token) {
-        const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (setErr) return { ok: false, error: setErr.message };
-      } else {
-        // The link may still have landed server-side; pick it up.
-        await supabase.auth.refreshSession();
-      }
-    }
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Linking failed' };
   }
 }
 
@@ -501,6 +483,48 @@ async function connectAppleProviderOrSignIn(): Promise<ConnectResult> {
 }
 
 /**
+ * Converts an anonymous Google user with one native account-picker prompt.
+ *
+ * This deliberately mirrors the Apple path. Native ID-token linking both
+ * preserves the current anonymous UUID and avoids exposing Supabase's hosted
+ * OAuth callback domain. If the identity belongs to an older Burrow account,
+ * the same credential restores that account without a second Google prompt.
+ */
+async function connectGoogleProviderOrSignIn(): Promise<ConnectResult> {
+  const credential = await requestGoogleIdToken();
+  if (credential.kind === 'cancelled') return { ok: false, cancelled: true };
+  if (credential.kind === 'unsupported') {
+    return { ok: false, error: 'Google sign-in is not available on this device.' };
+  }
+  if (credential.kind === 'error') {
+    return { ok: false, error: credential.message };
+  }
+
+  const { data: linked, error: linkError } = await supabase.auth.linkIdentity({
+    provider: 'google',
+    token: credential.token,
+    access_token: credential.accessToken,
+  });
+  if (!linkError && linked.session && linked.user) {
+    return { ok: true, mode: 'linked' };
+  }
+  if (!isAlreadyBoundError(linkError?.message, linkError?.code)) {
+    return { ok: false, error: linkError?.message ?? 'Could not link Google account.' };
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: credential.token,
+    access_token: credential.accessToken,
+  });
+  if (error) return { ok: false, error: error.message };
+  if (!data.session || !data.user) {
+    return { ok: false, error: 'Google sign-in succeeded but no session returned.' };
+  }
+  return { ok: true, mode: 'signedIn' };
+}
+
+/**
  * The one-button "Connect" contract (product call 2026-08-07):
  *   1. try to LINK the provider identity to the current (anonymous) user;
  *   2. if the identity already belongs to another account, this is a
@@ -527,15 +551,10 @@ export async function connectProviderOrSignIn(
   const isAnonymous = (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
   if (!isAnonymous) return signIn();
 
-  // Native Apple ID-token linking lets one credential handle both possible
-  // outcomes, so the user never sees a browser sheet followed by Apple again.
+  // Native ID-token linking lets one credential handle both possible outcomes,
+  // so the user never sees a hosted OAuth callback or a second account prompt.
   if (provider === 'apple') return connectAppleProviderOrSignIn();
-
-  const link = await linkIdentityWithProvider(provider);
-  if (link.ok) return { ok: true, mode: 'linked' };
-  if (link.cancelled) return { ok: false, cancelled: true };
-  if (!isAlreadyBoundError(link.error)) return { ok: false, error: link.error };
-  return signIn();
+  return connectGoogleProviderOrSignIn();
 }
 
 export type PasswordlessEmailMode = 'change' | 'login';

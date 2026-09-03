@@ -13,6 +13,7 @@ import {
 } from './friends-api';
 import { supabase } from './supabase';
 import { invalidateConnectionDashboard } from './connection-analysis-cache';
+import { fetchBags } from './bags-api';
 
 export type PairingRealtimeSnapshot = {
   pairing: PairingStatus;
@@ -141,9 +142,11 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
         fetchPairing({ force: true }),
         fetchFriends({ force: true }),
       ]);
-      const feed = pairing.paired
-        ? await fetchFriendFeed(undefined, { force: true })
-        : [];
+      const partnerId = pairing.paired ? pairing.partner?.userId : undefined;
+      const [feed] = await Promise.all([
+        pairing.paired ? fetchFriendFeed(undefined, { force: true }) : Promise.resolve([]),
+        partnerId ? fetchBags('their', partnerId) : Promise.resolve([]),
+      ]);
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });
     } catch (error) {
@@ -164,9 +167,11 @@ async function reconcileReflectFeed(userId: string, expectedGeneration: number):
   const request = (async () => {
     try {
       const pairing = getCachedPairing() ?? await fetchPairing({ force: true });
+      const partnerId = pairing.paired ? pairing.partner?.userId : undefined;
       const [friends, feed] = await Promise.all([
         fetchFriends({ force: true }),
         pairing.paired ? fetchFriendFeed(undefined, { force: true }) : Promise.resolve([]),
+        partnerId ? fetchBags('their', partnerId) : Promise.resolve([]),
       ]);
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });

@@ -131,7 +131,10 @@ export async function markAiConsent(
  * `next` is the full URL string including any query params (the
  * record overlay takes params for forceKeyword / questionId etc).
  */
-export function requireAiConsent(next: string): boolean {
+export function requireAiConsent(
+  next: string,
+  options?: { cancelTo?: string },
+): boolean {
   if (hasAiConsented()) return true;
   // expo-router v6 typed routes do not accept arbitrary query strings
   // in the path; use the object form with separate params instead.
@@ -140,7 +143,7 @@ export function requireAiConsent(next: string): boolean {
   void haptics.pageOpen();
   router.push({
     pathname: '/(main)/ai-consent',
-    params: { next },
+    params: { next, ...(options?.cancelTo ? { cancelTo: options.cancelTo } : {}) },
   });
   return false;
 }

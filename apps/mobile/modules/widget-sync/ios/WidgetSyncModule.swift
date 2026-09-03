@@ -35,7 +35,8 @@ public class WidgetSyncModule: Module {
       // Shared copier: local file URI (release / expo-asset) or an http URL
       // (dev Metro assets, uploaded-avatar URLs).
       func copyIn(_ src: String, as name: String) -> String? {
-        guard let url = URL(string: src) else { return nil }
+        let url = src.hasPrefix("/") ? URL(fileURLWithPath: src) : URL(string: src)
+        guard let url else { return nil }
         let dest = container.appendingPathComponent(name)
         if url.isFileURL {
           return (try? FileManager.default.copyItem(at: url, to: dest)) != nil ? name : nil
