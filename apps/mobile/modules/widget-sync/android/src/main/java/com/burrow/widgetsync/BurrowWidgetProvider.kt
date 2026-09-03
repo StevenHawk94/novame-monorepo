@@ -97,7 +97,7 @@ class BurrowWidgetProvider : AppWidgetProvider() {
       val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 320)
         .coerceIn(250, 600)
       val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 80)
-        .coerceIn(56, 160)
+        .coerceIn(67, 190)
       return width to height
     }
 
@@ -161,7 +161,7 @@ class BurrowWidgetProvider : AppWidgetProvider() {
 
       views.setImageViewBitmap(R.id.widget_avatar, null)
       payload?.optString("avatarFile")?.takeIf { it.isNotBlank() }?.let { path ->
-        decodeCircularAvatar(path, 96)?.let { views.setImageViewBitmap(R.id.widget_avatar, it) }
+        decodeCircularAvatar(path, 116)?.let { views.setImageViewBitmap(R.id.widget_avatar, it) }
       }
       val items = payload?.optJSONArray("items")
       val hasItems = state == "latest" && items != null && items.length() > 0
@@ -178,7 +178,7 @@ class BurrowWidgetProvider : AppWidgetProvider() {
         val total = payload?.optInt("totalItems", items?.length() ?: 0) ?: 0
         for (index in 0 until minOf(items?.length() ?: 0, 6)) {
           items?.optJSONObject(index)?.optString("file")?.takeIf { it.isNotBlank() }?.let { path ->
-            decodeWidgetBitmap(path, 112)?.let { views.setImageViewBitmap(itemViews[index], it) }
+            decodeWidgetBitmap(path, 120)?.let { views.setImageViewBitmap(itemViews[index], it) }
           }
         }
         if (total > 6) {

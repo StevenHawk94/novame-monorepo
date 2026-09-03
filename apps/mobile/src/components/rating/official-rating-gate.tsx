@@ -11,6 +11,7 @@ import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
 import { useActiveModalSlot } from '@/lib/modal-coordinator';
 import { isOverlayPresent, useOverlayPresent } from '@/lib/overlay-presence';
 import { withDeadline } from '@/lib/async-lifecycle';
+import { useHomeEntry } from '@/lib/use-home-entry';
 
 let requestInFlight = false;
 
@@ -40,6 +41,7 @@ async function requestOfficialRating(canPresent: () => boolean): Promise<boolean
  * goes first; rating waits for that paywall/other modals to close.
  */
 export function OfficialRatingGate() {
+  const homeEntry = useHomeEntry();
   const segments = useSegments();
   const routeKey = useMemo(() => segments.join('/'), [segments]);
   const [pending, setPending] = useState(false);
@@ -57,7 +59,13 @@ export function OfficialRatingGate() {
   const routeSegments = routeKey.split('/');
   const atTabs = routeSegments.includes('(tabs)');
   const atReflectPicker = routeKey === '(main)/reflect';
-  const idle = appState === 'active' && !transitionBusy && !dialogVisible && !activeModal && !overlayPresent;
+  const idle = appState === 'active'
+    && !homeEntry.pending
+    && !homeEntry.resumeRequired
+    && !transitionBusy
+    && !dialogVisible
+    && !activeModal
+    && !overlayPresent;
   const eligibility = useRef({ paywall: false, rating: false });
   eligibility.current = {
     paywall: idle && tier === 'free' && (atTabs || atReflectPicker) && !presentingPaywall.current,
@@ -128,7 +136,7 @@ export function OfficialRatingGate() {
         });
     });
     return () => cancelAnimationFrame(frame);
-  }, [appState, pending, pendingPaywall, requestingRating, routeKey, transitionBusy, dialogVisible, tier, activeModal, overlayPresent]);
+  }, [appState, pending, pendingPaywall, requestingRating, routeKey, transitionBusy, dialogVisible, tier, activeModal, overlayPresent, homeEntry.pending, homeEntry.resumeRequired]);
 
   return null;
 }

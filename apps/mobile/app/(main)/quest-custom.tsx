@@ -27,8 +27,9 @@ const MAX_GOAL = 500;
 /**
  * Custom Goal (Plus) — PRD §5.2: the user describes a concrete goal, the AI
  * proposes ~20 daily tasks, and quest-pick takes over for choose-7 → start.
- * Free users hit the server's Plus gate and are routed to the paywall; the
- * screen itself stays reachable so the feature is discoverable.
+ * The Quests picker gates Free users before this screen is mounted. The
+ * server-side Plus response below remains a defensive entitlement check for
+ * stale sessions or a subscription that expires while this screen is open.
  */
 export default function QuestCustomScreen() {
   const insets = useSafeAreaInsets();
@@ -117,8 +118,11 @@ export default function QuestCustomScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      // Android already resizes the activity for the IME. Applying a second
+      // height reduction here made the first focused frame jump and briefly
+      // misplaced the bottom controls.
+      style={{ flex: 1, backgroundColor: BG }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 12 }]}>
         <View style={styles.header}>

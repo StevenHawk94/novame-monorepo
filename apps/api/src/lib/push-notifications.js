@@ -45,7 +45,7 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
     if (!claimed) continue
     try {
       const { data: tokens, error: tokenError } = await supabase.from('device_push_tokens')
-        .select('id,expo_push_token').eq('user_id', row.recipient_user_id).eq('enabled', true)
+        .select('id,expo_push_token,platform').eq('user_id', row.recipient_user_id).eq('enabled', true)
       if (tokenError) throw tokenError
       if (!tokens?.length) {
         await supabase.from('notification_outbox').update({
@@ -58,7 +58,17 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
       }
       // Deliberately generic: no display name, account id or reflect id leaves
       // the backend. The authenticated app resolves the fresh Paired feed.
-      const response = await fetch(EXPO_PUSH_URL, {
+      const visibleMessages = tokens.map((token) => ({
+        to: token.expo_push_token,
+        title: 'Burrow',
+        body: 'A little more of your person’s day is here for you.',
+        sound: 'default',
+        channelId: 'partner-updates',
+        data: { type: 'partner_reflect', route: 'home' },
+      }))
+      // Send the widget invalidation independently. Its best-effort delivery
+      // must never reject, retry, or duplicate the existing visible alert.
+      const backgroundResponsePromise = fetch(EXPO_PUSH_URL, {
         method: 'POST',
         headers: {
           Accept: 'application/json', 'Content-Type': 'application/json',
@@ -68,12 +78,23 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
         },
         body: JSON.stringify(tokens.map((token) => ({
           to: token.expo_push_token,
-          title: 'Burrow',
-          body: 'A little more of your person’s day is here for you.',
-          sound: 'default',
-          channelId: 'partner-updates',
-          data: { type: 'partner_reflect', route: 'home' },
+          // APNs background updates require priority 5 (`normal`); Android
+          // data messages use `high` so a sleeping device can wake promptly.
+          priority: token.platform === 'ios' ? 'normal' : 'high',
+          ttl: 300,
+          contentAvailable: true,
+          data: { type: 'partner_reflect_widget_refresh' },
         }))),
+      }).catch(() => null)
+      const response = await fetch(EXPO_PUSH_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json', 'Content-Type': 'application/json',
+          ...(process.env.EXPO_ACCESS_TOKEN
+            ? { Authorization: `Bearer ${process.env.EXPO_ACCESS_TOKEN}` }
+            : {}),
+        },
+        body: JSON.stringify(visibleMessages),
       })
       if (!response.ok) throw new Error(`expo_push_http_${response.status}`)
       const payload = await response.json()
@@ -86,6 +107,9 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
           await supabase.from('device_push_tokens').update({ enabled: false }).eq('id', tokens[index].id)
         }
       }
+      // Drain the already-started background request without coupling its
+      // result to visible-notification delivery semantics.
+      await backgroundResponsePromise
       if (!delivered) throw new Error('expo_push_rejected')
       await supabase.from('notification_outbox').update({
         status: 'sent', sent_at: new Date().toISOString(), locked_at: null, last_error: null,

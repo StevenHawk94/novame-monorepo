@@ -1,18 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
-import { ActivityIndicator, AppState, BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, BackHandler, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
 import { router, useSegments } from 'expo-router';
 
 import {
   failHomeEntry, finishHomeEntry, homeEntryIsReady, markHomeEntryAsset,
-  beginHomeEntry, isHomeEntryRoute, retryHomeEntry, type HomeEntryAsset,
+  beginHomeEntry, HOME_ENTRY_TIMEOUT_MS, isFriendsEntryRoute,
+  isHomeEntryRoute, retryHomeEntry, timeoutHomeEntry, type HomeEntryAsset,
 } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { ICONS } from '@/lib/icons';
-import { haptics } from '@/lib/haptics';
 import { GridBackground } from '@/components/ui/grid-background';
 import { hideSplashOnce } from '@/lib/splash';
 import { registerOverlay, useOverlayPresent } from '@/lib/overlay-presence';
+import { useRatingTransitionBusy } from '@/lib/rating-navigation';
+import { fetchAppConfig } from '@/lib/app-config-api';
+import { getCurrentSession } from '@/lib/auth';
+import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 
 /** Images must be displayed in their final native view, not merely downloaded. */
 export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImageProps & { asset: HomeEntryAsset }) {
@@ -28,20 +32,30 @@ export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImagePro
   );
 }
 
-/** Cover Home AND its tab bar while the same views paint at their final size. */
+/** Cover the active external-entry destination while its final views paint. */
 export function HomeEntryGate({ children }: PropsWithChildren) {
   const entry = useHomeEntry();
-  const atHome = isHomeEntryRoute(useSegments());
+  const segments = useSegments();
+  const atHome = isHomeEntryRoute(segments);
+  const atFriends = isFriendsEntryRoute(segments);
   const otherOverlay = useOverlayPresent();
+  const transitionBusy = useRatingTransitionBusy();
   const overlayOwner = useRef({}).current;
-  const visible = atHome && entry.pending;
+  const visible = entry.pending;
+  const atTarget = entry.target === 'current'
+    || (entry.target === 'home' && atHome)
+    || (entry.target === 'friends' && atFriends);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [after, setAfter] = useState<'notification-settings' | null>(null);
   const ready = homeEntryIsReady();
 
   useLayoutEffect(() => {
-    if (atHome && entry.resumeRequired && !otherOverlay) beginHomeEntry();
-  }, [atHome, entry.resumeRequired, otherOverlay]);
+    if (!entry.resumeRequired || otherOverlay) return;
+    beginHomeEntry({
+      target: atHome ? 'home' : atFriends ? 'friends' : 'current',
+      forceHomeData: atHome || atFriends,
+    });
+  }, [atFriends, atHome, entry.resumeRequired, otherOverlay]);
 
   useLayoutEffect(() => {
     if (visible) return registerOverlay(overlayOwner);
@@ -61,28 +75,43 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   }, [entry.pending, after]);
 
   useEffect(() => {
+    if (!entry.pending) return;
+    const attempt = entry.attempt;
+    // Dialog/config copy is the only shared data that is deliberately checked
+    // on every real entry. Existing cached UI remains underneath the cover.
+    void Promise.allSettled([
+      fetchAppConfig({ noCache: true }),
+      getCurrentSession().then((session) => (
+        session?.user?.id ? prepareUnreadAnnouncement(session.user.id) : null
+      )),
+    ]).then(() => markHomeEntryAsset('entry-copy', attempt));
+  }, [entry.pending, entry.attempt]);
+
+  useEffect(() => {
     if (!visible) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
   }, [visible]);
 
   useEffect(() => {
-    if (!visible || !foreground || !ready) return;
+    if (!visible || !atTarget || !foreground || !ready || transitionBusy) return;
     // Leave a paint between the last native display/layout event and reveal.
+    // Do not reveal while the native stack is still moving Home into place:
+    // its temporary content background is the deep-brown frame users saw.
     // Backgrounding or unmounting cancels both queued frames.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => setAfter(finishHomeEntry(entry.attempt)));
     });
     return () => cancelAnimationFrame(frame);
-  }, [visible, entry.attempt, foreground, ready]);
+  }, [visible, atTarget, entry.attempt, foreground, ready, transitionBusy]);
 
   useEffect(() => {
-    if (!visible || !foreground || ready || entry.failed) return;
-    // A corrupt asset / missing native callback must not mean an endless
-    // spinner. Retry remounts only the visual assets, not auth or navigation.
-    const timer = setTimeout(() => failHomeEntry(entry.attempt), 12000);
+    if (!visible || !foreground) return;
+    // Never trap an entry on slow network or a missing native display event.
+    // The cached destination is already mounted underneath, so fail open.
+    const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), HOME_ENTRY_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [visible, entry.attempt, foreground, ready, entry.failed]);
+  }, [visible, entry.attempt, foreground]);
 
   useEffect(() => {
     if (entry.pending || !atHome || !foreground || !after) return;
@@ -93,14 +122,12 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
     return () => cancelAnimationFrame(frame);
   }, [entry.pending, atHome, foreground, after]);
 
-  // Deep links (including the home-screen widget) may cold-launch straight
-  // into Paired instead of Home. Those routes have no Home asset gate, so
-  // release the native splash as soon as their authenticated shell lays out
-  // rather than waiting for the 10-second defensive fallback.
+  // When no entry is pending, any authenticated destination owns the native
+  // splash hand-off. Home/Paired entries hide it from the cover's own layout.
   return (
     <View
       style={styles.root}
-      onLayout={!atHome ? hideSplashOnce : undefined}
+      onLayout={!visible ? hideSplashOnce : undefined}
     >
       <View
         style={styles.root}
@@ -114,19 +141,7 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
         <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
           <GridBackground />
           <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
-          {entry.failed ? (
-            <>
-              <Text style={styles.message}>Home is taking longer to get ready.</Text>
-              <Pressable accessibilityRole="button" style={styles.retry} onPress={() => { void haptics.light(); retryHomeEntry(); }}>
-                <Text style={styles.retryText}>Try Again</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <ActivityIndicator size="small" color="#8A6240" />
-              <Text style={styles.message}>Getting your burrow ready…</Text>
-            </>
-          )}
+          <ActivityIndicator size="small" color="#8A6240" />
         </View>
       ) : null}
     </View>
@@ -137,7 +152,4 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
   bunny: { width: 132, height: 158, marginBottom: 24 },
-  message: { marginTop: 16, marginHorizontal: 24, textAlign: 'center', color: '#6F4F34', fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  retry: { marginTop: 20, paddingVertical: 14, paddingHorizontal: 32, borderRadius: 18, backgroundColor: '#4A3220' },
-  retryText: { color: '#FFF4E3', fontFamily: 'Inter_700Bold', fontSize: 16 },
 });

@@ -12,7 +12,7 @@ import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
 import { HomeEntryImage } from '@/components/main/home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
-import { failHomeEntry, markHomeEntryAsset } from '@/lib/home-entry-readiness';
+import { failHomeEntry, getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
 import { getHomeSceneSource } from '@/lib/scenes';
 import {
   advanceDefaultBubble,
@@ -23,7 +23,7 @@ import {
 } from '@/lib/bubble-store';
 import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
 import { prefetchAppData } from '@/lib/prefetch';
-import { loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
+import { getCachedTodayBubbles, loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { useNavigationAction } from '@/lib/use-navigation-action';
@@ -63,7 +63,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const subscriptionTier = useSubscriptionTierState();
   const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
-  const [bubbles, setBubbles] = useState<MemoryBubble[]>([]);
+  const [bubbles, setBubbles] = useState<MemoryBubble[]>(getCachedTodayBubbles);
   const [firstPartnerReflect, setFirstPartnerReflect] = useState<{
     partnerId: string;
     name: string;
@@ -146,6 +146,13 @@ export default function HomeScreen() {
   const refreshHomeBubbles = useCallback(async (force = false) => {
     const nextBubbles = await loadTodayBubbles({ force });
     setBubbles(nextBubbles);
+    // Mark data ready only after the bubble state is queued for the mounted
+    // Home. HomeEntryGate adds two paint frames before reveal, so users never
+    // see an empty Home followed by bubbles/feed popping into place.
+    const entry = getHomeEntryState();
+    if (entry.pending) {
+      requestAnimationFrame(() => markHomeEntryAsset('home-data', entry.attempt));
+    }
     const pairing = getCachedPairing();
     const page = getCachedFriendFeedPage();
     const partner = pairing?.paired ? pairing.partner : null;
@@ -159,9 +166,19 @@ export default function HomeScreen() {
   // cache; consumeHomeRefresh also preserves cold-start taps until this screen
   // has mounted.
   useEffect(() => subscribeHomeRefresh(() => {
+    // Notification entry owns the pending refresh through HomeEntryGate. Its
+    // attempt effect below consumes the pulse exactly once and waits for it;
+    // ordinary modal-close refreshes still update Home without a full gate.
+    if (getHomeEntryState().pending) return;
     consumeHomeRefresh();
     void refreshHomeBubbles(true);
   }), [refreshHomeBubbles]);
+
+  useEffect(() => {
+    if (!homeEntry.pending || homeEntry.target !== 'home') return;
+    const signaledRefresh = consumeHomeRefresh();
+    void refreshHomeBubbles(homeEntry.forceData || signaledRefresh);
+  }, [homeEntry.pending, homeEntry.attempt, homeEntry.forceData, homeEntry.target, refreshHomeBubbles]);
 
   useFocusEffect(
     useCallback(() => {
@@ -172,7 +189,11 @@ export default function HomeScreen() {
       void fetchCompanion().then((c) => {
         if (c) setCompanion(c);
       });
-      void refreshHomeBubbles(consumeHomeRefresh());
+      // A pending entry attempt is handled by the effect above so its forced
+      // notification refresh cannot race a second cache-first request.
+      if (!getHomeEntryState().pending) {
+        void refreshHomeBubbles(consumeHomeRefresh());
+      }
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();

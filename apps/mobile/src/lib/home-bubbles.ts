@@ -18,7 +18,7 @@
  * persisting (kHomeBubblesState, user scope).
  */
 import { apiClient } from './api';
-import { fetchFriendFeed } from './friends-api';
+import { fetchFriendFeed, getCachedFriendFeed, type FeedEntry } from './friends-api';
 import { storage } from './storage';
 import { supabase } from './supabase';
 import { kHomeBubblesState } from '../shared/storage/keys';
@@ -109,47 +109,58 @@ export async function submitBubblePop(bubble: MemoryBubble): Promise<number> {
 /**
  * Today's bubble set: every (friend, today-item) pair, deterministically
  * ordered, capped at MAX_BUBBLES, minus the ones already popped. Network
- * failure or zero friends simply yields [] — Home renders nothing extra.
+ * failure reuses the last successful feed; a real empty feed renders
+ * no bubbles.
  */
+function bubblesFromFeed(feed: FeedEntry[]): MemoryBubble[] {
+  const newestFirst = [...feed].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const candidates: MemoryBubble[] = [];
+  const seen = new Set<string>();
+  for (const e of newestFirst) {
+    for (const itemId of e.itemIds) {
+      const id = `${e.friendUserId}:${itemId}`;
+      if (seen.has(id)) continue; // newest occurrence of an item wins
+      seen.add(id);
+      const entry = mergedItemDictionary().items[itemId];
+      const name = entry?.displayName ?? 'A little memory';
+      // A REAL memory only: item-pick reflects store the item's own name as
+      // the description — that's not a written memory, so no card for it.
+      const raw = e.details?.find((d) => d.itemId === itemId && d.text?.trim())?.text ?? null;
+      const norm = (v: string) => v.trim().toLowerCase();
+      const text = raw && norm(raw) !== norm(name) && norm(raw) !== norm(itemId) ? raw : null;
+      candidates.push({
+        id,
+        friendUserId: e.friendUserId,
+        friendName: e.friendName,
+        itemId,
+        emoji: entry?.emoji ?? '✨',
+        itemName: name,
+        memoryText: text,
+        isPublic: !!text,
+        slot: 0, // assigned after the newest-first cap below
+      });
+    }
+  }
+  return candidates
+    .slice(0, MAX_BUBBLES)
+    .map((b, i) => ({ ...b, slot: i }))
+    .filter((b) => !isPopped(b.id));
+}
+
+/** Synchronous first frame: last successful feed, with the same pop filter. */
+export function getCachedTodayBubbles(): MemoryBubble[] {
+  return bubblesFromFeed(getCachedFriendFeed());
+}
+
 export async function loadTodayBubbles(options?: { force?: boolean }): Promise<MemoryBubble[]> {
   try {
     // Feed-based (2026-08-08): newest publishes win — fresh reflects replace
     // older bubbles — and each item carries its memory text when the friend
     // shares one (the card shows only then; otherwise a pop is just a pop).
     const feed = await fetchFriendFeed(undefined, options);
-    const newestFirst = [...feed].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    const candidates: MemoryBubble[] = [];
-    const seen = new Set<string>();
-    for (const e of newestFirst) {
-      for (const itemId of e.itemIds) {
-        const id = `${e.friendUserId}:${itemId}`;
-        if (seen.has(id)) continue; // newest occurrence of an item wins
-        seen.add(id);
-        const entry = mergedItemDictionary().items[itemId];
-        const name = entry?.displayName ?? 'A little memory';
-        // A REAL memory only: item-pick reflects store the item's own name as
-        // the description — that's not a written memory, so no card for it.
-        const raw = e.details?.find((d) => d.itemId === itemId && d.text?.trim())?.text ?? null;
-        const norm = (v: string) => v.trim().toLowerCase();
-        const text = raw && norm(raw) !== norm(name) && norm(raw) !== norm(itemId) ? raw : null;
-        candidates.push({
-          id,
-          friendUserId: e.friendUserId,
-          friendName: e.friendName,
-          itemId,
-          emoji: entry?.emoji ?? '✨',
-          itemName: name,
-          memoryText: text,
-          isPublic: !!text,
-          slot: 0, // assigned after the newest-first cap below
-        });
-      }
-    }
-    return candidates
-      .slice(0, MAX_BUBBLES)
-      .map((b, i) => ({ ...b, slot: i }))
-      .filter((b) => !isPopped(b.id));
+    return bubblesFromFeed(feed);
   } catch {
-    return [];
+    // Never replace a good cached Home with an empty transient failure.
+    return getCachedTodayBubbles();
   }
 }

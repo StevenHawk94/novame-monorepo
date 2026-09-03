@@ -41,7 +41,10 @@ export default function MainLayout() {
             contentStyle: { backgroundColor: '#4C331B' },
           }}
         >
-          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="(tabs)"
+            options={{ contentStyle: { backgroundColor: '#E8D5B0' } }}
+          />
           <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
           <Stack.Screen
             name="item-sheet"

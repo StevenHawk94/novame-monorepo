@@ -1,7 +1,7 @@
 {
   "name": "@novame/mobile",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "./index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -49,6 +49,7 @@
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "expo-store-review": "~9.0.9",
+    "expo-task-manager": "~14.0.9",
     "expo-video": "~3.0.16",
     "expo-web-browser": "~15.0.11",
     "lottie-react-native": "~7.3.1",

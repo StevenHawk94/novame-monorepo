@@ -105,9 +105,13 @@ export function FeatureGuideModal({
   });
   const [iconDisplayed, setIconDisplayed] = useState(false);
   const [visible, setVisible] = useState(false);
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const cardOpacity = useRef(new Animated.Value(0)).current;
-  const cardScale = useRef(new Animated.Value(0.78)).current;
+  // A native Android Modal paints once before onShow runs. Starting the
+  // contents transparent exposed the destination page for that frame, which
+  // looked like a flash on every first-use guide. Keep the first frame fully
+  // composed and animate only a small, stable scale settle.
+  const backdropOpacity = useRef(new Animated.Value(1)).current;
+  const cardOpacity = useRef(new Animated.Value(1)).current;
+  const cardScale = useRef(new Animated.Value(0.96)).current;
   const entranceAnimation = useRef<Animated.CompositeAnimation | null>(null);
 
   useFocusEffect(
@@ -117,9 +121,9 @@ export function FeatureGuideModal({
       // useImage already supplies a decoded ImageRef. Do not open an invisible
       // modal and wait for an onDisplay event before allowing any interaction.
       setIconDisplayed(true);
-      backdropOpacity.setValue(0);
-      cardOpacity.setValue(0);
-      cardScale.setValue(0.78);
+      backdropOpacity.setValue(1);
+      cardOpacity.setValue(1);
+      cardScale.setValue(0.96);
       requestedRef.current = true;
       requestModalSlot('guide', owner);
       return () => {
@@ -139,42 +143,15 @@ export function FeatureGuideModal({
   const playEntrance = useCallback(() => {
     if (!requestedRef.current || !iconDisplayed) return;
     entranceAnimation.current?.stop();
-    backdropOpacity.setValue(0);
-    cardOpacity.setValue(0);
-    cardScale.setValue(0.78);
-    const animation = Animated.parallel([
-      Animated.timing(backdropOpacity, {
-        toValue: 1,
-        duration: 180,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 1,
-        duration: 140,
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.timing(cardScale, {
-          toValue: 1.06,
-          duration: 210,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardScale, {
-          toValue: 0.96,
-          duration: 90,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardScale, {
-          toValue: 1,
-          duration: 90,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    ]);
+    backdropOpacity.setValue(1);
+    cardOpacity.setValue(1);
+    cardScale.setValue(0.96);
+    const animation = Animated.timing(cardScale, {
+      toValue: 1,
+      duration: 160,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
     entranceAnimation.current = animation;
     animation.start(({ finished }) => {
       if (finished && entranceAnimation.current === animation) entranceAnimation.current = null;

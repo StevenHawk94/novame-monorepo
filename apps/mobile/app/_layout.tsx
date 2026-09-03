@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, Linking, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Sentry from '@sentry/react-native';
@@ -46,7 +46,7 @@ import { AppDialogHost } from '@/components/ui/app-dialog';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
-import { observeHomeEntryAppState } from '@/lib/home-entry-readiness';
+import { beginHomeEntry, observeHomeEntryAppState } from '@/lib/home-entry-readiness';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import { touchActivity } from '@/lib/activity';
 import { checkContentVersionInBackground } from '@/lib/content-version';
@@ -98,6 +98,10 @@ assertAllKeysRegistered();
 // network fetches hang — otherwise the user is trapped staring at a
 // static screen. 3 seconds is the standard Expo / RN community value.
 const PREWARM_TIMEOUT_MS = 3000;
+
+function isWidgetFriendsUrl(url: string | null | undefined): boolean {
+  return /^novame:\/\/friends(?:[/?#]|$)/i.test(url ?? '');
+}
 
 /**
  * Root layout for @novame/mobile.
@@ -230,6 +234,10 @@ function RootLayout() {
       const responseId = response.notification.request.identifier;
       if (handledNotificationResponses.current.has(responseId)) return;
       handledNotificationResponses.current.add(responseId);
+      // Cover the destination before invalidating its cached feed. Home now
+      // releases this gate only after the forced partner-feed/bubble read and
+      // its final native visual layout are both ready.
+      beginHomeEntry({ target: 'home', forceHomeData: true });
       emitHomeRefresh();
       // Let expo-router finish mounting its root navigator on a cold launch,
       // then select Home. The pending refresh pulse survives if Home has not
@@ -246,6 +254,22 @@ function RootLayout() {
       active = false;
       responseSubscription.remove();
     };
+  }, [fontsLoaded, isReady]);
+
+  useEffect(() => {
+    if (!isReady || !fontsLoaded) return;
+    let lastHandledAt = 0;
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (!isWidgetFriendsUrl(url)) return;
+      const now = Date.now();
+      if (now - lastHandledAt < 750) return;
+      lastHandledAt = now;
+      // Native widgets point to Paired. Keep its cached page mounted under the
+      // cover while pairing + reflection feed are force-revalidated.
+      beginHomeEntry({ target: 'friends', forceHomeData: true });
+      router.navigate('/(main)/(tabs)/friends' as never);
+    });
+    return () => subscription.remove();
   }, [fontsLoaded, isReady]);
 
   // Cold start restores the local session, then renders immediately. Remote
@@ -272,6 +296,14 @@ function RootLayout() {
         // Tiny R2 pointer only. Never awaited: content refresh/download is
         // staged behind the native splash and can continue after Home paints.
         void checkContentVersionInBackground();
+        const initialUrl = await Linking.getInitialURL().catch(() => null);
+        const initialNotification = Notifications.getLastNotificationResponse();
+        const initialNotificationData = initialNotification?.notification.request.content.data as { type?: unknown } | null;
+        if (initialNotificationData?.type === 'partner_reflect') {
+          beginHomeEntry({ target: 'home', forceHomeData: true });
+        } else if (isWidgetFriendsUrl(initialUrl)) {
+          beginHomeEntry({ target: 'friends', forceHomeData: true });
+        }
         const session = await getCurrentSession();
         const userId = session?.user?.id;
         void fetchAppConfig();

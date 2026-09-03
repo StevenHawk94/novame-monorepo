@@ -17,6 +17,7 @@ import { haptics } from '@/lib/haptics';
 import { useCompletionSound } from '@/lib/use-completion-sound';
 import { optimisticCloverAward } from '@/lib/cosmetics-api';
 import { sessionEpoch } from '@/lib/session-lifecycle';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import {
   checkTask,
   cacheQuestStatus,
@@ -51,6 +52,7 @@ const QUEST_CELEBRATION_SOURCE = require('../../../assets/animations/quest-dense
  */
 export default function QuestsScreen() {
   const router = useRouter();
+  const tier = useSubscriptionTier();
   const { play: playCompletionSound } = useCompletionSound();
   const [status, setStatus] = useState<QuestStatus>(() => getCachedStatus());
   // Optimistic check-off (2026-08-07): the row completes instantly with
@@ -64,11 +66,13 @@ export default function QuestsScreen() {
   const pendingPlanReward = useRef<number | null>(null);
   const checkInFlight = useRef(false);
   const statusRevision = useRef(0);
+  const navigationInFlight = useRef(false);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       screenActive.current = true;
+      navigationInFlight.current = false;
       const revision = statusRevision.current;
       const epoch = sessionEpoch();
       void fetchQuestStatus().then((next) => {
@@ -94,8 +98,18 @@ export default function QuestsScreen() {
   const standard = themes.filter((t) => !t.isCustom);
 
   function onPickTheme(theme: QuestTheme) {
+    if (navigationInFlight.current) return;
+    navigationInFlight.current = true;
     void haptics.pageOpen();
     if (theme.isCustom) {
+      // Gate Custom Goal before mounting either the editor or a recovered
+      // candidate list. Previously Free users briefly entered the editor and
+      // only saw the paywall after Generate, which produced a visible flash
+      // and exposed a page they could not use.
+      if (tier === 'free') {
+        router.push('/(main)/(modals)/subscription-paywall' as never);
+        return;
+      }
       const cachedTasks = getCachedCustomTasks();
       if (cachedTasks?.length) {
         router.push({

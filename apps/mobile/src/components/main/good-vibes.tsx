@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { useSegments } from 'expo-router';
 import { useHomeEntry } from '@/lib/use-home-entry';
-import { isHomeEntryRoute } from '@/lib/home-entry-readiness';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { createOperationScope, withDeadline } from '@/lib/async-lifecycle';
 import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
@@ -166,8 +165,10 @@ export function GoodVibesInboxGate() {
   const homeEntry = useHomeEntry();
   const active = useActiveModalSlot();
   const [appState, setAppState] = useState(AppState.currentState);
-  const homeLoading = isHomeEntryRoute(segments) && (homeEntry.pending || homeEntry.resumeRequired);
-  const eligible = (segments as readonly string[]).includes('(tabs)') && appState === 'active' && !homeLoading;
+  // External entry can target Home or Paired. Automatic inbox prompts wait
+  // behind either loading hand-off so they never cover its clean first frame.
+  const entryLoading = homeEntry.pending || homeEntry.resumeRequired;
+  const eligible = (segments as readonly string[]).includes('(tabs)') && appState === 'active' && !entryLoading;
 
   useEffect(() => {
     if (eligible && (vibe || replyToId)) requestModalSlot('good-vibe');

@@ -76,7 +76,8 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#8A6240"
+          "color": "#8A6240",
+          "enableBackgroundRemoteNotifications": true
         }
       ],
       "./plugins/with-photo-permissions",
@@ -94,7 +95,7 @@
         {
           "android": {
             "image": "./assets/adaptive-icon.png",
-            "imageWidth": 220,
+            "imageWidth": 154,
             "backgroundColor": "#F8E2C1"
           }
         }

@@ -283,13 +283,6 @@ export default function TameEnemyScreen() {
           {monsters.map((m) => {
             // Free: 3 tames a day across all monsters. Paid: one per monster.
             const locked = perEnemyDaily ? m.tamedToday : doneToday;
-            // Old cached payloads only carried tamedBefore. Preserve that
-            // first-tame badge until the background status refresh supplies
-            // the exact server count.
-            const tamedCount = Math.max(
-              0,
-              Number(m.tamedCount ?? (m.tamedBefore ? 1 : 0)) || 0,
-            );
             return (
               <Pressable
                 key={m.id}
@@ -302,11 +295,6 @@ export default function TameEnemyScreen() {
                   <Text style={styles.monsterEmoji}>{MONSTER_EMOJI[m.id] ?? '\u{1F47E}'}</Text>
                 )}
                 <Text style={[styles.monsterName, { color: kit.text }]}>{m.name}</Text>
-                {tamedCount > 0 && (
-                  <View style={[styles.tamedBadge, { backgroundColor: 'rgba(58,46,26,0.08)' }]}>
-                    <Text style={[styles.tamedBadgeText, { color: kit.textSub }]}>Tamed {tamedCount}×</Text>
-                  </View>
-                )}
               </Pressable>
             );
           })}
@@ -569,8 +557,6 @@ const styles = StyleSheet.create({
   monsterImg: { width: 92, height: 92, marginBottom: 8 },
   monsterName: { fontSize: 15, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   monsterSkills: { fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 4 },
-  tamedBadge: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-  tamedBadgeText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
 
   prepRoot: { flex: 1, backgroundColor: '#F6E7C8' },
   prepScroll: {

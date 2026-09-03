@@ -6,7 +6,7 @@ import { Redirect } from 'expo-router';
 import { getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { hideSplashOnce } from '@/lib/splash';
-import { beginHomeEntry } from '@/lib/home-entry-readiness';
+import { beginHomeEntry, getHomeEntryState } from '@/lib/home-entry-readiness';
 
 /**
  * Entry router. Home mounts under its visual readiness cover; only its visible
@@ -25,7 +25,7 @@ import { beginHomeEntry } from '@/lib/home-entry-readiness';
  * the destination paints, avoiding a second full-screen splash transition.
  * No remote asset download is awaited here.
  */
-type Route = 'main' | 'onboarding' | 'bootstrap' | 'signin';
+type Route = 'main' | 'friends' | 'onboarding' | 'bootstrap' | 'signin';
 
 // Supabase normally restores the persisted session from AsyncStorage almost
 // instantly. On a few Android process restarts the auth storage lock can take
@@ -52,8 +52,13 @@ export default function Index() {
       const isAnonymous =
         (session?.user as { is_anonymous?: boolean } | undefined)?.is_anonymous ?? false;
       if (session && (!isAnonymous || introSeen)) {
-        beginHomeEntry();
-        setRoute('main');
+        const pendingEntry = getHomeEntryState();
+        if (pendingEntry.pending && pendingEntry.target === 'friends') {
+          setRoute('friends');
+        } else {
+          beginHomeEntry({ target: 'home', forceHomeData: true });
+          setRoute('main');
+        }
       } else if (!introSeen) {
         setRoute('onboarding');
       } else {
@@ -87,6 +92,7 @@ export default function Index() {
     );
   }
   if (route === 'main') return <Redirect href="/(main)/(tabs)" />;
+  if (route === 'friends') return <Redirect href="/(main)/(tabs)/friends" />;
   if (route === 'onboarding') return <Redirect href="/(onboarding)" />;
   if (route === 'bootstrap') return <Redirect href="/(auth)/signing-in" />;
   return <Redirect href="/(auth)/sign-in" />;

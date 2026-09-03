@@ -43,7 +43,7 @@ export default function SigningInScreen() {
       const elapsed = Date.now() - start;
       setTimeout(() => {
         if (!cancelled) {
-          beginHomeEntry();
+          beginHomeEntry({ target: 'home', forceHomeData: true });
           if (params.after === 'notification-settings') {
             deferHomeEntryNotification();
           }

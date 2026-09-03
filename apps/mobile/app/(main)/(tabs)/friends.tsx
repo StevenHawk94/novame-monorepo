@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
-import { Image as ExpoImage } from 'expo-image';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -23,6 +22,9 @@ import {
   type FriendsStatus, type FeedEntry, type PairingStatus, type PendingRequest, type MemoryDetailsMode,
 } from '@/lib/friends-api';
 import { subscribeFriendshipRealtime, subscribePairingRealtime } from '@/lib/pairing-realtime';
+import { HomeEntryImage } from '@/components/main/home-entry-gate';
+import { getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
+import { useHomeEntry } from '@/lib/use-home-entry';
 
 /**
  * Friends Cave (mocks 1:1). Full-bleed meadow art; centered title; mail
@@ -45,6 +47,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function FriendsScreen() {
+  const homeEntry = useHomeEntry();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
@@ -79,28 +82,46 @@ export default function FriendsScreen() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  const load = useCallback(() => {
+  const load = useCallback(async (forceLatest = false) => {
     // Invitations expire after 48 hours. Bypass the normal short cache whenever
     // this screen regains focus so an expired request cannot keep the UI stuck
     // in Pending after the user returns to Paired.
-    void fetchFriends({ force: true }).then(setStatus);
     void fetchGoodVibeDailyStatus().then((dailyStatus) => {
       if (dailyStatus) setGoodVibeStatus(dailyStatus);
     });
-    void fetchPairing().then((nextPairing) => {
-      setPairing(nextPairing);
-      if (!nextPairing.paired) {
-        setFeed([]);
-        return;
-      }
-      void fetchFriendFeedPage().then((page) => {
-        setFeed(page.feed); setFeedHasMore(page.hasMore);
-        setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
-        setNextFeedId(page.nextBeforeId ?? null);
-      });
-    });
+    const statusRequest = fetchFriends({ force: true });
+    const nextPairing = await fetchPairing({ force: forceLatest });
+    const feedRequest = nextPairing.paired
+      ? fetchFriendFeedPage(undefined, { force: forceLatest })
+      : Promise.resolve(null);
+    const [nextStatus, page] = await Promise.all([statusRequest, feedRequest]);
+    setStatus(nextStatus);
+    setPairing(nextPairing);
+    if (!nextPairing.paired || !page) {
+      setFeed([]);
+      setFeedHasMore(false);
+      setNextFeedCreatedAt(null);
+      setNextFeedId(null);
+      return;
+    }
+    setFeed(page.feed); setFeedHasMore(page.hasMore);
+    setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
+    setNextFeedId(page.nextBeforeId ?? null);
   }, []);
-  useFocusEffect(load);
+
+  useEffect(() => {
+    if (!homeEntry.pending || homeEntry.target !== 'friends') return;
+    const attempt = homeEntry.attempt;
+    void load(true).finally(() => {
+      requestAnimationFrame(() => markHomeEntryAsset('friends-data', attempt));
+    });
+  }, [homeEntry.pending, homeEntry.target, homeEntry.attempt, load]);
+
+  useFocusEffect(useCallback(() => {
+    const entry = getHomeEntryState();
+    if (entry.pending && entry.target === 'friends') return;
+    void load(false);
+  }, [load]));
 
   // The accepting device refreshes synchronously in respondFriend(). The
   // requester can remain on this screen, so listen for the private server
@@ -273,7 +294,8 @@ export default function FriendsScreen() {
     <View style={styles.root}>
       {/* Top-anchored art: the meadow/mailbox top stays fully visible; any
           overflow crops from the BOTTOM (design note). */}
-      <ExpoImage
+      <HomeEntryImage
+        asset="friends-background"
         source={BACKGROUNDS.friends}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
@@ -479,7 +501,7 @@ export default function FriendsScreen() {
         onClose={() => setPrivacyOpen(false)}
         onSave={() => void savePrivacy()}
       />
-      <FeatureGuideModal guide="paired" />
+      <FeatureGuideModal guide="paired" enabled={!homeEntry.pending} />
     </View>
   );
 }

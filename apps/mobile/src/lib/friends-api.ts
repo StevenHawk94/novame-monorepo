@@ -331,7 +331,7 @@ export interface FeedEntry {
 /** The Messages list: friends' recent memories, unread first. */
 export function fetchFriendFeed(
   range?: { start: string; end: string },
-  options?: { force?: boolean },
+  options?: { force?: boolean; awaitWidgetSync?: boolean },
 ): Promise<FeedEntry[]> {
   return fetchFriendFeedPage(range, options).then((page) => page.feed);
 }
@@ -339,7 +339,7 @@ export function fetchFriendFeed(
 /** First six visible reflections. Cached pages paint immediately. */
 export function fetchFriendFeedPage(
   range?: { start: string; end: string },
-  options?: { force?: boolean },
+  options?: { force?: boolean; awaitWidgetSync?: boolean },
 ): Promise<FriendFeedPage> {
   const today = localDateStr();
   const cached = readFriendsFeedCache();
@@ -354,7 +354,7 @@ export function fetchFriendFeedPage(
     // reusing the stale snapshot that caused the missing Home bubbles.
     if (!friendsFeedForcedFollowup) {
       friendsFeedForcedFollowup = friendsFeedRequest
-        .then(() => fetchFriendFeed(undefined, { force: true }))
+        .then(() => fetchFriendFeed(undefined, options))
         .finally(() => { friendsFeedForcedFollowup = null; });
     }
     return friendsFeedForcedFollowup.then(() => getCachedFriendFeedPage());
@@ -396,7 +396,9 @@ export function fetchFriendFeedPage(
           byOwner.set(entry.friendUserId, current);
         }
         for (const [ownerUserId, entries] of byOwner) cacheTheirItemsFromFeed(ownerUserId, entries);
-        void syncWidgetLatestFriend(feed, getCachedPairing());
+        const widgetSync = syncWidgetLatestFriend(feed, getCachedPairing());
+        if (options?.awaitWidgetSync) await widgetSync;
+        else void widgetSync;
       }
       return page;
     } catch (error) {
