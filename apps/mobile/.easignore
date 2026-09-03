@@ -6,6 +6,12 @@ node_modules/
 .pnpm-store/
 .git/
 
+# Deployment/provider metadata is local-only and not a mobile build input.
+.vercel/
+**/.vercel/
+supabase/.temp/
+/supabase/.temp/
+
 # Build and framework outputs
 dist/
 build/

@@ -67,6 +67,7 @@ import {
   syncRemoteNotificationRegistration,
 } from '@/lib/notification-settings';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
+import { warmEntryBackgrounds } from '@/lib/prefetch';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -277,6 +278,10 @@ function RootLayout() {
   // network can never hold the native splash screen open.
   useEffect(() => {
     let cancelled = false;
+
+    // These are bundled files, so this performs no network request. Start
+    // their native WebP decode immediately but never delay the launch gate.
+    void warmEntryBackgrounds();
 
     const finish = () => {
       if (!cancelled) {

@@ -3,7 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import {
   XP_RULES, TAME_POINTS_PER_COMPLETION,
-  BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD,
+  BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD, MONSTERS,
 } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 
@@ -46,8 +46,8 @@ export async function POST(request) {
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (!monsterId) {
-      return NextResponse.json({ error: 'Missing monsterId' }, { status: 400 })
+    if (!monsterId || !MONSTERS.some((monster) => monster.id === monsterId)) {
+      return NextResponse.json({ error: 'Invalid monsterId' }, { status: 400 })
     }
 
     const supabase = createClient(
@@ -102,13 +102,19 @@ export async function POST(request) {
     if (result?.error) {
       return NextResponse.json({ error: result.error, ...result }, { status: 409 })
     }
+    // An API deploy may briefly overlap the database migration. Only forward
+    // a returned total when the RPC explicitly confirms it is monster-scoped;
+    // an older RPC's shared user total must never be painted onto one enemy.
+    const battleTotalPoints = result?.progress_scope === 'monster'
+      ? (result?.battle_total_points ?? null)
+      : null
 
     return NextResponse.json({
       success: true,
       ...result,
       battlePoints,
       milestoneBonus: result?.milestone_bonus ?? 0,
-      battleTotalPoints: result?.battle_total_points ?? null,
+      battleTotalPoints,
     })
   } catch (err) {
     console.error('[tame-enemy] unexpected:', err && err.message)

@@ -5,6 +5,11 @@ node_modules/
 # Local VCS metadata is not required by the remote builder.
 .git/
 
+# Deployment/provider metadata is local-only and not a mobile build input.
+.vercel/
+**/.vercel/
+supabase/.temp/
+
 # Build outputs
 dist/
 build/

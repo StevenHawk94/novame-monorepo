@@ -80,6 +80,10 @@ export default function MainLayout() {
               animation: 'slide_from_bottom',
               animationDuration: 250,
               gestureEnabled: false,
+              // The bundled sunset art can take one frame to decode on its
+              // first visit. Match that art instead of exposing the stack's
+              // shared deep-brown fallback during the transition.
+              contentStyle: { backgroundColor: '#FE6F79' },
             }}
           />
           <Stack.Screen name="reflect-typing" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
@@ -92,6 +96,9 @@ export default function MainLayout() {
               animation: 'slide_from_bottom',
               animationDuration: 250,
               gestureEnabled: false,
+              // Keep the native transition sky-blue while focus.webp is
+              // decoding so the first visit never flashes deep brown.
+              contentStyle: { backgroundColor: '#169FFE' },
             }}
           />
         </Stack>

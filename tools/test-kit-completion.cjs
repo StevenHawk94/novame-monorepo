@@ -42,7 +42,10 @@ function setup() {
   };
   const quiet = load(lib + 'quiet-wins-api.ts', common, timing.globals);
   const lens = load(lib + 'lens-api.ts', common, timing.globals);
-  const tame = load(lib + 'tame-enemy-api.ts', { ...common, '@novame/engine': { MONSTERS: definitions } }, timing.globals);
+  const tame = load(lib + 'tame-enemy-api.ts', {
+    ...common,
+    '@novame/engine': { MONSTERS: definitions, TAME_POINTS_PER_COMPLETION: 50 },
+  }, timing.globals);
   return { timing, storage, values, listeners, identity, pending, quiet, lens, tame, response, calls, apiClient,
     setUser(value) { sessionUser = value; identity.observeSessionIdentity(value); },
   };
@@ -73,6 +76,7 @@ function companion(h) {
     '@/lib/tame-enemy-api': h.tame, '@/lib/kit-completion-state': h.pending,
     '@/lib/true-north-api': { getCachedStatus: () => ({ doneThisWeek: false, nextAvailableAt: null }) },
     '@/lib/icons': { ICONS: {} }, '@/components/ui/grid-background': { GridBackground: 'GridBackground' },
+    '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text' },
     '@/lib/cosmetics-api': { getCachedCosmetics: () => cosmetic, fetchCosmetics: async () => cosmetic, subscribeCosmetics: () => () => {} },
     '@/lib/master-api': { getCachedMasterStatus: () => master, fetchMasterStatus: async () => master },
     '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
@@ -152,11 +156,43 @@ function seedTames(h, { paid = false, count = 0, dailyCount = 0, used = [] } = {
   const statusDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   h.storage.set('kTameEnemyState', JSON.stringify({ date: statusDate, count: dailyCount }));
   h.storage.set('kTameStatus', JSON.stringify({
-    statusDate, perEnemyDaily: paid, doneToday: false, battlePoints: 100,
-    monsters: definitions.map(m => ({ ...m, tamedCount: count, tamedBefore: count > 0, tamedToday: used.includes(m.id), skillCount: 0 })),
+    statusDate, perEnemyDaily: paid, doneToday: false,
+    monsters: definitions.map((m, index) => ({
+      ...m,
+      tamedCount: index === 0 ? count : 0,
+      tamedBefore: index === 0 && count > 0,
+      tamedToday: used.includes(m.id),
+      skillCount: 0,
+      battlePoints: index === 0 ? 100 : 0,
+    })),
   }));
 }
 const submitTame = h => h.tame.submitTame({ monsterId: 'monster-0', skillsUsed: ['final-1'], hits: 20 });
+
+test('every monster starts with an independent zero-point Tame History', () => {
+  const h = setup();
+  const status = h.tame.getCachedTameStatus();
+  assert.ok(status.monsters.every(monster => monster.battlePoints === 0));
+});
+
+test('legacy shared score cache is split by each monster completion history', () => {
+  const h = setup();
+  h.storage.set('kTameStatus', JSON.stringify({
+    battlePoints: 50,
+    perEnemyDaily: false,
+    doneToday: false,
+    monsters: definitions.map((monster, index) => ({
+      ...monster,
+      skillCount: 0,
+      tamedCount: index === 0 ? 1 : 0,
+      tamedBefore: index === 0,
+      tamedToday: false,
+    })),
+  }));
+  const status = h.tame.getCachedTameStatus();
+  assert.equal(status.monsters[0].battlePoints, 50);
+  assert.equal(status.monsters[1].battlePoints, 0);
+});
 
 test('tame completion updates cached and subscribed counts/points before any next entry', async () => {
   for (const count of [0, 11]) {
@@ -171,8 +207,9 @@ test('tame completion updates cached and subscribed counts/points before any nex
     assert.equal(rendered.monsters[0].tamedCount, count + 1);
     assert.equal(rendered.monsters[0].tamedBefore, true);
     assert.equal(rendered.monsters[0].tamedToday, true);
-    assert.equal(rendered.monsters[1].tamedCount, count, 'other monsters unchanged');
-    assert.equal(rendered.battlePoints, 150);
+    assert.equal(rendered.monsters[0].battlePoints, 150);
+    assert.equal(rendered.monsters[1].tamedCount, 0, 'other monsters unchanged');
+    assert.equal(rendered.monsters[1].battlePoints, 0, 'other monster score unchanged');
     assert.equal(JSON.parse(h.values.get('kTameEnemyState')).count, 1, 'counted once, not again by screen');
     assert.equal(h.calls.length, 1, 'no refresh request required for completion');
     unsubscribe();
@@ -207,7 +244,8 @@ test('entry GET arriving after successful tame cannot roll the counter or points
   await work;
   read.resolve({ success: true, ...stale });
   assert.equal((await refresh).monsters[0].tamedCount, 12);
-  assert.equal(h.tame.getCachedTameStatus().battlePoints, 150);
+  assert.equal(h.tame.getCachedTameStatus().monsters[0].battlePoints, 150);
+  assert.equal(h.tame.getCachedTameStatus().monsters[1].battlePoints, 0);
 });
 
 test('status GET observing the server commit before POST returns cannot double count the same tame', async () => {

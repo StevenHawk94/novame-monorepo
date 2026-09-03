@@ -4,7 +4,7 @@
  * The battle resolves client-side. A successful server completion updates the
  * existing local status immediately, including each monster's tame count.
  */
-import { MONSTERS } from '@novame/engine';
+import { MONSTERS, TAME_POINTS_PER_COMPLETION } from '@novame/engine';
 
 import { kTameEnemyState, kTameStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
@@ -33,6 +33,8 @@ export interface MonsterStatus {
   tamedBefore: boolean;
   /** How many times this monster was tamed (history/badge metadata). */
   tamedCount: number;
+  /** This monster's independent Tame History score. */
+  battlePoints: number;
   /** Paid users tame each enemy once a day; this flags today's use. */
   tamedToday: boolean;
 }
@@ -96,7 +98,6 @@ export interface TameStatusPayload {
   monsters: MonsterStatus[];
   doneToday: boolean;
   perEnemyDaily: boolean;
-  battlePoints: number;
   /** Daily flags expire locally; lifetime counts and points stay cached. */
   statusDate?: string;
 }
@@ -119,7 +120,18 @@ export function getCachedTameStatus(): TameStatusPayload {
         const staleDay = !!parsed.statusDate && parsed.statusDate !== localDateStr();
         const monsters = parsed.monsters.map((m) => {
           const def = byId.get(m.id);
-          const current = def ? { ...m, name: def.name, prep: def.prep, tamed: def.tamed } : m;
+          const tamedCount = Math.max(0, Number(m.tamedCount ?? (m.tamedBefore ? 1 : 0)) || 0);
+          const current = {
+            ...m,
+            ...(def ? { name: def.name, prep: def.prep, tamed: def.tamed } : {}),
+            tamedCount,
+            // Old cached payloads only had one shared top-level battlePoints
+            // value. Never copy that value onto every enemy: reconstruct the
+            // independent score until the authoritative status refresh lands.
+            battlePoints: Number.isFinite(Number(m.battlePoints))
+              ? Math.max(0, Number(m.battlePoints))
+              : tamedCount * TAME_POINTS_PER_COMPLETION,
+          };
           return staleDay ? { ...current, tamedToday: false } : current;
         });
         return {
@@ -143,11 +155,11 @@ export function getCachedTameStatus(): TameStatusPayload {
       skillCount: 0,
       tamedBefore: false,
       tamedCount: 0,
+      battlePoints: 0,
       tamedToday: false,
     })),
     doneToday: isTameEnemyDoneToday(),
     perEnemyDaily: false,
-    battlePoints: 0,
   };
 }
 
@@ -160,7 +172,7 @@ export async function fetchTameStatus(): Promise<TameStatusPayload> {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
     if (!userId || epoch !== sessionEpoch()) return getCachedTameStatus();
-    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean; battlePoints?: number }>(
+    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean }>(
       `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${today}`,
     );
     // An entry-time GET must not undo a completion that finished meanwhile.
@@ -171,7 +183,6 @@ export async function fetchTameStatus(): Promise<TameStatusPayload> {
       monsters: data.monsters,
       doneToday: !!data.doneToday,
       perEnemyDaily: !!data.perEnemyDaily,
-      battlePoints: data.battlePoints ?? 0,
       statusDate: today,
     };
     storage.set(kTameStatus.name, JSON.stringify(payload));
@@ -223,12 +234,19 @@ export async function submitTame(params: {
     statusRevision += 1;
     markTameEnemyDoneToday(today);
     const cached = getCachedTameStatus();
-    const monsters = cached.monsters.map(monster => monster.id === params.monsterId ? {
-      ...monster,
-      tamedCount: Math.max(0, Number(monster.tamedCount ?? (monster.tamedBefore ? 1 : 0)) || 0) + 1,
-      tamedBefore: true,
-      tamedToday: today === localDateStr(),
-    } : monster);
+    const monsters = cached.monsters.map(monster => {
+      if (monster.id !== params.monsterId) return monster;
+      const currentPoints = Math.max(0, Number(monster.battlePoints) || 0);
+      return {
+        ...monster,
+        tamedCount: Math.max(0, Number(monster.tamedCount ?? (monster.tamedBefore ? 1 : 0)) || 0) + 1,
+        battlePoints: typeof data.battleTotalPoints === 'number'
+          ? data.battleTotalPoints
+          : currentPoints + (data.battlePoints ?? TAME_POINTS_PER_COMPLETION),
+        tamedBefore: true,
+        tamedToday: today === localDateStr(),
+      };
+    });
     storage.set(kTameStatus.name, JSON.stringify({
       ...cached,
       monsters,
@@ -236,7 +254,6 @@ export async function submitTame(params: {
       doneToday: cached.perEnemyDaily
         ? monsters.every(monster => monster.tamedToday)
         : isTameEnemyDoneToday(),
-      battlePoints: typeof data.battleTotalPoints === 'number' ? data.battleTotalPoints : cached.battlePoints,
     }));
     return {
       ok: true,

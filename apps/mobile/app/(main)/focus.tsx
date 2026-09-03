@@ -286,7 +286,9 @@ export default function FocusScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  // ImageBackground paints asynchronously on a cold image cache. This color
+  // is deliberately close to the top of focus.webp for a seamless first frame.
+  root: { flex: 1, backgroundColor: '#169FFE' },
   inner: { flex: 1, paddingHorizontal: 20 },
 
   backDark: {

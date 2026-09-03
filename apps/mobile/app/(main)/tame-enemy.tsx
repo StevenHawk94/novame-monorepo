@@ -87,7 +87,6 @@ export default function TameEnemyScreen() {
   const [monsters, setMonsters] = useState<MonsterStatus[]>(cached.monsters);
   const [doneToday, setDoneToday] = useState(cached.doneToday);
   const [perEnemyDaily, setPerEnemyDaily] = useState(cached.perEnemyDaily);
-  const [battlePoints, setBattlePoints] = useState(cached.battlePoints);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [selectedFinalWords, setSelectedFinalWords] = useState<TameFinalWords | null>(null);
   const [hits, setHits] = useState(0);
@@ -119,7 +118,6 @@ export default function TameEnemyScreen() {
     setMonsters(status.monsters);
     setDoneToday(status.doneToday);
     setPerEnemyDaily(status.perEnemyDaily);
-    setBattlePoints(status.battlePoints);
   }, []);
 
   useEffect(() => {
@@ -240,7 +238,9 @@ export default function TameEnemyScreen() {
       setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
       if (res.ok) {
         if (typeof res.battleTotalPoints === 'number') {
-          setBattlePoints(res.battleTotalPoints);
+          setActive(current => current?.id === active.id
+            ? { ...current, battlePoints: res.battleTotalPoints! }
+            : current);
         }
         award.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
       } else {
@@ -305,6 +305,7 @@ export default function TameEnemyScreen() {
 
   // ---- PREP (design: Enemy selected — data + progress before the fight) ----
   if (phase === 'prep' && active) {
+    const battlePoints = active.battlePoints;
     // Always show the next three unclaimed milestones. As soon as one is
     // crossed, the following threshold becomes the leftmost node and a new
     // future threshold enters on the right.

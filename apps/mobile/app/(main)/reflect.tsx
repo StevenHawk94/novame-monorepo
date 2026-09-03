@@ -87,7 +87,7 @@ export default function ReflectEntryScreen() {
 
   return (
     <SwipeDownToDismiss onDismiss={() => router.back()}>
-      <View style={{ flex: 1, backgroundColor: '#5A2E2A' }}>
+      <View style={{ flex: 1, backgroundColor: '#FE6F79' }}>
         <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>

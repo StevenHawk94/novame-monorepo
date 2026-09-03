@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { MONSTERS } from '@novame/engine'
+import { MONSTERS, TAME_POINTS_PER_COMPLETION } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
@@ -80,24 +80,37 @@ export async function GET(request) {
       ? tamedTodayIds.size >= MONSTERS.length
       : tamesToday >= 3
 
-    // Battle points total for the prep screen's milestone track.
-    const { data: bp } = await supabase
-      .from('battle_progress').select('points').eq('user_id', userId).maybeSingle()
-    const battlePoints = Number(bp?.points ?? 0)
+    // Each enemy owns its own Tame History score. The completion-count fallback
+    // also keeps status correct during rollout and for any legacy row that was
+    // not backfilled into monster_battle_progress.
+    const { data: progress, error: progressError } = await supabase
+      .from('monster_battle_progress')
+      .select('monster_id, points')
+      .eq('user_id', userId)
+    if (progressError) {
+      console.error('[tame-enemy/status] monster progress error:', progressError.message)
+    }
+    const pointsByMonster = new Map(
+      (progress || []).map((row) => [row.monster_id, Math.max(0, Number(row.points) || 0)]),
+    )
 
-    const monsters = MONSTERS.map((m) => ({
-      id: m.id,
-      name: m.name,
-      dimension: m.dimension,
-      prep: m.prep,
-      tamed: m.tamed,
-      skillCount: countByDim[m.dimension] || 0,
-      tamedBefore: (tamedCounts.get(m.id) || 0) > 0,
-      tamedCount: tamedCounts.get(m.id) || 0,
-      tamedToday: tamedTodayIds.has(m.id),
-    }))
+    const monsters = MONSTERS.map((m) => {
+      const tamedCount = tamedCounts.get(m.id) || 0
+      return {
+        id: m.id,
+        name: m.name,
+        dimension: m.dimension,
+        prep: m.prep,
+        tamed: m.tamed,
+        skillCount: countByDim[m.dimension] || 0,
+        tamedBefore: tamedCount > 0,
+        tamedCount,
+        battlePoints: pointsByMonster.get(m.id) ?? (tamedCount * TAME_POINTS_PER_COMPLETION),
+        tamedToday: tamedTodayIds.has(m.id),
+      }
+    })
 
-    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily, battlePoints })
+    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily })
   } catch (err) {
     console.error('[tame-enemy/status] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
