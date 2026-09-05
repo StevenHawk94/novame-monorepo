@@ -14,8 +14,7 @@ export const runtime = 'edge'
  * that dimension (the monster's skill pool) and whether they've tamed it before
  * (for the exact "Tamed N×" badge), plus today's per-monster availability.
  *
- * Free users can tame three times across all monsters per day. Plus users can
- * tame each monster once per day.
+ * Every user can tame at most two distinct monsters per local day.
  */
 export async function GET(request) {
   try {
@@ -50,8 +49,8 @@ export async function GET(request) {
       countByDim[s.dimension] = (countByDim[s.dimension] || 0) + 1
     }
 
-    // Per-monster tame history drives badges; today's set drives paid
-    // per-enemy availability. Points themselves are a fixed +50 per tame.
+    // Per-monster tame history drives today's per-enemy availability. Points
+    // themselves are a fixed +50 per tame.
     const { data: past } = await supabase
       .from('kit_completions')
       .select('payload, local_date')
@@ -71,14 +70,8 @@ export async function GET(request) {
     }
     // (The old .maybeSingle() here errored once paid users had >1 row a day.)
 
-    // Tier decides the daily shape: free = one tame across all monsters,
-    // paid = one per monster (PRD benefits matrix).
-    const { data: profile } = await supabase
-      .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
-    const perEnemyDaily = (profile?.subscription_tier ?? 'free') !== 'free'
-    const doneToday = perEnemyDaily
-      ? tamedTodayIds.size >= MONSTERS.length
-      : tamesToday >= 3
+    const dailyLimit = 2
+    const doneToday = tamesToday >= dailyLimit
 
     // Each enemy owns its own Tame History score. The completion-count fallback
     // also keeps status correct during rollout and for any legacy row that was
@@ -110,7 +103,13 @@ export async function GET(request) {
       }
     })
 
-    return NextResponse.json({ success: true, monsters, doneToday, perEnemyDaily })
+    return NextResponse.json({
+      success: true, monsters, doneToday,
+      // Kept for older clients: individual monsters still cannot be repeated.
+      perEnemyDaily: true,
+      tamesToday,
+      dailyLimit,
+    })
   } catch (err) {
     console.error('[tame-enemy/status] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

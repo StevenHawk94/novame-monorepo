@@ -50,12 +50,13 @@ function queryResult(data) {
   return query;
 }
 
-function routeFor({ mode = 'custom', matched = [], memories = [] } = {}) {
+function routeFor({ mode = 'custom', matched = [], memories = [], sharedWithUserId = null } = {}) {
   const reflect = {
     id: 'reflect-1',
     local_date: '2026-08-29',
     created_at: '2026-08-29T12:00:00.000Z',
     shared_to_friends: true,
+    shared_with_user_id: sharedWithUserId,
   };
   const db = {
     from(table) {
@@ -115,18 +116,32 @@ test('only Hide All Details produces the explicit private feed state', async () 
   assert.equal(response.body.feed[0].details, null);
 });
 
-test('mobile surfaces distinguish private/empty friend details and label empty own reflections', () => {
+test('mobile feed keeps private rows private, alerts for empty memories, and opens populated rows inline', () => {
   const friends = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/(tabs)/friends.tsx'), 'utf8');
-  const detail = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/friend-reflect-detail.tsx'), 'utf8');
   const logs = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/my-logs.tsx'), 'utf8');
   const reflectDetail = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-detail.tsx'), 'utf8');
   assert.match(friends, /if \(!e\.sharesDetails\)/);
-  assert.match(detail, /No memories created today\./);
+  assert.match(friends, /appAlert\('No memories created in this reflection\.'\)/);
+  assert.match(friends, /<BottomSheetModal/);
+  assert.match(friends, /enablePanDownToClose/);
+  assert.doesNotMatch(friends, /pathname: '\/\(main\)\/friend-reflect-detail'/);
   assert.doesNotMatch(logs, /You did not type anything on this reflection/);
   assert.doesNotMatch(reflectDetail, /You did not type anything on this reflection/);
   assert.match(reflectDetail, /You did not write anything for this reflection\./);
   assert.match(reflectDetail, /entry\?\.mode === 'typing' \? 'Items Matched' : 'Items Selected'/);
   assert.doesNotMatch(reflectDetail, /memTitleIcon/);
+});
+
+test('Remember Together is marked so it cannot seed the partner Theirs cache', async () => {
+  const route = routeFor({
+    sharedWithUserId: 'viewer',
+    matched: [{ reflect_id: 'reflect-1', item_id: 'memory.0002_coffee', position: 0, created_at: '2026-08-29T12:00:00.000Z' }],
+    memories: [{ reflect_id: 'reflect-1', item_id: 'memory.0002_coffee', description: 'Coffee together.' }],
+  });
+  const response = await route.GET(request());
+  assert.equal(response.body.feed[0].isSharedMemory, true);
+  const api = fs.readFileSync(path.join(root, 'apps/mobile/src/lib/bags-api.ts'), 'utf8');
+  assert.match(api, /if \(entry\.isSharedMemory\) continue/);
 });
 
 test('friend feed is cursor-paged six at a time without a history or item cap', () => {

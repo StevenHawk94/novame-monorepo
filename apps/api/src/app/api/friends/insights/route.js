@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { generateBrief } from '@/lib/connection-brief'
+import { connectionCardsDuplicate, publicConnectionCard } from '@/lib/connection-card'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 
 export const runtime = 'edge'
@@ -16,38 +17,25 @@ const SECTION_BY_MODULE = {
   shared_rhythm: 'between',
 }
 const SECTION_LIMITS = { missed: 3, world: 3, ways_in: 3, between: 1 }
-const label = (value) => typeof value === 'string' && value.trim()
-  ? value.trim().split(/\s+/).slice(0, 3).join(' ') : 'Worth Noticing'
-
-function publicCard(card) {
-  const title = typeof card?.title === 'string' ? card.title
-    : typeof card?.headline === 'string' ? card.headline : null
-  const observation = typeof card?.observation === 'string' ? card.observation
-    : typeof card?.body === 'string' ? card.body : ''
-  const meaning = typeof card?.meaning === 'string' ? card.meaning
-    : typeof card?.supportingText === 'string' ? card.supportingText : null
-  const takeaway = typeof card?.takeaway === 'string' ? card.takeaway
-    : typeof card?.action === 'string' ? card.action : null
-  if (!observation) return null
-  return {
-    label: label(card?.label),
-    title: title || label(card?.label),
-    observation, meaning, takeaway,
-    // Temporary response aliases keep already-released clients compatible.
-    headline: title, body: observation, supportingText: meaning, action: takeaway,
-  }
-}
 
 function publicInsights(payload) {
   if (payload?.schemaVersion !== 2 || !payload.modules) return null
   const modules = {}
+  const seenCards = []
   const sectionCounts = { missed: 0, world: 0, ways_in: 0, between: 0 }
   for (const key of MODULE_KEYS) {
     const section = SECTION_BY_MODULE[key]
     const remaining = SECTION_LIMITS[section] - sectionCounts[section]
-    modules[key] = (Array.isArray(payload.modules[key]) ? payload.modules[key] : [])
-      .filter((card) => !card?.expiresAt || Date.parse(card.expiresAt) > Date.now())
-      .map(publicCard).filter(Boolean).slice(0, Math.max(0, remaining))
+    const visible = []
+    for (const card of Array.isArray(payload.modules[key]) ? payload.modules[key] : []) {
+      if (visible.length >= Math.max(0, remaining)) break
+      if (card?.expiresAt && Date.parse(card.expiresAt) <= Date.now()) continue
+      const publicCard = publicConnectionCard(card, key)
+      if (!publicCard || seenCards.some((prior) => connectionCardsDuplicate(prior, card))) continue
+      seenCards.push(card)
+      visible.push(publicCard)
+    }
+    modules[key] = visible
     sectionCounts[section] += modules[key].length
   }
   return { schemaVersion: 2, modules, updatedAt: payload.updatedAt || null }

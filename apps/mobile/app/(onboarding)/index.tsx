@@ -640,24 +640,33 @@ export default function OnboardingScreen() {
             <View>
               <View style={styles.card}>
                 <OnboardingImage source={ICONS.obCreatorBubble} style={styles.creatorBubbleImg} contentFit="contain" />
-                <Text style={[styles.h3, { marginBottom: 14 }]}>I built Burrow for my mom.</Text>
+                <Text style={[styles.h3, { marginBottom: 14 }]}>I built Burrow from a regret.</Text>
                 <Text style={styles.creatorBody}>
-                  We live thousands of miles apart. We talked about once a month, and with work
-                  moving so quickly, I felt like I was missing the small parts of her life, not the
-                  big updates, but the everyday moments that make you feel close to someone.
+                  I learned too late how quietly closeness can disappear. I lost my partner who was
+                  the love of my life and my best friend. For one year, we lived apart and both
+                  became busy. There was no big fight, and we never stopped caring. We simply
+                  stopped sharing the little things, the bad day, the random story, the tiny win.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  Now we each take a few minutes to reflect. When I open Burrow, I might see what
-                  made her smile, what she cooked, or what kind of day she had. She sees little
-                  pieces of my life too.
+                  By the time I noticed, I no longer knew how to reach them except “How was your
+                  day?”. I still carry that regret. I can’t change what happened, but I hope I can
+                  help someone else avoid the same regret.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  Neither of us has to schedule another call or come up with the perfect thing to
-                  say. We simply feel more present in each other&apos;s lives.
+                  Burrow is a private space for two. You reflect separately, keep your private words
+                  private, and share the small moments that feel right. They become little glimpses
+                  into each other’s days, without making either of you explain everything in busy
+                  day, and with real time insights about when and how to reach out or simply give
+                  them space.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  Everything in Burrow began with one question:{'\n'}
-                  How can two people stay close without asking more from each other?
+                  Not to tell you how to run your relationship. Just to help you notice the moments
+                  when showing up could mean something.
+                </Text>
+                <Text style={[styles.creatorBody, { marginTop: 14 }]}>
+                  Burrow only takes a couple of minutes a day. But those couple of minutes can help
+                  you stay part of each other’s lives. And sometimes, that’s all it takes to keep
+                  someone from becoming a stranger.
                 </Text>
               </View>
             </View>

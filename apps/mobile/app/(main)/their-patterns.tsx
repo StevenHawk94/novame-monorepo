@@ -43,7 +43,7 @@ function HistoryCard({ card }: { card: ConnectionHistoryCard }) {
         </View>
         <Text style={styles.dateText}>{shortDate(card.date)}</Text>
       </View>
-      <Text style={styles.headline}>{card.title}</Text>
+      {!!card.title && <Text style={styles.headline}>{card.title}</Text>}
       <Text style={styles.body}>{card.observation}</Text>
       {!!card.meaning && <Text style={styles.supporting}>{card.meaning}</Text>}
       {!!card.takeaway && card.section === 'between' && (

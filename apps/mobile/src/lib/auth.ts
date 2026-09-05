@@ -575,7 +575,7 @@ export async function sendPasswordlessEmailOtp(
   if (isAnonymous) {
     const { error } = await supabase.auth.updateUser({ email });
     if (!error) return { ok: true, mode: 'change' };
-    if (!isAlreadyBoundError(error.message)) return { ok: false, error: error.message };
+    if (!isAlreadyBoundError(error.message, error.code)) return { ok: false, error: error.message };
     const login = await sendLoginEmailOtp(email);
     return login.ok
       ? { ok: true, mode: 'login' }

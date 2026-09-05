@@ -321,6 +321,8 @@ export interface FeedEntry {
   createdAt: string;
   localDate?: string;
   itemIds: string[];
+  /** Remember Together items belong to Ours, never Mine/Theirs. */
+  isSharedMemory?: boolean;
   emoji: string[]; // decorated from the shared dictionary
   /** Present ONLY when that friend opted into sharing details (server-enforced). */
   details: FeedDetail[] | null;
@@ -1066,7 +1068,7 @@ export type ConnectionModuleKey =
 
 export interface ConnectionInsightCard {
   label: string;
-  title: string;
+  title: string | null;
   observation: string;
   meaning: string | null;
   takeaway: string | null;
@@ -1084,13 +1086,87 @@ const CONNECTION_MODULE_KEYS: ConnectionModuleKey[] = [
   'talk_about', 'try_together', 'shared_rhythm',
 ];
 
-function normalizeConnectionCard(value: unknown): ConnectionInsightCard | null {
+export type ConnectionHistorySection = 'missed' | 'world' | 'ways_in' | 'between';
+
+const CONNECTION_SECTION_BY_MODULE: Record<ConnectionModuleKey, ConnectionHistorySection> = {
+  worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
+  how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
+  shared_rhythm: 'between',
+};
+
+const CONNECTION_ALLOWED_LABELS: Record<ConnectionHistorySection, ReadonlySet<string>> = {
+  missed: new Set(['Milestone', 'Change', 'First', 'Quiet Win', 'Coming Up', 'Worth Noticing']),
+  world: new Set(['Mood', 'Routine', 'Interest', 'Priority', 'Pattern', 'Recent Vibe']),
+  ways_in: new Set([
+    'Comfort', 'Encourage', 'Listen', 'Talk', 'Companionship', 'Practical Help', 'Give Space',
+    'Support', 'Conversation', 'Together',
+  ]),
+  between: new Set(['Shared Rhythm', 'Overlap', 'Contrast', 'Little Pattern']),
+};
+
+const CONNECTION_DEFAULT_LABEL: Record<ConnectionModuleKey, string> = {
+  worth_knowing: 'Worth Noticing', recent_vibe: 'Recent Vibe', what_theyre_into: 'Interest',
+  how_to_show_up: 'Support', talk_about: 'Conversation', try_together: 'Together',
+  shared_rhythm: 'Shared Rhythm',
+};
+
+const CONNECTION_COPY_STOPWORDS = new Set([
+  'about', 'after', 'again', 'also', 'because', 'been', 'being', 'could', 'from', 'have',
+  'into', 'just', 'more', 'might', 'really', 'some', 'that', 'their', 'them', 'there',
+  'they', 'this', 'today', 'with', 'would',
+]);
+
+const CONNECTION_TERM_EQUIVALENTS: Record<string, string> = {
+  completed: 'complete', completing: 'complete', finished: 'complete', finishing: 'complete', done: 'complete',
+  played: 'play', playing: 'play', plays: 'play',
+  enjoyed: 'enjoy', enjoying: 'enjoy', enjoys: 'enjoy',
+  chatted: 'talk', chatting: 'talk', talked: 'talk', talking: 'talk',
+  encouraged: 'encourage', encouraging: 'encourage', comforted: 'comfort', comforting: 'comfort',
+  listened: 'listen', listening: 'listen', supported: 'support', supporting: 'support',
+};
+
+function connectionTerms(value: string | null): Set<string> {
+  return new Set((value ?? '').toLowerCase().match(/[a-z0-9']+/g)?.map((term) => (
+    CONNECTION_TERM_EQUIVALENTS[term] ?? term
+  )).filter((term) => term.length >= 3 && !CONNECTION_COPY_STOPWORDS.has(term)) ?? []);
+}
+
+function connectionCopyOverlap(left: string | null, right: string | null): { count: number; ratio: number } {
+  const a = connectionTerms(left);
+  const b = connectionTerms(right);
+  if (!a.size || !b.size) return { count: 0, ratio: 0 };
+  let count = 0;
+  for (const term of a) if (b.has(term)) count += 1;
+  return { count, ratio: count / Math.min(a.size, b.size) };
+}
+
+function duplicateConnectionCopy(left: string | null, right: string | null, threshold: number): boolean {
+  if (!left || !right) return false;
+  const a = left.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const b = right.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (a === b || (Math.min(a.length, b.length) >= 18 && (a.includes(b) || b.includes(a)))) return true;
+  const shared = connectionCopyOverlap(left, right);
+  return shared.count >= 2 && shared.ratio >= threshold;
+}
+
+function duplicateConnectionCards(left: ConnectionInsightCard, right: ConnectionInsightCard): boolean {
+  const leftCopy = [left.title, left.observation, left.meaning, left.takeaway].filter(Boolean).join(' ');
+  const rightCopy = [right.title, right.observation, right.meaning, right.takeaway].filter(Boolean).join(' ');
+  return duplicateConnectionCopy(leftCopy, rightCopy, 0.8);
+}
+
+function normalizeConnectionCard(
+  value: unknown,
+  moduleKey: ConnectionModuleKey,
+): ConnectionInsightCard | null {
   if (!value || typeof value !== 'object') return null;
   const card = value as Record<string, unknown>;
-  const label = (typeof card.label === 'string' && card.label.trim() ? card.label.trim() : 'Worth Noticing')
-    .split(/\s+/).slice(0, 3).join(' ');
-  const title = typeof card.title === 'string' && card.title.trim() ? card.title.trim()
-    : typeof card.headline === 'string' && card.headline.trim() ? card.headline.trim() : label;
+  const section = CONNECTION_SECTION_BY_MODULE[moduleKey];
+  const rawLabel = typeof card.label === 'string' ? card.label.trim() : '';
+  const label = CONNECTION_ALLOWED_LABELS[section].has(rawLabel)
+    ? rawLabel : CONNECTION_DEFAULT_LABEL[moduleKey];
+  let title = typeof card.title === 'string' && card.title.trim() ? card.title.trim()
+    : typeof card.headline === 'string' && card.headline.trim() ? card.headline.trim() : null;
   const observation = typeof card.observation === 'string' && card.observation.trim()
     ? card.observation.trim()
     : typeof card.body === 'string' ? card.body.trim() : '';
@@ -1099,34 +1175,46 @@ function normalizeConnectionCard(value: unknown): ConnectionInsightCard | null {
     typeof primary === 'string' && primary.trim() ? primary.trim()
       : typeof legacy === 'string' && legacy.trim() ? legacy.trim() : null
   );
-  return {
-    label, title, observation,
-    meaning: optional(card.meaning, card.supportingText),
-    takeaway: optional(card.takeaway, card.action),
-  };
+  let meaning = optional(card.meaning, card.supportingText);
+  let takeaway = optional(card.takeaway, card.action);
+  if (duplicateConnectionCopy(title, observation, 0.64)) title = null;
+  if (duplicateConnectionCopy(meaning, observation, 0.68)
+    || duplicateConnectionCopy(meaning, title, 0.72)) {
+    meaning = null;
+  } else if (/^(?:this|that|it)\s+(?:suggests?|may|might|could|seems?|looks?)/i.test(meaning ?? '')
+    && connectionCopyOverlap(meaning, observation).count >= 2) {
+    meaning = null;
+  }
+  if (duplicateConnectionCopy(takeaway, observation, 0.82)
+    || duplicateConnectionCopy(takeaway, title, 0.82)
+    || duplicateConnectionCopy(takeaway, meaning, 0.82)) {
+    takeaway = null;
+  }
+  return { label, title, observation, meaning, takeaway };
 }
 
 function normalizeConnectionInsights(value: unknown): ConnectionInsights | null {
   if (!value || typeof value !== 'object') return null;
   const insight = value as { schemaVersion?: unknown; modules?: Record<string, unknown>; updatedAt?: unknown };
   if (insight.schemaVersion !== 2 || !insight.modules) return null;
-  const sectionByModule: Record<ConnectionModuleKey, ConnectionHistorySection> = {
-    worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
-    how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
-    shared_rhythm: 'between',
-  };
   const limits: Record<ConnectionHistorySection, number> = {
     missed: 3, world: 3, ways_in: 3, between: 1,
   };
   const counts: Record<ConnectionHistorySection, number> = {
     missed: 0, world: 0, ways_in: 0, between: 0,
   };
+  const seenCards: ConnectionInsightCard[] = [];
   const modules = Object.fromEntries(CONNECTION_MODULE_KEYS.map((key) => {
-    const section = sectionByModule[key];
+    const section = CONNECTION_SECTION_BY_MODULE[key];
     const remaining = Math.max(0, limits[section] - counts[section]);
-    const cards = (Array.isArray(insight.modules?.[key]) ? insight.modules[key] : [])
-      .map(normalizeConnectionCard).filter((card): card is ConnectionInsightCard => card !== null)
-      .slice(0, remaining);
+    const cards: ConnectionInsightCard[] = [];
+    for (const raw of Array.isArray(insight.modules?.[key]) ? insight.modules[key] : []) {
+      if (cards.length >= remaining) break;
+      const card = normalizeConnectionCard(raw, key);
+      if (!card || seenCards.some((prior) => duplicateConnectionCards(prior, card))) continue;
+      seenCards.push(card);
+      cards.push(card);
+    }
     counts[section] += cards.length;
     return [key, cards];
   })) as Record<ConnectionModuleKey, ConnectionInsightCard[]>;
@@ -1136,8 +1224,6 @@ function normalizeConnectionInsights(value: unknown): ConnectionInsights | null 
     ...(typeof insight.updatedAt === 'string' ? { updatedAt: insight.updatedAt } : {}),
   };
 }
-
-export type ConnectionHistorySection = 'missed' | 'world' | 'ways_in' | 'between';
 
 export interface ConnectionHistoryCard extends ConnectionInsightCard {
   id: string;
@@ -1150,16 +1236,18 @@ export interface ConnectionHistoryCard extends ConnectionInsightCard {
 function normalizeConnectionHistoryCard(value: unknown): ConnectionHistoryCard | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
-  const card = normalizeConnectionCard(raw);
-  if (!card || typeof raw.id !== 'string' || typeof raw.date !== 'string'
-    || typeof raw.createdAt !== 'string' || !CONNECTION_MODULE_KEYS.includes(raw.moduleKey as ConnectionModuleKey)
+  const moduleKey = raw.moduleKey as ConnectionModuleKey;
+  if (typeof raw.id !== 'string' || typeof raw.date !== 'string'
+    || typeof raw.createdAt !== 'string' || !CONNECTION_MODULE_KEYS.includes(moduleKey)
     || !['missed', 'world', 'ways_in', 'between'].includes(String(raw.section))) return null;
+  const card = normalizeConnectionCard(raw, moduleKey);
+  if (!card) return null;
   return {
     ...card,
     id: raw.id,
     date: raw.date,
     createdAt: raw.createdAt,
-    moduleKey: raw.moduleKey as ConnectionModuleKey,
+    moduleKey,
     section: raw.section as ConnectionHistorySection,
   };
 }

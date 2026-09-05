@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import ItemPublisher from './ItemPublisher';
+import ItemRuleEditor from './ItemRuleEditor';
 
 type Candidate = { id:string; kind:string; concept:string; source_phrase?:string; suggested_item_id?:string; suggested_icon_name?:string; occurrence_count:number; status:string; evidence_version:number; bare_word_disabled:boolean };
 type Removal = { id:string; icon_name:string; keyword:string; status:string };
@@ -9,6 +10,7 @@ type Rule = { revision:number; keyword:string; item_id:string; action:string };
 type Review = { candidates:Candidate[]; removals:Removal[]; events:Rule[]; snapshot:{ revision:number; rules:Rule[] } };
 const button = 'rounded px-3 py-2 bg-amber-900 text-white disabled:opacity-40';
 export default function ItemsTab() {
+  const [view, setView] = useState<'rules'|'suggestions'|'publisher'>('rules');
   const [data, setData] = useState<Review | null>(null);
   const [status, setStatus] = useState('pending');
   const [busy, setBusy] = useState(false);
@@ -18,7 +20,7 @@ export default function ItemsTab() {
     try { setData(await apiClient.get<Review>(`/api/admin/item-learning?status=${status}`)); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not load review data.'); }
   }, [status]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (view === 'suggestions') void load(); }, [load, view]);
   async function act(action:string, row:{id?:string;revision?:number}, itemId?:string) {
     if (busy || !data) return;
     if (action === 'disable' && !window.confirm('Disable only this exact keyword for all NEW reflections? A user removing an item does not necessarily mean the match was wrong. This change can be undone.')) return;
@@ -44,14 +46,18 @@ export default function ItemsTab() {
       </article>)}{!rows.length && <p className="text-gray-500">No records.</p>}</div></section>;
   }
   return <div className="space-y-6 text-gray-900">
-    <header className="space-y-2"><h2 className="text-xl font-bold">Memory Items</h2>
-      <p className="text-sm text-gray-600">Short source phrases only, never full journals. ★ = icon has a disabled ambiguous bare word. Approval changes matching rules, not existing memories. Missing Icons still need an actual asset/catalog release.</p>
-      <div className="flex gap-3 items-center flex-wrap"><select className="border rounded p-2" value={status} onChange={e => setStatus(e.target.value)}>{['pending','approved','published','rejected','all'].map(s => <option key={s}>{s}</option>)}</select>
-        <button className="border rounded p-2" disabled={busy} onClick={() => {setError('');void load();}}>Refresh</button>
-        <a className="underline" href="/api/admin/item-learning?export=1">Export reviewed rules</a>
-        <span className="text-sm">Revision {data?.snapshot.revision ?? '…'}</span></div>
+    <header className="space-y-3"><h2 className="text-xl font-bold">Memory Items</h2>
+      <p className="text-sm text-gray-600">Browse the live icon catalog, maintain reviewed keyword rules, or process suggestions collected from reflections.</p>
+      <div className="flex gap-2 flex-wrap">
+        {([['rules','Icon Rule Editor'],['suggestions','Suggestions & Removals'],['publisher','Icon Publisher']] as const).map(([id,label]) => <button key={id} onClick={() => setView(id)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${view === id ? 'bg-amber-900 text-white' : 'border bg-white'}`}>{label}</button>)}
+      </div>
     </header>
-    <ItemPublisher />
+    {view === 'rules' && <ItemRuleEditor />}
+    {view === 'publisher' && <ItemPublisher />}
+    {view === 'suggestions' && <>
+    <section className="rounded-lg border bg-white p-4 space-y-3"><p className="text-sm text-gray-600">Short source phrases only, never full journals. ★ = icon has a disabled ambiguous bare word. Approval changes matching rules, not existing memories. Missing Icons still need an actual asset/catalog release.</p>
+      <div className="flex gap-3 items-center flex-wrap"><select className="border rounded p-2" value={status} onChange={e => setStatus(e.target.value)}>{['pending','approved','published','rejected','all'].map(s => <option key={s}>{s}</option>)}</select>
+        <button className="border rounded p-2" disabled={busy} onClick={() => {setError('');void load();}}>Refresh</button><a className="underline" href="/api/admin/item-learning?export=1">Export reviewed rules</a><span className="text-sm">Revision {data?.snapshot.revision ?? '…'}</span></div></section>
     {error && <p role="alert" className="p-3 bg-red-50 text-red-800 rounded">{error}</p>}
     <div className="grid lg:grid-cols-2 gap-5">{candidates('missing_icon','Missing Icons')}{candidates('missing_keyword','Missing Keywords')}</div>
     <section className="bg-white border rounded-lg p-4 space-y-3"><h3 className="font-bold">Confirmed Item Removals</h3><p className="text-sm text-gray-600">Review whether the match was wrong; removal may just be personal preference. Each row is an actual accepted triggering keyword.</p>
@@ -60,5 +66,6 @@ export default function ItemsTab() {
       </article>)}{!data?.removals.length && <p className="text-gray-500">No records.</p>}</div>
     </section>
     <section className="bg-white border rounded-lg p-4"><h3 className="font-bold mb-3">Rule Change History</h3><div className="max-h-[400px] overflow-auto space-y-2">{data?.events.map(event => <div key={event.revision} className="border rounded p-3 flex gap-3 items-center"><div className="flex-1 text-sm">#{event.revision} {event.action} · {event.keyword}<div className="text-xs text-gray-500">{event.item_id}</div></div>{data.snapshot.rules.some(r => r.keyword === event.keyword && r.revision === event.revision) && <button className="border rounded p-2" disabled={busy} onClick={() => void act('undo', event)}>Undo</button>}</div>)}</div></section>
+    </>}
   </div>;
 }

@@ -71,6 +71,8 @@ AuthKey_*.p8
 # UI design reference images (local only, 48MB)
 design-refs/
 __pycache__/
+# Local backup of superseded source grids and generated preview pages.
+tools/item-source/memory-items/old/
 # Firebase Admin / FCM V1 service-account private keys (never commit)
 **/*firebase-adminsdk*.json
 **/firebase-fcm-service-account*.json

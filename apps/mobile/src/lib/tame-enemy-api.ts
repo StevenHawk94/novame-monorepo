@@ -5,6 +5,7 @@
  * existing local status immediately, including each monster's tame count.
  */
 import { MONSTERS, TAME_POINTS_PER_COMPLETION } from '@novame/engine';
+import { ApiError } from '@novame/api-client';
 
 import { kTameEnemyState, kTameStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
@@ -35,7 +36,7 @@ export interface MonsterStatus {
   tamedCount: number;
   /** This monster's independent Tame History score. */
   battlePoints: number;
-  /** Paid users tame each enemy once a day; this flags today's use. */
+  /** One monster can only be tamed once per local day. */
   tamedToday: boolean;
 }
 
@@ -47,46 +48,37 @@ function localDateStr(): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Free tier tames per day (2026-07-31: was 1). */
-export const FREE_DAILY_TAMES = 3;
+/** Global Tame Enemy limit for every account. */
+export const TAME_DAILY_LIMIT = 2;
+
+function localTameCount(date: string): number {
+  const raw = storage.getString(kTameEnemyState.name);
+  if (!raw) return 0;
+  try {
+    const state = JSON.parse(raw) as { date?: string; count?: number; done?: boolean };
+    if (state.date !== date) return 0;
+    return Math.max(0, state.count ?? (state.done ? 1 : 0));
+  } catch {
+    return 0;
+  }
+}
 
 /** Count one completed tame toward today's local tally. */
 function markTameEnemyDoneToday(today: string): void {
-  let count = 0;
-  const raw = storage.getString(kTameEnemyState.name);
-  if (raw) {
-    try {
-      const s = JSON.parse(raw) as { date?: string; count?: number; done?: boolean };
-      if (s.date === today) count = s.count ?? (s.done ? 1 : 0);
-    } catch {
-      // fresh start
-    }
-  }
+  const count = localTameCount(today);
   storage.set(kTameEnemyState.name, JSON.stringify({ date: today, count: count + 1 }));
 }
 
 /** Whether all daily tames are spent (local view; server is truth). */
 export function isTameEnemyDoneToday(): boolean {
-  // A Plus user can tame all eight monsters; do not apply Free's three-tame
-  // tally after a current authoritative per-enemy status is available.
   const statusRaw = storage.getString(kTameStatus.name);
   if (statusRaw) {
     try {
       const status = JSON.parse(statusRaw) as TameStatusPayload;
-      if (status.statusDate === localDateStr() && status.perEnemyDaily) {
-        return status.doneToday;
-      }
-    } catch { /* Fall back to the local Free tally. */ }
+      if (status.statusDate === localDateStr()) return status.doneToday;
+    } catch { /* Fall back to the local completion tally. */ }
   }
-  const raw = storage.getString(kTameEnemyState.name);
-  if (!raw) return false;
-  try {
-    const s = JSON.parse(raw) as { date?: string; count?: number; done?: boolean };
-    if (s.date !== localDateStr()) return false;
-    return (s.count ?? (s.done ? 1 : 0)) >= FREE_DAILY_TAMES;
-  } catch {
-    return false;
-  }
+  return localTameCount(localDateStr()) >= TAME_DAILY_LIMIT;
 }
 
 /** __DEV__ reset. */
@@ -98,6 +90,8 @@ export interface TameStatusPayload {
   monsters: MonsterStatus[];
   doneToday: boolean;
   perEnemyDaily: boolean;
+  tamesToday?: number;
+  dailyLimit?: number;
   /** Daily flags expire locally; lifetime counts and points stay cached. */
   statusDate?: string;
 }
@@ -136,9 +130,9 @@ export function getCachedTameStatus(): TameStatusPayload {
         });
         return {
           ...parsed, monsters,
-          doneToday: parsed.perEnemyDaily
-            ? !staleDay && parsed.doneToday
-            : (!staleDay && parsed.doneToday) || isTameEnemyDoneToday(),
+          doneToday: !staleDay && (parsed.doneToday || isTameEnemyDoneToday()),
+          tamesToday: staleDay ? 0 : parsed.tamesToday ?? localTameCount(localDateStr()),
+          dailyLimit: TAME_DAILY_LIMIT,
         };
       }
     } catch {
@@ -159,7 +153,9 @@ export function getCachedTameStatus(): TameStatusPayload {
       tamedToday: false,
     })),
     doneToday: isTameEnemyDoneToday(),
-    perEnemyDaily: false,
+    perEnemyDaily: true,
+    tamesToday: 0,
+    dailyLimit: TAME_DAILY_LIMIT,
   };
 }
 
@@ -172,7 +168,7 @@ export async function fetchTameStatus(): Promise<TameStatusPayload> {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
     if (!userId || epoch !== sessionEpoch()) return getCachedTameStatus();
-    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean }>(
+    const data = await apiClient.get<{ success?: boolean; monsters?: MonsterStatus[]; doneToday?: boolean; perEnemyDaily?: boolean; tamesToday?: number; dailyLimit?: number }>(
       `/api/tame-enemy/status?userId=${encodeURIComponent(userId)}&localDate=${today}`,
     );
     // An entry-time GET must not undo a completion that finished meanwhile.
@@ -183,6 +179,8 @@ export async function fetchTameStatus(): Promise<TameStatusPayload> {
       monsters: data.monsters,
       doneToday: !!data.doneToday,
       perEnemyDaily: !!data.perEnemyDaily,
+      tamesToday: data.tamesToday ?? 0,
+      dailyLimit: data.dailyLimit ?? TAME_DAILY_LIMIT,
       statusDate: today,
     };
     storage.set(kTameStatus.name, JSON.stringify(payload));
@@ -222,6 +220,8 @@ export async function submitTame(params: {
       battlePoints?: number;
       battleTotalPoints?: number;
       milestoneBonus?: number;
+      tamesToday?: number;
+      dailyLimit?: number;
     }>('/api/tame-enemy', {
       userId,
       monsterId: params.monsterId,
@@ -234,6 +234,7 @@ export async function submitTame(params: {
     statusRevision += 1;
     markTameEnemyDoneToday(today);
     const cached = getCachedTameStatus();
+    const completedToday = data.tamesToday ?? localTameCount(today);
     const monsters = cached.monsters.map(monster => {
       if (monster.id !== params.monsterId) return monster;
       const currentPoints = Math.max(0, Number(monster.battlePoints) || 0);
@@ -251,9 +252,10 @@ export async function submitTame(params: {
       ...cached,
       monsters,
       statusDate: localDateStr(),
-      doneToday: cached.perEnemyDaily
-        ? monsters.every(monster => monster.tamedToday)
-        : isTameEnemyDoneToday(),
+      tamesToday: completedToday,
+      dailyLimit: data.dailyLimit ?? TAME_DAILY_LIMIT,
+      doneToday: completedToday >= (data.dailyLimit ?? TAME_DAILY_LIMIT)
+        || isTameEnemyDoneToday(),
     }));
     return {
       ok: true,
@@ -263,7 +265,22 @@ export async function submitTame(params: {
       battleTotalPoints: data.battleTotalPoints,
       milestoneBonus: data.milestoneBonus ?? 0,
     };
-  } catch {
+  } catch (error) {
+    if (epoch === sessionEpoch() && error instanceof ApiError && error.status === 409) {
+      const body = error.body as { error?: string; tamesToday?: number; dailyLimit?: number } | undefined;
+      const completedToday = Math.max(0, Number(body?.tamesToday) || 0);
+      const dailyLimit = Math.max(1, Number(body?.dailyLimit) || TAME_DAILY_LIMIT);
+      storage.set(kTameEnemyState.name, JSON.stringify({ date: today, count: completedToday }));
+      const cached = getCachedTameStatus();
+      storage.set(kTameStatus.name, JSON.stringify({
+        ...cached,
+        statusDate: today,
+        tamesToday: completedToday,
+        dailyLimit,
+        doneToday: completedToday >= dailyLimit,
+      } satisfies TameStatusPayload));
+      return { ok: false, error: body?.error ?? 'already_done' };
+    }
     return { ok: false, error: 'network' };
   } finally {
     pendingTames.delete(pending);

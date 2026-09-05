@@ -28,11 +28,9 @@ function isoWeek(dateStr) {
  * Records one tame. PRD v2.0 economy:
  *   - pays XP_RULES.tameEnemy.award (+30 Clover)
  *   - banks a fixed +50 Tame History points toward milestone rewards
- *   - FREE: 3 tames a day across all monsters (period = date#slot, slots 1-3)
- *   - PAID: once per monster per day, up to all 8 (period = date:monsterId)
- * The tier fork only widens the period key -- submit_kit's unique row stays
- * the single gate either way. The battle resolves entirely client-side
- * against the shared engine; this endpoint only credits the completion.
+ *   - at most two distinct monsters per local day for every account
+ * The database repeats these checks under its user lock so concurrent requests
+ * cannot exceed the limit. The battle resolves entirely client-side.
  */
 export async function POST(request) {
   try {
@@ -42,7 +40,7 @@ export async function POST(request) {
     if (!verified) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { userId, monsterId, skillsUsed, hits, localDate } = await request.json()
+    const { userId, monsterId, skillsUsed, hits } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -60,24 +58,20 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const usedIds = Array.isArray(skillsUsed) ? skillsUsed : []
 
-    // Tier fork (PRD benefits matrix): paid tames each enemy once a day;
-    // free gets 3 tames a day across all monsters (2026-07-31 ruling), gated
-    // by a per-slot period key so submit_kit's unique row still guards each.
-    const { data: profile } = await supabase
-      .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
-    const isPaid = (profile?.subscription_tier ?? 'free') !== 'free'
-
     const { data: priorRows } = await supabase
       .from('kit_completions')
       .select('payload, local_date')
       .eq('user_id', userId)
       .eq('kit', 'tame_enemy')
-    const tamesToday = (priorRows || []).filter((r) => r.local_date === dateStr).length
-    const FREE_DAILY_TAMES = 3
-    if (!isPaid && tamesToday >= FREE_DAILY_TAMES) {
-      return NextResponse.json({ error: 'already_done' }, { status: 409 })
+      .eq('local_date', dateStr)
+    const todayRows = priorRows || []
+    if (todayRows.length >= 2) {
+      return NextResponse.json({ error: 'daily_limit_reached', tamesToday: todayRows.length, dailyLimit: 2 }, { status: 409 })
     }
-    const periodKey = isPaid ? `${dateStr}:${monsterId}` : `${dateStr}#${tamesToday + 1}`
+    if (todayRows.some((row) => row.payload?.monster_id === monsterId)) {
+      return NextResponse.json({ error: 'already_done', tamesToday: todayRows.length, dailyLimit: 2 }, { status: 409 })
+    }
+    const periodKey = `${dateStr}:${monsterId}`
 
     const battlePoints = TAME_POINTS_PER_COMPLETION
 
@@ -115,6 +109,8 @@ export async function POST(request) {
       battlePoints,
       milestoneBonus: result?.milestone_bonus ?? 0,
       battleTotalPoints,
+      tamesToday: result?.tames_today ?? todayRows.length + 1,
+      dailyLimit: result?.daily_limit ?? 2,
     })
   } catch (err) {
     console.error('[tame-enemy] unexpected:', err && err.message)

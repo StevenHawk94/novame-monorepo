@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
+  ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -10,7 +10,7 @@ import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { GridBackground } from '@/components/ui/grid-background';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { UserAvatar } from '@/components/ui/user-avatar';
-import { androidTabHeaderTypography } from '@/components/ui/tab-header-typography';
+import { tabHeaderTypography } from '@/components/ui/tab-header-typography';
 import {
   fetchInsights, fetchPairing, getCachedInsights, getCachedPairing,
   markConnectionDashboardRefreshed, shouldRefreshConnectionDashboard,
@@ -98,7 +98,7 @@ function InsightContentCard({
       <View style={st.insightBadge}>
         <Text style={st.insightBadgeText}>{card.label}</Text>
       </View>
-      <Text style={st.insightHeadline}>{card.title}</Text>
+      {!!card.title && <Text style={st.insightHeadline}>{card.title}</Text>}
       <Text style={st.insightText}>{card.observation}</Text>
       {!!card.meaning && <Text style={st.supportingText}>{card.meaning}</Text>}
       {!!card.takeaway && section === 'between' && (
@@ -117,8 +117,6 @@ function InsightContentCard({
 export default function ConnectionDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const narrow = width < 380;
   // Read the cache exactly once for this mounted tab. The Connection cache also
   // contains append-only History, so doing this in the render body used to
   // synchronously parse an increasingly large JSON document after each state
@@ -267,14 +265,14 @@ export default function ConnectionDashboardScreen() {
       <View style={[st.header, { paddingTop: insets.top + 10 }]}>
         <View style={{ flex: 1 }}>
           <Text
-            style={[st.title, Platform.OS !== 'android' && narrow && { fontSize: 19 }]}
+            style={st.title}
             numberOfLines={Platform.OS === 'android' ? undefined : 1}
             adjustsFontSizeToFit={Platform.OS !== 'android'}
             minimumFontScale={0.85}
           >
             Connection Board
           </Text>
-          <Text style={[st.subtitle, Platform.OS !== 'android' && narrow && { fontSize: 11.5 }]}
+          <Text style={st.subtitle}
             numberOfLines={Platform.OS === 'android' ? undefined : 2}>
             The little things tell a bigger story.
           </Text>
@@ -423,8 +421,8 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#7A4A3A', paddingHorizontal: 18, paddingBottom: 18,
   },
-  title: { fontSize: 23, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', ...androidTabHeaderTypography.title },
-  subtitle: { fontSize: 13.5, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3, ...androidTabHeaderTypography.subtitle },
+  title: { color: '#FFFFFF', ...tabHeaderTypography.title },
+  subtitle: { color: 'rgba(255,255,255,0.9)', marginTop: 3, ...tabHeaderTypography.subtitle },
   hubPill: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3,
     width: 108, backgroundColor: '#F0885C', borderRadius: 20,

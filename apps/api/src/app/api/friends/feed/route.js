@@ -90,7 +90,7 @@ export async function GET(request) {
     let exhausted = false
     while (visible.length < PAGE_SIZE + 1 && !exhausted) {
       let reflectQuery = supabase.from('reflects')
-        .select('id, local_date, created_at, shared_to_friends')
+        .select('id, local_date, created_at, shared_to_friends, shared_with_user_id')
         .eq('user_id', friendId)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
@@ -153,6 +153,7 @@ export async function GET(request) {
         createdAt: reflect.created_at || items[0]?.created_at,
         localDate: reflect.local_date,
         itemIds: items.map((item) => item.item_id),
+        isSharedMemory: !!reflect.shared_with_user_id,
         details,
         sharesDetails: mode !== 'none',
         unread: (reflect.created_at || items[0]?.created_at) > (reads?.last_read_at || '1970-01-01T00:00:00Z'),

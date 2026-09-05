@@ -86,7 +86,6 @@ export default function TameEnemyScreen() {
   const cached = getCachedTameStatus();
   const [monsters, setMonsters] = useState<MonsterStatus[]>(cached.monsters);
   const [doneToday, setDoneToday] = useState(cached.doneToday);
-  const [perEnemyDaily, setPerEnemyDaily] = useState(cached.perEnemyDaily);
   const [active, setActive] = useState<MonsterStatus | null>(null);
   const [selectedFinalWords, setSelectedFinalWords] = useState<TameFinalWords | null>(null);
   const [hits, setHits] = useState(0);
@@ -117,7 +116,6 @@ export default function TameEnemyScreen() {
     const status = getCachedTameStatus();
     setMonsters(status.monsters);
     setDoneToday(status.doneToday);
-    setPerEnemyDaily(status.perEnemyDaily);
   }, []);
 
   useEffect(() => {
@@ -272,17 +270,14 @@ export default function TameEnemyScreen() {
         {doneToday && (
           <View style={[styles.hintBar, { backgroundColor: kit.card }]}>
             <Text style={[styles.hintText, { color: kit.accent }]}>
-              {perEnemyDaily
-                ? "All eight tamed today — that's the full sweep. Back tomorrow!"
-                : "All 3 tames used today. Come back tomorrow for more."}
+              Both tames used today. Come back tomorrow for more.
             </Text>
           </View>
         )}
 
         <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
           {monsters.map((m) => {
-            // Free: 3 tames a day across all monsters. Paid: one per monster.
-            const locked = perEnemyDaily ? m.tamedToday : doneToday;
+            const locked = doneToday || m.tamedToday;
             return (
               <Pressable
                 key={m.id}

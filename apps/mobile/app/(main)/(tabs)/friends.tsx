@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -81,6 +87,25 @@ export default function FriendsScreen() {
   const [privacyMode, setPrivacyMode] = useState<MemoryDetailsMode>('custom');
   const [privacySaving, setPrivacySaving] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const reflectSheetRef = useRef<BottomSheetModal>(null);
+  const [selectedReflection, setSelectedReflection] = useState<FeedEntry | null>(null);
+
+  useEffect(() => {
+    if (selectedReflection) reflectSheetRef.current?.present();
+  }, [selectedReflection]);
+
+  const renderReflectBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        opacity={0.45}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
 
   const load = useCallback(async (forceLatest = false) => {
     // Invitations expire after 48 hours. Bypass the normal short cache whenever
@@ -251,25 +276,19 @@ export default function FriendsScreen() {
       void markFriendRead(e.friendUserId);
       setFeed((cur) => cur.map((x) => (x.friendUserId === e.friendUserId ? { ...x, unread: false } : x)));
     }
-    // Privacy is an explicit profile setting, not an inference from whether a
-    // memory sentence exists. A Tap Your Day reflect can legitimately contain
-    // shared item icons with no typed/AI memory; that opens the normal detail
-    // page and shows its empty state. Only Hide All Details is private.
     if (!e.sharesDetails) {
       void haptics.light();
       appAlert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
       return;
     }
+    const memories = (e.details ?? []).filter((detail) => detail.text.trim().length > 0);
+    if (memories.length === 0) {
+      void haptics.light();
+      appAlert('No memories created in this reflection.');
+      return;
+    }
     void haptics.pageOpen();
-    router.push({
-      pathname: '/(main)/friend-reflect-detail' as never,
-      params: {
-        friendUserId: e.friendUserId,
-        friendName: e.friendName,
-        createdAt: e.createdAt,
-        detailsJson: JSON.stringify(e.details ?? []),
-      },
-    } as never);
+    setSelectedReflection({ ...e, details: memories });
   }
 
   const pendingCount = status.pending.length;
@@ -501,6 +520,53 @@ export default function FriendsScreen() {
         onClose={() => setPrivacyOpen(false)}
         onSave={() => void savePrivacy()}
       />
+      <BottomSheetModal
+        ref={reflectSheetRef}
+        index={0}
+        snapPoints={['78%']}
+        enableDynamicSizing={false}
+        enablePanDownToClose
+        backdropComponent={renderReflectBackdrop}
+        backgroundStyle={styles.reflectSheetBackground}
+        handleStyle={styles.reflectSheetHandle}
+        handleIndicatorStyle={styles.reflectSheetIndicator}
+        onDismiss={() => setSelectedReflection(null)}
+      >
+        {selectedReflection && (
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.reflectSheetContent, { paddingBottom: Math.max(insets.bottom, 12) + 18 }]}
+          >
+            <View style={styles.reflectSheetHeader}>
+              <UserAvatar
+                userId={selectedReflection.friendUserId}
+                avatarUrl={selectedReflection.friendAvatarUrl}
+                isDefaultAvatar={selectedReflection.friendIsDefaultAvatar}
+                size={46}
+              />
+              <Text style={styles.reflectSheetName} numberOfLines={1}>{selectedReflection.friendName}</Text>
+              <Text style={styles.reflectSheetTime}>{timeAgo(selectedReflection.createdAt)}</Text>
+            </View>
+            <View style={styles.reflectMemories}>
+              {selectedReflection.details?.map((detail, index) => (
+                <View key={`${detail.itemId}:${index}`} style={styles.reflectMemoryCard}>
+                  <ItemSprite itemId={detail.itemId} size={72} radius={14} />
+                  <Text style={styles.reflectMemoryText}>{detail.text}</Text>
+                </View>
+              ))}
+            </View>
+            <Pressable
+              onPress={() => {
+                void haptics.pageClose();
+                reflectSheetRef.current?.dismiss();
+              }}
+              style={({ pressed }) => [styles.reflectSheetClose, pressed && { transform: [{ translateY: 2 }] }]}
+            >
+              <MaterialIcons name="close" size={28} color="#FFFFFF" />
+            </Pressable>
+          </BottomSheetScrollView>
+        )}
+      </BottomSheetModal>
       <FeatureGuideModal guide="paired" enabled={!homeEntry.pending} />
     </View>
   );
@@ -660,6 +726,24 @@ const styles = StyleSheet.create({
   moreText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#8B7FD9' },
   timeText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: '#9A8770' },
   unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#E5483C' },
+  reflectSheetBackground: { backgroundColor: '#F5EBDD' },
+  reflectSheetHandle: { paddingTop: 11, paddingBottom: 8 },
+  reflectSheetIndicator: { width: 46, height: 5, backgroundColor: '#C6AA8A' },
+  reflectSheetContent: { paddingHorizontal: 18, paddingTop: 6 },
+  reflectSheetHeader: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 18 },
+  reflectSheetName: { flex: 1, fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B' },
+  reflectSheetTime: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: '#8B765F' },
+  reflectMemories: { gap: 12 },
+  reflectMemoryCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#FFFFFF', borderRadius: 22, borderWidth: 1.5, borderColor: '#E5C8B8',
+    padding: 16,
+  },
+  reflectMemoryText: { flex: 1, fontSize: 16, fontFamily: 'Inter_500Medium', color: '#1B1B1B', lineHeight: 24 },
+  reflectSheetClose: {
+    width: 58, height: 58, borderRadius: 29, alignSelf: 'center', marginTop: 22,
+    backgroundColor: '#53351D', alignItems: 'center', justifyContent: 'center',
+  },
   privacyBackdrop: { flex: 1, backgroundColor: 'rgba(34,24,17,0.64)', alignItems: 'center', justifyContent: 'center', padding: 18 },
   privacyFrame: { width: '100%', maxWidth: 500, alignItems: 'center' },
   privacyCard: { width: '100%', backgroundColor: '#53351D', borderRadius: 30, borderWidth: 10, borderColor: '#FFC99E', padding: 24 },

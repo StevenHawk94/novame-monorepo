@@ -156,7 +156,7 @@ function seedTames(h, { paid = false, count = 0, dailyCount = 0, used = [] } = {
   const statusDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   h.storage.set('kTameEnemyState', JSON.stringify({ date: statusDate, count: dailyCount }));
   h.storage.set('kTameStatus', JSON.stringify({
-    statusDate, perEnemyDaily: paid, doneToday: false,
+    statusDate, perEnemyDaily: true, tamesToday: dailyCount, dailyLimit: 2, doneToday: dailyCount >= 2,
     monsters: definitions.map((m, index) => ({
       ...m,
       tamedCount: index === 0 ? count : 0,
@@ -262,22 +262,34 @@ test('status GET observing the server commit before POST returns cannot double c
   assert.equal(h.tame.getCachedTameStatus().monsters[0].tamedCount, 12);
 });
 
-test('Free third tame locks daily entry, Plus third tame does not; Plus eighth does', async () => {
-  for (const [paid, used, expected] of [
-    [false, [], true], [true, ['monster-1', 'monster-2'], false],
-    [true, definitions.slice(1).map(m => m.id), true],
-  ]) {
+test('the second tame locks daily entry for every tier and the next day resets it', async () => {
+  for (const paid of [false, true]) {
     const h = setup();
-    seedTames(h, { paid, dailyCount: paid ? used.length : 2, used });
+    seedTames(h, { paid, dailyCount: 1, used: ['monster-1'] });
     const work = submitTame(h);
     await flush();
     h.response.resolve({ success: true });
     await work;
-    assert.equal(h.tame.getCachedTameStatus().doneToday, expected);
-    assert.equal(h.tame.isTameEnemyDoneToday(), expected);
+    assert.equal(h.tame.getCachedTameStatus().doneToday, true);
+    assert.equal(h.tame.isTameEnemyDoneToday(), true);
     h.timing.advance(24 * 60 * 60 * 1000);
     assert.equal(h.tame.isTameEnemyDoneToday(), false);
     assert.ok(h.tame.getCachedTameStatus().monsters.every(m => !m.tamedToday));
     assert.equal(h.tame.getCachedTameStatus().monsters[0].tamedCount, 1, 'lifetime count survives day rollover');
   }
+});
+
+test('Tame Enemy daily limit is enforced in the API and again under the database user lock', () => {
+  const route = require('node:fs').readFileSync('apps/api/src/app/api/tame-enemy/route.js', 'utf8');
+  const status = require('node:fs').readFileSync('apps/api/src/app/api/tame-enemy/status/route.js', 'utf8');
+  const migration = require('node:fs').readFileSync('supabase/migrations/20260905000076_ours_only_and_tame_daily_limit.sql', 'utf8');
+  assert.match(route, /todayRows\.length >= 2/);
+  assert.match(route, /row\.payload\?\.monster_id === monsterId/);
+  assert.doesNotMatch(route, /subscription_tier/);
+  assert.match(status, /const dailyLimit = 2/);
+  const lockAt = migration.indexOf('pg_advisory_xact_lock');
+  const limitAt = migration.indexOf('if v_tames_today >= 2');
+  const rewardAt = migration.indexOf("v_submit := public.submit_kit");
+  assert.ok(lockAt >= 0 && limitAt > lockAt && rewardAt > limitAt);
+  assert.match(migration, /payload->>'monster_id' = v_monster_id/);
 });

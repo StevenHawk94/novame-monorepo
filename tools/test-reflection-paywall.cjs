@@ -53,9 +53,11 @@ test('current settlement completion counts once, only after success; an in-settl
   }
   visit(source); assert.ok(effect, 'new settlement must invoke the restored cadence');
   const h = counter(), calls = [];
-  const context = { completed: null, delivered: { current: false }, isPaid: false, draft: { draftId: 'one' },
+  const context = { completed: null, delivered: { current: false }, isPaid: false, shared: false,
+    draft: { draftId: 'one', userId: 'user-one' },
     Platform: { OS: 'ios' }, route: { key: 'reflect-screen' }, markNavigationTransitionPending() {},
     releaseReflectSettlement() {}, recordReflectionPaywallClaim: h.api.recordReflectionPaywallClaim,
+    logFirstReflectCompleted() {},
     onFinalized: () => calls.push('finished'), recordReflectClaimForRating: () => false, emitOfficialRatingRequest() {},
   };
   const run = vm.runInNewContext('(' + effect.getText(source) + ')', context);
@@ -88,19 +90,23 @@ function gateHarness({ slowStore = false, navigation } = {}) {
   const { OfficialRatingGate } = load('apps/mobile/src/components/rating/official-rating-gate.tsx', {
     react,
     'react-native': { AppState: appState },
-    'expo-router': { useSegments: () => env.route, router: { push(route) { pushes.push(route); env.route = ['(main)', '(modals)', 'reflection-plus-paywall']; } } },
+    'expo-router': { useSegments: () => env.route, router: { push(route) { pushes.push(typeof route === 'string' ? route : route.pathname); env.route = ['(main)', '(modals)', 'reflection-plus-paywall']; } } },
     'expo-store-review': {
       hasAction() { checks++; return slowStore ? new Promise(resolve => resolvers.push(resolve)) : Promise.resolve(true); },
       requestReview: async () => { reviews++; },
     },
     '@/lib/official-rating-prompt': { subscribeOfficialRatingRequest(fn) { ratingListener = fn; return () => { ratingListener = null; }; } },
-    '@/lib/reflection-paywall-count': { subscribeReflectionPaywallRequest(fn) { paywallListener = fn; return () => { paywallListener = null; }; } },
+    '@/lib/reflection-paywall-count': {
+      getNextReflectionPaywallVariant: () => '1',
+      subscribeReflectionPaywallRequest(fn) { paywallListener = fn; return () => { paywallListener = null; }; },
+    },
     '@/lib/rating-navigation': {
       useRatingTransitionBusy: () => navigation ? navigation.isNavigationTransitionBusy() : env.busy,
       isNavigationTransitionBusy: () => navigation ? navigation.isNavigationTransitionBusy() : env.busy,
     },
     '@/components/ui/app-dialog': { useAppDialogVisible: () => env.dialog },
     '@/lib/use-subscription-tier': { useSubscriptionTierState: () => env.tier },
+    '@/lib/use-home-entry': { useHomeEntry: () => ({ pending: false, resumeRequired: false }) },
     '@/lib/modal-coordinator': { useActiveModalSlot: () => env.modal },
     '@/lib/overlay-presence': { useOverlayPresent: () => env.overlay, isOverlayPresent: () => env.overlay },
     '@/lib/async-lifecycle': load('apps/mobile/src/lib/async-lifecycle.ts', {}, time.globals),
@@ -245,4 +251,6 @@ test('Paywall uses requested copy and responsive larger icons with a fixed text 
   assert.ok(!file.includes("justifyContent: 'space-between'"));
   assert.match(file, /alignItems: 'center', gap: 6/);
   assert.ok(file.includes("router.replace('/(main)/(modals)/subscription-paywall?phase=plans'"));
+  assert.match(file, /source=\{ICONS\.Plus\}[\s\S]*style=\{styles\.v1PlusIcon\}/);
+  assert.match(file, /v1PlusIcon: \{ width: 56, height: 56, alignSelf: 'center', marginBottom: 8 \}/);
 });

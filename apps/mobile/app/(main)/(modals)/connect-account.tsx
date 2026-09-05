@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView,
+  StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -185,12 +186,24 @@ export default function ConnectAccountScreen() {
   return (
     <View style={styles.root}>
       <GridBackground />
-      <View style={[styles.inner, { paddingTop: insets.top + 14 }]}>
-        <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
-          <MaterialIcons name="close" size={22} color="#FFFFFF" />
-        </Pressable>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={[
+            styles.inner,
+            { paddingTop: insets.top + 14, paddingBottom: Math.max(insets.bottom, 24) },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+        >
+          <Pressable onPress={() => router.back()} style={styles.closeCircle} hitSlop={10}>
+            <MaterialIcons name="close" size={22} color="#FFFFFF" />
+          </Pressable>
 
-        <View style={styles.center}>
+          <View style={styles.center}>
           <Text style={styles.h1}>Connect Your Account</Text>
           {connectedAs ? (
             <>
@@ -273,15 +286,17 @@ export default function ConnectAccountScreen() {
               )}
             </>
           )}
-        </View>
-      </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8E2C1' },
-  inner: { flex: 1, paddingHorizontal: 24 },
+  keyboardAvoider: { flex: 1 },
+  inner: { flexGrow: 1, paddingHorizontal: 24 },
   closeCircle: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: '#5C3A24',
     alignItems: 'center', justifyContent: 'center',

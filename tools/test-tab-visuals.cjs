@@ -20,7 +20,9 @@ function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok
   const rn = native(platform, width);
   const typography = load('apps/mobile/src/components/ui/tab-header-typography.ts', { 'react-native': rn });
   const pushes = [], feedback = [];
-  const insights = { schemaVersion: 2, modules: { worth_knowing: content ? [{ label: 'Something New', headline: 'Private paid headline', body: 'Private paid insight' }] : [] } };
+  const insights = { schemaVersion: 2, modules: { worth_knowing: content ? [{
+    label: 'Worth Noticing', title: null, observation: 'Private paid insight', meaning: null, takeaway: null,
+  }] : [] } };
   const { default: Screen } = load('apps/mobile/app/(main)/(tabs)/status.tsx', {
     react: { useCallback: fn => fn, useEffect() {}, useRef: value => ({ current: value }),
       useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}] },
@@ -113,24 +115,30 @@ test('Android header remains 20/26 and subtitle 12/18 even on narrow screens', (
     assert.equal(subtitle.props.numberOfLines, undefined);
   }
 });
-test('iOS title/subtitle dimensions and responsive behavior remain unchanged', () => {
+test('iOS Connection title and subtitle use the shared tab header dimensions', () => {
   for (const width of [360, 390]) {
     const all = nodes(setup('ios', { width }).tree);
     const title = all.find(n => n.type === 'Text' && n.props.children === 'Connection Board');
     const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'The little things tell a bigger story.');
-    assert.equal(flatten(title.props.style).fontSize, width < 380 ? 19 : 23);
+    assert.equal(flatten(title.props.style).fontSize, 27);
+    assert.equal(flatten(title.props.style).lineHeight, 33);
     assert.equal(title.props.adjustsFontSizeToFit, true);
-    assert.equal(flatten(subtitle.props.style).fontSize, width < 380 ? 11.5 : 13.5);
+    assert.equal(flatten(subtitle.props.style).fontSize, 13.5);
+    assert.equal(flatten(subtitle.props.style).lineHeight, 19);
   }
 });
 test('Memories and both Quests states consume the shared header typography', () => {
   const read = name => fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/(tabs)', name), 'utf8');
   const bags = read('bags.tsx'), quests = read('quests.tsx');
-  assert.match(bags, /title: \{ \.\.\.MEMORIES_TITLE_TYPOGRAPHY/);
-  assert.match(bags, /title: \{[^\n]+\.\.\.androidTabHeaderTypography.title/);
+  assert.match(bags, /title: \{[^\n]+\.\.\.tabHeaderTypography.title/);
+  assert.match(bags, /Items with memories saved here\./);
+  assert.match(bags, /subtitle: \{[\s\S]*\.\.\.tabHeaderTypography.subtitle/);
+  assert.match(bags, /titleWrap: \{ flex: 1, paddingLeft: 8 \}/);
   assert.match(bags, /adjustsFontSizeToFit=\{Platform.OS !== 'android'\}/);
-  assert.match(quests, /title: \{[^\n]+\.\.\.androidTabHeaderTypography.title/);
-  assert.match(quests, /subtitle: \{[^\n]+\.\.\.androidTabHeaderTypography.subtitle/);
-  assert.match(quests, /style=\{styles.title\}>7-Day Daily Plan/);
-  assert.match(quests, /style=\{\[styles.title,[^\n]+>Weekly Quests/);
+  assert.doesNotMatch(bags, /source=\{ICONS\.memory\}/);
+  assert.match(quests, /title: \{[^\n]+\.\.\.tabHeaderTypography.title/);
+  assert.match(quests, /subtitle: \{[^\n]+\.\.\.tabHeaderTypography.subtitle/);
+  assert.equal((quests.match(/Weekly Goal/g) || []).length, 2);
+  assert.equal((quests.match(/One goal, broken into daily small steps\./g) || []).length, 2);
+  assert.doesNotMatch(quests, /Weekly To-Do List|Select your main goal of the week/);
 });

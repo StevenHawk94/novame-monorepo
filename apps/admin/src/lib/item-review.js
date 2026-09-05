@@ -51,6 +51,51 @@ export async function publishReview(db, input, adminId) {
   return data
 }
 
+export async function publishManualRule(db, input, adminId) {
+  const snapshot = await reviewSnapshot(db)
+  if (input.revision !== snapshot.revision) throw new Error('Rules changed. Refresh this icon before saving.')
+  const remote = await loadCurrentItemManifest()
+  const publishedBase = applyRemoteItemManifest(ITEM_DICTIONARY, remote.manifest)
+  const dictionary = applyItemRules(publishedBase, snapshot.rules)
+  const keyword = normalizeItemKeyword(String(input.keyword || ''))
+  const itemId = String(input.itemId || '')
+  if (!Object.prototype.hasOwnProperty.call(dictionary.items, itemId)) throw new Error('Choose an existing icon.')
+  if (!keyword || keyword.length > 100) throw new Error('Keyword must be between 1 and 100 characters.')
+
+  let action
+  if (input.action === 'add') {
+    if (!keyword.includes(' ')) throw new Error('Manual additions must be a safe multi-word phrase.')
+    const remoteNeverAuto = (remote.manifest?.items || []).some(item =>
+      item.keywordSafety?.some(rule => normalizeItemKeyword(rule.keyword) === keyword && rule.triggerMode === 'NEVER_AUTO'))
+    if (NEVER_AUTO_ITEMS[keyword]?.length || remoteNeverAuto) {
+      throw new Error('This phrase is classified NEVER_AUTO in the reviewed catalog and cannot be enabled here.')
+    }
+    if (dictionary.synonyms[keyword] && dictionary.synonyms[keyword] !== itemId) {
+      throw new Error(`This phrase already belongs to ${dictionary.items[dictionary.synonyms[keyword]]?.displayName || 'another icon'}.`)
+    }
+    if (dictionary.synonyms[keyword] === itemId) throw new Error('This phrase is already active for this icon.')
+    if (publishedBase.exclusions?.[keyword]?.length) {
+      throw new Error('This phrase has exclusion rules. Maintain it through the reviewed Item Manifest instead.')
+    }
+    action = 'enable'
+  } else if (input.action === 'delete') {
+    if (dictionary.synonyms[keyword] !== itemId) throw new Error('This exact phrase is not active for this icon.')
+    action = 'disable'
+  } else if (input.action === 'restore') {
+    if (dictionary.synonyms[keyword] === itemId) throw new Error('This phrase is already active.')
+    const owner = dictionary.synonyms[keyword]
+    if (owner && owner !== itemId) throw new Error('This phrase now belongs to another icon.')
+    action = publishedBase.synonyms[keyword] === itemId ? 'reset' : 'enable'
+  } else throw new Error('Invalid manual rule action.')
+
+  const { data, error } = await db.rpc('publish_item_rule', {
+    p_catalog: ITEM_CATALOG_VERSION, p_keyword: keyword, p_item_id: itemId, p_action: action,
+    p_expected_revision: snapshot.revision, p_admin: adminId, p_candidate: null, p_removal: null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function loadReview(db, status) {
   let candidates = db.from('item_learning_candidates').select('*').order('last_seen_at', { ascending: false }).limit(300)
   let removals = db.from('item_match_removals').select('id,item_id,icon_name,keyword,status,catalog_version,created_at').order('created_at', { ascending: false }).limit(300)

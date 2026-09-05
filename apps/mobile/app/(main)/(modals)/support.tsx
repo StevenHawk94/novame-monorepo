@@ -271,7 +271,7 @@ export default function SupportModal() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, styles.emailInput]}
           />
 
           {/* Subject */}
@@ -434,6 +434,9 @@ const styles = StyleSheet.create({
     color: '#4A3423',
     fontSize: 14,
     marginBottom: 16,
+  },
+  emailInput: {
+    textAlign: 'left',
   },
   messageInput: {
     minHeight: 130,

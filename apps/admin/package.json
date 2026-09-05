@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "build:item-atlas": "python3 ../../tools/build-admin-item-atlases.py",
     "start": "next start -p 3000",
     "lint": "next lint",
     "type-check": "tsc --noEmit"

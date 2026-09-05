@@ -8,7 +8,7 @@ import { CLOVERS_PER_TASK, COMPLETION_BONUS, themesForScope, type QuestTheme } f
 
 import { ICONS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
-import { androidTabHeaderTypography } from '@/components/ui/tab-header-typography';
+import { tabHeaderTypography } from '@/components/ui/tab-header-typography';
 import { GridBackground } from '@/components/ui/grid-background';
 import { CloverBurst } from '@/components/main/clover-burst';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
@@ -300,9 +300,10 @@ export default function QuestsScreen() {
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <View style={styles.titleRow}>
-              <Text style={styles.title}>7-Day Daily Plan</Text>
+              <Text style={styles.title}>Weekly Goal</Text>
               <Image source={ICONS.weekPlan} style={styles.titleIcon} resizeMode="contain" />
             </View>
+            <Text style={styles.subtitle}>One goal, broken into daily small steps.</Text>
           </View>
 
           <OffsetCard color={OFFSET} offset={4} radius={20} cardStyle={styles.planCard} style={styles.cardGap}>
@@ -383,12 +384,10 @@ export default function QuestsScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: titleColor }]}>Weekly Quests</Text>
+            <Text style={[styles.title, { color: titleColor }]}>Weekly Goal</Text>
             <Image source={ICONS.weekPlan} style={styles.titleIcon} resizeMode="contain" />
           </View>
-          <Text style={[styles.subtitle, { color: mutedColor }]}>
-            Select your main goal of the week, finish and get rewards!
-          </Text>
+          <Text style={[styles.subtitle, { color: mutedColor }]}>One goal, broken into daily small steps.</Text>
         </View>
 
         {custom && (
@@ -473,9 +472,9 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 16, paddingBottom: 16 },
   header: { paddingTop: 12, paddingBottom: 14, paddingHorizontal: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  title: { fontSize: 30, fontFamily: 'Inter_800ExtraBold', color: CREAM, ...androidTabHeaderTypography.title },
+  title: { color: CREAM, ...tabHeaderTypography.title },
   titleIcon: { width: 42, height: 42 },
-  subtitle: { fontSize: 14, fontFamily: 'Inter_500Medium', color: CREAM_MUTED, marginTop: 6, ...androidTabHeaderTypography.subtitle },
+  subtitle: { color: CREAM_MUTED, marginTop: 3, ...tabHeaderTypography.subtitle },
 
   cardGap: { marginBottom: 12 },
   rowGap: { marginBottom: 8 },

@@ -68,6 +68,11 @@ export default function ReflectionPlusPaywallModal() {
               { paddingTop: insets.top + 82 },
             ]}
           >
+            <ExpoImage
+              source={ICONS.Plus}
+              style={styles.v1PlusIcon}
+              contentFit="contain"
+            />
             <Text style={styles.v1Title}>Get Burrow Plus</Text>
             <Text style={styles.v1Subtitle}>
               Plus user get 2x significant improvement in how close they feel to their person.
@@ -169,6 +174,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, paddingHorizontal: 22 },
   v1Scroll: { flex: 1 },
   v1Content: { flexGrow: 1, paddingHorizontal: 22, paddingBottom: 20 },
+  v1PlusIcon: { width: 56, height: 56, alignSelf: 'center', marginBottom: 8 },
   v1Title: {
     color: INK, fontSize: 31, lineHeight: 39, fontFamily: 'Inter_800ExtraBold',
     textAlign: 'center', paddingHorizontal: 4,

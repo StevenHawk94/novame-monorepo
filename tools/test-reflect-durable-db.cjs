@@ -43,6 +43,8 @@ before(async () => {
   const migration = read('20260827000068_reflect_durable_settlement.sql');
   await db.exec(migration);
   await db.exec(migration); // safe SQL-editor retry
+  const oursOnly = read('20260905000076_ours_only_and_tame_daily_limit.sql');
+  await db.exec(oursOnly.slice(0, oursOnly.indexOf('-- Every account may tame')));
 });
 after(async () => { await db?.close(); });
 async function user() {
@@ -108,6 +110,10 @@ test('Shared/Ours only publishes after completion, once; lost pairing retains a 
   assert.equal((await row('select count(*)::int n from shared_memory_items where reflect_id=$1',[d.saved_reflect_id])).n,0);
   const saved=await complete(id,d.id);
   assert.equal(saved.sharedItems.length,1);
+  assert.equal((await row('select count(*)::int n from get_personal_memory_items($1)',[id])).n,0);
+  assert.equal((await row('select count(*)::int n from get_visible_partner_memory_items($1,false)',[id])).n,0);
+  assert.equal((await row('select count(*)::int n from get_personal_item_memories($1,\'i1\')',[id])).n,0);
+  assert.equal((await row('select count(*)::int n from shared_memory_items where reflect_id=$1',[d.saved_reflect_id])).n,1);
   await complete(id,d.id);
   assert.equal((await row('select count(*)::int n from shared_memory_items where reflect_id=$1',[d.saved_reflect_id])).n,1);
   const {draft:abandoned}=await begin(id,randomUUID(),{friend_user_id:friend});

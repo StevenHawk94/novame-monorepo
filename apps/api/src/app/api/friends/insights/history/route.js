@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
+import { publicConnectionCard } from '@/lib/connection-card'
 
 export const runtime = 'edge'
 const PAGE_SIZE = 24
@@ -28,28 +29,15 @@ const isoTimestamp = (value) => {
 }
 const uuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || '')
   ? value : null
-const copy = (value, max) => typeof value === 'string' && value.trim()
-  ? value.trim().slice(0, max) : null
-const label = (value) => (copy(value, 60) || 'Worth Noticing').split(/\s+/).slice(0, 3).join(' ')
-
 function publicCard(row) {
   if (!MODULE_KEYS.has(row?.module_key) || !row?.card || typeof row.card !== 'object') return null
-  const title = copy(row.card.title, 140) || copy(row.card.headline, 140)
-  const observation = copy(row.card.observation, 500) || copy(row.card.body, 500)
-  const meaning = copy(row.card.meaning, 300) || copy(row.card.supportingText, 300)
-  const takeaway = copy(row.card.takeaway, 240) || copy(row.card.action, 240)
-  if (!observation) return null
+  const card = publicConnectionCard(row.card, row.module_key)
+  if (!card) return null
   return {
     id: row.id,
     section: SECTION_BY_MODULE[row.module_key],
     moduleKey: row.module_key,
-    label: label(row.card.label),
-    title: title || label(row.card.label),
-    observation,
-    meaning,
-    takeaway,
-    // Temporary response aliases keep already-released clients compatible.
-    headline: title, body: observation, supportingText: meaning, action: takeaway,
+    ...card,
     date: row.for_date,
     createdAt: row.created_at,
   }

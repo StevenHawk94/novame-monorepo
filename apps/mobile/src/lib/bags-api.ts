@@ -17,7 +17,8 @@ import { supabase } from './supabase';
 const MINE_CACHE_MAX_AGE_MS = 15 * 60_000;
 const THEIR_CACHE_MAX_AGE_MS = 5 * 60_000;
 const BAGS_PAGE_SIZE = 100;
-const THEIR_CACHE_VERSION = 4;
+const MINE_CACHE_VERSION = 3;
+const THEIR_CACHE_VERSION = 5;
 
 export interface ItemMemory {
   excerpt: string;
@@ -161,7 +162,7 @@ function readMineCache(): MineBagsCache | null {
       storage.remove(kBagsState.name);
       return null;
     }
-    if (parsed.version !== 2) {
+    if (parsed.version !== MINE_CACHE_VERSION) {
       storage.remove(kBagsState.name);
       return null;
     }
@@ -306,7 +307,7 @@ export function cacheReflectItems(snapshot: {
   }
   const reconciled = [...byId.values()].sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt));
   storage.set(kBagsState.name, JSON.stringify({
-    version: 2,
+    version: MINE_CACHE_VERSION,
     items: reconciled,
     fetchedAt: cached?.fetchedAt ?? 0,
     historyComplete: cached?.historyComplete ?? false,
@@ -324,7 +325,7 @@ export function invalidateMineBagsCache(): void {
 /** A successful Paired feed can append the partner's new tiles locally. */
 export function cacheTheirItemsFromFeed(
   ownerUserId: string,
-  entries: { reflectId: string; createdAt: string; itemIds: string[]; details: { itemId: string; text: string }[] | null }[],
+  entries: { reflectId: string; createdAt: string; itemIds: string[]; details: { itemId: string; text: string }[] | null; isSharedMemory?: boolean }[],
 ): void {
   if (!ownerUserId || entries.length === 0) return;
   const cached = readTheirCache();
@@ -341,6 +342,7 @@ export function cacheTheirItemsFromFeed(
     }
   }
   for (const entry of entries) {
+    if (entry.isSharedMemory) continue;
     // The Paired feed can contain matched items without a saved Memory. Theirs
     // mirrors the partner's Mine collection, so only a visible, non-blank
     // memory detail is allowed to create a missing tile.
@@ -446,7 +448,7 @@ async function fetchBagsFirstPage(
       const merged = mergeWireItems(previous?.items ?? [], data.items);
       const hasDeeperCachedHistory = (previous?.items.length ?? 0) > data.items.length;
       storage.set(kBagsState.name, JSON.stringify({
-        version: 2,
+        version: MINE_CACHE_VERSION,
         items: merged,
         fetchedAt: Date.now(),
         historyComplete: hasDeeperCachedHistory
@@ -537,7 +539,7 @@ export async function fetchMoreBags(
       if (scope === 'mine') {
         const latest = readMineCache();
         storage.set(kBagsState.name, JSON.stringify({
-          version: 2,
+          version: MINE_CACHE_VERSION,
           items: mergeWireItems(latest?.items ?? [], data.items),
           fetchedAt: latest?.fetchedAt ?? Date.now(),
           historyComplete: data.hasMore !== true,

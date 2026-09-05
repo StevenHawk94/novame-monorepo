@@ -134,22 +134,13 @@ export async function GET(request) {
         rawRows = result.data
         memoryError = result.error
       } else {
-        let memoryQuery = supabase
-          .from('item_memories')
-          .select('id, item_id, reflect_id, raw_excerpt, refined_desc, description, memory_source, created_at')
-          .eq('user_id', targetUserId)
-          .eq('item_id', detailItemId)
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(memoryPageSize + 1)
-        if (beforeCreatedAt && beforeMemoryId) {
-          memoryQuery = memoryQuery.or(
-            `created_at.lt.${beforeCreatedAt},and(created_at.eq.${beforeCreatedAt},id.lt.${beforeMemoryId})`,
-          )
-        } else if (beforeCreatedAt) {
-          memoryQuery = memoryQuery.lt('created_at', beforeCreatedAt)
-        }
-        const result = await memoryQuery
+        const result = await supabase.rpc('get_personal_item_memories', {
+          p_owner_user_id: targetUserId,
+          p_item_id: detailItemId,
+          p_limit: memoryPageSize + 1,
+          p_before_created_at: beforeCreatedAt,
+          p_before_memory_id: beforeMemoryId,
+        })
         rawRows = result.data
         memoryError = result.error
       }
@@ -211,23 +202,12 @@ export async function GET(request) {
       ownedRaw = result.data
       e1 = result.error
     } else {
-      let ownedQuery = supabase
-        .from('user_items')
-        .select('item_id, count, first_seen_at')
-        .eq('user_id', targetUserId)
-        .order('first_seen_at', { ascending: false })
-        .order('item_id', { ascending: false })
-        .limit(pageSize + 1)
-      if (beforeFirstSeenAt && beforeItemId) {
-        ownedQuery = ownedQuery.or(
-          `first_seen_at.lt.${beforeFirstSeenAt},and(first_seen_at.eq.${beforeFirstSeenAt},item_id.lt.${beforeItemId})`,
-        )
-      } else if (beforeFirstSeenAt) {
-        // Backward compatibility for clients that still send the old timestamp-
-        // only cursor. New clients always send both parts of the stable keyset.
-        ownedQuery = ownedQuery.lt('first_seen_at', beforeFirstSeenAt)
-      }
-      const result = await ownedQuery
+      const result = await supabase.rpc('get_personal_memory_items', {
+        p_owner_user_id: targetUserId,
+        p_limit: pageSize + 1,
+        p_before_first_seen_at: beforeFirstSeenAt,
+        p_before_item_id: beforeItemId,
+      })
       ownedRaw = result.data
       e1 = result.error
     }

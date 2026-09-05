@@ -7,7 +7,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { ItemSprite } from '@/components/ui/item-sprite';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { OffsetCard } from '@/components/ui/offset-card';
-import { androidTabHeaderTypography, MEMORIES_TITLE_TYPOGRAPHY } from '@/components/ui/tab-header-typography';
+import { tabHeaderTypography } from '@/components/ui/tab-header-typography';
 import {
   fetchMoreBags,
   getCachedBags,
@@ -350,12 +350,12 @@ export default function BagsScreen() {
       <GridBackground base={gridColors.base} line={gridColors.line} cell={22} lineWidth={1.4} />
       <View style={styles.content}>
         <View style={styles.header}>
-          <Image source={ICONS.memory} style={styles.headerIcon} resizeMode="contain" />
           <View style={styles.titleWrap}>
             <Text style={styles.title} numberOfLines={Platform.OS === 'android' ? undefined : 1}
               adjustsFontSizeToFit={Platform.OS !== 'android'} minimumFontScale={0.75}>
               Memories Hub
             </Text>
+            <Text style={styles.subtitle}>Items with memories saved here.</Text>
           </View>
 
           <OffsetCard
@@ -469,9 +469,11 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8DF91' },
   content: { flex: 1, paddingHorizontal: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 10 },
-  headerIcon: { width: 56, height: 56 },
-  titleWrap: { flex: 1 },
-  title: { ...MEMORIES_TITLE_TYPOGRAPHY, color: '#4A2E17', ...androidTabHeaderTypography.title },
+  titleWrap: { flex: 1, paddingLeft: 8 },
+  title: { color: '#4A2E17', ...tabHeaderTypography.title },
+  subtitle: {
+    color: 'rgba(74,46,23,0.78)', marginTop: 3, ...tabHeaderTypography.subtitle,
+  },
   headerButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     minHeight: 56, backgroundColor: '#F0913D', paddingHorizontal: 14, paddingVertical: 13,
