@@ -21,7 +21,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ScreenOverlay } from '@/components/ui/screen-overlay';
 import { GridBackground } from '@/components/ui/grid-background';
-import { apiClient } from '@/lib/api';
 import { disableMetaAnalytics, initializeMetaAnalytics } from '@/lib/meta-analytics';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { hideSplashOnce } from '@/lib/splash';
@@ -42,7 +41,10 @@ type MetaPrivacyContextValue = {
 
 const MetaPrivacyContext = createContext<MetaPrivacyContextValue | null>(null);
 const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
-const REGION_TIMEOUT_MS = 2500;
+// Direct mobile connections to the Vercel edge can take 10-12 seconds from
+// China. This request runs in the background and does not hold the app UI.
+const REGION_TIMEOUT_MS = 20_000;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
 
 function savedChoice(): MetaPrivacyChoice | null {
   const value = storage.getString(kMetaPrivacyChoice.name);
@@ -59,15 +61,36 @@ async function fetchPrivacyRegion(): Promise<PrivacyRegion> {
   if (override === 'other') return 'other';
 
   const controller = new AbortController();
+  const startedAt = Date.now();
   const timer = setTimeout(() => controller.abort(), REGION_TIMEOUT_MS);
   try {
-    const response = await apiClient.get<{
+    if (!API_BASE_URL) throw new Error('Missing EXPO_PUBLIC_API_URL');
+
+    // This endpoint is intentionally public. Do not route it through the
+    // authenticated ApiClient: resolving the Supabase session during a cold
+    // launch can consume the whole timeout before the network request starts,
+    // leaving Meta disabled as an unknown region on both platforms.
+    const raw = await fetch(`${API_BASE_URL}/api/privacy-region`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!raw.ok) throw new Error(`Privacy region request failed: ${raw.status}`);
+    const response = await raw.json() as {
       success?: boolean;
       region?: 'eea_uk' | 'other' | 'unknown';
-    }>('/api/privacy-region', { signal: controller.signal });
-    return response.success && response.region
+    };
+    const resolved = response.success && response.region
       ? response.region
       : 'unknown';
+    if (__DEV__) {
+      console.info(
+        '[meta-privacy] region resolved:',
+        resolved,
+        `(${Date.now() - startedAt}ms)`,
+      );
+    }
+    return resolved;
   } catch (error) {
     console.warn('[meta-privacy] region lookup failed; Meta remains disabled:', error);
     return 'unknown';
@@ -142,23 +165,21 @@ export function MetaPrivacyProvider({ children }: PropsWithChildren) {
     openPreferences,
   }), [choice, ensureConsentBeforeHome, openPreferences, region]);
 
+  // Never hold the native splash while IP classification is in flight. Meta
+  // remains disabled during `checking`/`unknown`; a confirmed EEA/UK response
+  // still gates measurement behind the consent surface.
   const startupBlocking = initialReturningUser
-    && (region === 'checking' || (region === 'eea_uk' && choice === null));
+    && region === 'eea_uk'
+    && choice === null;
 
   return (
     <MetaPrivacyContext.Provider value={value}>
       {startupBlocking ? (
-        region === 'checking' ? (
-          // Keep the native splash visible while the short country lookup is
-          // in flight. It has its own timeout and never traps launch.
-          <View style={styles.launchBlank} />
-        ) : (
-          <ConsentSurface
-            preferences={false}
-            onAllow={() => choose('granted')}
-            onDeny={() => choose('denied')}
-          />
-        )
+        <ConsentSurface
+          preferences={false}
+          onAllow={() => choose('granted')}
+          onDeny={() => choose('denied')}
+        />
       ) : (
         <>
           {children}
@@ -241,7 +262,6 @@ function ConsentSurface({
 }
 
 const styles = StyleSheet.create({
-  launchBlank: { flex: 1, backgroundColor: '#F8E2C1' },
   surface: {
     flex: 1,
     backgroundColor: '#F8E2C1',

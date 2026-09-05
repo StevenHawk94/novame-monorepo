@@ -71,6 +71,7 @@
           "microphonePermission": "App needs microphone access to record voice to transcript to text and analyze."
         }
       ],
+      "./plugins/with-foreground-audio-only",
       "expo-web-browser",
       [
         "expo-notifications",

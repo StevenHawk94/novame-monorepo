@@ -32,8 +32,10 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
       matchedIcons: (draft.matches || []).map((item) => ({
         id: item.itemId, name: item.displayName, acceptedKeywords: item.matchedKeywords || [],
       })),
-      connectionEnabled: context.connectionEnabled,
-      currentConnectionBoard: context.connectionEnabled ? context.currentBoard : null,
+      // Extract eligible Connection signals even while the reader is inactive.
+      // Persistence still keeps them inactive until the reader returns.
+      connectionEnabled: context.connectionEligible,
+      currentConnectionBoard: context.connectionEligible ? context.currentBoard : null,
       writerRecentEvidence: context.writerRecentEvidence,
       readerRecentEvidence: context.readerRecentEvidence,
     })

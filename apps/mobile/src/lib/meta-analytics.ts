@@ -10,9 +10,26 @@ import { storage } from './storage';
 
 const FIRST_LAUNCH_EVENT = 'burrow_first_launch';
 const FIRST_REFLECT_EVENT = 'burrow_first_reflect_completed';
+const DEV_PIPELINE_EVENT = 'burrow_meta_pipeline_check';
 
 let initialized = false;
 let analyticsEnabled = false;
+
+function flushEvents(): void {
+  // Funnel events are intentionally sparse. Flush immediately so a cold-start
+  // event is not left waiting for the SDK's periodic/background flush, which
+  // also makes Events Manager's Test Events useful during development.
+  AppEventsLogger.flush();
+}
+
+function logEventAndFlush(
+  eventName: string,
+  parameters?: Record<string, string | number>,
+): void {
+  if (parameters) AppEventsLogger.logEvent(eventName, parameters);
+  else AppEventsLogger.logEvent(eventName);
+  flushEvents();
+}
 
 /**
  * Initialize only Meta App Events. Burrow does not use Meta Login, advanced
@@ -27,16 +44,28 @@ export function initializeMetaAnalytics(): void {
   analyticsEnabled = true;
   const wasInitialized = initialized;
   try {
+    AppEventsLogger.setFlushBehavior('auto');
     Settings.setAutoLogAppEventsEnabled(true);
     Settings.setAdvertiserIDCollectionEnabled(Platform.OS === 'android');
+    if (Platform.OS === 'ios') {
+      // Burrow does not request ATT or access IDFA. Make that state explicit
+      // to Meta instead of relying on an SDK default.
+      void Settings.setAdvertiserTrackingEnabled(false);
+    }
     if (!wasInitialized) {
       initialized = true;
       Settings.initializeSDK();
     }
 
     if (!storage.getBoolean(kMetaFirstLaunchLogged.name)) {
-      AppEventsLogger.logEvent(FIRST_LAUNCH_EVENT);
+      logEventAndFlush(FIRST_LAUNCH_EVENT);
       storage.set(kMetaFirstLaunchLogged.name, true);
+    }
+    if (__DEV__) {
+      // Development builds need a non-deduplicated probe so reinstalling over
+      // an existing dev client can still prove the native delivery pipeline.
+      logEventAndFlush(DEV_PIPELINE_EVENT, { platform: Platform.OS });
+      console.info('[meta] SDK initialized and pipeline check flushed');
     }
   } catch (error) {
     analyticsEnabled = false;
@@ -61,7 +90,7 @@ export function logOnboardingCompleted(): void {
   if (Platform.OS === 'web' || !analyticsEnabled) return;
   if (storage.getBoolean(kMetaOnboardingCompletedLogged.name)) return;
   try {
-    AppEventsLogger.logEvent(AppEventsLogger.AppEvents.CompletedTutorial);
+    logEventAndFlush(AppEventsLogger.AppEvents.CompletedTutorial);
     storage.set(kMetaOnboardingCompletedLogged.name, true);
   } catch (error) {
     console.warn('[meta] onboarding event failed:', error);
@@ -73,7 +102,7 @@ export function logFirstReflectCompleted(userId: string | undefined): void {
   const dedupeKey = kMetaFirstReflectLogged.keyFor(userId);
   if (storage.getBoolean(dedupeKey)) return;
   try {
-    AppEventsLogger.logEvent(FIRST_REFLECT_EVENT);
+    logEventAndFlush(FIRST_REFLECT_EVENT);
     storage.set(dedupeKey, true);
   } catch (error) {
     console.warn('[meta] first-reflect event failed:', error);
@@ -86,7 +115,7 @@ export function logStartTrial(params: {
 }): void {
   if (Platform.OS === 'web' || !analyticsEnabled) return;
   try {
-    AppEventsLogger.logEvent(AppEventsLogger.AppEvents.StartTrial, {
+    logEventAndFlush(AppEventsLogger.AppEvents.StartTrial, {
       [AppEventsLogger.AppEventParams.ContentID]: params.productId,
       [AppEventsLogger.AppEventParams.ContentType]: 'subscription',
       billing_cycle: params.cycle,

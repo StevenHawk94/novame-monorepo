@@ -1066,10 +1066,10 @@ export type ConnectionModuleKey =
 
 export interface ConnectionInsightCard {
   label: string;
-  headline: string | null;
-  body: string;
-  supportingText: string | null;
-  action: string | null;
+  title: string;
+  observation: string;
+  meaning: string | null;
+  takeaway: string | null;
 }
 
 export interface ConnectionInsights {
@@ -1077,6 +1077,64 @@ export interface ConnectionInsights {
   modules: Record<ConnectionModuleKey, ConnectionInsightCard[]>;
   updatedAt?: string;
   lastProcessedReflectId?: string;
+}
+
+const CONNECTION_MODULE_KEYS: ConnectionModuleKey[] = [
+  'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
+  'talk_about', 'try_together', 'shared_rhythm',
+];
+
+function normalizeConnectionCard(value: unknown): ConnectionInsightCard | null {
+  if (!value || typeof value !== 'object') return null;
+  const card = value as Record<string, unknown>;
+  const label = (typeof card.label === 'string' && card.label.trim() ? card.label.trim() : 'Worth Noticing')
+    .split(/\s+/).slice(0, 3).join(' ');
+  const title = typeof card.title === 'string' && card.title.trim() ? card.title.trim()
+    : typeof card.headline === 'string' && card.headline.trim() ? card.headline.trim() : label;
+  const observation = typeof card.observation === 'string' && card.observation.trim()
+    ? card.observation.trim()
+    : typeof card.body === 'string' ? card.body.trim() : '';
+  if (!observation) return null;
+  const optional = (primary: unknown, legacy: unknown): string | null => (
+    typeof primary === 'string' && primary.trim() ? primary.trim()
+      : typeof legacy === 'string' && legacy.trim() ? legacy.trim() : null
+  );
+  return {
+    label, title, observation,
+    meaning: optional(card.meaning, card.supportingText),
+    takeaway: optional(card.takeaway, card.action),
+  };
+}
+
+function normalizeConnectionInsights(value: unknown): ConnectionInsights | null {
+  if (!value || typeof value !== 'object') return null;
+  const insight = value as { schemaVersion?: unknown; modules?: Record<string, unknown>; updatedAt?: unknown };
+  if (insight.schemaVersion !== 2 || !insight.modules) return null;
+  const sectionByModule: Record<ConnectionModuleKey, ConnectionHistorySection> = {
+    worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
+    how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
+    shared_rhythm: 'between',
+  };
+  const limits: Record<ConnectionHistorySection, number> = {
+    missed: 3, world: 3, ways_in: 3, between: 1,
+  };
+  const counts: Record<ConnectionHistorySection, number> = {
+    missed: 0, world: 0, ways_in: 0, between: 0,
+  };
+  const modules = Object.fromEntries(CONNECTION_MODULE_KEYS.map((key) => {
+    const section = sectionByModule[key];
+    const remaining = Math.max(0, limits[section] - counts[section]);
+    const cards = (Array.isArray(insight.modules?.[key]) ? insight.modules[key] : [])
+      .map(normalizeConnectionCard).filter((card): card is ConnectionInsightCard => card !== null)
+      .slice(0, remaining);
+    counts[section] += cards.length;
+    return [key, cards];
+  })) as Record<ConnectionModuleKey, ConnectionInsightCard[]>;
+  return {
+    schemaVersion: 2,
+    modules,
+    ...(typeof insight.updatedAt === 'string' ? { updatedAt: insight.updatedAt } : {}),
+  };
 }
 
 export type ConnectionHistorySection = 'missed' | 'world' | 'ways_in' | 'between';
@@ -1087,6 +1145,23 @@ export interface ConnectionHistoryCard extends ConnectionInsightCard {
   moduleKey: ConnectionModuleKey;
   date: string;
   createdAt: string;
+}
+
+function normalizeConnectionHistoryCard(value: unknown): ConnectionHistoryCard | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const card = normalizeConnectionCard(raw);
+  if (!card || typeof raw.id !== 'string' || typeof raw.date !== 'string'
+    || typeof raw.createdAt !== 'string' || !CONNECTION_MODULE_KEYS.includes(raw.moduleKey as ConnectionModuleKey)
+    || !['missed', 'world', 'ways_in', 'between'].includes(String(raw.section))) return null;
+  return {
+    ...card,
+    id: raw.id,
+    date: raw.date,
+    createdAt: raw.createdAt,
+    moduleKey: raw.moduleKey as ConnectionModuleKey,
+    section: raw.section as ConnectionHistorySection,
+  };
 }
 
 export type ConnectionHistoryResult =
@@ -1106,12 +1181,16 @@ export type InsightsResult =
   | { ok: false; error: 'plus_required' | 'network' };
 
 export function getCachedInsights(): InsightsResult | null {
-  return (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
+  const cached = (readAnalysisCache().insights as InsightsResult | undefined) ?? null;
+  return cached?.ok ? { ...cached, insights: normalizeConnectionInsights(cached.insights) } : cached;
 }
 
 export function getCachedConnectionHistory(): ConnectionHistoryResult | null {
   const cached = readAnalysisCache().history as ConnectionHistoryResult | undefined;
-  return cached?.ok === true ? cached : null;
+  return cached?.ok === true
+    ? { ...cached, cards: cached.cards.map(normalizeConnectionHistoryCard)
+      .filter((card): card is ConnectionHistoryCard => card !== null) }
+    : null;
 }
 
 export function subscribeConnectionHistory(listener: ConnectionHistoryListener): () => void {
@@ -1165,7 +1244,10 @@ export async function fetchInsights(options?: { resume?: boolean }): Promise<
       `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view${options?.resume ? '&resume=1' : ''}`,
     );
     if (data.success) {
-      const cachedResult: InsightsResult = { ok: true, insights: data.insights ?? null };
+      const cachedResult: InsightsResult = {
+        ok: true,
+        insights: normalizeConnectionInsights(data.insights),
+      };
       patchAnalysisCache({ insights: cachedResult });
       return {
         ...cachedResult,
@@ -1246,13 +1328,16 @@ export async function fetchConnectionHistory(options?: {
         error?: string;
       }>(`/api/friends/insights/history?${params.toString()}`);
       if (result.success) {
+        const incomingCards = (Array.isArray(result.cards) ? result.cards : [])
+          .map(normalizeConnectionHistoryCard)
+          .filter((card): card is ConnectionHistoryCard => card !== null);
         const next: ConnectionHistoryResult = {
           ok: true,
           paired: result.paired === true,
           unavailable: result.unavailable === true,
           cards: cacheable && cached?.ok && result.paired === true && result.unavailable !== true
-            ? mergeConnectionHistoryCards(cached.cards, Array.isArray(result.cards) ? result.cards : [])
-            : (Array.isArray(result.cards) ? result.cards : []),
+            ? mergeConnectionHistoryCards(cached.cards, incomingCards)
+            : incomingCards,
           hasMore: cacheable && options?.incremental && cached?.ok
             ? cached.hasMore === true : result.hasMore === true,
           nextBeforeCreatedAt: cacheable && options?.incremental && cached?.ok

@@ -10,20 +10,45 @@ const MODULE_KEYS = [
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
   'talk_about', 'try_together', 'shared_rhythm',
 ]
+const SECTION_BY_MODULE = {
+  worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
+  how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
+  shared_rhythm: 'between',
+}
+const SECTION_LIMITS = { missed: 3, world: 3, ways_in: 3, between: 1 }
+const label = (value) => typeof value === 'string' && value.trim()
+  ? value.trim().split(/\s+/).slice(0, 3).join(' ') : 'Worth Noticing'
+
+function publicCard(card) {
+  const title = typeof card?.title === 'string' ? card.title
+    : typeof card?.headline === 'string' ? card.headline : null
+  const observation = typeof card?.observation === 'string' ? card.observation
+    : typeof card?.body === 'string' ? card.body : ''
+  const meaning = typeof card?.meaning === 'string' ? card.meaning
+    : typeof card?.supportingText === 'string' ? card.supportingText : null
+  const takeaway = typeof card?.takeaway === 'string' ? card.takeaway
+    : typeof card?.action === 'string' ? card.action : null
+  if (!observation) return null
+  return {
+    label: label(card?.label),
+    title: title || label(card?.label),
+    observation, meaning, takeaway,
+    // Temporary response aliases keep already-released clients compatible.
+    headline: title, body: observation, supportingText: meaning, action: takeaway,
+  }
+}
 
 function publicInsights(payload) {
   if (payload?.schemaVersion !== 2 || !payload.modules) return null
   const modules = {}
+  const sectionCounts = { missed: 0, world: 0, ways_in: 0, between: 0 }
   for (const key of MODULE_KEYS) {
+    const section = SECTION_BY_MODULE[key]
+    const remaining = SECTION_LIMITS[section] - sectionCounts[section]
     modules[key] = (Array.isArray(payload.modules[key]) ? payload.modules[key] : [])
       .filter((card) => !card?.expiresAt || Date.parse(card.expiresAt) > Date.now())
-      .map((card) => ({
-      label: typeof card?.label === 'string' ? card.label : 'Worth Noticing',
-      headline: typeof card?.headline === 'string' ? card.headline : null,
-      body: typeof card?.body === 'string' ? card.body : '',
-      supportingText: typeof card?.supportingText === 'string' ? card.supportingText : null,
-      action: typeof card?.action === 'string' ? card.action : null,
-      })).filter((card) => card.body)
+      .map(publicCard).filter(Boolean).slice(0, Math.max(0, remaining))
+    sectionCounts[section] += modules[key].length
   }
   return { schemaVersion: 2, modules, updatedAt: payload.updatedAt || null }
 }

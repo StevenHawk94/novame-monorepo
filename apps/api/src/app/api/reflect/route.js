@@ -295,8 +295,8 @@ export async function POST(request) {
           reflectId,
           journal: body,
           matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
-          connectionEnabled: analyzerContext.connectionEnabled,
-          currentConnectionBoard: analyzerContext.connectionEnabled ? analyzerContext.currentBoard : null,
+          connectionEnabled: analyzerContext.connectionEligible,
+          currentConnectionBoard: analyzerContext.connectionEligible ? analyzerContext.currentBoard : null,
           writerRecentEvidence: analyzerContext.writerRecentEvidence,
           readerRecentEvidence: analyzerContext.readerRecentEvidence,
         })

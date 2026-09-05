@@ -68,17 +68,26 @@ async function saveRecoveredAnalysis(supabase, {
   if (error) throw error
 }
 
+function cardsFromUpdates(updates) {
+  if (!updates || typeof updates !== 'object') return []
+  return Object.entries(updates).flatMap(([moduleKey, module]) => (
+    Array.isArray(module?.cards) ? module.cards.map((card) => ({ moduleKey, ...card })) : []
+  ))
+}
+
 /**
- * Resume after a reader was away for 48h. Deliberately analyzes only the most
- * recent skipped reflection; older skipped rows are consumed without replay.
+ * Resume after a reader was away for 48h. Compare all retained privacy-safe
+ * unprocessed signals together and publish only the three most valuable,
+ * distinct updates. Legacy rows without retained signals keep the former
+ * single-latest-reflection fallback instead of widening raw journal access.
  */
 export async function generateBrief(supabase, {
   forUser, partnerId, date, cachedPayload = null, pairedSince = null,
 }) {
   let latestQuery = supabase.from('reflect_ai_analyses')
-    .select('reflect_id, local_date, created_at')
+    .select('reflect_id, local_date, created_at, connection_updates')
     .eq('user_id', partnerId).eq('status', 'completed').eq('connection_mode', 'inactive')
-    .order('created_at', { ascending: false }).limit(1)
+    .order('created_at', { ascending: false })
   if (pairedSince) latestQuery = latestQuery.gte('created_at', pairedSince)
   const { data: latestRows, error } = await latestQuery
   let latest = latestRows?.[0]
@@ -100,20 +109,33 @@ export async function generateBrief(supabase, {
     return { ok: true, insights: cachedPayload, refreshed: false }
   }
 
-  const [reflectResult, itemRowsResult] = await Promise.all([
-    supabase.from('reflects').select('id, body, local_date, created_at')
-      .eq('id', latest.reflect_id).eq('user_id', partnerId).maybeSingle(),
-    supabase.from('reflect_items').select('item_id, match_label')
-      .eq('reflect_id', latest.reflect_id).eq('visible_to_paired', true)
-      .order('position', { ascending: true }),
-  ])
-  if (reflectResult.error || itemRowsResult.error) {
-    return { ok: false, reason: 'query_failed' }
-  }
-  const reflect = reflectResult.data
-  const itemRows = itemRowsResult.data
+  const unprocessedSignals = (latestRows || []).flatMap((row) => (
+    cardsFromUpdates(row.connection_updates).map((card) => ({
+      sourceReflectId: row.reflect_id,
+      localDate: row.local_date,
+      createdAt: row.created_at,
+      ...card,
+    }))
+  ))
 
-  if (!reflect?.body?.trim()) {
+  let reflect = null
+  let itemRows = []
+  if (unprocessedSignals.length === 0) {
+    const [reflectResult, itemRowsResult] = await Promise.all([
+      supabase.from('reflects').select('id, body, local_date, created_at')
+        .eq('id', latest.reflect_id).eq('user_id', partnerId).maybeSingle(),
+      supabase.from('reflect_items').select('item_id, match_label')
+        .eq('reflect_id', latest.reflect_id).eq('visible_to_paired', true)
+        .order('position', { ascending: true }),
+    ])
+    if (reflectResult.error || itemRowsResult.error) {
+      return { ok: false, reason: 'query_failed' }
+    }
+    reflect = reflectResult.data
+    itemRows = itemRowsResult.data || []
+  }
+
+  if (unprocessedSignals.length === 0 && !reflect?.body?.trim()) {
     await finishResume(supabase, {
       forUser, partnerId, pairedSince, through: latest.created_at,
     })
@@ -122,12 +144,20 @@ export async function generateBrief(supabase, {
 
   try {
     const context = await loadReflectAnalyzerContext(supabase, {
-      userId: partnerId, visibleToFriend: true, localDate: reflect.local_date || date,
+      userId: partnerId, visibleToFriend: true, localDate: latest.local_date || date,
     })
     const generated = await runConnectionRefresh({
-      reflectId: reflect.id,
-      journal: reflect.body,
-      matchedIcons: (itemRows || []).map((item) => ({ id: item.item_id, name: item.match_label })),
+      reflectId: latest.reflect_id,
+      unprocessedSignals,
+      ...(reflect ? {
+        unprocessedReflections: [{
+          reflectId: reflect.id,
+          localDate: reflect.local_date,
+          createdAt: reflect.created_at,
+          journal: reflect.body,
+          matchedIcons: itemRows.map((item) => ({ id: item.item_id, name: item.match_label })),
+        }],
+      } : {}),
       currentConnectionBoard: context.currentBoard || cachedPayload,
       writerRecentEvidence: context.writerRecentEvidence,
       readerRecentEvidence: context.readerRecentEvidence,
@@ -135,8 +165,8 @@ export async function generateBrief(supabase, {
     const applied = await applyConnectionUpdates(supabase, {
       pair: context.pair,
       updates: generated.data,
-      reflectId: reflect.id,
-      localDate: reflect.local_date || date,
+      reflectId: latest.reflect_id,
+      localDate: latest.local_date || date,
     })
     await Promise.all([
       saveRecoveredAnalysis(supabase, {
@@ -155,7 +185,7 @@ export async function generateBrief(supabase, {
         promptVersion: CONNECTION_REFRESH_VERSION,
         result: generated.result,
         latencyMs: generated.latencyMs,
-        refId: reflect.id,
+        refId: latest.reflect_id,
       }),
     ])
     return {
@@ -169,7 +199,7 @@ export async function generateBrief(supabase, {
       feature: 'connection_catchup',
       promptVersion: CONNECTION_REFRESH_VERSION,
       success: false,
-      refId: reflect.id,
+      refId: latest.reflect_id,
       error: String(err?.message || err),
     })
     return { ok: false, reason: 'ai_unavailable' }

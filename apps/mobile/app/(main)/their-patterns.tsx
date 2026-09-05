@@ -43,13 +43,16 @@ function HistoryCard({ card }: { card: ConnectionHistoryCard }) {
         </View>
         <Text style={styles.dateText}>{shortDate(card.date)}</Text>
       </View>
-      {!!card.headline && <Text style={styles.headline}>{card.headline}</Text>}
-      <Text style={styles.body}>{card.body}</Text>
-      {!!card.supportingText && <Text style={styles.supporting}>{card.supportingText}</Text>}
-      {!!card.action && (
+      <Text style={styles.headline}>{card.title}</Text>
+      <Text style={styles.body}>{card.observation}</Text>
+      {!!card.meaning && <Text style={styles.supporting}>{card.meaning}</Text>}
+      {!!card.takeaway && card.section === 'between' && (
+        <Text style={styles.supporting}>{card.takeaway}</Text>
+      )}
+      {!!card.takeaway && card.section === 'ways_in' && (
         <View style={styles.actionRow}>
           <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
-          <Text style={styles.actionText}>{card.action}</Text>
+          <Text style={styles.actionText}>{card.takeaway}</Text>
         </View>
       )}
     </View>

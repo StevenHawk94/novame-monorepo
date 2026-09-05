@@ -28,6 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 type SectionDefinition = {
+  section: 'missed' | 'world' | 'ways_in' | 'between';
   title: string;
   icon: typeof ICONS.connect1;
   modules: ConnectionModuleKey[];
@@ -36,24 +37,28 @@ type SectionDefinition = {
 
 const SECTION_DEFINITIONS: SectionDefinition[] = [
   {
+    section: 'missed',
     title: 'What You May Have Missed',
     icon: ICONS.connect1,
     modules: ['worth_knowing'],
     preset: 'Important moments, changes, and quiet wins worth following up on will appear here.',
   },
   {
+    section: 'world',
     title: 'Their World Lately',
     icon: ICONS.connect2,
     modules: ['recent_vibe', 'what_theyre_into'],
     preset: 'Get a clearer feel for their recent vibe and what’s been capturing their attention.',
   },
   {
+    section: 'ways_in',
     title: 'Ways In',
     icon: ICONS.connect3,
     modules: ['how_to_show_up', 'talk_about', 'try_together'],
     preset: 'Find thoughtful ways to check in, start a conversation, or spend time together.',
   },
   {
+    section: 'between',
     title: 'Between You Lately',
     icon: ICONS.connect4,
     modules: ['shared_rhythm'],
@@ -82,19 +87,27 @@ function cardsForSection(
   ));
 }
 
-function InsightContentCard({ card }: { card: ConnectionInsightCard }) {
+function InsightContentCard({
+  card, section,
+}: {
+  card: ConnectionInsightCard;
+  section: 'missed' | 'world' | 'ways_in' | 'between';
+}) {
   return (
     <View style={st.insightCard}>
       <View style={st.insightBadge}>
         <Text style={st.insightBadgeText}>{card.label}</Text>
       </View>
-      {!!card.headline && <Text style={st.insightHeadline}>{card.headline}</Text>}
-      <Text style={st.insightText}>{card.body}</Text>
-      {!!card.supportingText && <Text style={st.supportingText}>{card.supportingText}</Text>}
-      {!!card.action && (
+      <Text style={st.insightHeadline}>{card.title}</Text>
+      <Text style={st.insightText}>{card.observation}</Text>
+      {!!card.meaning && <Text style={st.supportingText}>{card.meaning}</Text>}
+      {!!card.takeaway && section === 'between' && (
+        <Text style={st.supportingText}>{card.takeaway}</Text>
+      )}
+      {!!card.takeaway && section === 'ways_in' && (
         <View style={st.actionRow}>
           <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
-          <Text style={st.actionText}>{card.action}</Text>
+          <Text style={st.actionText}>{card.takeaway}</Text>
         </View>
       )}
     </View>
@@ -362,7 +375,11 @@ export default function ConnectionDashboardScreen() {
                     </View>
                   </View>
                   {cards.length > 0 ? cards.map((card, index) => (
-                    <InsightContentCard key={`${section.title}-${card.label}-${index}`} card={card} />
+                    <InsightContentCard
+                      key={`${section.title}-${card.label}-${index}`}
+                      card={card}
+                      section={section.section}
+                    />
                   )) : (
                     <View style={st.presetCard}>
                       <Image source={section.icon} style={st.presetIcon} resizeMode="contain" />
