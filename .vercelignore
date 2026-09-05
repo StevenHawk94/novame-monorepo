@@ -1,9 +1,8 @@
-# Vercel builds the API project from this monorepo root. Keep only the API and
-# the workspace packages it imports; mobile assets/native outputs are released
-# through EAS and must never be uploaded with the API deployment.
+# Vercel builds both the API and Admin projects from this monorepo root. Keep
+# those apps and their workspace dependencies; mobile assets/native outputs are
+# released through EAS and must never be uploaded with either deployment.
 
 # Other applications and non-runtime project material
-/apps/admin/
 /apps/mobile/
 /docs/
 /supabase/
@@ -13,8 +12,7 @@
 /gen-manifest.log
 /.easignore
 
-# Workspace packages not used by apps/api
-/packages/api-client/
+# Workspace packages not used by the API or Admin projects
 /packages/ui-tokens/
 
 # Dependencies, framework output, caches, and VCS metadata
