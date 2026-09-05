@@ -68,6 +68,7 @@ import {
 } from '@/lib/notification-settings';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import { warmEntryBackgrounds } from '@/lib/prefetch';
+import { MetaPrivacyProvider } from '@/components/privacy/meta-privacy-provider';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -557,22 +558,24 @@ function RootLayout() {
           <SafeAreaProvider>
             <ThemeProvider>
               <ErrorBoundary>
-                <Stack
-                  screenOptions={{
-                    // Global default = the app's deep brown. The native
-                    // splash->JS handoff gap on first launch (and the index.tsx
-                    // redirect window) shows this navigator content background;
-                    // brown keeps it seamless with the Home/Quests ground
-                    // (2026-07-30 — was black, read as a purple flash).
-                    headerShown: false,
-                    contentStyle: { backgroundColor: '#4C331B' },
-                    animation: 'none',
-                  }}
-                />
-                {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
-                <StatusBar style="dark" />
-                <GoodVibesInboxGate />
-                <AppDialogHost />
+                <MetaPrivacyProvider>
+                  <Stack
+                    screenOptions={{
+                      // Global default = the app's deep brown. The native
+                      // splash->JS handoff gap on first launch (and the index.tsx
+                      // redirect window) shows this navigator content background;
+                      // brown keeps it seamless with the Home/Quests ground
+                      // (2026-07-30 — was black, read as a purple flash).
+                      headerShown: false,
+                      contentStyle: { backgroundColor: '#4C331B' },
+                      animation: 'none',
+                    }}
+                  />
+                  {forceUpdate ? <ForceUpdateGate message={forceUpdate.message} /> : null}
+                  <StatusBar style="dark" />
+                  <GoodVibesInboxGate />
+                  <AppDialogHost />
+                </MetaPrivacyProvider>
               </ErrorBoundary>
             </ThemeProvider>
           </SafeAreaProvider>

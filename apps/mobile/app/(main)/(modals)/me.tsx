@@ -52,6 +52,7 @@ import { getBunnyName } from '@/lib/onboarding';
 import { resolveAvatarSource } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import { useRef } from 'react';
+import { useMetaPrivacy } from '@/components/privacy/meta-privacy-provider';
 
 const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
 const TERMS_URL = 'https://www.burrow-app.com/terms';
@@ -86,6 +87,7 @@ export default function MeScreen() {
   const [notificationPickerSeed, setNotificationPickerSeed] = useState(
     () => getNotificationSettings(),
   );
+  const metaPrivacy = useMetaPrivacy();
 
   // Name + avatar come from me-stats (profiles), the same source Account
   // Management edits — so a save there shows here on the next focus.
@@ -359,6 +361,14 @@ export default function MeScreen() {
               divider
             />
             <MenuRow emoji={'🔗'} label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
+            {metaPrivacy.applies ? (
+              <MenuRow
+                emoji={'🛡️'}
+                label={`Meta Measurement: ${metaPrivacy.choice === 'granted' ? 'Allowed' : 'Not allowed'}`}
+                onPress={metaPrivacy.openPreferences}
+                divider
+              />
+            ) : null}
             <MenuRow emoji={'⭐'} label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
             <MenuRow emoji={'🐞'} label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
             <MenuRow emoji={'💝'} label="Help Centers" onPress={() => goTo('/(main)/(modals)/support')} />

@@ -22,6 +22,8 @@ import {
   setChosenCompanion,
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
+import { logOnboardingCompleted } from '../../src/lib/meta-analytics';
+import { useMetaPrivacy } from '../../src/components/privacy/meta-privacy-provider';
 import {
   connectProviderOrSignIn, ensureSession,
   sendPasswordlessEmailOtp, verifyPasswordlessEmailOtp,
@@ -151,6 +153,7 @@ const FLOW: Step[] = [
 ];
 
 export default function OnboardingScreen() {
+  const { ensureConsentBeforeHome } = useMetaPrivacy();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const onboardingTextScale = useMemo(
@@ -324,9 +327,13 @@ export default function OnboardingScreen() {
     if (name.trim()) setBunnyName(name);
     setChosenCompanion('pet1');
     setOnboardingChoices(who ?? '', blocker ?? '');
+    // EEA/UK users decide before any Meta event is emitted and before Home is
+    // revealed. Everyone else passes through without seeing a prompt.
+    await ensureConsentBeforeHome();
     // Arm before auth can redirect independently on SIGNED_IN. UUID creation
     // and the purchase/name/connect sequence are otherwise unchanged.
     beginHomeEntry();
+    logOnboardingCompleted();
     markIntroSeen();
     // Guest mode: an anonymous session carries the whole app. Connect only
     // pops after payment (skippable); everyone else goes straight in.

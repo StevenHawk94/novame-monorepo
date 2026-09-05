@@ -85,6 +85,19 @@
       "./plugins/with-ios-modular-headers",
       "expo-asset",
       [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1511452757474099",
+          "clientToken": "5fb5094e9754979501cb27b54f764050",
+          "displayName": "Burrow-Reflect & Stay Close",
+          "scheme": "fb1511452757474099",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": false,
+          "iosUserTrackingPermission": false
+        }
+      ],
+      [
         "@bacons/apple-targets",
         {
           "appleTeamId": "VFUC7899NP"

@@ -290,6 +290,19 @@ export const kFirstPartnerReflectGuide = defineKey(
  *  session-less launch to onboarding (unseen) vs sign-in (seen). */
 export const kOnboardingIntroSeen = defineKey('novame_onboarding_intro_seen', 'device');
 
+/** Meta Ads funnel deduplication. No user content or identity is stored. */
+export const kMetaFirstLaunchLogged = defineKey('burrow_meta_first_launch_logged', 'device');
+export const kMetaOnboardingCompletedLogged = defineKey(
+  'burrow_meta_onboarding_completed_logged',
+  'device',
+);
+export const kMetaFirstReflectLogged = definePrefixKey(
+  'burrow_meta_first_reflect_logged:',
+  'device',
+);
+/** EEA/UK Meta measurement choice. Absent means the user has not decided. */
+export const kMetaPrivacyChoice = defineKey('burrow_meta_privacy_choice', 'device');
+
 /**
  * shipping-form.tsx: STORAGE_KEY. Read by order-history.tsx:122.
  *

@@ -43,6 +43,7 @@ import {
   restorePurchases,
   getAvailablePurchases,
   presentCodeRedemptionSheetIOS,
+  isEligibleForIntroOfferIOS,
   purchaseUpdatedListener,
   purchaseErrorListener,
   createPurchaseError,
@@ -64,6 +65,7 @@ import {
   setCachedSubscription,
 } from './subscription';
 import type { PricingTierKey } from '@novame/core';
+import { logStartTrial } from './meta-analytics';
 
 // ---- Purchase outcome (for paywall to react to upgrade vs downgrade) ----
 
@@ -183,6 +185,7 @@ let userInitiatedTimer: ReturnType<typeof setTimeout> | null = null;
 // being uploaded under a different account if the auth session changes while
 // StoreKit / Play Billing is still open.
 let purchaseAccountIdInFlight: string | null = null;
+let purchaseIncludesFreeTrialInFlight = false;
 
 // Event emitter for UI to subscribe to purchase outcomes.
 type PurchaseCompleteCallback = (info: {
@@ -247,6 +250,7 @@ async function recoverAlreadyOwnedPurchase(productId?: string | null): Promise<b
   if (alreadyOwnedRecoveryInFlight) return alreadyOwnedRecoveryInFlight;
   alreadyOwnedRecoveryInFlight = (async () => {
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
@@ -521,6 +525,25 @@ function hasFreePhase(offer: AndroidOffer): boolean {
   );
 }
 
+async function isIOSIntroTrialEligible(productId: string): Promise<boolean> {
+  if (Platform.OS !== 'ios') return false;
+  try {
+    const products = await fetchSubscriptionProducts();
+    const product = products.find((item) => item.id === productId) as
+      | (ProductSubscription & {
+          subscriptionInfoIOS?: { subscriptionGroupId?: string } | null;
+          introductoryPricePaymentModeIOS?: string | null;
+        })
+      | undefined;
+    const groupId = product?.subscriptionInfoIOS?.subscriptionGroupId;
+    const hasFreeTrial = product?.introductoryPricePaymentModeIOS === 'free-trial';
+    return Boolean(hasFreeTrial && groupId && await isEligibleForIntroOfferIOS(groupId));
+  } catch (error) {
+    console.warn('[iap] could not verify introductory-offer eligibility:', error);
+    return false;
+  }
+}
+
 function selectAndroidOffer(
   offers: AndroidOffer[],
   cycle: SubscriptionCycle,
@@ -627,11 +650,13 @@ export async function purchaseSubscription(
   // (which closes the paywall + shows success). Replays / renewals
   // run silently. Auto-clear after 60s in case the dialog is dismissed.
   userInitiatedInFlight = true;
+  purchaseIncludesFreeTrialInFlight = false;
   purchaseAccountIdInFlight = purchaseUserId;
   if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
   userInitiatedTimer = setTimeout(() => {
     const timedOutProductId = productId;
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     purchaseAccountIdInFlight = null;
     userInitiatedTimer = null;
     handlePurchaseError(createPurchaseError({
@@ -663,7 +688,11 @@ export async function purchaseSubscription(
       const product = products.find((item) => item.id === androidProductId);
       const offers = (product as { subscriptionOffers?: AndroidOffer[] } | undefined)
         ?.subscriptionOffers ?? [];
-      androidOffer = selectAndroidOffer(offers, cycle)?.offerTokenAndroid ?? undefined;
+      const selectedOffer = selectAndroidOffer(offers, cycle);
+      androidOffer = selectedOffer?.offerTokenAndroid ?? undefined;
+      purchaseIncludesFreeTrialInFlight = Boolean(selectedOffer && hasFreePhase(selectedOffer));
+    } else {
+      purchaseIncludesFreeTrialInFlight = await isIOSIntroTrialEligible(productId);
     }
     if (Platform.OS === 'android' && !androidOffer) {
       throw new Error(
@@ -693,6 +722,7 @@ export async function purchaseSubscription(
       // Scheduled change -- clear the in-flight flag because the
       // listener won't fire. The paywall will show "scheduled" UI.
       userInitiatedInFlight = false;
+      purchaseIncludesFreeTrialInFlight = false;
       purchaseAccountIdInFlight = null;
       if (userInitiatedTimer) {
         clearTimeout(userInitiatedTimer);
@@ -711,6 +741,7 @@ export async function purchaseSubscription(
     return { kind: 'completed', productId };
   } catch (e) {
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
@@ -843,6 +874,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   if (isAndroidPurchasePending(purchase)) {
     const wasUserInitiated = userInitiatedInFlight;
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
@@ -874,9 +906,11 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   // handling. Even if userInitiatedInFlight clears mid-flight (60s
   // timeout) we want to honor the original intent.
   const wasUserInitiated = userInitiatedInFlight;
+  const startedFreeTrial = wasUserInitiated && purchaseIncludesFreeTrialInFlight;
   const expectedUserId = wasUserInitiated ? purchaseAccountIdInFlight : null;
   if (wasUserInitiated) {
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     purchaseAccountIdInFlight = null;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
@@ -943,6 +977,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
   }
 
   const { cycle } = entitlement;
+  if (startedFreeTrial) logStartTrial({ productId, cycle });
 
   // Stage 6 follow-up (Me-page subscription regression): proactively
   // refresh me-stats cache rather than just invalidating it.
@@ -992,6 +1027,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
 
 function handlePurchaseError(error: PurchaseError): void {
   userInitiatedInFlight = false;
+  purchaseIncludesFreeTrialInFlight = false;
   purchaseAccountIdInFlight = null;
   if (userInitiatedTimer) {
     clearTimeout(userInitiatedTimer);
@@ -1187,9 +1223,11 @@ export async function presentOfferCodeRedemption(): Promise<void> {
   if (Platform.OS !== 'ios') return;
 
   userInitiatedInFlight = true;
+  purchaseIncludesFreeTrialInFlight = false;
   if (userInitiatedTimer) clearTimeout(userInitiatedTimer);
   userInitiatedTimer = setTimeout(() => {
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     userInitiatedTimer = null;
   }, 60000);
 
@@ -1198,6 +1236,7 @@ export async function presentOfferCodeRedemption(): Promise<void> {
   } catch (e) {
     console.warn('[iap] offer code redemption sheet failed:', e);
     userInitiatedInFlight = false;
+    purchaseIncludesFreeTrialInFlight = false;
     if (userInitiatedTimer) {
       clearTimeout(userInitiatedTimer);
       userInitiatedTimer = null;
