@@ -80,6 +80,35 @@ function copy(value, max) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null
 }
 
+function sentenceCase(value) {
+  if (!value) return value
+  const index = value.search(/[A-Za-z]/)
+  if (index < 0) return value
+  return value.slice(0, index) + value.charAt(index).toUpperCase() + value.slice(index + 1)
+}
+
+/**
+ * Mechanical confidence padding is a copy defect, not a reason to discard an
+ * otherwise useful Connection card. The model is still asked to self-rewrite;
+ * this is the deterministic safety net when one slips through.
+ */
+export function directifyConnectionCopy(value, max = COPY_LIMITS.observation) {
+  const original = copy(value, max)
+  if (!original || !CANNED_INFERENCE_OPENER.test(original)) return original
+
+  let repaired = original
+    .replace(/^it\s+(?:sounds|seems|appears|looks)\s+(?:like|as though)\s+/i, '')
+    .replace(/^this\s+(?:suggests|seems|appears)(?:\s+that)?\s+/i, '')
+    .replace(/^they\s+(?:seem|appear)\s+to\s+be\s+/i, 'They are ')
+    .replace(/^they\s+(?:seem|appear)\s+to\s+have\s+/i, 'They have ')
+    .replace(/^they\s+(?:seem|appear)\s+to\s+/i, 'They ')
+    .replace(/^they\s+(?:seem|appear)\s+/i, 'They are ')
+    .trim()
+
+  repaired = repaired.replace(/^[,;:\-–—]\s*/, '').trim()
+  return copy(sentenceCase(repaired), max) || original
+}
+
 function canonicalKey(value) {
   return typeof value === 'string' ? value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') : ''
 }
@@ -135,21 +164,12 @@ function duplicates(left, right, threshold = 0.72) {
  * legacy generated cards at read time, without rewriting append-only History.
  */
 export function pruneConnectionFields({ title, observation, meaning, takeaway }) {
-  const body = copy(observation, COPY_LIMITS.observation)
+  const body = directifyConnectionCopy(observation, COPY_LIMITS.observation)
   if (!body) return null
 
-  // A card that opens by announcing uncertainty almost always restates the
-  // reflection instead of adding a grounded second layer. Reject it rather
-  // than publishing generic AI-shaped copy to the Connection Board.
-  if (CANNED_INFERENCE_OPENER.test(body)) return null
-
-  let nextTitle = copy(title, COPY_LIMITS.title)
-  let nextMeaning = copy(meaning, COPY_LIMITS.meaning)
-  let nextTakeaway = copy(takeaway, COPY_LIMITS.takeaway)
-
-  if (CANNED_INFERENCE_OPENER.test(nextTitle || '')) nextTitle = null
-  if (CANNED_INFERENCE_OPENER.test(nextMeaning || '')) nextMeaning = null
-  if (CANNED_INFERENCE_OPENER.test(nextTakeaway || '')) nextTakeaway = null
+  let nextTitle = directifyConnectionCopy(title, COPY_LIMITS.title)
+  let nextMeaning = directifyConnectionCopy(meaning, COPY_LIMITS.meaning)
+  let nextTakeaway = directifyConnectionCopy(takeaway, COPY_LIMITS.takeaway)
 
   if (duplicates(nextTitle, body, 0.64)) nextTitle = null
 

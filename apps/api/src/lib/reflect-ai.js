@@ -3,9 +3,9 @@ import { itemLearningHints, cleanLearningSignals } from './item-learning-evidenc
 import { cleanConnectionSignals } from './connection-evidence'
 import { connectionLabelForKey, normalizeConnectionLabel, pruneConnectionFields } from './connection-card'
 
-export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V12'
+export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V13'
 export const REFLECT_COPY_VERSION = 'REFLECT_COPY_V5'
-export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V10'
+export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V11'
 
 const CONNECTION_KEYS = [
   'worth_knowing',
@@ -73,9 +73,9 @@ Do not summarize the reflection. Silently move through this sequence before draf
 1. Evidence: isolate the concrete clue, continuity, contrast, pressure, preference, or support need actually present.
 2. New layer: identify the most useful supported thing the paired reader could not get by simply rereading the memory—its role in the person's life, what is changing, what approach is likely to land, or what the two people's signals reveal together.
 3. Card: lead with that new layer. Use no more source detail than is needed to make it credible.
-4. Value test: imagine the reader has already seen the shared memory. If the card does not deepen their understanding or change how they could show up, discard it.
+4. Value test: imagine the reader has already seen the shared memory. If the underlying signal is useful but the draft merely repeats it, rewrite the card from a deeper angle; do not discard a supported signal because the first wording was weak. Return no card only when the evidence itself cannot support added understanding or a useful way to show up.
 
-Grounded does not mean vague or grammatically hesitant. State a warranted interpretation plainly. Never begin a user-facing field with “It sounds like,” “It seems,” “They seem,” “This suggests,” “It appears,” or similar confidence-padding. Do not add perhaps/maybe/might merely to shield a paraphrase. If the insight cannot be stated clearly without guesswork, return no card. Vary sentence shape naturally; there is no fixed card template.
+Grounded does not mean vague or grammatically hesitant. State a warranted interpretation plainly. Never begin a user-facing field with “It sounds like,” “It seems,” “They seem,” “This suggests,” “It appears,” or similar confidence-padding. Do not add perhaps/maybe/might merely to shield a paraphrase. If an otherwise supported card starts this way, rewrite the sentence directly before returning JSON; this is a copy correction, not grounds for dropping the card. If the insight itself cannot be stated clearly without guesswork, return no card. Vary sentence shape naturally; there is no fixed card template.
 
 DISTINCT SIGNAL ALLOCATION
 Each card must use one independently useful signal and do a different job. Reserve a descriptive topic for one section. A separate support need from the same reflection may enter Ways In only when it focuses on the approach and does not retell the event.
@@ -98,6 +98,9 @@ Every card requires labelKey, label, and observation.
 
 FIELD SEPARATION
 Label classifies; title frames; observation informs; meaning deepens; takeaway acts or closes. Before keeping an optional field, ask what useful information disappears without it. If nothing disappears, set it to null. Never repeat the same fact, phrase, conclusion, or advice across fields.
+
+FINAL REPAIR PASS
+Before returning JSON, inspect every selected signal and draft. When a signal supports a qualified card but its draft fails only because of wording, repetition, a canned opener, or an unnecessary optional field, repair the draft in place. Do not silently turn that module into hasUpdate:false. Remove or rewrite the defective field, keep the independently useful information once, and recheck the required metadata. Absence of a polished first draft is not absence of an insight.
 
 QUALITY ANCHORS — learn the depth, not the wording or layout
 - Evidence: gaming and guitar have lasted from the teenage years into age 50, for about an hour each at home after work most nights. Weak: repeat that they are consistent, comforting hobbies. Stronger: label “Home Base”; optional title “Familiar things are how they land”; explain that after decades these hobbies function less like projects to master and more like a reliable route back to themselves at day's end.
@@ -415,7 +418,7 @@ export async function runReflectAnalyzer(input) {
   const result = await callAI({
     systemInstruction: REFLECT_ANALYZER_SYSTEM_PROMPT,
     userText: JSON.stringify({ ...input, ambiguousKeywordHints: itemLearningHints(input.journal) }),
-    generationConfig: { temperature: 0.6, maxOutputTokens: 3200, thinkingConfig: { thinkingBudget: 640 } },
+    generationConfig: { temperature: 0.6, maxOutputTokens: 3200, thinkingConfig: { thinkingBudget: 1024 } },
   })
   const parsed = parseAIJson(result.text)
   return {
@@ -470,7 +473,7 @@ export async function runConnectionRefresh(input) {
   const result = await callAI({
     systemInstruction: CONNECTION_REFRESH_SYSTEM_PROMPT,
     userText: JSON.stringify(input),
-    generationConfig: { temperature: 0.6, maxOutputTokens: 2600, thinkingConfig: { thinkingBudget: 640 } },
+    generationConfig: { temperature: 0.6, maxOutputTokens: 2600, thinkingConfig: { thinkingBudget: 1024 } },
   })
   const parsed = parseAIJson(result.text)
   const data = cleanConnectionUpdates(parsed?.connectionUpdates || parsed, input.reflectId, {
