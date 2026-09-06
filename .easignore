@@ -3,7 +3,8 @@ node_modules/
 .pnpm-store/
 
 # Local VCS metadata is not required by the remote builder.
-.git/
+# EAS checks this special path as the exact entry `.git`.
+.git
 
 # Deployment/provider metadata is local-only and not a mobile build input.
 .vercel/
