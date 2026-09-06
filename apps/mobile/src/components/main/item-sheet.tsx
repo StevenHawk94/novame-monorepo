@@ -158,27 +158,34 @@ export function ItemSheet({
                   const dateLabel = new Date(memory.createdAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric',
                   });
-                  return (
-                    <View key={`${memory.reflectId ?? memory.createdAt}-${index}`} style={styles.memCard}>
+                  const cardKey = `${memory.reflectId ?? memory.createdAt}-${index}`;
+                  const cardContent = (
+                    <>
                       <ItemSprite itemId={item.itemId} size={72} radius={16} />
                       <View style={styles.memBody}>
                         <Text style={styles.memDate}>{dateLabel}</Text>
-                        <Text
-                          style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}
-                          numberOfLines={scope === 'their' ? undefined : 3}
-                        >
+                        <Text style={[styles.memExcerpt, !wrote && styles.memExcerptEmpty]}>
                           {wrote ? memory.excerpt : 'No memory was added to this item.'}
                         </Text>
                       </View>
-                      {scope === 'mine' && memory.reflectId ? (
-                        <Pressable
-                          onPress={() => openReflect(memory.reflectId!)}
-                          style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.7 }]}
-                        >
-                          <Text style={styles.detailsText}>Details</Text>
-                          <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
-                        </Pressable>
-                      ) : null}
+                    </>
+                  );
+                  if (scope === 'mine' && memory.reflectId) {
+                    return (
+                      <Pressable
+                        key={cardKey}
+                        onPress={() => openReflect(memory.reflectId!)}
+                        style={({ pressed }) => [styles.memCard, pressed && styles.memCardPressed]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open memory from ${dateLabel}`}
+                      >
+                        {cardContent}
+                      </Pressable>
+                    );
+                  }
+                  return (
+                    <View key={cardKey} style={styles.memCard}>
+                      {cardContent}
                     </View>
                   );
                 })}
@@ -271,6 +278,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 18,
     borderWidth: 1.5, borderColor: '#D8BCA8', padding: 14,
   },
+  memCardPressed: { opacity: 0.72 },
   memBody: { flex: 1 },
   memExcerpt: { fontSize: 16, fontFamily: 'Inter_500Medium', color: '#2A2118', lineHeight: 23 },
   memDate: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#161311', marginBottom: 3 },
@@ -285,13 +293,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18, paddingVertical: 11, marginTop: 2,
   },
   loadMoreText: { color: '#4A3423', fontSize: 14, fontFamily: 'Inter_700Bold' },
-  detailsBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 1,
-    borderRadius: 18, backgroundColor: '#4A3423',
-    paddingLeft: 14, paddingRight: 9, paddingVertical: 11,
-  },
-  detailsText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
-
   closeBtn: {
     position: 'absolute', alignSelf: 'center',
     width: 58, height: 58, borderRadius: 29, backgroundColor: '#4A3423',

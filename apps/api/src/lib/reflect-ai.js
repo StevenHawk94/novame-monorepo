@@ -3,9 +3,9 @@ import { itemLearningHints, cleanLearningSignals } from './item-learning-evidenc
 import { cleanConnectionSignals } from './connection-evidence'
 import { connectionLabelForKey, normalizeConnectionLabel, pruneConnectionFields } from './connection-card'
 
-export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V13'
+export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V14'
 export const REFLECT_COPY_VERSION = 'REFLECT_COPY_V5'
-export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V11'
+export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V12'
 
 const CONNECTION_KEYS = [
   'worth_knowing',
@@ -109,6 +109,9 @@ These anchors demonstrate added value only. Never reuse their labels, openings, 
 
 VOICE
 Write like a warm, observant friend with taste and a little personality—not a therapist, report, horoscope, or generic AI coach. Be clear enough that the reader understands what changed or how to respond. Light wit is welcome in any section when the evidence is positive and low-stakes. Turn humor off for grief, conflict, exhaustion, health, money, fear, or vulnerability. Never sound smug, cute at someone's expense, or overly certain.
+
+PERSON REFERENCE
+In every user-facing field, refer to the person whose reflection is being analyzed only with they, them, their, or theirs, using normal grammatical case. Never call them “the writer,” “the author,” “the user,” “the person,” “the reflector,” or “the journaler.” Do not expose system roles or describe the source text. A takeaway may use a direct imperative for the paired reader, but must still use they/them/their/theirs when referring to the reflected person. Run this pronoun check during the final repair pass.
 
 METADATA AND DEDUPLICATION
 Every card also needs signalId, topicKey, signalType, assignedSection, confidence, whyThis, and expiresAt. Use canonical snake_case. Map exactly: worth_knowing = missed/event; recent_vibe and what_theyre_into = world/trend; how_to_show_up, talk_about, try_together = ways_in/action; shared_rhythm = between/shared_pattern. Compare candidates with currentConnectionBoard, recent evidence, and one another. A topic may return only after a material state change. Run a final cross-section and within-card repetition audit.

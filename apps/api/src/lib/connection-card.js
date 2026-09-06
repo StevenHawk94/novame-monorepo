@@ -87,13 +87,23 @@ function sentenceCase(value) {
   return value.slice(0, index) + value.charAt(index).toUpperCase() + value.slice(index + 1)
 }
 
+function normalizePairedPersonReference(value, max) {
+  const clean = copy(value, max)
+  if (!clean) return null
+  return sentenceCase(clean
+    .replace(/\bthe\s+writer(?:['’]s)\b/gi, 'their')
+    .replace(/\b(to|for|with|about|from|around|beside|behind|without|toward|towards|of)\s+the\s+writer\b/gi, '$1 them')
+    .replace(/\b(help|support|encourage|ask|tell|give|offer|remind|comfort|join|invite|message|text|call|leave|let|acknowledge)\s+the\s+writer\b/gi, '$1 them')
+    .replace(/\bthe\s+writer\b/gi, 'they'))
+}
+
 /**
  * Mechanical confidence padding is a copy defect, not a reason to discard an
  * otherwise useful Connection card. The model is still asked to self-rewrite;
  * this is the deterministic safety net when one slips through.
  */
 export function directifyConnectionCopy(value, max = COPY_LIMITS.observation) {
-  const original = copy(value, max)
+  const original = normalizePairedPersonReference(value, max)
   if (!original || !CANNED_INFERENCE_OPENER.test(original)) return original
 
   let repaired = original

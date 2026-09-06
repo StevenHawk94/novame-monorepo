@@ -1161,10 +1161,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center',
   },
   howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
-  insightCarousel: { marginTop: 28, marginHorizontal: -22 },
-  insightCarouselContent: { gap: 14, paddingHorizontal: 22, paddingRight: 44 },
+  insightCarousel: { flexGrow: 0, marginTop: 28, marginHorizontal: -22 },
+  insightCarouselContent: {
+    alignItems: 'flex-start', gap: 14, paddingHorizontal: 22, paddingRight: 44,
+  },
   insightCarouselCard: {
-    minHeight: 318, backgroundColor: '#FFF6E4', borderRadius: 26,
+    backgroundColor: '#FFF6E4', borderRadius: 26,
     paddingHorizontal: 20, paddingVertical: 20,
   },
   insightCarouselBadge: {
