@@ -32,7 +32,6 @@ import {
 import { supabase } from '../../src/lib/supabase';
 import { reportOnboardingChoices, updateDisplayName } from '../../src/lib/account-api';
 import {
-  fetchSubscriptionProducts,
   initIAP,
   onPurchaseComplete,
   onPurchaseError,
@@ -43,6 +42,7 @@ import {
   shouldPromptNotifAfterPurchase,
 } from '../../src/lib/notification-settings';
 import { DEFAULT_PLUS_BENEFITS } from '../../src/lib/plus-benefits';
+import { useStoreSubscriptionPricing } from '../../src/hooks/use-store-subscription-pricing';
 
 /**
  * Burrow story flow on the beige grid: hook → who/what-blocks questions →
@@ -221,6 +221,7 @@ export default function OnboardingScreen() {
   const [sampleDetailsOpen, setSampleDetailsOpen] = useState(false);
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [purchasing, setPurchasing] = useState(false);
+  const [openingPlans, setOpeningPlans] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const [name, setName] = useState('');
   const [finishing, setFinishing] = useState(false);
@@ -229,14 +230,6 @@ export default function OnboardingScreen() {
   const [linkCode, setLinkCode] = useState('');
   const [linkPhase, setLinkPhase] = useState<'enter' | 'verify'>('enter');
   const [linkMode, setLinkMode] = useState<PasswordlessEmailMode>('change');
-  // Store-localized prices (industry standard: StoreKit's displayPrice is the
-  // truth per storefront/currency). The design-stub strings only show while
-  // products haven't loaded (dev/simulator without StoreKit config).
-  const [priceYearly, setPriceYearly] = useState<string | null>(null);
-  const [priceMonthly, setPriceMonthly] = useState<string | null>(null);
-  const [perMonth, setPerMonth] = useState<string | null>(null);
-  const [compareAt, setCompareAt] = useState<string | null>(null);
-  const pricesFetched = useRef(false);
   const insightCardWidth = Math.min(340, Math.max(240, width - 82));
   const insightCardStep = insightCardWidth + 14;
 
@@ -265,44 +258,31 @@ export default function OnboardingScreen() {
     () => (idx >= FLOW.length ? 'connect' : FLOW[idx]),
     [idx],
   );
-
-  useEffect(() => {
-    if (step !== 'paywall' && step !== 'plans') return;
-    if (pricesFetched.current) return;
-    pricesFetched.current = true;
-    void (async () => {
-      try {
-        await initIAP();
-        const products = await fetchSubscriptionProducts();
-        const byId = new Map(products.map((pr) => [pr.id, pr]));
-        const yearly = byId.get('novame.plus.yearly');
-        const monthly = byId.get('novame.plus.monthly');
-        if (yearly?.displayPrice) setPriceYearly(yearly.displayPrice);
-        if (monthly?.displayPrice) setPriceMonthly(monthly.displayPrice);
-        // Derived lines share the store currency symbol from displayPrice.
-        const num = (v: unknown) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')));
-        const symbol = (dp?: string) => dp?.replace(/[\d.,\s]/g, '') || '$';
-        const yNum = num(yearly?.price);
-        const mNum = num(monthly?.price);
-        if (Number.isFinite(yNum) && yNum > 0 && yearly?.displayPrice) {
-          setPerMonth(`${symbol(yearly.displayPrice)}${(yNum / 12).toFixed(2)}`);
-        }
-        if (Number.isFinite(mNum) && mNum > 0 && monthly?.displayPrice) {
-          setCompareAt(`${symbol(monthly.displayPrice)}${(mNum * 12).toFixed(2)}`);
-        }
-      } catch {
-        // stay on the stub strings; purchase still resolves real pricing
-      }
-    })();
-  }, [step]);
+  const {
+    pricing,
+    status: priceStatus,
+    load: loadPrices,
+    retry: retryPrices,
+  } = useStoreSubscriptionPricing(step === 'paywall' || step === 'plans');
 
   function next() {
     void haptics.light();
     setIdx((i) => i + 1);
   }
 
-  function onTryFree() {
+  async function onTryFree() {
+    if (openingPlans) return;
     void haptics.medium();
+    setOpeningPlans(true);
+    const loaded = pricing ?? await loadPrices();
+    setOpeningPlans(false);
+    if (!loaded) {
+      appAlert(
+        'Prices unavailable',
+        `We couldn’t load prices from ${Platform.OS === 'android' ? 'Google Play' : 'the App Store'}. Check your connection and try again.`,
+      );
+      return;
+    }
     setIdx(FLOW.indexOf('plans'));
   }
 
@@ -331,6 +311,14 @@ export default function OnboardingScreen() {
 
   async function onStartPlan() {
     if (purchasing) return;
+    if (!pricing) {
+      appAlert(
+        'Prices unavailable',
+        `We couldn’t load prices from ${Platform.OS === 'android' ? 'Google Play' : 'the App Store'}. Please retry before subscribing.`,
+      );
+      void retryPrices();
+      return;
+    }
     void haptics.medium();
     setPurchasing(true);
     try {
@@ -796,7 +784,13 @@ export default function OnboardingScreen() {
                 One Plus subscription unlocks the full experience for both of you.
               </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
-              <Btn label="Start Free Trial" onPress={onTryFree} />
+              <Btn
+                label={pricing
+                  ? pricing.yearlyTrialEligible ? 'Start Free Trial' : 'Subscribe'
+                  : priceStatus === 'error' ? 'Try Again' : 'Continue'}
+                onPress={() => void onTryFree()}
+                busy={openingPlans}
+              />
             </View>
           </ScrollView>
         </OnboardingPage>
@@ -817,15 +811,23 @@ export default function OnboardingScreen() {
             >
               <View style={{ flex: 1 }}>
                 <Text style={styles.planTitle}>12 Months</Text>
-                <Text style={styles.planPrice}>
-                  <Text style={styles.planStrike}>{compareAt ?? '$83.88'}</Text>
-                  {'  '}
-                  {priceYearly ?? '$69.99'} ({perMonth ?? '$5.83'}/month)
-                </Text>
+                {pricing ? (
+                  <Text style={styles.planPrice}>
+                    <Text style={styles.planStrike}>{pricing.monthlyAnnualized}</Text>
+                    {'  '}
+                    {pricing.yearly.displayPrice} ({pricing.yearlyPerMonth}/month)
+                  </Text>
+                ) : (
+                  <Text style={styles.planPricePending}>
+                    {priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
+                  </Text>
+                )}
               </View>
-              <View style={styles.trialBadge}>
-                <Text style={styles.trialBadgeText}>3 Days Free Trial</Text>
-              </View>
+              {pricing?.yearlyTrialEligible ? (
+                <View style={styles.trialBadge}>
+                  <Text style={styles.trialBadgeText}>3 Days Free Trial</Text>
+                </View>
+              ) : null}
             </Pressable>
             <Pressable
               onPress={() => { void haptics.light(); setPlan('monthly'); }}
@@ -833,22 +835,45 @@ export default function OnboardingScreen() {
             >
               <View>
                 <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={styles.planPrice}>{priceMonthly ?? '$6.99'} every month</Text>
+                <Text style={pricing ? styles.planPrice : styles.planPricePending}>
+                  {pricing
+                    ? `${pricing.monthly.displayPrice} every month`
+                    : priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
+                </Text>
               </View>
             </Pressable>
+            {priceStatus === 'error' && !pricing ? (
+              <Pressable
+                onPress={() => void retryPrices()}
+                style={styles.priceRetry}
+                hitSlop={8}
+              >
+                <MaterialIcons name="refresh" size={17} color={INK} />
+                <Text style={styles.priceRetryText}>Retry prices</Text>
+              </Pressable>
+            ) : null}
             <View style={{ flex: 1 }} />
             <Btn
-              label={plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
+              label={plan === 'yearly' && pricing?.yearlyTrialEligible
+                ? 'Start Free Trial'
+                : 'Start My Plan'}
               onPress={() => void onStartPlan()}
               busy={purchasing}
+              disabled={!pricing}
             />
             {/* Apple 3.1.2: subscription terms + working legal links. */}
             <Text style={styles.disclosure}>
-              {plan === 'yearly'
-                ? 'Burrow Plus Yearly: $69.99 per 12 months after a 3-day free trial. '
-                : 'Burrow Plus Monthly: $6.99 per month. '}
+              {pricing
+                ? plan === 'yearly'
+                  ? pricing.yearlyTrialEligible
+                    ? `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months after a 3-day free trial. `
+                    : `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months. `
+                  : `Burrow Plus Monthly: ${pricing.monthly.displayPrice} per month. `
+                : priceStatus === 'error'
+                  ? 'Subscription terms will appear when store prices are available. '
+                  : 'Loading localized subscription terms… '}
               Auto-renews unless cancelled at least 24 hours before the period ends.
-              Cancel anytime in your App Store settings.
+              Cancel anytime in your {Platform.OS === 'android' ? 'Google Play' : 'App Store'} settings.
             </Text>
             <View style={[styles.legalRow, { marginBottom: insets.bottom + 8, marginTop: 8 }]}>
               <Pressable onPress={() => { void haptics.pageOpen(); void Linking.openURL('https://www.burrow-app.com/privacy'); }} hitSlop={8}>
@@ -1230,7 +1255,13 @@ const styles = StyleSheet.create({
   planCardOn: { borderColor: BTN },
   planTitle: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   planPrice: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#2A2118', marginTop: 6 },
+  planPricePending: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#9A8770', marginTop: 6 },
   planStrike: { textDecorationLine: 'line-through', color: '#8A7A63' },
+  priceRetry: {
+    alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginTop: -4, marginBottom: 12, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  priceRetryText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK, textDecorationLine: 'underline' },
   trialBadge: { backgroundColor: BTN, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 },
   trialBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   legalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12 },

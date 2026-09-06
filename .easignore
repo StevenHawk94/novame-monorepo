@@ -11,6 +11,13 @@ node_modules/
 **/.vercel/
 supabase/.temp/
 
+# Other applications and backend/development workspaces are not mobile build inputs.
+apps/admin/
+apps/api/
+docs/
+supabase/
+tools/
+
 # Build outputs
 dist/
 build/

@@ -12,6 +12,13 @@ node_modules/
 supabase/.temp/
 /supabase/.temp/
 
+# Other applications and backend/development workspaces are not mobile build inputs.
+apps/admin/
+apps/api/
+docs/
+supabase/
+tools/
+
 # Build and framework outputs
 dist/
 build/

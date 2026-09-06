@@ -494,18 +494,12 @@ export async function cleanupIAP(): Promise<void> {
   }
 }
 
-// ---- Product fetching (for paywall to show real localized prices) ----
+// ---- Product fetching (for localized storefront pricing) ----
 
-/**
- * Fetches the 6 subscription products from the App Store. Used by the
- * paywall to display real localized prices (currency-aware) instead
- * of the hard-coded USD prices in PRICING_TIERS.
- *
- * Optional in Stage 5.IAP.3 -- the paywall can keep using
- * PRICING_TIERS for now and switch to live prices in a follow-up.
- */
+/** Fetches and normalizes the current storefront's subscription prices. */
 type AndroidOffer = {
   basePlanIdAndroid?: string | null;
+  currency?: string | null;
   displayPrice: string;
   offerTokenAndroid?: string | null;
   price: number;
@@ -513,8 +507,23 @@ type AndroidOffer = {
     pricingPhaseList: Array<{
       formattedPrice: string;
       priceAmountMicros: string;
+      priceCurrencyCode: string;
     }>;
   } | null;
+};
+
+export type SubscriptionPlanPricing = {
+  displayPrice: string;
+  price: number;
+  currency: string;
+};
+
+export type StoreSubscriptionPricing = {
+  yearly: SubscriptionPlanPricing;
+  monthly: SubscriptionPlanPricing;
+  yearlyPerMonth: string;
+  monthlyAnnualized: string;
+  yearlyTrialEligible: boolean;
 };
 
 function hasFreePhase(offer: AndroidOffer): boolean {
@@ -525,10 +534,13 @@ function hasFreePhase(offer: AndroidOffer): boolean {
   );
 }
 
-async function isIOSIntroTrialEligible(productId: string): Promise<boolean> {
+async function isIOSIntroTrialEligible(
+  productId: string,
+  prefetchedProducts?: ProductSubscription[],
+): Promise<boolean> {
   if (Platform.OS !== 'ios') return false;
   try {
-    const products = await fetchSubscriptionProducts();
+    const products = prefetchedProducts ?? await fetchSubscriptionProducts();
     const product = products.find((item) => item.id === productId) as
       | (ProductSubscription & {
           subscriptionInfoIOS?: { subscriptionGroupId?: string } | null;
@@ -542,6 +554,17 @@ async function isIOSIntroTrialEligible(productId: string): Promise<boolean> {
     console.warn('[iap] could not verify introductory-offer eligibility:', error);
     return false;
   }
+}
+
+function isAndroidIntroTrialEligible(
+  products: ProductSubscription[],
+  productId: string,
+): boolean {
+  if (Platform.OS !== 'android') return false;
+  const product = products.find((item) => item.id === productId);
+  const offers = ((product as { subscriptionOffers?: AndroidOffer[] } | undefined)
+    ?.subscriptionOffers ?? []);
+  return offers.some(hasFreePhase);
 }
 
 function selectAndroidOffer(
@@ -558,7 +581,7 @@ function selectAndroidOffer(
 export function getSubscriptionPlanPricing(
   products: ProductSubscription[],
   cycle: SubscriptionCycle,
-): { displayPrice: string; price: number } | null {
+): SubscriptionPlanPricing | null {
   if (Platform.OS === 'android') {
     const product = products.find((item) => item.id === `novame.plus.${cycle}`);
     const offers = ((product as { subscriptionOffers?: AndroidOffer[] } | undefined)
@@ -573,15 +596,24 @@ export function getSubscriptionPlanPricing(
       ? {
           displayPrice: recurring.formattedPrice,
           price: Number(recurring.priceAmountMicros) / 1_000_000,
+          currency: recurring.priceCurrencyCode || offer.currency || product?.currency || '',
         }
-      : { displayPrice: offer.displayPrice, price: offer.price };
+      : {
+          displayPrice: offer.displayPrice,
+          price: offer.price,
+          currency: offer.currency || product?.currency || '',
+        };
   }
 
   const product = products.find(
     (item) => item.id === `novame.plus.${cycle}`,
   );
   if (!product?.displayPrice || typeof product.price !== 'number') return null;
-  return { displayPrice: product.displayPrice, price: product.price };
+  return {
+    displayPrice: product.displayPrice,
+    price: product.price,
+    currency: product.currency,
+  };
 }
 
 export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]> {
@@ -605,6 +637,50 @@ export async function fetchSubscriptionProducts(): Promise<ProductSubscription[]
     console.warn('[iap] fetchProducts failed:', e);
     return [];
   }
+}
+
+function formatStoreCurrency(amount: number, currency: string): string {
+  if (!Number.isFinite(amount) || amount < 0 || !currency) {
+    throw new Error('The store returned incomplete subscription pricing.');
+  }
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+    }).format(amount);
+  } catch {
+    // Currency and amount still come from the store. This fallback is only for
+    // runtimes that cannot format a valid ISO currency code.
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+}
+
+/**
+ * Returns the complete customer-facing price model for both paywalls.
+ * Charged prices are the store-provided display strings. Derived comparison
+ * amounts use only the store's numeric values and currency (never USD stubs).
+ */
+export async function fetchStoreSubscriptionPricing(): Promise<StoreSubscriptionPricing> {
+  const products = await fetchSubscriptionProducts();
+  const yearly = getSubscriptionPlanPricing(products, 'yearly');
+  const monthly = getSubscriptionPlanPricing(products, 'monthly');
+
+  if (!yearly || !monthly || !yearly.currency || !monthly.currency) {
+    throw new Error('Subscription prices are temporarily unavailable.');
+  }
+
+  const yearlyTrialEligible = Platform.OS === 'android'
+    ? isAndroidIntroTrialEligible(products, 'novame.plus.yearly')
+    : await isIOSIntroTrialEligible('novame.plus.yearly', products);
+
+  return {
+    yearly,
+    monthly,
+    yearlyPerMonth: formatStoreCurrency(yearly.price / 12, yearly.currency),
+    monthlyAnnualized: formatStoreCurrency(monthly.price * 12, monthly.currency),
+    yearlyTrialEligible,
+  };
 }
 
 // ---- Purchase trigger (paywall calls this) ----

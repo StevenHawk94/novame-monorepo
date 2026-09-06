@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,9 +8,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
 import {
-  fetchSubscriptionProducts,
-  getSubscriptionPlanPricing,
-  initIAP,
   purchaseSubscription,
   restoreSubscriptions,
   onPurchaseComplete,
@@ -26,6 +23,7 @@ import {
 import { ICONS } from '@/lib/icons';
 import { DEFAULT_PLUS_BENEFITS } from '@/lib/plus-benefits';
 import { GridBackground } from '@/components/ui/grid-background';
+import { useStoreSubscriptionPricing } from '@/hooks/use-store-subscription-pricing';
 
 /**
  * Subscription paywall (2026-07-26 redesign — same look as onboarding):
@@ -53,39 +51,13 @@ export default function SubscriptionPaywallModal() {
   const [phase, setPhase] = useState<Phase>(params.phase === 'plans' ? 'plans' : 'benefits');
   const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
   const [busy, setBusy] = useState<'idle' | 'purchasing' | 'restoring'>('idle');
-  const [priceYearly, setPriceYearly] = useState<string | null>(null);
-  const [priceMonthly, setPriceMonthly] = useState<string | null>(null);
-  const [perMonth, setPerMonth] = useState<string | null>(null);
-  const [compareAt, setCompareAt] = useState<string | null>(null);
-  const fetched = useRef(false);
-
-  // Store-localized prices (StoreKit displayPrice is the per-storefront truth).
-  useEffect(() => {
-    if (fetched.current) return;
-    fetched.current = true;
-    void (async () => {
-      try {
-        await initIAP();
-        const products = await fetchSubscriptionProducts();
-        const yearly = getSubscriptionPlanPricing(products, 'yearly');
-        const monthly = getSubscriptionPlanPricing(products, 'monthly');
-        if (yearly?.displayPrice) setPriceYearly(yearly.displayPrice);
-        if (monthly?.displayPrice) setPriceMonthly(monthly.displayPrice);
-        const num = (v: unknown) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')));
-        const symbol = (dp?: string) => dp?.replace(/[\d.,\s]/g, '') || '$';
-        const yNum = num(yearly?.price);
-        const mNum = num(monthly?.price);
-        if (Number.isFinite(yNum) && yNum > 0 && yearly?.displayPrice) {
-          setPerMonth(`${symbol(yearly.displayPrice)}${(yNum / 12).toFixed(2)}`);
-        }
-        if (Number.isFinite(mNum) && mNum > 0 && monthly?.displayPrice) {
-          setCompareAt(`${symbol(monthly.displayPrice)}${(mNum * 12).toFixed(2)}`);
-        }
-      } catch {
-        // stub strings remain; StoreKit still rules the actual charge
-      }
-    })();
-  }, []);
+  const [openingPlans, setOpeningPlans] = useState(false);
+  const {
+    pricing,
+    status: priceStatus,
+    load: loadPrices,
+    retry: retryPrices,
+  } = useStoreSubscriptionPricing(true);
 
   // Global IAP listeners: close on success (no redundant alert — StoreKit
   // already confirmed), then serialize account safety before notifications.
@@ -187,6 +159,22 @@ export default function SubscriptionPaywallModal() {
     router.back();
   };
 
+  const handleOpenPlans = async () => {
+    if (openingPlans) return;
+    void haptics.pageOpen();
+    setOpeningPlans(true);
+    const loaded = pricing ?? await loadPrices();
+    setOpeningPlans(false);
+    if (!loaded) {
+      appAlert(
+        'Prices unavailable',
+        `We couldn’t load prices from ${Platform.OS === 'android' ? 'Google Play' : 'the App Store'}. Check your connection and try again.`,
+      );
+      return;
+    }
+    setPhase('plans');
+  };
+
   const handleRestore = async () => {
     if (busy !== 'idle') return;
     void haptics.light();
@@ -237,6 +225,14 @@ export default function SubscriptionPaywallModal() {
           ? 'https://play.google.com/store/account/subscriptions'
           : 'https://apps.apple.com/account/subscriptions',
       );
+      return;
+    }
+    if (!pricing) {
+      appAlert(
+        'Prices unavailable',
+        `We couldn’t load prices from ${Platform.OS === 'android' ? 'Google Play' : 'the App Store'}. Please retry before subscribing.`,
+      );
+      void retryPrices();
       return;
     }
     void haptics.medium();
@@ -297,10 +293,19 @@ export default function SubscriptionPaywallModal() {
               </Text>
               <View style={{ flex: 1, minHeight: 20 }} />
               <Pressable
-                onPress={() => { void haptics.pageOpen(); setPhase('plans'); }}
-                style={({ pressed }) => [styles.cta, { opacity: pressed ? 0.85 : 1 }]}
+                onPress={() => void handleOpenPlans()}
+                disabled={openingPlans}
+                style={({ pressed }) => [styles.cta, { opacity: openingPlans ? 0.65 : pressed ? 0.85 : 1 }]}
               >
-                <Text style={styles.ctaText}>Start Free Trial</Text>
+                {openingPlans
+                  ? <ActivityIndicator color="#FFFFFF" />
+                  : (
+                    <Text style={styles.ctaText}>
+                      {pricing
+                        ? pricing.yearlyTrialEligible ? 'Start Free Trial' : 'Subscribe'
+                        : priceStatus === 'error' ? 'Try Again' : 'Continue'}
+                    </Text>
+                  )}
               </Pressable>
               <Pressable onPress={() => void handleRestore()} style={styles.restoreBtn} hitSlop={8}>
                 {busy === 'restoring' ? (
@@ -324,15 +329,23 @@ export default function SubscriptionPaywallModal() {
             >
               <View style={{ flex: 1 }}>
                 <Text style={styles.planTitle}>12 Months</Text>
-                <Text style={styles.planPrice}>
-                  <Text style={styles.planStrike}>{compareAt ?? '$83.88'}</Text>
-                  {'  '}
-                  {priceYearly ?? '$69.99'} ({perMonth ?? '$5.83'}/month)
-                </Text>
+                {pricing ? (
+                  <Text style={styles.planPrice}>
+                    <Text style={styles.planStrike}>{pricing.monthlyAnnualized}</Text>
+                    {'  '}
+                    {pricing.yearly.displayPrice} ({pricing.yearlyPerMonth}/month)
+                  </Text>
+                ) : (
+                  <Text style={styles.planPricePending}>
+                    {priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
+                  </Text>
+                )}
               </View>
-              <View style={styles.trialBadge}>
-                <Text style={styles.trialBadgeText}>3 Days Free Trial</Text>
-              </View>
+              {pricing?.yearlyTrialEligible ? (
+                <View style={styles.trialBadge}>
+                  <Text style={styles.trialBadgeText}>3 Days Free Trial</Text>
+                </View>
+              ) : null}
             </Pressable>
             <Pressable
               onPress={() => { void haptics.light(); setPlan('monthly'); }}
@@ -340,14 +353,30 @@ export default function SubscriptionPaywallModal() {
             >
               <View>
                 <Text style={styles.planTitle}>Monthly</Text>
-                <Text style={styles.planPrice}>{priceMonthly ?? '$6.99'} every month</Text>
+                <Text style={pricing ? styles.planPrice : styles.planPricePending}>
+                  {pricing
+                    ? `${pricing.monthly.displayPrice} every month`
+                    : priceStatus === 'error' ? 'Price unavailable' : 'Loading price…'}
+                </Text>
               </View>
             </Pressable>
+            {priceStatus === 'error' && !pricing ? (
+              <Pressable
+                onPress={() => void retryPrices()}
+                style={styles.priceRetry}
+                hitSlop={8}
+              >
+                <MaterialIcons name="refresh" size={17} color={INK} />
+                <Text style={styles.priceRetryText}>Retry prices</Text>
+              </Pressable>
+            ) : null}
             <View style={{ flex: 1 }} />
             <Pressable
               onPress={() => void handleSubscribe()}
-              disabled={busy !== 'idle'}
-              style={({ pressed }) => [styles.cta, { opacity: busy !== 'idle' ? 0.6 : pressed ? 0.85 : 1 }]}
+              disabled={busy !== 'idle' || (!isPaid && !pricing)}
+              style={({ pressed }) => [styles.cta, {
+                opacity: busy !== 'idle' || (!isPaid && !pricing) ? 0.6 : pressed ? 0.85 : 1,
+              }]}
             >
               {busy === 'purchasing' ? (
                 <ActivityIndicator color="#FFFFFF" />
@@ -355,16 +384,24 @@ export default function SubscriptionPaywallModal() {
                 <Text style={styles.ctaText}>
                   {isPaid
                     ? 'Manage Subscription'
-                    : plan === 'yearly' ? 'Start Free Trial' : 'Start My Plan'}
+                    : plan === 'yearly' && pricing?.yearlyTrialEligible
+                      ? 'Start Free Trial'
+                      : 'Start My Plan'}
                 </Text>
               )}
             </Pressable>
             {/* Apple 3.1.2: price-per-period, auto-renew and trial terms on the
                 purchase screen, plus working Privacy/Terms links. */}
             <Text style={styles.disclosure}>
-              {plan === 'yearly'
-                ? 'Burrow Plus Yearly: $69.99 per 12 months after a 3-day free trial. '
-                : 'Burrow Plus Monthly: $6.99 per month. '}
+              {pricing
+                ? plan === 'yearly'
+                  ? pricing.yearlyTrialEligible
+                    ? `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months after a 3-day free trial. `
+                    : `Burrow Plus Yearly: ${pricing.yearly.displayPrice} per 12 months. `
+                  : `Burrow Plus Monthly: ${pricing.monthly.displayPrice} per month. `
+                : priceStatus === 'error'
+                  ? 'Subscription terms will appear when store prices are available. '
+                  : 'Loading localized subscription terms… '}
               Subscription auto-renews unless cancelled at least 24 hours before the end
               of the current period. Manage or cancel anytime in your{' '}
               {Platform.OS === 'android' ? 'Google Play' : 'App Store'} settings.
@@ -426,7 +463,13 @@ const styles = StyleSheet.create({
   planCardOn: { borderColor: BTN },
   planTitle: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   planPrice: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#2A2118', marginTop: 6 },
+  planPricePending: { fontSize: 15.5, fontFamily: 'Inter_600SemiBold', color: '#9A8770', marginTop: 6 },
   planStrike: { textDecorationLine: 'line-through', color: '#8A7A63' },
+  priceRetry: {
+    alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginTop: -4, marginBottom: 12, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  priceRetryText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: INK, textDecorationLine: 'underline' },
   trialBadge: { backgroundColor: BTN, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 },
   trialBadgeText: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   legalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12 },
