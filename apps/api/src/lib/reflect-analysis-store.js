@@ -1,7 +1,10 @@
 import { REFLECT_ANALYZER_VERSION, CONNECTION_DIMENSIONS } from './reflect-ai'
+import {
+  compactConnectionEvidence, CONNECTION_RETENTION_DAYS,
+} from './connection-evidence'
 
 const ACTIVE_WINDOW_MS = 48 * 60 * 60 * 1000
-const BASELINE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+const BASELINE_WINDOW_MS = CONNECTION_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
 function detailsMode(profile) {
   return profile?.memory_details_mode
@@ -9,7 +12,7 @@ function detailsMode(profile) {
 }
 
 export async function loadReflectAnalyzerContext(supabase, {
-  userId, visibleToFriend, localDate,
+  userId, visibleToFriend, localDate, excludeReflectIds = [],
 }) {
   const [pairingResult, writerProfileResult] = await Promise.all([
     supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle(),
@@ -33,13 +36,15 @@ export async function loadReflectAnalyzerContext(supabase, {
       .eq('user_a', ua).eq('user_b', ub).eq('for_user', partnerId)
       .order('for_date', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('reflect_ai_analyses')
-      .select('reflect_id, local_date, connection_updates, created_at')
-      .eq('user_id', userId).eq('status', 'completed').gte('created_at', baselineSince)
-      .order('created_at', { ascending: false }).limit(30),
+      .select('reflect_id, local_date, connection_signals, connection_updates, created_at')
+      .eq('user_id', userId).eq('status', 'completed').eq('connection_eligible', true)
+      .gte('created_at', baselineSince)
+      .order('created_at', { ascending: false }).limit(60),
     supabase.from('reflect_ai_analyses')
-      .select('reflect_id, local_date, connection_updates, created_at')
-      .eq('user_id', partnerId).eq('status', 'completed').gte('created_at', baselineSince)
-      .order('created_at', { ascending: false }).limit(30),
+      .select('reflect_id, local_date, connection_signals, connection_updates, created_at')
+      .eq('user_id', partnerId).eq('status', 'completed').eq('connection_eligible', true)
+      .gte('created_at', baselineSince)
+      .order('created_at', { ascending: false }).limit(60),
   ])
   for (const result of [readerResult, cachedResult, writerEvidenceResult, readerEvidenceResult]) {
     if (result.error) throw result.error
@@ -55,8 +60,8 @@ export async function loadReflectAnalyzerContext(supabase, {
     connectionEligible: privacyAllows,
     connectionEnabled: privacyAllows && readerActive,
     currentBoard: cached?.payload || null,
-    writerRecentEvidence: writerEvidence || [],
-    readerRecentEvidence: readerEvidence || [],
+    writerRecentEvidence: compactConnectionEvidence(writerEvidence, { excludeReflectIds }),
+    readerRecentEvidence: compactConnectionEvidence(readerEvidence, { excludeReflectIds }),
     pair: { ua, ub, writerId: userId, readerId: partnerId, localDate },
   }
 }
@@ -72,18 +77,29 @@ export async function applyConnectionUpdates(supabase, {
     )
   ))
   if (!hasAnyUpdate) return { changed: false, payload: null }
-  const { data, error } = await supabase.rpc('apply_connection_insight_updates_v2', {
-    p_user_a: pair.ua,
-    p_user_b: pair.ub,
-    p_for_user: pair.readerId,
-    p_for_date: localDate,
-    p_reflect_id: reflectId,
-    p_updates: updates,
+  const writeForUser = (forUser, nextUpdates) => supabase.rpc('apply_connection_insight_updates_v2', {
+    p_user_a: pair.ua, p_user_b: pair.ub, p_for_user: forUser,
+    p_for_date: localDate, p_reflect_id: reflectId, p_updates: nextUpdates,
   })
-  if (error) throw error
+  const shared = updates.shared_rhythm
+  const mirrorShared = shared?.hasUpdate === true && (
+    shared.clearExisting === true || (Array.isArray(shared.cards) && shared.cards.length > 0)
+  )
+  const writes = [writeForUser(pair.readerId, updates)]
+  if (mirrorShared && pair.writerId && pair.writerId !== pair.readerId) {
+    const sharedOnly = Object.fromEntries(CONNECTION_DIMENSIONS.map((key) => [key, key === 'shared_rhythm'
+      ? shared
+      : { hasUpdate: false, clearExisting: false, cards: [] }]))
+    // Between You Lately describes the pair, so both people receive the exact
+    // same accepted card rather than separately generated paraphrases.
+    writes.push(writeForUser(pair.writerId, sharedOnly))
+  }
+  const [readerResult, ...mirrorResults] = await Promise.all(writes)
+  if (readerResult.error) throw readerResult.error
+  for (const result of mirrorResults) if (result.error) throw result.error
   return {
-    changed: data?.changed === true,
-    payload: data?.payload || null,
+    changed: readerResult.data?.changed === true,
+    payload: readerResult.data?.payload || null,
   }
 }
 
@@ -105,6 +121,7 @@ export async function persistReflectAnalyzerResult(supabase, {
     weekly_eligible: false,
     weekly_evidence: null,
     visual_concepts: analyzer.data.visualConcepts,
+    connection_signals: analyzer.data.connectionSignals || [],
     connection_eligible: context.connectionEligible,
     connection_updates: updates,
     connection_mode: connectionMode,

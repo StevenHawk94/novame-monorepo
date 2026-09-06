@@ -1094,16 +1094,6 @@ const CONNECTION_SECTION_BY_MODULE: Record<ConnectionModuleKey, ConnectionHistor
   shared_rhythm: 'between',
 };
 
-const CONNECTION_ALLOWED_LABELS: Record<ConnectionHistorySection, ReadonlySet<string>> = {
-  missed: new Set(['Milestone', 'Change', 'First', 'Quiet Win', 'Coming Up', 'Worth Noticing']),
-  world: new Set(['Mood', 'Routine', 'Interest', 'Priority', 'Pattern', 'Recent Vibe']),
-  ways_in: new Set([
-    'Comfort', 'Encourage', 'Listen', 'Talk', 'Companionship', 'Practical Help', 'Give Space',
-    'Support', 'Conversation', 'Together',
-  ]),
-  between: new Set(['Shared Rhythm', 'Overlap', 'Contrast', 'Little Pattern']),
-};
-
 const CONNECTION_DEFAULT_LABEL: Record<ConnectionModuleKey, string> = {
   worth_knowing: 'Worth Noticing', recent_vibe: 'Recent Vibe', what_theyre_into: 'Interest',
   how_to_show_up: 'Support', talk_about: 'Conversation', try_together: 'Together',
@@ -1161,9 +1151,10 @@ function normalizeConnectionCard(
 ): ConnectionInsightCard | null {
   if (!value || typeof value !== 'object') return null;
   const card = value as Record<string, unknown>;
-  const section = CONNECTION_SECTION_BY_MODULE[moduleKey];
   const rawLabel = typeof card.label === 'string' ? card.label.trim() : '';
-  const label = CONNECTION_ALLOWED_LABELS[section].has(rawLabel)
+  const labelWords = rawLabel.split(/\s+/).filter(Boolean);
+  const label = rawLabel.length <= 36 && labelWords.length >= 1 && labelWords.length <= 3
+    && /^[A-Za-z][A-Za-z'’&-]*(?:\s+[A-Za-z][A-Za-z'’&-]*){0,2}$/.test(rawLabel)
     ? rawLabel : CONNECTION_DEFAULT_LABEL[moduleKey];
   let title = typeof card.title === 'string' && card.title.trim() ? card.title.trim()
     : typeof card.headline === 'string' && card.headline.trim() ? card.headline.trim() : null;

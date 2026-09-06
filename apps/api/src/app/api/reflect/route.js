@@ -285,7 +285,7 @@ export async function POST(request) {
         }
         try {
           analyzerContext = await loadReflectAnalyzerContext(supabase, {
-            userId, visibleToFriend, localDate: dateStr,
+            userId, visibleToFriend, localDate: dateStr, excludeReflectIds: [reflectId],
           })
         } catch (contextErr) {
           console.warn('[reflect] analyzer context unavailable:', contextErr && contextErr.message)

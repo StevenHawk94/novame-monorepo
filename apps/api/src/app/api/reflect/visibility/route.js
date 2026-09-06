@@ -42,6 +42,16 @@ export async function POST(request) {
       .update({ visible_to_paired: visible })
       .eq('reflect_id', reflectId)
       .eq('user_id', userId)
+    if (!visible) {
+      // A hidden reflection must also stop contributing retained Connection
+      // evidence to later analyses after the live board is cleared.
+      await supabase.from('reflect_ai_analyses').update({
+        connection_eligible: false,
+        connection_signals: [],
+        connection_updates: null,
+        connection_mode: 'disabled',
+      }).eq('reflect_id', reflectId).eq('user_id', userId)
+    }
     await supabase.from('connection_insights').delete()
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
     await supabase.from('connection_card_history').delete()

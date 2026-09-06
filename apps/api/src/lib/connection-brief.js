@@ -1,6 +1,9 @@
 import { runConnectionRefresh, CONNECTION_REFRESH_VERSION } from './reflect-ai'
 import { recordAIUsage } from './ai-usage'
 import { applyConnectionUpdates, loadReflectAnalyzerContext } from './reflect-analysis-store'
+import { compactConnectionEvidence, CONNECTION_RETENTION_DAYS } from './connection-evidence'
+
+const RETENTION_MS = CONNECTION_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
 async function finishResume(supabase, { forUser, partnerId, pairedSince, through }) {
   let query = supabase.from('reflect_ai_analyses')
@@ -20,6 +23,7 @@ async function latestUntrackedReflect(supabase, { partnerId, pairedSince }) {
   let query = supabase.from('reflects')
     .select('id, local_date, created_at')
     .eq('user_id', partnerId)
+    .gte('created_at', new Date(Date.now() - RETENTION_MS).toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
   if (pairedSince) query = query.gte('created_at', pairedSince)
@@ -68,13 +72,6 @@ async function saveRecoveredAnalysis(supabase, {
   if (error) throw error
 }
 
-function cardsFromUpdates(updates) {
-  if (!updates || typeof updates !== 'object') return []
-  return Object.entries(updates).flatMap(([moduleKey, module]) => (
-    Array.isArray(module?.cards) ? module.cards.map((card) => ({ moduleKey, ...card })) : []
-  ))
-}
-
 /**
  * Resume after a reader was away for 48h. Compare all retained privacy-safe
  * unprocessed signals together and publish only the three most valuable,
@@ -85,9 +82,12 @@ export async function generateBrief(supabase, {
   forUser, partnerId, date, cachedPayload = null, pairedSince = null,
 }) {
   let latestQuery = supabase.from('reflect_ai_analyses')
-    .select('reflect_id, local_date, created_at, connection_updates')
-    .eq('user_id', partnerId).eq('status', 'completed').eq('connection_mode', 'inactive')
+    .select('reflect_id, local_date, created_at, connection_signals, connection_updates')
+    .eq('user_id', partnerId).eq('status', 'completed').eq('connection_eligible', true)
+    .eq('connection_mode', 'inactive')
+    .gte('created_at', new Date(Date.now() - RETENTION_MS).toISOString())
     .order('created_at', { ascending: false })
+    .limit(120)
   if (pairedSince) latestQuery = latestQuery.gte('created_at', pairedSince)
   const { data: latestRows, error } = await latestQuery
   let latest = latestRows?.[0]
@@ -109,14 +109,14 @@ export async function generateBrief(supabase, {
     return { ok: true, insights: cachedPayload, refreshed: false }
   }
 
-  const unprocessedSignals = (latestRows || []).flatMap((row) => (
-    cardsFromUpdates(row.connection_updates).map((card) => ({
-      sourceReflectId: row.reflect_id,
-      localDate: row.local_date,
-      createdAt: row.created_at,
-      ...card,
-    }))
-  ))
+  const unprocessedSignals = compactConnectionEvidence(latestRows, {
+    recentLimit: 18,
+    backgroundLimit: 12,
+    retainBackgroundOneOff: true,
+  }).map((signal) => ({
+    ...signal,
+    isNewest: Date.parse(signal.lastSeenAt) >= Date.parse(latest.created_at) - 1000,
+  }))
 
   let reflect = null
   let itemRows = []
@@ -145,6 +145,7 @@ export async function generateBrief(supabase, {
   try {
     const context = await loadReflectAnalyzerContext(supabase, {
       userId: partnerId, visibleToFriend: true, localDate: latest.local_date || date,
+      excludeReflectIds: (latestRows || []).map((row) => row.reflect_id),
     })
     const generated = await runConnectionRefresh({
       reflectId: latest.reflect_id,
@@ -161,6 +162,10 @@ export async function generateBrief(supabase, {
       currentConnectionBoard: context.currentBoard || cachedPayload,
       writerRecentEvidence: context.writerRecentEvidence,
       readerRecentEvidence: context.readerRecentEvidence,
+      recentConnectionEvidence: {
+        writer: context.writerRecentEvidence,
+        otherPerson: context.readerRecentEvidence,
+      },
     })
     const applied = await applyConnectionUpdates(supabase, {
       pair: context.pair,

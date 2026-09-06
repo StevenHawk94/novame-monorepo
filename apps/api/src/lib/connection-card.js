@@ -88,6 +88,21 @@ export function connectionLabelForKey(section, value) {
   return label ? { key, label } : null
 }
 
+export function normalizeConnectionLabel(value, reference = null) {
+  const label = copy(value, 36)
+  if (!label) return null
+  const words = label.split(/\s+/)
+  if (words.length > 3) return null
+  if (!/^[A-Za-z][A-Za-z'’&-]*(?:\s+[A-Za-z][A-Za-z'’&-]*){0,2}$/.test(label)) return null
+  if (reference) {
+    const referenceTerms = new Set(String(reference).toLowerCase().match(/[a-z0-9']+/g) || [])
+    const labelTerms = label.toLowerCase().match(/[a-z0-9']+/g) || []
+    // A label that simply lifts the event words is a summary, not a category.
+    if (labelTerms.length > 0 && labelTerms.every((term) => referenceTerms.has(term))) return null
+  }
+  return label
+}
+
 function terms(value) {
   const matches = String(value || '').toLowerCase().match(/[a-z0-9']+/g) || []
   return new Set(matches.map((term) => TOKEN_EQUIVALENTS[term] || term)
@@ -176,7 +191,9 @@ export function publicConnectionCard(card, moduleKey) {
     takeaway: copy(card.takeaway, COPY_LIMITS.takeaway) || copy(card.action, COPY_LIMITS.takeaway),
   })
   if (!fields) return null
-  const label = labelResult?.label || DEFAULT_LABEL_BY_MODULE[moduleKey]
+  const label = normalizeConnectionLabel(card.label, [card.observation, card.body].filter(Boolean).join(' '))
+    || labelResult?.label
+    || DEFAULT_LABEL_BY_MODULE[moduleKey]
   return {
     ...(labelResult ? { labelKey: labelResult.key } : {}),
     label,

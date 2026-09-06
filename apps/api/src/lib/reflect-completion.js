@@ -25,6 +25,7 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
 
     context = await loadReflectAnalyzerContext(supabase, {
       userId, visibleToFriend: result.shared_to_friends !== false, localDate: draft.local_date,
+      excludeReflectIds: [result.reflect_id],
     })
     const analyzer = await runReflectAnalyzer({
       reflectId: result.reflect_id,
