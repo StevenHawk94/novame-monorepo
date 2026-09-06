@@ -85,3 +85,12 @@ test('catalog exposes effective modes, dynamic source, thumbnails, and disabled 
   const search = catalog.queryAdminItemCatalog(result, { q:'freshly brewed cup', limit:10 });
   assert.ok(search.items.some((item) => item.itemId === coffeeId));
 });
+
+test('suggestions expose an icon backlog and block unsafe one-word AUTO approvals', () => {
+  const source = fs.readFileSync(path.join(root, 'apps/admin/src/app/admin/_components/ItemsTab.tsx'), 'utf8');
+  assert.match(source, /Icon Backlog \(\{data\?\.iconBacklog\?\.length \|\| 0\}\)/);
+  assert.ok(source.includes('Added to Icon Backlog. It will stay visible below'));
+  assert.ok(source.includes("words.length > 1 && !row.bare_word_disabled"));
+  assert.ok(source.includes('Needs contextual phrase'));
+  assert.ok(source.includes("'error' in error.body"), 'server validation detail must replace a generic HTTP 409');
+});

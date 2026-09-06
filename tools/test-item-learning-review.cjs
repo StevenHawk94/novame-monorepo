@@ -12,13 +12,15 @@ function load(file, imports = {}, globals = {}) {
     const local = path.join(path.dirname(file),name);
     if (name.startsWith('.')) {
       if (local.endsWith('.json')) return JSON.parse(fs.readFileSync(path.join(root,local),'utf8'));
-      return load(local+'.ts',imports);
+      for (const extension of ['.js','.ts']) {
+        if (fs.existsSync(path.join(root,local+extension))) return load(local+extension,imports);
+      }
     }
     throw Error('Unexpected dependency '+name);
   }});
   return mod.exports;
 }
-const engine = {...load('packages/engine/src/items/item-matcher.ts'),...load('packages/engine/src/items/dictionary.ts'),...load('packages/engine/src/items/item-rules.ts')};
+const engine = {...load('packages/engine/src/items/item-matcher.ts'),...load('packages/engine/src/items/dictionary.ts'),...load('packages/engine/src/items/item-rules.ts'),...load('packages/engine/src/items/remote-manifest.ts')};
 const evidence = load('apps/api/src/lib/item-learning-evidence.js',{'@novame/engine':engine});
 const plain = x => JSON.parse(JSON.stringify(x));
 test('evidence must be a real short source span and existing valid matches are excluded',()=>{
@@ -62,13 +64,16 @@ test('admin approval is exact, requires fresh revision, and cannot enable ambigu
     if(name==='item_rule_snapshot')return {data:{catalog:engine.ITEM_CATALOG_VERSION,revision:0,rules:[]}};
     writes.push(args);return {data:1};
   }};
-  const admin=load('apps/admin/src/lib/item-review.js',{'@novame/engine':engine});
+  const admin=load('apps/admin/src/lib/item-review.js',{
+    '@novame/engine':engine,
+    './item-manifest':{loadCurrentItemManifest:async()=>({version:'0',manifest:null})},
+  });
   await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:4},'admin'),/Rules changed/);
   assert.equal(writes.length,0);
   await admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin');
   assert.equal(writes[0].p_keyword,row.source_phrase);assert.equal(writes[0].p_action,'enable');
   row={...row,source_phrase:'running'};
-  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin'),/bare word/);
+  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin'),/contextual multi-word phrase/);
   assert.equal(writes.length,1);
 });
 
@@ -80,6 +85,7 @@ test('custom choices persist by account, and a stale save cannot cross an auth c
     react,'@novame/engine':{...engine,...load('packages/engine/src/items/custom-tap-items.ts')},
     './storage':{storage:{getString:key=>values.get(key),set:(key,value)=>values.set(key,value)}},
     './supabase':{supabase:{auth:{getSession:async()=>({data:{session:{user:{id:'a'}}}}),onAuthStateChange(fn){auth=fn;return{data:{subscription:{unsubscribe(){}}}}}}}},
+    './remote-items':{mergedItemDictionary:()=>engine.ITEM_DICTIONARY},
   });
   const render=()=>{cursor=0;return mod.useCustomTapItems()};
   render();effects.shift()();await Promise.resolve();let hook=render();
@@ -106,6 +112,7 @@ test('automatic rating waits outside modal transitions and never renders a block
       '@/lib/rating-navigation':{useRatingTransitionBusy:()=>transition,isNavigationTransitionBusy:()=>transition},
       '@/components/ui/app-dialog':{useAppDialogVisible:()=>dialog},
       '@/lib/use-subscription-tier':{useSubscriptionTierState:()=> 'free'},
+      '@/lib/use-home-entry':{useHomeEntry:()=>({pending:false,resumeRequired:false})},
       '@/lib/modal-coordinator':{useActiveModalSlot:()=>undefined},
       '@/lib/overlay-presence':{useOverlayPresent:()=>false,isOverlayPresent:()=>false},
       '@/lib/async-lifecycle':{withDeadline:work=>work},

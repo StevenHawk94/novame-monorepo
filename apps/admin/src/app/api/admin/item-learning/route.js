@@ -40,8 +40,9 @@ export async function PATCH(request) {
     } else if (['reject','approve-icon'].includes(input.action)) {
       let query = client.from('item_learning_candidates').update({ status: input.action === 'reject' ? 'rejected' : 'approved', reviewed_at: new Date().toISOString() }).eq('id', input.id).in('status',['pending','approved'])
       if (input.action === 'approve-icon') query = query.eq('kind','missing_icon')
-      const { error } = await query
+      const { data, error } = await query.select('id').maybeSingle()
       if (error) throw error
+      if (!data) throw new Error(input.action === 'approve-icon' ? 'This icon suggestion is already reviewed. Refresh the backlog.' : 'This suggestion is already reviewed. Refresh the list.')
     } else throw new Error('Invalid review action')
     return NextResponse.json({ success: true })
   } catch (error) { return NextResponse.json({ success: false, error: error.message }, { status: 409 }) }
