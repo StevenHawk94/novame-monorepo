@@ -17,6 +17,7 @@ import { beginHomeEntry, deferHomeEntryNotification } from '@/lib/home-entry-rea
 const MIN_DISPLAY_MS = 600;
 const SESSION_RESTORE_TIMEOUT_MS = 2000;
 const ANONYMOUS_SESSION_TIMEOUT_MS = 5000;
+const COMPANION_SYNC_TIMEOUT_MS = 5000;
 
 type TimedResult<T> = { status: 'resolved'; value: T } | { status: 'timeout' };
 
@@ -82,11 +83,15 @@ export default function SigningInScreen() {
         return;
       }
 
-      // Onboarding: sync the locally-chosen companion into a companions row on
-      // first sign-in (there was no user_id when the pet was picked). Idempotent
-      // and fire-and-forget -- a failure retries next launch, and Reflect fails
-      // loud if the companion is still missing.
-      void syncOnboardingCompanion(userId);
+      // Onboarding: create the companion before revealing Home. This is an
+      // economy prerequisite for Reflect/Quests/Kits, so allowing the user to
+      // interact while a fire-and-forget request was still running produced a
+      // real save race on slower Android devices. Keep the entry gate bounded;
+      // the API save boundary also repairs an already-missing row idempotently.
+      const companionSync = withTimeout(
+        syncOnboardingCompanion(userId),
+        COMPANION_SYNC_TIMEOUT_MS,
+      );
 
       void fetchSubscriptionTier(userId).catch((e) => {
         console.warn('[signing-in] subscription fetch failed:', (e as Error)?.message || e);
@@ -94,6 +99,11 @@ export default function SigningInScreen() {
       void fetchMeStats(userId).catch((e) => {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
+
+      const companionResult = await companionSync;
+      if (companionResult.status === 'timeout') {
+        console.warn('[signing-in] companion sync timed out; save boundary will self-heal');
+      }
 
       // HomeEntryGate keeps this loading look until the actual Home visuals
       // display. Existing local assets and data caches are reused unchanged.

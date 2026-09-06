@@ -128,6 +128,52 @@ const BLOCKER_FEEDBACK: Record<string, { title: string; body: string }> = {
   },
 };
 
+const INSIGHT_CAROUSEL_CARDS = [
+  {
+    label: 'LOW-BATTERY MODE',
+    title: 'Not Ignoring You. Just Full.',
+    observation: 'Their days have been feeling a little too packed lately. They may not have much social energy left to give.',
+    meaning: 'Give them room without disappearing. Care can be quiet, too.',
+    takeaway: 'Send a no-reply-needed check-in.',
+  },
+  {
+    label: 'QUIET WIN ALERT',
+    title: 'They Did Something Kind of Big',
+    observation: 'They recently pushed through something they were nervous about and may be playing it cooler than they feel.',
+    meaning: 'This is your cue to be their personal hype person.',
+    takeaway: 'Make a little fuss about it.',
+  },
+  {
+    label: 'GENTLE NUDGE',
+    title: 'They’ve Been Running on Empty',
+    observation: 'They’ve been in go-go-go mode for a while, with very little space to actually reset.',
+    meaning: 'A warm check-in or a tiny distraction might land better than “How are you?”',
+    takeaway: 'Bring them something soft and silly.',
+  },
+] as const;
+
+function OnboardingInsightCard({
+  card, width,
+}: {
+  card: (typeof INSIGHT_CAROUSEL_CARDS)[number];
+  width: number;
+}) {
+  return (
+    <View style={[styles.insightCarouselCard, { width }]}>
+      <View style={styles.insightCarouselBadge}>
+        <Text style={styles.insightCarouselBadgeText}>{card.label}</Text>
+      </View>
+      <Text style={styles.insightCarouselTitle}>{card.title}</Text>
+      <Text style={styles.insightCarouselObservation}>{card.observation}</Text>
+      <Text style={styles.insightCarouselMeaning}>{card.meaning}</Text>
+      <View style={styles.insightCarouselAction}>
+        <MaterialIcons name="chat-bubble-outline" size={17} color="#8C523D" />
+        <Text style={styles.insightCarouselActionText}>{card.takeaway}</Text>
+      </View>
+    </View>
+  );
+}
+
 // Ob5's tappable sample reflection (Mom's card). Keep these IDs on the
 // current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
 // art and render as empty tiles.
@@ -168,6 +214,8 @@ export default function OnboardingScreen() {
     : null;
   const router = useRouter();
   const [idx, setIdx] = useState(0);
+  const [insightCardIndex, setInsightCardIndex] = useState(0);
+  const insightCarouselRef = useRef<ScrollView>(null);
   const [who, setWho] = useState<string | null>(null);
   const [blocker, setBlocker] = useState<string | null>(null);
   const [sampleDetailsOpen, setSampleDetailsOpen] = useState(false);
@@ -189,6 +237,8 @@ export default function OnboardingScreen() {
   const [perMonth, setPerMonth] = useState<string | null>(null);
   const [compareAt, setCompareAt] = useState<string | null>(null);
   const pricesFetched = useRef(false);
+  const insightCardWidth = Math.min(340, Math.max(240, width - 82));
+  const insightCardStep = insightCardWidth + 14;
 
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
@@ -594,7 +644,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </OnboardingPage>
 
-        <OnboardingPage id="insights" imageCount={1}>
+        <OnboardingPage id="insights" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>The little things tell a bigger story</Text>
@@ -602,7 +652,48 @@ export default function OnboardingScreen() {
               Turns everyday reflections into moments worth noticing, natural ways to reach out,
               and playful patterns between you.
             </Text>
-            <OnboardingImage source={ICONS.obInsights} style={styles.insightsImage} contentFit="contain" />
+            <ScrollView
+              ref={insightCarouselRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={insightCardStep}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              disableIntervalMomentum
+              nestedScrollEnabled
+              contentContainerStyle={styles.insightCarouselContent}
+              style={styles.insightCarousel}
+              onMomentumScrollEnd={(event) => {
+                const nextIndex = Math.max(0, Math.min(
+                  INSIGHT_CAROUSEL_CARDS.length - 1,
+                  Math.round(event.nativeEvent.contentOffset.x / insightCardStep),
+                ));
+                setInsightCardIndex(nextIndex);
+              }}
+            >
+              {INSIGHT_CAROUSEL_CARDS.map((card) => (
+                <OnboardingInsightCard key={card.label} card={card} width={insightCardWidth} />
+              ))}
+            </ScrollView>
+            <View style={styles.insightCarouselDots}>
+              {INSIGHT_CAROUSEL_CARDS.map((card, cardIndex) => (
+                <Pressable
+                  key={card.label}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show insight card ${cardIndex + 1} of ${INSIGHT_CAROUSEL_CARDS.length}`}
+                  onPress={() => {
+                    void haptics.light();
+                    setInsightCardIndex(cardIndex);
+                    insightCarouselRef.current?.scrollTo({ x: cardIndex * insightCardStep, animated: true });
+                  }}
+                  hitSlop={8}
+                  style={[
+                    styles.insightCarouselDot,
+                    cardIndex === insightCardIndex && styles.insightCarouselDotActive,
+                  ]}
+                />
+              ))}
+            </View>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
@@ -1070,7 +1161,45 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium', color: '#3F3428', textAlign: 'center',
   },
   howGif: { width: '80%', alignSelf: 'center', aspectRatio: 1, marginTop: 26, borderRadius: 18, overflow: 'hidden' },
-  insightsImage: { width: '100%', aspectRatio: 1, alignSelf: 'center', marginTop: 24 },
+  insightCarousel: { marginTop: 28, marginHorizontal: -22 },
+  insightCarouselContent: { gap: 14, paddingHorizontal: 22, paddingRight: 44 },
+  insightCarouselCard: {
+    minHeight: 318, backgroundColor: '#FFF6E4', borderRadius: 26,
+    paddingHorizontal: 20, paddingVertical: 20,
+  },
+  insightCarouselBadge: {
+    alignSelf: 'flex-start', backgroundColor: '#F8D88B', borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 15,
+  },
+  insightCarouselBadgeText: {
+    fontSize: 12.5, lineHeight: 17, fontFamily: 'Inter_700Bold', color: '#7A462A',
+  },
+  insightCarouselTitle: {
+    fontSize: 18, lineHeight: 24, fontFamily: 'Inter_800ExtraBold',
+    color: '#7A4E3B', marginBottom: 14,
+  },
+  insightCarouselObservation: {
+    fontSize: 14.5, lineHeight: 20.5, fontFamily: 'Inter_700Bold', color: '#7A4E3B',
+  },
+  insightCarouselMeaning: {
+    fontSize: 14, lineHeight: 20, fontFamily: 'Inter_500Medium',
+    color: '#8A5B47', marginTop: 14,
+  },
+  insightCarouselAction: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    borderTopWidth: 1, borderTopColor: 'rgba(122,74,58,0.16)',
+    marginTop: 16, paddingTop: 13,
+  },
+  insightCarouselActionText: {
+    flex: 1, fontSize: 13.5, lineHeight: 19,
+    fontFamily: 'Inter_700Bold', color: '#7A4E3B',
+  },
+  insightCarouselDots: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, marginTop: 14,
+  },
+  insightCarouselDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#D8B998' },
+  insightCarouselDotActive: { width: 18, backgroundColor: '#7A4E3B' },
 
   creatorBubble: { fontSize: 34, textAlign: 'center', marginBottom: 6 },
   creatorBody: { fontSize: 15.5, lineHeight: 23, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },

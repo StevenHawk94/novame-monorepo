@@ -43,13 +43,32 @@ export async function POST(request) {
     }
     // Permanent record, daily quota and reward commit BEFORE spending tokens.
     // Retrying a previously saved key succeeds even when today's quota is full.
-    const { data: reserved, error } = await supabase.rpc('begin_saved_reflect', {
+    const reserveArgs = {
       p_user_id: input.userId, p_payload: payload, p_xp: XP_RULES.reflect.award,
       p_week: isoWeek(localDate),
       p_memories: isPaid && profile.ai_consent_at && resolved.body
         ? createMemoryFallbacks({ body: resolved.body, matches: resolved.matches }) : {},
-    })
-    if (error) throw error
+    }
+    let { data: reserved, error: reserveError } = await supabase.rpc('begin_saved_reflect', reserveArgs)
+    if (reserveError) throw reserveError
+    if (reserved?.error === 'companion_not_initialized') {
+      // Fresh onboarding used to launch Home before its fire-and-forget
+      // companion sync completed. Repair both that race and already-affected
+      // accounts at the durable save boundary. complete_onboarding is
+      // idempotent and the current Burrow onboarding always selects pet1.
+      const { data: initialized, error: initializeError } = await supabase.rpc('complete_onboarding', {
+        p_user_id: input.userId,
+        p_companion_id: 'pet1',
+      })
+      if (initializeError || initialized?.error) {
+        throw initializeError || new Error('companion_initialization_failed')
+      }
+      // Reuse the exact idempotency key. The first attempt may already have
+      // created the draft row, and begin_saved_reflect safely resumes it.
+      const retry = await supabase.rpc('begin_saved_reflect', reserveArgs)
+      if (retry.error) throw retry.error
+      reserved = retry.data
+    }
     if (reserved?.error) return NextResponse.json(reserved, {
       status: reserved.error === 'daily_limit_reached' ? 409 : 400,
     })
