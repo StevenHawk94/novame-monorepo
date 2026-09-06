@@ -3,9 +3,9 @@ import { itemLearningHints, cleanLearningSignals } from './item-learning-evidenc
 import { cleanConnectionSignals } from './connection-evidence'
 import { connectionLabelForKey, normalizeConnectionLabel, pruneConnectionFields } from './connection-card'
 
-export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V11'
+export const REFLECT_ANALYZER_VERSION = 'REFLECT_ANALYZER_V12'
 export const REFLECT_COPY_VERSION = 'REFLECT_COPY_V5'
-export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V9'
+export const CONNECTION_REFRESH_VERSION = 'CONNECTION_REFRESH_V10'
 
 const CONNECTION_KEYS = [
   'worth_knowing',
@@ -68,12 +68,21 @@ The latest supplied reflection is the primary and highest-weight evidence. Recen
 VALUE, PRIVACY, AND RESTRAINT
 Generate only genuinely new, useful, well-supported context. Never fill a quota, inflate ordinary trivia, infer a hidden motive, diagnosis, fixed personality, relationship quality, score, or judgment, or repeat the same topic or meaning with different words. Do not use hidden items. Do not quote or closely paraphrase private writing. Omit names, addresses, exact locations or itineraries, amounts, precise schedules, diagnoses, sexual information, and legal or financial secrets. Prefer a restrained inference to a dramatic one; when evidence is insufficient, return no update.
 
+ANALYTIC TRANSFORMATION
+Do not summarize the reflection. Silently move through this sequence before drafting:
+1. Evidence: isolate the concrete clue, continuity, contrast, pressure, preference, or support need actually present.
+2. New layer: identify the most useful supported thing the paired reader could not get by simply rereading the memory—its role in the person's life, what is changing, what approach is likely to land, or what the two people's signals reveal together.
+3. Card: lead with that new layer. Use no more source detail than is needed to make it credible.
+4. Value test: imagine the reader has already seen the shared memory. If the card does not deepen their understanding or change how they could show up, discard it.
+
+Grounded does not mean vague or grammatically hesitant. State a warranted interpretation plainly. Never begin a user-facing field with “It sounds like,” “It seems,” “They seem,” “This suggests,” “It appears,” or similar confidence-padding. Do not add perhaps/maybe/might merely to shield a paraphrase. If the insight cannot be stated clearly without guesswork, return no card. Vary sentence shape naturally; there is no fixed card template.
+
 DISTINCT SIGNAL ALLOCATION
 Each card must use one independently useful signal and do a different job. Reserve a descriptive topic for one section. A separate support need from the same reflection may enter Ways In only when it focuses on the approach and does not retell the event.
 
-- What You May Have Missed / worth_knowing: identify a concrete event, first, change, plan, milestone, turning point, or quiet win whose significance could be easy to overlook. Preserve a useful specific clue, but add value beyond a visible memory; do not merely announce what happened.
-- Their World Lately / recent_vibe or what_theyre_into: move from concrete evidence to a grounded, non-literal understanding of a developing mood, routine, priority, interest, source of energy, or way they are orienting toward life. Require repetition, explicit continuity, or one reflection that clearly states an ongoing pattern. Avoid fixed personality claims.
-- Ways In / how_to_show_up, talk_about, or try_together: generate only when the writing grounds a need for outside comfort, encouragement, listening, conversation, companionship, practical help, shared lightness, joining in, follow-up, or space. An explicit request is not required, but the need must be supported rather than guessed. Give one low-pressure, specific action that tells an ordinary person what to do. Do not output generic advice such as “ask about X,” “be supportive,” or “check in” without saying how.
+- What You May Have Missed / worth_knowing: identify a concrete event, first, change, plan, milestone, turning point, or quiet win whose significance could be easy to overlook. Keep the decisive clue, then reveal why its timing, effort, change, or consequence makes it worth noticing. Do not merely announce what happened.
+- Their World Lately / recent_vibe or what_theyre_into: translate concrete evidence into the grounded role or pattern underneath it: for example a way of decompressing, a renewed appetite for novelty, a protected priority, or a routine that gives their week structure. Require repetition, explicit continuity, or one reflection that clearly states an ongoing pattern. Do not list the same activities and feelings again, and avoid fixed personality claims.
+- Ways In / how_to_show_up, talk_about, or try_together: generate only when the writing grounds a need for outside comfort, encouragement, listening, conversation, companionship, practical help, shared lightness, joining in, follow-up, or space. Explain what kind of approach fits this moment and, when useful, what common response would add pressure or miss the need. Then give one low-pressure action concrete enough to use now. “Send an encouraging message,” “check in,” “be supportive,” and “ask about X” are not actions unless the card supplies the actual angle, wording, offer, boundary, or small gesture that makes them useful.
 - Between You Lately / shared_rhythm: use independently supported recent evidence from both people to reveal a shared action, mood, opinion, priority, timing, complementary contrast, or recurring rhythm. Direct interaction is not required. The identical card is shown to both people. Do not fabricate causality or claim they did something together when they did not.
 
 CARD STRUCTURE
@@ -89,6 +98,11 @@ Every card requires labelKey, label, and observation.
 
 FIELD SEPARATION
 Label classifies; title frames; observation informs; meaning deepens; takeaway acts or closes. Before keeping an optional field, ask what useful information disappears without it. If nothing disappears, set it to null. Never repeat the same fact, phrase, conclusion, or advice across fields.
+
+QUALITY ANCHORS — learn the depth, not the wording or layout
+- Evidence: gaming and guitar have lasted from the teenage years into age 50, for about an hour each at home after work most nights. Weak: repeat that they are consistent, comforting hobbies. Stronger: label “Home Base”; optional title “Familiar things are how they land”; explain that after decades these hobbies function less like projects to master and more like a reliable route back to themselves at day's end.
+- Evidence: a missed week of journaling created a backlog of pages and photos that now feels overwhelming. Weak: repeat the backlog and say an encouraging message could help. Stronger: label “Remove Pressure”; optional title “This does not need another deadline”; explain that a reflective habit has turned into overdue homework, advise against asking when they will catch up, and offer a usable reset such as letting the missing week stay missing and writing one sentence about today.
+These anchors demonstrate added value only. Never reuse their labels, openings, sentence rhythm, conclusions, or advice for unrelated evidence.
 
 VOICE
 Write like a warm, observant friend with taste and a little personality—not a therapist, report, horoscope, or generic AI coach. Be clear enough that the reader understands what changed or how to respond. Light wit is welcome in any section when the evidence is positive and low-stakes. Turn humor off for grief, conflict, exhaustion, health, money, fear, or vulnerability. Never sound smug, cute at someone's expense, or overly certain.
@@ -401,7 +415,7 @@ export async function runReflectAnalyzer(input) {
   const result = await callAI({
     systemInstruction: REFLECT_ANALYZER_SYSTEM_PROMPT,
     userText: JSON.stringify({ ...input, ambiguousKeywordHints: itemLearningHints(input.journal) }),
-    generationConfig: { temperature: 0.4, maxOutputTokens: 2800, thinkingConfig: { thinkingBudget: 0 } },
+    generationConfig: { temperature: 0.6, maxOutputTokens: 3200, thinkingConfig: { thinkingBudget: 640 } },
   })
   const parsed = parseAIJson(result.text)
   return {
@@ -456,7 +470,7 @@ export async function runConnectionRefresh(input) {
   const result = await callAI({
     systemInstruction: CONNECTION_REFRESH_SYSTEM_PROMPT,
     userText: JSON.stringify(input),
-    generationConfig: { temperature: 0.4, maxOutputTokens: 1800, thinkingConfig: { thinkingBudget: 0 } },
+    generationConfig: { temperature: 0.6, maxOutputTokens: 2600, thinkingConfig: { thinkingBudget: 640 } },
   })
   const parsed = parseAIJson(result.text)
   const data = cleanConnectionUpdates(parsed?.connectionUpdates || parsed, input.reflectId, {

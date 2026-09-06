@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "966579113880-qgnuujto9s6er7et4nn1f4m5n47n53am.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.burrow.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "966579113880-v82263lh312rbj04fu12nop2omng5sp8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.burrow.app",
+            "certificate_hash": "dd43ce24c27f0c708941995144ad38e8591c742d"
+          }
+        },
+        {
           "client_id": "966579113880-n2qf03aljr9dkfpc821ihhefgmvst2no.apps.googleusercontent.com",
           "client_type": 3
         }

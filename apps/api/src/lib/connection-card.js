@@ -74,6 +74,8 @@ const TOKEN_EQUIVALENTS = {
   supported: 'support', supporting: 'support',
 }
 
+const CANNED_INFERENCE_OPENER = /^(?:it\s+(?:sounds|seems|appears|looks)\s+(?:like|as though)|they\s+(?:seem|appear)\b|this\s+(?:suggests|seems|appears)\b)/i
+
 function copy(value, max) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null
 }
@@ -136,9 +138,18 @@ export function pruneConnectionFields({ title, observation, meaning, takeaway })
   const body = copy(observation, COPY_LIMITS.observation)
   if (!body) return null
 
+  // A card that opens by announcing uncertainty almost always restates the
+  // reflection instead of adding a grounded second layer. Reject it rather
+  // than publishing generic AI-shaped copy to the Connection Board.
+  if (CANNED_INFERENCE_OPENER.test(body)) return null
+
   let nextTitle = copy(title, COPY_LIMITS.title)
   let nextMeaning = copy(meaning, COPY_LIMITS.meaning)
   let nextTakeaway = copy(takeaway, COPY_LIMITS.takeaway)
+
+  if (CANNED_INFERENCE_OPENER.test(nextTitle || '')) nextTitle = null
+  if (CANNED_INFERENCE_OPENER.test(nextMeaning || '')) nextMeaning = null
+  if (CANNED_INFERENCE_OPENER.test(nextTakeaway || '')) nextTakeaway = null
 
   if (duplicates(nextTitle, body, 0.64)) nextTitle = null
 
