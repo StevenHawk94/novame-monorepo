@@ -21,8 +21,12 @@ export async function publishReview(db, input, adminId) {
     keyword = normalizeItemKeyword(row.source_phrase)
     itemId = typeof input.itemId === 'string' ? input.itemId : row.suggested_item_id
     if (!Object.prototype.hasOwnProperty.call(dictionary.items, itemId)) throw new Error('Choose an existing item ID.')
-    if (!keyword.includes(' ') || row.bare_word_disabled || NEVER_AUTO_ITEMS[keyword]?.includes(itemId)) {
-      throw new Error('This suggestion cannot be enabled as AUTO. Add a safe contextual multi-word phrase in Icon Rule Editor, or reject it.')
+    const remoteNeverAuto = (remote.manifest?.items || []).some(item => item.itemId === itemId
+      && item.keywordSafety?.some(rule => normalizeItemKeyword(rule.keyword) === keyword && rule.triggerMode === 'NEVER_AUTO'))
+    const reviewedNeverAuto = snapshot.rules.some(rule => normalizeItemKeyword(rule.keyword) === keyword
+      && rule.item_id === itemId && rule.action === 'never')
+    if (NEVER_AUTO_ITEMS[keyword]?.includes(itemId) || remoteNeverAuto || reviewedNeverAuto) {
+      throw new Error('This keyword is classified NEVER_AUTO for this icon and cannot be enabled as AUTO.')
     }
     if (dictionary.synonyms[keyword] && dictionary.synonyms[keyword] !== itemId) throw new Error('This keyword already belongs to another icon.')
     if (publishedBase.synonyms[keyword] && publishedBase.synonyms[keyword] !== itemId) throw new Error('A disabled keyword still belongs to another catalog icon. Edit the source catalog or Item Manifest to transfer ownership.')
@@ -66,28 +70,47 @@ export async function publishManualRule(db, input, adminId) {
 
   let action
   if (input.action === 'add') {
-    if (!keyword.includes(' ')) throw new Error('Manual additions must be a safe multi-word phrase.')
-    const remoteNeverAuto = (remote.manifest?.items || []).some(item =>
-      item.keywordSafety?.some(rule => normalizeItemKeyword(rule.keyword) === keyword && rule.triggerMode === 'NEVER_AUTO'))
-    if (NEVER_AUTO_ITEMS[keyword]?.length || remoteNeverAuto) {
-      throw new Error('This phrase is classified NEVER_AUTO in the reviewed catalog and cannot be enabled here.')
+    const triggerMode = input.triggerMode === 'NEVER_AUTO' ? 'NEVER_AUTO' : 'AUTO'
+    const remoteNeverAuto = (remote.manifest?.items || []).some(item => item.itemId === itemId
+      && item.keywordSafety?.some(rule => normalizeItemKeyword(rule.keyword) === keyword && rule.triggerMode === 'NEVER_AUTO'))
+    const latestRule = snapshot.rules.find(rule => normalizeItemKeyword(rule.keyword) === keyword)
+    if (triggerMode === 'AUTO' && (NEVER_AUTO_ITEMS[keyword]?.includes(itemId) || remoteNeverAuto)) {
+      throw new Error('This keyword is classified NEVER_AUTO in the reviewed catalog and cannot be enabled here.')
+    }
+    if (triggerMode === 'AUTO' && latestRule?.action === 'never' && latestRule.item_id === itemId) {
+      throw new Error('Remove the current NEVER_AUTO rule before enabling this keyword as AUTO.')
     }
     if (dictionary.synonyms[keyword] && dictionary.synonyms[keyword] !== itemId) {
       throw new Error(`This phrase already belongs to ${dictionary.items[dictionary.synonyms[keyword]]?.displayName || 'another icon'}.`)
     }
-    if (dictionary.synonyms[keyword] === itemId) throw new Error('This phrase is already active for this icon.')
-    if (publishedBase.exclusions?.[keyword]?.length) {
+    if (triggerMode === 'AUTO' && dictionary.synonyms[keyword] === itemId) throw new Error('This keyword is already AUTO for this icon.')
+    if (triggerMode === 'NEVER_AUTO' && latestRule?.action === 'never' && latestRule.item_id === itemId) {
+      throw new Error('This keyword is already NEVER_AUTO for this icon.')
+    }
+    if (triggerMode === 'NEVER_AUTO' && (NEVER_AUTO_ITEMS[keyword]?.includes(itemId) || remoteNeverAuto)) {
+      throw new Error('This keyword is already NEVER_AUTO for this icon in the reviewed catalog.')
+    }
+    if (triggerMode === 'AUTO' && publishedBase.exclusions?.[keyword]?.length) {
       throw new Error('This phrase has exclusion rules. Maintain it through the reviewed Item Manifest instead.')
     }
-    action = 'enable'
+    action = triggerMode === 'NEVER_AUTO' ? 'never' : 'enable'
   } else if (input.action === 'delete') {
     if (dictionary.synonyms[keyword] !== itemId) throw new Error('This exact phrase is not active for this icon.')
     action = 'disable'
   } else if (input.action === 'restore') {
-    if (dictionary.synonyms[keyword] === itemId) throw new Error('This phrase is already active.')
-    const owner = dictionary.synonyms[keyword]
-    if (owner && owner !== itemId) throw new Error('This phrase now belongs to another icon.')
-    action = publishedBase.synonyms[keyword] === itemId ? 'reset' : 'enable'
+    const currentRule = snapshot.rules.find(rule => normalizeItemKeyword(rule.keyword) === keyword)
+    if (currentRule?.action === 'never' && currentRule.item_id === itemId) {
+      const { data: prior, error: priorError } = await db.from('item_keyword_rule_events').select('item_id,action')
+        .eq('catalog_version', ITEM_CATALOG_VERSION).eq('keyword', keyword).lt('revision', currentRule.revision)
+        .order('revision', { ascending: false }).limit(1).maybeSingle()
+      if (priorError) throw priorError
+      action = prior?.action || 'reset'
+    } else {
+      if (dictionary.synonyms[keyword] === itemId) throw new Error('This phrase is already active.')
+      const owner = dictionary.synonyms[keyword]
+      if (owner && owner !== itemId) throw new Error('This phrase now belongs to another icon.')
+      action = publishedBase.synonyms[keyword] === itemId ? 'reset' : 'enable'
+    }
   } else throw new Error('Invalid manual rule action.')
 
   const { data, error } = await db.rpc('publish_item_rule', {

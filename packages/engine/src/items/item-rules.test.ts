@@ -12,7 +12,12 @@ describe('reviewed matching rules', () => {
     expect(base.synonyms['running on the track']).toBeUndefined();
     expect(applyItemRules(base,[{keyword:'jog',item_id:'a',action:'disable',revision:2}]).synonyms.jog).toBeUndefined();
     expect(applyItemRules(base,[{keyword:'jog',item_id:'a',action:'reset',revision:3}]).synonyms.jog).toBe('a');
-    expect(applyItemRules(base,[{keyword:'running',item_id:'a',action:'enable',revision:4}]).synonyms.running).toBeUndefined();
+    expect(applyItemRules(base,[{keyword:'running',item_id:'a',action:'enable',revision:4}]).synonyms.running).toBe('a');
+    expect(applyItemRules(base,[{keyword:'jog',item_id:'a',action:'never',revision:5}]).synonyms.jog).toBeUndefined();
+    expect(applyItemRules(base,[
+      {keyword:'jog',item_id:'a',action:'never',revision:5},
+      {keyword:'jog',item_id:'a',action:'reset',revision:6},
+    ]).synonyms.jog).toBe('a');
   });
   it('records all accepted keyword rules, never a negated match', () => {
     const dict = {...base,synonyms:{jog:'a',jogging:'a'}};

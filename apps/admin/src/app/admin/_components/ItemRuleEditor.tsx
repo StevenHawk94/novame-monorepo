@@ -50,6 +50,7 @@ export default function ItemRuleEditor() {
   const [selected, setSelected] = useState<DetailResponse|null>(null);
   const [ruleQuery, setRuleQuery] = useState('');
   const [newPhrase, setNewPhrase] = useState('');
+  const [newTriggerMode, setNewTriggerMode] = useState<'AUTO'|'NEVER_AUTO'>('AUTO');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -82,13 +83,13 @@ export default function ItemRuleEditor() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load icon rules.'); }
   }
 
-  async function mutate(action:'add'|'delete'|'restore', keyword:string) {
+  async function mutate(action:'add'|'delete'|'restore', keyword:string, triggerMode?:'AUTO'|'NEVER_AUTO') {
     if (!selected || busy) return;
     if (action === 'delete' && !window.confirm(`Stop “${keyword}” from matching ${selected.item.displayName}? This is reversible.`)) return;
     setBusy(true); setError('');
     try {
       await apiClient.patch('/api/admin/item-catalog', {
-        action, keyword, itemId:selected.item.itemId, revision:selected.revision,
+        action, keyword, triggerMode, itemId:selected.item.itemId, revision:selected.revision,
       });
       const refreshed = await apiClient.get<DetailResponse>(`/api/admin/item-catalog?itemId=${encodeURIComponent(selected.item.itemId)}`);
       setSelected(refreshed);
@@ -104,7 +105,7 @@ export default function ItemRuleEditor() {
 
   return <section className="space-y-4">
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-      <strong>Live rule editor.</strong> Additions publish as reviewed <code>AUTO / Phrase</code> rules and reach existing apps through the same dynamic rule feed. Single words and catalogued <code>NEVER_AUTO</code> phrases are blocked. Deleting creates a reversible override; it does not erase the source workbook.
+      <strong>Live rule editor.</strong> Add reviewed <code>AUTO</code> or <code>NEVER_AUTO</code> rules for a word or phrase. Rules reach compatible apps through the same dynamic feed. Catalogued <code>NEVER_AUTO</code> rules cannot be overridden as AUTO here. Deleting creates a reversible override; it does not erase the source workbook.
     </div>
     <div className="flex flex-col md:flex-row gap-3">
       <input aria-label="Search icons" className="border rounded-lg px-3 py-2 flex-1" value={query}
@@ -145,16 +146,18 @@ export default function ItemRuleEditor() {
         </header>
         <div className="overflow-y-auto p-4 space-y-5">
           <section className="rounded-xl border bg-slate-50 p-4 space-y-3">
-            <h4 className="font-bold">Add a safe phrase</h4>
-            <p className="text-sm text-gray-600">At least two words. It becomes active immediately as <strong>AUTO / Phrase</strong>; punctuation and capitalization are normalized before publishing.</p>
-            <div className="flex gap-2"><input className="min-w-0 flex-1 rounded border bg-white px-3 py-2" value={newPhrase} onChange={e => setNewPhrase(e.target.value)} placeholder="e.g. grabbed an iced coffee" />
-              <button className="rounded bg-amber-900 px-4 py-2 text-white disabled:opacity-40" disabled={busy || newPhrase.trim().split(/\s+/).length < 2} onClick={() => void mutate('add', newPhrase)}>Add</button></div>
+            <h4 className="font-bold">Add a reviewed rule</h4>
+            <p className="text-sm text-gray-600">Enter one word or a phrase, then choose whether it should match automatically or never match this icon. Punctuation and capitalization are normalized before publishing.</p>
+            <div className="flex flex-col sm:flex-row gap-2"><input className="min-w-0 flex-1 rounded border bg-white px-3 py-2" value={newPhrase} onChange={e => setNewPhrase(e.target.value)} placeholder="e.g. brunch or grabbed an iced coffee" />
+              <select aria-label="Trigger mode" className="rounded border bg-white px-3 py-2" value={newTriggerMode} onChange={e => setNewTriggerMode(e.target.value as 'AUTO'|'NEVER_AUTO')}><option value="AUTO">AUTO</option><option value="NEVER_AUTO">NEVER_AUTO</option></select>
+              <button className="rounded bg-amber-900 px-4 py-2 text-white disabled:opacity-40" disabled={busy || !/[a-z0-9]/i.test(newPhrase)} onClick={() => void mutate('add', newPhrase, newTriggerMode)}>Add</button></div>
           </section>
           <section className="space-y-3">
             <div className="flex gap-3 items-center"><h4 className="font-bold flex-1">Current rules ({selected.item.rules.length})</h4><input className="rounded border px-3 py-1.5 text-sm w-52" value={ruleQuery} onChange={e => setRuleQuery(e.target.value.toLowerCase())} placeholder="Filter keywords…" /></div>
             <div className="space-y-2">{filteredRules.map(rule => <article key={`${rule.keyword}:${rule.triggerMode}`} className="rounded-lg border p-3 flex gap-3 items-start">
               <div className="min-w-0 flex-1"><div className="font-medium break-words">{rule.keyword}</div><div className="mt-1 flex flex-wrap gap-1.5 text-[11px]"><span className={`rounded-full px-2 py-0.5 font-bold ${MODE_STYLE[rule.triggerMode]}`}>{rule.triggerMode}</span><span className="rounded-full bg-blue-50 text-blue-800 px-2 py-0.5">{rule.keywordType}</span><span className="rounded-full bg-gray-100 px-2 py-0.5">{rule.source}</span></div>{rule.exclusions.length > 0 && <p className="mt-2 text-xs text-gray-600">Excluded when: {rule.exclusions.join(' · ')}</p>}</div>
               {rule.active && <button className="shrink-0 rounded border border-red-200 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50" disabled={busy} onClick={() => void mutate('delete', rule.keyword)}>Delete</button>}
+              {!rule.active && rule.triggerMode === 'NEVER_AUTO' && rule.source === 'ADMIN' && <button className="shrink-0 rounded border px-3 py-1.5 text-xs" disabled={busy} onClick={() => void mutate('restore', rule.keyword)}>Remove rule</button>}
             </article>)}{!filteredRules.length && <p className="text-sm text-gray-500">No matching rules.</p>}</div>
           </section>
           {selected.item.disabledRules.length > 0 && <section className="space-y-3"><h4 className="font-bold">Disabled in Admin ({selected.item.disabledRules.length})</h4>

@@ -96,6 +96,17 @@ export function buildAdminItemCatalog({ remoteManifest, snapshot, publicUrl = ''
     }
   }
 
+  for (const rule of snapshot.rules || []) {
+    if (rule.action !== 'never' || !effective.items[rule.item_id]) continue;
+    const keyword = normalizeItemKeyword(rule.keyword);
+    addRule(rulesByItem, rule.item_id, {
+      keyword,
+      triggerMode: 'NEVER_AUTO',
+      keywordType: keyword.includes(' ') ? 'Phrase' : 'Word',
+      exclusions: [], source: 'ADMIN', active: false,
+    });
+  }
+
   const disabledByItem = new Map();
   for (const rule of snapshot.rules || []) {
     if (rule.action !== 'disable') continue;

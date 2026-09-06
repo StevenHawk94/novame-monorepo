@@ -17,8 +17,7 @@ function reviewErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Review failed. Refresh and try again.';
 }
 function canPublishKeyword(row: Candidate): boolean {
-  const words = (row.source_phrase || '').trim().split(/\s+/).filter(Boolean);
-  return row.evidence_version === 2 && words.length > 1 && !row.bare_word_disabled;
+  return row.evidence_version === 2 && Boolean((row.source_phrase || '').trim());
 }
 export default function ItemsTab() {
   const [view, setView] = useState<'rules'|'suggestions'|'publisher'>('rules');
@@ -51,13 +50,13 @@ export default function ItemsTab() {
       <div className="space-y-3 max-h-[600px] overflow-auto">{rows.map(row => {
         const keywordPublishable = kind !== 'missing_keyword' || canPublishKeyword(row);
         return <article key={row.id} className="rounded border p-3 space-y-2">
-        <div className="font-semibold">Icon Name: {row.suggested_icon_name || row.concept}{row.bare_word_disabled ? ' ★' : ''}</div>
+        <div className="font-semibold">Icon Name: {row.suggested_icon_name || row.concept}</div>
         <div className="break-words">User Input: <strong>{row.source_phrase || '(legacy suggestion: no verified source phrase)'}</strong></div>
         <div className="text-xs text-gray-500">{row.occurrence_count} reflections · {row.status}</div>
         {kind === 'missing_keyword' && <label className="block text-xs">Target item ID<input className="block border rounded p-2 w-full text-sm" value={targets[row.id] ?? row.suggested_item_id ?? ''} onChange={e => setTargets(old => ({...old,[row.id]:e.target.value}))}/></label>}
-        {kind === 'missing_keyword' && !keywordPublishable && <p className="text-xs text-amber-800">Dynamic AUTO rules require a safe contextual multi-word phrase. Add one directly in Icon Rule Editor, or reject this suggestion.</p>}
+        {kind === 'missing_keyword' && !keywordPublishable && <p className="text-xs text-amber-800">A verified source keyword is required. Add one directly in Icon Rule Editor, or reject this suggestion.</p>}
         {['pending','approved'].includes(row.status) && <div className="flex gap-2 flex-wrap">
-          {(kind === 'missing_keyword' || row.status === 'pending') && <button className={button} disabled={busy || !keywordPublishable} onClick={() => void act(kind === 'missing_keyword' ? 'publish' : 'approve-icon', row, targets[row.id] ?? row.suggested_item_id)}>{kind === 'missing_keyword' ? (keywordPublishable ? 'Approve → AUTO / Phrase' : 'Needs contextual phrase') : 'Add to icon backlog'}</button>}
+          {(kind === 'missing_keyword' || row.status === 'pending') && <button className={button} disabled={busy || !keywordPublishable} onClick={() => void act(kind === 'missing_keyword' ? 'publish' : 'approve-icon', row, targets[row.id] ?? row.suggested_item_id)}>{kind === 'missing_keyword' ? (keywordPublishable ? 'Approve → AUTO' : 'Needs verified keyword') : 'Add to icon backlog'}</button>}
           <button disabled={busy} className="border rounded px-3 py-2" onClick={() => void act('reject',row)}>Reject</button>
         </div>}
       </article>})}{!rows.length && <p className="text-gray-500">No records.</p>}</div></section>;
@@ -72,7 +71,7 @@ export default function ItemsTab() {
     {view === 'rules' && <ItemRuleEditor />}
     {view === 'publisher' && <ItemPublisher />}
     {view === 'suggestions' && <>
-    <section className="rounded-lg border bg-white p-4 space-y-3"><p className="text-sm text-gray-600">Short source phrases only, never full journals. ★ = icon has a disabled ambiguous bare word. Approval changes matching rules, not existing memories. Missing Icons still need an actual asset/catalog release.</p>
+    <section className="rounded-lg border bg-white p-4 space-y-3"><p className="text-sm text-gray-600">Only the verified source keyword is shown, never a full journal. Admin approval may publish a word or phrase as AUTO; reviewed NEVER_AUTO rules still block it. Approval changes matching rules, not existing memories. Missing Icons still need an actual asset/catalog release.</p>
       <div className="flex gap-3 items-center flex-wrap"><select className="border rounded p-2" value={status} onChange={e => setStatus(e.target.value)}>{['pending','approved','published','rejected','all'].map(s => <option key={s}>{s}</option>)}</select>
         <button className="border rounded p-2" disabled={busy} onClick={() => {setError('');void load();}}>Refresh</button><a className="underline" href="/api/admin/item-learning?export=1">Export reviewed rules</a><span className="text-sm">Revision {data?.snapshot.revision ?? '…'}</span></div></section>
     {error && <p role="alert" className="p-3 bg-red-50 text-red-800 rounded">{error}</p>}
