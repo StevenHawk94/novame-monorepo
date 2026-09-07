@@ -60,6 +60,16 @@
       ],
       "expo-video",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "./plugins/with-android-r8-optimization",
+      [
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.966579113880-fd110tglqc5bnciu3nk9s3b6h87avuqm"
