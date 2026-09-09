@@ -328,7 +328,7 @@ export default function HomeScreen() {
               onPress={onReflect}
               style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
             >
-              <Text style={styles.entryText}>Reflect</Text>
+              <Text style={styles.entryText}>Journal</Text>
             </Pressable>
           </View>
 
@@ -341,8 +341,8 @@ export default function HomeScreen() {
           guide="memories"
           manual
           enabled={!homeEntry.pending && !!firstPartnerReflect}
-          title={`${firstPartnerReflect?.name ?? 'your person'} just reflected for the first time`}
-          body="Every reflection becomes a bubble of little moments. Pop one to see what’s inside."
+          title={`${firstPartnerReflect?.name ?? 'your person'} just journaled for the first time`}
+          body="Every journal entry becomes a bubble of little moments. Pop one to see what’s inside."
           button="Pop a Bubble"
           onDismiss={() => {
             if (firstPartnerReflect) {

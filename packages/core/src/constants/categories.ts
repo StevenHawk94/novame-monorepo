@@ -24,7 +24,7 @@ export const CATEGORIES: readonly string[] = [
 ]
 
 export const WISDOM_DIMENSIONS: readonly string[] = [
-  'Reflection',
+  'Journaling',
   'Resilience',
   'Empathy',
   'Vision',

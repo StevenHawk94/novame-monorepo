@@ -241,10 +241,10 @@ function ConsentSurface({
         </Text>
         <View style={styles.detailCard}>
           <Text style={styles.detailText}>
-            This includes events such as first launch, completing onboarding, your first reflection, and starting a trial.
+            This includes events such as first launch, completing onboarding, your first journal entry, and starting a trial.
           </Text>
           <Text style={styles.detailText}>
-            We never send your reflection content, messages, name, email, or friend information to Meta.
+            We never send your journal content, messages, name, email, or friend information to Meta.
           </Text>
         </View>
         <Pressable accessibilityRole="button" onPress={onAllow} style={styles.allowButton}>

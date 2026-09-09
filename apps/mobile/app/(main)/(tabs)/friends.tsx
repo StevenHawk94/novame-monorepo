@@ -278,13 +278,13 @@ export default function FriendsScreen() {
     }
     if (!e.sharesDetails) {
       void haptics.light();
-      appAlert('This Reflect is Private.', 'Your friend keeps the words to themselves — the items are the message.');
+      appAlert('This Journal is Private.', 'Your friend keeps the words to themselves — the items are the message.');
       return;
     }
     const memories = (e.details ?? []).filter((detail) => detail.text.trim().length > 0);
     if (memories.length === 0) {
       void haptics.light();
-      appAlert('No memories created in this reflection.');
+      appAlert('No memories created in this journal entry.');
       return;
     }
     void haptics.pageOpen();
@@ -379,7 +379,7 @@ export default function FriendsScreen() {
                       style={styles.emptyFeedIcon}
                       resizeMode="contain"
                     />
-                    <Text style={styles.emptyFeedText}>Your person do not reflect anything yet.</Text>
+                    <Text style={styles.emptyFeedText}>Your person hasn&apos;t journaled anything yet.</Text>
                   </View>
                 ) : (
                   shownFeed.map((e, feedIndex) => (
@@ -590,7 +590,7 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
   const choices: { mode: MemoryDetailsMode; label: string }[] = [
     { mode: 'all', label: 'Show all details' },
     { mode: 'none', label: 'Hide all details' },
-    { mode: 'custom', label: 'Based on each reflection setting' },
+    { mode: 'custom', label: 'Based on each journal setting' },
   ];
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

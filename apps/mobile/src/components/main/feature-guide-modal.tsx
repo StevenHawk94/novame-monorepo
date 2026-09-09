@@ -37,7 +37,7 @@ const GUIDES: Record<FeatureGuideId, GuideCopy> = {
   reflect: {
     title: 'YOUR DAY, NOW COLLECTIBLE',
     body: 'Write what happened, or tap your keyboard mic to voice typing. Items appear as you go, giving your person a glimpse while the full story stays private.',
-    button: 'Let’s Reflect',
+    button: 'Let’s Journal',
     icon: ICONS.reflectEntry3,
   },
   focus: {
@@ -54,7 +54,7 @@ const GUIDES: Record<FeatureGuideId, GuideCopy> = {
   },
   connection: {
     title: 'PRIVATE BY DESIGN. CLOSER BY CHOICE.',
-    body: 'Both of your full reflections stay private. Burrow surfaces only high-level patterns to help you understand each other—without revealing anyone’s private words.',
+    body: 'Both of your full journal entries stay private. Burrow surfaces only high-level patterns to help you understand each other—without revealing anyone’s private words.',
     button: 'See the Connection',
     icon: ICONS.guideConnection,
   },
@@ -72,7 +72,7 @@ const GUIDES: Record<FeatureGuideId, GuideCopy> = {
   },
   quests: {
     title: 'GIVE YOUR WEEK SOME PLOT',
-    body: 'Set one weekly goal, take on bite-sized Quests, and give your days something new to reflect on.',
+    body: 'Set one weekly goal, take on bite-sized Quests, and give you something new to journal about.',
     button: 'Start a Quest',
     icon: ICONS.guideQuests,
   },

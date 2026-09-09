@@ -65,7 +65,7 @@ export default function ReflectEntryScreen() {
     {
       key: 'typing',
       title: 'Write Freely',
-      text: 'Reflect in your own words.',
+      text: 'Journal in your own words.',
       icon: ICONS.reflectEntry1,
       route: '/(main)/reflect-typing' as const,
     },
@@ -93,7 +93,7 @@ export default function ReflectEntryScreen() {
           <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
           </Pressable>
-          <Text style={styles.lead}>How would you like to reflect?</Text>
+          <Text style={styles.lead}>How would you like to journal?</Text>
           <Text style={styles.leadSub}>Pick a way.</Text>
           {ways.map((w) => (
             <OffsetCard

@@ -513,7 +513,7 @@ export default function MeScreen() {
                     </View>
                     <Text style={styles.confirmTitle}>Unpair from {pairing.partner.displayName}?</Text>
                     <Text style={styles.confirmBody}>
-                      Are you sure you want to end this pairing? After unpairing, you will no longer be able to view any of their memory items, reflections, or connection information.
+                      Are you sure you want to end this pairing? After unpairing, you will no longer be able to view any of their memory items, journal entries, or connection information.
                     </Text>
                     <Text style={styles.confirmInstruction}>Type Confirm below to continue.</Text>
                     <TextInput

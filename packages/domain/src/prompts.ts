@@ -29,7 +29,7 @@ export interface ReflectPrompt {
 }
 
 export const REFLECT_PROMPTS: readonly ReflectPrompt[] = [
-  { id: 1, dimension: 'momentum',   title: 'Journalling',     text: 'Capture what happened in your day.' },
+  { id: 1, dimension: 'momentum',   title: 'Capture My Day',  text: 'Capture what happened in your day.' },
   { id: 2, dimension: 'connection', title: 'Someone',         text: 'A moment I shared with someone.' },
   { id: 3, dimension: 'expression', title: 'Feeling',         text: 'A feeling I noticed today.' },
   { id: 4, dimension: 'awareness',  title: 'Learning',        text: 'Something today taught me about myself.' },
@@ -37,7 +37,7 @@ export const REFLECT_PROMPTS: readonly ReflectPrompt[] = [
   { id: 6, dimension: 'direction',  title: 'Realization',     text: 'Something I see differently now.' },
   { id: 7, dimension: 'steadiness', title: 'Challenge',       text: 'Something that challenged me today.' },
   { id: 8, dimension: 'gratitude',  title: 'Appreciation',    text: 'A small moment worth appreciating.' },
-  { id: 9, dimension: null,         title: 'Open Reflection', text: "Write whatever's here right now." },
+  { id: 9, dimension: null,         title: 'Open Journal',    text: "Write whatever's here right now." },
 ];
 
 /** The prompt dimension for a given prompt_id, or null (free-form / bad id). */

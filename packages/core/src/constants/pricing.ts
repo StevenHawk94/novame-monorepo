@@ -41,7 +41,7 @@ export const PRICING_TIERS: Record<PricingTierKey, PricingTier> = {
     maxSecondsPerRecord: 300,
     dailyRecordSeconds: 300,
     dailyTypeChars: 2000,
-    features: ['Rule-based reflections', 'Collect items', 'Your companion'],
+    features: ['Rule-based journaling', 'Collect items', 'Your companion'],
   },
   plus: {
     name: 'Plus',

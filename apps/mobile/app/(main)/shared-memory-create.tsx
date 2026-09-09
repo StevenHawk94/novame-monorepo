@@ -49,7 +49,7 @@ import {
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
-  daily_limit: "You've reflected 3 times today. Rest up — come back tomorrow.",
+  daily_limit: "You've journaled 3 times today. Rest up — come back tomorrow.",
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',
@@ -248,7 +248,7 @@ export default function SharedMemoryCreateScreen() {
                   { marginBottom: insets.bottom + 12 },
                 ]}
               >
-                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.createText}>Save Reflection</Text>}
+                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.createText}>Save Journal</Text>}
               </Pressable>
             </View>
           )}

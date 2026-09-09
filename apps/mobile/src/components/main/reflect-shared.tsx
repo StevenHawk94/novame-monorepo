@@ -345,7 +345,7 @@ export function ReflectResultView({
       </View>
       <ScrollView style={s.resultScroller} contentContainerStyle={s.resultScroll} showsVerticalScrollIndicator={false}>
         <Text style={s.resultEmoji}>{'🎉'}</Text>
-        <Text style={s.resultTitle}>Reflection Done</Text>
+        <Text style={s.resultTitle}>Journal Done</Text>
 
         <SpringPop boundedBounce>
           <View style={s.cloverCard}>

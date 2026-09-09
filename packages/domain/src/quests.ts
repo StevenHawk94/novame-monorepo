@@ -172,7 +172,7 @@ export const QUEST_THEMES: QuestTheme[] = [
       'Let go of a worry instead of dwelling on it', 'Took a mindful walk, noticing your senses',
       'Practiced self-compassion instead of self-criticism', 'Set an intention for the day',
       'Took a break from screens to just be present', 'Ate a meal mindfully, without distractions',
-      'Reflected on your day before bed', 'Practiced patience in a frustrating moment',
+      'Journaled about your day before bed', 'Practiced patience in a frustrating moment',
       'Did a breathing exercise before sleep', 'Checked in with how you’re feeling today',
     ],
   },

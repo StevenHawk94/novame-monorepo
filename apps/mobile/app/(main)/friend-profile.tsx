@@ -105,7 +105,7 @@ export default function FriendProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {entries.length === 0 ? (
-          <Text style={styles.empty}>Nothing here yet — their memory items will show up as they reflect.</Text>
+          <Text style={styles.empty}>Nothing here yet — their memory items will show up as they journal.</Text>
         ) : (
           entries.map((e) => (
             <View key={e.reflectId} style={styles.entryCard}>

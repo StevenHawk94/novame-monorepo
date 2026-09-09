@@ -156,7 +156,7 @@ export default function ReflectGuidedScreen() {
           {remaining <= 0 && phase !== 'result' ? (
             <View style={styles.center}>
               <Text style={styles.title}>That’s three for today</Text>
-              <Text style={styles.hint}>You&apos;ve reflected 3 times today. Rest up — come back tomorrow.</Text>
+              <Text style={styles.hint}>You&apos;ve journaled 3 times today. Rest up — come back tomorrow.</Text>
             </View>
           ) : phase === 'steps' ? (
             <View style={{ flex: 1 }}>
@@ -208,7 +208,7 @@ export default function ReflectGuidedScreen() {
               <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={() => void onSubmit()}
                 disabled={submitting || selected.size === 0}
                 style={{ marginTop: 20, opacity: submitting || selected.size === 0 ? 0.55 : 1 }} cardStyle={styles.yellowBtn}>
-                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.yellowBtnText}>Save Reflection</Text>}
+                {submitting ? <ActivityIndicator color={RC.ink} /> : <Text style={styles.yellowBtnText}>Save Journal</Text>}
               </OffsetCard>
             </ScrollView>
           ) : preparedDraft && (
@@ -225,7 +225,7 @@ export default function ReflectGuidedScreen() {
       {addOpen && <CustomTapItemSheet question={question} onClose={() => setAddOpen(false)} onSave={item => {
         custom.save(item); requestKey.current = null;
         if (!selected.has(item.itemId) && selected.size >= MAX_TAP_YOUR_DAY_SELECTIONS) {
-          setToast(`Saved. You can select up to ${MAX_TAP_YOUR_DAY_SELECTIONS} items per reflection.`);
+          setToast(`Saved. You can select up to ${MAX_TAP_YOUR_DAY_SELECTIONS} items per journal.`);
           if (toastTimer.current) clearTimeout(toastTimer.current);
           toastTimer.current = setTimeout(() => setToast(null), 2200);
           return;

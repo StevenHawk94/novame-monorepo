@@ -44,7 +44,7 @@ import { MatchedItemsReviewSheet, ReflectSettlementView } from '../../src/compon
 const MAX_CHARS = 5000;
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
-  daily_limit: "You've reflected 3 times today. Rest up — come back tomorrow.",
+  daily_limit: "You've journaled 3 times today. Rest up — come back tomorrow.",
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',
@@ -179,7 +179,7 @@ export default function ReflectTypingScreen() {
             </View>
           ) : phase === 'pick' ? (
             <ScrollView contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.lead}>What would you like to reflect on?</Text>
+              <Text style={styles.lead}>What&apos;s on your mind to journal today?</Text>
               <Text style={styles.leadSub}>Pick a moment.</Text>
               {REFLECT_PROMPTS.map((p) => (
                 <OffsetCard
@@ -217,8 +217,8 @@ export default function ReflectTypingScreen() {
                 <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
               </View>
 
-              {/* Live match bar (mock: "Items matched from your reflection") */}
-              <Text style={styles.matchLabel}>Items matched from your reflection</Text>
+              {/* Live match bar. */}
+              <Text style={styles.matchLabel}>Items matched from your journal</Text>
               <Pressable
                 onPress={() => {
                   if (shownMatches.length > 0) {
@@ -253,7 +253,7 @@ export default function ReflectTypingScreen() {
                 {submitting ? (
                   <ActivityIndicator color={RC.ink} />
                 ) : (
-                  <Text style={styles.yellowBtnText}>Save Reflection</Text>
+                  <Text style={styles.yellowBtnText}>Save Journal</Text>
                 )}
               </OffsetCard>
             </View>

@@ -189,10 +189,10 @@ export default function ReflectDetailScreen() {
           )}
           {entry ? (
             <Text style={styles.body}>
-              {entry.body.trim() || 'You did not write anything for this reflection.'}
+              {entry.body.trim() || 'You did not write anything for this journal entry.'}
             </Text>
           ) : (
-            <Text style={styles.body}>This reflection is no longer available.</Text>
+            <Text style={styles.body}>This journal entry is no longer available.</Text>
           )}
         </View>
 

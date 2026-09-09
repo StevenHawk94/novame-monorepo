@@ -274,7 +274,7 @@ export default function ConnectionDashboardScreen() {
           </Text>
           <Text style={st.subtitle}
             numberOfLines={Platform.OS === 'android' ? undefined : 2}>
-            The little things tell a bigger story.
+            Real-time insight to keep you close
           </Text>
         </View>
         <OffsetCard
@@ -357,7 +357,7 @@ export default function ConnectionDashboardScreen() {
               </Pressable>
             ) : !hasAnyContent ? (
               <Text style={st.emptyIntro}>
-                These spaces will fill in naturally when their reflections offer enough context.
+                These spaces will fill in naturally when their journal entries offer enough context.
               </Text>
             ) : null}
 

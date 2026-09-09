@@ -20,7 +20,7 @@ const BROWN = '#4A3220';
 const CREAM = '#FFF7E8';
 
 const V1_BENEFITS = [
-  'Better memories organization for every reflection.',
+  'Better memories organization for every journal entry.',
   'Know when to reach out, and when to give them space',
   'Understand whether they need comfort, encouragement, or someone to listen',
   'Take better care of yourself, and create more moments worth remembering and sharing.',
@@ -136,7 +136,7 @@ export default function ReflectionPlusPaywallModal() {
 
             <View style={styles.column}>
               <View style={styles.plusBadge}><Text style={styles.plusBadgeText}>Plus</Text></View>
-              <Text style={styles.columnCaption}>Auto Summarize Reflections into Memories</Text>
+              <Text style={styles.columnCaption}>Auto Summarize Journal Entries into Memories</Text>
               <View style={styles.itemCard}>
                 <ExpoImage
                   source={PARK_ICON}

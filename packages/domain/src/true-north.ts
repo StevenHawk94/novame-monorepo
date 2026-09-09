@@ -47,7 +47,7 @@ export function trueNorthGemHits(
  */
 export const TRUE_NORTH_FOCUS_POINTS: Record<DimensionId, string[]> = {
   expression: ['Speaking honestly', 'Sharing your thoughts', 'Being heard', 'Hard conversations', 'Saying no clearly', 'Finding your voice', 'Emotional honesty', 'Standing by your words', 'Asking for what you need', 'Telling your story'],
-  awareness: ['Understanding yourself', 'Noticing patterns', 'Quiet self-check-ins', 'Naming feelings', 'Untangling thoughts', 'Honest reflection', 'Catching spirals early', 'Seeing both sides', 'Slowing down to look', 'Learning from your days'],
+  awareness: ['Understanding yourself', 'Noticing patterns', 'Quiet self-check-ins', 'Naming feelings', 'Untangling thoughts', 'Honest journaling', 'Catching spirals early', 'Seeing both sides', 'Slowing down to look', 'Learning from your days'],
   momentum: ['Completing important tasks', 'Building momentum', 'Making progress', 'Career growth', 'Time management', 'Deep work', 'Creating results', 'Overcoming procrastination', 'Taking action', 'Staying consistent'],
   direction: ['Knowing what you want', 'Setting a course', 'Choosing priorities', 'Long-term goals', 'Meaningful work', 'Saying no to drift', 'Planning next steps', 'Living by your values', 'Future you', 'Purpose over noise'],
   steadiness: ['Staying calm under pressure', 'Grounding routines', 'Steady breathing', 'Weathering hard days', 'Emotional balance', 'Rest without guilt', 'Slow mornings', 'Letting waves pass', 'Keeping your footing', 'A quiet center'],

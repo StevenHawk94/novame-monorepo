@@ -601,7 +601,7 @@ export default function OnboardingScreen() {
         <OnboardingPage id="how" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
-            <Text style={styles.h1}>A few minutes of reflection becomes something you can share.</Text>
+            <Text style={styles.h1}>A few minutes of journaling becomes something you can share.</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
               Burrow turns the parts you choose into adorable memory items, creating a shared space
               that grows with both of you.
@@ -609,7 +609,7 @@ export default function OnboardingScreen() {
             {/* expo-image plays and loops animated GIFs natively. */}
             <OnboardingImage animated source={ICONS.obHowItWorksGif} style={styles.howGif} contentFit="cover" />
             <Text style={[styles.privacySmall, { marginTop: 16 }]}>
-              Reflect privately. Share selectively. Stay connected naturally.
+              Journal privately. Share selectively. Stay connected naturally.
             </Text>
             <View style={{ flex: 1 }} />
             <Btn label="Continue" onPress={next} />
@@ -637,7 +637,7 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>The little things tell a bigger story</Text>
             <Text style={[styles.body, { marginTop: 20 }]}>
-              Turns everyday reflections into moments worth noticing, natural ways to reach out,
+              Turns everyday journal entries into moments worth noticing, natural ways to reach out,
               and playful patterns between you.
             </Text>
             <ScrollView
@@ -692,7 +692,7 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1 }} />
             <Text style={styles.h1}>Close doesn&apos;t have to mean exposed.</Text>
             <Text style={styles.boundaryIntro}>
-              Your reflections begin privately.{'\n'}
+              Your journal entries begin privately.{'\n'}
               You decide what enters your shared space.
             </Text>
             <View style={styles.boundaryVisualWrap}>
@@ -732,7 +732,7 @@ export default function OnboardingScreen() {
                   help someone else avoid the same regret.
                 </Text>
                 <Text style={[styles.creatorBody, { marginTop: 14 }]}>
-                  Burrow is a private space for two. You reflect separately, keep your private words
+                  Burrow is a private space for two. You journal separately, keep your private words
                   private, and share the small moments that feel right. They become little glimpses
                   into each other’s days, without making either of you explain everything in busy
                   day, and with real time insights about when and how to reach out or simply give
@@ -892,7 +892,7 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1, minHeight: 24 }} />
               <Text style={styles.h1}>Name your bunny.</Text>
               <Text style={[styles.body, { marginTop: 12 }]}>
-                They&apos;ll help you reflect, remember, and stay close to your person.
+                They&apos;ll help you journal, remember, and stay close to your person.
               </Text>
               <OnboardingImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
               <TextInput

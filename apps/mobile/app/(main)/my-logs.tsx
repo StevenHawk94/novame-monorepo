@@ -72,7 +72,7 @@ export default function MyLogsScreen() {
           <MaterialIcons name="arrow-back" size={24} color="#FFF6E8" />
         </Pressable>
         <Image source={ICONS.sharedMemories} style={styles.headerIcon} resizeMode="contain" />
-        <Text style={styles.title} numberOfLines={1}>Reflect Feed</Text>
+        <Text style={styles.title} numberOfLines={1}>Journal Feed</Text>
         <Pressable onPress={() => { void haptics.pageOpen(); setCalOpen(true); }} style={styles.byDatePill}>
           <Text style={styles.byDateText} numberOfLines={1}>{pillLabel}</Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color="#4A3423" />
@@ -86,7 +86,7 @@ export default function MyLogsScreen() {
       ) : entries.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>{'\u{1F4D6}'}</Text>
-          <Text style={styles.emptyText}>Your reflections will gather here, one day at a time.</Text>
+          <Text style={styles.emptyText}>Your journal entries will gather here, one day at a time.</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

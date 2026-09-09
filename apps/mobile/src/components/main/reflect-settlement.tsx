@@ -445,7 +445,7 @@ export function ReflectSettlementView({
             ? 'Burrow Plus required'
             : 'Could not save that',
         result.error === 'daily_limit'
-          ? "You've reflected 3 times today. Rest up — come back tomorrow."
+          ? "You've journaled 3 times today. Rest up — come back tomorrow."
           : result.error === 'plus_required'
             ? 'Restore or renew Plus to finish this Shared Memory.'
             : 'Please check your connection and try again.',
@@ -485,8 +485,8 @@ export function ReflectSettlementView({
           )}
         </View>
         <Text style={styles.celebration}>🎉</Text>
-        <Text style={styles.savedTitle}>REFLECTION SAVED</Text>
-        <Text style={styles.savedSub}>Your full reflection is private in My Logs.</Text>
+        <Text style={styles.savedTitle}>JOURNAL SAVED</Text>
+        <Text style={styles.savedSub}>Your full journal entry is private in My Logs.</Text>
 
         <View style={styles.summaryRegion}>
         <SpringPop boundedBounce>
@@ -523,7 +523,7 @@ export function ReflectSettlementView({
         <View style={[styles.settlementFooter, shared && styles.sharedSettlementFooter]}>
           {!isPaid && (
             <View style={styles.upgradeActions}>
-              <Text style={styles.joinCopy}>You can join Plus to turn reflections into memories automatically.</Text>
+              <Text style={styles.joinCopy}>You can join Plus to turn journal entries into memories automatically.</Text>
               <OffsetCard
                 color={RC.yellowDrop}
                 offset={4}

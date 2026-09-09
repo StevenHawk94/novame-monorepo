@@ -332,10 +332,10 @@ export default function BagsScreen() {
   }
 
   function emptyCopy(): string {
-    if (tab === 'mine') return 'Start reflecting and collecting the little things in your days.';
+    if (tab === 'mine') return 'Start journaling and collecting the little things in your days.';
     if (tab === 'their') {
       return partner
-        ? "They haven't reflect anything yet."
+        ? "They haven't journaled anything yet."
         : 'Pair with someone now and start seeing their little moments.';
     }
     return partner
