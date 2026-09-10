@@ -515,6 +515,65 @@ export async function editReflectMemories(
   }
 }
 
+export type EditJournalEntryError = 'empty' | 'too_long' | 'not_found' | 'network';
+
+export type EditJournalEntryResult =
+  | {
+    ok: true;
+    body: string;
+    matchedItems: MatchedItem[];
+    memories: ReflectMemoryDraft[];
+    shared: boolean;
+  }
+  | { ok: false; error: EditJournalEntryError };
+
+/**
+ * Re-save one Journal Feed entry. Matching is deliberately server-owned: the
+ * supplied rule revision only selects the already-published dictionary, while
+ * the API returns the authoritative icons and Memory projection.
+ */
+export async function editJournalEntry(
+  reflectId: string,
+  body: string,
+  matchingVersion?: { catalog: string; revision: number; itemsVersion?: string },
+): Promise<EditJournalEntryResult> {
+  const normalizedBody = body.trim();
+  if (normalizedBody.length > 5000) return { ok: false, error: 'too_long' };
+  const { data: sess } = await supabase.auth.getSession();
+  const userId = sess.session?.user?.id;
+  if (!userId) return { ok: false, error: 'network' };
+  try {
+    const result = await apiClient.post<{
+      success?: boolean;
+      body?: string;
+      shared?: boolean;
+      matchedItems?: MatchedItem[];
+      memories?: ReflectMemoryDraft[];
+    }>('/api/reflect/edit-entry', {
+      userId,
+      reflectId,
+      body: normalizedBody,
+      matchingVersion,
+    });
+    if (!result.success) return { ok: false, error: 'network' };
+    reflectMemoryCache.delete(reflectMemoryCacheKey(userId, reflectId));
+    return {
+      ok: true,
+      body: result.body ?? normalizedBody,
+      matchedItems: result.matchedItems ?? [],
+      memories: result.memories ?? [],
+      shared: result.shared === true,
+    };
+  } catch (error) {
+    const code = error instanceof ApiError && typeof error.body === 'object' && error.body
+      && 'error' in error.body ? error.body.error : '';
+    if (code === 'empty' || code === 'too_long' || code === 'not_found') {
+      return { ok: false, error: code };
+    }
+    return { ok: false, error: 'network' };
+  }
+}
+
 export interface ReflectMemoryEditorData {
   shared: boolean;
   /** Optional for older servers; selected flows never support Use My Words. */

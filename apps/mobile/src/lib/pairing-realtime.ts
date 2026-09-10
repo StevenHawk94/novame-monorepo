@@ -264,11 +264,15 @@ export async function startPairingRealtime(
       })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;
+        const reflectId = message.payload?.reflect_id;
         if (typeof partnerUserId !== 'string' || !partnerUserId) return;
         // Treat broadcast payloads as invalidations, not authority. Only the
         // currently authenticated pairing may select which local cache moves.
         if (getCachedPairing()?.partner?.userId !== partnerUserId) return;
-        notifyRemoteSharedBoxChanged(partnerUserId);
+        notifyRemoteSharedBoxChanged(
+          partnerUserId,
+          typeof reflectId === 'string' && reflectId ? reflectId : undefined,
+        );
       })
       .subscribe((status) => {
         if (activeUserId !== userId || generation !== subscribedGeneration) return;

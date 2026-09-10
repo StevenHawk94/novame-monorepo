@@ -183,6 +183,7 @@ export default function SharedMemoryCreateScreen() {
                   if (snapshot.bubble) setReflectBubble(snapshot.bubble);
                   notifySharedBoxChanged(friendUserId, snapshot.sharedItems.map((item) => ({
                     ...item,
+                    reflectId: snapshot.reflectId,
                     emoji: '',
                   })));
                   void fetchReflectFeed({ force: true });

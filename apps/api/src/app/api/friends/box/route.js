@@ -60,7 +60,7 @@ export async function GET(request) {
 
     const [a, b] = pairOf(userId, friendUserId)
     let itemsQuery = supabase.from('shared_memory_items')
-        .select('id, author_user_id, item_id, description, source, created_at')
+        .select('id, author_user_id, item_id, description, source, reflect_id, created_at')
         .eq('user_a', a).eq('user_b', b)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })

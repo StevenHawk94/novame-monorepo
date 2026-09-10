@@ -32,6 +32,8 @@ interface ReflectFeedCache {
 const REFLECT_FEED_SCHEMA_VERSION = 2;
 const REFLECT_FEED_TTL_MS = 15 * 60 * 1000;
 let feedInflight: Promise<FeedDay[]> | null = null;
+let feedForcedFollowup: Promise<FeedDay[]> | null = null;
+let feedRevision = 0;
 
 function emojiFor(itemId: string): string {
   return mergedItemDictionary().items[itemId]?.emoji ?? '✨';
@@ -65,14 +67,47 @@ export function getCachedFeed(): FeedDay[] {
   return isCurrentCache(cached) ? cached.days : [];
 }
 
+/** Apply the edit receipt before navigation can reveal an older MMKV copy.
+ * fetchedAtMs=0 keeps the API authoritative on the next normal read. */
+export function patchCachedReflectEntry(
+  reflectId: string,
+  patch: { body: string; itemIds: string[]; hasMemories: boolean },
+): FeedDay[] {
+  const current = getCachedFeed();
+  const days = current.map((day) => {
+    if (!day.reflects.some((reflect) => reflect.id === reflectId)) return day;
+    const reflects = day.reflects.map((reflect) => reflect.id === reflectId
+      ? { ...reflect, ...patch }
+      : reflect);
+    const itemIds = reflects.flatMap((reflect) => reflect.itemIds);
+    return { ...day, reflects, itemIds, itemEmoji: itemIds.map(emojiFor) };
+  });
+  feedRevision += 1;
+  storage.set(kReflectFeed.name, JSON.stringify({
+    schemaVersion: REFLECT_FEED_SCHEMA_VERSION,
+    days,
+    fetchedAtMs: 0,
+  } satisfies ReflectFeedCache));
+  return days;
+}
+
 export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay[]> {
   const cached = readCache();
   const cacheIsCurrent = isCurrentCache(cached);
   if (!options?.force && cached && cacheIsCurrent && Date.now() - cached.fetchedAtMs < REFLECT_FEED_TTL_MS) {
     return Promise.resolve(cached.days);
   }
-  if (feedInflight) return feedInflight;
+  if (feedInflight) {
+    if (!options?.force) return feedInflight;
+    if (!feedForcedFollowup) {
+      feedForcedFollowup = feedInflight
+        .then(() => fetchReflectFeed({ force: true }))
+        .finally(() => { feedForcedFollowup = null; });
+    }
+    return feedForcedFollowup;
+  }
 
+  const requestRevision = feedRevision;
   feedInflight = (async () => {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
@@ -109,6 +144,8 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
         })),
         itemEmoji: d.itemIds.map(emojiFor),
       }));
+      // A local edit receipt supersedes any request that began before it.
+      if (requestRevision !== feedRevision) return getCachedFeed();
       // Do not turn an old API response without `mode` into a valid-looking
       // cache. Once the API is deployed, the next focus fetches the typed data
       // immediately instead of preserving the compatibility fallback for 15m.

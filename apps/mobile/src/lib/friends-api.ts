@@ -605,6 +605,7 @@ export interface SharedBoxItem {
   id: string;
   authorUserId: string;
   itemId: string;
+  reflectId?: string;
   emoji: string;
   description: string;
   source: 'manual' | 'reflect';
@@ -624,9 +625,12 @@ export interface SharedBoxResult {
 }
 
 interface SharedBoxCache {
+  version?: number;
   friendUserId: string;
   result: SharedBoxResult;
 }
+
+const SHARED_BOX_CACHE_VERSION = 2;
 
 export function getCachedSharedBox(friendUserId?: string): SharedBoxResult {
   const empty: SharedBoxResult = {
@@ -640,6 +644,7 @@ export function getCachedSharedBox(friendUserId?: string): SharedBoxResult {
   if (!raw) return empty;
   try {
     const cached = JSON.parse(raw) as SharedBoxCache;
+    if (cached.version !== SHARED_BOX_CACHE_VERSION) return empty;
     if (friendUserId && cached.friendUserId !== friendUserId) return empty;
     if (!cached.result || !Array.isArray(cached.result.items)) return empty;
     return {
@@ -675,7 +680,11 @@ function mergeSharedBoxItems(current: SharedBoxItem[], incoming: SharedBoxItem[]
 }
 
 function cacheSharedBox(friendUserId: string, result: SharedBoxResult): void {
-  storage.set(kSharedBoxState.name, JSON.stringify({ friendUserId, result } satisfies SharedBoxCache));
+  storage.set(kSharedBoxState.name, JSON.stringify({
+    version: SHARED_BOX_CACHE_VERSION,
+    friendUserId,
+    result,
+  } satisfies SharedBoxCache));
 }
 
 export function isSharedBoxCacheStale(friendUserId: string, maxAgeMs = SHARED_BOX_CACHE_MAX_AGE_MS): boolean {
@@ -690,7 +699,7 @@ interface SharedBoxWireResponse {
   hasMore?: boolean;
   nextBeforeCreatedAt?: string | null;
   nextBeforeId?: string | null;
-  items?: { id: string; author_user_id: string; item_id: string; description: string; source: 'manual' | 'reflect'; created_at: string }[];
+  items?: { id: string; author_user_id: string; item_id: string; reflect_id?: string; description: string; source: 'manual' | 'reflect'; created_at: string }[];
 }
 
 function mapSharedBoxRows(rows: NonNullable<SharedBoxWireResponse['items']>): SharedBoxItem[] {
@@ -698,6 +707,7 @@ function mapSharedBoxRows(rows: NonNullable<SharedBoxWireResponse['items']>): Sh
     id: row.id,
     authorUserId: row.author_user_id,
     itemId: row.item_id,
+    reflectId: row.reflect_id,
     emoji: emojiFor(row.item_id),
     description: row.description,
     source: row.source,
@@ -733,11 +743,12 @@ export function notifySharedBoxChanged(friendUserId: string, items: SharedBoxIte
  * five-minute TTL remains the delivery fallback; setting fetchedAt to zero
  * only makes the next Ours read refresh immediately after this explicit event.
  */
-export function notifyRemoteSharedBoxChanged(friendUserId: string): void {
+export function notifyRemoteSharedBoxChanged(friendUserId: string, reflectId?: string): void {
   if (!friendUserId) return;
   const cached = getCachedSharedBox(friendUserId);
   cacheSharedBox(friendUserId, {
     ...cached,
+    items: reflectId ? cached.items.filter((item) => item.reflectId !== reflectId) : cached.items,
     hasUnreadFromPartner: true,
     fetchedAt: 0,
   });
@@ -746,6 +757,21 @@ export function notifyRemoteSharedBoxChanged(friendUserId: string): void {
     items: [],
     forceRefresh: true,
   } satisfies SharedBoxChange;
+  for (const listener of sharedBoxChangeListeners) listener(change);
+}
+
+/** Evict one locally edited Remember Together projection without showing a
+ * false unread badge. The authoritative first page is fetched immediately by
+ * the mounted Memories tab, or on its next focus. */
+export function invalidateEditedSharedReflect(friendUserId: string, reflectId: string): void {
+  if (!friendUserId || !reflectId) return;
+  const cached = getCachedSharedBox(friendUserId);
+  cacheSharedBox(friendUserId, {
+    ...cached,
+    items: cached.items.filter((item) => item.reflectId !== reflectId),
+    fetchedAt: 0,
+  });
+  const change = { friendUserId, items: [], forceRefresh: true } satisfies SharedBoxChange;
   for (const listener of sharedBoxChangeListeners) listener(change);
 }
 
@@ -856,10 +882,7 @@ export async function markSharedBoxRead(friendUserId: string, readThrough: strin
     });
     if (data.success) {
       const cached = getCachedSharedBox(friendUserId);
-      storage.set(kSharedBoxState.name, JSON.stringify({
-        friendUserId,
-        result: { ...cached, hasUnreadFromPartner: false, readThrough },
-      } satisfies SharedBoxCache));
+      cacheSharedBox(friendUserId, { ...cached, hasUnreadFromPartner: false, readThrough });
     }
     return !!data.success;
   } catch { return false; }
@@ -1055,6 +1078,10 @@ export async function fetchCommonItems(): Promise<CommonItem[]> {
   } catch {
     return getCachedCommonItems();
   }
+}
+
+export function invalidateCommonItemsCache(): void {
+  storage.remove(kCommonItems.name);
 }
 
 export type ConnectionModuleKey =
