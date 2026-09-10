@@ -28,6 +28,15 @@ import {
 
 const DAILY_LIMIT = 3;
 
+export type JournalKind = 'write_freely' | 'tap_your_day' | 'remember_together';
+export type JournalEntryStatus = 'available' | 'in_progress' | 'completed';
+export type JournalEntryStates = Record<JournalKind, JournalEntryStatus>;
+const AVAILABLE_ENTRIES: JournalEntryStates = {
+  write_freely: 'available',
+  tap_your_day: 'available',
+  remember_together: 'available',
+};
+
 /** The snapshot /api/reflect returns; the client renders it directly. */
 export interface MatchedItem {
   itemId: string;
@@ -63,6 +72,7 @@ export interface PreparedReflect {
   bubble: string | null;
   isPaid: boolean;
   reflectsRemaining: number;
+  journalKind: JournalKind;
 }
 
 export interface SharedReflectItem {
@@ -89,6 +99,7 @@ export interface ReflectSnapshot {
 
 export type ReflectError =
   | 'daily_limit' // already reflected 3 times today
+  | 'journal_kind_used' // this Journal entry was already used today
   | 'companion_not_ready' // no companion row (should not happen post-onboarding)
   | 'too_long' // body over 5000 chars
   | 'empty' // nothing typed
@@ -109,6 +120,7 @@ export type PrepareResult =
 interface CachedState {
   date: string; // YYYY-MM-DD (device-local) this count belongs to
   reflectsToday: number;
+  entries?: JournalEntryStates;
   lastSnapshot?: ReflectSnapshot;
 }
 
@@ -119,6 +131,15 @@ function localDateStr(): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function journalKindForPrepare(params: {
+  friendUserId?: string;
+  mode?: 'typing' | 'prompt' | 'items';
+}): JournalKind {
+  if (params.friendUserId) return 'remember_together';
+  if (params.mode === 'prompt') return 'tap_your_day';
+  return 'write_freely';
 }
 
 function readCache(): CachedState | null {
@@ -132,7 +153,11 @@ function readCache(): CachedState | null {
 }
 
 function writeCache(state: CachedState): void {
-  storage.set(kReflectState.name, JSON.stringify(state));
+  const previous = readCache();
+  storage.set(kReflectState.name, JSON.stringify({
+    ...state,
+    entries: state.entries ?? (previous?.date === state.date ? previous.entries : undefined),
+  }));
 }
 
 /**
@@ -156,6 +181,44 @@ export function getReflectStateToday(): {
     reflectsToday: count,
     reflectsRemaining: Math.max(0, DAILY_LIMIT - count),
   };
+}
+
+export function getJournalEntryStatesToday(): JournalEntryStates {
+  const cache = readCache();
+  return cache?.date === localDateStr() && cache.entries
+    ? { ...AVAILABLE_ENTRIES, ...cache.entries }
+    : { ...AVAILABLE_ENTRIES };
+}
+
+export async function fetchJournalEntryStates(): Promise<{
+  entries: JournalEntryStates;
+  reflectsToday: number;
+  reflectsRemaining: number;
+}> {
+  const local = getReflectStateToday();
+  try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) return { entries: getJournalEntryStatesToday(), ...local };
+    const wire = await apiClient.get<{
+      success?: boolean;
+      localDate?: string;
+      reflectsToday?: number;
+      reflectsRemaining?: number;
+      journalKind?: JournalKind;
+      entries?: Partial<JournalEntryStates>;
+    }>(`/api/reflect/status?userId=${encodeURIComponent(userId)}`);
+    if (!wire.success || wire.localDate !== localDateStr()) {
+      return { entries: getJournalEntryStatesToday(), ...local };
+    }
+    const entries = { ...AVAILABLE_ENTRIES, ...(wire.entries || {}) };
+    const reflectsToday = wire.reflectsToday ?? local.reflectsToday;
+    const reflectsRemaining = wire.reflectsRemaining ?? Math.max(0, DAILY_LIMIT - reflectsToday);
+    writeCache({ date: wire.localDate, reflectsToday, entries });
+    return { entries, reflectsToday, reflectsRemaining };
+  } catch {
+    return { entries: getJournalEntryStatesToday(), ...local };
+  }
 }
 
 /** Wire shape from /api/reflect (snake_case from the RPC snapshot). */
@@ -237,6 +300,7 @@ export async function prepareReflect(params: {
       bubble?: string | null;
       isPaid?: boolean;
       reflectsRemaining?: number;
+      journalKind?: JournalKind;
     }>('/api/reflect/prepare', {
       userId,
       promptId: params.promptId,
@@ -261,8 +325,13 @@ export async function prepareReflect(params: {
       }
     }
     holdReflectSettlement(wire.draftId);
+    const journalKind = wire.journalKind || journalKindForPrepare(params);
     if (wire.reflectId && wire.localDate === localDateStr()) {
-      writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT - (wire.reflectsRemaining ?? 0) });
+      writeCache({
+        date: localDateStr(),
+        reflectsToday: DAILY_LIMIT - (wire.reflectsRemaining ?? 0),
+        entries: { ...getJournalEntryStatesToday(), [journalKind]: 'in_progress' },
+      });
     }
     return {
       ok: true,
@@ -276,6 +345,7 @@ export async function prepareReflect(params: {
         bubble: wire.bubble ?? null,
         isPaid: wire.isPaid === true,
         reflectsRemaining: wire.reflectsRemaining ?? getReflectStateToday().reflectsRemaining,
+        journalKind,
       },
     };
   } catch (error) {
@@ -296,6 +366,16 @@ export async function prepareReflect(params: {
     }
     if (error instanceof ApiError && error.status === 403) return { ok: false, error: 'plus_required' };
     if (error instanceof ApiError && error.status === 409) {
+      if (code === 'journal_kind_used') {
+        const journalKind = journalKindForPrepare(params);
+        const state = getReflectStateToday();
+        writeCache({
+          date: localDateStr(),
+          reflectsToday: Math.max(1, state.reflectsToday),
+          entries: { ...getJournalEntryStatesToday(), [journalKind]: 'completed' },
+        });
+        return { ok: false, error: 'journal_kind_used' };
+      }
       if (code === 'daily_limit_reached') {
         writeCache({ date: localDateStr(), reflectsToday: DAILY_LIMIT });
         return { ok: false, error: 'daily_limit' };
@@ -356,7 +436,12 @@ export async function finalizeReflect(
     if (wire.error || !wire.success) return { ok: false, error: 'network' };
     if (checkpoint) clearSettlementCheckpoint(userId, draft.draftId, checkpoint.revision);
     const snapshot = { ...toSnapshot(wire), memories: wire.memories ?? memories };
-    writeCache({ date: localDateStr(), reflectsToday: snapshot.reflectsToday, lastSnapshot: snapshot });
+    writeCache({
+      date: localDateStr(),
+      reflectsToday: snapshot.reflectsToday,
+      lastSnapshot: snapshot,
+      entries: { ...getJournalEntryStatesToday(), [draft.journalKind]: 'completed' },
+    });
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
   } catch (error) {
@@ -430,6 +515,15 @@ export async function submitReflect(params: {
       visibleToFriend: params.visibleToFriend,
     });
 
+    if (data.error === 'journal_kind_used') {
+      const journalKind = journalKindForPrepare(params);
+      writeCache({
+        date: today,
+        reflectsToday: Math.max(1, getReflectStateToday().reflectsToday),
+        entries: { ...getJournalEntryStatesToday(), [journalKind]: 'completed' },
+      });
+      return { ok: false, error: 'journal_kind_used' };
+    }
     if (data.error === 'daily_limit_reached') {
       writeCache({ date: today, reflectsToday: DAILY_LIMIT });
       return { ok: false, error: 'daily_limit' };
@@ -445,10 +539,12 @@ export async function submitReflect(params: {
     }
 
     const snapshot = toSnapshot(data);
+    const journalKind = journalKindForPrepare(params);
     writeCache({
       date: today,
       reflectsToday: snapshot.reflectsToday,
       lastSnapshot: snapshot,
+      entries: { ...getJournalEntryStatesToday(), [journalKind]: 'completed' },
     });
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
@@ -465,6 +561,16 @@ export async function submitReflect(params: {
     }
     // ApiError with a 409 carries the daily-limit body; other codes are network.
     if (e instanceof ApiError && e.status === 409) {
+      const code = typeof e.body === 'object' && e.body && 'error' in e.body ? e.body.error : '';
+      if (code === 'journal_kind_used') {
+        const journalKind = journalKindForPrepare(params);
+        writeCache({
+          date: today,
+          reflectsToday: Math.max(1, getReflectStateToday().reflectsToday),
+          entries: { ...getJournalEntryStatesToday(), [journalKind]: 'completed' },
+        });
+        return { ok: false, error: 'journal_kind_used' };
+      }
       writeCache({ date: today, reflectsToday: DAILY_LIMIT });
       return { ok: false, error: 'daily_limit' };
     }

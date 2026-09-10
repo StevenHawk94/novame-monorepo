@@ -4,6 +4,7 @@ import { MAX_REFLECT_ITEMS, XP_RULES } from '@novame/engine'
 
 import { isoWeek, serviceClient } from '@/lib/reflect-draft'
 import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
+import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 import { sanitizeSettlementMemories } from '@/lib/reflect-settlement'
 import { drainPushNotificationOutbox, enqueuePartnerReflectNotification } from '@/lib/push-notifications'
 
@@ -81,8 +82,21 @@ export async function POST(request) {
     // waiting on the settlement screen. Next's after() keeps the task alive
     // after the response has been sent. A failed row + recovery flag lets the
     // next Connection visit retry only this latest reflection.
-    if (!result?.already_finalized && draft.body?.trim()) {
-      after(() => analyzeFinalizedReflect({ userId, draft, result }))
+    if (!result?.already_finalized && draft.body?.trim() && result?.reflect_id) {
+      try {
+        const queued = await enqueueReflectAnalysisJob(supabase, {
+          reflectId: result.reflect_id,
+          userId,
+          localDate: draft.local_date,
+          journalKind: draft.journal_kind || (draft.friend_user_id ? 'remember_together'
+            : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely'),
+        })
+        if (queued) after(() => processReflectAnalysisJobs({ reflectId: result.reflect_id }))
+      } catch (queueError) {
+        // Compatibility while the migration and API roll out independently.
+        console.warn('[reflect/finalize] analysis enqueue failed:', queueError?.message || queueError)
+        after(() => analyzeFinalizedReflect({ userId, draft, result }))
+      }
     }
 
     if (!result?.already_finalized && result?.reflect_id) {

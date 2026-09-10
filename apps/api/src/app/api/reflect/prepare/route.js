@@ -1,7 +1,7 @@
 import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
-import { createMemoryFallbacks, isoWeek, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
+import { createMemoryFallbacks, isoWeek, journalKindForInput, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 
@@ -35,11 +35,13 @@ export async function POST(request) {
     if (!profile) return NextResponse.json({ error: 'profile_not_found' }, { status: 404 })
     const isPaid = (profile.subscription_tier || 'free') !== 'free'
     if (input.friendUserId && !isPaid) return NextResponse.json({ error: 'plus_required' }, { status: 403 })
+    const journalKind = journalKindForInput(input, resolved.mode)
     const payload = {
       user_id: input.userId, idempotency_key: input.idempotencyKey.slice(0, 100),
       prompt_id: input.promptId, body: resolved.body, local_date: localDate, mode: resolved.mode,
       source_kit: input.sourceKit === 'new_lens' ? 'new_lens' : null,
       friend_user_id: input.friendUserId || null, matches: resolved.matches,
+      journal_kind: journalKind,
     }
     // Permanent record, daily quota and reward commit BEFORE spending tokens.
     // Retrying a previously saved key succeeds even when today's quota is full.
@@ -70,7 +72,7 @@ export async function POST(request) {
       reserved = retry.data
     }
     if (reserved?.error) return NextResponse.json(reserved, {
-      status: reserved.error === 'daily_limit_reached' ? 409 : 400,
+      status: ['daily_limit_reached', 'journal_kind_used'].includes(reserved.error) ? 409 : 400,
     })
     let draft = reserved?.draft
     if (!draft) throw new Error('save_not_confirmed')
@@ -99,6 +101,7 @@ export async function POST(request) {
       memories: draft.settlement_memories, matches: draft.matches || [],
       aiMemories: draft.ai_memories || {}, bubble: draft.bubble || null,
       isPaid, reflectsRemaining: draft.save_receipt?.reflects_remaining ?? 0,
+      journalKind: draft.journal_kind || journalKind,
     })
   } catch (error) {
     console.error('[reflect/prepare] failed:', error?.message || error)

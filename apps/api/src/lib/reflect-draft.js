@@ -13,6 +13,13 @@ import {
 
 export const MAX_BODY_CHARS = 5000
 
+export function journalKindForInput(input, resolvedMode = null) {
+  if (typeof input?.friendUserId === 'string' && input.friendUserId) return 'remember_together'
+  const mode = resolvedMode || input?.mode
+  if (mode === 'prompt') return 'tap_your_day'
+  return 'write_freely'
+}
+
 export function serviceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

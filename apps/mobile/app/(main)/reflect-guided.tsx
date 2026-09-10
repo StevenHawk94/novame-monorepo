@@ -203,6 +203,7 @@ export default function ReflectGuidedScreen() {
               </View>
               {!!error && <Text style={styles.errorText}>{error === 'selection_unavailable'
                 ? SELECTION_UNAVAILABLE_MESSAGE
+                : error === 'journal_kind_used' ? "You've already used Tap Your Day today. It will be available again tomorrow."
                 : error === 'too_long' ? 'That’s a little long. Trim it under 5,000 characters.'
                   : 'Couldn’t save that. Check your connection and try again.'}</Text>}
               <OffsetCard color={RC.yellowDrop} offset={4} radius={24} onPress={() => void onSubmit()}

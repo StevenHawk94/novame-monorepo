@@ -4,6 +4,7 @@ import { MAX_REFLECT_ITEMS } from '@novame/engine'
 import { verifyToken } from '@/lib/auth-guard'
 import { recordAIUsage } from '@/lib/ai-usage'
 import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
+import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 import {
   createMemoryCopy,
   createMemoryFallbacks,
@@ -53,7 +54,7 @@ export async function POST(request) {
     const supabase = serviceClient()
     const [reflectResult, rowsResult, profileResult] = await Promise.all([
       supabase.from('reflects')
-        .select('id, mode, local_date, shared_to_friends, shared_with_user_id')
+        .select('id, mode, local_date, shared_to_friends, shared_with_user_id, journal_kind')
         .eq('id', input.reflectId).eq('user_id', input.userId).maybeSingle(),
       supabase.from('reflect_items')
         .select('item_id, position, match_label, source_excerpt, items(display_name, rarity)')
@@ -144,15 +145,27 @@ export async function POST(request) {
     ])
 
     if (body) {
-      after(() => analyzeFinalizedReflect({
-        userId: input.userId,
-        draft: { body, matches, local_date: reflect.local_date },
-        result: {
-          reflect_id: input.reflectId,
-          shared_to_friends: reflect.shared_to_friends,
-          reflects_today: 1,
-        },
-      }))
+      try {
+        const queued = await enqueueReflectAnalysisJob(supabase, {
+          reflectId: input.reflectId,
+          userId: input.userId,
+          localDate: reflect.local_date,
+          journalKind: reflect.journal_kind || (reflect.mode === 'prompt' ? 'tap_your_day' : 'write_freely'),
+          reset: true,
+        })
+        if (queued) after(() => processReflectAnalysisJobs({ reflectId: input.reflectId }))
+      } catch (queueError) {
+        console.warn('[reflect/edit-entry] analysis enqueue failed:', queueError?.message || queueError)
+        after(() => analyzeFinalizedReflect({
+          userId: input.userId,
+          draft: { body, matches, local_date: reflect.local_date, journal_kind: reflect.journal_kind },
+          result: {
+            reflect_id: input.reflectId,
+            shared_to_friends: reflect.shared_to_friends,
+            reflects_today: 1,
+          },
+        }))
+      }
     }
 
     return NextResponse.json({ success: true, ...result })

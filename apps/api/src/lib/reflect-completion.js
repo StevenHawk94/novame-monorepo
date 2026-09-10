@@ -18,6 +18,9 @@ export async function analyzeFinalizedReflect({ userId, draft, result }) {
     connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null,
   }
   try {
+    const journalKind = draft.journal_kind || (draft.friend_user_id
+      ? 'remember_together' : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely')
+    if (journalKind === 'remember_together') return
     const { data: profile } = await supabase.from('profiles')
       .select('subscription_tier, ai_consent_at').eq('id', userId).single()
     if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at) return

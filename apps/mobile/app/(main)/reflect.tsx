@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../src/lib/haptics';
@@ -15,6 +15,12 @@ import { FeatureGuideModal } from '../../src/components/main/feature-guide-modal
 import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
 import { TAP_YOUR_DAY_QUESTIONS } from '@novame/engine';
 import { warmItemSprites } from '@/components/ui/item-sprite';
+import {
+  fetchJournalEntryStates,
+  getJournalEntryStatesToday,
+  type JournalEntryStates,
+  type JournalKind,
+} from '@/lib/reflect-api';
 
 const TAN_OFFSET = '#E5B57E';
 
@@ -37,6 +43,16 @@ export default function ReflectEntryScreen() {
     sourceKit?: string;
   }>();
   const hasPreset = typeof params.presetPrompt === 'string' && params.presetPrompt.length > 0;
+  const [entryStates, setEntryStates] = useState<JournalEntryStates>(getJournalEntryStatesToday);
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setEntryStates(getJournalEntryStatesToday());
+    void fetchJournalEntryStates().then((state) => {
+      if (active) setEntryStates(state.entries);
+    });
+    return () => { active = false; };
+  }, []));
 
   useEffect(() => {
     // Cloud additions are only checked when the user enters an item-consuming
@@ -64,6 +80,7 @@ export default function ReflectEntryScreen() {
   const ways = [
     {
       key: 'typing',
+      journalKind: 'write_freely' as JournalKind,
       title: 'Write Freely',
       text: 'Journal in your own words.',
       icon: ICONS.reflectEntry1,
@@ -71,6 +88,7 @@ export default function ReflectEntryScreen() {
     },
     {
       key: 'prompt',
+      journalKind: 'tap_your_day' as JournalKind,
       title: 'Tap Your Day',
       text: 'Tap moments from your day.',
       icon: ICONS.reflectEntry2,
@@ -78,6 +96,7 @@ export default function ReflectEntryScreen() {
     },
     {
       key: 'shared',
+      journalKind: 'remember_together' as JournalKind,
       title: 'Remember Together',
       text: 'Keep a moment you’ve shared.',
       icon: ICONS.reflectEntry3,
@@ -95,13 +114,17 @@ export default function ReflectEntryScreen() {
           </Pressable>
           <Text style={styles.lead}>How would you like to journal?</Text>
           <Text style={styles.leadSub}>Pick a way.</Text>
-          {ways.map((w) => (
+          {ways.map((w) => {
+            const status = entryStates[w.journalKind];
+            const unavailable = status !== 'available';
+            return (
             <OffsetCard
               key={w.key}
-              color={TAN_OFFSET}
+              color={unavailable ? '#B8B1AA' : TAN_OFFSET}
               offset={4}
               radius={30}
               onPress={() => {
+                if (unavailable) return;
                 void haptics.pageOpen();
                 if (w.key === 'shared' && !isPaid) {
                   router.push('/(main)/(modals)/subscription-paywall?phase=plans' as never);
@@ -109,8 +132,9 @@ export default function ReflectEntryScreen() {
                 }
                 router.push(w.route as never);
               }}
-              cardStyle={styles.wayCard}
-              style={{ marginBottom: 18 }}
+              disabled={unavailable}
+              cardStyle={[styles.wayCard, unavailable && styles.wayCardDisabled]}
+              style={{ marginBottom: 18, opacity: unavailable ? 0.72 : 1 }}
             >
               <View style={{ flex: 1 }}>
                 <View style={styles.wayTitleRow}>
@@ -122,10 +146,14 @@ export default function ReflectEntryScreen() {
                   ) : null}
                 </View>
                 <Text style={styles.wayText}>{w.text}</Text>
+                {unavailable ? (
+                  <Text style={styles.doneText}>{status === 'in_progress' ? 'Finishing today’s Journal…' : 'Done for today'}</Text>
+                ) : null}
               </View>
               <ExpoImage source={w.icon} style={styles.wayIcon} contentFit="contain" />
             </OffsetCard>
-          ))}
+            );
+          })}
         </View>
         <FeatureGuideModal guide="reflect" />
       </View>
@@ -142,10 +170,12 @@ const styles = StyleSheet.create({
   lead: { fontSize: 28, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   leadSub: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', marginTop: 4, marginBottom: 20 },
   wayCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', padding: 20 },
+  wayCardDisabled: { backgroundColor: '#D8D2CC' },
   wayTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   wayTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
   plusBadge: { backgroundColor: '#4A3220', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 3 },
   plusBadgeText: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Inter_800ExtraBold' },
   wayText: { fontSize: 14.5, fontFamily: 'Inter_500Medium', color: '#3E3229', marginTop: 4 },
+  doneText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#765F50', marginTop: 7 },
   wayIcon: { width: 56, height: 56 },
 });

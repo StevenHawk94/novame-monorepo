@@ -9,6 +9,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/connection-analysis",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/push-notifications",
       "schedule": "*/5 * * * *"
     }

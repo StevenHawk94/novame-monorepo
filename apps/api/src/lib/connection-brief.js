@@ -1,7 +1,14 @@
-import { runConnectionRefresh, CONNECTION_REFRESH_VERSION } from './reflect-ai'
+import {
+  runConnectionRouter,
+  runConnectionWriter,
+  missingQualifiedSignalIds,
+  CONNECTION_ROUTER_VERSION,
+  CONNECTION_WRITER_VERSION,
+} from './connection-ai'
 import { recordAIUsage } from './ai-usage'
 import { applyConnectionUpdates, loadReflectAnalyzerContext } from './reflect-analysis-store'
 import { compactConnectionEvidence, CONNECTION_RETENTION_DAYS } from './connection-evidence'
+import { readConnectionFamilies, readConnectionTemplates } from './connection-template-store'
 
 const RETENTION_MS = CONNECTION_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
@@ -48,19 +55,23 @@ async function latestUntrackedReflect(supabase, { partnerId, pairedSince }) {
 }
 
 async function saveRecoveredAnalysis(supabase, {
-  latest, partnerId, generated, updates, connectionEligible,
+  latest, partnerId, generated, updates, connectionEligible, stageOne = null,
 }) {
   if (!latest?.recovery) return
   const { error } = await supabase.from('reflect_ai_analyses').upsert({
     reflect_id: latest.reflect_id,
     user_id: partnerId,
     local_date: latest.local_date,
-    prompt_version: CONNECTION_REFRESH_VERSION,
+    prompt_version: stageOne ? CONNECTION_ROUTER_VERSION : CONNECTION_WRITER_VERSION,
     weekly_eligible: false,
     weekly_evidence: null,
     visual_concepts: [],
     connection_eligible: connectionEligible,
     connection_updates: updates,
+    connection_stage_one: stageOne?.data || null,
+    connection_signal_results: generated.signalResults || null,
+    connection_writer_version: CONNECTION_WRITER_VERSION,
+    template_library_version: 'v2',
     connection_mode: 'caught_up',
     provider: generated.result.provider,
     model: generated.result.model,
@@ -147,26 +158,47 @@ export async function generateBrief(supabase, {
       userId: partnerId, visibleToFriend: true, localDate: latest.local_date || date,
       excludeReflectIds: (latestRows || []).map((row) => row.reflect_id),
     })
-    const generated = await runConnectionRefresh({
+    let stageOne = null
+    let selectedSignals = unprocessedSignals
+      .filter((signal) => signal.cardEligible !== false)
+      .sort((left, right) => Number(right.isNewest) - Number(left.isNewest))
+      .slice(0, 3)
+    if (selectedSignals.length === 0 && reflect?.body?.trim()) {
+      const families = await readConnectionFamilies(supabase)
+      stageOne = await runConnectionRouter({
+        reflectId: latest.reflect_id,
+        journal: reflect.body,
+        matchedIcons: itemRows.map((item) => ({ id: item.item_id, name: item.match_label })),
+        connectionEnabled: true,
+        familyCatalog: families,
+        currentConnectionBoard: context.currentBoard || cachedPayload,
+        writerRecentEvidence: context.writerRecentEvidence,
+        readerRecentEvidence: context.readerRecentEvidence,
+      })
+      selectedSignals = stageOne.data.eligibleSignals.slice(0, 3)
+    }
+    if (selectedSignals.length === 0) {
+      await finishResume(supabase, {
+        forUser, partnerId, pairedSince, through: latest.created_at,
+      })
+      return { ok: true, insights: cachedPayload, refreshed: false }
+    }
+    const templates = await readConnectionTemplates(
+      supabase,
+      selectedSignals.map((signal) => signal.familyKey),
+    )
+    const generated = await runConnectionWriter({
       reflectId: latest.reflect_id,
-      unprocessedSignals,
-      ...(reflect ? {
-        unprocessedReflections: [{
-          reflectId: reflect.id,
-          localDate: reflect.local_date,
-          createdAt: reflect.created_at,
-          journal: reflect.body,
-          matchedIcons: itemRows.map((item) => ({ id: item.item_id, name: item.match_label })),
-        }],
-      } : {}),
+      journal: reflect?.body || '',
+      selectedSignals,
+      scenarioTemplates: templates,
       currentConnectionBoard: context.currentBoard || cachedPayload,
       writerRecentEvidence: context.writerRecentEvidence,
       readerRecentEvidence: context.readerRecentEvidence,
-      recentConnectionEvidence: {
-        writer: context.writerRecentEvidence,
-        otherPerson: context.readerRecentEvidence,
-      },
     })
+    if (missingQualifiedSignalIds(generated.signalResults, generated.data).length > 0) {
+      throw new Error('connection_writer_missing_qualified_card')
+    }
     const applied = await applyConnectionUpdates(supabase, {
       pair: context.pair,
       updates: generated.data,
@@ -180,18 +212,27 @@ export async function generateBrief(supabase, {
         generated,
         updates: generated.data,
         connectionEligible: context.connectionEligible,
+        stageOne,
       }),
       finishResume(supabase, {
         forUser, partnerId, pairedSince, through: latest.created_at,
       }),
-      recordAIUsage(supabase, {
+      ...(stageOne ? [recordAIUsage(supabase, {
+        userId: partnerId,
+        feature: 'connection_catchup_router',
+        promptVersion: CONNECTION_ROUTER_VERSION,
+        result: stageOne.result,
+        latencyMs: stageOne.latencyMs,
+        refId: latest.reflect_id,
+      })] : []),
+      ...generated.results.map((result) => recordAIUsage(supabase, {
         userId: partnerId,
         feature: 'connection_catchup',
-        promptVersion: CONNECTION_REFRESH_VERSION,
-        result: generated.result,
+        promptVersion: CONNECTION_WRITER_VERSION,
+        result,
         latencyMs: generated.latencyMs,
         refId: latest.reflect_id,
-      }),
+      })),
     ])
     return {
       ok: true,
@@ -202,7 +243,7 @@ export async function generateBrief(supabase, {
     await recordAIUsage(supabase, {
       userId: partnerId,
       feature: 'connection_catchup',
-      promptVersion: CONNECTION_REFRESH_VERSION,
+      promptVersion: CONNECTION_WRITER_VERSION,
       success: false,
       refId: latest.reflect_id,
       error: String(err?.message || err),

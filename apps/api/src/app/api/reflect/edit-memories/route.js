@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient } from '@/lib/reflect-draft'
 import { MAX_REFLECT_ITEMS } from '@novame/engine'
 import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
+import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 
 export const runtime = 'edge'
 export const maxDuration = 60
@@ -93,11 +94,23 @@ export async function POST(request) {
     // The SQL returns a receipt only when this edit completes a pending saved
     // reflection. Preserve the same once-only background analysis as Done.
     if (result?.reflect_id && !result.already_finalized) {
-      after(async () => {
-        const { data: draft } = await supabase.from('reflect_drafts').select('*')
-          .eq('user_id', input.userId).eq('saved_reflect_id', result.reflect_id).maybeSingle()
-        if (draft?.body?.trim()) await analyzeFinalizedReflect({ userId: input.userId, draft, result })
-      })
+      const { data: draft } = await supabase.from('reflect_drafts').select('*')
+        .eq('user_id', input.userId).eq('saved_reflect_id', result.reflect_id).maybeSingle()
+      if (draft?.body?.trim()) {
+        try {
+          const queued = await enqueueReflectAnalysisJob(supabase, {
+            reflectId: result.reflect_id,
+            userId: input.userId,
+            localDate: draft.local_date,
+            journalKind: draft.journal_kind || (draft.friend_user_id
+              ? 'remember_together' : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely'),
+          })
+          if (queued) after(() => processReflectAnalysisJobs({ reflectId: result.reflect_id }))
+        } catch (queueError) {
+          console.warn('[reflect/edit-memories] analysis enqueue failed:', queueError?.message || queueError)
+          after(() => analyzeFinalizedReflect({ userId: input.userId, draft, result }))
+        }
+      }
     }
     await Promise.all([
       supabase.rpc('broadcast_reflect_feed_change', { p_user_id: input.userId }),

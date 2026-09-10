@@ -29,6 +29,10 @@ before(async () => {
     create table user_items(user_id uuid,item_id text,count int,first_seen_at timestamptz,primary key(user_id,item_id));
     create table shared_memory_items(id uuid primary key default gen_random_uuid(),user_a uuid,user_b uuid,author_user_id uuid,
       item_id text,description text,source text,reflect_id uuid,created_at timestamptz default now());
+    create table reflect_ai_analyses(reflect_id uuid primary key references reflects(id),user_id uuid,local_date date,
+      prompt_version text,weekly_eligible boolean,weekly_evidence jsonb,visual_concepts jsonb,connection_signals jsonb,
+      connection_eligible boolean,connection_updates jsonb,connection_mode text,provider text,model text,usage jsonb,
+      status text,created_at timestamptz default now(),completed_at timestamptz,error text);
     create table reflect_drafts(id uuid primary key default gen_random_uuid(),user_id uuid,idempotency_key text,prompt_id smallint,
       body text,local_date date,mode text,source_kit text,friend_user_id uuid,matches jsonb default '[]',ai_memories jsonb default '{}',
       bubble text,finalized_reflect_id uuid,created_at timestamptz default now(),expires_at timestamptz default now()+interval '24 hours',
@@ -45,6 +49,9 @@ before(async () => {
   await db.exec(migration); // safe SQL-editor retry
   const oursOnly = read('20260905000076_ours_only_and_tame_daily_limit.sql');
   await db.exec(oursOnly.slice(0, oursOnly.indexOf('-- Every account may tame')));
+  const connectionTemplates = read('20260910000080_connection_templates_and_journal_slots.sql');
+  await db.exec(connectionTemplates);
+  await db.exec(connectionTemplates); // seed/function migration is safe to retry
 });
 after(async () => { await db?.close(); });
 async function user() {
@@ -73,14 +80,37 @@ test('Save commits record/count/reward/fallback BEFORE AI and keeps all partner 
   assert.equal((await row('select visible_to_paired from reflect_items where reflect_id=$1',[d.saved_reflect_id])).visible_to_paired,false);
   assert.equal((await row('select description from item_memories where reflect_id=$1',[d.saved_reflect_id])).description,'Made soup.');
 });
-test('new request keys cannot bypass three-per-day; lost-response retry still succeeds at quota',async()=>{
+test('each Journal kind has one daily slot; lost-response retry still succeeds after all three are used',async()=>{
   const id=await user(), key=randomUUID(), first=await begin(id,key);
-  await begin(id); await begin(id);
-  assert.equal((await begin(id)).error,'daily_limit_reached');
+  assert.equal((await begin(id)).error,'journal_kind_used');
+  await begin(id,randomUUID(),{mode:'prompt',journal_kind:'tap_your_day'});
+  await begin(id,randomUUID(),{journal_kind:'remember_together'});
+  assert.equal((await begin(id)).error,'journal_kind_used');
   assert.equal((await begin(id,key)).draft.saved_reflect_id,first.draft.saved_reflect_id);
   assert.equal((await row('select count(*)::int n from reflects where user_id=$1',[id])).n,3);
   assert.equal((await row('select sum(amount)::int n from xp_events where user_id=$1',[id])).n,90);
   assert.equal((await begin(id,randomUUID(),{local_date:'2000-01-01'})).error,'invalid_local_date');
+});
+test('a reserved entry is in progress until its settlement completes',async()=>{
+  const id=await user(), {draft:d}=await begin(id);
+  assert.equal((await row('select status from daily_journal_slots where draft_id=$1',[d.id])).status,'in_progress');
+  await complete(id,d.id);
+  assert.equal((await row('select status from daily_journal_slots where draft_id=$1',[d.id])).status,'completed');
+});
+test('Connection jobs retry failed and stale work without rerunning more than three times',async()=>{
+  const id=await user(), {draft:d}=await begin(id);
+  await db.query(`insert into connection_analysis_jobs(reflect_id,user_id,local_date,journal_kind)
+    values($1,$2,$3,'write_freely')`,[d.saved_reflect_id,id,d.local_date]);
+  const first=await db.query('select * from claim_connection_analysis_job($1)',[d.saved_reflect_id]);
+  assert.equal(first.rows[0].status,'processing'); assert.equal(first.rows[0].attempts,1);
+  await db.query("update connection_analysis_jobs set status='failed',next_attempt_at=now() where reflect_id=$1",[d.saved_reflect_id]);
+  const second=await db.query('select * from claim_connection_analysis_job($1)',[d.saved_reflect_id]);
+  assert.equal(second.rows[0].attempts,2);
+  await db.query("update connection_analysis_jobs set status='processing',claimed_at=now()-interval '4 minutes' where reflect_id=$1",[d.saved_reflect_id]);
+  const third=await db.query('select * from claim_connection_analysis_job($1)',[d.saved_reflect_id]);
+  assert.equal(third.rows[0].attempts,3);
+  await db.query("update connection_analysis_jobs set status='failed',next_attempt_at=now() where reflect_id=$1",[d.saved_reflect_id]);
+  assert.equal((await db.query('select * from claim_connection_analysis_job($1)',[d.saved_reflect_id])).rows.length,0);
 });
 test('manual clearing and privacy survive late AI, stale checkpoints, recovery and duplicate Done',async()=>{
   const id=await user(), {draft:d}=await begin(id);
@@ -116,7 +146,8 @@ test('Shared/Ours only publishes after completion, once; lost pairing retains a 
   assert.equal((await row('select count(*)::int n from shared_memory_items where reflect_id=$1',[d.saved_reflect_id])).n,1);
   await complete(id,d.id);
   assert.equal((await row('select count(*)::int n from shared_memory_items where reflect_id=$1',[d.saved_reflect_id])).n,1);
-  const {draft:abandoned}=await begin(id,randomUUID(),{friend_user_id:friend});
+  const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const {draft:abandoned}=await begin(id,randomUUID(),{friend_user_id:friend,local_date:tomorrow});
   await db.query('delete from pairings where user_id=$1',[id]);
   assert.equal((await complete(id,abandoned.id)).shared_to_friends,false);
   assert.equal((await row('select visible_to_paired from reflect_items where reflect_id=$1',[abandoned.saved_reflect_id])).visible_to_paired,false);
@@ -141,8 +172,8 @@ test('the model claim is durable and single-use; all 191 curated/custom selectio
   assert.equal((await claim()).rows.length,0);
 });
 test('My Logs edits win regardless of whether crash recovery completes first or second',async()=>{
-  const id=await user();
   for (const recoveryFirst of [true,false]) {
+    const id=await user();
     const {draft:d}=await begin(id);
     if (recoveryFirst) await complete(id,d.id);
     await rpc('select edit_durable_reflect_memories($1,$2,$3::jsonb) result',[id,d.saved_reflect_id,

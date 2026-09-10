@@ -1,17 +1,16 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
 import { matchItems, XP_RULES, MAX_REFLECT_ITEMS, tapYourDaySelectionLimit } from '@novame/engine'
 import {
-  REFLECT_ANALYZER_VERSION,
   REFLECT_COPY_VERSION,
-  runReflectAnalyzer,
   runReflectCopy,
 } from '@/lib/reflect-ai'
-import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from '@/lib/reflect-analysis-store'
 import { recordAIUsage } from '@/lib/ai-usage'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { journalKindForInput } from '@/lib/reflect-draft'
+import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 
 export const runtime = 'edge'
 
@@ -131,10 +130,11 @@ export async function POST(request) {
 
     const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
+    const journalKind = journalKindForInput({ friendUserId, mode }, mode)
 
     // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,
     // so a successful submit is always one of the first three and pays 30.
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_reflect', {
+    const { data: result, error: rpcErr } = await supabase.rpc('submit_reflect_with_kind', {
       p_user_id: userId,
       p_prompt_id: promptId,
       p_body: body,
@@ -148,6 +148,7 @@ export async function POST(request) {
       // Per-reflect top-right toggle (default visible); which entry made it.
       p_shared_to_friends: visibleToFriend !== false,
       p_mode: mode,
+      p_journal_kind: journalKind,
     })
     if (rpcErr) {
       console.error('[reflect] rpc error:', rpcErr.message)
@@ -248,11 +249,21 @@ export async function POST(request) {
       }
     }
 
-    // Plus AI pipeline. Typing reflections run exactly two calls in parallel:
-    // reusable analysis + private titles/bunny copy. The local admin dictionary
-    // comparison is queued by persistReflectAnalyzerResult and never blocks.
+    // Compatibility for clients predating the durable prepare/finalize flow.
+    // Connection analysis uses the same durable two-stage background queue as
+    // current clients; private item/Bunny copy remains part of this response.
     let bubble = null
     if (reflectId && isPaid && hasConsent) {
+      if (body.trim()) {
+        try {
+          const queued = await enqueueReflectAnalysisJob(supabase, {
+            reflectId, userId, localDate: dateStr, journalKind,
+          })
+          if (queued) after(() => processReflectAnalysisJobs({ reflectId }))
+        } catch (queueError) {
+          console.warn('[reflect] analysis enqueue failed:', queueError?.message || queueError)
+        }
+      }
       const noted = new Set()
       if (mode === 'typing' && itemNotes && typeof itemNotes === 'object') {
         for (const [key, value] of Object.entries(itemNotes)) {
@@ -279,82 +290,28 @@ export async function POST(request) {
         }
       }
 
-      if (mode === 'typing' && body.trim().length >= 10) {
-        let analyzerContext = {
-          connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null,
-        }
+      if (mode === 'typing' && journalKind !== 'remember_together' && body.trim().length >= 10) {
         try {
-          analyzerContext = await loadReflectAnalyzerContext(supabase, {
-            userId, visibleToFriend, localDate: dateStr, excludeReflectIds: [reflectId],
+          const copy = await runReflectCopy({
+            journal: body,
+            generateBunny: true,
+            items: targets.map((item) => ({
+              id: item.itemId,
+              name: item.displayName,
+              evidence: item.sourceExcerpt || item.label || '',
+            })),
           })
-        } catch (contextErr) {
-          console.warn('[reflect] analyzer context unavailable:', contextErr && contextErr.message)
-        }
-
-        const analyzerPromise = runReflectAnalyzer({
-          reflectId,
-          journal: body,
-          matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
-          connectionEnabled: analyzerContext.connectionEligible,
-          currentConnectionBoard: analyzerContext.connectionEligible ? analyzerContext.currentBoard : null,
-          writerRecentEvidence: analyzerContext.writerRecentEvidence,
-          readerRecentEvidence: analyzerContext.readerRecentEvidence,
-        })
-        const copyPromise = runReflectCopy({
-          journal: body,
-          generateBunny: true,
-          items: targets.map((item) => ({
-            id: item.itemId,
-            name: item.displayName,
-            evidence: item.sourceExcerpt || item.label || '',
-          })),
-        })
-        const [analysisResult, copyResult] = await Promise.allSettled([analyzerPromise, copyPromise])
-
-        if (analysisResult.status === 'fulfilled') {
+          bubble = copy.data.bunnyText
           await Promise.all([
-            persistReflectAnalyzerResult(supabase, {
-              reflectId, userId, localDate: dateStr,
-              reflectsToday: Number(result?.reflects_today || 1),
-              analyzer: analysisResult.value,
-              context: analyzerContext,
-              matchedItems,
-            }),
-            recordAIUsage(supabase, {
-              userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
-              result: analysisResult.value.result, latencyMs: analysisResult.value.latencyMs,
-              refId: reflectId,
-            }),
-          ])
-        } else {
-          const message = String(analysisResult.reason?.message || analysisResult.reason)
-          console.warn('[reflect] analyzer failed (non-fatal):', message)
-          await Promise.all([
-            supabase.from('reflect_ai_analyses').upsert({
-              reflect_id: reflectId, user_id: userId, local_date: dateStr,
-              prompt_version: REFLECT_ANALYZER_VERSION, weekly_eligible: false,
-              connection_eligible: analyzerContext.connectionEligible,
-              connection_mode: 'disabled', status: 'failed', error: message.slice(0, 500),
-            }, { onConflict: 'reflect_id' }),
-            recordAIUsage(supabase, {
-              userId, feature: 'reflect_analyzer', promptVersion: REFLECT_ANALYZER_VERSION,
-              success: false, refId: reflectId, error: message,
-            }),
-          ])
-        }
-
-        if (copyResult.status === 'fulfilled') {
-          bubble = copyResult.value.data.bunnyText
-          await Promise.all([
-            applyDescriptions(copyResult.value.data.items),
+            applyDescriptions(copy.data.items),
             recordAIUsage(supabase, {
               userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,
-              result: copyResult.value.result, latencyMs: copyResult.value.latencyMs,
+              result: copy.result, latencyMs: copy.latencyMs,
               refId: reflectId,
             }),
           ])
-        } else {
-          const message = String(copyResult.reason?.message || copyResult.reason)
+        } catch (copyError) {
+          const message = String(copyError?.message || copyError)
           console.warn('[reflect] copy failed (non-fatal):', message)
           await recordAIUsage(supabase, {
             userId, feature: 'reflect_copy', promptVersion: REFLECT_COPY_VERSION,

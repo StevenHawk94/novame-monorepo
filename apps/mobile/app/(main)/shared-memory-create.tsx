@@ -50,6 +50,7 @@ import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
   daily_limit: "You've journaled 3 times today. Rest up — come back tomorrow.",
+  journal_kind_used: "You've already used Remember Together today. It will be available again tomorrow.",
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
   too_long: 'That’s a little long. Trim it under 5,000 characters.',
   empty: 'Write a few words first.',

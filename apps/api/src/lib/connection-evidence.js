@@ -7,6 +7,7 @@ const SUPPORT_MODES = new Set([
   'comfort', 'encourage', 'listen', 'talk', 'companionship', 'practical_help',
   'give_space', 'share', 'join_in',
 ])
+const SECTIONS = new Set(['missed', 'world', 'ways_in', 'between'])
 
 const DAY_MS = 24 * 60 * 60 * 1000
 export const CONNECTION_ACTIVE_DAYS = 10
@@ -57,6 +58,8 @@ export function cleanConnectionSignals(value, reflectId = null, nowMs = Date.now
     const continuity = canonical(raw.continuity, 30)
     const sentiment = canonical(raw.sentiment, 30)
     const supportMode = canonical(raw.supportMode, 40)
+    const assignedSection = canonical(raw.assignedSection || raw.fallbackSection, 30)
+    const familyKey = canonical(raw.familyKey, 80)
     out.push({
       signalId,
       topicKey,
@@ -65,6 +68,11 @@ export function cleanConnectionSignals(value, reflectId = null, nowMs = Date.now
       continuity: CONTINUITY.has(continuity) ? continuity : 'one_off',
       sentiment: SENTIMENTS.has(sentiment) ? sentiment : 'neutral',
       supportMode: SUPPORT_MODES.has(supportMode) ? supportMode : null,
+      cardEligible: raw.cardEligible === true ? true : raw.cardEligible === false ? false : null,
+      assignedSection: SECTIONS.has(assignedSection) ? assignedSection : null,
+      familyKey,
+      newValue: text(raw.newValue, 240),
+      whyQualified: text(raw.whyQualified, 240),
       confidence: conf,
       expiresAt: futureIso(raw.expiresAt, nowMs),
       evidenceIds: reflectId ? [reflectId] : [],
@@ -133,6 +141,11 @@ function publicAggregate(entry, tier, nowMs) {
     continuity: entry.occurrenceCount > 1 ? 'repeated' : entry.continuity,
     sentiment: entry.sentiment,
     supportMode: entry.supportMode,
+    cardEligible: entry.cardEligible,
+    assignedSection: entry.assignedSection || null,
+    familyKey: entry.familyKey || null,
+    newValue: entry.newValue || null,
+    whyQualified: entry.whyQualified || null,
     confidence: entry.confidence,
     occurrenceCount: entry.occurrenceCount,
     firstSeenAt: new Date(entry.firstSeenMs).toISOString(),
@@ -185,6 +198,11 @@ export function compactConnectionEvidence(rows, {
         prior.sentiment = signal.sentiment
         prior.continuity = signal.continuity
         prior.expiresAt = signal.expiresAt || prior.expiresAt
+        prior.cardEligible = signal.cardEligible
+        prior.assignedSection = signal.assignedSection
+        prior.familyKey = signal.familyKey
+        prior.newValue = signal.newValue
+        prior.whyQualified = signal.whyQualified
       }
     }
   }
