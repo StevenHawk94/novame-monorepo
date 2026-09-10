@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
-import { ActivityIndicator, AppState, BackHandler, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, BackHandler, Platform, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
 import { router, useSegments } from 'expo-router';
 
@@ -27,7 +27,18 @@ export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImagePro
       key={attempt}
       transition={0}
       onDisplay={() => { markHomeEntryAsset(asset, attempt); onDisplay?.(); }}
-      onError={(error) => { failHomeEntry(attempt); onError?.(error); }}
+      onError={(error) => {
+        if (Platform.OS === 'android') {
+          console.warn('[assets/android] native image render failed', {
+            asset,
+            error: typeof error === 'object' && error && 'error' in error
+              ? String(error.error)
+              : String(error),
+          });
+        }
+        failHomeEntry(attempt);
+        onError?.(error);
+      }}
     />
   );
 }

@@ -7,6 +7,7 @@
  */
 import { getHomeSceneSource } from './scenes';
 import { Image as ExpoImage } from 'expo-image';
+import { Platform } from 'react-native';
 import { BACKGROUNDS } from './icons';
 
 let lastPrefetchedSceneUri: string | null = null;
@@ -22,6 +23,16 @@ let entryBackgroundWarmRequest: Promise<void> | null = null;
  */
 export function warmEntryBackgrounds(): Promise<void> {
   if (entryBackgroundWarmRequest) return entryBackgroundWarmRequest;
+  // On Android, bundled Metro assets are already local resources and the
+  // entry screens keep themselves hidden until expo-image reports onDisplay.
+  // Calling Image.loadAsync with a numeric require() source is unsafe under
+  // full-mode R8 (the native SourceMap converter can reject the bridged map),
+  // so let the mounted Image perform the decode instead. Keep the iOS warm-up
+  // unchanged because it is stable there and remains useful for navigation.
+  if (Platform.OS === 'android') {
+    entryBackgroundWarmRequest = Promise.resolve();
+    return entryBackgroundWarmRequest;
+  }
   entryBackgroundWarmRequest = Promise.allSettled(
     [BACKGROUNDS.focus, BACKGROUNDS.reflect].map(async (source) => {
       const image = await ExpoImage.loadAsync(source);

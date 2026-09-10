@@ -10,8 +10,9 @@
  * files for as long as the app remains active, and reconstructs its work from
  * the manifest + local cache on every launch.
  */
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
+import { File } from 'expo-file-system';
 
 import {
   ensureOutfitVideoCached,
@@ -205,7 +206,11 @@ export function enqueueR2Image(url: string, priority = 20): void {
     priority,
     isReady: async () => {
       try {
-        return Boolean(await ExpoImage.getCachePathAsync(url));
+        const cachePath = await ExpoImage.getCachePathAsync(url);
+        if (!cachePath) return false;
+        if (Platform.OS !== 'android') return true;
+        const file = new File(cachePath);
+        return file.exists && file.size > 0;
       } catch {
         return false;
       }

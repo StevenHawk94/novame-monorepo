@@ -8,7 +8,6 @@ import {
   fetchOutfitCatalog,
   getCachedOutfitCatalog,
   getEquippedOutfitKey,
-  outfitAssetUrl,
   resolveEquippedOutfitVideo,
 } from '../../lib/outfits';
 import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
@@ -65,19 +64,27 @@ function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOut
 
     const cached = getCachedOutfitCatalog().find((outfit) => outfit.key === key);
     if (cached) {
-      // Show the transparent worn preview immediately while the animated WebP
-      // is being resolved from disk (or downloaded on first launch).
-      setSource({ uri: outfitAssetUrl(cached.bunny, cached.assetVersion) });
-      void resolveEquippedOutfitVideo().then(useAnimatedSource);
+      // Keep the current known-good frame visible until the animated WebP is
+      // available locally. A transient R2 failure must not blank the companion.
+      void resolveEquippedOutfitVideo().then(useAnimatedSource).catch((error) => {
+        console.warn('[assets/android] equipped companion resolve failed', {
+          outfit: key,
+          error: String(error),
+        });
+      });
       return;
     }
 
     void fetchOutfitCatalog().then((catalog) => {
       const currentKey = getEquippedOutfitKey();
-      const outfit = catalog.find((entry) => entry.key === currentKey);
-      if (outfit) setSource({ uri: outfitAssetUrl(outfit.bunny, outfit.assetVersion) });
+      if (!catalog.some((entry) => entry.key === currentKey)) return null;
       return resolveEquippedOutfitVideo();
-    }).then(useAnimatedSource);
+    }).then(useAnimatedSource).catch((error) => {
+      console.warn('[assets/android] companion catalog refresh failed', {
+        outfit: key,
+        error: String(error),
+      });
+    });
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -98,7 +105,19 @@ function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOut
         contentFit="contain"
         autoplay
         onDisplay={onReady}
-        onError={onError}
+        onError={(error) => {
+          if (source !== DEFAULT_COMPANION_VIDEO) {
+            console.warn('[assets/android] companion image failed; using bundled fallback', {
+              error: typeof error === 'object' && error && 'error' in error
+                ? String(error.error)
+                : String(error),
+            });
+            loadedOutfitKey.current = null;
+            setSource(DEFAULT_COMPANION_VIDEO);
+            return;
+          }
+          onError?.();
+        }}
       />
     </Pressable>
   );
@@ -234,11 +253,26 @@ function PreparedHomeCompanion(props: Props) {
     void resolveEquippedOutfitVideo().then(resolved => {
       if (!active) return;
       if (!resolved || resolved.key !== getEquippedOutfitKey()) {
+        if (Platform.OS === 'android') {
+          console.warn('[assets/android] initial outfit unavailable; using bundled companion');
+          setPrepared({ source: DEFAULT_COMPANION_VIDEO, key: null });
+          return;
+        }
         onError.current?.();
         return;
       }
       setPrepared({ key: resolved.key, source: { uri: resolved.uri, isAnimated: true } });
-    }).catch(() => { if (active) onError.current?.(); });
+    }).catch((error) => {
+      if (!active) return;
+      if (Platform.OS === 'android') {
+        console.warn('[assets/android] initial outfit resolve failed; using bundled companion', {
+          error: String(error),
+        });
+        setPrepared({ source: DEFAULT_COMPANION_VIDEO, key: null });
+        return;
+      }
+      onError.current?.();
+    });
     return () => { active = false; };
   }, [prepared]);
   if (!prepared) return null;

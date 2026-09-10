@@ -16,7 +16,7 @@
  * per-item webps and the generated map.
  */
 import { memo, useEffect, useSyncExternalStore } from 'react';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
 import { ITEM_IMAGES } from '../../lib/item-images.g';
@@ -39,13 +39,19 @@ const warmedBundledArt = new Map<string, LoadedImage>();
 let warmRequest: Promise<void> | null = null;
 
 /**
- * Decode the first Tap Your Day page while the user is still choosing a
- * Reflect method. Android otherwise has to decode dozens of local WebPs during
- * the route transition. The loaded native references are deliberately kept:
- * this page is frequently revisited and the compact 96px decode is bounded to
- * the requested curated ids, never the full 5,439-icon catalog.
+ * Decode the first Tap Your Day page on iOS while the user is still choosing a
+ * Journal method. The loaded native references are deliberately kept: this
+ * page is frequently revisited and the compact 96px decode is bounded to the
+ * requested curated ids, never the full 5,439-icon catalog. Android relies on
+ * the route's existing staged render instead (see the platform guard below).
  */
 export function warmItemSprites(itemIds: readonly string[]): Promise<void> {
+  // Android's full-mode R8 build can reject expo-image's imperative
+  // loadAsync(number) SourceMap conversion. This warm-up is optional: the Tap
+  // Your Day route is already staged until its mounted images display, so
+  // skipping it avoids a fragile native path without changing correctness.
+  // iOS keeps the existing decoded-reference cache.
+  if (Platform.OS === 'android') return Promise.resolve();
   if (warmRequest) return warmRequest;
   const missing = [...new Set(itemIds)].filter((itemId) => {
     const source = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];

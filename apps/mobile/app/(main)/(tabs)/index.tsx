@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -13,7 +13,7 @@ import { CompanionVideo } from '@/components/main/companion-video';
 import { HomeEntryImage } from '@/components/main/home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { failHomeEntry, getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
-import { getHomeSceneSource } from '@/lib/scenes';
+import { DEFAULT_SCENE_BG, getHomeSceneSource } from '@/lib/scenes';
 import {
   advanceDefaultBubble,
   getFreshBubbleState,
@@ -71,6 +71,7 @@ export default function HomeScreen() {
   const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
+  const [failedAndroidSceneUri, setFailedAndroidSceneUri] = useState<string | null>(null);
   const aiBubbleRef = useRef(aiBubble);
   const navigate = useNavigationAction();
   const [measuredLayoutParts, setMeasuredLayoutParts] = useState<string[]>([]);
@@ -96,6 +97,13 @@ export default function HomeScreen() {
   useEffect(() => {
     applyAiBubble(visibleAiBubble(subscriptionTier));
   }, [applyAiBubble, subscriptionTier]);
+
+  useEffect(() => {
+    // A completed R2 cache write increments the revision. Let Android retry a
+    // scene that previously failed instead of pinning the bundled fallback for
+    // the rest of the process lifetime.
+    if (Platform.OS === 'android') setFailedAndroidSceneUri(null);
+  }, [r2AssetRevision]);
 
   useEffect(() => {
     // R2 icon replacements finish asynchronously after the feed itself. Push
@@ -225,7 +233,13 @@ export default function HomeScreen() {
     router.push(route);
   });
 
-  const sceneImg = getHomeSceneSource();
+  const selectedSceneImg = getHomeSceneSource();
+  const selectedSceneUri = typeof selectedSceneImg === 'object' ? selectedSceneImg.uri : null;
+  const sceneImg = Platform.OS === 'android'
+    && selectedSceneUri
+    && selectedSceneUri === failedAndroidSceneUri
+    ? DEFAULT_SCENE_BG
+    : selectedSceneImg;
   // Short screens (iPhone SE) can't spare 140pt above the companion — scale
   // the gap with the window so the video never crowds Focus/Reflect.
   const { height } = useWindowDimensions();
@@ -255,7 +269,10 @@ export default function HomeScreen() {
         priority="high"
         recyclingKey={`home-scene:${r2AssetRevision}`}
         onError={() => {
-          if (typeof sceneImg === 'object' && sceneImg.uri) prioritizeR2Image(sceneImg.uri);
+          if (typeof sceneImg === 'object' && sceneImg.uri) {
+            prioritizeR2Image(sceneImg.uri);
+            if (Platform.OS === 'android') setFailedAndroidSceneUri(sceneImg.uri);
+          }
         }}
       />
       <SafeAreaView style={styles.safe} edges={['top']} onLayout={onSafeLayout}>
