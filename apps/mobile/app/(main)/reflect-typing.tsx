@@ -170,7 +170,7 @@ export default function ReflectTypingScreen() {
       >
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           {phase !== 'result' && (
-            <ReflectTopBar remaining={remaining} onBack={() => router.back()} />
+            <ReflectTopBar onBack={() => router.back()} />
           )}
 
           {atLimit && phase !== 'result' ? (

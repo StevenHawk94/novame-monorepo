@@ -14,6 +14,7 @@
  * that answered.
  */
 import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 
 import { storage } from './storage';
 import { kFocusVoice } from '../shared/storage/keys';
@@ -95,6 +96,10 @@ function localPath(scene: string, index: number): string {
   return `${cacheDir()}${scene}-${index}.mp3`;
 }
 
+function completePath(scene: string, index: number): string {
+  return `${localPath(scene, index)}.complete`;
+}
+
 /** Filename candidates for a track — covers the observed case drift. */
 function candidates(scene: string, index: number): string[] {
   const base = BASE_NAME[scene] ?? scene;
@@ -133,13 +138,43 @@ async function probe(scene: string, index: number): Promise<string | null> {
 
 async function ensureDownloaded(scene: string, index: number, key: string): Promise<boolean> {
   const path = localPath(scene, index);
+  if (Platform.OS !== 'android') {
+    try {
+      const info = await FileSystem.getInfoAsync(path);
+      if (info.exists && (info.size ?? 0) > 0) return true;
+      await FileSystem.makeDirectoryAsync(cacheDir(), { intermediates: true }).catch(() => {});
+      const result = await FileSystem.downloadAsync(urlFor(key), path);
+      return result.status >= 200 && result.status < 300;
+    } catch {
+      return false;
+    }
+  }
+  const marker = completePath(scene, index);
+  const partial = `${path}.part`;
   try {
-    const info = await FileSystem.getInfoAsync(path);
-    if (info.exists && (info.size ?? 0) > 0) return true;
+    const [info, markerInfo] = await Promise.all([
+      FileSystem.getInfoAsync(path),
+      FileSystem.getInfoAsync(marker),
+    ]);
+    if (info.exists && (info.size ?? 0) > 0 && markerInfo.exists) return true;
     await FileSystem.makeDirectoryAsync(cacheDir(), { intermediates: true }).catch(() => {});
-    const result = await FileSystem.downloadAsync(urlFor(key), path);
-    return result.status >= 200 && result.status < 300;
+    await Promise.all([
+      FileSystem.deleteAsync(partial, { idempotent: true }).catch(() => {}),
+      FileSystem.deleteAsync(marker, { idempotent: true }).catch(() => {}),
+    ]);
+    const result = await FileSystem.downloadAsync(urlFor(key), partial);
+    if (result.status < 200 || result.status >= 300) throw new Error(`HTTP ${result.status}`);
+    const partialInfo = await FileSystem.getInfoAsync(partial);
+    if (!partialInfo.exists || (partialInfo.size ?? 0) <= 0) throw new Error('Empty Focus Voice file');
+    await FileSystem.deleteAsync(path, { idempotent: true }).catch(() => {});
+    await FileSystem.moveAsync({ from: partial, to: path });
+    await FileSystem.writeAsStringAsync(marker, 'ok');
+    return true;
   } catch {
+    await Promise.all([
+      FileSystem.deleteAsync(partial, { idempotent: true }).catch(() => {}),
+      FileSystem.deleteAsync(marker, { idempotent: true }).catch(() => {}),
+    ]);
     return false;
   }
 }
@@ -151,17 +186,28 @@ async function ensureDownloaded(scene: string, index: number, key: string): Prom
  * foreground download queue keeps retrying instead of mistaking offline for
  * "no more tracks".
  */
-export async function syncAllFocusVoiceAssets(): Promise<boolean> {
+export async function syncAllFocusVoiceAssets(options?: {
+  /** Android P0 cooperatively yields between files when backgrounded/preempted. */
+  shouldContinue?: () => boolean;
+}): Promise<boolean> {
   const state = readState();
   const scenes = Object.keys(FOCUS_VOICE_BUNDLED);
   let complete = true;
 
+  const canContinue = () => options?.shouldContinue?.() ?? true;
+
   for (const scene of scenes) {
+    if (!canContinue()) return false;
     const previous = sceneState(state, scene);
     const st: SceneState = { ...previous, keys: { ...previous.keys } };
 
     // First make every already-known track durable locally.
     for (let index = 2; index <= st.knownMax; index++) {
+      if (!canContinue()) {
+        state[scene] = st;
+        writeState(state);
+        return false;
+      }
       const key = st.keys[String(index)];
       if (key && !await ensureDownloaded(scene, index, key)) complete = false;
     }
@@ -169,6 +215,11 @@ export async function syncAllFocusVoiceAssets(): Promise<boolean> {
     // Then walk forward until R2 confirms the first missing index. The hard
     // ceiling protects a malformed bucket from creating an unbounded probe.
     for (let index = Math.max(2, st.knownMax + 1); index <= 100; index++) {
+      if (!canContinue()) {
+        state[scene] = st;
+        writeState(state);
+        return false;
+      }
       const found = await probeDetailed(scene, index);
       if (!found.reachable) {
         complete = false;
@@ -217,8 +268,18 @@ export async function getFocusVoiceSource(
 
   const path = localPath(scene, st.current);
   try {
-    const info = await FileSystem.getInfoAsync(path);
-    if (info.exists) return { source: { uri: path }, index: st.current };
+    if (Platform.OS !== 'android') {
+      const info = await FileSystem.getInfoAsync(path);
+      if (info.exists) return { source: { uri: path }, index: st.current };
+    } else {
+      const [info, marker] = await Promise.all([
+        FileSystem.getInfoAsync(path),
+        FileSystem.getInfoAsync(completePath(scene, st.current)),
+      ]);
+      if (info.exists && (info.size ?? 0) > 0 && marker.exists) {
+        return { source: { uri: path }, index: st.current };
+      }
+    }
   } catch { /* fall through to streaming */ }
 
   const key = st.keys[String(st.current)];

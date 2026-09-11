@@ -25,6 +25,7 @@ function focusHarness() {
     'expo-router':{useRouter:()=>({back(){}}),useFocusEffect(fn){focus=fn;}},
     '@/lib/async-lifecycle':load(lib+'async-lifecycle.ts',{},time.globals),
     '@/lib/session-lifecycle':session,'@/components/ui/app-dialog':{appAlert:(...args)=>alerts.push(args)},
+    '@/components/ui/android-compact-typography':{AndroidCompactText:'Text'},
     '@expo/vector-icons':{MaterialIcons:'Icon'},
     'expo-audio':{useAudioPlayer:playerFor,useAudioPlayerStatus:p=>p.status,setAudioModeAsync:async()=>{}},
     '@novame/domain':{FOCUS_SCENES:scenes},'@novame/engine':{XP_RULES:{focus:{award:30}}},

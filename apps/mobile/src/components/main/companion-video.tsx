@@ -9,7 +9,9 @@ import {
   getCachedOutfitCatalog,
   getEquippedOutfitKey,
   resolveEquippedOutfitVideo,
+  type OutfitDef,
 } from '../../lib/outfits';
+import { ensurePriorityOutfitVideo } from '../../lib/download-queue';
 import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
 
 /**
@@ -54,7 +56,7 @@ function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOut
       return;
     }
 
-    const useAnimatedSource = (resolved: Awaited<ReturnType<typeof resolveEquippedOutfitVideo>>) => {
+    const useAnimatedSource = (resolved: { key: string; uri: string } | null) => {
       if (!resolved || getEquippedOutfitKey() !== resolved.key) return;
       loadedOutfitKey.current = resolved.key;
       // expo-image cannot always infer animation from a cache path without an
@@ -62,11 +64,16 @@ function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOut
       setSource({ uri: resolved.uri, isAnimated: true });
     };
 
+    const resolveAndroidOutfit = async (outfit: OutfitDef) => {
+      const uri = await ensurePriorityOutfitVideo(outfit);
+      return uri ? { key: outfit.key, uri } : null;
+    };
+
     const cached = getCachedOutfitCatalog().find((outfit) => outfit.key === key);
     if (cached) {
       // Keep the current known-good frame visible until the animated WebP is
       // available locally. A transient R2 failure must not blank the companion.
-      void resolveEquippedOutfitVideo().then(useAnimatedSource).catch((error) => {
+      void resolveAndroidOutfit(cached).then(useAnimatedSource).catch((error) => {
         console.warn('[assets/android] equipped companion resolve failed', {
           outfit: key,
           error: String(error),
@@ -77,8 +84,8 @@ function AndroidCompanion({ onPress, onReady, onError, initialSource, initialOut
 
     void fetchOutfitCatalog().then((catalog) => {
       const currentKey = getEquippedOutfitKey();
-      if (!catalog.some((entry) => entry.key === currentKey)) return null;
-      return resolveEquippedOutfitVideo();
+      const outfit = catalog.find((entry) => entry.key === currentKey);
+      return outfit ? resolveAndroidOutfit(outfit) : null;
     }).then(useAnimatedSource).catch((error) => {
       console.warn('[assets/android] companion catalog refresh failed', {
         outfit: key,
@@ -244,7 +251,9 @@ function AppleCompanionVideo({ onPress, onReady, onError, initialSource, initial
  */
 function PreparedHomeCompanion(props: Props) {
   const [prepared, setPrepared] = useState<{ source: CompanionSource; key: string | null } | null>(() =>
-    getEquippedOutfitKey() ? null : { source: DEFAULT_COMPANION_VIDEO, key: null });
+    Platform.OS === 'android' || !getEquippedOutfitKey()
+      ? { source: DEFAULT_COMPANION_VIDEO, key: null }
+      : null);
   const onError = useRef(props.onError);
   onError.current = props.onError;
   useEffect(() => {

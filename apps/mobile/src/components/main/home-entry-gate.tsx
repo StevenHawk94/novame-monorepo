@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
-import { ActivityIndicator, AppState, BackHandler, Platform, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator, AppState, BackHandler, Image as NativeImage, Platform,
+  StyleSheet, View,
+} from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
 import { router, useSegments } from 'expo-router';
 
@@ -17,10 +20,41 @@ import { useRatingTransitionBusy } from '@/lib/rating-navigation';
 import { fetchAppConfig } from '@/lib/app-config-api';
 import { getCurrentSession } from '@/lib/auth';
 import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
+import { markAndroidP0UiReady } from '@/lib/download-queue';
 
-/** Images must be displayed in their final native view, not merely downloaded. */
+const ANDROID_ENTRY_TIMEOUT_MS = 750;
+
+/** Track final display for diagnostics; image callbacks never gate navigation. */
 export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImageProps & { asset: HomeEntryAsset }) {
   const { attempt } = useHomeEntry();
+  // Metro's numeric source is already a packaged Android drawable. Rendering
+  // it with React Native's native Image path gives core navigation art an
+  // independent fallback from expo-image/Glide's module bridge. Remote URIs
+  // and every iOS image continue through expo-image unchanged.
+  if (Platform.OS === 'android' && typeof props.source === 'number') {
+    const resizeMode = props.contentFit === 'cover'
+      ? 'cover'
+      : props.contentFit === 'fill'
+        ? 'stretch'
+        : props.contentFit === 'none'
+          ? 'center'
+          : 'contain';
+    return (
+      <NativeImage
+        key={attempt}
+        source={props.source}
+        style={props.style}
+        resizeMode={resizeMode}
+        onLoad={() => { markHomeEntryAsset(asset, attempt); onDisplay?.(); }}
+        onError={(event) => {
+          const error = event.nativeEvent.error || 'Bundled image render failed';
+          console.warn('[assets/android] bundled image render failed', { asset, error });
+          failHomeEntry(attempt);
+          onError?.({ error });
+        }}
+      />
+    );
+  }
   return (
     <ExpoImage
       {...props}
@@ -43,7 +77,7 @@ export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImagePro
   );
 }
 
-/** Cover the active external-entry destination while its final views paint. */
+/** Briefly cover an active external-entry destination for its first paint. */
 export function HomeEntryGate({ children }: PropsWithChildren) {
   const entry = useHomeEntry();
   const segments = useSegments();
@@ -52,13 +86,15 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   const otherOverlay = useOverlayPresent();
   const transitionBusy = useRatingTransitionBusy();
   const overlayOwner = useRef({}).current;
-  const visible = entry.pending;
   const atTarget = entry.target === 'current'
     || (entry.target === 'home' && atHome)
     || (entry.target === 'friends' && atFriends);
+  const visible = entry.pending && atTarget;
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [after, setAfter] = useState<'notification-settings' | null>(null);
-  const ready = homeEntryIsReady();
+  // iOS keeps its proven visual-readiness hand-off. Android must not depend
+  // on an image callback that R8/device-specific decoding can suppress.
+  const ready = Platform.OS === 'android' || homeEntryIsReady();
 
   useLayoutEffect(() => {
     if (!entry.resumeRequired || otherOverlay) return;
@@ -106,12 +142,15 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!visible || !atTarget || !foreground || !ready || transitionBusy) return;
-    // Leave a paint between the last native display/layout event and reveal.
+    // Leave two frames for the already-mounted destination's first paint.
     // Do not reveal while the native stack is still moving Home into place:
     // its temporary content background is the deep-brown frame users saw.
     // Backgrounding or unmounting cancels both queued frames.
     let frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(() => setAfter(finishHomeEntry(entry.attempt)));
+      frame = requestAnimationFrame(() => {
+        setAfter(finishHomeEntry(entry.attempt, Platform.OS === 'android'));
+        markAndroidP0UiReady();
+      });
     });
     return () => cancelAnimationFrame(frame);
   }, [visible, atTarget, entry.attempt, foreground, ready, transitionBusy]);
@@ -120,7 +159,8 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
     if (!visible || !foreground) return;
     // Never trap an entry on slow network or a missing native display event.
     // The cached destination is already mounted underneath, so fail open.
-    const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), HOME_ENTRY_TIMEOUT_MS);
+    const timeoutMs = Platform.OS === 'android' ? ANDROID_ENTRY_TIMEOUT_MS : HOME_ENTRY_TIMEOUT_MS;
+    const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), timeoutMs);
     return () => clearTimeout(timer);
   }, [visible, entry.attempt, foreground]);
 

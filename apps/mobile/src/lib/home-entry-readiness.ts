@@ -154,14 +154,14 @@ export function retryHomeEntry(): void {
   publish({ ...state, attempt: state.attempt + 1, ready: [], failed: false });
 }
 
-export function finishHomeEntry(attempt: number): FollowUp {
-  if (attempt !== state.attempt || !homeEntryIsReady()) return null;
+export function finishHomeEntry(attempt: number, allowUnready = false): FollowUp {
+  if (attempt !== state.attempt || (!allowUnready && !homeEntryIsReady())) return null;
   const after = state.after;
   publish({ ...state, pending: false, after: null });
   return after;
 }
 
-/** Five-second fail-open. Late callbacks are ignored by pending/attempt checks. */
+/** Defensive fail-open. Late callbacks are ignored after release. */
 export function timeoutHomeEntry(attempt: number): FollowUp {
   if (!state.pending || attempt !== state.attempt) return null;
   const after = state.after;

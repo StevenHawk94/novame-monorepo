@@ -24,7 +24,7 @@ function load(file, imports = {}, globals = {}) {
   });
   return module.exports;
 }
-function harness() {
+function harness(platform = 'android') {
   const api = load(stateFile), frames = new Map(), timers = new Map(), appListeners = new Set(), backListeners = new Set(), routes = [];
   let next = 0, owner, cursor, segments = ['(main)', '(tabs)'], externalOverlay = false;
   const overlays = new Set();
@@ -49,7 +49,8 @@ function harness() {
   const components = load(gateFile, {
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': {
-      View: 'View', Text: 'Text', Pressable: 'Pressable', ActivityIndicator: 'Spinner', AppState: appState,
+      View: 'View', Text: 'Text', Pressable: 'Pressable', ActivityIndicator: 'Spinner', Image: 'NativeImage',
+      Platform: { OS: platform }, AppState: appState,
       BackHandler: { addEventListener(_event, fn) { backListeners.add(fn); return { remove: () => backListeners.delete(fn) }; } },
       StyleSheet: { create: (x) => x, absoluteFillObject: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 } },
     },
@@ -62,6 +63,11 @@ function harness() {
       useOverlayPresent: () => externalOverlay || overlays.size > 0,
       registerOverlay(owner) { overlays.add(owner); return () => overlays.delete(owner); },
     },
+    '@/lib/rating-navigation': { useRatingTransitionBusy: () => false },
+    '@/lib/app-config-api': { fetchAppConfig: async () => ({}) },
+    '@/lib/auth': { getCurrentSession: async () => null },
+    '@/lib/announcements-api': { prepareUnreadAnnouncement: async () => null },
+    '@/lib/download-queue': { markAndroidP0UiReady() {} },
   }, {
     requestAnimationFrame(fn) { frames.set(++next, fn); return next; }, cancelAnimationFrame(id) { frames.delete(id); },
     setTimeout(fn, ms) { timers.set(++next, { fn, ms }); return next; }, clearTimeout(id) { timers.delete(id); },
@@ -102,27 +108,43 @@ test('ordinary tab returns do not rearm; releasing a prepared Home preserves the
   assert.equal(h.overlays.size, 0);
 });
 
-test('all 12 display/layout signals are required; duplicate callbacks cannot release early', () => {
+test('image and data signals cannot hold the Android entry gate open', () => {
   const h = harness(); h.beginHomeEntry();
   const attempt = h.getHomeEntryState().attempt;
-  assert.equal(h.HOME_ENTRY_ASSETS.length, 12);
-  h.HOME_ENTRY_ASSETS.slice(0, -1).forEach((asset) => h.markHomeEntryAsset(asset, attempt));
-  h.markHomeEntryAsset('scene', attempt); h.finishHomeEntry(attempt);
-  assert.equal(h.homeEntryIsReady(), false); assert.equal(h.getHomeEntryState().pending, true);
-  h.markHomeEntryAsset('tabs-layout', attempt);
-  assert.equal(h.homeEntryIsReady(), true);
+  assert.equal(h.homeEntryIsReady(), false);
+  h.markHomeEntryAsset('scene', attempt);
+  h.failHomeEntry(attempt);
+  assert.equal(h.getHomeEntryState().failed, true);
+  const gate = h.component(h.HomeEntryGate, { children: jsx('Home', {}) });
+  gate.render(); h.frame(); h.frame(); gate.render();
+  assert.equal(h.getHomeEntryState().pending, false);
+  gate.unmount();
 });
 
-test('image download alone is not ready: actual onDisplay fires, errors remain retryable', () => {
+test('Android bundled art uses the native packaged-resource fallback', () => {
   const h = harness(); h.beginHomeEntry();
   const props = { asset: 'menu', source: 7, onDisplay() { props.displayed = true; } };
   const image = h.HomeEntryImage(props);
-  assert.equal(image.props.transition, 0); assert.equal(image.props.onLoad, undefined);
+  assert.equal(image.type, 'NativeImage');
+  assert.equal(image.props.source, 7);
   assert.equal(h.getHomeEntryState().ready.length, 0);
-  image.props.onDisplay(); assert.equal(props.displayed, true);
+  image.props.onLoad(); assert.equal(props.displayed, true);
   assert.ok(h.getHomeEntryState().ready.includes('menu'));
-  h.HomeEntryImage({ asset: 'scene' }).props.onError({ error: 'decode failed' });
+  h.HomeEntryImage({ asset: 'scene', source: 8 }).props.onError({ nativeEvent: { error: 'decode failed' } });
   assert.equal(h.getHomeEntryState().failed, true);
+});
+
+test('iOS keeps expo-image and its existing visual-readiness contract', () => {
+  const h = harness('ios'); h.beginHomeEntry();
+  const gate = h.component(h.HomeEntryGate, { children: jsx('Home', {}) });
+  const image = h.HomeEntryImage({ asset: 'menu', source: 7 });
+  assert.equal(image.type, 'Image');
+  assert.equal(image.props.transition, 0);
+  gate.render(); h.frame(); h.frame(); gate.render();
+  assert.equal(h.getHomeEntryState().pending, true);
+  h.ready(); gate.render(); h.frame(); h.frame(); gate.render();
+  assert.equal(h.getHomeEntryState().pending, false);
+  gate.unmount();
 });
 
 test('opaque full-screen cover blocks touch/accessibility until ready, never scales Home down', () => {
@@ -138,20 +160,16 @@ test('opaque full-screen cover blocks touch/accessibility until ready, never sca
   gate.unmount();
 });
 
-test('timeout offers a retry; old attempt callbacks cannot reveal the new attempt', () => {
+test('defensive timeout releases the page and stale image callbacks stay harmless', () => {
   const h = harness(); h.beginHomeEntry(); h.deferHomeEntryNotification();
   const gate = h.component(h.HomeEntryGate, { children: jsx('Home', {}) });
   gate.render(); const oldImage = h.HomeEntryImage({ asset: 'scene' }), oldAttempt = h.getHomeEntryState().attempt;
-  h.expire(12000); const tree = gate.render();
-  assert.equal(h.getHomeEntryState().pending, true);
+  h.expire(750); const tree = gate.render();
+  assert.equal(h.getHomeEntryState().pending, false);
   assert.equal(nodes(tree).some((n) => n.type === 'Spinner'), false);
-  nodes(tree).find((n) => n.type === 'Pressable').props.onPress(); gate.render();
-  assert.equal(h.getHomeEntryState().attempt, oldAttempt + 1);
-  assert.equal(h.getHomeEntryState().failed, false);
-  assert.equal(h.getHomeEntryState().after, 'notification-settings');
-  oldImage.props.onDisplay(); oldImage.props.onError({});
-  assert.equal(h.getHomeEntryState().ready.length, 0); assert.equal(h.getHomeEntryState().failed, false);
-  assert.notEqual(h.HomeEntryImage({ asset: 'scene' }).key, oldImage.key);
+  oldImage.props.onDisplay(); oldImage.props.onError({ error: 'late' });
+  assert.equal(h.getHomeEntryState().attempt, oldAttempt);
+  assert.equal(h.getHomeEntryState().ready.length, 0);
   gate.unmount(); assert.equal(h.timers.size, 0);
 });
 
@@ -176,9 +194,9 @@ test('purchased onboarding notification is deferred until after Home paint, exac
   gate.unmount();
 });
 
-test('late native frames can recover a timeout without a second navigation', () => {
+test('late native frames after timeout cannot re-arm or navigate', () => {
   const h = harness(); h.beginHomeEntry(); const gate = h.component(h.HomeEntryGate, { children: null });
-  gate.render(); h.expire(12000); gate.render(); h.ready(); gate.render(); h.frame(); h.frame(); gate.render();
+  gate.render(); h.expire(750); gate.render(); h.ready(); gate.render(); h.frame(); h.frame(); gate.render();
   assert.equal(h.getHomeEntryState().pending, false); assert.equal(h.routes.length, 0);
   gate.unmount();
 });
@@ -200,9 +218,9 @@ test('entry is armed before auth redirects; first Home mounts before notificatio
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('markIntroSeen()'));
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('await ensureSession()'));
   const signing = read('apps/mobile/app/(auth)/signing-in.tsx');
-  assert.match(signing, /beginHomeEntry\(\);[\s\S]*deferHomeEntryNotification\(\);[\s\S]*router.replace\('\/\(main\)\/\(tabs\)'\)/);
+  assert.match(signing, /beginHomeEntry\(\{ target: 'home', forceHomeData: true \}\);[\s\S]*deferHomeEntryNotification\(\);[\s\S]*router.replace\('\/\(main\)\/\(tabs\)'\)/);
   const index = read('apps/mobile/app/index.tsx');
-  assert.match(index, /beginHomeEntry\(\);\s*setRoute\('main'\)/);
+  assert.match(index, /beginHomeEntry\(\{ target: 'home', forceHomeData: true \}\);\s*setRoute\('main'\)/);
   assert.match(read('apps/mobile/app/_layout.tsx'), /observeHomeEntryAppState\(state\)/);
   assert.match(read('apps/mobile/app/(main)/_layout.tsx'), /<HomeEntryGate>[\s\S]*<Stack[\s\S]*<\/HomeEntryGate>/);
   assert.doesNotMatch(read(stateFile), /storage|supabase|fetch\(/);

@@ -366,9 +366,9 @@ function RootLayout() {
       observeHomeEntryAppState(state);
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
-        // R2 assets are warmed only while the app is in use. The queue
-        // rebuilds from the manifest + local disk on every cold launch, so a
-        // force-close naturally resumes only the still-missing files.
+        // R2 work runs only while the app is in use. Android waits for the
+        // first bundled destination to paint, then fills P0 through one idle,
+        // file-only worker; visible requests can move to the front.
         resumeDownloadQueue();
         void touchActivity();
         void reconcileDailyReminderSchedule();

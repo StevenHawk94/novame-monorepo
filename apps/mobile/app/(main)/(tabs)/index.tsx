@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { requireAiConsent } from '@/lib/ai-consent';
 import { prioritizeR2Image } from '@/lib/download-queue';
+import { invalidateAndroidR2CachedFile } from '@/lib/android-r2-file-cache';
 import { useR2AssetRevision } from '@/lib/use-r2-asset-revision';
 import { haptics } from '@/lib/haptics';
 import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
@@ -13,7 +14,7 @@ import { CompanionVideo } from '@/components/main/companion-video';
 import { HomeEntryImage } from '@/components/main/home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { failHomeEntry, getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
-import { DEFAULT_SCENE_BG, getHomeSceneSource } from '@/lib/scenes';
+import { DEFAULT_SCENE_BG, getHomeSceneRemoteUrl, getHomeSceneSource } from '@/lib/scenes';
 import {
   advanceDefaultBubble,
   getFreshBubbleState,
@@ -234,6 +235,7 @@ export default function HomeScreen() {
   });
 
   const selectedSceneImg = getHomeSceneSource();
+  const selectedSceneRemoteUrl = getHomeSceneRemoteUrl();
   const selectedSceneUri = typeof selectedSceneImg === 'object' ? selectedSceneImg.uri : null;
   const sceneImg = Platform.OS === 'android'
     && selectedSceneUri
@@ -249,6 +251,16 @@ export default function HomeScreen() {
   const entriesTop = homeLayout.safeHeight > 0
     ? videoBottom + Math.max(0, (availableBelowVideo - homeLayout.entriesHeight) / 2)
     : undefined;
+
+  useEffect(() => {
+    setFailedAndroidSceneUri(null);
+  }, [r2AssetRevision]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && selectedSceneRemoteUrl) {
+      prioritizeR2Image(selectedSceneRemoteUrl);
+    }
+  }, [selectedSceneRemoteUrl]);
 
   useEffect(() => {
     if (!homeEntry.pending || entriesTop == null || measuredLayoutParts.length < 5) return;
@@ -270,7 +282,10 @@ export default function HomeScreen() {
         recyclingKey={`home-scene:${r2AssetRevision}`}
         onError={() => {
           if (typeof sceneImg === 'object' && sceneImg.uri) {
-            prioritizeR2Image(sceneImg.uri);
+            if (selectedSceneRemoteUrl) {
+              invalidateAndroidR2CachedFile(selectedSceneRemoteUrl);
+              prioritizeR2Image(selectedSceneRemoteUrl);
+            }
             if (Platform.OS === 'android') setFailedAndroidSceneUri(sceneImg.uri);
           }
         }}

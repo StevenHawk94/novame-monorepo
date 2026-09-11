@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
 import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
@@ -11,10 +11,18 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
-import { prioritizeR2Image } from '../../../src/lib/download-queue';
+import {
+  ensurePriorityR2Image,
+  prioritizeR2Image,
+} from '../../../src/lib/download-queue';
 import { useR2AssetRevision } from '../../../src/lib/use-r2-asset-revision';
 import { ICONS } from '../../../src/lib/icons';
 import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
+import {
+  androidR2ImageSource,
+  getAndroidR2CachedUri,
+  invalidateAndroidR2CachedFile,
+} from '../../../src/lib/android-r2-file-cache';
 import { getSelectedScene, setSelectedScene } from '../../../src/lib/cosmetics-store';
 import {
   DEFAULT_SCENE_KEY,
@@ -89,6 +97,12 @@ export default function SceneSelectScreen() {
   // limited to the current/owned set and warmed one at a time (current first),
   // so opening Maps never starts sixteen large competing downloads.
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      for (const scene of catalog.slice(0, 6)) {
+        prioritizeR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion));
+      }
+      return;
+    }
     const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb, scene.assetVersion));
     if (thumbUrls.length > 0) {
       void ExpoImage.prefetch(thumbUrls, { cachePolicy: 'disk' });
@@ -124,18 +138,26 @@ export default function SceneSelectScreen() {
     if (imageUrl) {
       let cachedPath: string | null = null;
       try {
-        cachedPath = await withDeadline(ExpoImage.getCachePathAsync(imageUrl), 3000);
+        cachedPath = Platform.OS === 'android'
+          ? getAndroidR2CachedUri(imageUrl)
+          : await withDeadline(ExpoImage.getCachePathAsync(imageUrl), 3000);
       } catch { /* a failed cache lookup is handled as a cache miss */ }
       if (!run.isCurrent() || closingRef.current) return;
 
       if (cachedPath) {
         // Do not hold the user in the modal. This disk hit also warms the
         // decoded memory entry while Home is coming back into focus.
-        void ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' });
+        if (Platform.OS !== 'android') {
+          void ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' });
+        }
       } else {
         setSwitching(true);
         try {
-          await withDeadline(ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' }), 12000);
+          if (Platform.OS === 'android') {
+            await withDeadline(ensurePriorityR2Image(imageUrl), 12000);
+          } else {
+            await withDeadline(ExpoImage.prefetch(imageUrl, { cachePolicy: 'memory-disk' }), 12000);
+          }
         } catch { /* falls back to on-demand load on Home */ }
         if (!run.isCurrent() || closingRef.current) return;
         setSwitching(false);
@@ -259,12 +281,16 @@ export default function SceneSelectScreen() {
               return (
                 <Pressable onPress={() => onTap(s)} style={styles.cell}>
                   <ExpoImage
-                    source={{ uri: sceneAssetUrl(s.thumb, s.assetVersion) }}
+                    source={androidR2ImageSource(sceneAssetUrl(s.thumb, s.assetVersion))}
                     style={styles.thumb}
                     contentFit="cover"
                     transition={100}
                     recyclingKey={`scene-thumb:${s.key}:${assetRevision}`}
-                    onError={() => prioritizeR2Image(sceneAssetUrl(s.thumb, s.assetVersion))}
+                    onError={() => {
+                      const url = sceneAssetUrl(s.thumb, s.assetVersion);
+                      invalidateAndroidR2CachedFile(url);
+                      prioritizeR2Image(url);
+                    }}
                   />
                   <Text style={styles.cellName} numberOfLines={2}>{s.name}</Text>
                   {isCurrent(s.key) ? (

@@ -21,12 +21,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ScreenOverlay } from '@/components/ui/screen-overlay';
 import { GridBackground } from '@/components/ui/grid-background';
-import { disableMetaAnalytics, initializeMetaAnalytics } from '@/lib/meta-analytics';
+import { disableAdMeasurement, initializeAdMeasurement } from '@/lib/ad-measurement';
 import { hasSeenIntro } from '@/lib/onboarding';
 import { hideSplashOnce } from '@/lib/splash';
 import { storage } from '@/lib/storage';
 import { ICONS } from '@/lib/icons';
-import { kMetaPrivacyChoice } from '@/shared/storage/keys';
+import { kAdsPrivacyChoice } from '@/shared/storage/keys';
 
 type MetaPrivacyChoice = 'granted' | 'denied';
 type PrivacyRegion = 'checking' | 'eea_uk' | 'other' | 'unknown';
@@ -47,7 +47,7 @@ const REGION_TIMEOUT_MS = 20_000;
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
 
 function savedChoice(): MetaPrivacyChoice | null {
-  const value = storage.getString(kMetaPrivacyChoice.name);
+  const value = storage.getString(kAdsPrivacyChoice.name);
   return value === 'granted' || value === 'denied' ? value : null;
 }
 
@@ -55,7 +55,10 @@ async function fetchPrivacyRegion(): Promise<PrivacyRegion> {
   // Explicit local override makes the two consent branches testable without
   // pretending device locale or App Store country is a reliable location.
   const override = __DEV__
-    ? process.env.EXPO_PUBLIC_META_PRIVACY_REGION_OVERRIDE?.trim().toLowerCase()
+    ? (
+      process.env.EXPO_PUBLIC_ADS_PRIVACY_REGION_OVERRIDE
+      ?? process.env.EXPO_PUBLIC_META_PRIVACY_REGION_OVERRIDE
+    )?.trim().toLowerCase()
     : undefined;
   if (override === 'eea_uk') return 'eea_uk';
   if (override === 'other') return 'other';
@@ -69,7 +72,7 @@ async function fetchPrivacyRegion(): Promise<PrivacyRegion> {
     // This endpoint is intentionally public. Do not route it through the
     // authenticated ApiClient: resolving the Supabase session during a cold
     // launch can consume the whole timeout before the network request starts,
-    // leaving Meta disabled as an unknown region on both platforms.
+    // leaving ad measurement disabled as an unknown region on both platforms.
     const raw = await fetch(`${API_BASE_URL}/api/privacy-region`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
@@ -85,14 +88,14 @@ async function fetchPrivacyRegion(): Promise<PrivacyRegion> {
       : 'unknown';
     if (__DEV__) {
       console.info(
-        '[meta-privacy] region resolved:',
+        '[ads-privacy] region resolved:',
         resolved,
         `(${Date.now() - startedAt}ms)`,
       );
     }
     return resolved;
   } catch (error) {
-    console.warn('[meta-privacy] region lookup failed; Meta remains disabled:', error);
+    console.warn('[ads-privacy] region lookup failed; ad measurement remains disabled:', error);
     return 'unknown';
   } finally {
     clearTimeout(timer);
@@ -118,17 +121,17 @@ export function MetaPrivacyProvider({ children }: PropsWithChildren) {
 
     regionPromise.current = fetchPrivacyRegion().then((resolved) => {
       setRegion(resolved);
-      if (resolved === 'other') initializeMetaAnalytics();
+      if (resolved === 'other') initializeAdMeasurement();
       // Unknown is deliberately fail-closed: no prompt based on a guess, and
-      // no Meta initialization until a later launch can classify the region.
+      // no ads SDK initialization until a later launch can classify the region.
       return resolved;
     });
     return regionPromise.current;
   }, [region]);
 
   useEffect(() => {
-    if (initialChoice === 'granted') initializeMetaAnalytics();
-    else if (initialChoice === 'denied') disableMetaAnalytics();
+    if (initialChoice === 'granted') initializeAdMeasurement();
+    else if (initialChoice === 'denied') disableAdMeasurement();
 
     void resolveRegion().then((resolved) => {
       if (initialReturningUser && resolved === 'eea_uk' && !choiceRef.current) {
@@ -139,12 +142,12 @@ export function MetaPrivacyProvider({ children }: PropsWithChildren) {
 
   const choose = useCallback((next: MetaPrivacyChoice) => {
     choiceRef.current = next;
-    storage.set(kMetaPrivacyChoice.name, next);
+    storage.set(kAdsPrivacyChoice.name, next);
     setChoice(next);
     setRegion('eea_uk');
     setPromptMode(null);
-    if (next === 'granted') initializeMetaAnalytics();
-    else disableMetaAnalytics();
+    if (next === 'granted') initializeAdMeasurement();
+    else disableAdMeasurement();
     const waiters = decisionWaiters.current.splice(0);
     waiters.forEach((resolve) => resolve());
   }, []);
@@ -165,7 +168,7 @@ export function MetaPrivacyProvider({ children }: PropsWithChildren) {
     openPreferences,
   }), [choice, ensureConsentBeforeHome, openPreferences, region]);
 
-  // Never hold the native splash while IP classification is in flight. Meta
+  // Never hold the native splash while IP classification is in flight. Ads
   // remains disabled during `checking`/`unknown`; a confirmed EEA/UK response
   // still gates measurement behind the consent surface.
   const startupBlocking = initialReturningUser
@@ -237,14 +240,14 @@ function ConsentSurface({
         <Image source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
         <Text style={styles.title}>Help improve Burrow</Text>
         <Text style={styles.body}>
-          With your permission, Burrow will share limited app activity and device information with Meta to measure whether our ads are effective and improve our campaigns.
+          With your permission, Burrow will share limited app activity and device information with TikTok and Meta to measure whether our ads are effective and improve our campaigns.
         </Text>
         <View style={styles.detailCard}>
           <Text style={styles.detailText}>
-            This includes events such as first launch, completing onboarding, your first journal entry, and starting a trial.
+            This includes events such as first launch, completing onboarding or a journal, connecting an account, and starting a trial or subscription.
           </Text>
           <Text style={styles.detailText}>
-            We never send your journal content, messages, name, email, or friend information to Meta.
+            We never send your journal content, messages, name, email, or friend information to TikTok or Meta.
           </Text>
         </View>
         <Pressable accessibilityRole="button" onPress={onAllow} style={styles.allowButton}>

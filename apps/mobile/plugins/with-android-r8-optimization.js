@@ -23,6 +23,15 @@ const OPTIMIZED_RULES_PATTERN =
 const RULES_START = '# burrow-r8-safety:start';
 const RULES_END = '# burrow-r8-safety:end';
 const R8_SAFETY_RULES = `${RULES_START}
+# Expo SDK 54 registers native module definitions and image source records at
+# runtime. Full-mode optimization may inline or rewrite these classes even
+# though their resource files remain in the AAB, leaving numeric Metro assets
+# impossible to resolve in Play release builds. Keep only the affected bridge
+# packages until the Expo/React Native toolchain can move to an AGP version
+# with the newer integrated resource shrinker.
+-keep class expo.modules.image.** { *; }
+-keep class expo.modules.asset.** { *; }
+
 # Expo TaskManager persists consumer class names and recreates consumers with
 # reflection. Keep the stable name and the exact reflective constructor while
 # still allowing R8 to optimize the implementation.

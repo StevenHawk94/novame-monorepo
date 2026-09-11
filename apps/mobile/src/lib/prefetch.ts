@@ -23,8 +23,8 @@ let entryBackgroundWarmRequest: Promise<void> | null = null;
  */
 export function warmEntryBackgrounds(): Promise<void> {
   if (entryBackgroundWarmRequest) return entryBackgroundWarmRequest;
-  // On Android, bundled Metro assets are already local resources and the
-  // entry screens keep themselves hidden until expo-image reports onDisplay.
+  // On Android, bundled Metro assets are already local resources and render
+  // directly from the mounted view; no imperative pre-decode is required.
   // Calling Image.loadAsync with a numeric require() source is unsafe under
   // full-mode R8 (the native SourceMap converter can reject the bridged map),
   // so let the mounted Image perform the decode instead. Keep the iOS warm-up
@@ -47,6 +47,10 @@ export function prefetchAppData(): void {
   // intentionally omitted: their screens paint from cache and lazily ask
   // their own resource to revalidate when the user actually opens them.
   // Selected Home scene background (remote scenes only — bundled default is a number).
+  // Android's selected R2 scene is already promoted by Home and written by
+  // the file-only queue. Imperative prefetch here would decode it a second
+  // time and reintroduce the memory spike this pipeline avoids.
+  if (Platform.OS === 'android') return;
   const sceneSrc = getHomeSceneSource();
   if (typeof sceneSrc === 'object' && sceneSrc.uri && sceneSrc.uri !== lastPrefetchedSceneUri) {
     lastPrefetchedSceneUri = sceneSrc.uri;

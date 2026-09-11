@@ -45,7 +45,7 @@ import {
 } from '@/lib/reflect-settlement-outbox';
 
 import { RC } from './reflect-shared';
-import { logFirstReflectCompleted } from '@/lib/meta-analytics';
+import { logJournalCompleted } from '@/lib/ad-measurement';
 
 const INVALID_AI_MEMORY = [
   /\bno (?:specific )?memor(?:y|ies)\b/i,
@@ -366,10 +366,23 @@ export function ReflectSettlementView({
     releaseReflectSettlement(draft.draftId);
     if (Platform.OS !== 'web') markNavigationTransitionPending(route.key);
     recordReflectionPaywallClaim(!isPaid);
-    if (!shared) logFirstReflectCompleted(draft.userId);
+    logJournalCompleted({
+      userId: draft.userId,
+      journalKind: draft.journalKind,
+      shared: Boolean(shared),
+    });
     onFinalized(completed);
     if (recordReflectClaimForRating()) emitOfficialRatingRequest();
-  }, [completed, draft.draftId, isPaid, onFinalized, route.key, shared]);
+  }, [
+    completed,
+    draft.draftId,
+    draft.journalKind,
+    draft.userId,
+    isPaid,
+    onFinalized,
+    route.key,
+    shared,
+  ]);
 
   function persistMemories(next: ReflectMemoryDraft[]) {
     memoriesRef.current = next;

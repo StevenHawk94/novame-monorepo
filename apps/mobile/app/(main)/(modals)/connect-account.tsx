@@ -14,6 +14,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { supabase } from '@/lib/supabase';
 import { storage } from '@/lib/storage';
 import { kConnectedAccount } from '@/shared/storage/keys';
+import { logRegistration } from '@/lib/ad-measurement';
 import {
   connectProviderOrSignIn,
   sendPasswordlessEmailOtp,
@@ -129,6 +130,9 @@ export default function ConnectAccountScreen() {
     const res = await connectProviderOrSignIn(provider);
     setBusy(false);
     if (res.ok && res.mode === 'linked') {
+      void supabase.auth.getSession().then(({ data }) => {
+        logRegistration(data.session?.user?.id);
+      });
       refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
         { text: 'OK', onPress: finish },
@@ -172,6 +176,9 @@ export default function ConnectAccountScreen() {
     }
     void haptics.success();
     if (emailMode === 'change') {
+      void supabase.auth.getSession().then(({ data }) => {
+        logRegistration(data.session?.user?.id);
+      });
       refreshConnected();
       appAlert('Account connected', 'Your memories are now safe on this account.', [
         { text: 'OK', onPress: finish },

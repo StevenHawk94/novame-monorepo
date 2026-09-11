@@ -15,6 +15,7 @@ import { kSceneCatalog } from '../shared/storage/keys';
 import { storage } from './storage';
 import { getSelectedScene } from './cosmetics-store';
 import { fetchManifestFromR2 } from './asset-cache';
+import { androidR2ImageSource } from './android-r2-file-cache';
 
 const R2_BASE = 'https://media.novameapp.com';
 
@@ -68,15 +69,21 @@ export async function fetchSceneCatalog(options?: { force?: boolean }): Promise<
 }
 
 /**
- * The Home background source for the currently selected scene. Remote scenes
- * render via expo-image's disk cache (prefetched at launch); the default —
- * and any legacy 'sceneN' value — is the bundled art.
+ * The Home background source for the currently selected scene. iOS keeps its
+ * established remote source. Android exposes a verified local file only and
+ * uses the bundled default while its one-lane worker fills that file.
  */
 export function getHomeSceneSource(): number | { uri: string } {
+  const remoteUrl = getHomeSceneRemoteUrl();
+  return remoteUrl ? androidR2ImageSource(remoteUrl) ?? DEFAULT_SCENE_BG : DEFAULT_SCENE_BG;
+}
+
+/** Canonical R2 URL for queueing/invalidation; null means bundled default. */
+export function getHomeSceneRemoteUrl(): string | null {
   const selected = getSelectedScene();
   if (!selected || selected === DEFAULT_SCENE_KEY || /^scene\d+$/.test(selected)) {
-    return DEFAULT_SCENE_BG;
+    return null;
   }
   const def = getCachedSceneCatalog().find((s) => s.key === selected);
-  return def ? { uri: sceneAssetUrl(def.image, def.assetVersion) } : DEFAULT_SCENE_BG;
+  return def ? sceneAssetUrl(def.image, def.assetVersion) : null;
 }

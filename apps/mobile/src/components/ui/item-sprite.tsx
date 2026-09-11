@@ -15,15 +15,19 @@
  * assets/items/, then run tools/slice-item-images.py to refresh both the
  * per-item webps and the generated map.
  */
-import { memo, useEffect, useSyncExternalStore } from 'react';
+import { memo, useEffect, useState, useSyncExternalStore } from 'react';
 import { Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 import { TAP_PERSON_IMAGES } from '../../lib/tap-person-images';
 import { mergedItemDictionary, remoteImageUri } from '../../lib/remote-items';
-import { prioritizeR2Image } from '../../lib/download-queue';
+import { ensurePriorityR2Image, prioritizeR2Image } from '../../lib/download-queue';
 import { getCachedRemoteItemManifest, subscribeRemoteItemManifest } from '../../lib/item-manifest-cache';
+import {
+  getAndroidR2CachedUri,
+  invalidateAndroidR2CachedFile,
+} from '../../lib/android-r2-file-cache';
 
 type Props = {
   itemId: string;
@@ -91,9 +95,42 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
   const remoteUri = remoteImageUri(itemId);
   const bundledArt = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
   const warmedArt = warmedBundledArt.get(itemId);
-  const art = remoteUri ? { uri: remoteUri } : warmedArt ?? bundledArt;
+  const [androidRemote, setAndroidRemote] = useState<{
+    sourceUrl: string | null;
+    localUri: string | null;
+  }>(() => ({
+    sourceUrl: remoteUri,
+    localUri: remoteUri ? getAndroidR2CachedUri(remoteUri) : null,
+  }));
   useEffect(() => {
-    if (remoteUri) prioritizeR2Image(remoteUri);
+    if (Platform.OS !== 'android') return;
+    let active = true;
+    if (!remoteUri) {
+      setAndroidRemote({ sourceUrl: null, localUri: null });
+      return () => { active = false; };
+    }
+    const cached = getAndroidR2CachedUri(remoteUri);
+    setAndroidRemote({ sourceUrl: remoteUri, localUri: cached });
+    if (!cached) {
+      void ensurePriorityR2Image(remoteUri).then((uri) => {
+        if (active && uri) setAndroidRemote({ sourceUrl: remoteUri, localUri: uri });
+      });
+    }
+    return () => { active = false; };
+  }, [remoteUri]);
+  // Android never lets a mounted grid start an independent remote decode.
+  // Keep showing its bundled fallback until the shared one-lane file worker
+  // publishes a verified local URI. iOS retains the existing remote source.
+  const remoteArt = remoteUri
+    ? Platform.OS === 'android'
+      ? androidRemote.sourceUrl === remoteUri && androidRemote.localUri
+        ? { uri: androidRemote.localUri }
+        : null
+      : { uri: remoteUri }
+    : null;
+  const art = remoteArt ?? warmedArt ?? bundledArt;
+  useEffect(() => {
+    if (Platform.OS !== 'android' && remoteUri) prioritizeR2Image(remoteUri);
   }, [remoteUri]);
   if (art == null) {
     const item = mergedItemDictionary().items[itemId];
@@ -120,8 +157,21 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
         style,
       ]}
     >
-      <Image source={art} placeholder={remoteUri ? warmedArt ?? bundledArt : undefined}
-        placeholderContentFit="contain" style={{ width: size, height: size }} contentFit="contain" />
+      <Image
+        source={art}
+        placeholder={remoteUri ? warmedArt ?? bundledArt : undefined}
+        placeholderContentFit="contain"
+        style={{ width: size, height: size }}
+        contentFit="contain"
+        onError={() => {
+          if (Platform.OS !== 'android' || !remoteUri || !remoteArt) return;
+          invalidateAndroidR2CachedFile(remoteUri);
+          setAndroidRemote({ sourceUrl: remoteUri, localUri: null });
+          void ensurePriorityR2Image(remoteUri).then((uri) => {
+            if (uri) setAndroidRemote({ sourceUrl: remoteUri, localUri: uri });
+          });
+        }}
+      />
     </View>
   );
 });

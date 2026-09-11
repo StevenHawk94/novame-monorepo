@@ -105,8 +105,8 @@ export default function SigningInScreen() {
         console.warn('[signing-in] companion sync timed out; save boundary will self-heal');
       }
 
-      // HomeEntryGate keeps this loading look until the actual Home visuals
-      // display. Existing local assets and data caches are reused unchanged.
+      // HomeEntryGate provides a short paint hand-off. Missing images or slow
+      // refreshes never hold Home closed; its local/cached views repaint.
       goHome();
     })();
 

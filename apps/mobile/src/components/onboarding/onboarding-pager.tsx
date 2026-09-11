@@ -6,6 +6,7 @@ import {
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Image, type ImageProps } from 'expo-image';
 import { hideSplashOnce } from '../../lib/splash';
+import { markAndroidP0UiReady } from '../../lib/download-queue';
 
 type PageContextValue = { playing: boolean; imageReady: (key: string) => void };
 const PageContext = createContext<PageContextValue | null>(null);
@@ -62,7 +63,10 @@ export function OnboardingPager({
   useEffect(() => {
     if (!displayed) return;
     // Hide the initial native splash only AFTER the prepared page is revealed.
-    const frame = requestAnimationFrame(hideSplashOnce);
+    const frame = requestAnimationFrame(() => {
+      hideSplashOnce();
+      markAndroidP0UiReady();
+    });
     return () => cancelAnimationFrame(frame);
   }, [displayed]);
 

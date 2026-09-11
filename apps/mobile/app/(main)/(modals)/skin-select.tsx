@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
 import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
@@ -11,10 +11,17 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '../../../src/lib/haptics';
-import { prioritizeR2Image } from '../../../src/lib/download-queue';
+import {
+  ensurePriorityOutfitVideo,
+  prioritizeR2Image,
+} from '../../../src/lib/download-queue';
 import { useR2AssetRevision } from '../../../src/lib/use-r2-asset-revision';
 import { ICONS } from '../../../src/lib/icons';
 import { useSubscriptionTier } from '../../../src/lib/use-subscription-tier';
+import {
+  androidR2ImageSource,
+  invalidateAndroidR2CachedFile,
+} from '../../../src/lib/android-r2-file-cache';
 import {
   fetchCosmetics,
   getCachedCosmetics,
@@ -91,10 +98,21 @@ export default function OutfitClosetScreen() {
 
   // Prefetch worn-preview images so tapping cards feels instant.
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      for (const outfit of catalog.slice(0, 6)) {
+        prioritizeR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion));
+      }
+      return;
+    }
     for (const o of catalog) void ExpoImage.prefetch(outfitAssetUrl(o.bunny, o.assetVersion));
   }, [catalog]);
 
   const preview = catalog.find((o) => o.key === previewKey) ?? null;
+  useEffect(() => {
+    if (Platform.OS === 'android' && preview) {
+      prioritizeR2Image(outfitAssetUrl(preview.bunny, preview.assetVersion));
+    }
+  }, [preview]);
   const owned = (o: OutfitDef) => isUnlocked(cosmetics, 'outfit', o.key);
 
   /**
@@ -115,7 +133,10 @@ export default function OutfitClosetScreen() {
     if (!run.isCurrent()) return;
     if (!cached) {
       setSwitching(true);
-      const uri = await withDeadline(ensureOutfitVideoCached(o), 12000).catch(() => null);
+      const uri = await withDeadline(
+        Platform.OS === 'android' ? ensurePriorityOutfitVideo(o) : ensureOutfitVideoCached(o),
+        12000,
+      ).catch(() => null);
       if (!run.isCurrent()) return;
       setSwitching(false);
       if (!uri) {
@@ -212,13 +233,19 @@ export default function OutfitClosetScreen() {
       <View style={styles.bgWrap}>
         <ExpoImage source={BG} style={styles.bgImg} contentFit="cover" />
         <ExpoImage
-          source={preview ? { uri: outfitAssetUrl(preview.bunny, preview.assetVersion) } : DEFAULT_BUNNY}
+          source={preview
+            ? androidR2ImageSource(outfitAssetUrl(preview.bunny, preview.assetVersion))
+            : DEFAULT_BUNNY}
           style={styles.bunny}
           contentFit="contain"
           transition={120}
           recyclingKey={`outfit-preview:${preview?.key ?? 'default'}:${assetRevision}`}
           onError={() => {
-            if (preview) prioritizeR2Image(outfitAssetUrl(preview.bunny, preview.assetVersion));
+            if (preview) {
+              const url = outfitAssetUrl(preview.bunny, preview.assetVersion);
+              invalidateAndroidR2CachedFile(url);
+              prioritizeR2Image(url);
+            }
           }}
         />
         <Pressable
@@ -290,12 +317,16 @@ export default function OutfitClosetScreen() {
                 style={[styles.card, isSelected && styles.cardSelected]}
               >
                 <ExpoImage
-                  source={{ uri: outfitAssetUrl(o.thumb, o.assetVersion) }}
+                  source={androidR2ImageSource(outfitAssetUrl(o.thumb, o.assetVersion))}
                   style={styles.thumb}
                   contentFit="contain"
                   transition={100}
                   recyclingKey={`outfit-thumb:${o.key}:${assetRevision}`}
-                  onError={() => prioritizeR2Image(outfitAssetUrl(o.thumb, o.assetVersion))}
+                  onError={() => {
+                    const url = outfitAssetUrl(o.thumb, o.assetVersion);
+                    invalidateAndroidR2CachedFile(url);
+                    prioritizeR2Image(url);
+                  }}
                 />
                 {plusLocked ? (
                   <View style={styles.plusPill}>

@@ -170,7 +170,7 @@ export default function SharedMemoryCreateScreen() {
         enabled={phase !== 'result'}
       >
         <KeyboardDismissView style={[styles.root, { paddingTop: insets.top + 10 }]}>
-          {phase !== 'result' && <ReflectTopBar remaining={remaining} onBack={() => router.back()} />}
+          {phase !== 'result' && <ReflectTopBar onBack={() => router.back()} />}
 
           {phase === 'result' && preparedDraft ? (
             <View style={{ flex: 1 }}>

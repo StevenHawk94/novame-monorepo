@@ -22,7 +22,7 @@ import {
   setChosenCompanion,
   setOnboardingChoices,
 } from '../../src/lib/onboarding';
-import { logOnboardingCompleted } from '../../src/lib/meta-analytics';
+import { logOnboardingCompleted, logRegistration } from '../../src/lib/ad-measurement';
 import { useMetaPrivacy } from '../../src/components/privacy/meta-privacy-provider';
 import {
   connectProviderOrSignIn, ensureSession,
@@ -405,6 +405,11 @@ export default function OnboardingScreen() {
     const res = await connectProviderOrSignIn(provider);
     setLinking(false);
     if (res.ok) {
+      if (res.mode === 'linked') {
+        void supabase.auth.getSession().then(({ data }) => {
+          logRegistration(data.session?.user?.id);
+        });
+      }
       appAlert(
         res.mode === 'linked' ? 'Account connected' : 'Welcome back!',
         res.mode === 'linked'
@@ -443,6 +448,11 @@ export default function OnboardingScreen() {
     if (!res.ok) {
       appAlert('Wrong code', res.error ?? 'Double-check the 6-digit code and try again.');
       return;
+    }
+    if (linkMode === 'change') {
+      void supabase.auth.getSession().then(({ data }) => {
+        logRegistration(data.session?.user?.id);
+      });
     }
     appAlert(
       linkMode === 'change' ? 'Account connected' : 'Welcome back!',

@@ -9,8 +9,8 @@ import { hideSplashOnce } from '@/lib/splash';
 import { beginHomeEntry, getHomeEntryState } from '@/lib/home-entry-readiness';
 
 /**
- * Entry router. Home mounts under its visual readiness cover; only its visible
- * assets are awaited, never the whole remote library or unrelated API caches.
+ * Entry router. Home mounts beneath a short paint hand-off; image/network
+ * callbacks never gate the destination or the rest of the remote library.
  *
  * GUEST MODE (2026-07-26): the app never forces a login. A signed-in (or
  * anonymous) completed session goes home; a fresh install goes to onboarding.

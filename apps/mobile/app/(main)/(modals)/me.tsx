@@ -364,7 +364,7 @@ export default function MeScreen() {
             {metaPrivacy.applies ? (
               <MenuRow
                 emoji={'🛡️'}
-                label={`Meta Measurement: ${metaPrivacy.choice === 'granted' ? 'Allowed' : 'Not allowed'}`}
+                label={`Ad Measurement: ${metaPrivacy.choice === 'granted' ? 'Allowed' : 'Not allowed'}`}
                 onPress={metaPrivacy.openPreferences}
                 divider
               />

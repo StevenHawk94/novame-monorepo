@@ -65,7 +65,7 @@ import {
   setCachedSubscription,
 } from './subscription';
 import type { PricingTierKey } from '@novame/core';
-import { logStartTrial } from './meta-analytics';
+import { logStartTrial, logSubscribe } from './ad-measurement';
 
 // ---- Purchase outcome (for paywall to react to upgrade vs downgrade) ----
 
@@ -1054,6 +1054,7 @@ async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
 
   const { cycle } = entitlement;
   if (startedFreeTrial) logStartTrial({ productId, cycle });
+  else logSubscribe({ productId, cycle });
 
   // Stage 6 follow-up (Me-page subscription regression): proactively
   // refresh me-stats cache rather than just invalidating it.

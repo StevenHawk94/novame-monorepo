@@ -290,7 +290,7 @@ export const kFirstPartnerReflectGuide = defineKey(
  *  session-less launch to onboarding (unseen) vs sign-in (seen). */
 export const kOnboardingIntroSeen = defineKey('novame_onboarding_intro_seen', 'device');
 
-/** Meta Ads funnel deduplication. No user content or identity is stored. */
+/** Ads funnel deduplication. No user content or identity is stored. */
 export const kMetaFirstLaunchLogged = defineKey('burrow_meta_first_launch_logged', 'device');
 export const kMetaOnboardingCompletedLogged = defineKey(
   'burrow_meta_onboarding_completed_logged',
@@ -300,8 +300,18 @@ export const kMetaFirstReflectLogged = definePrefixKey(
   'burrow_meta_first_reflect_logged:',
   'device',
 );
-/** EEA/UK Meta measurement choice. Absent means the user has not decided. */
+export const kTikTokOnboardingCompletedLogged = defineKey(
+  'burrow_tiktok_onboarding_completed_logged',
+  'device',
+);
+export const kTikTokRegistrationLogged = definePrefixKey(
+  'burrow_tiktok_registration_logged:',
+  'device',
+);
+/** Legacy Meta-only choice retained so upgrades can clear it safely. */
 export const kMetaPrivacyChoice = defineKey('burrow_meta_privacy_choice', 'device');
+/** EEA/UK ads-measurement choice covering the currently disclosed partners. */
+export const kAdsPrivacyChoice = defineKey('burrow_ads_privacy_choice_v2', 'device');
 
 /**
  * shipping-form.tsx: STORAGE_KEY. Read by order-history.tsx:122.
@@ -444,6 +454,9 @@ export const kRatingReflectClaimCount = defineKey('novame_rating_reflect_claim_c
 export const kAssetManifest = defineKey('asset-manifest:cached', 'device');
 /** asset-cache.ts: independent six-hour freshness timestamp for the R2 manifest. */
 export const kAssetManifestFetchedAt = defineKey('asset-manifest:fetched-at', 'device');
+
+/** Android file-only P0 cache: immutable R2 URL -> verified local file URI. */
+export const kAndroidR2FileIndex = defineKey('android-r2-p0:file-index:v1', 'device');
 
 /** Immutable remote Item overlay selected by content-version.itemsVersion. */
 export const kRemoteItemManifest = defineKey('remote-item-manifest:v1', 'device');

@@ -7,6 +7,7 @@ import { withDeadline } from '@/lib/async-lifecycle';
 import { Image as ExpoImage } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
+import { androidR2ImageSource } from '@/lib/android-r2-file-cache';
 
 import { getCurrentSession } from '@/lib/auth';
 import {
@@ -135,7 +136,7 @@ export function AnnouncementGate() {
             showsVerticalScrollIndicator={false}
           >
             <ExpoImage
-              source={{ uri: announcement.image_url! }}
+              source={androidR2ImageSource(announcement.image_url!)}
               style={styles.image}
               contentFit="contain"
               cachePolicy="disk"

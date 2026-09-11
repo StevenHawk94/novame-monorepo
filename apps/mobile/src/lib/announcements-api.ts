@@ -1,6 +1,7 @@
 import { apiClient } from './api';
 import { Image as ExpoImage } from 'expo-image';
-import { enqueueR2Image } from './download-queue';
+import { Platform } from 'react-native';
+import { enqueueR2Image, ensurePriorityR2Image } from './download-queue';
 
 export type Announcement = {
   id: string;
@@ -52,7 +53,10 @@ async function prefetchImageBeforeDeadline(uri: string): Promise<boolean> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   try {
     return await Promise.race([
-      ExpoImage.prefetch(uri, 'disk').then(Boolean).catch(() => false),
+      (Platform.OS === 'android'
+        ? ensurePriorityR2Image(uri, -200).then(Boolean)
+        : ExpoImage.prefetch(uri, 'disk').then(Boolean)
+      ).catch(() => false),
       new Promise<boolean>((resolve) => {
         timeoutId = setTimeout(() => resolve(false), IMAGE_PRELOAD_TIMEOUT_MS);
       }),

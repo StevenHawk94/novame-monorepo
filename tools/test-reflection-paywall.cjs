@@ -54,10 +54,10 @@ test('current settlement completion counts once, only after success; an in-settl
   visit(source); assert.ok(effect, 'new settlement must invoke the restored cadence');
   const h = counter(), calls = [];
   const context = { completed: null, delivered: { current: false }, isPaid: false, shared: false,
-    draft: { draftId: 'one', userId: 'user-one' },
+    draft: { draftId: 'one', userId: 'user-one', journalKind: 'write_freely' },
     Platform: { OS: 'ios' }, route: { key: 'reflect-screen' }, markNavigationTransitionPending() {},
     releaseReflectSettlement() {}, recordReflectionPaywallClaim: h.api.recordReflectionPaywallClaim,
-    logFirstReflectCompleted() {},
+    logJournalCompleted() {},
     onFinalized: () => calls.push('finished'), recordReflectClaimForRating: () => false, emitOfficialRatingRequest() {},
   };
   const run = vm.runInNewContext('(' + effect.getText(source) + ')', context);
@@ -243,7 +243,7 @@ test('cancelling a native swipe clears transition state on the still-focused rou
 
 test('Paywall uses requested copy and responsive larger icons with a fixed text gap', () => {
   const file = read('apps/mobile/app/(main)/(modals)/reflection-plus-paywall.tsx');
-  for (const copy of ['Memories Need Your Input', 'Auto Summarize Reflections into Memories',
+  for (const copy of ['Memories Need Your Input', 'Auto Summarize Journal Entries into Memories',
     'And more features to help you live your life while staying close to your person.', '[Input your memory]', 'Try for Free']) {
     assert.ok(file.includes(copy), copy);
   }

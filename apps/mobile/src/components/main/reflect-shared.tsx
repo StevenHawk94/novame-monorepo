@@ -1,6 +1,6 @@
 /**
  * Shared pieces of the three Reflect entries (2026-07-24 design):
- *   - ReflectTopBar     back circle + "N of 3 left today"
+ *   - ReflectTopBar     back circle shared by all Journal flows
  *   - SelectableItemGrid the tappable sprite grid (guided + object flows)
  *   - MemoryEditSheet   the "N Items" note editor (mocks: yellow-frame card)
  *   - ReflectResultView "Reflection Done" (+clovers, +memory items, claim,
@@ -74,13 +74,12 @@ export function itemIdsForCategories(categories: string[]): string[] {
 
 // ---- top bar ----------------------------------------------------------------
 
-export function ReflectTopBar({ remaining, onBack }: { remaining?: number; onBack: () => void }) {
+export function ReflectTopBar({ onBack }: { onBack: () => void }) {
   return (
     <View style={s.topBar}>
       <Pressable onPress={() => { void haptics.pageClose(); onBack(); }} style={s.backCircle} hitSlop={10}>
         <MaterialIcons name="arrow-back" size={24} color={RC.ink} />
       </Pressable>
-      {remaining != null && <Text style={s.remaining}>{remaining} of 3 left today</Text>}
     </View>
   );
 }
@@ -413,7 +412,6 @@ const s = StyleSheet.create({
     width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center',
   },
-  remaining: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.95)' },
 
   gridRow: { gap: 4, paddingHorizontal: 8 },
   gridContent: { gap: 7, paddingVertical: 12 },

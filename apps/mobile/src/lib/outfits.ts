@@ -111,11 +111,23 @@ function videoCachePath(key: string, version?: string): string {
   return `${FileSystem.cacheDirectory}outfit-video-${VIDEO_PLATFORM}-${key}${tag}.${VIDEO_EXTENSION}`;
 }
 
+function videoCompletePath(key: string, version?: string): string {
+  return `${videoCachePath(key, version)}.complete`;
+}
+
 /** Local file URI if the outfit's video is already cached, else null. */
 export async function getCachedOutfitVideoUri(key: string, version?: string): Promise<string | null> {
   try {
-    const info = await FileSystem.getInfoAsync(videoCachePath(key, version));
-    return info.exists && (info.size ?? 0) > 0 ? info.uri : null;
+    const path = videoCachePath(key, version);
+    if (Platform.OS !== 'android') {
+      const info = await FileSystem.getInfoAsync(path);
+      return info.exists && (info.size ?? 0) > 0 ? info.uri : null;
+    }
+    const [info, marker] = await Promise.all([
+      FileSystem.getInfoAsync(path),
+      FileSystem.getInfoAsync(videoCompletePath(key, version)),
+    ]);
+    return info.exists && (info.size ?? 0) > 0 && marker.exists ? info.uri : null;
   } catch {
     return null;
   }
@@ -134,15 +146,45 @@ export function ensureOutfitVideoCached(outfit: OutfitDef): Promise<string | nul
   const p = (async () => {
     const cached = await getCachedOutfitVideoUri(outfit.key, outfit.assetVersion);
     if (cached) return cached;
+    const destination = videoCachePath(outfit.key, outfit.assetVersion);
+    if (Platform.OS !== 'android') {
+      try {
+        const result = await FileSystem.downloadAsync(
+          outfitAssetUrl(outfitVideoObjectKey(outfit), outfit.assetVersion),
+          destination,
+        );
+        if (result.status === 200) return result.uri;
+        await FileSystem.deleteAsync(destination, { idempotent: true });
+        return null;
+      } catch {
+        return null;
+      } finally {
+        inflight.delete(inflightKey);
+      }
+    }
+    const marker = videoCompletePath(outfit.key, outfit.assetVersion);
+    const partial = `${destination}.part`;
     try {
+      await Promise.all([
+        FileSystem.deleteAsync(partial, { idempotent: true }).catch(() => {}),
+        FileSystem.deleteAsync(marker, { idempotent: true }).catch(() => {}),
+      ]);
       const res = await FileSystem.downloadAsync(
         outfitAssetUrl(outfitVideoObjectKey(outfit), outfit.assetVersion),
-        videoCachePath(outfit.key, outfit.assetVersion),
+        partial,
       );
-      if (res.status === 200) return res.uri;
-      await FileSystem.deleteAsync(videoCachePath(outfit.key, outfit.assetVersion), { idempotent: true });
-      return null;
+      if (res.status < 200 || res.status >= 300) throw new Error(`HTTP ${res.status}`);
+      const info = await FileSystem.getInfoAsync(partial);
+      if (!info.exists || (info.size ?? 0) <= 0) throw new Error('Empty outfit animation');
+      await FileSystem.deleteAsync(destination, { idempotent: true }).catch(() => {});
+      await FileSystem.moveAsync({ from: partial, to: destination });
+      await FileSystem.writeAsStringAsync(marker, 'ok');
+      return destination;
     } catch {
+      await Promise.all([
+        FileSystem.deleteAsync(partial, { idempotent: true }).catch(() => {}),
+        FileSystem.deleteAsync(marker, { idempotent: true }).catch(() => {}),
+      ]);
       return null;
     } finally {
       inflight.delete(inflightKey);
