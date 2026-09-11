@@ -29,7 +29,13 @@ import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
 import { useNavigationAction } from '@/lib/use-navigation-action';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
-import { getCachedFriendFeedPage, getCachedPairing } from '@/lib/friends-api';
+import {
+  getCachedConnectionHistory,
+  getCachedFriendFeedPage,
+  getCachedPairing,
+  subscribeConnectionHistory,
+} from '@/lib/friends-api';
+import { consumeNewConnectionHomeMessage } from '@/lib/connection-home-prompt';
 import { storage } from '@/lib/storage';
 import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
 import { syncWidgetLatestFriend } from '@/lib/widget-sync';
@@ -72,8 +78,10 @@ export default function HomeScreen() {
   const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
+  const [connectionUpdateSpeech, setConnectionUpdateSpeech] = useState<string | null>(null);
   const [failedAndroidSceneUri, setFailedAndroidSceneUri] = useState<string | null>(null);
   const aiBubbleRef = useRef(aiBubble);
+  const homeFocusedRef = useRef(false);
   const navigate = useNavigationAction();
   const [measuredLayoutParts, setMeasuredLayoutParts] = useState<string[]>([]);
   const [homeLayout, setHomeLayout] = useState({
@@ -119,6 +127,17 @@ export default function HomeScreen() {
   useEffect(() => subscribeToReflectBubble(() => {
     applyAiBubble(visibleAiBubble(subscriptionTier));
   }), [applyAiBubble, subscriptionTier]);
+
+  const applyConnectionUpdateSpeech = useCallback((result = getCachedConnectionHistory()) => {
+    if (!homeFocusedRef.current || subscriptionTier === 'free') return;
+    const partnerId = getCachedPairing()?.partner?.userId ?? null;
+    const line = consumeNewConnectionHomeMessage(result, partnerId);
+    if (line) setConnectionUpdateSpeech(line);
+  }, [subscriptionTier]);
+
+  useEffect(() => subscribeConnectionHistory((result) => {
+    applyConnectionUpdateSpeech(result);
+  }), [applyConnectionUpdateSpeech]);
 
   // A new Reflect replaces the old AI line and starts a fresh six-hour timer.
   // If the app stays open, expiry switches to the next local-time default line.
@@ -191,6 +210,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      homeFocusedRef.current = true;
+      setConnectionUpdateSpeech(null);
+      applyConnectionUpdateSpeech();
       // Cache refreshes are independent of the bounded navigation tap guard.
       // A slow read or a queued automatic prompt never disables Home.
       setCosmeticTick((t) => t + 1);
@@ -206,7 +228,11 @@ export default function HomeScreen() {
       // Warm every tab's cache in the background (throttled) so switching
       // tabs paints instantly instead of cold-loading.
       prefetchAppData();
-    }, [applyAiBubble, refreshHomeBubbles, subscriptionTier]),
+      return () => {
+        homeFocusedRef.current = false;
+        setConnectionUpdateSpeech(null);
+      };
+    }, [applyAiBubble, applyConnectionUpdateSpeech, refreshHomeBubbles, subscriptionTier]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -323,7 +349,9 @@ export default function HomeScreen() {
           >
             <View style={styles.bubbleWrap}>
               <View style={styles.bubble}>
-                <Text style={styles.bubbleText}>{aiBubble?.line ?? defaultSpeech}</Text>
+                <Text style={styles.bubbleText}>
+                  {connectionUpdateSpeech ?? aiBubble?.line ?? defaultSpeech}
+                </Text>
                 <View style={styles.bubbleTail} />
               </View>
             </View>

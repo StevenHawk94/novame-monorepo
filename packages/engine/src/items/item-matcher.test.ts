@@ -17,6 +17,7 @@ const DICT: ItemDictionary = {
     'nature.moon': { displayName: 'Moon', rarity: 'uncommon', category: 'nature', sheetId: 'nature', row: 0, col: 2 },
     'nature.ocean': { displayName: 'Ocean', rarity: 'rare', category: 'nature', sheetId: 'nature', row: 0, col: 4 },
     'object.book': { displayName: 'Book', rarity: 'common', category: 'object', sheetId: 'object', row: 0, col: 0 },
+    'sport.tennis': { displayName: 'Tennis', rarity: 'common', category: 'sport', sheetId: 'sport', row: 0, col: 0 },
   },
   synonyms: {
     apple: 'food.apple', apples: 'food.apple', 'an apple': 'food.apple',
@@ -29,6 +30,7 @@ const DICT: ItemDictionary = {
     moon: 'nature.moon',
     ocean: 'nature.ocean', sea: 'nature.ocean',
     book: 'object.book', books: 'object.book',
+    tennis: 'sport.tennis', 'played tennis': 'sport.tennis',
   },
   exclusions: {
     coffee: ['coffee table', 'coffee-table book'],
@@ -92,6 +94,18 @@ describe('matchItems: negation guard (rule 3)', () => {
     // U+2019 curly apostrophe, as iOS keyboards produce.
     expect(ids('I didn’t drink coffee')).toEqual([]);
     expect(ids('couldn’t find the book')).toEqual([]);
+  });
+  it('resets negation at punctuation-delimited clause boundaries', () => {
+    expect(ids('no regret, played tennis')).toEqual(['sport.tennis']);
+    expect(ids('did not order pizza; played tennis instead')).toEqual(['sport.tennis']);
+  });
+  it('resets negation at explicit contrast or sequence boundaries', () => {
+    expect(ids('no pizza but played tennis')).toEqual(['sport.tennis']);
+    expect(ids('skipped pizza then played tennis')).toEqual(['sport.tennis']);
+  });
+  it('still suppresses a match governed by a same-clause negator', () => {
+    expect(ids("I didn't play tennis")).toEqual([]);
+    expect(ids('no tennis today')).toEqual([]);
   });
 });
 

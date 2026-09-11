@@ -74,6 +74,8 @@ export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
 export const kPairingStatus = defineKey('burrow_pairing_status', 'user');
 export const kCommonItems = defineKey('burrow_common_items', 'user');
 export const kConnInsights = defineKey('burrow_conn_insights', 'user');
+/** Latest Connection card already announced by the Home bunny, per pairing. */
+export const kConnectionHomePrompt = defineKey('burrow_connection_home_prompt', 'user');
 
 /** Clear-only legacy OTA items manifest; current items ship in the bundle. */
 export const kRemoteItems = defineKey('burrow_remote_items', 'device');

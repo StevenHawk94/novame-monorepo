@@ -6,7 +6,8 @@
  *   2. dictionary lookup -- the dictionary holds every variant (apple/apples/an
  *      apple), so there's no lemmatizer and matching never drifts
  *   3. negation guard: a negator (didn't / no / without / skipped / never /
- *      avoided) within 3 tokens before the noun drops the hit
+ *      avoided) within 3 tokens before the noun, in the same clause, drops
+ *      the hit
  *   4. dedupe: the same item counts once per reflect
  *   5. no count cap (2026-07-23 ruling: every hit lands in Bags); ranked
  *      rare > uncommon > common, then by appearance, for display order
@@ -63,6 +64,15 @@ const NEGATORS = new Set([
   "didn't", 'didnt', 'did', 'not', 'no', 'without', 'skipped', 'never', 'avoided', "couldn't", 'couldnt',
 ]);
 
+// Reset short negation scope at a real clause boundary. Tokenization
+// intentionally omits punctuation, so inspect the original text between token
+// offsets as well as common contrast/sequence words. Without this, the `no` in
+// "no regret, played tennis" incorrectly suppresses the later AUTO match.
+const CLAUSE_BOUNDARY_WORDS = new Set([
+  'but', 'however', 'though', 'although', 'yet', 'nevertheless', 'nonetheless', 'instead', 'then',
+]);
+const CLAUSE_BOUNDARY_PUNCTUATION = /[,.!?;:\n\r\u2028\u2029\u2013\u2014]/;
+
 const STOPWORDS = new Set([
   'a', 'an', 'the', 'some', 'any', 'this', 'that', 'these', 'those',
   'my', 'your', 'his', 'her', 'its', 'our', 'their',
@@ -101,6 +111,22 @@ function maxPhraseLen(synonyms: Record<string, string>): number {
     if (n > mx) mx = n;
   }
   return mx;
+}
+
+function hasClauseBoundaryBetween(
+  text: string,
+  tokens: Token[],
+  leftTokenIndex: number,
+  rightTokenIndex: number,
+): boolean {
+  const left = tokens[leftTokenIndex];
+  const right = tokens[rightTokenIndex];
+  if (!left || !right || leftTokenIndex >= rightTokenIndex) return false;
+
+  if (CLAUSE_BOUNDARY_PUNCTUATION.test(text.slice(left.end, right.start))) return true;
+  return tokens
+    .slice(leftTokenIndex, rightTokenIndex)
+    .some((token) => CLAUSE_BOUNDARY_WORDS.has(token.word));
 }
 
 function containsPhraseAt(tokens: Token[], phrase: string, hitStart: number, hitLength: number): boolean {
@@ -182,7 +208,8 @@ export function matchItems(text: string, dict: ItemDictionary): ItemMatch[] {
       }
 
       let negated = false;
-      for (let j = Math.max(0, i - 3); j < i; j++) {
+      for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+        if (hasClauseBoundaryBetween(text, tokens, j, i)) break;
         if (NEGATORS.has(tokens[j].word)) { negated = true; break; }
       }
       if (negated) {
