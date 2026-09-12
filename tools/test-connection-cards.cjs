@@ -217,6 +217,31 @@ test('one analysis can persist no more than three cards total', () => {
   assert.equal(count, 3);
 });
 
+test('distinct routed topics survive similar template wording in one batch', () => {
+  const updates = emptyUpdates();
+  updates.worth_knowing = {
+    hasUpdate: true, clearExisting: false, cards: [{
+      signalId: 'presentation_next_week_5d7df7e1_1', topicKey: 'upcoming_presentation',
+      signalType: 'event', assignedSection: 'missed', labelKey: 'coming_up',
+      label: 'Coming Up', title: 'A meaningful moment is taking shape',
+      observation: 'Their attention is gathering around something that matters.',
+      confidence: 0.9,
+    }],
+  };
+  updates.how_to_show_up = {
+    hasUpdate: true, clearExisting: false, cards: [{
+      signalId: 'quiet_recovery_need_5d7df7e1_2', topicKey: 'need_for_space',
+      signalType: 'action', assignedSection: 'ways_in', labelKey: 'give_space',
+      label: 'A Little Space', title: 'A meaningful moment is taking shape',
+      observation: 'Their attention is gathering around something that matters.',
+      takeaway: 'Give them room without disappearing.', confidence: 0.9,
+    }],
+  };
+  const clean = ai.cleanConnectionUpdates(updates, 'reflect-distinct', { maxTotal: 3 });
+  assert.equal(clean.worth_knowing.cards.length, 1);
+  assert.equal(clean.how_to_show_up.cards.length, 1);
+});
+
 test('legacy cards are presented with a category label and repetitive fields removed', () => {
   const card = publicCards.publicConnectionCard({
     label: 'Finished Assignment',

@@ -13,6 +13,8 @@ export async function recordAIUsage(supabase, {
       explicitCacheRequested: !!result?.cachedContent,
       explicitCacheHit: !!result?.cachedContent && cachedTokens > 0,
       cacheFallback: result?.cacheFallback === true,
+      providerAttempts: Array.isArray(result?.providerAttempts)
+        ? result.providerAttempts.slice(0, 3) : undefined,
     } : null
     const { error: insertError } = await supabase.from('ai_usage_events').insert({
       user_id: userId || null,

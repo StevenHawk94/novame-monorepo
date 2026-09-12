@@ -12,7 +12,7 @@ function source(file) {
   return fs.readFileSync(path.join(root, file), 'utf8');
 }
 
-function load(file, imports = {}) {
+function load(file, imports = {}, globals = {}) {
   const code = ts.transpileModule(source(file), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -28,8 +28,8 @@ function load(file, imports = {}) {
     console,
     Date,
     Buffer,
-    process,
-    fetch: global.fetch,
+    process: globals.process || process,
+    fetch: globals.fetch || global.fetch,
     AbortController,
     setTimeout,
     clearTimeout,
@@ -166,8 +166,64 @@ test('router performs value/family routing in one bounded first-stage call', asy
   assert.equal(request.journal, 'private input');
   assert.equal(request.families.length, 1);
   assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash-lite');
-  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 192);
+  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 0);
   assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 1024);
+  assert.equal(ai.__calls[0].generationConfig.responseMimeType, 'application/json');
+  assert.equal(ai.__calls[0].generationConfig.responseSchema.properties.signals.maxItems, 3);
+});
+
+test('shared Gemini client sends structured-output fields with system instruction', async () => {
+  const calls = [];
+  const shared = load('apps/api/src/lib/ai.js', {}, {
+    process: { env: { GEMINI_API_KEY: 'test-gemini-key' } },
+    fetch: async (url, options) => {
+      calls.push({ url, body: JSON.parse(options.body) });
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"ok":true}' }] } }],
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 2 },
+        }),
+      };
+    },
+  });
+  const schema = { type: 'OBJECT', required: ['ok'], properties: { ok: { type: 'BOOLEAN' } } };
+  const result = await shared.callAI({
+    systemInstruction: 'Return a result.', userText: 'Check.', skipDeepSeek: true,
+    geminiModel: 'gemini-2.5-flash-lite',
+    generationConfig: { responseMimeType: 'application/json', responseSchema: schema },
+  });
+  assert.equal(result.provider, 'gemini');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.generationConfig.responseMimeType, 'application/json');
+  assert.deepEqual(calls[0].body.generationConfig.responseSchema, schema);
+  assert.equal(calls[0].body.system_instruction.parts[0].text, 'Return a result.');
+});
+
+test('DeepSeek fallback records the failed Gemini attempt for diagnosis', async () => {
+  let call = 0;
+  const shared = load('apps/api/src/lib/ai.js', {}, {
+    process: { env: { GEMINI_API_KEY: 'test-gemini-key', DEEPSEEK_API_KEY: 'test-deepseek-key' } },
+    fetch: async () => {
+      call += 1;
+      if (call === 1) throw new Error('synthetic Gemini outage');
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: '{"decision":"no_update"}' } }],
+          usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 },
+        }),
+      };
+    },
+  });
+  const result = await shared.callAI({
+    systemInstruction: 'Return JSON.', userText: 'Check.', geminiModel: 'gemini-2.5-flash-lite',
+    generationConfig: { responseMimeType: 'application/json' },
+  });
+  assert.equal(result.provider, 'deepseek');
+  assert.equal(result.providerAttempts.length, 1);
+  assert.equal(result.providerAttempts[0].model, 'gemini-2.5-flash-lite');
+  assert.match(result.providerAttempts[0].error, /synthetic Gemini outage/);
 });
 
 test('second stage matches scenarios and writes matched and custom cards in one call', async () => {
@@ -220,6 +276,12 @@ test('second stage matches scenarios and writes matched and custom cards in one 
   assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash');
   assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 512);
   assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
+  assert.equal(ai.__calls[0].generationConfig.responseMimeType, 'application/json');
+  assert.equal(ai.__calls[0].generationConfig.responseSchema.properties.results.minItems, 2);
+  assert.deepEqual(
+    Array.from(ai.__calls[0].generationConfig.responseSchema.properties.results.items.properties.outcome.enum),
+    ['matched', 'custom'],
+  );
 });
 
 test('operation prompts are separate, concise, and retain the essential contracts', () => {
@@ -229,7 +291,7 @@ test('operation prompts are separate, concise, and retain the essential contract
   assert.match(router, /at most 3 distinct signals/i);
   assert.match(router, /recent5d/i);
   assert.doesNotMatch(router, /matched\/custom require one complete card/i);
-  assert.match(writer, /matched\/custom require one complete card/i);
+  assert.match(writer, /every supplied signal must produce exactly one card/i);
   assert.match(writer, /they\/them\/their/i);
   assert.match(writer, /one specific low-pressure takeaway/i);
   assert.doesNotMatch(writer, /literal icon gaps/i);
@@ -237,7 +299,7 @@ test('operation prompts are separate, concise, and retain the essential contract
   assert.ok(writer.length < 2400);
 });
 
-test('combined second stage rejects mismatched scenarios and normalizes custom card metadata', async () => {
+test('combined second stage downgrades a mismatched scenario to custom and normalizes card metadata', async () => {
   const custom = waysCard('signal_two');
   custom.assignedSection = 'missed';
   custom.signalType = 'event';
@@ -265,38 +327,45 @@ test('combined second stage rejects mismatched scenarios and normalizes custom c
     ],
     scenarioIndex: [], currentConnectionBoard: null,
   });
-  assert.deepEqual(result.signalResults.map((row) => row.signalId), ['signal_two']);
+  assert.deepEqual(result.signalResults.map((row) => row.signalId), ['signal_one', 'signal_two']);
+  assert.equal(result.signalResults[0].outcome, 'custom');
+  assert.equal(result.signalResults[0].scenarioKey, null);
   const normalized = result.data.how_to_show_up.cards[0];
   assert.equal(normalized.assignedSection, 'ways_in');
   assert.equal(normalized.signalType, 'action');
   assert.equal(normalized.topicKey, 'signal_two_topic');
 });
 
-test('second stage retries MAX_TOKENS once with 3072 and reuses explicit cache', async () => {
+test('second stage never spends a second writer call when output reaches MAX_TOKENS', async () => {
+  const ai = connectionAiWithResponses([
+    { __finishReason: 'MAX_TOKENS' },
+  ], { cachedContent: 'cachedContents/global-connection' });
+  await assert.rejects(() => ai.runConnectionMatchWriter({
+    reflectId: 'reflect-no-retry',
+    selectedSignals: [signal('career_win', 'missed', null)],
+    scenarioIndex: [], currentConnectionBoard: null,
+  }), /connection_match_writer_max_tokens/);
+  assert.equal(ai.__calls.length, 1);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
+  assert.equal(ai.__calls[0].cachedContent, 'cachedContents/global-connection');
+});
+
+test('writer settlement keeps valid siblings and terminally closes invalid rows', async () => {
+  const ai = connectionAiWithResponses([]);
+  const selectedSignals = [
+    signal('career_win', 'missed', null),
+    signal('need_space', 'ways_in', null),
+  ];
   const updates = emptyUpdates();
   updates.worth_knowing = {
     hasUpdate: true, clearExisting: false, cards: [missedCard('career_win')],
   };
-  const ai = connectionAiWithResponses([
-    { __finishReason: 'MAX_TOKENS' },
-    {
-      signalResults: [{
-        signalId: 'career_win', outcome: 'custom', familyKey: null,
-        scenarioKey: null, moduleKey: 'worth_knowing',
-      }],
-      connectionUpdates: updates,
-    },
-  ], { cachedContent: 'cachedContents/global-connection' });
-  const result = await ai.runConnectionMatchWriter({
-    reflectId: 'reflect-retry',
-    selectedSignals: [signal('career_win', 'missed', null)],
-    scenarioIndex: [], currentConnectionBoard: null,
-  });
-  assert.equal(result.results.length, 2);
-  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
-  assert.equal(ai.__calls[1].generationConfig.maxOutputTokens, 3072);
-  assert.equal(ai.__calls[0].cachedContent, 'cachedContents/global-connection');
-  assert.equal(ai.__calls[1].cachedContent, 'cachedContents/global-connection');
+  const settled = ai.settleWriterSignalResults(selectedSignals, [
+    { signalId: 'career_win', outcome: 'custom', moduleKey: 'worth_knowing' },
+    { signalId: 'need_space', outcome: 'custom', moduleKey: 'how_to_show_up' },
+  ], updates);
+  assert.deepEqual(settled.map((row) => row.outcome), ['custom', 'no_update']);
+  assert.equal(settled[1].reason, 'generated_card_rejected');
 });
 
 test('pipeline migration records recoverable stage status and failure boundary', () => {
@@ -306,14 +375,15 @@ test('pipeline migration records recoverable stage status and failure boundary',
   assert.match(sql, /add column if not exists failure_stage text/i);
 });
 
-test('job pipeline has two AI stages and preserves partial-retry boundaries', () => {
+test('job pipeline has two AI stages and settles writer validation without a paid retry', () => {
   const jobs = source('apps/api/src/lib/reflect-analysis-jobs.js');
   assert.match(jobs, /runConnectionRouter/);
   assert.match(jobs, /runConnectionMatchWriter/);
   assert.doesNotMatch(jobs, /runConnectionMatcher/);
   assert.doesNotMatch(jobs, /runConnectionWriter/);
   assert.doesNotMatch(jobs, /readConnectionTemplatesByScenarioKeys/);
-  assert.match(jobs, /connection_partial_persist/);
+  assert.match(jobs, /settleWriterSignalResults/);
+  assert.doesNotMatch(jobs, /throw new Error\('connection_match_writer_missing_qualified_card'\)/);
   assert.match(jobs, /pendingSignals = eligibleSignals\.filter/);
   assert.match(jobs, /stage_one_result/);
 });

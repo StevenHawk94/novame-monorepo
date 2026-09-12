@@ -258,9 +258,11 @@ const CONNECTION_TOPIC_GENERIC_TERMS = new Set([
 ])
 
 function connectionTopicTerms(card) {
-  return new Set([card.topicKey, card.signalId]
-    .filter(Boolean)
-    .join('_')
+  // signalId contains the reflect-id suffix shared by every signal from one
+  // Journal (for example *_5d7df7e1_1). Including it in topic-token overlap
+  // makes all sibling cards look like the same topic. Exact signalId equality
+  // is already checked separately, so semantic topic overlap uses topicKey only.
+  return new Set(String(card.topicKey || '')
     .split(/_+/)
     .filter((term) => term.length >= 4 && !CONNECTION_TOPIC_GENERIC_TERMS.has(term)))
 }
@@ -273,7 +275,7 @@ function connectionSemanticTerms(card) {
   )) || [])
 }
 
-function semanticallyDuplicatesConnectionCard(left, right) {
+function duplicatesConnectionTopic(left, right) {
   if ((left.topicKey && right.topicKey && left.topicKey === right.topicKey)
     || (left.signalId && right.signalId && left.signalId === right.signalId)) return true
   const leftTopics = connectionTopicTerms(left)
@@ -281,6 +283,11 @@ function semanticallyDuplicatesConnectionCard(left, right) {
   for (const term of leftTopics) {
     if (rightTopics.has(term)) return true
   }
+  return false
+}
+
+function semanticallyDuplicatesConnectionCard(left, right) {
+  if (duplicatesConnectionTopic(left, right)) return true
   const a = connectionSemanticTerms(left)
   const b = connectionSemanticTerms(right)
   if (a.size < 4 || b.size < 4) return false
@@ -390,7 +397,10 @@ export function cleanConnectionUpdates(value, reflectId = null, options = {}) {
   for (const candidate of [...candidates].sort((a, b) => b.confidence - a.confidence)) {
     if (selected.length >= totalLimit) break
     if (sectionCounts[candidate.assignedSection] >= CONNECTION_SECTION_LIMITS[candidate.assignedSection]) continue
-    if (selected.some((prior) => semanticallyDuplicatesConnectionCard(prior, candidate))) continue
+    // Router has already selected distinct signals. Within this one writer
+    // batch, dedupe by canonical signal/topic only: template voice can make
+    // unrelated cards sound similar and must not erase a valid sibling card.
+    if (selected.some((prior) => duplicatesConnectionTopic(prior, candidate))) continue
     // A module update replaces that module's current cards. Compare only with
     // the other live modules so a newly generated card cannot duplicate a
     // different section that will remain on the board.

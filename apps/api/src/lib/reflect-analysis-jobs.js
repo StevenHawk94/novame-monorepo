@@ -1,7 +1,7 @@
 import { recordAIUsage } from './ai-usage'
 import {
-  runConnectionRouter, runConnectionMatchWriter, missingQualifiedSignalIds,
-  representedSignalIds,
+  runConnectionRouter, runConnectionMatchWriter, representedSignalIds,
+  settleWriterSignalResults,
   CONNECTION_ROUTER_VERSION, CONNECTION_MATCH_WRITER_VERSION, CONNECTION_WRITER_VERSION,
 } from './connection-ai'
 import {
@@ -278,42 +278,18 @@ async function analyzeClaimedJob(supabase, job) {
     refId: reflectId,
   })))
 
-  const persistGeneratedPartial = async (failure) => {
-    if (!hasCards(generated.data)) return
-    await atStage('connection_partial_persist', () => persistReflectAnalyzerResult(supabase, {
-      reflectId,
-      userId: reflect.user_id,
-      localDate: reflect.local_date,
-      reflectsToday: 1,
-      analyzer: {
-        ...baseAnalyzer,
-        result: generated.result,
-        results: generated.results || [generated.result],
-        data: { ...baseAnalyzer.data, connectionUpdates: generated.data },
-        signalResults: generated.signalResults,
-      },
-      context,
-      matchedItems,
-      pipelineStatus: 'partial',
-      error: errorText(failure),
-    }))
-    failure.partial = true
-  }
-
-  const resolvedIds = new Set(generated.signalResults.map((row) => row.signalId))
-  const missingResolution = pendingSignals
-    .map((signal) => signal.signalId).filter((signalId) => !resolvedIds.has(signalId))
-  if (missingResolution.length > 0) {
-    const error = new Error('connection_match_writer_missing_signal_result')
-    error.pipelineStage = 'match_writer_validation'
-    await persistGeneratedPartial(error)
-    throw error
-  }
-
   const finalUpdates = generated.data
-  const missingQualified = missingQualifiedSignalIds(generated.signalResults, finalUpdates, {
-    currentBoard: context.currentBoard, reflectId,
-  })
+  // Stage one already made the value/privacy decision. Stage two is a single
+  // bounded write call. Invalid model rows are settled as no_update instead of
+  // charging for repeated writer calls; accepted siblings are kept.
+  const settledSignalResults = settleWriterSignalResults(
+    pendingSignals, generated.signalResults, finalUpdates,
+    { currentBoard: context.currentBoard, reflectId },
+  )
+  const settledWithoutCardCount = settledSignalResults.filter((row) => (
+    row.outcome === 'no_update'
+    && ['generated_card_rejected', 'writer_result_missing'].includes(row.reason)
+  )).length
   await atStage('connection_persist', () => persistReflectAnalyzerResult(supabase, {
     reflectId,
     userId: reflect.user_id,
@@ -324,18 +300,17 @@ async function analyzeClaimedJob(supabase, job) {
       result: generated.result,
       results: generated.results || [generated.result],
       data: { ...baseAnalyzer.data, connectionUpdates: finalUpdates },
-      signalResults: generated.signalResults,
+      signalResults: settledSignalResults,
     },
     context,
     matchedItems,
-    pipelineStatus: missingQualified.length > 0 ? 'partial' : 'completed',
-    error: missingQualified.length > 0 ? 'connection_match_writer_missing_qualified_card' : null,
+    pipelineStatus: 'completed',
+    error: null,
   }))
-  if (missingQualified.length > 0) {
-    const error = new Error('connection_match_writer_missing_qualified_card')
-    error.pipelineStage = 'match_writer_validation'
-    error.partial = hasCards(finalUpdates)
-    throw error
+  if (settledWithoutCardCount > 0) {
+    console.warn('[reflect-analysis] writer output settled without cards:', {
+      reflectId, count: settledWithoutCardCount,
+    })
   }
   const status = hasCards(finalUpdates) || pendingSignals.length < eligibleSignals.length
     ? 'completed' : 'no_update'

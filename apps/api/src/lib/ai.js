@@ -56,14 +56,28 @@ async function callGemini(model, {
   const apiKey = GEMINI_API_KEY()
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
-  // Strip response_mime_type to avoid 400 errors on Gemini 2.5 models with system_instruction
-  const { response_mime_type, ...safeGenConfig } = generationConfig || {}
+  // Gemini supports JSON mode and response schemas alongside system_instruction.
+  // Accept the legacy snake_case option used by older callers, but send the
+  // REST API's camelCase fields on the wire.
+  const {
+    response_mime_type,
+    response_schema,
+    responseMimeType,
+    responseSchema,
+    ...safeGenConfig
+  } = generationConfig || {}
 
   const body = {
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 5000,
       ...safeGenConfig,
+      ...((responseMimeType || response_mime_type) ? {
+        responseMimeType: responseMimeType || response_mime_type,
+      } : {}),
+      ...((responseSchema || response_schema) ? {
+        responseSchema: responseSchema || response_schema,
+      } : {}),
     },
     safetySettings: SAFETY_NONE,
   }
@@ -136,7 +150,8 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
       messages,
       temperature: generationConfig?.temperature ?? 0.7,
       max_tokens: generationConfig?.maxOutputTokens ?? 5000,
-      response_format: generationConfig?.response_mime_type === 'application/json'
+      response_format: (generationConfig?.responseMimeType
+        || generationConfig?.response_mime_type) === 'application/json'
         ? { type: 'json_object' }
         : undefined,
     }),
@@ -161,7 +176,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
  * @param {string} opts.systemInstruction  — fixed system prompt (cached by Gemini)
  * @param {string} opts.userText           — per-request user input
  * @param {Array}  opts.contents           — raw contents array (for multimodal; overrides userText)
- * @param {Object} opts.generationConfig   — { temperature, maxOutputTokens, response_mime_type }
+ * @param {Object} opts.generationConfig   — generation controls, including optional JSON schema
  * @param {boolean} opts.skipDeepSeek      — true for multimodal requests (DeepSeek can't do audio)
  * @param {number} opts.totalTimeoutMs     — optional total budget shared by all provider attempts
  * @param {string} opts.cachedContent      — Gemini explicit cachedContents resource name
@@ -170,6 +185,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
  */
 export async function callAI(opts) {
   const errors = []
+  const providerAttempts = []
   let cacheFallback = false
   const totalTimeoutMs = Number.isFinite(opts.totalTimeoutMs) && opts.totalTimeoutMs > 0
     ? opts.totalTimeoutMs : null
@@ -194,6 +210,11 @@ export async function callAI(opts) {
     } catch (err) {
       console.warn(`[AI] ${model} failed:`, err.message)
       errors.push(`${model}: ${err.message}`)
+      providerAttempts.push({
+        provider: 'gemini', model, success: false,
+        status: Number.isFinite(err.status) ? err.status : null,
+        error: String(err.message || err).slice(0, 300),
+      })
       // A stale/invalid cache must not turn a healthy Gemini request into a
       // provider fallback. Retry the same model once with the full system
       // instruction; the caller will invalidate the durable cache pointer.
@@ -207,6 +228,11 @@ export async function callAI(opts) {
         } catch (retryError) {
           console.warn(`[AI] ${model} uncached retry failed:`, retryError.message)
           errors.push(`${model} uncached: ${retryError.message}`)
+          providerAttempts.push({
+            provider: 'gemini', model, success: false, uncachedRetry: true,
+            status: Number.isFinite(retryError.status) ? retryError.status : null,
+            error: String(retryError.message || retryError).slice(0, 300),
+          })
         }
       }
     }
@@ -216,7 +242,11 @@ export async function callAI(opts) {
   if (!opts.skipDeepSeek && !opts.contents) {
     try {
       const result = await callDeepSeek(withRemainingTimeout())
-      return cacheFallback ? { ...result, cacheFallback: true } : result
+      return {
+        ...result,
+        ...(cacheFallback ? { cacheFallback: true } : {}),
+        ...(providerAttempts.length > 0 ? { providerAttempts } : {}),
+      }
     } catch (err) {
       console.warn('[AI] DeepSeek failed:', err.message)
       errors.push(`deepseek: ${err.message}`)
