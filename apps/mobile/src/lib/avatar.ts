@@ -1,7 +1,7 @@
 /**
- * Default profile avatars (assets/profile/default-1..4.webp).
+ * Default profile avatars (assets/profile/default-1..10.webp).
  *
- * Every user starts with one of four bundled portraits — the initial pick is
+ * Every user starts with one of ten bundled portraits — the initial pick is
  * a deterministic hash of their userId, so it is stable with zero round-trips.
  * Users can then choose a different bundled portrait. The selected id is
  * persisted in profiles.avatar_url while is_default_avatar remains true.
@@ -16,6 +16,12 @@ export const DEFAULT_AVATARS = [
   require('../../assets/profile/default-2.webp'),
   require('../../assets/profile/default-3.webp'),
   require('../../assets/profile/default-4.webp'),
+  require('../../assets/profile/default-5.webp'),
+  require('../../assets/profile/default-6.webp'),
+  require('../../assets/profile/default-7.webp'),
+  require('../../assets/profile/default-8.webp'),
+  require('../../assets/profile/default-9.webp'),
+  require('../../assets/profile/default-10.webp'),
 ] as const;
 
 export const DEFAULT_AVATAR_IDS = [
@@ -23,6 +29,12 @@ export const DEFAULT_AVATAR_IDS = [
   'default-2',
   'default-3',
   'default-4',
+  'default-5',
+  'default-6',
+  'default-7',
+  'default-8',
+  'default-9',
+  'default-10',
 ] as const;
 
 export type DefaultAvatarId = (typeof DEFAULT_AVATAR_IDS)[number];

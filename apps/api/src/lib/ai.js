@@ -1,8 +1,8 @@
 /**
  * lib/ai.js — Shared AI invocation layer with Gemini -> DeepSeek fallback
  *
- * Tier 1: gemini-2.5-flash           (primary)
- * Tier 2: deepseek-chat (V3.2)       (external fallback if Gemini fails)
+ * Tier 1: AI_MODEL_DEFAULT           (Gemini primary)
+ * Tier 2: AI_MODEL_FALLBACK          (DeepSeek fallback if Gemini fails)
  *
  * Default per-provider timeout is 15s. Callers with a longer background job
  * can provide one totalTimeoutMs budget shared by primary and fallback.
@@ -14,9 +14,21 @@
 const GEMINI_API_KEY = () => process.env.GEMINI_API_KEY
 const DEEPSEEK_API_KEY = () => process.env.DEEPSEEK_API_KEY
 
-const DEFAULT_GEMINI_MODELS = [
-  'gemini-2.5-flash',
-]
+/**
+ * Server-owned model routing. Environment overrides make model retirement an
+ * API deployment/configuration change; no mobile release is required.
+ */
+export function getAIModelConfig() {
+  const defaultGemini = process.env.AI_MODEL_DEFAULT?.trim() || 'gemini-2.5-flash'
+  return {
+    defaultGemini,
+    connectionRouter: process.env.AI_MODEL_CONNECTION_ROUTER?.trim()
+      || 'gemini-2.5-flash-lite',
+    connectionWriter: process.env.AI_MODEL_CONNECTION_WRITER?.trim()
+      || defaultGemini,
+    fallback: process.env.AI_MODEL_FALLBACK?.trim() || 'deepseek-chat',
+  }
+}
 
 const SAFETY_NONE = [
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -134,7 +146,7 @@ async function callGemini(model, {
 /**
  * Call DeepSeek (OpenAI-compatible API).
  */
-async function callDeepSeek({ systemInstruction, userText, generationConfig, requestTimeoutMs }) {
+async function callDeepSeek({ systemInstruction, userText, generationConfig, requestTimeoutMs }, model) {
   const apiKey = DEEPSEEK_API_KEY()
   if (!apiKey) throw new Error('DEEPSEEK_API_KEY not configured')
 
@@ -146,7 +158,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model,
       messages,
       temperature: generationConfig?.temperature ?? 0.7,
       max_tokens: generationConfig?.maxOutputTokens ?? 5000,
@@ -166,7 +178,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
   const text = data.choices?.[0]?.message?.content?.trim()
   if (!text) throw new Error('DeepSeek returned empty response')
 
-  return { text, model: 'deepseek-chat', provider: 'deepseek', usage: data.usage }
+  return { text, model, provider: 'deepseek', usage: data.usage }
 }
 
 /**
@@ -184,6 +196,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
  * @returns {{ text, model, provider, usage }}
  */
 export async function callAI(opts) {
+  const configuredModels = getAIModelConfig()
   const errors = []
   const providerAttempts = []
   let cacheFallback = false
@@ -199,7 +212,7 @@ export async function callAI(opts) {
 
   const geminiModels = typeof opts.geminiModel === 'string' && opts.geminiModel.trim()
     ? [opts.geminiModel.trim()]
-    : DEFAULT_GEMINI_MODELS
+    : [configuredModels.defaultGemini]
 
   // Gemini primary. Individual workloads may choose a cheaper model while
   // retaining the shared provider fallback and timeout behavior.
@@ -238,10 +251,10 @@ export async function callAI(opts) {
     }
   }
 
-  // Tier 3: DeepSeek (text-only; skip for multimodal like audio transcription)
+  // Tier 2: DeepSeek (text-only; skip for multimodal like audio transcription)
   if (!opts.skipDeepSeek && !opts.contents) {
     try {
-      const result = await callDeepSeek(withRemainingTimeout())
+      const result = await callDeepSeek(withRemainingTimeout(), configuredModels.fallback)
       return {
         ...result,
         ...(cacheFallback ? { cacheFallback: true } : {}),

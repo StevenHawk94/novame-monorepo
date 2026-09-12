@@ -13,13 +13,17 @@ const userSync = read('apps/api/src/app/api/user-sync/route.js');
 const envExample = read('apps/api/.env.example');
 const appConfig = read('apps/mobile/app.json');
 
-for (const id of ['default-1', 'default-2', 'default-3', 'default-4']) {
+for (const id of Array.from({ length: 10 }, (_, index) => `default-${index + 1}`)) {
   assert.match(avatarLib, new RegExp(`['\"]${id}['\"]`));
   assert.match(updateProfile, new RegExp(`['\"]${id}['\"]`));
   assert.match(userSync, new RegExp(`['\"]${id}['\"]`));
+  assert.equal(fs.existsSync(path.join(root, `apps/mobile/assets/profile/${id}.webp`)), true);
 }
 
 assert.match(accountScreen, /DEFAULT_AVATAR_OPTIONS\.map/);
+assert.match(accountScreen, /flexWrap:\s*'wrap'/);
+assert.match(accountScreen, /flexBasis:\s*'18%'/);
+assert.doesNotMatch(accountScreen, /styles\.avatarCheck/);
 assert.match(accountScreen, /updateDefaultAvatar/);
 assert.doesNotMatch(accountScreen, /ImagePicker|ImageManipulator|Upload New/);
 assert.match(accountApi, /defaultAvatarId/);

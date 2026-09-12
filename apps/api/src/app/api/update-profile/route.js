@@ -3,7 +3,10 @@ import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
-const DEFAULT_AVATAR_IDS = new Set(['default-1', 'default-2', 'default-3', 'default-4'])
+const DEFAULT_AVATAR_IDS = new Set([
+  'default-1', 'default-2', 'default-3', 'default-4', 'default-5',
+  'default-6', 'default-7', 'default-8', 'default-9', 'default-10',
+])
 
 function getSupabaseAdmin() {
   return createClient(

@@ -1,4 +1,4 @@
-import { callAI, parseAIJson } from './ai'
+import { callAI, getAIModelConfig, parseAIJson } from './ai'
 import { itemLearningHints, cleanLearningSignals } from './item-learning-evidence'
 import { cleanConnectionSignals } from './connection-evidence'
 import { cleanConnectionUpdates } from './reflect-ai'
@@ -461,6 +461,7 @@ export function settleWriterSignalResults(selectedSignals, signalResults, update
 
 export async function runConnectionRouter(input, { supabase = null } = {}) {
   const started = Date.now()
+  const model = getAIModelConfig().connectionRouter
   if (!input.connectionEnabled || isDeterministicallyTrivialJournal(input.journal)) {
     return {
       result: null,
@@ -479,7 +480,7 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
   }
   const result = await callConnectionAI(supabase, {
     systemInstruction: CONNECTION_ROUTER_SYSTEM_PROMPT,
-    geminiModel: 'gemini-2.5-flash-lite',
+    geminiModel: model,
     userText: JSON.stringify({
       journal: request.journal,
       matchedIcons: request.matchedIcons,
@@ -501,7 +502,7 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
     totalTimeoutMs: 30000,
   }, {
     cacheKey: 'connection-router',
-    model: 'gemini-2.5-flash-lite',
+    model,
     features: ['connection_router', 'connection_catchup_router'],
   })
   if (result.finishReason === 'MAX_TOKENS') {
@@ -546,6 +547,7 @@ export async function runConnectionRouter(input, { supabase = null } = {}) {
 
 export async function runConnectionMatchWriter(input, { supabase = null, maxOutputTokens = 2048 } = {}) {
   const started = Date.now()
+  const model = getAIModelConfig().connectionWriter
   const userText = JSON.stringify({
     signals: compactSelectedSignals(input.selectedSignals),
     templates: compactScenarioTemplates(input.scenarioIndex),
@@ -553,7 +555,7 @@ export async function runConnectionMatchWriter(input, { supabase = null, maxOutp
   })
   const invoke = (limit) => callConnectionAI(supabase, {
     systemInstruction: CONNECTION_MATCH_WRITER_SYSTEM_PROMPT,
-    geminiModel: 'gemini-2.5-flash',
+    geminiModel: model,
     userText,
     generationConfig: {
       temperature: 0.3,
@@ -565,7 +567,7 @@ export async function runConnectionMatchWriter(input, { supabase = null, maxOutp
     totalTimeoutMs: 45000,
   }, {
     cacheKey: 'connection-writer',
-    model: 'gemini-2.5-flash',
+    model,
     features: ['connection_match_writer', 'connection_catchup_match_writer'],
   })
   const result = await invoke(maxOutputTokens)

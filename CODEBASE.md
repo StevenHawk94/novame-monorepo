@@ -254,8 +254,8 @@ app/
 | 服务 | 用途 | 关键环境变量 |
 |---|---|---|
 | Supabase | DB / Auth / Storage / RPC | `NEXT_PUBLIC_SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY` |
-| Google Gemini | 主 AI（维度分析/技能卡/Master/任务生成） | `GEMINI_API_KEY` |
-| DeepSeek | AI 后备 | `DEEPSEEK_API_KEY` |
+| Google Gemini | 主 AI（维度分析/技能卡/Master/任务生成）；模型可由服务端配置，改动后仅需重新部署 API | `GEMINI_API_KEY`、`AI_MODEL_DEFAULT`、`AI_MODEL_CONNECTION_ROUTER`、`AI_MODEL_CONNECTION_WRITER` |
+| DeepSeek | AI 后备；模型可由服务端配置 | `DEEPSEEK_API_KEY`、`AI_MODEL_FALLBACK` |
 | Apple App Store | IAP 验签 + Server Notifications v2 | `WEBHOOK_VERIFY_DISABLED`（应急开关） |
 | Google Play | RTDN + subscriptionsv2 | `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY` |
 | Airwallex | 实体商品支付 | `AIRWALLEX_CLIENT_ID/API_KEY/ENV/WEBHOOK_SECRET` |

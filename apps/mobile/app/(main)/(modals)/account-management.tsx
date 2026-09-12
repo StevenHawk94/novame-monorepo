@@ -50,7 +50,7 @@ import { clearCachedSubscription } from '@/lib/subscription';
  * silent refetch so when the user closes this overlay and goes back to
  * the Me page the new value is already in cache.
  *
- * Avatar UX: users choose from the four bundled profile portraits. The
+ * Avatar UX: users choose from the ten bundled profile portraits. The
  * selected id is saved immediately and contains no user-uploaded media.
  */
 
@@ -348,7 +348,7 @@ export default function AccountManagementModal() {
                   <Pressable
                     key={option.id}
                     accessibilityRole="radio"
-                    accessibilityLabel={`Avatar ${option.id.slice(-1)}`}
+                    accessibilityLabel={`Avatar ${option.id.replace('default-', '')}`}
                     accessibilityState={{ selected }}
                     disabled={busy}
                     onPress={() => void handleSelectAvatar(option.id)}
@@ -364,11 +364,6 @@ export default function AccountManagementModal() {
                       contentFit="cover"
                       contentPosition="center"
                     />
-                    {selected ? (
-                      <View style={styles.avatarCheck}>
-                        <MaterialIcons name="check" size={15} color="#FFFFFF" />
-                      </View>
-                    ) : null}
                   </Pressable>
                 );
               })}
@@ -627,13 +622,16 @@ const styles = StyleSheet.create({
   },
   avatarGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    rowGap: 10,
   },
   avatarOption: {
-    flex: 1,
+    flexBasis: '18%',
+    flexGrow: 0,
+    flexShrink: 0,
     aspectRatio: 1,
-    maxWidth: 72,
+    maxWidth: 64,
     borderRadius: 36,
     borderWidth: 2,
     borderColor: '#E8D5B0',
@@ -654,19 +652,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 32,
-  },
-  avatarCheck: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 23,
-    height: 23,
-    borderRadius: 12,
-    backgroundColor: '#2E8B57',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
   currentAvatarText: {
     color: '#8A7A63',

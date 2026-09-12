@@ -51,7 +51,15 @@ const legacyAi = load('apps/api/src/lib/reflect-ai.js', {
   './connection-card': card,
 });
 
-function connectionAiWithResponses(responses, { cachedContent = null } = {}) {
+function connectionAiWithResponses(responses, {
+  cachedContent = null,
+  models = {
+    defaultGemini: 'gemini-2.5-flash',
+    connectionRouter: 'gemini-2.5-flash-lite',
+    connectionWriter: 'gemini-2.5-flash',
+    fallback: 'deepseek-chat',
+  },
+} = {}) {
   const queue = [...responses];
   const calls = [];
   const loaded = load('apps/api/src/lib/connection-ai.js', {
@@ -68,6 +76,7 @@ function connectionAiWithResponses(responses, { cachedContent = null } = {}) {
         };
       },
       parseAIJson: JSON.parse,
+      getAIModelConfig: () => models,
     },
     './item-learning-evidence': {
       itemLearningHints: () => [],
@@ -200,13 +209,48 @@ test('shared Gemini client sends structured-output fields with system instructio
   assert.equal(calls[0].body.system_instruction.parts[0].text, 'Return a result.');
 });
 
+test('shared Gemini client reads the default model from server configuration', async () => {
+  const calls = [];
+  const shared = load('apps/api/src/lib/ai.js', {}, {
+    process: {
+      env: {
+        GEMINI_API_KEY: 'test-gemini-key',
+        AI_MODEL_DEFAULT: 'gemini-configured-default',
+      },
+    },
+    fetch: async (url) => {
+      calls.push(url);
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"ok":true}' }] } }],
+          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 2 },
+        }),
+      };
+    },
+  });
+  const result = await shared.callAI({
+    systemInstruction: 'Return JSON.', userText: 'Check.', skipDeepSeek: true,
+  });
+  assert.equal(result.model, 'gemini-configured-default');
+  assert.match(calls[0], /models\/gemini-configured-default:generateContent/);
+});
+
 test('DeepSeek fallback records the failed Gemini attempt for diagnosis', async () => {
   let call = 0;
+  let fallbackBody = null;
   const shared = load('apps/api/src/lib/ai.js', {}, {
-    process: { env: { GEMINI_API_KEY: 'test-gemini-key', DEEPSEEK_API_KEY: 'test-deepseek-key' } },
-    fetch: async () => {
+    process: {
+      env: {
+        GEMINI_API_KEY: 'test-gemini-key',
+        DEEPSEEK_API_KEY: 'test-deepseek-key',
+        AI_MODEL_FALLBACK: 'deepseek-configured-fallback',
+      },
+    },
+    fetch: async (_url, options) => {
       call += 1;
       if (call === 1) throw new Error('synthetic Gemini outage');
+      fallbackBody = JSON.parse(options.body);
       return {
         ok: true,
         json: async () => ({
@@ -221,9 +265,50 @@ test('DeepSeek fallback records the failed Gemini attempt for diagnosis', async 
     generationConfig: { responseMimeType: 'application/json' },
   });
   assert.equal(result.provider, 'deepseek');
+  assert.equal(result.model, 'deepseek-configured-fallback');
+  assert.equal(fallbackBody.model, 'deepseek-configured-fallback');
   assert.equal(result.providerAttempts.length, 1);
   assert.equal(result.providerAttempts[0].model, 'gemini-2.5-flash-lite');
   assert.match(result.providerAttempts[0].error, /synthetic Gemini outage/);
+});
+
+test('Connection stages use their independently configured Gemini models', async () => {
+  const models = {
+    defaultGemini: 'gemini-default',
+    connectionRouter: 'gemini-router',
+    connectionWriter: 'gemini-writer',
+    fallback: 'deepseek-fallback',
+  };
+  const routed = signal('signal_model', 'missed', 'milestone_or_quiet_win');
+  const router = connectionAiWithResponses([{
+    decision: 'update', connectionSignals: [routed],
+  }], { models });
+  await router.runConnectionRouter({
+    reflectId: 'reflect-model-router', journal: 'A concrete meaningful milestone happened today.',
+    connectionEnabled: true,
+    familyCatalog: [{ familyKey: 'milestone_or_quiet_win', section: 'missed' }],
+    currentConnectionBoard: null,
+  });
+  assert.equal(router.__calls[0].geminiModel, 'gemini-router');
+
+  const writer = connectionAiWithResponses([{
+    results: [{
+      signalId: 'signal_model', outcome: 'matched', scenarioKey: 'quiet_threshold',
+      card: missedCard('signal_model'),
+    }],
+  }], { models });
+  await writer.runConnectionMatchWriter({
+    reflectId: 'reflect-model-writer',
+    selectedSignals: [routed],
+    scenarioIndex: [{
+      familyKey: 'milestone_or_quiet_win', section: 'missed',
+      moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
+      scenario: 'A meaningful effort crosses a quiet threshold.',
+      templateCard: missedCard('template-model'),
+    }],
+    currentConnectionBoard: null,
+  });
+  assert.equal(writer.__calls[0].geminiModel, 'gemini-writer');
 });
 
 test('second stage matches scenarios and writes matched and custom cards in one call', async () => {
