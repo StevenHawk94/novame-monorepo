@@ -778,6 +778,7 @@ export async function purchaseSubscription(
     const googleAccountId = await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
       `novame:${purchaseUserId}`,
+      { encoding: Crypto.CryptoEncoding.HEX },
     );
     const result = await requestPurchase({
       request: {

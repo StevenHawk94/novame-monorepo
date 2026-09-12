@@ -10,14 +10,28 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('Android release keeps the runtime image and Metro asset bridge intact', () => {
   const plugin = require(path.join(root, 'apps/mobile/plugins/with-android-r8-optimization.js'));
+  const source = read('apps/mobile/plugins/with-android-r8-optimization.js');
+  assert.match(plugin.R8_SAFETY_RULES, /-keepattributes Signature,InnerClasses,EnclosingMethod,\*Annotation\*/);
+  assert.match(plugin.R8_SAFETY_RULES, /-keep class expo\.modules\.kotlin\.records\.\*\* \{ \*; \}/);
+  assert.match(plugin.R8_SAFETY_RULES, /-keep class expo\.modules\.kotlin\.types\.\*\* \{ \*; \}/);
+  assert.match(plugin.R8_SAFETY_RULES, /-keep class expo\.modules\.kotlin\.sharedobjects\.\*\* \{ \*; \}/);
   assert.match(plugin.R8_SAFETY_RULES, /-keep class expo\.modules\.image\.\*\* \{ \*; \}/);
   assert.match(plugin.R8_SAFETY_RULES, /-keep class expo\.modules\.asset\.\*\* \{ \*; \}/);
   assert.match(plugin.RESOURCE_KEEP_XML, /tools:keep="@drawable\/assets_\*,@raw\/assets_\*"/);
+  assert.doesNotMatch(source, /proguard-android-optimize\.txt/);
 
   const once = plugin.upsertMarkedBlock('# existing\n', plugin.R8_SAFETY_RULES);
   const twice = plugin.upsertMarkedBlock(once, plugin.R8_SAFETY_RULES);
   assert.equal(twice.match(/burrow-r8-safety:start/g)?.length, 1);
   assert.equal(twice.match(/burrow-r8-safety:end/g)?.length, 1);
+});
+
+test('Google Play purchase hashing passes a concrete Expo Crypto Record', () => {
+  const iap = read('apps/mobile/src/lib/iap.ts');
+  assert.match(
+    iap,
+    /Crypto\.digestStringAsync\([\s\S]*?Crypto\.CryptoDigestAlgorithm\.SHA256,[\s\S]*?`novame:\$\{purchaseUserId\}`,[\s\S]*?\{ encoding: Crypto\.CryptoEncoding\.HEX \},[\s\S]*?\)/,
+  );
 });
 
 test('core Android Metro images bypass expo-image without changing iOS', () => {
@@ -26,7 +40,7 @@ test('core Android Metro images bypass expo-image without changing iOS', () => {
   assert.match(gate, /<NativeImage/);
   assert.match(gate, /return \(\s*<ExpoImage/);
   assert.match(gate, /const ANDROID_ENTRY_TIMEOUT_MS = 750/);
-  assert.match(gate, /const ready = Platform\.OS === 'android' \|\| homeEntryIsReady\(\)/);
+  assert.match(gate, /const ready = Platform\.OS === 'android' \? androidHomeDataReady : homeEntryIsReady\(\)/);
   assert.match(gate, /markAndroidP0UiReady\(\)/);
 
   const readiness = read('apps/mobile/src/lib/home-entry-readiness.ts');

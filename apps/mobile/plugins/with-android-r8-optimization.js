@@ -1,34 +1,34 @@
 /**
- * Use Android's optimized default R8 configuration for release builds.
+ * Keep Metro resources and Expo Modules bridge metadata safe in Android
+ * release builds.
  *
- * Expo SDK 54 generates `proguard-android.txt`, which enables shrinking and
- * obfuscation when minification is turned on but disables R8's optimization
- * pass. Google Play's DEX requirements score shrinking, obfuscation, and
- * optimization separately, so release builds should use the optimized
- * Android default instead.
+ * Do not replace Expo's default `proguard-android.txt` with Android's fully
+ * optimized configuration. Expo Modules SDK 54 converts React Native maps to
+ * Kotlin Records at runtime; the extra optimization pass can rewrite that
+ * type machinery even when the individual module classes are kept. The
+ * result is release-only failures across unrelated modules (for example
+ * expo-image SourceMap and expo-crypto DigestOptions conversion).
  *
- * This plugin only writes generated Android Gradle/ProGuard/resource files.
- * It has no iOS mod and no iOS effect.
+ * Minification, obfuscation and resource shrinking remain enabled by
+ * expo-build-properties. This plugin only supplies the safety rules and
+ * Metro resource keep file that those supported defaults require.
  */
-const { withAppBuildGradle, withDangerousMod } = require('expo/config-plugins');
+const { withDangerousMod } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
-
-const DEFAULT_RULES = /getDefaultProguardFile\((['"])proguard-android\.txt\1\)/g;
-const OPTIMIZED_RULES =
-  'getDefaultProguardFile("proguard-android-optimize.txt")';
-const OPTIMIZED_RULES_PATTERN =
-  /getDefaultProguardFile\((['"])proguard-android-optimize\.txt\1\)/g;
 
 const RULES_START = '# burrow-r8-safety:start';
 const RULES_END = '# burrow-r8-safety:end';
 const R8_SAFETY_RULES = `${RULES_START}
-# Expo SDK 54 registers native module definitions and image source records at
-# runtime. Full-mode optimization may inline or rewrite these classes even
-# though their resource files remain in the AAB, leaving numeric Metro assets
-# impossible to resolve in Play release builds. Keep only the affected bridge
-# packages until the Expo/React Native toolchain can move to an AGP version
-# with the newer integrated resource shrinker.
+# Expo Modules reads Kotlin generic signatures and annotations to convert
+# React Native maps into Records/Either values. These attributes and converter
+# packages must survive release minification.
+-keepattributes Signature,InnerClasses,EnclosingMethod,*Annotation*
+-keep class expo.modules.kotlin.records.** { *; }
+-keep class expo.modules.kotlin.types.** { *; }
+-keep class expo.modules.kotlin.sharedobjects.** { *; }
+
+# Local Metro images use expo-image and expo-asset native bridge records.
 -keep class expo.modules.image.** { *; }
 -keep class expo.modules.asset.** { *; }
 
@@ -87,32 +87,7 @@ const withAndroidR8SafetyFiles = (config) =>
     },
   ]);
 
-const withAndroidR8Optimization = (config) => {
-  config = withAppBuildGradle(config, (config) => {
-    if (config.modResults.language !== 'groovy') {
-      throw new Error(
-        'with-android-r8-optimization expects android/app/build.gradle to use Groovy',
-      );
-    }
-
-    const source = config.modResults.contents;
-    const defaultMatches = source.match(DEFAULT_RULES) ?? [];
-    const optimizedMatches = source.match(OPTIMIZED_RULES_PATTERN) ?? [];
-
-    if (defaultMatches.length === 1 && optimizedMatches.length === 0) {
-      config.modResults.contents = source.replace(DEFAULT_RULES, OPTIMIZED_RULES);
-      return config;
-    }
-    if (defaultMatches.length === 0 && optimizedMatches.length === 1) {
-      return config;
-    }
-    throw new Error(
-      'Expected exactly one Android default ProGuard rule; '
-        + `found default=${defaultMatches.length}, optimized=${optimizedMatches.length}`,
-    );
-  });
-  return withAndroidR8SafetyFiles(config);
-};
+const withAndroidR8Optimization = (config) => withAndroidR8SafetyFiles(config);
 
 module.exports = withAndroidR8Optimization;
 module.exports.R8_SAFETY_RULES = R8_SAFETY_RULES;
