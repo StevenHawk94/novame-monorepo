@@ -7,7 +7,7 @@
  * Default per-provider timeout is 15s. Callers with a longer background job
  * can provide one totalTimeoutMs budget shared by primary and fallback.
  *
- * All Gemini calls use system_instruction separation to maximize implicit cache hits.
+ * Gemini calls support both system_instruction separation and explicit cached content.
  * Safety filters set to BLOCK_NONE so user diary content (emotions, stress, anger) is never blocked.
  */
 
@@ -50,7 +50,9 @@ async function fetchWithTimeout(url, options, timeoutMs = 15000) {
  * Splitting system_instruction from contents maximizes implicit cache hits
  * (the system part stays constant, Gemini auto-caches the prefix).
  */
-async function callGemini(model, { systemInstruction, userText, generationConfig, contents, requestTimeoutMs }) {
+async function callGemini(model, {
+  systemInstruction, userText, generationConfig, contents, requestTimeoutMs, cachedContent,
+}) {
   const apiKey = GEMINI_API_KEY()
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
@@ -66,8 +68,11 @@ async function callGemini(model, { systemInstruction, userText, generationConfig
     safetySettings: SAFETY_NONE,
   }
 
-  // Use system_instruction field (separate from contents) for implicit caching
-  if (systemInstruction) {
+  // Explicit cached content already contains the shared system instruction.
+  // Gemini does not accept a second system instruction alongside it.
+  if (cachedContent) {
+    body.cachedContent = cachedContent
+  } else if (systemInstruction) {
     body.system_instruction = { parts: [{ text: systemInstruction }] }
   }
 
@@ -86,14 +91,30 @@ async function callGemini(model, { systemInstruction, userText, generationConfig
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '')
-    throw new Error(`Gemini ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`)
+    const error = new Error(`Gemini ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`)
+    error.status = res.status
+    error.cachedContentRejected = !!cachedContent && [400, 403, 404].includes(res.status)
+    throw error
   }
 
   const data = await res.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-  if (!text) throw new Error(`Gemini ${model} returned empty response`)
+  const candidate = data.candidates?.[0]
+  const finishReason = candidate?.finishReason || null
+  const text = candidate?.content?.parts?.[0]?.text?.trim() || ''
+  // A MAX_TOKENS response can legitimately contain no parseable text. Return
+  // its metadata so the caller can retry with a larger, bounded output budget.
+  if (!text && finishReason !== 'MAX_TOKENS') {
+    throw new Error(`Gemini ${model} returned empty response`)
+  }
 
-  return { text, model, provider: 'gemini', usage: data.usageMetadata }
+  return {
+    text,
+    model,
+    provider: 'gemini',
+    usage: data.usageMetadata,
+    finishReason,
+    cachedContent: cachedContent || null,
+  }
 }
 
 /**
@@ -143,10 +164,12 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
  * @param {Object} opts.generationConfig   — { temperature, maxOutputTokens, response_mime_type }
  * @param {boolean} opts.skipDeepSeek      — true for multimodal requests (DeepSeek can't do audio)
  * @param {number} opts.totalTimeoutMs     — optional total budget shared by all provider attempts
+ * @param {string} opts.cachedContent      — Gemini explicit cachedContents resource name
  * @returns {{ text, model, provider, usage }}
  */
 export async function callAI(opts) {
   const errors = []
+  let cacheFallback = false
   const totalTimeoutMs = Number.isFinite(opts.totalTimeoutMs) && opts.totalTimeoutMs > 0
     ? opts.totalTimeoutMs : null
   const deadline = totalTimeoutMs ? Date.now() + totalTimeoutMs : null
@@ -165,6 +188,21 @@ export async function callAI(opts) {
     } catch (err) {
       console.warn(`[AI] ${model} failed:`, err.message)
       errors.push(`${model}: ${err.message}`)
+      // A stale/invalid cache must not turn a healthy Gemini request into a
+      // provider fallback. Retry the same model once with the full system
+      // instruction; the caller will invalidate the durable cache pointer.
+      if (err.cachedContentRejected) {
+        cacheFallback = true
+        try {
+          const result = await callGemini(model, {
+            ...withRemainingTimeout(), cachedContent: null,
+          })
+          return { ...result, cacheFallback }
+        } catch (retryError) {
+          console.warn(`[AI] ${model} uncached retry failed:`, retryError.message)
+          errors.push(`${model} uncached: ${retryError.message}`)
+        }
+      }
     }
   }
 
@@ -172,7 +210,7 @@ export async function callAI(opts) {
   if (!opts.skipDeepSeek && !opts.contents) {
     try {
       const result = await callDeepSeek(withRemainingTimeout())
-      return result
+      return cacheFallback ? { ...result, cacheFallback: true } : result
     } catch (err) {
       console.warn('[AI] DeepSeek failed:', err.message)
       errors.push(`deepseek: ${err.message}`)

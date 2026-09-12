@@ -1,14 +1,13 @@
 import {
-  runConnectionRouter, runConnectionMatcher, runConnectionWriter,
-  mergeConnectionUpdates,
-  missingQualifiedSignalIds,
-  CONNECTION_ROUTER_VERSION, CONNECTION_MATCHER_VERSION, CONNECTION_WRITER_VERSION,
+  runConnectionRouter, runConnectionMatchWriter,
+  missingQualifiedSignalIds, representedSignalIds,
+  CONNECTION_ROUTER_VERSION, CONNECTION_MATCH_WRITER_VERSION, CONNECTION_WRITER_VERSION,
 } from './connection-ai'
 import { recordAIUsage } from './ai-usage'
 import { applyConnectionUpdates, loadReflectAnalyzerContext } from './reflect-analysis-store'
 import { compactConnectionEvidence, CONNECTION_RETENTION_DAYS } from './connection-evidence'
 import {
-  readConnectionFamilies, readConnectionScenarioIndex, readConnectionTemplatesByScenarioKeys,
+  readConnectionFamilies, readConnectionScenarioIndex,
 } from './connection-template-store'
 
 const RETENTION_MS = CONNECTION_RETENTION_DAYS * 24 * 60 * 60 * 1000
@@ -167,8 +166,8 @@ export async function generateBrief(supabase, {
 
   const evidenceRows = latest.recovery ? [] : latestRows
   const unprocessedSignals = compactConnectionEvidence(evidenceRows, {
-    recentLimit: 18,
-    backgroundLimit: 12,
+    recentLimit: 6,
+    backgroundLimit: 3,
     retainBackgroundOneOff: true,
   }).map((signal) => ({
     ...signal,
@@ -226,7 +225,7 @@ export async function generateBrief(supabase, {
         currentConnectionBoard: context.currentBoard || cachedPayload,
         writerRecentEvidence: context.writerRecentEvidence,
         readerRecentEvidence: context.readerRecentEvidence,
-      })
+      }, { supabase })
       selectedSignals = stageOne.data.eligibleSignals.slice(0, 3)
     }
     if (selectedSignals.length === 0) {
@@ -235,24 +234,49 @@ export async function generateBrief(supabase, {
       })
       return { ok: true, insights: cachedPayload, refreshed: false }
     }
+    const board = context.currentBoard || cachedPayload
+    if (latest.recovery) {
+      const represented = representedSignalIds(null, {
+        currentBoard: board,
+        reflectId: latest.reflect_id,
+      })
+      selectedSignals = selectedSignals.filter((signal) => !represented.has(signal.signalId))
+      if (selectedSignals.length === 0) {
+        await finishResume(supabase, {
+          forUser, partnerId, pairedSince, through: latest.created_at,
+        })
+        return { ok: true, insights: board, refreshed: false }
+      }
+    }
     const scenarioIndex = await readConnectionScenarioIndex(
       supabase, selectedSignals.map((signal) => signal.familyKey),
     )
-    const matcher = await runConnectionMatcher({
-      reflectId: latest.reflect_id,
-      journal: reflect?.body || '',
-      selectedSignals,
-      scenarioIndex,
-      currentConnectionBoard: context.currentBoard || cachedPayload,
-      writerRecentEvidence: context.writerRecentEvidence,
-      readerRecentEvidence: context.readerRecentEvidence,
-    })
-    const persistMatcherPartial = async (failure) => {
-      if (!hasCards(matcher.data)) return
+    let generated
+    try {
+      generated = await runConnectionMatchWriter({
+        reflectId: latest.reflect_id,
+        selectedSignals,
+        scenarioIndex,
+        currentConnectionBoard: board,
+        allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
+      }, { supabase })
+    } catch (error) {
+      await Promise.all((error.results || []).map((result) => recordAIUsage(supabase, {
+        userId: partnerId,
+        feature: 'connection_catchup_match_writer',
+        promptVersion: CONNECTION_MATCH_WRITER_VERSION,
+        result,
+        latencyMs: null,
+        refId: latest.reflect_id,
+      })))
+      throw error
+    }
+    const persistGeneratedPartial = async (failure) => {
+      if (!hasCards(generated.data)) return
       await Promise.all([
         applyConnectionUpdates(supabase, {
           pair: context.pair,
-          updates: matcher.data,
+          updates: generated.data,
           reflectId: latest.reflect_id,
           localDate: latest.local_date || date,
         }),
@@ -260,10 +284,10 @@ export async function generateBrief(supabase, {
           latest,
           partnerId,
           generated: {
-            result: matcher.result,
-            signalResults: matcher.signalResults,
+            result: generated.result,
+            signalResults: generated.signalResults,
           },
-          updates: matcher.data,
+          updates: generated.data,
           connectionEligible: context.connectionEligible,
           stageOne,
           pipelineStatus: 'partial',
@@ -272,77 +296,15 @@ export async function generateBrief(supabase, {
         markResumeRequired(supabase, forUser),
       ])
     }
-    const resolvedIds = new Set(matcher.signalResults.map((row) => row.signalId))
+    const resolvedIds = new Set(generated.signalResults.map((row) => row.signalId))
     if (selectedSignals.some((signal) => !resolvedIds.has(signal.signalId))) {
-      const error = new Error('connection_matcher_missing_signal_result')
-      await persistMatcherPartial(error)
+      const error = new Error('connection_match_writer_missing_signal_result')
+      await persistGeneratedPartial(error)
       throw error
     }
-    const matchedResults = matcher.signalResults.filter((row) => row.outcome === 'matched')
-    const missingCustom = new Set(missingQualifiedSignalIds(
-      matcher.signalResults.filter((row) => row.outcome === 'custom'), matcher.data,
-      { currentBoard: context.currentBoard || cachedPayload, reflectId: latest.reflect_id },
-    ))
-    const generationResults = matcher.signalResults.filter((row) => (
-      row.outcome === 'matched' || (row.outcome === 'custom' && missingCustom.has(row.signalId))
-    ))
-    const generationIds = new Set(generationResults.map((row) => row.signalId))
-    const generationSignals = selectedSignals.filter((signal) => generationIds.has(signal.signalId))
-    let writer = null
-    if (generationSignals.length > 0) {
-      let templates
-      try {
-        templates = await readConnectionTemplatesByScenarioKeys(
-          supabase, matchedResults.map((row) => row.scenarioKey),
-        )
-      } catch (error) {
-        await persistMatcherPartial(error)
-        throw error
-      }
-      const templateByScenario = new Map(templates.map((template) => [template.scenarioKey, template]))
-      const generationRequests = generationResults.map((row) => ({
-        signal: generationSignals.find((signal) => signal.signalId === row.signalId),
-        outcome: row.outcome,
-        scenarioKey: row.scenarioKey,
-        scenarioTemplate: row.outcome === 'matched' ? templateByScenario.get(row.scenarioKey) || null : null,
-      }))
-      if (generationRequests.some((request) => request.outcome === 'matched' && !request.scenarioTemplate)) {
-        const error = new Error('connection_template_not_found')
-        await persistMatcherPartial(error)
-        throw error
-      }
-      try {
-        writer = await runConnectionWriter({
-          reflectId: latest.reflect_id,
-          journal: reflect?.body || '',
-          selectedSignals: generationSignals,
-          signalResults: generationResults,
-          generationRequests,
-          currentConnectionBoard: context.currentBoard || cachedPayload,
-          writerRecentEvidence: context.writerRecentEvidence,
-          readerRecentEvidence: context.readerRecentEvidence,
-        })
-      } catch (writerError) {
-        await persistMatcherPartial(writerError)
-        throw writerError
-      }
-    }
-    const finalUpdates = mergeConnectionUpdates(
-      [matcher.data, writer?.data], latest.reflect_id, {
-        allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
-        maxTotal: 3,
-        currentBoard: context.currentBoard || cachedPayload,
-      },
-    )
-    const generated = {
-      result: writer?.result || matcher.result,
-      results: [matcher.result, ...(writer?.results || [])],
-      latencyMs: matcher.latencyMs + (writer?.latencyMs || 0),
-      signalResults: matcher.signalResults,
-      data: finalUpdates,
-    }
-    const missingQualified = missingQualifiedSignalIds(matcher.signalResults, finalUpdates, {
-      currentBoard: context.currentBoard || cachedPayload,
+    const finalUpdates = generated.data
+    const missingQualified = missingQualifiedSignalIds(generated.signalResults, finalUpdates, {
+      currentBoard: board,
       reflectId: latest.reflect_id,
     })
     const applied = await applyConnectionUpdates(supabase, {
@@ -360,7 +322,7 @@ export async function generateBrief(supabase, {
         connectionEligible: context.connectionEligible,
         stageOne,
         pipelineStatus: missingQualified.length > 0 ? 'partial' : 'completed',
-        errorText: missingQualified.length > 0 ? 'connection_writer_missing_qualified_card' : null,
+        errorText: missingQualified.length > 0 ? 'connection_match_writer_missing_qualified_card' : null,
       }),
       ...(missingQualified.length > 0
         ? [markResumeRequired(supabase, forUser)]
@@ -373,25 +335,17 @@ export async function generateBrief(supabase, {
         latencyMs: stageOne.latencyMs,
         refId: latest.reflect_id,
       })] : []),
-      recordAIUsage(supabase, {
+      ...(generated.results || [generated.result]).map((result) => recordAIUsage(supabase, {
         userId: partnerId,
-        feature: 'connection_catchup_matcher',
-        promptVersion: CONNECTION_MATCHER_VERSION,
-        result: matcher.result,
-        latencyMs: matcher.latencyMs,
-        refId: latest.reflect_id,
-      }),
-      ...(writer?.results || []).map((result) => recordAIUsage(supabase, {
-        userId: partnerId,
-        feature: 'connection_catchup',
-        promptVersion: CONNECTION_WRITER_VERSION,
+        feature: 'connection_catchup_match_writer',
+        promptVersion: CONNECTION_MATCH_WRITER_VERSION,
         result,
         latencyMs: generated.latencyMs,
         refId: latest.reflect_id,
       })),
     ])
     if (missingQualified.length > 0) {
-      throw new Error('connection_writer_missing_qualified_card')
+      throw new Error('connection_match_writer_missing_qualified_card')
     }
     await finishResume(supabase, {
       forUser, partnerId, pairedSince, through: latest.created_at,

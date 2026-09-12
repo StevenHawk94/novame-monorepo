@@ -1,5 +1,5 @@
 const FAMILY_SELECT = 'family_key,name,section,module_key,routing_hint,sort_order,library_version'
-const SCENARIO_INDEX_SELECT = 'family_key,section,module_key,scenario_key,scenario,required_evidence,disqualifiers,library_version'
+const SCENARIO_INDEX_SELECT = 'family_key,section,module_key,scenario_key,scenario,required_evidence,disqualifiers,emotional_weight,tone_mode,depth_level,field_pattern,label_options,template_card,blocked_overlap,library_version'
 const TEMPLATE_SELECT = 'template_id,family_key,section,module_key,scenario_key,scenario,required_evidence,disqualifiers,emotional_weight,tone_mode,depth_level,field_pattern,label_options,template_card,blocked_overlap,library_version'
 
 export async function readConnectionFamilies(supabase) {
@@ -63,6 +63,13 @@ export async function readConnectionScenarioIndex(supabase, familyKeys) {
     scenario: row.scenario,
     requiredEvidence: row.required_evidence,
     disqualifiers: row.disqualifiers,
+    emotionalWeight: row.emotional_weight,
+    toneMode: row.tone_mode,
+    depthLevel: row.depth_level,
+    fieldPattern: row.field_pattern,
+    labelOptions: row.label_options,
+    templateCard: row.template_card,
+    blockedOverlap: row.blocked_overlap,
     libraryVersion: row.library_version,
   }))
 }

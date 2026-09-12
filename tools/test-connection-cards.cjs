@@ -243,7 +243,7 @@ test('a genuinely separate optional framing remains visible', () => {
   assert.equal(card.title, 'A new chapter');
 });
 
-test('history is compacted into a 10-day active tier and persistent 11-30 day tier', () => {
+test('history is compacted into days 1–5 and persistent days 6–10 tiers', () => {
   const now = Date.parse('2026-09-06T12:00:00.000Z');
   const signal = (topicKey, kind, summary, continuity = 'one_off') => ({
     signalId: `${topicKey}_signal`, topicKey, kind, summary, continuity,
@@ -253,24 +253,25 @@ test('history is compacted into a 10-day active tier and persistent 11-30 day ti
     { reflect_id: 'r1', created_at: '2026-09-05T12:00:00.000Z', connection_signals: [
       signal('learning_energy', 'pattern', 'They keep making time to learn.', 'ongoing'),
     ] },
-    { reflect_id: 'r2', created_at: '2026-08-22T12:00:00.000Z', connection_signals: [
-      signal('learning_energy', 'pattern', 'Learning has stayed in their routine.', 'ongoing'),
+    { reflect_id: 'r2', created_at: '2026-08-29T12:00:00.000Z', connection_signals: [
+      signal('morning_routine', 'pattern', 'Morning walks have stayed in their routine.', 'ongoing'),
     ] },
-    { reflect_id: 'r3', created_at: '2026-08-20T12:00:00.000Z', connection_signals: [
+    { reflect_id: 'r3', created_at: '2026-08-26T12:00:00.000Z', connection_signals: [
       signal('old_errand', 'event', 'They completed an errand.'),
     ] },
   ];
   const compact = evidence.compactConnectionEvidence(rows, { nowMs: now });
-  assert.equal(compact.length, 1);
+  assert.equal(compact.length, 2);
   assert.equal(compact[0].topicKey, 'learning_energy');
-  assert.equal(compact[0].occurrenceCount, 2);
-  assert.equal(compact[0].recencyTier, 'recent_10d');
+  assert.equal(compact[0].recencyTier, 'recent_5d');
+  assert.equal(compact[1].topicKey, 'morning_routine');
+  assert.equal(compact[1].recencyTier, 'background_6_10d');
 });
 
-test('unprocessed catch-up may retain a valuable one-off from days 11-30', () => {
+test('unprocessed catch-up may retain a valuable one-off from days 6–10', () => {
   const now = Date.parse('2026-09-06T12:00:00.000Z');
   const rows = [{
-    reflect_id: 'r-old', created_at: '2026-08-22T12:00:00.000Z',
+    reflect_id: 'r-old', created_at: '2026-08-29T12:00:00.000Z',
     connection_signals: [{
       signalId: 'quiet_win', topicKey: 'quiet_win', kind: 'event',
       summary: 'They reached a goal they had worked toward.', continuity: 'one_off',

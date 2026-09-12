@@ -1,11 +1,11 @@
 import { recordAIUsage } from './ai-usage'
 import {
-  runConnectionRouter, runConnectionMatcher, runConnectionWriter,
-  mergeConnectionUpdates, missingQualifiedSignalIds,
-  CONNECTION_ROUTER_VERSION, CONNECTION_MATCHER_VERSION, CONNECTION_WRITER_VERSION,
+  runConnectionRouter, runConnectionMatchWriter, missingQualifiedSignalIds,
+  representedSignalIds,
+  CONNECTION_ROUTER_VERSION, CONNECTION_MATCH_WRITER_VERSION, CONNECTION_WRITER_VERSION,
 } from './connection-ai'
 import {
-  readConnectionFamilies, readConnectionScenarioIndex, readConnectionTemplatesByScenarioKeys,
+  readConnectionFamilies, readConnectionScenarioIndex,
 } from './connection-template-store'
 import { serviceClient } from './reflect-draft'
 import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from './reflect-analysis-store'
@@ -164,10 +164,10 @@ async function analyzeClaimedJob(supabase, job) {
       currentConnectionBoard: context.connectionEligible ? context.currentBoard : null,
       writerRecentEvidence: context.writerRecentEvidence,
       readerRecentEvidence: context.readerRecentEvidence,
-    }))
-    stageOne = generated
+    }, { supabase }))
+    stageOne = { ...generated, promptVersion: CONNECTION_ROUTER_VERSION }
     await updateJob(supabase, reflectId, {
-      stage_one_result: { data: generated.data },
+      stage_one_result: { data: generated.data, promptVersion: CONNECTION_ROUTER_VERSION },
       stage_one_usage: generated.result.usage || null,
     })
     await Promise.all([
@@ -185,7 +185,7 @@ async function analyzeClaimedJob(supabase, job) {
 
   const baseAnalyzer = {
     result: stageOne.result || { provider: null, model: null, usage: job.stage_one_usage || null },
-    promptVersion: CONNECTION_ROUTER_VERSION,
+    promptVersion: stageOne.promptVersion || 'CONNECTION_ROUTER_V1',
     data: {
       visualConcepts: stageOne.data.visualConcepts || [],
       connectionSignals: stageOne.data.connectionSignals || [],
@@ -226,29 +226,59 @@ async function analyzeClaimedJob(supabase, job) {
     return { status: eligibleSignals.length === 0 ? 'no_update' : 'completed' }
   }
 
-  const scenarioIndex = await atStage('scenario_index', () => readConnectionScenarioIndex(
-    supabase, eligibleSignals.map((signal) => signal.familyKey),
-  ))
-  const matcher = await atStage('scenario_matcher', () => runConnectionMatcher({
+  // Partial writes are already present on the durable board. A retry reuses
+  // the router checkpoint and sends only unresolved signals to Gemini.
+  const represented = representedSignalIds(null, {
+    currentBoard: context.currentBoard,
     reflectId,
-    journal: reflect.body,
-    selectedSignals: eligibleSignals,
-    scenarioIndex,
-    currentConnectionBoard: context.currentBoard,
-    writerRecentEvidence: context.writerRecentEvidence,
-    readerRecentEvidence: context.readerRecentEvidence,
-  }))
-  await recordResultUsage(supabase, {
-    userId: reflect.user_id,
-    feature: 'connection_matcher',
-    promptVersion: CONNECTION_MATCHER_VERSION,
-    result: matcher.result,
-    latencyMs: matcher.latencyMs,
-    refId: reflectId,
   })
+  const pendingSignals = eligibleSignals.filter((signal) => !represented.has(signal.signalId))
+  if (pendingSignals.length === 0) {
+    const { error: pipelineError } = await supabase.from('reflect_ai_analyses').update({
+      connection_pipeline_status: 'completed',
+      error: null,
+    }).eq('reflect_id', reflectId)
+    if (pipelineError) throw pipelineError
+    await updateJob(supabase, reflectId, {
+      status: 'completed', error: null, failure_stage: null, processed_at: new Date().toISOString(),
+    })
+    return { status: 'completed' }
+  }
 
-  const persistMatcherPartial = async (failure) => {
-    if (!hasCards(matcher.data)) return
+  const scenarioIndex = await atStage('scenario_index', () => readConnectionScenarioIndex(
+    supabase, pendingSignals.map((signal) => signal.familyKey),
+  ))
+  let generated
+  try {
+    generated = await atStage('connection_match_writer', () => runConnectionMatchWriter({
+      reflectId,
+      selectedSignals: pendingSignals,
+      scenarioIndex,
+      currentConnectionBoard: context.currentBoard,
+      allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
+    }, { supabase }))
+  } catch (error) {
+    await Promise.all((error.results || []).map((result) => recordResultUsage(supabase, {
+      userId: reflect.user_id,
+      feature: 'connection_match_writer',
+      promptVersion: CONNECTION_MATCH_WRITER_VERSION,
+      result,
+      latencyMs: null,
+      refId: reflectId,
+    })))
+    throw error
+  }
+  await Promise.all((generated.results || [generated.result]).map((result) => recordResultUsage(supabase, {
+    userId: reflect.user_id,
+    feature: 'connection_match_writer',
+    promptVersion: CONNECTION_MATCH_WRITER_VERSION,
+    result,
+    latencyMs: generated.latencyMs,
+    refId: reflectId,
+  })))
+
+  const persistGeneratedPartial = async (failure) => {
+    if (!hasCards(generated.data)) return
     await atStage('connection_partial_persist', () => persistReflectAnalyzerResult(supabase, {
       reflectId,
       userId: reflect.user_id,
@@ -256,10 +286,10 @@ async function analyzeClaimedJob(supabase, job) {
       reflectsToday: 1,
       analyzer: {
         ...baseAnalyzer,
-        result: matcher.result,
-        results: [matcher.result],
-        data: { ...baseAnalyzer.data, connectionUpdates: matcher.data },
-        signalResults: matcher.signalResults,
+        result: generated.result,
+        results: generated.results || [generated.result],
+        data: { ...baseAnalyzer.data, connectionUpdates: generated.data },
+        signalResults: generated.signalResults,
       },
       context,
       matchedItems,
@@ -269,86 +299,18 @@ async function analyzeClaimedJob(supabase, job) {
     failure.partial = true
   }
 
-  const resolvedIds = new Set(matcher.signalResults.map((row) => row.signalId))
-  const missingResolution = eligibleSignals
+  const resolvedIds = new Set(generated.signalResults.map((row) => row.signalId))
+  const missingResolution = pendingSignals
     .map((signal) => signal.signalId).filter((signalId) => !resolvedIds.has(signalId))
   if (missingResolution.length > 0) {
-    const error = new Error('connection_matcher_missing_signal_result')
-    error.pipelineStage = 'scenario_matcher_validation'
-    await persistMatcherPartial(error)
+    const error = new Error('connection_match_writer_missing_signal_result')
+    error.pipelineStage = 'match_writer_validation'
+    await persistGeneratedPartial(error)
     throw error
   }
 
-  const matchedResults = matcher.signalResults.filter((row) => row.outcome === 'matched')
-  const missingCustom = new Set(missingQualifiedSignalIds(
-    matcher.signalResults.filter((row) => row.outcome === 'custom'), matcher.data,
-    { currentBoard: context.currentBoard, reflectId },
-  ))
-  const generationResults = matcher.signalResults.filter((row) => (
-    row.outcome === 'matched' || (row.outcome === 'custom' && missingCustom.has(row.signalId))
-  ))
-  const generationIds = new Set(generationResults.map((row) => row.signalId))
-  const generationSignals = eligibleSignals.filter((signal) => generationIds.has(signal.signalId))
-
-  let writer = null
-  if (matchedResults.length > 0 || generationSignals.length > 0) {
-    let templates
-    try {
-      templates = await atStage('template_load', () => readConnectionTemplatesByScenarioKeys(
-        supabase, matchedResults.map((row) => row.scenarioKey),
-      ))
-    } catch (error) {
-      await persistMatcherPartial(error)
-      throw error
-    }
-    const templateByScenario = new Map(templates.map((template) => [template.scenarioKey, template]))
-    const generationRequests = generationResults.map((row) => ({
-      signal: generationSignals.find((signal) => signal.signalId === row.signalId),
-      outcome: row.outcome,
-      scenarioKey: row.scenarioKey,
-      scenarioTemplate: row.outcome === 'matched' ? templateByScenario.get(row.scenarioKey) || null : null,
-    }))
-    if (generationRequests.some((request) => request.outcome === 'matched' && !request.scenarioTemplate)) {
-      const error = new Error('connection_template_not_found')
-      error.pipelineStage = 'template_load'
-      await persistMatcherPartial(error)
-      throw error
-    }
-    try {
-      writer = await atStage('template_writer', () => runConnectionWriter({
-        reflectId,
-        journal: reflect.body,
-        selectedSignals: generationSignals,
-        signalResults: generationResults,
-        generationRequests,
-        currentConnectionBoard: context.currentBoard,
-        writerRecentEvidence: context.writerRecentEvidence,
-        readerRecentEvidence: context.readerRecentEvidence,
-      }))
-    } catch (error) {
-      // A matched template request must not delay valid original cards that
-      // the matcher already completed in the same Journal analysis.
-      await persistMatcherPartial(error)
-      throw error
-    }
-    await recordResultUsage(supabase, {
-      userId: reflect.user_id,
-      feature: 'connection_writer',
-      promptVersion: CONNECTION_WRITER_VERSION,
-      result: writer.result,
-      latencyMs: writer.latencyMs,
-      refId: reflectId,
-    })
-  }
-
-  const finalUpdates = mergeConnectionUpdates(
-    [matcher.data, writer?.data], reflectId, {
-      allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
-      maxTotal: 3,
-      currentBoard: context.currentBoard,
-    },
-  )
-  const missingQualified = missingQualifiedSignalIds(matcher.signalResults, finalUpdates, {
+  const finalUpdates = generated.data
+  const missingQualified = missingQualifiedSignalIds(generated.signalResults, finalUpdates, {
     currentBoard: context.currentBoard, reflectId,
   })
   await atStage('connection_persist', () => persistReflectAnalyzerResult(supabase, {
@@ -358,23 +320,24 @@ async function analyzeClaimedJob(supabase, job) {
     reflectsToday: 1,
     analyzer: {
       ...baseAnalyzer,
-      result: writer?.result || matcher.result,
-      results: [matcher.result, ...(writer?.results || [])],
+      result: generated.result,
+      results: generated.results || [generated.result],
       data: { ...baseAnalyzer.data, connectionUpdates: finalUpdates },
-      signalResults: matcher.signalResults,
+      signalResults: generated.signalResults,
     },
     context,
     matchedItems,
     pipelineStatus: missingQualified.length > 0 ? 'partial' : 'completed',
-    error: missingQualified.length > 0 ? 'connection_writer_missing_qualified_card' : null,
+    error: missingQualified.length > 0 ? 'connection_match_writer_missing_qualified_card' : null,
   }))
   if (missingQualified.length > 0) {
-    const error = new Error('connection_writer_missing_qualified_card')
-    error.pipelineStage = 'writer_validation'
+    const error = new Error('connection_match_writer_missing_qualified_card')
+    error.pipelineStage = 'match_writer_validation'
     error.partial = hasCards(finalUpdates)
     throw error
   }
-  const status = hasCards(finalUpdates) ? 'completed' : 'no_update'
+  const status = hasCards(finalUpdates) || pendingSignals.length < eligibleSignals.length
+    ? 'completed' : 'no_update'
   await updateJob(supabase, reflectId, {
     status, error: null, failure_stage: null, processed_at: new Date().toISOString(),
   })

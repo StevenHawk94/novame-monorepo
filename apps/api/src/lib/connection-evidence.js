@@ -10,10 +10,10 @@ const SUPPORT_MODES = new Set([
 const SECTIONS = new Set(['missed', 'world', 'ways_in', 'between'])
 
 const DAY_MS = 24 * 60 * 60 * 1000
-export const CONNECTION_ACTIVE_DAYS = 10
-export const CONNECTION_RETENTION_DAYS = 30
-export const CONNECTION_RECENT_SIGNAL_LIMIT = 12
-export const CONNECTION_BACKGROUND_SIGNAL_LIMIT = 6
+export const CONNECTION_ACTIVE_DAYS = 5
+export const CONNECTION_RETENTION_DAYS = 10
+export const CONNECTION_RECENT_SIGNAL_LIMIT = 6
+export const CONNECTION_BACKGROUND_SIGNAL_LIMIT = 3
 
 function text(value, max) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null
@@ -158,7 +158,7 @@ function publicAggregate(entry, tier, nowMs) {
 }
 
 /**
- * Ten recent days remain the active context. Days 11-30 contribute only
+ * Five recent days remain the active context. Days 6-10 contribute only
  * persistent evidence and are collapsed by canonical topic/kind. This keeps
  * long histories from growing the prompt on every reflection.
  */
@@ -218,7 +218,7 @@ export function compactConnectionEvidence(rows, {
     if (entry.lastSeenMs >= activeCutoffMs) {
       // A one-off support need gets stale faster than descriptive evidence.
       if (entry.kind === 'support_need' && entry.occurrenceCount === 1
-        && entry.lastSeenMs < nowMs - 7 * DAY_MS) continue
+        && entry.lastSeenMs < nowMs - 3 * DAY_MS) continue
       recent.push(entry)
     } else if (retainBackgroundOneOff
       ? (!['upcoming', 'invitation'].includes(entry.kind)
@@ -230,7 +230,7 @@ export function compactConnectionEvidence(rows, {
   recent.sort((a, b) => score(b) - score(a))
   background.sort((a, b) => score(b) - score(a))
   return [
-    ...recent.slice(0, recentLimit).map((entry) => publicAggregate(entry, 'recent_10d', nowMs)),
-    ...background.slice(0, backgroundLimit).map((entry) => publicAggregate(entry, 'background_11_30d', nowMs)),
+    ...recent.slice(0, recentLimit).map((entry) => publicAggregate(entry, 'recent_5d', nowMs)),
+    ...background.slice(0, backgroundLimit).map((entry) => publicAggregate(entry, 'background_6_10d', nowMs)),
   ]
 }

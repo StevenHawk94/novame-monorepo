@@ -61,7 +61,9 @@ export async function loadReflectAnalyzerContext(supabase, {
     connectionEnabled: privacyAllows && readerActive,
     currentBoard: cached?.payload || null,
     writerRecentEvidence: compactConnectionEvidence(writerEvidence, { excludeReflectIds }),
-    readerRecentEvidence: compactConnectionEvidence(readerEvidence, { excludeReflectIds }),
+    readerRecentEvidence: compactConnectionEvidence(readerEvidence, {
+      excludeReflectIds, recentLimit: 4, backgroundLimit: 2,
+    }),
     pair: { ua, ub, writerId: userId, readerId: partnerId, localDate },
   }
 }

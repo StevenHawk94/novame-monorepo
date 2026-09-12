@@ -27,8 +27,15 @@ function load(file, imports = {}) {
     exports: module.exports,
     console,
     Date,
+    Buffer,
+    process,
+    fetch: global.fetch,
+    AbortController,
+    setTimeout,
+    clearTimeout,
     require(name) {
       if (Object.hasOwn(imports, name)) return imports[name];
+      if (name.startsWith('node:')) return require(name);
       throw new Error(`Unexpected dependency: ${name}`);
     },
   }, { filename: file });
@@ -44,16 +51,22 @@ const legacyAi = load('apps/api/src/lib/reflect-ai.js', {
   './connection-card': card,
 });
 
-function connectionAiWithResponses(responses) {
+function connectionAiWithResponses(responses, { cachedContent = null } = {}) {
   const queue = [...responses];
-  return load('apps/api/src/lib/connection-ai.js', {
+  const calls = [];
+  const loaded = load('apps/api/src/lib/connection-ai.js', {
     './ai': {
-      callAI: async () => ({
-        text: JSON.stringify(queue.shift() || {}),
-        provider: 'test',
-        model: 'test',
-        usage: { inputTokens: 1, outputTokens: 1 },
-      }),
+      callAI: async (options) => {
+        calls.push(options);
+        const response = queue.shift() || {};
+        return {
+          text: typeof response === 'string' ? response : JSON.stringify(response),
+          provider: 'test',
+          model: 'test',
+          usage: { inputTokens: 1, outputTokens: 1 },
+          finishReason: response?.__finishReason || 'STOP',
+        };
+      },
       parseAIJson: JSON.parse,
     },
     './item-learning-evidence': {
@@ -62,7 +75,13 @@ function connectionAiWithResponses(responses) {
     },
     './connection-evidence': evidence,
     './reflect-ai': { cleanConnectionUpdates: legacyAi.cleanConnectionUpdates },
+    './connection-context-cache': {
+      getConnectionContextCache: async () => cachedContent,
+      invalidateConnectionContextCache: async () => {},
+    },
   });
+  loaded.__calls = calls;
+  return loaded;
 }
 
 function signal(id, section, familyKey) {
@@ -127,14 +146,13 @@ function waysCard(id) {
   };
 }
 
-test('router performs value/family routing without generating card copy', async () => {
+test('router performs value/family routing in one bounded first-stage call', async () => {
   const routed = signal('signal_one', 'missed', 'milestone_or_quiet_win');
   const ai = connectionAiWithResponses([{
     learningCandidates: [],
     decision: 'update',
     connectionSignals: [routed],
   }]);
-  assert.doesNotMatch(ai.CONNECTION_ROUTER_SYSTEM_PROMPT, /Return ONLY valid JSON:[\s\S]*connectionUpdates/);
   const result = await ai.runConnectionRouter({
     reflectId: 'reflect-1', journal: 'private input', connectionEnabled: true,
     familyCatalog: [{
@@ -143,33 +161,34 @@ test('router performs value/family routing without generating card copy', async 
   });
   assert.equal(result.data.decision, 'update');
   assert.equal(result.data.eligibleSignals[0].familyKey, 'milestone_or_quiet_win');
+  assert.equal(ai.__calls.length, 1);
+  const request = JSON.parse(ai.__calls[0].userText);
+  assert.equal(request.operation, 'ROUTE');
+  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 192);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
 });
 
-test('matcher writes custom cards while writer receives only exact matched templates', async () => {
-  const customUpdates = emptyUpdates();
-  customUpdates.how_to_show_up = {
+test('second stage matches scenarios and writes matched and custom cards in one call', async () => {
+  const updates = emptyUpdates();
+  updates.how_to_show_up = {
     hasUpdate: true, clearExisting: false, cards: [waysCard('need_space')],
   };
-  const matchedUpdates = emptyUpdates();
-  matchedUpdates.worth_knowing = {
+  updates.worth_knowing = {
     hasUpdate: true, clearExisting: true, cards: [missedCard('career_win')],
   };
-  const ai = connectionAiWithResponses([
-    {
-      signalResults: [
-        {
-          signalId: 'career_win', outcome: 'matched', familyKey: 'milestone_or_quiet_win',
-          scenarioKey: 'quiet_threshold', moduleKey: 'worth_knowing',
-        },
-        {
-          signalId: 'need_space', outcome: 'custom', familyKey: null,
-          scenarioKey: null, moduleKey: 'how_to_show_up',
-        },
-      ],
-      connectionUpdates: customUpdates,
-    },
-    { connectionUpdates: matchedUpdates },
-  ]);
+  const ai = connectionAiWithResponses([{
+    signalResults: [
+      {
+        signalId: 'career_win', outcome: 'matched', familyKey: 'milestone_or_quiet_win',
+        scenarioKey: 'quiet_threshold', moduleKey: 'worth_knowing',
+      },
+      {
+        signalId: 'need_space', outcome: 'custom', familyKey: null,
+        scenarioKey: null, moduleKey: 'how_to_show_up',
+      },
+    ],
+    connectionUpdates: updates,
+  }]);
   const selectedSignals = [
     signal('career_win', 'missed', 'milestone_or_quiet_win'),
     signal('need_space', 'ways_in', null),
@@ -179,48 +198,42 @@ test('matcher writes custom cards while writer receives only exact matched templ
     moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
     scenario: 'A meaningful effort crosses a quiet threshold.',
     requiredEvidence: ['concrete progress'], disqualifiers: [],
+    templateId: 'template-one', templateCard: { title: 'Structural reference only' },
   }];
-  const matcher = await ai.runConnectionMatcher({
-    reflectId: 'reflect-2', journal: 'private input', selectedSignals,
-    scenarioIndex, currentConnectionBoard: null, readerRecentEvidence: [],
+  const generated = await ai.runConnectionMatchWriter({
+    reflectId: 'reflect-2', selectedSignals,
+    scenarioIndex, currentConnectionBoard: null,
   });
-  assert.equal(matcher.signalResults.length, 2);
-  assert.equal(matcher.data.how_to_show_up.cards.length, 1);
-  assert.equal(matcher.data.worth_knowing.cards.length, 0);
-
-  const matchedSignal = selectedSignals[0];
-  const matchedResult = matcher.signalResults[0];
-  const exactTemplate = {
-    ...scenarioIndex[0], templateId: 'template-one',
-    templateCard: { title: 'Structural reference only' },
-  };
-  const writer = await ai.runConnectionWriter({
-    reflectId: 'reflect-2', journal: 'private input',
-    selectedSignals: [matchedSignal], signalResults: [matchedResult],
-    generationRequests: [{
-      signal: matchedSignal, outcome: 'matched', scenarioKey: 'quiet_threshold',
-      scenarioTemplate: exactTemplate,
-    }],
-    currentConnectionBoard: null, readerRecentEvidence: [],
-  });
-  const merged = ai.mergeConnectionUpdates([matcher.data, writer.data], 'reflect-2');
-  assert.equal(merged.worth_knowing.cards.length, 1);
-  assert.equal(merged.how_to_show_up.cards.length, 1);
-  assert.equal(merged.worth_knowing.clearExisting, false);
+  assert.equal(generated.signalResults.length, 2);
+  assert.equal(generated.data.worth_knowing.cards.length, 1);
+  assert.equal(generated.data.how_to_show_up.cards.length, 1);
+  assert.equal(generated.data.worth_knowing.clearExisting, false);
+  assert.equal(ai.__calls.length, 1);
+  const request = JSON.parse(ai.__calls[0].userText);
+  assert.equal(request.operation, 'MATCH_AND_WRITE');
+  assert.equal(request.journal, undefined);
+  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 768);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 4096);
 });
 
-test('writer prompt enforces deeper value, concrete action, pronouns, and non-template phrasing', () => {
+test('shared cached prompt enforces both operation contracts and writing quality', () => {
   const ai = connectionAiWithResponses([]);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Memories already show the event/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /structural and tonal reference/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /only as they, them, their, or theirs/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Never begin with “It sounds like/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /give one low-pressure action usable now/i);
-  assert.match(ai.CONNECTION_MATCHER_SYSTEM_PROMPT, /Do not write a card for matched signals/i);
-  assert.match(ai.CONNECTION_MATCHER_SYSTEM_PROMPT, /Write one original card/i);
+  const prompt = ai.CONNECTION_COMMON_SYSTEM_PROMPT;
+  assert.match(prompt, /OPERATION ROUTE/);
+  assert.match(prompt, /OPERATION MATCH_AND_WRITE/);
+  assert.match(prompt, /Every matched or custom result must include exactly one complete card/i);
+  assert.match(prompt, /only as they, them, their, or theirs/i);
+  assert.match(prompt, /Never begin with “It sounds like/i);
+  assert.match(prompt, /give one low-pressure action usable now/i);
+  assert.match(prompt, /days 1–5/i);
+  assert.match(prompt, /days 6–10/i);
+  // Gemini explicit caching requires at least 2,048 input tokens. The cache
+  // API remains the runtime authority; this guard catches accidental prompt
+  // shrinkage well before the known-safe current prompt size.
+  assert.ok(prompt.length > 9000);
 });
 
-test('matcher rejects mismatched scenario keys and normalizes custom card metadata', async () => {
+test('combined second stage rejects mismatched scenarios and normalizes custom card metadata', async () => {
   const custom = waysCard('signal_two');
   custom.assignedSection = 'missed';
   custom.signalType = 'event';
@@ -240,19 +253,46 @@ test('matcher rejects mismatched scenario keys and normalizes custom card metada
     ],
     connectionUpdates: updates,
   }]);
-  const result = await ai.runConnectionMatcher({
-    reflectId: 'reflect-3', journal: 'private input',
+  const result = await ai.runConnectionMatchWriter({
+    reflectId: 'reflect-3',
     selectedSignals: [
       signal('signal_one', 'missed', 'milestone_or_quiet_win'),
       signal('signal_two', 'ways_in', null),
     ],
-    scenarioIndex: [], currentConnectionBoard: null, readerRecentEvidence: [],
+    scenarioIndex: [], currentConnectionBoard: null,
   });
   assert.deepEqual(result.signalResults.map((row) => row.signalId), ['signal_two']);
   const normalized = result.data.how_to_show_up.cards[0];
   assert.equal(normalized.assignedSection, 'ways_in');
   assert.equal(normalized.signalType, 'action');
   assert.equal(normalized.topicKey, 'signal_two_topic');
+});
+
+test('second stage retries MAX_TOKENS once with 6144 and reuses explicit cache', async () => {
+  const updates = emptyUpdates();
+  updates.worth_knowing = {
+    hasUpdate: true, clearExisting: false, cards: [missedCard('career_win')],
+  };
+  const ai = connectionAiWithResponses([
+    { __finishReason: 'MAX_TOKENS' },
+    {
+      signalResults: [{
+        signalId: 'career_win', outcome: 'custom', familyKey: null,
+        scenarioKey: null, moduleKey: 'worth_knowing',
+      }],
+      connectionUpdates: updates,
+    },
+  ], { cachedContent: 'cachedContents/global-connection' });
+  const result = await ai.runConnectionMatchWriter({
+    reflectId: 'reflect-retry',
+    selectedSignals: [signal('career_win', 'missed', null)],
+    scenarioIndex: [], currentConnectionBoard: null,
+  });
+  assert.equal(result.results.length, 2);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 4096);
+  assert.equal(ai.__calls[1].generationConfig.maxOutputTokens, 6144);
+  assert.equal(ai.__calls[0].cachedContent, 'cachedContents/global-connection');
+  assert.equal(ai.__calls[1].cachedContent, 'cachedContents/global-connection');
 });
 
 test('pipeline migration records recoverable stage status and failure boundary', () => {
@@ -262,12 +302,51 @@ test('pipeline migration records recoverable stage status and failure boundary',
   assert.match(sql, /add column if not exists failure_stage text/i);
 });
 
-test('job pipeline calls the final writer only for a template match or malformed custom repair', () => {
+test('job pipeline has two AI stages and preserves partial-retry boundaries', () => {
   const jobs = source('apps/api/src/lib/reflect-analysis-jobs.js');
-  assert.match(jobs, /row\.outcome === 'matched' \|\| \(row\.outcome === 'custom' && missingCustom\.has\(row\.signalId\)\)/);
-  assert.match(jobs, /readConnectionTemplatesByScenarioKeys\([\s\S]*matchedResults\.map\(\(row\) => row\.scenarioKey\)/);
+  assert.match(jobs, /runConnectionRouter/);
+  assert.match(jobs, /runConnectionMatchWriter/);
+  assert.doesNotMatch(jobs, /runConnectionMatcher/);
+  assert.doesNotMatch(jobs, /runConnectionWriter/);
+  assert.doesNotMatch(jobs, /readConnectionTemplatesByScenarioKeys/);
   assert.match(jobs, /connection_partial_persist/);
-  assert.doesNotMatch(jobs, /readConnectionTemplates\(/);
+  assert.match(jobs, /pendingSignals = eligibleSignals\.filter/);
+  assert.match(jobs, /stage_one_result/);
+});
+
+test('explicit cache registry is global, private, leased, and seven-day renewable', () => {
+  const sql = source('supabase/migrations/20260912000084_ai_context_cache_registry.sql');
+  const cache = source('apps/api/src/lib/connection-context-cache.js');
+  assert.match(sql, /create table if not exists public\.ai_context_caches/i);
+  assert.match(sql, /revoke all on table public\.ai_context_caches from public, anon, authenticated/i);
+  assert.match(sql, /security definer/i);
+  assert.match(sql, /refresh_lease_until = v_now \+ interval '60 seconds'/i);
+  assert.match(cache, /7 \* 24 \* 60 \* 60/);
+  assert.match(cache, /24 \* 60 \* 60 \* 1000/);
+  assert.match(cache, /5 \* 60 \* 1000/);
+  assert.match(cache, /claim_ai_context_cache/);
+  assert.match(cache, /systemInstruction/);
+  assert.match(cache, /ttl: `\$\{CACHE_TTL_SECONDS\}s`/);
+});
+
+test('evidence window keeps latest plus days 1–5 and compressed days 6–10 only', () => {
+  const now = Date.now();
+  const row = (id, daysAgo, continuity = 'one_off') => ({
+    reflect_id: `reflect-${id}`,
+    created_at: new Date(now - daysAgo * 86400000).toISOString(),
+    connection_signals: [{
+      ...signal(id, 'world', 'current_role_or_pattern'),
+      kind: continuity === 'ongoing' ? 'pattern' : 'event',
+      continuity,
+    }],
+  });
+  const compact = evidence.compactConnectionEvidence([
+    row('latest', 0), row('recent', 4), row('background', 8, 'ongoing'), row('expired', 11, 'ongoing'),
+  ], { nowMs: now });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(compact.map((entry) => [entry.signalId, entry.recencyTier]))),
+    [['latest', 'recent_5d'], ['recent', 'recent_5d'], ['background', 'background_6_10d']],
+  );
 });
 
 test('migration seeds the reviewed v2 library and durable per-kind slots', () => {
