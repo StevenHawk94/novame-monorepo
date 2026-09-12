@@ -105,7 +105,7 @@ test('Android header remains 20/26 and subtitle 12/18 even on narrow screens', (
     const h = setup('android', { width });
     const all = nodes(h.tree);
     const title = all.find(n => n.type === 'Text' && n.props.children === 'Connection Board');
-    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'The little things tell a bigger story.');
+    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'Real-time insight to keep you close');
     assert.equal(flatten(title.props.style).fontSize, 20);
     assert.equal(flatten(title.props.style).lineHeight, 26);
     assert.equal(title.props.adjustsFontSizeToFit, false);
@@ -119,7 +119,7 @@ test('iOS Connection title and subtitle use the shared tab header dimensions', (
   for (const width of [360, 390]) {
     const all = nodes(setup('ios', { width }).tree);
     const title = all.find(n => n.type === 'Text' && n.props.children === 'Connection Board');
-    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'The little things tell a bigger story.');
+    const subtitle = all.find(n => n.type === 'Text' && n.props.children === 'Real-time insight to keep you close');
     assert.equal(flatten(title.props.style).fontSize, 27);
     assert.equal(flatten(title.props.style).lineHeight, 33);
     assert.equal(title.props.adjustsFontSizeToFit, true);

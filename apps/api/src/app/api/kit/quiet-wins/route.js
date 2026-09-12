@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -58,7 +59,7 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const ids = Array.isArray(checkedIds) ? checkedIds : []
 
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
+    const submitArgs = {
       p_user_id: userId,
       p_kit: 'quiet_wins',
       p_source: 'quiet_wins',
@@ -70,7 +71,10 @@ export async function POST(request) {
       // server boundary so checklist selections can never become gem events.
       p_gem_hits: [],
       p_payload: { checkedIds: ids },
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_kit', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[quiet-wins] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

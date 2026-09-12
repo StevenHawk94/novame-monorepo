@@ -56,6 +56,7 @@ function harness() {
   const native = {
     ...Object.fromEntries(['ActivityIndicator', 'View', 'ScrollView', 'Text', 'TextInput', 'Modal', 'Pressable', 'KeyboardAvoidingView'].map((key) => [key, key])),
     Platform: { OS: 'ios' }, Linking: {}, AppState: appState,
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
     StyleSheet: { create: (s) => s, absoluteFill: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }, absoluteFillObject: { position: 'absolute' } },
   };
   function load(file, imports = {}) {
@@ -63,6 +64,7 @@ function harness() {
     const defaults = {
       react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': native,
       'expo-image': { Image: 'NativeImage' }, '../../lib/splash': { hideSplashOnce: () => splashHides++ },
+      '../../lib/download-queue': { markAndroidP0UiReady() {} },
     };
     const code = ts.transpileModule(read(file), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
@@ -348,7 +350,13 @@ function screenHarness(h) {
     '../../src/lib/home-entry-readiness': { beginHomeEntry() {}, deferHomeEntryNotification() {} },
     '../../src/lib/item-images.g': items,
     '../../src/lib/feature-guides': { enableFeatureGuidesForNewUser() {} },
-    '../../src/lib/onboarding': { markIntroSeen() {}, setBunnyName() {}, setChosenCompanion() {}, setOnboardingChoices() {} },
+    '../../src/lib/onboarding': {
+      beginAnonymousOnboardingAuthHandoff() {}, endAnonymousOnboardingAuthHandoff() {},
+      markIntroSeen() {}, setBunnyName() {}, setChosenCompanion() {}, setOnboardingChoices() {},
+      syncOnboardingCompanion: async () => true,
+    },
+    '../../src/lib/ad-measurement': { logOnboardingCompleted() {}, logRegistration() {} },
+    '../../src/components/privacy/meta-privacy-provider': { useMetaPrivacy: () => ({ ensureConsentBeforeHome: async () => {} }) },
     '../../src/lib/auth': { async ensureSession() { sessions++; return true; } },
     '../../src/lib/supabase': { supabase: { auth: { getSession: async () => ({ data: { session: null } }) } } },
     '../../src/lib/account-api': {},
@@ -359,6 +367,17 @@ function screenHarness(h) {
       async purchaseSubscription() { purchases++; return { kind: 'cancelled' }; },
     },
     '../../src/lib/notification-settings': {},
+    '../../src/lib/plus-benefits': { DEFAULT_PLUS_BENEFITS: [] },
+    '../../src/hooks/use-store-subscription-pricing': {
+      useStoreSubscriptionPricing: () => ({
+        pricing: {
+          yearlyTrialEligible: true,
+          monthlyAnnualized: '$59.88', yearlyPerMonth: '$4.99',
+          yearly: { displayPrice: '$59.99' }, monthly: { displayPrice: '$5.99' },
+        },
+        status: 'ready', load: async () => null, retry: async () => null,
+      }),
+    },
   });
   return { screen, completed: () => completed(), failed: (error) => failed(error), purchases: () => purchases, sessions: () => sessions };
 }
@@ -380,7 +399,7 @@ test('all 15 real pages declare exactly their image count and every source exist
       assert.equal(scroll.props.removeClippedSubviews, false);
     }
   }
-  assert.equal(images, 26);
+  assert.equal(images, 20);
   assert.equal(fixture.purchases(), 0); assert.equal(fixture.sessions(), 0);
   screen.unmount();
 });

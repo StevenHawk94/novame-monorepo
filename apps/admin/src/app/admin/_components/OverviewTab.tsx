@@ -223,16 +223,6 @@ export default function OverviewTab() {
                 label="Announcements"
                 onClick={() => router.push('/admin/announcements')}
               />
-              <NavBtn
-                icon="🚫"
-                label="Block List"
-                onClick={() => router.push('/admin/block-list')}
-              />
-              <NavBtn
-                icon="🚨"
-                label="Report List"
-                onClick={() => router.push('/admin/report-list')}
-              />
             </div>
           </>
         )

@@ -4,7 +4,8 @@
  * Tier 1: gemini-2.5-flash           (primary)
  * Tier 2: deepseek-chat (V3.2)       (external fallback if Gemini fails)
  *
- * Per-call timeout: 5s (fits within Vercel edge 25s limit).
+ * Default per-provider timeout is 15s. Callers with a longer background job
+ * can provide one totalTimeoutMs budget shared by primary and fallback.
  *
  * All Gemini calls use system_instruction separation to maximize implicit cache hits.
  * Safety filters set to BLOCK_NONE so user diary content (emotions, stress, anger) is never blocked.
@@ -27,7 +28,7 @@ const SAFETY_NONE = [
 
 /**
  * fetch wrapper with hard timeout via AbortController.
- * Default 8s — fits within Vercel 25s limit when chained across 3 model tiers.
+ * Default 15s. A caller-level deadline may supply a smaller remaining budget.
  */
 async function fetchWithTimeout(url, options, timeoutMs = 15000) {
   const controller = new AbortController()
@@ -49,7 +50,7 @@ async function fetchWithTimeout(url, options, timeoutMs = 15000) {
  * Splitting system_instruction from contents maximizes implicit cache hits
  * (the system part stays constant, Gemini auto-caches the prefix).
  */
-async function callGemini(model, { systemInstruction, userText, generationConfig, contents }) {
+async function callGemini(model, { systemInstruction, userText, generationConfig, contents, requestTimeoutMs }) {
   const apiKey = GEMINI_API_KEY()
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
@@ -79,7 +80,8 @@ async function callGemini(model, { systemInstruction, userText, generationConfig
 
   const res = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    requestTimeoutMs,
   )
 
   if (!res.ok) {
@@ -97,7 +99,7 @@ async function callGemini(model, { systemInstruction, userText, generationConfig
 /**
  * Call DeepSeek (OpenAI-compatible API).
  */
-async function callDeepSeek({ systemInstruction, userText, generationConfig }) {
+async function callDeepSeek({ systemInstruction, userText, generationConfig, requestTimeoutMs }) {
   const apiKey = DEEPSEEK_API_KEY()
   if (!apiKey) throw new Error('DEEPSEEK_API_KEY not configured')
 
@@ -117,7 +119,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig }) {
         ? { type: 'json_object' }
         : undefined,
     }),
-  })
+  }, requestTimeoutMs)
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '')
@@ -140,15 +142,25 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig }) {
  * @param {Array}  opts.contents           — raw contents array (for multimodal; overrides userText)
  * @param {Object} opts.generationConfig   — { temperature, maxOutputTokens, response_mime_type }
  * @param {boolean} opts.skipDeepSeek      — true for multimodal requests (DeepSeek can't do audio)
+ * @param {number} opts.totalTimeoutMs     — optional total budget shared by all provider attempts
  * @returns {{ text, model, provider, usage }}
  */
 export async function callAI(opts) {
   const errors = []
+  const totalTimeoutMs = Number.isFinite(opts.totalTimeoutMs) && opts.totalTimeoutMs > 0
+    ? opts.totalTimeoutMs : null
+  const deadline = totalTimeoutMs ? Date.now() + totalTimeoutMs : null
+  const withRemainingTimeout = () => {
+    if (!deadline) return opts
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) throw new Error(`AI request budget exhausted after ${totalTimeoutMs}ms`)
+    return { ...opts, requestTimeoutMs: remaining }
+  }
 
   // Tier 1 & 2: Gemini models
   for (const model of GEMINI_MODELS) {
     try {
-      const result = await callGemini(model, opts)
+      const result = await callGemini(model, withRemainingTimeout())
       return result
     } catch (err) {
       console.warn(`[AI] ${model} failed:`, err.message)
@@ -159,7 +171,7 @@ export async function callAI(opts) {
   // Tier 3: DeepSeek (text-only; skip for multimodal like audio transcription)
   if (!opts.skipDeepSeek && !opts.contents) {
     try {
-      const result = await callDeepSeek(opts)
+      const result = await callDeepSeek(withRemainingTimeout())
       return result
     } catch (err) {
       console.warn('[AI] DeepSeek failed:', err.message)

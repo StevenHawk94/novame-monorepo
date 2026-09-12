@@ -4,74 +4,16 @@ import { supabase } from './supabase';
 /**
  * Account-related mutation wrappers — Stage 3.10.2 (C1).
  *
- * Thin typed facade over four server endpoints used by the Account
+ * Thin typed facade over the server endpoints used by the Account
  * Management overlay:
- *   POST /api/upload-avatar     (multipart, has Vision SafeSearch)
- *   POST /api/update-profile    (display_name and onboarding profile fields)
+ *   POST /api/update-profile    (display_name, bundled avatar and onboarding fields)
  *   POST /api/delete-account    (cascading delete, server-side)
  *
  * Why a wrapper layer:
- *   - Each call has a non-trivial response shape (avatar's UNSAFE_CONTENT
- *     code, update-profile's variant returns) -- typing it once here
- *     keeps the overlay component readable.
  *   - mobile invalidates the me-stats cache after avatar / display name
  *     changes; centralizing those side-effects is overlay business, not
  *     wrapper business -- the wrapper just returns parsed data.
  */
-
-// ---- avatar upload ----
-
-export type AvatarUploadResult =
-  | { kind: 'success'; avatarUrl: string }
-  | { kind: 'unsafe'; reason: string }
-  | { kind: 'error'; message: string };
-
-/**
- * Uploads a local image to /api/upload-avatar via multipart form-data.
- * The server runs Google Cloud Vision SafeSearch and rejects unsafe
- * images with code 'UNSAFE_CONTENT' -- we surface that as a distinct
- * result kind so the UI can show a yellow warning instead of a red error.
- *
- * On success, the server has already updated profiles.avatar_url and
- * cleared is_default_avatar; the caller should then invalidate the
- * me-stats cache so the new URL surfaces on the Me page.
- */
-export async function uploadAvatar(
-  userId: string,
-  imageUri: string,
-  mimeType: string = 'image/jpeg',
-): Promise<AvatarUploadResult> {
-  const fd = new FormData();
-  // React Native FormData blob shape -- expo-image-picker returns a
-  // file:// uri. The runtime wraps this into a multipart part with
-  // the right boundary headers; the server reads it via
-  // formData.get('image').
-  fd.append('image', {
-    uri: imageUri,
-    name: 'avatar.jpg',
-    type: mimeType,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any);
-  fd.append('userId', userId);
-
-  type WireResponse =
-    | { success: true; avatarUrl: string }
-    | { success: false; error: string; reason?: string; code?: string };
-
-  try {
-    const data = await apiClient.post<WireResponse>('/api/upload-avatar', fd);
-    if (data.success) return { kind: 'success', avatarUrl: data.avatarUrl };
-    if (data.code === 'UNSAFE_CONTENT') {
-      return { kind: 'unsafe', reason: data.reason || 'Image rejected' };
-    }
-    return { kind: 'error', message: data.error || 'Upload failed' };
-  } catch (e) {
-    return {
-      kind: 'error',
-      message: e instanceof Error ? e.message : 'Network error',
-    };
-  }
-}
 
 // ---- profile field updates ----
 
@@ -103,6 +45,13 @@ export function updateDisplayName(
   displayName: string,
 ): Promise<UpdateResult> {
   return postUpdate({ userId, displayName });
+}
+
+export function updateDefaultAvatar(
+  userId: string,
+  defaultAvatarId: string,
+): Promise<UpdateResult> {
+  return postUpdate({ userId, defaultAvatarId });
 }
 
 /** Onboarding funnel answers — fire-and-forget analytics write. */

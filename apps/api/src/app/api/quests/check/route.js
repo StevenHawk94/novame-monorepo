@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { CLOVERS_PER_TASK, COMPLETION_BONUS } from '@novame/domain'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'nodejs'
 
@@ -49,14 +50,17 @@ export async function POST(request) {
     )
 
     const today = await resolveUserLocalDate(supabase, userId)
-    const { data: result, error: rpcError } = await supabase.rpc('check_quest_task', {
+    const checkArgs = {
       p_user_id: userId,
       p_task_index: taskIndex,
       p_local_date: today,
       p_iso_week: isoWeek(today),
       p_default_reward: CLOVERS_PER_TASK,
       p_completion_bonus: COMPLETION_BONUS,
-    })
+    }
+    const { data: result, error: rpcError } = await runCompanionDependentRpc(
+      supabase, 'check_quest_task', checkArgs, userId,
+    )
     if (rpcError) {
       console.error('[quests/check] rpc error:', rpcError.message)
       return NextResponse.json({ error: 'Failed' }, { status: 500 })

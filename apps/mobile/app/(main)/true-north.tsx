@@ -9,7 +9,6 @@ import {
   TRUE_NORTH_PHRASES,
   TRUE_NORTH_FOCUS_POINTS,
   TRUE_NORTH_RELEASE_POINTS,
-  TRUE_NORTH_GEMS_BY_RANK,
   type DimensionId,
 } from '@novame/domain';
 import { GridBackground } from '../../src/components/ui/grid-background';

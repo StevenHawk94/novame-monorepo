@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -310,13 +310,13 @@ export default function FriendsScreen() {
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, Platform.OS === 'android' && styles.androidRoot]}>
       {/* Top-anchored art: the meadow/mailbox top stays fully visible; any
           overflow crops from the BOTTOM (design note). */}
       <HomeEntryImage
         asset="friends-background"
         source={BACKGROUNDS.friends}
-        style={StyleSheet.absoluteFill}
+        style={Platform.OS === 'android' ? styles.androidBackground : StyleSheet.absoluteFill}
         contentFit="cover"
         contentPosition="top"
       />
@@ -604,6 +604,8 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
                 <Pressable
                   key={choice.mode}
                   onPress={() => onMode(choice.mode)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: mode === choice.mode }}
                   style={[styles.privacyChoice, mode === choice.mode && styles.privacyChoiceSelected]}
                 >
                   <Text style={styles.privacyChoiceText}>{choice.label}</Text>
@@ -628,6 +630,18 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#6B4226' },
+  androidRoot: { overflow: 'hidden' },
+  // friends.webp is 841x1870. Android's full-screen `cover` scales this tall
+  // artwork by viewport height and crops its left/right edges. Give the image
+  // its intrinsic aspect ratio instead, so it always spans the screen width,
+  // stays anchored at the top, and only its bottom can overflow/crop.
+  androidBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    aspectRatio: 841 / 1870,
+  },
 
   headerRow: { height: 56, justifyContent: 'center' },
   headerRowOverlay: { position: 'absolute', left: 0, right: 0, zIndex: 2 },
@@ -746,13 +760,13 @@ const styles = StyleSheet.create({
   },
   privacyBackdrop: { flex: 1, backgroundColor: 'rgba(34,24,17,0.64)', alignItems: 'center', justifyContent: 'center', padding: 18 },
   privacyFrame: { width: '100%', maxWidth: 500, alignItems: 'center' },
-  privacyCard: { width: '100%', backgroundColor: '#53351D', borderRadius: 30, borderWidth: 10, borderColor: '#FFC99E', padding: 24 },
-  privacyTitle: { color: '#FFFFFF', fontSize: 29, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', marginTop: 8 },
-  privacySubtitle: { color: '#FFFFFF', fontSize: 17, lineHeight: 24, fontFamily: 'Inter_700Bold', textAlign: 'center', marginTop: 24, paddingHorizontal: 12 },
-  privacyChoices: { gap: 13, marginTop: 28 },
-  privacyChoice: { minHeight: 62, borderRadius: 17, backgroundColor: '#FFFFFF', borderWidth: 5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  privacyChoiceSelected: { borderColor: '#77D94D' },
-  privacyChoiceText: { color: '#161311', fontSize: 18, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
+  privacyCard: { width: '100%', backgroundColor: '#53351D', borderRadius: 24, borderWidth: 3, borderColor: '#FFC99E', padding: 24 },
+  privacyTitle: { color: '#FFFFFF', fontSize: 26, fontFamily: 'Inter_700Bold', textAlign: 'center', marginTop: 8 },
+  privacySubtitle: { color: '#FFFFFF', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_600SemiBold', textAlign: 'center', marginTop: 22, paddingHorizontal: 12 },
+  privacyChoices: { gap: 12, marginTop: 26 },
+  privacyChoice: { minHeight: 54, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8E0D7', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  privacyChoiceSelected: { backgroundColor: '#FFC34D', borderColor: '#FFC34D' },
+  privacyChoiceText: { color: '#161311', fontSize: 16, fontFamily: 'Inter_400Regular', textAlign: 'center' },
   privacyHint: { color: '#FFFFFF', fontSize: 13, lineHeight: 19, fontFamily: 'Inter_600SemiBold', fontStyle: 'italic', textAlign: 'center', marginVertical: 25, paddingHorizontal: 8 },
   privacySave: { minHeight: 62, borderRadius: 18, backgroundColor: '#FFF8E7', alignItems: 'center', justifyContent: 'center' },
   privacySaveText: { color: '#2A1A10', fontSize: 21, fontFamily: 'Inter_800ExtraBold' },

@@ -91,7 +91,6 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "./plugins/with-photo-permissions",
       "expo-iap",
       "./plugins/with-ios-modular-headers",
       "./plugins/with-tiktok-business-sdk",

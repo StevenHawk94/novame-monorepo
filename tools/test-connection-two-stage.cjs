@@ -145,50 +145,129 @@ test('router performs value/family routing without generating card copy', async 
   assert.equal(result.data.eligibleSignals[0].familyKey, 'milestone_or_quiet_win');
 });
 
-test('writer preserves valid first-pass cards when repairing one missing card', async () => {
-  const firstUpdates = emptyUpdates();
-  firstUpdates.worth_knowing = {
-    hasUpdate: true, clearExisting: true, cards: [missedCard('signal_one')],
+test('matcher writes custom cards while writer receives only exact matched templates', async () => {
+  const customUpdates = emptyUpdates();
+  customUpdates.how_to_show_up = {
+    hasUpdate: true, clearExisting: false, cards: [waysCard('need_space')],
   };
-  const repairUpdates = emptyUpdates();
-  repairUpdates.how_to_show_up = {
-    hasUpdate: true, clearExisting: false, cards: [waysCard('signal_two')],
+  const matchedUpdates = emptyUpdates();
+  matchedUpdates.worth_knowing = {
+    hasUpdate: true, clearExisting: true, cards: [missedCard('career_win')],
   };
   const ai = connectionAiWithResponses([
     {
       signalResults: [
-        { signalId: 'signal_one', outcome: 'matched', familyKey: 'milestone_or_quiet_win', scenarioKey: 'one' },
-        { signalId: 'signal_two', outcome: 'custom', familyKey: null, scenarioKey: null },
+        {
+          signalId: 'career_win', outcome: 'matched', familyKey: 'milestone_or_quiet_win',
+          scenarioKey: 'quiet_threshold', moduleKey: 'worth_knowing',
+        },
+        {
+          signalId: 'need_space', outcome: 'custom', familyKey: null,
+          scenarioKey: null, moduleKey: 'how_to_show_up',
+        },
       ],
-      connectionUpdates: firstUpdates,
+      connectionUpdates: customUpdates,
     },
-    {
-      signalResults: [{ signalId: 'signal_two', outcome: 'custom', familyKey: null, scenarioKey: null }],
-      connectionUpdates: repairUpdates,
-    },
+    { connectionUpdates: matchedUpdates },
   ]);
-  const result = await ai.runConnectionWriter({
-    reflectId: 'reflect-2',
-    journal: 'private input',
-    selectedSignals: [
-      signal('signal_one', 'missed', 'milestone_or_quiet_win'),
-      signal('signal_two', 'ways_in', null),
-    ],
-    scenarioTemplates: [], currentConnectionBoard: null, readerRecentEvidence: [],
+  const selectedSignals = [
+    signal('career_win', 'missed', 'milestone_or_quiet_win'),
+    signal('need_space', 'ways_in', null),
+  ];
+  const scenarioIndex = [{
+    familyKey: 'milestone_or_quiet_win', section: 'missed',
+    moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
+    scenario: 'A meaningful effort crosses a quiet threshold.',
+    requiredEvidence: ['concrete progress'], disqualifiers: [],
+  }];
+  const matcher = await ai.runConnectionMatcher({
+    reflectId: 'reflect-2', journal: 'private input', selectedSignals,
+    scenarioIndex, currentConnectionBoard: null, readerRecentEvidence: [],
   });
-  assert.equal(result.repaired, true);
-  assert.equal(result.data.worth_knowing.cards.length, 1);
-  assert.equal(result.data.how_to_show_up.cards.length, 1);
-  assert.equal(result.data.worth_knowing.clearExisting, false);
+  assert.equal(matcher.signalResults.length, 2);
+  assert.equal(matcher.data.how_to_show_up.cards.length, 1);
+  assert.equal(matcher.data.worth_knowing.cards.length, 0);
+
+  const matchedSignal = selectedSignals[0];
+  const matchedResult = matcher.signalResults[0];
+  const exactTemplate = {
+    ...scenarioIndex[0], templateId: 'template-one',
+    templateCard: { title: 'Structural reference only' },
+  };
+  const writer = await ai.runConnectionWriter({
+    reflectId: 'reflect-2', journal: 'private input',
+    selectedSignals: [matchedSignal], signalResults: [matchedResult],
+    generationRequests: [{
+      signal: matchedSignal, outcome: 'matched', scenarioKey: 'quiet_threshold',
+      scenarioTemplate: exactTemplate,
+    }],
+    currentConnectionBoard: null, readerRecentEvidence: [],
+  });
+  const merged = ai.mergeConnectionUpdates([matcher.data, writer.data], 'reflect-2');
+  assert.equal(merged.worth_knowing.cards.length, 1);
+  assert.equal(merged.how_to_show_up.cards.length, 1);
+  assert.equal(merged.worth_knowing.clearExisting, false);
 });
 
 test('writer prompt enforces deeper value, concrete action, pronouns, and non-template phrasing', () => {
   const ai = connectionAiWithResponses([]);
   assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Memories already show the event/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Templates are guidance, not fill-in-the-blank copy/i);
+  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /structural and tonal reference/i);
   assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /only as they, them, their, or theirs/i);
-  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Never begin with or use “It sounds like/i);
+  assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /Never begin with “It sounds like/i);
   assert.match(ai.CONNECTION_WRITER_SYSTEM_PROMPT, /give one low-pressure action usable now/i);
+  assert.match(ai.CONNECTION_MATCHER_SYSTEM_PROMPT, /Do not write a card for matched signals/i);
+  assert.match(ai.CONNECTION_MATCHER_SYSTEM_PROMPT, /Write one original card/i);
+});
+
+test('matcher rejects mismatched scenario keys and normalizes custom card metadata', async () => {
+  const custom = waysCard('signal_two');
+  custom.assignedSection = 'missed';
+  custom.signalType = 'event';
+  custom.topicKey = 'model_invented_topic';
+  const updates = emptyUpdates();
+  updates.worth_knowing = { hasUpdate: true, clearExisting: false, cards: [custom] };
+  const ai = connectionAiWithResponses([{
+    signalResults: [
+      {
+        signalId: 'signal_one', outcome: 'matched', familyKey: 'wrong_family',
+        scenarioKey: 'wrong_scenario', moduleKey: 'worth_knowing',
+      },
+      {
+        signalId: 'signal_two', outcome: 'custom', familyKey: null,
+        scenarioKey: null, moduleKey: 'how_to_show_up',
+      },
+    ],
+    connectionUpdates: updates,
+  }]);
+  const result = await ai.runConnectionMatcher({
+    reflectId: 'reflect-3', journal: 'private input',
+    selectedSignals: [
+      signal('signal_one', 'missed', 'milestone_or_quiet_win'),
+      signal('signal_two', 'ways_in', null),
+    ],
+    scenarioIndex: [], currentConnectionBoard: null, readerRecentEvidence: [],
+  });
+  assert.deepEqual(result.signalResults.map((row) => row.signalId), ['signal_two']);
+  const normalized = result.data.how_to_show_up.cards[0];
+  assert.equal(normalized.assignedSection, 'ways_in');
+  assert.equal(normalized.signalType, 'action');
+  assert.equal(normalized.topicKey, 'signal_two_topic');
+});
+
+test('pipeline migration records recoverable stage status and failure boundary', () => {
+  const sql = source('supabase/migrations/20260911000083_connection_pipeline_reliability.sql');
+  assert.match(sql, /connection_pipeline_status text not null default 'completed'/i);
+  assert.match(sql, /'router_completed',[\s\S]*'partial',[\s\S]*'failed'/i);
+  assert.match(sql, /add column if not exists failure_stage text/i);
+});
+
+test('job pipeline calls the final writer only for a template match or malformed custom repair', () => {
+  const jobs = source('apps/api/src/lib/reflect-analysis-jobs.js');
+  assert.match(jobs, /row\.outcome === 'matched' \|\| \(row\.outcome === 'custom' && missingCustom\.has\(row\.signalId\)\)/);
+  assert.match(jobs, /readConnectionTemplatesByScenarioKeys\([\s\S]*matchedResults\.map\(\(row\) => row\.scenarioKey\)/);
+  assert.match(jobs, /connection_partial_persist/);
+  assert.doesNotMatch(jobs, /readConnectionTemplates\(/);
 });
 
 test('migration seeds the reviewed v2 library and durable per-kind slots', () => {

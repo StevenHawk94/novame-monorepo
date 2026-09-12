@@ -71,7 +71,7 @@ KEEP    apps/api/src/app/api/payment-result/route.js
 KEEP    apps/api/src/app/api/subscriptions/route.js
 KEEP    apps/api/src/app/api/support-ticket/route.js
 KEEP    apps/api/src/app/api/update-profile/route.js
-KEEP    apps/api/src/app/api/upload-avatar/route.js
+DELETE  apps/api/src/app/api/upload-avatar/route.js
 KEEP    apps/api/src/app/api/user-sync/route.js
 KEEP    apps/api/src/app/api/webhooks/airwallex/route.js
 KEEP    apps/api/src/app/api/webhooks/apple/route.js

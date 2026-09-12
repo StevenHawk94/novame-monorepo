@@ -173,8 +173,7 @@ app/
 | 路径 | 方法 | 功能 |
 |---|---|---|
 | `/api/user-sync` | GET / POST | 拉取用户全量数据 / 保存 profile（从 token 取 ID 防越权） |
-| `/api/update-profile` | POST | 昵称/头像/生日/aspire 词；经 Admin API 改邮箱密码 |
-| `/api/upload-avatar` | POST | 头像上传：8MB 校验 → Google Vision SafeSearch → Storage |
+| `/api/update-profile` | POST | 昵称/内置头像/生日；邮箱密码改动要求用户重新验证 |
 | `/api/delete-account` | POST | 级联删除全部数据（App Store 合规） |
 | `/api/onboarding-complete` | POST | 幂等 RPC 创建所选宠物 + 盖章 profile |
 | `/api/ai-consent` | GET / POST | AI 处理同意时间戳 |
@@ -260,7 +259,6 @@ app/
 | Apple App Store | IAP 验签 + Server Notifications v2 | `WEBHOOK_VERIFY_DISABLED`（应急开关） |
 | Google Play | RTDN + subscriptionsv2 | `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY` |
 | Airwallex | 实体商品支付 | `AIRWALLEX_CLIENT_ID/API_KEY/ENV/WEBHOOK_SECRET` |
-| Google Cloud Vision | 头像 SafeSearch | `GOOGLE_CLOUD_VISION_API_KEY` |
 | Resend | 工单邮件 | `RESEND_API_KEY` |
 
 ---

@@ -21,13 +21,34 @@ const COMPANION_SYNC_TIMEOUT_MS = 5000;
 
 type TimedResult<T> = { status: 'resolved'; value: T } | { status: 'timeout' };
 
-async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<TimedResult<T>> {
-  return Promise.race([
-    promise.then((value) => ({ status: 'resolved' as const, value })),
-    new Promise<TimedResult<T>>((resolve) => {
-      setTimeout(() => resolve({ status: 'timeout' }), ms);
-    }),
-  ]);
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  onTimeout?: () => void,
+): Promise<TimedResult<T>> {
+  return new Promise<TimedResult<T>>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      onTimeout?.();
+      resolve({ status: 'timeout' });
+    }, ms);
+    promise.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve({ status: 'resolved', value });
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 export default function SigningInScreen() {
@@ -55,6 +76,7 @@ export default function SigningInScreen() {
 
     void (async () => {
       const restored = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
+      if (cancelled) return;
       let userId = restored.status === 'resolved' ? restored.value?.user?.id : null;
 
       // A returning guest can lose the persisted anonymous session after an
@@ -63,8 +85,10 @@ export default function SigningInScreen() {
       // splash indefinitely.
       if (!userId && restored.status === 'resolved') {
         const ensured = await withTimeout(ensureSession(), ANONYMOUS_SESSION_TIMEOUT_MS);
+        if (cancelled) return;
         if (ensured.status === 'resolved' && ensured.value) {
           const retry = await withTimeout(getCurrentSession(), SESSION_RESTORE_TIMEOUT_MS);
+          if (cancelled) return;
           userId = retry.status === 'resolved' ? retry.value?.user?.id : null;
         }
       }
@@ -83,13 +107,11 @@ export default function SigningInScreen() {
         return;
       }
 
-      // Onboarding: create the companion before revealing Home. This is an
-      // economy prerequisite for Reflect/Quests/Kits, so allowing the user to
-      // interact while a fire-and-forget request was still running produced a
-      // real save race on slower Android devices. Keep the entry gate bounded;
-      // the API save boundary also repairs an already-missing row idempotently.
+      // Start the durable onboarding completion before revealing Home. It is
+      // an economy prerequisite for Reflect/Quests/Kits, but the visual entry
+      // gate stays bounded while the idempotent request continues underneath.
       const companionSync = withTimeout(
-        syncOnboardingCompanion(userId),
+        syncOnboardingCompanion(userId, { force: true }),
         COMPANION_SYNC_TIMEOUT_MS,
       );
 
@@ -100,10 +122,11 @@ export default function SigningInScreen() {
         console.warn('[signing-in] me-stats fetch failed:', (e as Error)?.message || e);
       });
 
-      const companionResult = await companionSync;
-      if (companionResult.status === 'timeout') {
-        console.warn('[signing-in] companion sync timed out; save boundary will self-heal');
-      }
+      await companionSync;
+      if (cancelled) return;
+      // Five seconds is only the UI gate. The durable request keeps running
+      // for up to 30 seconds and MainLayout resumes it on later foregrounds.
+      // A real 30-second failure is logged by onboarding.ts, not here.
 
       // HomeEntryGate provides a short paint hand-off. Missing images or slow
       // refreshes never hold Home closed; its local/cached views repaint.

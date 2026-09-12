@@ -1,15 +1,16 @@
-import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { AppState, InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
 import type { ImageSourcePropType } from 'react-native';
+import { useSegments } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { HomeEntryImage } from './home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
-import { markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
+import { isHomeEntryRoute, markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
 
 /**
  * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
@@ -23,6 +24,13 @@ const TABS: ReadonlyArray<{ name: 'index' | 'bags' | 'quests' | 'friends' | 'sta
   { name: 'friends', icon: ICONS.Friends, label: 'Paired' },
   { name: 'status', icon: ICONS.friendList, label: 'Connection' },
 ];
+
+// Lightest first, heaviest last. React Navigation's preload mounts the real
+// inactive route without focusing it, so useFocusEffect network refreshes do
+// not run until the user actually visits the tab.
+const TAB_PRELOAD_ORDER = ['quests', 'friends', 'bags', 'status'] as const;
+const TAB_PRELOAD_START_DELAY_MS = 400;
+const TAB_PRELOAD_SETTLE_MS = 500;
 
 type TabBarTheme = {
   background: string;
@@ -83,7 +91,9 @@ const BAG_COLLECTION_THEMES: Record<'their' | 'ours', TabBarTheme> = {
 const FALLBACK_THEME = TAB_THEMES.index;
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
-  const { attempt } = useHomeEntry();
+  const { attempt, pending: homeEntryPending } = useHomeEntry();
+  const segments = useSegments();
+  const homeIsForeground = isHomeEntryRoute(segments);
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
   const activeRouteName = activeRoute?.name ?? 'index';
@@ -93,8 +103,75 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
     : TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
   const routesByName = new Map<string, (typeof state.routes)[number]>();
   state.routes.forEach((r) => routesByName.set(r.name, r));
+  const preloadedTabs = useRef(new Set<string>());
+  const stopPreloading = useRef<(() => void) | null>(null);
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === 'active');
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      setAppIsActive(nextState === 'active');
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (
+      homeEntryPending
+      || !homeIsForeground
+      || activeRouteName !== 'index'
+      || !appIsActive
+    ) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let interaction: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
+
+    const cancel = () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      interaction?.cancel();
+      interaction = null;
+    };
+    stopPreloading.current = cancel;
+
+    const schedule = (startAt: number) => {
+      if (cancelled) return;
+      let index = startAt;
+      while (index < TAB_PRELOAD_ORDER.length && preloadedTabs.current.has(TAB_PRELOAD_ORDER[index])) {
+        index += 1;
+      }
+      if (index >= TAB_PRELOAD_ORDER.length) return;
+
+      interaction = InteractionManager.runAfterInteractions(() => {
+        interaction = null;
+        if (cancelled || AppState.currentState !== 'active') return;
+        const routeName = TAB_PRELOAD_ORDER[index];
+        try {
+          navigation.preload(routeName);
+          preloadedTabs.current.add(routeName);
+        } catch (error) {
+          // Preloading is an optional performance optimization. A navigator
+          // teardown must never affect normal tab navigation.
+          console.warn('[tabs] background preload skipped:', routeName, error);
+        }
+        timer = setTimeout(() => schedule(index + 1), TAB_PRELOAD_SETTLE_MS);
+      });
+    };
+
+    const memorySub = AppState.addEventListener('memoryWarning', cancel);
+    timer = setTimeout(() => schedule(0), TAB_PRELOAD_START_DELAY_MS);
+
+    return () => {
+      cancel();
+      memorySub.remove();
+      if (stopPreloading.current === cancel) stopPreloading.current = null;
+    };
+  }, [activeRouteName, appIsActive, homeEntryPending, homeIsForeground, navigation]);
 
   const handleTabPress = (routeName: string, isFocused: boolean) => {
+    // A real user action always outranks speculative background mounting.
+    if (!isFocused) stopPreloading.current?.();
     void haptics.pageOpen();
     const route = routesByName.get(routeName);
     if (!route) return;

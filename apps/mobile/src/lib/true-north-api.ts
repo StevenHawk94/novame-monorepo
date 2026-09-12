@@ -27,7 +27,7 @@ export interface TrueNorthStatus {
 export type TrueNorthError = 'already_done' | 'companion_not_ready' | 'network';
 
 export type TrueNorthSubmitResult =
-  | { ok: true; companionXp: number; xpAwarded: number; gemHits: { dimension: string; gems: number }[] }
+  | { ok: true; companionXp: number; xpAwarded: number }
   | { ok: false; error: TrueNorthError };
 
 function localDateStr(): string {
@@ -117,7 +117,6 @@ export async function submitTrueNorth(
       error?: string;
       companion_xp?: number;
       xp_awarded?: number;
-      gem_hits?: { dimension: string; gems: number }[];
       nextAvailableAt?: string | null;
     }>('/api/kit/true-north', { userId, ranking, localDate: localDateStr() });
 
@@ -146,7 +145,6 @@ export async function submitTrueNorth(
       ok: true,
       companionXp: data.companion_xp ?? 0,
       xpAwarded: data.xp_awarded ?? 0,
-      gemHits: data.gem_hits ?? [],
     };
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {

@@ -105,6 +105,7 @@ export async function applyConnectionUpdates(supabase, {
 
 export async function persistReflectAnalyzerResult(supabase, {
   reflectId, userId, localDate, reflectsToday, analyzer, context, matchedItems,
+  pipelineStatus = 'completed', error = null,
 }) {
   const updates = analyzer.data.connectionUpdates
   const connectionMode = !context.connectionEligible
@@ -128,6 +129,7 @@ export async function persistReflectAnalyzerResult(supabase, {
     connection_signal_results: analyzer.signalResults || null,
     connection_writer_version: analyzer.writerVersion || null,
     template_library_version: analyzer.templateLibraryVersion || null,
+    connection_pipeline_status: pipelineStatus,
     connection_mode: connectionMode,
     provider: analyzer.result?.provider || null,
     model: analyzer.result?.model || null,
@@ -135,7 +137,7 @@ export async function persistReflectAnalyzerResult(supabase, {
       ? { calls: analyzer.results.map((result) => result?.usage || null) }
       : analyzer.result?.usage || null,
     status: 'completed',
-    error: null,
+    error,
     completed_at: new Date().toISOString(),
   }
   const { error: analysisError } = await supabase.from('reflect_ai_analyses')

@@ -5,21 +5,24 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as FileSystem from 'expo-file-system/legacy';
 
 import { haptics } from '@/lib/haptics';
 import { signOut } from '@/lib/auth';
 import { getBunnyName } from '@/lib/onboarding';
-import { resolveAvatarSource } from '@/lib/avatar';
+import {
+  DEFAULT_AVATAR_OPTIONS,
+  getDefaultAvatarId,
+  isDefaultAvatarId,
+  resolveAvatarSource,
+  type DefaultAvatarId,
+} from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import {
   deleteAccount,
   requestAccountReauthentication,
+  updateDefaultAvatar,
   updateDisplayName,
   updateEmail,
-  uploadAvatar,
 } from '@/lib/account-api';
 import {
   clearCachedMeStats,
@@ -32,7 +35,7 @@ import { clearCachedSubscription } from '@/lib/subscription';
 /**
  * Account Management overlay -- Stage 3.10.2 C1.
  *
- * 3-section accordion (Profile Image / Display Name / Email)
+ * 3-section accordion (Change Avatar / Display Name / Email)
  * + Danger Zone (Delete Account). Each section opens independently and
  * has its own Save action and inline status message.
  *
@@ -47,19 +50,15 @@ import { clearCachedSubscription } from '@/lib/subscription';
  * silent refetch so when the user closes this overlay and goes back to
  * the Me page the new value is already in cache.
  *
- * Avatar upload UX (per stage 3.10.2 decision C1-A):
- *   Tap "Upload New" -> launch picker -> on selection upload immediately,
- *   no two-step preview/save. The picker itself is the confirmation step.
+ * Avatar UX: users choose from the four bundled profile portraits. The
+ * selected id is saved immediately and contains no user-uploaded media.
  */
-
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
 type Section = 'avatar' | 'name' | 'email' | null;
 
 type Status =
   | { kind: 'idle' }
   | { kind: 'success'; text: string }
-  | { kind: 'warning'; text: string }
   | { kind: 'error'; text: string };
 
 export default function AccountManagementModal() {
@@ -85,6 +84,9 @@ export default function AccountManagementModal() {
   const [openSection, setOpenSection] = useState<Section>(null);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [busy, setBusy] = useState(false);
+  const selectedDefaultAvatarId = isDefaultAvatar !== false
+    ? (isDefaultAvatarId(avatarUrl) ? avatarUrl : getDefaultAvatarId(userId))
+    : null;
 
   // Section-local input state
   const [nameInput, setNameInput] = useState<string>('');
@@ -132,78 +134,25 @@ export default function AccountManagementModal() {
     setOpenSection(id);
   };
 
-  // ---- Avatar upload ----
+  // ---- Bundled avatar selection ----
 
-  const handlePickAndUpload = async () => {
+  const handleSelectAvatar = async (avatarId: DefaultAvatarId) => {
     void haptics.light();
     if (!userId || busy) return;
+    if (isDefaultAvatar && avatarUrl === avatarId) return;
     setStatus({ kind: 'idle' });
-
-    // Permission
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      setStatus({
-        kind: 'error',
-        text: 'Photo library permission denied. Enable it in Settings.',
-      });
-      return;
-    }
-
-    // Picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const asset = result.assets[0];
-
-    // Size check
-    try {
-      const info = await FileSystem.getInfoAsync(asset.uri);
-      if (info.exists && typeof info.size === 'number' && info.size > MAX_AVATAR_BYTES) {
-        setStatus({ kind: 'error', text: 'Image too large. Max 5MB allowed.' });
-        return;
-      }
-    } catch {
-      // size probe failure isn't fatal; let server reject if needed.
-    }
-
     setBusy(true);
     void haptics.medium();
-
-    // B: normalize the cropped image before upload. iOS allowsEditing
-    // returns a square crop, but the file can carry EXIF orientation /
-    // non-exact dimensions that make expo-image render it off-center in the
-    // circle (square crop, but NOT center-aligned). Re-encoding via
-    // manipulateAsync bakes the orientation into pixels and emits a clean
-    // square JPEG, so square-crop -> circle-display lands exactly centered.
-    let uploadUri = asset.uri;
-    try {
-      const normalized = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 512 } }],
-        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
-      );
-      uploadUri = normalized.uri;
-    } catch (e) {
-      console.warn('[avatar] normalize failed; uploading original:', e);
-    }
-
-    const res = await uploadAvatar(userId, uploadUri, 'image/jpeg');
+    const res = await updateDefaultAvatar(userId, avatarId);
     setBusy(false);
 
     if (res.kind === 'success') {
-      setAvatarUrl(res.avatarUrl);
-      setIsDefaultAvatar(false);
-      setStatus({ kind: 'success', text: 'Profile picture updated.' });
+      setAvatarUrl(avatarId);
+      setIsDefaultAvatar(true);
+      setStatus({ kind: 'success', text: 'Avatar updated.' });
       void haptics.success();
       invalidateMeStats();
-      void fetchMeStats(userId).catch(() => {});
-    } else if (res.kind === 'unsafe') {
-      setStatus({ kind: 'warning', text: `Image rejected: ${res.reason}` });
-      void haptics.warning();
+      void fetchMeStats(userId, { force: true }).then(refreshFromCache).catch(() => {});
     } else {
       setStatus({ kind: 'error', text: res.message });
       void haptics.error();
@@ -366,7 +315,6 @@ export default function AccountManagementModal() {
             style={[
               styles.statusBanner,
               status.kind === 'success' && styles.statusSuccess,
-              status.kind === 'warning' && styles.statusWarning,
               status.kind === 'error' && styles.statusError,
             ]}
           >
@@ -374,26 +322,58 @@ export default function AccountManagementModal() {
               style={[
                 styles.statusText,
                 status.kind === 'success' && { color: '#3E7C4F' },
-                status.kind === 'warning' && { color: '#B58A2A' },
                 status.kind === 'error' && { color: '#C25B4E' },
               ]}
             >
-              {status.kind === 'success' ? '✓ ' : status.kind === 'warning' ? '⚠ ' : ''}
+              {status.kind === 'success' ? '✓ ' : ''}
               {status.text}
             </Text>
           </View>
         ) : null}
 
-        {/* Profile Image */}
+        {/* Bundled profile avatar */}
         <SectionHeader
-          label="Profile Image"
-          summary="Tap to change"
+          label="Change Avatar"
+          summary="Choose an avatar"
           open={openSection === 'avatar'}
           onPress={() => toggleSection('avatar')}
         />
         {openSection === 'avatar' ? (
           <View style={styles.sectionBody}>
-            <View style={styles.avatarRow}>
+            <Text style={styles.avatarPickerTitle}>Choose your avatar</Text>
+            <View style={styles.avatarGrid}>
+              {DEFAULT_AVATAR_OPTIONS.map((option) => {
+                const selected = selectedDefaultAvatarId === option.id;
+                return (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Avatar ${option.id.slice(-1)}`}
+                    accessibilityState={{ selected }}
+                    disabled={busy}
+                    onPress={() => void handleSelectAvatar(option.id)}
+                    style={({ pressed }) => [
+                      styles.avatarOption,
+                      selected && styles.avatarOptionSelected,
+                      pressed && !busy && styles.avatarOptionPressed,
+                    ]}
+                  >
+                    <Image
+                      source={option.source}
+                      style={styles.avatarOptionImage}
+                      contentFit="cover"
+                      contentPosition="center"
+                    />
+                    {selected ? (
+                      <View style={styles.avatarCheck}>
+                        <MaterialIcons name="check" size={15} color="#FFFFFF" />
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.currentAvatarRow}>
               <View style={styles.avatarWrap}>
                 <Image
                   source={resolveAvatarSource(avatarUrl, isDefaultAvatar, userId)}
@@ -402,23 +382,9 @@ export default function AccountManagementModal() {
                   contentPosition="center"
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <Pressable
-                  onPress={handlePickAndUpload}
-                  disabled={busy}
-                  style={({ pressed }) => [
-                    styles.uploadBtn,
-                    { opacity: busy ? 0.6 : pressed ? 0.85 : 1 },
-                  ]}
-                >
-                  {busy ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Text style={styles.uploadBtnText}>Upload New</Text>
-                  )}
-                </Pressable>
-                <Text style={styles.avatarHint}>Max 5MB, JPG/PNG</Text>
-              </View>
+              <Text style={styles.currentAvatarText}>
+                {busy ? 'Saving…' : 'Current avatar'}
+              </Text>
             </View>
           </View>
         ) : null}
@@ -600,7 +566,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statusSuccess: { backgroundColor: 'rgba(62,124,79,0.12)' },
-  statusWarning: { backgroundColor: 'rgba(181,138,42,0.12)' },
   statusError: { backgroundColor: 'rgba(194,91,78,0.12)' },
   statusText: {
     fontSize: 13,
@@ -634,15 +599,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   // Avatar
-  avatarRow: {
+  currentAvatarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 14,
   },
   avatarWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#F2E6CB',
     overflow: 'hidden',
     alignItems: 'center',
@@ -652,24 +619,59 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  uploadBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#8A6240',
+  avatarPickerTitle: {
+    color: '#4A3423',
+    fontSize: 14,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 12,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  avatarOption: {
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: '#E8D5B0',
+    backgroundColor: '#F2E6CB',
+    padding: 3,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  avatarOptionSelected: {
+    borderColor: '#2E8B57',
+    borderWidth: 3,
+  },
+  avatarOptionPressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.97 }],
+  },
+  avatarOptionImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+  },
+  avatarCheck: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 23,
+    height: 23,
     borderRadius: 12,
+    backgroundColor: '#2E8B57',
     alignItems: 'center',
-    minHeight: 40,
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
-  uploadBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  avatarHint: {
+  currentAvatarText: {
     color: '#8A7A63',
-    fontSize: 11,
-    marginTop: 6,
+    fontSize: 12,
+    fontFamily: 'Inter_600SemiBold',
   },
   // Inputs
   input: {

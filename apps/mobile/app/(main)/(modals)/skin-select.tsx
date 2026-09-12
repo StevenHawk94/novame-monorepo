@@ -277,24 +277,28 @@ export default function OutfitClosetScreen() {
           columns={3}
           columnGap={12}
           rowGap={16}
+          equalRowHeights
           keyExtractor={(entry) => entry.kind === 'default' ? 'default' : entry.outfit.key}
           renderItem={(entry) => {
             if (entry.kind === 'default') {
               return (
                 <Pressable
                   onPress={() => { void haptics.selection(); setPreviewKey(null); }}
-                  style={[styles.card, styles.noneCard, previewKey === null && styles.cardSelected]}
+                  style={[styles.card, previewKey === null && styles.cardSelected]}
                 >
                   <View style={styles.noneIconWrap}>
                     <MaterialIcons name="block" size={52} color="#4A3220" />
                   </View>
-                  {equipped === null ? (
-                    <View style={styles.inUseBadge}>
-                      <Text style={styles.inUseText}>In Use</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.ownedText}>Default</Text>
-                  )}
+                  <Text style={styles.cardName} numberOfLines={2}>Default</Text>
+                  <View style={styles.cardFooter}>
+                    {equipped === null ? (
+                      <View style={styles.inUseBadge}>
+                        <Text style={styles.inUseText}>In Use</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.ownedText}>Owned</Text>
+                    )}
+                  </View>
                 </Pressable>
               );
             }
@@ -328,23 +332,26 @@ export default function OutfitClosetScreen() {
                     prioritizeR2Image(url);
                   }}
                 />
-                {plusLocked ? (
-                  <View style={styles.plusPill}>
-                    <MaterialIcons name="lock" size={14} color="#FFFFFF" />
-                    <Text style={styles.plusPillText}>PLUS</Text>
-                  </View>
-                ) : isActive ? (
-                  <View style={styles.inUseBadge}>
-                    <Text style={styles.inUseText}>In Use</Text>
-                  </View>
-                ) : owned(o) ? (
-                  <Text style={styles.ownedText}>Owned</Text>
-                ) : (
-                  <View style={styles.priceRow}>
-                    <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
-                    <Text style={styles.priceText}>{o.price}</Text>
-                  </View>
-                )}
+                <Text style={styles.cardName} numberOfLines={2}>{o.name}</Text>
+                <View style={styles.cardFooter}>
+                  {plusLocked ? (
+                    <View style={styles.plusPill}>
+                      <MaterialIcons name="lock" size={14} color="#FFFFFF" />
+                      <Text style={styles.plusPillText}>PLUS</Text>
+                    </View>
+                  ) : isActive ? (
+                    <View style={styles.inUseBadge}>
+                      <Text style={styles.inUseText}>In Use</Text>
+                    </View>
+                  ) : owned(o) ? (
+                    <Text style={styles.ownedText}>Owned</Text>
+                  ) : (
+                    <View style={styles.priceRow}>
+                      <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
+                      <Text style={styles.priceText}>{o.price}</Text>
+                    </View>
+                  )}
+                </View>
               </Pressable>
             );
           }}
@@ -421,14 +428,15 @@ const styles = StyleSheet.create({
   panelHeaderText: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   card: {
-    width: '100%', alignItems: 'center',
+    flex: 1, width: '100%', alignItems: 'center',
     backgroundColor: '#FBF3DF', borderRadius: 22, borderWidth: 2.5, borderColor: '#E3B7A0',
     paddingVertical: 12, paddingHorizontal: 8, gap: 8,
   },
   cardSelected: { borderColor: '#FFFFFF' },
-  noneCard: { justifyContent: 'center' },
   noneIconWrap: { width: '84%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   thumb: { width: '84%', aspectRatio: 1 },
+  cardName: { fontSize: 13, lineHeight: 18, fontFamily: 'Inter_800ExtraBold', color: '#4A3220', textAlign: 'center' },
+  cardFooter: { minHeight: 30, marginTop: 'auto', alignItems: 'center', justifyContent: 'center' },
   inUseBadge: { backgroundColor: '#4A3220', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5 },
   inUseText: { color: '#FFFFFF', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
   ownedText: { color: '#8A6240', fontSize: 13, fontFamily: 'Inter_700Bold' },

@@ -254,6 +254,7 @@ export default function SceneSelectScreen() {
             columns={3}
             columnGap={12}
             rowGap={20}
+            equalRowHeights
             keyExtractor={(entry) => entry.kind === 'default' ? 'default' : entry.scene.key}
             renderItem={(entry) => {
               if (entry.kind === 'default') {
@@ -268,11 +269,13 @@ export default function SceneSelectScreen() {
                   >
                     <ExpoImage source={DEFAULT_SCENE_THUMB} style={styles.thumb} contentFit="cover" />
                     <Text style={styles.cellName} numberOfLines={2}>Mushroom Wood</Text>
-                    {isCurrent(DEFAULT_SCENE_KEY) ? (
-                      <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
-                    ) : (
-                      <Text style={styles.ownedText}>Free</Text>
-                    )}
+                    <View style={styles.cellFooter}>
+                      {isCurrent(DEFAULT_SCENE_KEY) ? (
+                        <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
+                      ) : (
+                        <Text style={styles.ownedText}>Free</Text>
+                      )}
+                    </View>
                   </Pressable>
                 );
               }
@@ -293,21 +296,23 @@ export default function SceneSelectScreen() {
                     }}
                   />
                   <Text style={styles.cellName} numberOfLines={2}>{s.name}</Text>
-                  {isCurrent(s.key) ? (
-                    <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
-                  ) : plusLocked ? (
-                    <View style={styles.plusPill}>
-                      <MaterialIcons name="lock" size={12} color="#FFFFFF" />
-                      <Text style={styles.plusPillText}>PLUS</Text>
-                    </View>
-                  ) : owned(s) ? (
-                    <Text style={styles.ownedText}>Owned</Text>
-                  ) : (
-                    <View style={styles.priceRow}>
-                      <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
-                      <Text style={styles.priceText}>{s.price}</Text>
-                    </View>
-                  )}
+                  <View style={styles.cellFooter}>
+                    {isCurrent(s.key) ? (
+                      <View style={styles.currentChip}><Text style={styles.currentText}>Currently</Text></View>
+                    ) : plusLocked ? (
+                      <View style={styles.plusPill}>
+                        <MaterialIcons name="lock" size={12} color="#FFFFFF" />
+                        <Text style={styles.plusPillText}>PLUS</Text>
+                      </View>
+                    ) : owned(s) ? (
+                      <Text style={styles.ownedText}>Owned</Text>
+                    ) : (
+                      <View style={styles.priceRow}>
+                        <Image source={ICONS.Clovers} style={styles.priceClover} resizeMode="contain" />
+                        <Text style={styles.priceText}>{s.price}</Text>
+                      </View>
+                    )}
+                  </View>
                 </Pressable>
               );
             }}
@@ -361,12 +366,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF3DF', borderRadius: 30, borderWidth: 4, borderColor: '#E8B54D',
     paddingHorizontal: 14, paddingVertical: 18,
   },
-  cell: { width: '100%', alignItems: 'center' },
+  cell: { flex: 1, width: '100%', alignItems: 'center' },
   thumb: { width: '100%', aspectRatio: 1, borderRadius: 22 },
   cellName: {
-    fontSize: 13, fontFamily: 'Inter_800ExtraBold', color: '#4A3220',
+    fontSize: 13, lineHeight: 18, fontFamily: 'Inter_800ExtraBold', color: '#4A3220',
     marginTop: 8, marginBottom: 5, textAlign: 'center',
   },
+  cellFooter: { minHeight: 28, marginTop: 'auto', alignItems: 'center', justifyContent: 'center' },
   currentChip: { backgroundColor: '#4A3220', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
   currentText: { color: '#FFFFFF', fontSize: 12.5, fontFamily: 'Inter_700Bold' },
   plusPill: {

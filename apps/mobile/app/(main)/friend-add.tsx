@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Keyboard, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,6 +74,7 @@ export default function FriendAddScreen() {
       void haptics.medium();
       const res = await previewFriend(code);
       if (res.ok && res.targetName) {
+        Keyboard.dismiss();
         setFound({ code, name: res.targetName, userId: res.targetUserId, avatarUrl: res.targetAvatarUrl, isDefaultAvatar: res.targetIsDefaultAvatar });
         setInviteDraft(freshInviteDraft());
       } else {

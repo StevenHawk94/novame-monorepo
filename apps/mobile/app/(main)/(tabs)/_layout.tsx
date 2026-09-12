@@ -23,11 +23,11 @@ export default function TabsLayout() {
       <Tabs.Screen name="bags" options={{ title: 'Bags' }} />
       <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
       <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-      {/* Connection has the heaviest cached card tree. Pre-mount it behind Home
-          so the first press swaps screens immediately instead of paying the
-          module/render cost after the tap. Network refresh still starts only
-          when the screen is actually focused. */}
-      <Tabs.Screen name="status" options={{ title: 'Connection', lazy: false }} />
+      {/* The custom tab bar preloads every non-Home screen sequentially only
+          after Home's visual entry gate has released. Keeping this screen lazy
+          prevents its heavier card tree from competing with Home's first
+          frame; its focus-only network refresh remains unchanged. */}
+      <Tabs.Screen name="status" options={{ title: 'Connection' }} />
     </Tabs>
   );
 }

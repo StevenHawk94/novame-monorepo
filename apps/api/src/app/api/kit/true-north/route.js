@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { DIMENSION_IDS, trueNorthGemHits } from '@novame/domain'
+import { DIMENSION_IDS } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -23,12 +24,9 @@ function isoWeek(dateStr) {
  *
  * Body: { userId, ranking: DimensionId[8], localDate }
  *
- * Completes True North: the engine turns the ranking into gem hits
- * (top three get +30/+20/+10, via trueNorthGemHits) and submit_kit writes them
- * atomically -- +50 xp, the gems, the completion with the ranking in its
- * payload, then the database enforces a rolling seven-day cooldown. True
- * North is the only Kit besides Reflect that bears gems, which is exactly what
- * submit_kit's gem path is for.
+ * Completes True North atomically: the ranking is stored in the completion,
+ * Clover XP is awarded, and the database enforces a rolling seven-day
+ * cooldown. Growth Gems are retired and are no longer calculated or written.
  */
 export async function POST(request) {
   try {
@@ -61,9 +59,7 @@ export async function POST(request) {
 
     const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
-    const gemHits = trueNorthGemHits(ranking)
-
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_true_north', {
+    const submitArgs = {
       p_user_id: userId,
       // Uniqueness is still retained as a last-resort replay guard. The
       // rolling cooldown itself is enforced atomically by submit_true_north.
@@ -71,9 +67,14 @@ export async function POST(request) {
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.trueNorth.award,
-      p_gem_hits: gemHits,
+      // Preserve the RPC signature for installed clients while the server
+      // function ignores this retired argument.
+      p_gem_hits: [],
       p_payload: { ranking },
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_true_north', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[true-north] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

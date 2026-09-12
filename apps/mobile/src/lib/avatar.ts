@@ -1,11 +1,10 @@
 /**
  * Default profile avatars (assets/profile/default-1..4.webp).
  *
- * Every user is "randomly" assigned one of the four portraits — the pick
- * is a deterministic hash of their userId, so the assignment is stable
- * across sessions/screens with zero server round-trips and no flicker.
- * A real upload (profiles.is_default_avatar = false, surfaced by
- * /api/me-stats as isDefaultAvatar) always wins over the bundled default.
+ * Every user starts with one of four bundled portraits — the initial pick is
+ * a deterministic hash of their userId, so it is stable with zero round-trips.
+ * Users can then choose a different bundled portrait. The selected id is
+ * persisted in profiles.avatar_url while is_default_avatar remains true.
  *
  * The client is the ONLY source of default avatars: the legacy DB-side
  * default_avatars table + assign trigger were dropped in migration 037,
@@ -19,11 +18,44 @@ export const DEFAULT_AVATARS = [
   require('../../assets/profile/default-4.webp'),
 ] as const;
 
-export function getDefaultAvatar(userId: string | null | undefined): number {
-  if (!userId) return DEFAULT_AVATARS[0];
+export const DEFAULT_AVATAR_IDS = [
+  'default-1',
+  'default-2',
+  'default-3',
+  'default-4',
+] as const;
+
+export type DefaultAvatarId = (typeof DEFAULT_AVATAR_IDS)[number];
+
+export const DEFAULT_AVATAR_OPTIONS = DEFAULT_AVATAR_IDS.map((id, index) => ({
+  id,
+  source: DEFAULT_AVATARS[index],
+}));
+
+export function isDefaultAvatarId(value: unknown): value is DefaultAvatarId {
+  return typeof value === 'string'
+    && (DEFAULT_AVATAR_IDS as readonly string[]).includes(value);
+}
+
+export function getDefaultAvatarId(userId: string | null | undefined): DefaultAvatarId {
+  if (!userId) return DEFAULT_AVATAR_IDS[0];
   let h = 0;
   for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0;
-  return DEFAULT_AVATARS[h % DEFAULT_AVATARS.length];
+  return DEFAULT_AVATAR_IDS[h % DEFAULT_AVATAR_IDS.length];
+}
+
+export function getDefaultAvatar(userId: string | null | undefined): number {
+  return DEFAULT_AVATARS[DEFAULT_AVATAR_IDS.indexOf(getDefaultAvatarId(userId))];
+}
+
+export function getProfileDefaultAvatar(
+  avatarId: string | null | undefined,
+  userId: string | null | undefined,
+): number {
+  if (isDefaultAvatarId(avatarId)) {
+    return DEFAULT_AVATARS[DEFAULT_AVATAR_IDS.indexOf(avatarId)];
+  }
+  return getDefaultAvatar(userId);
 }
 
 /**
@@ -38,5 +70,5 @@ export function resolveAvatarSource(
   userId: string | null | undefined,
 ): { uri: string } | number {
   if (avatarUrl && isDefaultAvatar === false) return { uri: avatarUrl };
-  return getDefaultAvatar(userId);
+  return getProfileDefaultAvatar(avatarUrl, userId);
 }

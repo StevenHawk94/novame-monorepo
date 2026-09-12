@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 /** ISO week like 2026-W28, from a YYYY-MM-DD date string. */
 function isoWeek(dateStr) {
@@ -133,7 +134,7 @@ export async function POST(request) {
     let xpAwarded = 0
     try {
       const dateStr = await resolveUserLocalDate(supabase, userId)
-      const { data: pay, error: payErr } = await supabase.rpc('submit_kit', {
+      const payArgs = {
         p_user_id: userId,
         p_kit: 'visit_master',
         p_source: 'visit_master',
@@ -143,14 +144,25 @@ export async function POST(request) {
         p_xp_amount: XP_RULES.visitMaster.award,
         p_gem_hits: [],
         p_payload: { visit_id: saved?.id ?? null },
-      })
+      }
+      const { data: pay, error: payErr } = await runCompanionDependentRpc(
+        supabase, 'submit_kit', payArgs, userId,
+      )
       if (payErr) console.warn('[master/ask] pay skipped:', payErr.message)
       else if (!pay?.error) xpAwarded = pay?.xp_awarded ?? 0
     } catch (e) {
       console.warn('[master/ask] pay skipped:', e && e.message)
     }
 
-    return NextResponse.json({ success: true, visitId: saved?.id, response, xpAwarded })
+    const createdAt = saved?.created_at ?? new Date().toISOString()
+    return NextResponse.json({
+      success: true,
+      visitId: saved?.id,
+      createdAt,
+      nextAvailableAt: new Date(new Date(createdAt).getTime() + COOLDOWN_MS).toISOString(),
+      response,
+      xpAwarded,
+    })
   } catch (err) {
     console.error('[master/ask] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { LENS_THEME_KEYS } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -60,7 +61,7 @@ export async function POST(request) {
     const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)
 
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_lens', {
+    const submitArgs = {
       p_user_id: userId,
       p_theme: theme,
       p_card_id: cardId,
@@ -69,7 +70,10 @@ export async function POST(request) {
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.newLens.award,
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_lens', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[lens/complete] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

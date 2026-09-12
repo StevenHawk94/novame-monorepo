@@ -21,12 +21,9 @@ function getSupabaseAdmin() {
  * 
  * App Store 要求：用户必须能在 App 内删除自己的账号
  * 
- * 删除顺序：
- * 1. 删除用户的 wisdoms
- * 2. 删除用户的 questions
- * 3. 删除用户的 liked wisdoms 记录
- * 4. 删除用户的 profile
- * 5. 删除 Supabase Auth 用户
+ * The retired Wisdom/community tables no longer need endpoint-specific
+ * cleanup. Removing the profile applies the current schema's ON DELETE
+ * cascades; the Auth row is deleted only after that succeeds.
  */
 export async function POST(request) {
   try {
@@ -68,69 +65,7 @@ export async function POST(request) {
     
     console.log('Starting account deletion for user:', userId)
     
-    // 1. 删除用户的 wisdoms 相关的音频文件
-    const { data: wisdoms, error: wisdomListError } = await supabase
-      .from('wisdoms')
-      .select('id, audio_url')
-      .eq('user_id', userId)
-    if (wisdomListError) throw wisdomListError
-    
-    if (wisdoms && wisdoms.length > 0) {
-      // 尝试删除 Storage 中的音频文件
-      for (const wisdom of wisdoms) {
-        if (wisdom.audio_url) {
-          try {
-            // 从 URL 中提取文件路径
-            const urlParts = wisdom.audio_url.split('/audio/')
-            if (urlParts.length > 1) {
-              const filePath = urlParts[1]
-              const { error: storageError } = await supabase.storage.from('audio').remove([filePath])
-              if (storageError) throw storageError
-            }
-          } catch (e) { throw new Error(`audio_cleanup_failed: ${e.message}`) }
-        }
-      }
-    }
-    
-    // 2. 删除用户的 wisdoms
-    const { error: wisdomsError } = await supabase
-      .from('wisdoms')
-      .delete()
-      .eq('user_id', userId)
-    
-    if (wisdomsError) throw wisdomsError
-    
-    // 3. 删除用户提交的 seek_questions
-    //
-    // Stage 6.UserSyncCleanup: this delete previously targeted
-    // public.questions (table never existed) with .eq('user_id', ...).
-    // The real table is public.seek_questions and the user reference
-    // column is submitted_by_user_id. Pre-fix every account deletion
-    // left the user's submitted questions orphaned in DB -- silent
-    // GDPR violation hidden by the silent error swallow.
-    const { error: questionsError } = await supabase
-      .from('seek_questions')
-      .delete()
-      .eq('submitted_by_user_id', userId)
-    
-    if (questionsError) throw questionsError
-    
-    // 4. 删除用户的 liked wisdoms 记录
-    const { error: likedError } = await supabase
-      .from('user_liked_wisdoms')
-      .delete()
-      .eq('user_id', userId)
-    
-    if (likedError) throw likedError
-    
-    // 5. 删除用户的 liked defaults 记录
-    const { error: likedDefaultsError } = await supabase
-      .from('user_liked_defaults')
-      .delete()
-      .eq('user_id', userId)
-    if (likedDefaultsError) throw likedDefaultsError
-    
-    // 6. 删除用户头像
+    // Delete the user's uploaded avatar before the profile row disappears.
     {
       const { data: profile, error: avatarProfileError } = await supabase
         .from('profiles')
@@ -149,7 +84,7 @@ export async function POST(request) {
       }
     }
     
-    // 7. 删除用户 profile
+    // Delete the profile and all current relational dependents.
     const { error: profileError } = await supabase
       .from('profiles')
       .delete()
@@ -159,7 +94,7 @@ export async function POST(request) {
     // continue to auth deletion unless the relational delete is confirmed.
     if (profileError) throw profileError
     
-    // 8. 删除 Supabase Auth 用户
+    // Delete the Supabase Auth user last.
     const { error: authError } = await supabase.auth.admin.deleteUser(userId)
     
     if (authError) throw authError

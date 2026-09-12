@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/auth-guard'
 
 export const runtime = 'edge'
 
+const DEFAULT_AVATAR_IDS = new Set(['default-1', 'default-2', 'default-3', 'default-4'])
+
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -22,7 +24,16 @@ function getSupabaseAdmin() {
  */
 export async function POST(request) {
   try {
-    const { userId, displayName, avatarUrl, birthday, newEmail, newPassword, aspireWords, onboardingWho, onboardingBlocker } = await request.json()
+    const {
+      userId,
+      displayName,
+      defaultAvatarId,
+      birthday,
+      newEmail,
+      newPassword,
+      onboardingWho,
+      onboardingBlocker,
+    } = await request.json()
     
     if (!userId) {
       return Response.json({ error: 'Missing userId' }, { status: 400 })
@@ -78,9 +89,12 @@ export async function POST(request) {
       updateData.display_name = displayName ? displayName.slice(0, 15) : displayName
     }
     
-    if (avatarUrl !== undefined) {
-      updateData.avatar_url = avatarUrl
-      updateData.is_default_avatar = false
+    if (defaultAvatarId !== undefined) {
+      if (!DEFAULT_AVATAR_IDS.has(defaultAvatarId)) {
+        return Response.json({ error: 'Invalid default avatar' }, { status: 400 })
+      }
+      updateData.avatar_url = defaultAvatarId
+      updateData.is_default_avatar = true
     }
     
     // Onboarding funnel answers (2026-08-10 analytics) — whitelisted keys only.
@@ -95,34 +109,6 @@ export async function POST(request) {
       updateData.birthday = birthday
     }
 
-    // Stage 6: aspire_words update with B-strategy score handling.
-    // Preserves historical aspire_scores untouched (user-produced data
-    // is user-owned -- removed words keep their score in the dict, will
-    // be revived if user re-adds the word later). Better-self-score is
-    // recomputed as avg of CURRENT aspireWords, with unscored new words
-    // defaulting to 70 (matches generate-card.js publish-time default).
-    if (aspireWords !== undefined) {
-      if (!Array.isArray(aspireWords)) {
-        return Response.json({ error: 'aspireWords must be an array' }, { status: 400 })
-      }
-      updateData.aspire_words = aspireWords
-
-      // Fetch current aspire_scores to recompute better_self_score
-      // (we preserve scores untouched; we only recompute the average
-      // for the new aspireWords set).
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('aspire_scores')
-        .eq('id', userId)
-        .single()
-      const existingScores = existing?.aspire_scores || {}
-      if (aspireWords.length > 0) {
-        const vals = aspireWords.map(w => existingScores[w] ?? 70)
-        const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
-        updateData.better_self_score = avg
-      }
-    }
-    
     console.log('[update-profile] updating whitelisted fields for user:', userId, Object.keys(updateData))
     
     // 更新 profile
@@ -143,7 +129,8 @@ export async function POST(request) {
           .insert({
             id: userId,
             display_name: displayName ? displayName.slice(0, 15) : '',
-            avatar_url: avatarUrl || null,
+            avatar_url: defaultAvatarId || null,
+            is_default_avatar: true,
             birthday: birthday || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -159,50 +146,6 @@ export async function POST(request) {
       }
       
       return Response.json({ error: 'Failed to update profile', details: error.message }, { status: 500 })
-    }
-
-    // When aspire_words changed, invalidate this week's cached weekly
-    // report so it regenerates with the new trait set (otherwise the
-    // user sees stale traits for the rest of the ISO week). Best-effort.
-    if (aspireWords !== undefined) {
-      const _now = new Date()
-      const _dow = _now.getDay()
-      const _mon = new Date(_now)
-      _mon.setDate(_now.getDate() - (_dow === 0 ? 6 : _dow - 1))
-      const _weekStart = _mon.toISOString().split('T')[0]
-      await supabase
-        .from('weekly_reports')
-        .delete()
-        .eq('user_id', userId)
-        .eq('week_start', _weekStart)
-    }
-
-    // Cascade name/avatar changes to the redundant snapshots stamped on
-    // the user's previously-published content, so a rename / new avatar
-    // also shows up on their existing cards and seek questions (not just
-    // the Me page / leaderboard, which read profiles live). Only runs when
-    // display_name or avatar_url actually changed. Best-effort: a cascade
-    // failure must NOT fail the profile update itself (that already
-    // succeeded) — we log and move on. Clients see the new values on the
-    // next SWR refresh of the seek / cards feeds.
-    if (displayName !== undefined || avatarUrl !== undefined) {
-      const cascade = {}
-      if (displayName !== undefined) cascade.creator_name = updateData.display_name
-      if (avatarUrl !== undefined) cascade.creator_avatar = updateData.avatar_url
-      try {
-        const { error: wcErr } = await supabase
-          .from('wisdom_cards')
-          .update(cascade)
-          .eq('user_id', userId)
-        if (wcErr) console.error('[update-profile] wisdom_cards cascade failed (non-blocking):', wcErr.message)
-        const { error: sqErr } = await supabase
-          .from('seek_questions')
-          .update(cascade)
-          .eq('submitted_by_user_id', userId)
-        if (sqErr) console.error('[update-profile] seek_questions cascade failed (non-blocking):', sqErr.message)
-      } catch (cascadeErr) {
-        console.error('[update-profile] creator name/avatar cascade exception (non-blocking):', cascadeErr && cascadeErr.message)
-      }
     }
 
     return Response.json({ success: true, profile: data })

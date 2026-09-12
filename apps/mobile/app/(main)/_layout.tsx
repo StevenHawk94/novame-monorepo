@@ -7,6 +7,8 @@ import { OfficialRatingGate } from '@/components/rating/official-rating-gate';
 import { HomeEntryGate } from '@/components/main/home-entry-gate';
 import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recovery';
 import { AndroidCompactTypographyProvider } from '@/components/ui/android-compact-typography';
+import { getCurrentSession } from '@/lib/auth';
+import { syncOnboardingCompanion } from '@/lib/onboarding';
 
 /**
  * Authenticated app layout.
@@ -26,10 +28,21 @@ import { AndroidCompactTypographyProvider } from '@/components/ui/android-compac
 export default function MainLayout() {
   useReflectSettlementRecovery();
   useEffect(() => {
+    let active = true;
+    const resumePendingOnboarding = (force = false) => {
+      void getCurrentSession().then((session) => {
+        if (!active || !session?.user?.id) return;
+        void syncOnboardingCompanion(session.user.id, { force });
+      }).catch(() => {});
+    };
+    // A cold returning launch goes directly to Main instead of signing-in.
+    // Force one attempt on mount so a task survives process termination.
+    resumePendingOnboarding(true);
     const subscription = AppState.addEventListener('change', state => {
-      if (state !== 'active') resetNavigationTransitions();
+      if (state === 'active') resumePendingOnboarding();
+      else resetNavigationTransitions();
     });
-    return () => { subscription.remove(); resetNavigationTransitions(); };
+    return () => { active = false; subscription.remove(); resetNavigationTransitions(); };
   }, []);
   return (
     <AndroidCompactTypographyProvider>

@@ -5,7 +5,7 @@ const jsx = (type, props) => ({ type, props });
 
 function harness(platform, outfit) {
   const h = hooks(), download = deferred();
-  let resolves = 0, ready = 0, errors = 0, key = outfit;
+  let resolves = 0, priorityResolves = 0, ready = 0, errors = 0, key = outfit;
   const players = [];
   const video = load('apps/mobile/src/components/main/companion-video.tsx', {
     react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
@@ -29,11 +29,19 @@ function harness(platform, outfit) {
       outfitAssetUrl: () => 'https://preview',
       fetchOutfitCatalog: async () => [],
     },
+    '../../lib/download-queue': {
+      async ensurePriorityOutfitVideo() {
+        priorityResolves++;
+        const resolved = await download.promise;
+        return resolved?.uri ?? null;
+      },
+    },
   }, { setTimeout, clearTimeout });
   const root = video.CompanionVideo({ waitForInitialAsset: true, onReady: () => ready++, onError: () => errors++ });
   const render = () => h.render(() => root.type(root.props));
   return { render, dispose: h.unmount, download, players, get ready() { return ready; }, get errors() { return errors; },
     get resolves() { return resolves; }, changeKey(value) { key = value; },
+    get priorityResolves() { return priorityResolves; },
     mountNative(prepared) {
       const native = prepared.type(prepared.props);
       const nativeHooks = hooks();
@@ -41,8 +49,8 @@ function harness(platform, outfit) {
       // separate component mount must start its hook storage from empty.
       h.unmount();
       Object.assign(h.react, nativeHooks.react);
-      const tree = nativeHooks.render(() => native.type(native.props));
-      return { view: tree.props.children, dispose: nativeHooks.unmount };
+      const renderNative = () => nativeHooks.render(() => native.type(native.props)).props.children;
+      return { view: renderNative(), render: renderNative, dispose: nativeHooks.unmount };
     } };
 }
 
@@ -59,18 +67,27 @@ test('bundled default needs no network and only the actual native display/first 
 });
 
 test('equipped outfit mounts directly from its local animation without a default/preview frame', async () => {
-  for (const platform of ['ios', 'android']) {
-    const h = harness(platform, 'coat');
-    assert.equal(h.render(), null); assert.equal(h.resolves, 1); assert.equal(h.ready, 0);
-    h.download.resolve({ key: 'coat', uri: 'file:///cached-coat' }); await flush();
-    const prepared = h.render();
-    assert.equal(prepared.props.initialSource.uri, 'file:///cached-coat');
-    const native = h.mountNative(prepared);
-    assert.equal(h.resolves, 1, 'focus must not replace the prepared animation with a preview');
-    if (platform === 'ios') assert.equal(h.players[0].uri, 'file:///cached-coat');
-    else assert.equal(native.view.props.source.uri, 'file:///cached-coat');
-    assert.equal(h.ready, 0); native.dispose();
-  }
+  const ios = harness('ios', 'coat');
+  assert.equal(ios.render(), null); assert.equal(ios.resolves, 1); assert.equal(ios.ready, 0);
+  ios.download.resolve({ key: 'coat', uri: 'file:///cached-coat' }); await flush();
+  const iosPrepared = ios.render();
+  assert.equal(iosPrepared.props.initialSource.uri, 'file:///cached-coat');
+  const iosNative = ios.mountNative(iosPrepared);
+  assert.equal(ios.resolves, 1, 'focus must not replace the prepared animation with a preview');
+  assert.equal(ios.players[0].uri, 'file:///cached-coat');
+  assert.equal(ios.ready, 0); iosNative.dispose();
+
+  // Android releases the Home gate with the bundled animation, then its one
+  // priority file-cache lane swaps in the selected animated WebP when ready.
+  const android = harness('android', 'coat');
+  const androidPrepared = android.render();
+  assert.equal(androidPrepared.props.initialSource, 42);
+  const androidNative = android.mountNative(androidPrepared);
+  assert.equal(androidNative.view.props.source, 42);
+  assert.equal(android.priorityResolves, 1);
+  android.download.resolve({ key: 'coat', uri: 'file:///cached-coat' }); await flush();
+  assert.equal(androidNative.render().props.source.uri, 'file:///cached-coat');
+  androidNative.dispose();
 });
 
 test('failed, stale or unmounted outfit resolutions never release Home readiness', async () => {

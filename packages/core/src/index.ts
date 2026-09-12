@@ -24,7 +24,6 @@ export * from './constants/pricing'
 export * from './constants/locales'
 export * from './constants/recording'
 export * from './constants/categories'
-export * from './constants/aspire-pool'
 
 // Rules (pure functions)
 export * from './rules/format'

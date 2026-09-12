@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +9,10 @@ import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from
 
 import { haptics } from '../../src/lib/haptics';
 import { BACKGROUNDS, ICONS } from '../../src/lib/icons';
+import { useSubscriptionTierState } from '../../src/lib/use-subscription-tier';
 import {
-  fetchMasterStatus, getCachedMasterStatus, askMaster, fetchMasterVisit, cooldownLabel,
+  fetchMasterStatus, getCachedMasterStatus, refreshCachedMasterClock,
+  askMaster, fetchMasterVisit, cooldownLabel,
   type MasterStatus, type MasterResponse, type MasterVisit,
 } from '../../src/lib/master-api';
 
@@ -27,6 +29,7 @@ type Phase = 'ask' | 'waiting' | 'reply' | 'history' | 'detail';
 export default function VisitMasterScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const subscriptionTier = useSubscriptionTierState();
   // `screen` remains stable while Android's adjustResize changes the app
   // window for the keyboard. The artwork and speech bubble therefore stay put.
   const screen = useMemo(() => Dimensions.get('screen'), []);
@@ -38,11 +41,45 @@ export default function VisitMasterScreen() {
   const [detail, setDetail] = useState<{ question: string; response: MasterResponse } | null>(null);
   const [bubbleHeight, setBubbleHeight] = useState(92);
   const [inputFocused, setInputFocused] = useState(false);
+  const [clockMs, setClockMs] = useState(Date.now);
 
   const load = useCallback(() => {
-    void fetchMasterStatus().then(setStatus);
+    setClockMs(Date.now());
+    setStatus(refreshCachedMasterClock());
+    // TTL-backed and cache-first: repeated screen focus inside the window does
+    // not create another request, while cross-device activity still reconciles.
+    void fetchMasterStatus().then((next) => {
+      setStatus(next);
+      setClockMs(Date.now());
+    });
   }, []);
   useFocusEffect(load);
+
+  // Native timers may pause in the background. Re-evaluate the persisted
+  // deadline immediately on foreground rather than waiting for a network read.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      setClockMs(Date.now());
+      setStatus(refreshCachedMasterClock());
+    });
+    return () => sub.remove();
+  }, []);
+
+  const nextAvailableAtMs = status.nextAvailableAt
+    ? Date.parse(status.nextAvailableAt)
+    : Number.NaN;
+
+  // The 72-hour deadline is deterministic. Wake the mounted screen exactly at
+  // the boundary; the ask endpoint remains authoritative if clocks ever drift.
+  useEffect(() => {
+    if (!Number.isFinite(nextAvailableAtMs) || nextAvailableAtMs <= clockMs) return undefined;
+    const timer = setTimeout(() => {
+      setClockMs(Date.now());
+      setStatus(refreshCachedMasterClock());
+    }, Math.max(0, nextAvailableAtMs - Date.now() + 50));
+    return () => clearTimeout(timer);
+  }, [clockMs, nextAvailableAtMs]);
 
   async function onAsk() {
     const q = question.trim();
@@ -54,8 +91,18 @@ export default function VisitMasterScreen() {
     if (res.ok) {
       setReply(res.response);
       setPhase('reply');
-      void fetchMasterStatus().then(setStatus);
+      if (res.status) {
+        setStatus(res.status);
+        setClockMs(Date.now());
+      } else {
+        // Backwards compatibility while an older API deployment is still live.
+        void fetchMasterStatus({ force: true }).then(setStatus);
+      }
     } else {
+      if (res.error === 'on_cooldown') {
+        setStatus(refreshCachedMasterClock());
+        setClockMs(Date.now());
+      }
       const msg =
         res.error === 'on_cooldown' ? cooldownLabel(res.nextAvailableAt ?? null)
         : res.error === 'not_paid' ? 'Visiting the Master is part of Plus.'
@@ -75,13 +122,17 @@ export default function VisitMasterScreen() {
     }
   }
 
-  const bubbleText = !status.isPaid
+  // Entitlement already has its own cache + Realtime channel. Master status
+  // owns only its history/cooldown; use its paid bit solely during hydration.
+  const isPaid = subscriptionTier == null ? status.isPaid : subscriptionTier !== 'free';
+  const isCoolingDown = Number.isFinite(nextAvailableAtMs) && nextAvailableAtMs > clockMs;
+  const bubbleText = !isPaid
     ? 'Ask me any question that has been troubling you the most, I will give you some wisdom that can rewire your mind.'
-    : !status.available
+    : isCoolingDown
       ? `${cooldownLabel(status.nextAvailableAt)} — the Master is away travelling. Come back when he returns.`
       : 'Ask me any question that has been troubling you the most, I will give you some wisdom that can rewire your mind.';
 
-  const canAsk = status.isPaid && status.available;
+  const canAsk = isPaid && !isCoolingDown;
   const sceneTop = screen.height - screen.width * (2004 / 785);
   // Centre the bubble inside the second fifth from the top (20–40%).
   const bubbleTop = screen.height * 0.3 - bubbleHeight / 2;
@@ -139,7 +190,7 @@ export default function VisitMasterScreen() {
           )}
 
           {/* The keyboard layer resizes; the absolute artwork behind it never moves. */}
-            {!status.isPaid ? (
+            {!isPaid ? (
               <Pressable
                 onPress={() => { void haptics.pageOpen(); router.push('/(main)/(modals)/subscription-paywall'); }}
                 style={[styles.askPill, styles.askPillResting, { marginBottom: insets.bottom + 18 }]}

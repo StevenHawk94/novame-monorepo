@@ -2,6 +2,8 @@
  * Visit Master (Kit 5). Paid-only consultation with a 72h cooldown. Produces no
  * skill / xp / items -- it's a sage's counsel, isolated from the Skills system.
  */
+import { ApiError } from '@novame/api-client';
+
 import { kMasterState } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { confirmCloverAward } from './cosmetics-api';
@@ -32,64 +34,188 @@ export interface MasterStatus {
   history: MasterVisit[];
 }
 
+interface MasterStatusCache {
+  version: 2;
+  status: MasterStatus;
+  fetchedAtMs: number;
+}
+
+const EMPTY_STATUS: MasterStatus = {
+  isPaid: false,
+  available: false,
+  nextAvailableAt: null,
+  history: [],
+};
+const MASTER_STATUS_TTL_MS = 15 * 60 * 1000;
+const MASTER_COOLDOWN_MS = 72 * 60 * 60 * 1000;
+let statusFetchInFlight: Promise<MasterStatus> | null = null;
+
 async function uid(): Promise<string | null> {
   const { data: sess } = await supabase.auth.getSession();
   return sess.session?.user?.id ?? null;
 }
 
-export function getCachedMasterStatus(): MasterStatus {
-  const raw = storage.getString(kMasterState.name);
-  if (!raw) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
-  try {
-    return JSON.parse(raw) as MasterStatus;
-  } catch {
-    return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
-  }
-}
-
-function setCachedMasterStatus(s: MasterStatus): void {
-  storage.set(kMasterState.name, JSON.stringify(s));
-}
-
-export async function fetchMasterStatus(): Promise<MasterStatus> {
-  const userId = await uid();
-  if (!userId) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
-  try {
-    const data = await apiClient.get<{
-      success?: boolean; isPaid?: boolean; available?: boolean;
-      nextAvailableAt?: string | null; history?: MasterVisit[];
-    }>(`/api/master/status?userId=${encodeURIComponent(userId)}`);
-    if (!data.success) return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
-    const fresh: MasterStatus = {
-      isPaid: !!data.isPaid,
-      available: !!data.available,
-      nextAvailableAt: data.nextAvailableAt ?? null,
-      history: data.history || [],
+function normalizeStatus(status: MasterStatus, now = Date.now()): MasterStatus {
+  const nextAvailableAtMs = status.nextAvailableAt
+    ? Date.parse(status.nextAvailableAt)
+    : Number.NaN;
+  if (Number.isFinite(nextAvailableAtMs) && nextAvailableAtMs <= now) {
+    return {
+      ...status,
+      available: status.isPaid,
+      nextAvailableAt: null,
     };
-    setCachedMasterStatus(fresh);
-    return fresh;
-  } catch {
-    return { isPaid: false, available: false, nextAvailableAt: null, history: [] };
   }
+  return {
+    ...status,
+    available: status.isPaid && status.available,
+    history: Array.isArray(status.history) ? status.history : [],
+  };
+}
+
+function readMasterCache(): MasterStatusCache | null {
+  const raw = storage.getString(kMasterState.name);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as MasterStatusCache | MasterStatus;
+    if ('status' in parsed && parsed.status) {
+      return {
+        version: 2,
+        status: normalizeStatus(parsed.status),
+        fetchedAtMs: Number.isFinite(parsed.fetchedAtMs) ? parsed.fetchedAtMs : 0,
+      };
+    }
+    // Backwards-compatible migration from the previous raw MasterStatus.
+    return { version: 2, status: normalizeStatus(parsed as MasterStatus), fetchedAtMs: 0 };
+  } catch {
+    return null;
+  }
+}
+
+export function getCachedMasterStatus(): MasterStatus {
+  return readMasterCache()?.status ?? EMPTY_STATUS;
+}
+
+function setCachedMasterStatus(status: MasterStatus, fetchedAtMs = Date.now()): MasterStatus {
+  const normalized = normalizeStatus(status);
+  storage.set(kMasterState.name, JSON.stringify({
+    version: 2,
+    status: normalized,
+    fetchedAtMs,
+  } satisfies MasterStatusCache));
+  return normalized;
+}
+
+function cacheMasterCooldown(nextAvailableAt: string): MasterStatus {
+  const cached = getCachedMasterStatus();
+  return setCachedMasterStatus({
+    ...cached,
+    isPaid: true,
+    available: false,
+    nextAvailableAt,
+  });
+}
+
+export function refreshCachedMasterClock(now = Date.now()): MasterStatus {
+  const cached = readMasterCache();
+  if (!cached) return EMPTY_STATUS;
+  const normalized = normalizeStatus(cached.status, now);
+  if (
+    normalized.available !== cached.status.available
+    || normalized.nextAvailableAt !== cached.status.nextAvailableAt
+  ) {
+    return setCachedMasterStatus(normalized, cached.fetchedAtMs);
+  }
+  return normalized;
+}
+
+export function fetchMasterStatus(options?: { force?: boolean }): Promise<MasterStatus> {
+  const cached = readMasterCache();
+  if (
+    !options?.force
+    && cached
+    && Date.now() - cached.fetchedAtMs < MASTER_STATUS_TTL_MS
+  ) {
+    return Promise.resolve(cached.status);
+  }
+  if (statusFetchInFlight) return statusFetchInFlight;
+
+  const request = (async () => {
+    const userId = await uid();
+    if (!userId) return getCachedMasterStatus();
+    try {
+      const data = await apiClient.get<{
+        success?: boolean; isPaid?: boolean; available?: boolean;
+        nextAvailableAt?: string | null; history?: MasterVisit[];
+      }>(`/api/master/status?userId=${encodeURIComponent(userId)}`);
+      if (!data.success) return getCachedMasterStatus();
+      return setCachedMasterStatus({
+        isPaid: !!data.isPaid,
+        available: !!data.available,
+        nextAvailableAt: data.nextAvailableAt ?? null,
+        history: data.history || [],
+      });
+    } catch {
+      // A transient transport failure must never turn a paid/cooldown cache into
+      // the old empty Free state. The next TTL/focus pass retries silently.
+      return getCachedMasterStatus();
+    }
+  })().finally(() => {
+    if (statusFetchInFlight === request) statusFetchInFlight = null;
+  });
+  statusFetchInFlight = request;
+  return request;
 }
 
 export async function askMaster(question: string): Promise<
-  { ok: true; response: MasterResponse; xpAwarded: number } | { ok: false; error: string; nextAvailableAt?: string }
+  { ok: true; response: MasterResponse; xpAwarded: number; status: MasterStatus | null }
+  | { ok: false; error: string; nextAvailableAt?: string }
 > {
   const userId = await uid();
   if (!userId) return { ok: false, error: 'no_session' };
   try {
     const data = await apiClient.post<{
-      success?: boolean; error?: string; response?: MasterResponse; nextAvailableAt?: string; xpAwarded?: number;
+      success?: boolean; error?: string; response?: MasterResponse; nextAvailableAt?: string;
+      visitId?: string; createdAt?: string; xpAwarded?: number;
     }>('/api/master/ask', { userId, question });
-    if (data.error) return { ok: false, error: data.error, nextAvailableAt: data.nextAvailableAt };
+    if (data.error) {
+      if (data.error === 'on_cooldown' && data.nextAvailableAt) {
+        cacheMasterCooldown(data.nextAvailableAt);
+      }
+      return { ok: false, error: data.error, nextAvailableAt: data.nextAvailableAt };
+    }
     if (data.success && data.response) {
       const xpAwarded = data.xpAwarded ?? 0;
       confirmCloverAward(xpAwarded);
-      return { ok: true, response: data.response, xpAwarded };
+      let status: MasterStatus | null = null;
+      if (data.visitId && data.createdAt) {
+        const cached = getCachedMasterStatus();
+        const visit: MasterVisit = { id: data.visitId, question, createdAt: data.createdAt };
+        status = setCachedMasterStatus({
+          ...cached,
+          isPaid: true,
+          available: false,
+          nextAvailableAt: data.nextAvailableAt
+            ?? new Date(Date.parse(data.createdAt) + MASTER_COOLDOWN_MS).toISOString(),
+          history: [visit, ...cached.history.filter((entry) => entry.id !== visit.id)].slice(0, 30),
+        });
+      }
+      return { ok: true, response: data.response, xpAwarded, status };
     }
     return { ok: false, error: 'unknown' };
-  } catch {
+  } catch (error) {
+    // ApiClient throws on the endpoint's 4xx/5xx responses. Preserve the
+    // server's meaningful cooldown/paywall errors instead of mislabelling every
+    // non-2xx response as a network failure.
+    const body = error instanceof ApiError && error.body && typeof error.body === 'object'
+      ? error.body as { error?: string; nextAvailableAt?: string }
+      : null;
+    if (body?.error) {
+      if (body.error === 'on_cooldown' && body.nextAvailableAt) {
+        cacheMasterCooldown(body.nextAvailableAt);
+      }
+      return { ok: false, error: body.error, nextAvailableAt: body.nextAvailableAt };
+    }
     return { ok: false, error: 'network' };
   }
 }

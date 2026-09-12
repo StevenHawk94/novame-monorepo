@@ -358,11 +358,6 @@ export const kGuidedCategories = defineKey('novame_guided_categories', 'user');
 /** Guided Prompt items explicitly selected in successful reflections. */
 export const kGuidedFavoriteItems = defineKey('burrow_guided_favorite_items', 'user');
 
-/** status.tsx: the eight-dimension gem totals from /api/status. A read-only
- *  shadow of user_gems; the Status screen derives stage and totals from these
- *  with the shared engine, never storing computed values. */
-export const kStatusGems = defineKey('novame_status_gems', 'user');
-
 /** quiet-wins.tsx: whether Quiet Wins was completed today, so the Home entry
  *  can hide once done and reappear next day. Shape: { date, done }. A read-only
  *  shadow of the server's once-per-day gate; a stale cache at worst shows the
@@ -389,11 +384,6 @@ export const kNewLensState = defineKey('novame_new_lens_state', 'user');
  *  kit_completions; the rolling seven-day gate stays
  *  server-side. */
 export const kTrueNorthState = defineKey('novame_true_north_state', 'user');
-
-/** Home + interaction sheet: the companion's authoritative state (xp, stage,
- *  skin, name). Level/progress are derived from xp with the shared engine, not
- *  stored. A read-only shadow refreshed from /api/companion. */
-export const kCompanionState = defineKey('novame_companion_state', 'user');
 
 /** Bags tab: collected items + their memories, cached for instant render.
  *  Display info (name, emoji, rarity) is derived from the shared dictionary by

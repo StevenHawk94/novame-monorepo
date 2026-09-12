@@ -11,6 +11,7 @@ import { recordAIUsage } from '@/lib/ai-usage'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 import { journalKindForInput } from '@/lib/reflect-draft'
 import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -134,7 +135,7 @@ export async function POST(request) {
 
     // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,
     // so a successful submit is always one of the first three and pays 30.
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_reflect_with_kind', {
+    const submitArgs = {
       p_user_id: userId,
       p_prompt_id: promptId,
       p_body: body,
@@ -149,7 +150,10 @@ export async function POST(request) {
       p_shared_to_friends: visibleToFriend !== false,
       p_mode: mode,
       p_journal_kind: journalKind,
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_reflect_with_kind', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[reflect] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

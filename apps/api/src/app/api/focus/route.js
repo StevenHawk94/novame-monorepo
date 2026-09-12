@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
-import { XP_RULES, GEMS_PER_DIMENSION } from '@novame/engine'
-import { FOCUS_SCENE_BY_ID } from '@novame/domain'
+import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -72,7 +72,7 @@ export async function POST(request) {
     }
     const periodKey = doneCount === 0 ? dateStr : `${dateStr}#2`
 
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_kit', {
+    const submitArgs = {
       p_user_id: userId,
       p_kit: 'focus',
       p_source: 'focus',
@@ -80,13 +80,12 @@ export async function POST(request) {
       p_local_date: dateStr,
       p_iso_week: weekStr,
       p_xp_amount: XP_RULES.focus.award,
-      // PRD 1.2 (Q9 first-pass mapping): a completed Focus credits its
-      // scene's dimension +10. Unknown scene ids just skip the credit.
-      p_gem_hits: FOCUS_SCENE_BY_ID[sceneId]?.dimension
-        ? [{ dimension: FOCUS_SCENE_BY_ID[sceneId].dimension, gems: GEMS_PER_DIMENSION }]
-        : [],
+      p_gem_hits: [],
       p_payload: { scene_id: sceneId, track_index: idx },
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_kit', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[focus] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

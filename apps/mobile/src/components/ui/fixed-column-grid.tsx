@@ -8,6 +8,7 @@ type FixedColumnGridProps<T> = {
   keyExtractor: (item: T, index: number) => string;
   columnGap?: number;
   rowGap?: number;
+  equalRowHeights?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -23,6 +24,7 @@ export function FixedColumnGrid<T>({
   keyExtractor,
   columnGap = 0,
   rowGap = 0,
+  equalRowHeights = false,
   style,
 }: FixedColumnGridProps<T>) {
   const safeColumns = Math.max(1, Math.floor(columns));
@@ -42,7 +44,7 @@ export function FixedColumnGrid<T>({
       {rows.map((row) => (
         <View
           key={`row:${keyExtractor(row[0]!.item, row[0]!.index)}`}
-          style={[styles.row, { columnGap }]}
+          style={[styles.row, equalRowHeights && styles.equalHeightRow, { columnGap }]}
         >
           {row.map(({ item, index }) => (
             <View key={keyExtractor(item, index)} style={styles.cell}>
@@ -67,5 +69,6 @@ export function FixedColumnGrid<T>({
 const styles = StyleSheet.create({
   grid: { width: '100%' },
   row: { width: '100%', flexDirection: 'row', alignItems: 'flex-start' },
+  equalHeightRow: { alignItems: 'stretch' },
   cell: { flex: 1, minWidth: 0 },
 });

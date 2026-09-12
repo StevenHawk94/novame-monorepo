@@ -12,7 +12,6 @@
     "./constants/pricing": "./src/constants/pricing.ts",
     "./constants/recording": "./src/constants/recording.ts",
     "./constants/categories": "./src/constants/categories.ts",
-    "./constants/aspire-pool": "./src/constants/aspire-pool.ts",
     "./rules/format": "./src/rules/format.ts"
   },
   "devDependencies": {

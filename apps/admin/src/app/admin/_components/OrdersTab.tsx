@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import type { Order, WisdomCardData, WisdomEntry, CardEntry } from '@novame/core/types';
+import type { Order } from '@novame/core/types';
 import { apiClient } from '@/lib/api-client';
-
-type DownloadResponse = {
-  success: boolean;
-  customerName?: string;
-  wisdoms?: WisdomEntry[];
-  cards?: CardEntry[];
-};
 
 const STATUS_COLORS: Record<string, string> = {
   pending_payment: 'bg-blue-100 text-blue-700',
@@ -55,48 +48,6 @@ export default function OrdersTab() {
     });
     setEditOrder(null);
     loadOrders();
-  };
-
-  const downloadContent = async (order: Order, type: 'book' | 'cards') => {
-    const d = await apiClient.get<DownloadResponse>(`/api/orders?orderId=${order.id}&download=${type}`);
-    if (!d.success) return alert('Download failed');
-
-    if (type === 'book') {
-      let content = `WISDOM BOOK - ${d.customerName}\n${'='.repeat(40)}\n\n`;
-      (d.wisdoms || []).forEach((w, i) => {
-        content += `--- Wisdom #${i + 1} (${new Date(
-          w.created_at
-        ).toLocaleDateString()}) ---\n\n`;
-        content += `${w.text}\n\n`;
-        if (w.card) {
-          content += `Quote: ${w.card.quote_short}\n\n`;
-          content += `Insight: ${w.card.insight_full}\n\n`;
-          content += `Underlying Worry: ${w.card.card_b}\n\n`;
-          content += `Lesson: ${w.card.card_c}\n\n`;
-        }
-        content += '\n';
-      });
-      const blob = new Blob([content], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `wisdom-book-${d.customerName}.txt`;
-      a.click();
-    }
-
-    if (type === 'cards') {
-      let csv = 'keyword,quote_short,insight_full\n';
-      (d.cards || []).forEach((c) => {
-        csv += `"${c.keyword_id}","${(c.quote_short || '').replace(
-          /"/g,
-          '""'
-        )}","${(c.insight_full || '').replace(/"/g, '""')}"\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `wisdom-cards-${d.customerName}.csv`;
-      a.click();
-    }
   };
 
   return (
@@ -193,17 +144,6 @@ export default function OrdersTab() {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
             >
               Save
-            </button>
-            <button
-              onClick={() =>
-                downloadContent(
-                  editOrder,
-                  editOrder.product_type === 'wisdom_book' ? 'book' : 'cards'
-                )
-              }
-              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
-            >
-              📥 Download Content
             </button>
             <button
               onClick={() => setEditOrder(null)}

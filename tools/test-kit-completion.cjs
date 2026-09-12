@@ -68,6 +68,7 @@ function companion(h) {
     'react-native': {
       Image: 'Image', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', View: 'View',
       StyleSheet: { create: value => value }, useWindowDimensions: () => ({ height: 850 }),
+      AppState: { addEventListener: () => ({ remove() {} }) },
     },
     'expo-router': { useRouter: () => ({ push() {}, back() {} }), useFocusEffect: fn => react.useEffect(fn, [fn]) },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ bottom: 0 }) },
@@ -78,7 +79,12 @@ function companion(h) {
     '@/lib/icons': { ICONS: {} }, '@/components/ui/grid-background': { GridBackground: 'GridBackground' },
     '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text' },
     '@/lib/cosmetics-api': { getCachedCosmetics: () => cosmetic, fetchCosmetics: async () => cosmetic, subscribeCosmetics: () => () => {} },
-    '@/lib/master-api': { getCachedMasterStatus: () => master, fetchMasterStatus: async () => master },
+    '@/lib/master-api': {
+      getCachedMasterStatus: () => master,
+      refreshCachedMasterClock: () => master,
+      fetchMasterStatus: async () => master,
+    },
+    '@/lib/use-subscription-tier': { useSubscriptionTierState: () => 'free' },
     '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
   }, h.timing.globals);
   const text = tree => Array.isArray(tree) ? tree.flatMap(text) : typeof tree === 'string' ? [tree] : tree?.props ? text(tree.props.children) : [];

@@ -113,23 +113,11 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 
-      if (download === 'book') {
-        const { data: wisdoms } = await supabase.from('wisdoms')
-          .select('*, wisdom_cards(keyword_id, quote_short, insight_full, card_b, card_c, wisdom_score)')
-          .eq('user_id', order.user_id)
-          .order('created_at', { ascending: true })
-
-        return NextResponse.json({
-          success: true, type: 'book', customerName: order.customer_name,
-          wisdoms: (wisdoms || []).map(w => ({ text: w.text, created_at: w.created_at, card: w.wisdom_cards?.[0] || null })),
-        })
-      }
-
-      if (download === 'cards') {
-        const cardIds = order.selected_card_ids || []
-        if (cardIds.length === 0) return NextResponse.json({ success: true, type: 'cards', cards: [] })
-        const { data: cards } = await supabase.from('wisdom_cards').select('keyword_id, quote_short, insight_full').in('id', cardIds)
-        return NextResponse.json({ success: true, type: 'cards', customerName: order.customer_name, cards: cards || [] })
+      if (download === 'book' || download === 'cards') {
+        return NextResponse.json(
+          { error: 'Legacy order content export is retired' },
+          { status: 410 },
+        )
       }
     }
 

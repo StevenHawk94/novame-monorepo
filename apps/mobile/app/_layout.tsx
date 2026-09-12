@@ -24,7 +24,7 @@ import { ThemeProvider } from '@/theme';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession } from '@/lib/auth';
 import { observeSessionIdentity } from '@/lib/session-lifecycle';
-import { hasSeenIntro } from '@/lib/onboarding';
+import { hasSeenIntro, isAnonymousOnboardingAuthHandoffActive } from '@/lib/onboarding';
 import { initIAP, cleanupIAP, reconcileAvailablePurchases } from '@/lib/iap';
 import { fetchSubscriptionTier } from '@/lib/subscription';
 import {
@@ -430,7 +430,7 @@ function RootLayout() {
         // user can finish the store sheet and the remaining onboarding steps.
         // A deliberate sign-in to an existing Apple/Google/email account is
         // non-anonymous and still follows the normal signing-in route below.
-        if (isAnonymous && !hasSeenIntro()) {
+        if (isAnonymous && (!hasSeenIntro() || isAnonymousOnboardingAuthHandoffActive())) {
           if (session?.user?.id) {
             void startSubscriptionRealtime(session.user.id).catch((error) => {
               console.warn('[layout] onboarding entitlement realtime start failed:', error);

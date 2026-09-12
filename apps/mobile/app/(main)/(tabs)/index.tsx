@@ -8,7 +8,6 @@ import { prioritizeR2Image } from '@/lib/download-queue';
 import { invalidateAndroidR2CachedFile } from '@/lib/android-r2-file-cache';
 import { useR2AssetRevision } from '@/lib/use-r2-asset-revision';
 import { haptics } from '@/lib/haptics';
-import { fetchCompanion, getCachedCompanion, type CompanionState } from '@/lib/companion-api';
 import { ICONS } from '@/lib/icons';
 import { CompanionVideo } from '@/components/main/companion-video';
 import { HomeEntryImage } from '@/components/main/home-entry-gate';
@@ -69,7 +68,6 @@ export default function HomeScreen() {
   const r2AssetRevision = useR2AssetRevision();
   const router = useRouter();
   const subscriptionTier = useSubscriptionTierState();
-  const [companion, setCompanion] = useState<CompanionState | null>(() => getCachedCompanion());
   const [bubbles, setBubbles] = useState<MemoryBubble[]>(getCachedTodayBubbles);
   const [firstPartnerReflect, setFirstPartnerReflect] = useState<{
     partnerId: string;
@@ -91,8 +89,6 @@ export default function HomeScreen() {
     videoHeight: 240,
     entriesHeight: 68,
   });
-  void companion;
-
   const applyAiBubble = useCallback((next: FreshBubble | null) => {
     const previous = aiBubbleRef.current;
     aiBubbleRef.current = next;
@@ -217,9 +213,6 @@ export default function HomeScreen() {
       // A slow read or a queued automatic prompt never disables Home.
       setCosmeticTick((t) => t + 1);
       applyAiBubble(visibleAiBubble(subscriptionTier));
-      void fetchCompanion().then((c) => {
-        if (c) setCompanion(c);
-      });
       // A pending entry attempt is handled by the effect above so its forced
       // notification refresh cannot race a second cache-first request.
       if (!getHomeEntryState().pending) {

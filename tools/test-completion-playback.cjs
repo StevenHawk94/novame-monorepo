@@ -310,12 +310,14 @@ test('final Quest completion preserves the active run across the picker and prel
     '@novame/domain': { CLOVERS_PER_TASK: 10, COMPLETION_BONUS: 20, themesForScope: () => [] },
     '@/lib/icons': { ICONS: {} },
     '@/lib/session-lifecycle': { sessionEpoch: () => 0 },
+    '@/lib/use-subscription-tier': { useSubscriptionTier: () => 'plus' },
     '@/components/ui/app-dialog': { appAlert(...args) { alerts.push(args); } },
     '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
     '@/components/ui/tab-header-typography': load('apps/mobile/src/components/ui/tab-header-typography.ts', {
       'react-native': { Platform: { OS: 'android' } },
     }),
     '@/components/ui/grid-background': { GridBackground: 'GridBackground' },
+    '@/components/main/clover-burst': { CloverBurst: 'CloverBurst' },
     '@/components/main/reflect-celebration': { ReflectCelebration: 'Celebration' },
     '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
     '@/lib/haptics': { haptics: { success() {}, pageOpen() {} } },
@@ -349,7 +351,7 @@ test('final Quest completion preserves the active run across the picker and prel
   }
   await new Promise(resolve => setImmediate(resolve));
   const picker = render();
-  assert.ok(nodes(tree).some(n => n.props?.children === 'Weekly Quests'));
+  assert.ok(nodes(tree).some(n => n.props?.children === 'Weekly Goal'));
   assert.equal(picker.key, running.key);
   assert.equal(picker.props.active, true);
   assert.equal(alerts.length, 0, 'fast final-task response must not cover the confetti');

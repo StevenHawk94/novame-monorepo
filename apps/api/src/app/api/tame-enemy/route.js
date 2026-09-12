@@ -6,6 +6,7 @@ import {
   BATTLE_MILESTONE_BASE, BATTLE_MILESTONE_REWARD, MONSTERS,
 } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { runCompanionDependentRpc } from '@/lib/companion-boundary'
 
 export const runtime = 'edge'
 
@@ -78,7 +79,7 @@ export async function POST(request) {
     // Completion, Clover XP, fixed history points and milestone Clover are one
     // database transaction. A transient failure cannot leave a successful
     // tame without its 50 pts (or make a retry double-pay).
-    const { data: result, error: rpcErr } = await supabase.rpc('submit_tame_enemy', {
+    const submitArgs = {
       p_user_id: userId,
       p_period_key: periodKey,
       p_local_date: dateStr,
@@ -88,7 +89,10 @@ export async function POST(request) {
       p_battle_points: battlePoints,
       p_base: BATTLE_MILESTONE_BASE,
       p_reward: BATTLE_MILESTONE_REWARD,
-    })
+    }
+    const { data: result, error: rpcErr } = await runCompanionDependentRpc(
+      supabase, 'submit_tame_enemy', submitArgs, userId,
+    )
     if (rpcErr) {
       console.error('[tame-enemy] rpc error:', rpcErr.message)
       return NextResponse.json({ error: 'Submit failed' }, { status: 500 })

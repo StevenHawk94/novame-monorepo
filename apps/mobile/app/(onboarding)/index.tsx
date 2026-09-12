@@ -17,10 +17,13 @@ import {
   enableFeatureGuidesForNewUser,
 } from '../../src/lib/feature-guides';
 import {
+  beginAnonymousOnboardingAuthHandoff,
   markIntroSeen,
+  endAnonymousOnboardingAuthHandoff,
   setBunnyName,
   setChosenCompanion,
   setOnboardingChoices,
+  syncOnboardingCompanion,
 } from '../../src/lib/onboarding';
 import { logOnboardingCompleted, logRegistration } from '../../src/lib/ad-measurement';
 import { useMetaPrivacy } from '../../src/components/privacy/meta-privacy-provider';
@@ -155,12 +158,19 @@ const INSIGHT_CAROUSEL_CARDS = [
 function OnboardingInsightCard({
   card,
   width,
+  height,
+  onLayout,
 }: {
   card: (typeof INSIGHT_CAROUSEL_CARDS)[number];
   width: number;
+  height?: number;
+  onLayout?: ComponentProps<typeof View>['onLayout'];
 }) {
   return (
-    <View style={[styles.insightCarouselCard, { width }]}>
+    <View
+      onLayout={onLayout}
+      style={[styles.insightCarouselCard, { width }, height ? { height } : null]}
+    >
       <View style={styles.insightCardLabel}>
         <Text style={styles.insightCardLabelText}>{card.label}</Text>
       </View>
@@ -238,6 +248,7 @@ export default function OnboardingScreen() {
   const [purchased, setPurchased] = useState(false);
   const [name, setName] = useState('');
   const [finishing, setFinishing] = useState(false);
+  const finishingRef = useRef(false);
   const [linkEmail, setLinkEmail] = useState('');
   const [linking, setLinking] = useState(false);
   const [linkCode, setLinkCode] = useState('');
@@ -246,7 +257,12 @@ export default function OnboardingScreen() {
   const [paywallExitOpen, setPaywallExitOpen] = useState(false);
   const [paywallExitOfferSeen, setPaywallExitOfferSeen] = useState(false);
   const [insightCardIndex, setInsightCardIndex] = useState(0);
+  const [insightCardHeight, setInsightCardHeight] = useState<number>();
   const insightCarouselRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    setInsightCardHeight(undefined);
+  }, [insightCardWidth, onboardingTextScale]);
 
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
@@ -396,7 +412,8 @@ export default function OnboardingScreen() {
   }
 
   async function onFinishName() {
-    if (finishing) return;
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     void haptics.medium();
     setFinishing(true);
     if (name.trim()) setBunnyName(name);
@@ -412,9 +429,12 @@ export default function OnboardingScreen() {
     markIntroSeen();
     // Guest mode: an anonymous session carries the whole app. Connect only
     // pops after payment (skippable); everyone else goes straight in.
+    beginAnonymousOnboardingAuthHandoff();
     const ok = await ensureSession();
     setFinishing(false);
     if (!ok) {
+      finishingRef.current = false;
+      endAnonymousOnboardingAuthHandoff();
       router.replace('/(auth)/sign-in');
       return;
     }
@@ -425,13 +445,21 @@ export default function OnboardingScreen() {
     void supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user?.id;
       if (!uid) return;
+      // Start the durable completion as soon as auth gives us an identity.
+      // Purchased users may still be on Connect/Notifications, so this often
+      // finishes before Home; signing-in shares the same in-flight request.
+      void syncOnboardingCompanion(uid, { force: true });
       if (name.trim()) void updateDisplayName(uid, name.trim().slice(0, 15)).catch(() => {});
       if (who && blocker) void reportOnboardingChoices(uid, who, blocker).catch(() => {});
     });
     if (purchased) {
+      endAnonymousOnboardingAuthHandoff();
       setIdx(FLOW.length); // → connect
     } else {
       router.replace('/(auth)/signing-in');
+      // Keep the ownership marker alive through Supabase's SIGNED_IN event;
+      // the explicit route above is the sole navigation owner for this flow.
+      setTimeout(endAnonymousOnboardingAuthHandoff, 2_000);
     }
   }
 
@@ -685,6 +713,7 @@ export default function OnboardingScreen() {
             <ScrollView
               ref={insightCarouselRef}
               horizontal
+              removeClippedSubviews={false}
               showsHorizontalScrollIndicator={false}
               snapToInterval={insightCardStep}
               snapToAlignment="start"
@@ -698,8 +727,19 @@ export default function OnboardingScreen() {
                 setInsightCardIndex(Math.max(0, Math.min(INSIGHT_CAROUSEL_CARDS.length - 1, nextIndex)));
               }}
             >
-              {INSIGHT_CAROUSEL_CARDS.map((card) => (
-                <OnboardingInsightCard key={card.label} card={card} width={insightCardWidth} />
+              {INSIGHT_CAROUSEL_CARDS.map((card, cardIndex) => (
+                <OnboardingInsightCard
+                  key={card.label}
+                  card={card}
+                  width={insightCardWidth}
+                  height={insightCardHeight}
+                  onLayout={cardIndex === 0
+                    ? (event) => {
+                        const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
+                        setInsightCardHeight((current) => current === measuredHeight ? current : measuredHeight);
+                      }
+                    : undefined}
+                />
               ))}
             </ScrollView>
             <View style={styles.insightDots}>

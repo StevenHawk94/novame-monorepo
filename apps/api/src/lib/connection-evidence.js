@@ -135,6 +135,7 @@ function isBackgroundEligible(signal, occurrenceCount, nowMs) {
 function publicAggregate(entry, tier, nowMs) {
   const ageDays = Math.max(0, (nowMs - entry.lastSeenMs) / DAY_MS)
   return {
+    signalId: entry.signalId || `${entry.topicKey}_${entry.kind}`,
     topicKey: entry.topicKey,
     kind: entry.kind,
     summary: entry.summary,

@@ -107,13 +107,12 @@ async function handlePaymentSuccess(supabase, paymentIntent) {
   if (metadata.original_order_id) {
     const orderId = metadata.original_order_id
     const orderType = metadata.order_type || metadata.product // 'printed', 'wisdom_cards', 'wisdom_book'
-    const userId = metadata.user_id
-
     // 智能路由：根据 orderType 决定去更新哪张表
     if (orderType === 'printed' || orderType === 'ebook') {
       // 路由 A：WisdomBookOverlay 产生的订单 (写 book_orders 表)
-      // P2-b① idempotency: a retried/duplicate succeeded event must not
-      // re-apply the word-progress deduction below. Skip if already paid.
+      // Idempotency: a retried/duplicate succeeded event must not repeat the
+      // state transition. The retired recording-progress deduction no longer
+      // exists.
       const { data: existingBook } = await supabase.from('book_orders').select('status').eq('id', orderId).single()
       if (existingBook?.status === 'paid') {
         console.log(`[Webhook] Book Order ${orderId} already paid — skipping (idempotent)`)
@@ -125,12 +124,6 @@ async function handlePaymentSuccess(supabase, paymentIntent) {
         payment_intent_id: paymentIntent.id,
         updated_at: new Date().toISOString()
       }).eq('id', orderId)
-
-      // 扣除字数进度
-      if (userId) {
-        const { data: profile } = await supabase.from('profiles').select('total_minutes_recorded').eq('id', userId).single()
-        if (profile) await supabase.from('profiles').update({ last_book_applied_minutes: profile.total_minutes_recorded }).eq('id', userId)
-      }
       console.log(`[Webhook] Book Order ${orderId} marked as paid in book_orders`)
     } 
     else if (orderType === 'wisdom_cards' || orderType === 'wisdom_book') {

@@ -1,8 +1,7 @@
 /**
  * True North identity phrases (C5). One per dimension, shown on the ranking
  * cards: the user orders them by "what matters most right now". Phrases are
- * fixed and live here; ranking them is a weekly ritual that credits gems to
- * the top three.
+ * fixed and live here; ranking them is a weekly reflection ritual.
  *
  * The reveal samples focus points from the top three and release points from
  * the bottom two -- handled client-side from these labels.
@@ -19,25 +18,6 @@ export const TRUE_NORTH_PHRASES: Record<DimensionId, string> = {
   gratitude:  'Appreciating what I have',
   connection: 'Showing up for people I love',
 };
-
-/** Gems for a rank (1-based). Top three only: +30 / +20 / +10, else 0.
- *  (PRD §1.2 — was 50/30/10 before the v2.0 economy pass.) */
-export const TRUE_NORTH_GEMS_BY_RANK: readonly number[] = [30, 20, 10];
-
-/**
- * The gem hits for a ranking (array of dimension ids, best first). Returns the
- * top-three as [{dimension, gems}], the shape submit_kit expects. Pure -- the
- * API calls this and hands the result to the RPC.
- */
-export function trueNorthGemHits(
-  ranking: DimensionId[],
-): { dimension: DimensionId; gems: number }[] {
-  const hits: { dimension: DimensionId; gems: number }[] = [];
-  for (let i = 0; i < TRUE_NORTH_GEMS_BY_RANK.length && i < ranking.length; i++) {
-    hits.push({ dimension: ranking[i], gems: TRUE_NORTH_GEMS_BY_RANK[i] });
-  }
-  return hits;
-}
 
 /**
  * Reveal-page content (copy finalized 2026-08-06). The TOP-THREE ranked

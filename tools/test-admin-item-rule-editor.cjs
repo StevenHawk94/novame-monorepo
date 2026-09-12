@@ -60,7 +60,7 @@ test('manual additions are normalized, revision-safe AUTO phrases', async () => 
   assert.equal(writes[0].p_candidate, null);
   await assert.rejects(review.publishManualRule(db, {
     action:'add', itemId, keyword:'running', revision:7,
-  }, 'admin'), /multi-word/);
+  }, 'admin'), /multi-word|NEVER_AUTO/);
   await assert.rejects(review.publishManualRule(db, {
     action:'add', itemId, keyword:'another safe phrase', revision:6,
   }, 'admin'), /Rules changed/);
@@ -86,11 +86,12 @@ test('catalog exposes effective modes, dynamic source, thumbnails, and disabled 
   assert.ok(search.items.some((item) => item.itemId === coffeeId));
 });
 
-test('suggestions expose an icon backlog and block unsafe one-word AUTO approvals', () => {
+test('suggestions expose an icon backlog and require verified source evidence', () => {
   const source = fs.readFileSync(path.join(root, 'apps/admin/src/app/admin/_components/ItemsTab.tsx'), 'utf8');
   assert.match(source, /Icon Backlog \(\{data\?\.iconBacklog\?\.length \|\| 0\}\)/);
   assert.ok(source.includes('Added to Icon Backlog. It will stay visible below'));
-  assert.ok(source.includes("words.length > 1 && !row.bare_word_disabled"));
-  assert.ok(source.includes('Needs contextual phrase'));
+  assert.ok(source.includes('row.evidence_version === 2'));
+  assert.ok(source.includes("Boolean((row.source_phrase || '').trim())"));
+  assert.ok(source.includes('Needs verified keyword'));
   assert.ok(source.includes("'error' in error.body"), 'server validation detail must replace a generic HTTP 409');
 });

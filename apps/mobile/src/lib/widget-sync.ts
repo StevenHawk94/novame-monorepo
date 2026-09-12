@@ -4,7 +4,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
 import { TAP_PERSON_IMAGES } from './tap-person-images';
-import { getDefaultAvatar } from './avatar';
+import { getProfileDefaultAvatar } from './avatar';
 import { remoteImageUri } from './remote-items';
 import type { FeedEntry, PairingStatus } from './friends-api';
 
@@ -65,14 +65,17 @@ export async function syncWidgetLatestFriend(
         return { src, emoji: latest.emoji[i] ?? '✨' };
       }),
     );
-    // Avatar: real upload wins; otherwise the friend's assigned bundled
-    // default (same resolution as UserAvatar in-app).
+    // Avatar: preserve legacy uploads; otherwise resolve the friend's chosen
+    // bundled avatar (or deterministic initial default for older profiles).
     let avatarSrc: string | null = null;
     if (latest.friendAvatarUrl && latest.friendIsDefaultAvatar === false) {
       avatarSrc = latest.friendAvatarUrl;
     } else {
       try {
-        const asset = Asset.fromModule(getDefaultAvatar(latest.friendUserId));
+        const asset = Asset.fromModule(getProfileDefaultAvatar(
+          latest.friendAvatarUrl,
+          latest.friendUserId,
+        ));
         if (!asset.localUri) await asset.downloadAsync();
         avatarSrc = asset.localUri;
       } catch {

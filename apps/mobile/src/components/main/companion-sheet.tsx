@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AppState, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,7 +13,13 @@ import { getCachedStatus } from '@/lib/true-north-api';
 import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 import { getCachedCosmetics, fetchCosmetics, subscribeCosmetics } from '@/lib/cosmetics-api';
-import { fetchMasterStatus, getCachedMasterStatus, type MasterStatus } from '@/lib/master-api';
+import {
+  fetchMasterStatus,
+  getCachedMasterStatus,
+  refreshCachedMasterClock,
+  type MasterStatus,
+} from '@/lib/master-api';
+import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
 import { FeatureGuideModal } from '@/components/main/feature-guide-modal';
 import { subscribeKitCompletion } from '@/lib/kit-completion-state';
 import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
@@ -63,6 +69,7 @@ export function CompanionSheet() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  const subscriptionTier = useSubscriptionTierState();
   const [doneState, setDoneState] = useState<DoneState>(() => readDoneState());
   const [balance, setBalance] = useState(() => getCachedCosmetics().balance);
   const [masterStatus, setMasterStatus] = useState<MasterStatus>(() => getCachedMasterStatus());
@@ -86,10 +93,19 @@ export function CompanionSheet() {
       setClockMs(Date.now());
       setBalance(getCachedCosmetics().balance);
       void fetchCosmetics().then((state) => setBalance(state.balance));
-      setMasterStatus(getCachedMasterStatus());
+      setMasterStatus(refreshCachedMasterClock());
       void fetchMasterStatus().then(setMasterStatus);
     }, []),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      setClockMs(Date.now());
+      setMasterStatus(refreshCachedMasterClock());
+    });
+    return () => sub.remove();
+  }, []);
 
   const trueNorthRemainingMs = doneState.trueNorthNextAvailableAt
     ? new Date(doneState.trueNorthNextAvailableAt).getTime() - clockMs
@@ -110,11 +126,31 @@ export function CompanionSheet() {
     return () => clearTimeout(timer);
   }, [trueNorthCoolingDown, trueNorthRemainingMs]);
 
+  const masterIsPaid = subscriptionTier == null
+    ? masterStatus.isPaid
+    : subscriptionTier !== 'free';
+  const masterRemainingMs = masterStatus.nextAvailableAt
+    ? Date.parse(masterStatus.nextAvailableAt) - clockMs
+    : 0;
+  const masterCoolingDown = masterIsPaid && masterRemainingMs > 0;
+  const masterRemainingHours = Math.max(1, Math.ceil(masterRemainingMs / 3_600_000));
+
+  // Keep the visible hour badge accurate without polling. The timer wakes only
+  // when the rounded hour changes (and finally at the unlock boundary).
+  useEffect(() => {
+    if (!masterCoolingDown) return undefined;
+    const delay = Math.max(
+      1_000,
+      masterRemainingMs - (masterRemainingHours - 1) * 3_600_000 + 1_000,
+    );
+    const timer = setTimeout(() => {
+      setClockMs(Date.now());
+      setMasterStatus(refreshCachedMasterClock());
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [masterCoolingDown, masterRemainingHours, masterRemainingMs]);
+
   const kits: KitRow[] = useMemo(() => {
-    const masterCoolingDown = masterStatus.isPaid && !masterStatus.available;
-    const remainingHours = masterStatus.nextAvailableAt
-      ? Math.max(1, Math.ceil((new Date(masterStatus.nextAvailableAt).getTime() - Date.now()) / 3_600_000))
-      : 72;
     return [
       { key: 'quiet_wins', label: 'Small Wins', desc: 'See what you did right today.', icon: ICONS.SmallWins, route: '/(main)/quiet-wins', done: doneState.quietWins, daily: true },
       { key: 'new_lens', label: 'New Lens', desc: 'Feeling stuck? A different angle might help.', icon: ICONS.NewLens, route: '/(main)/new-lens', done: doneState.newLens, daily: true },
@@ -126,11 +162,11 @@ export function CompanionSheet() {
           ? 'The Master has set out in search of wisdom.'
           : 'Need a sharper read? Ask the bunny master.',
         icon: ICONS.VisitMaster, route: '/(main)/visit-master',
-        badge: masterCoolingDown ? `Back in ${remainingHours}h` : !masterStatus.isPaid ? 'Plus' : undefined,
+        badge: masterCoolingDown ? `Back in ${masterRemainingHours}h` : !masterIsPaid ? 'Plus' : undefined,
         disabled: masterCoolingDown,
       },
     ];
-  }, [doneState, masterStatus, trueNorthAvail, trueNorthCoolingDown]);
+  }, [doneState, masterCoolingDown, masterIsPaid, masterRemainingHours, trueNorthAvail, trueNorthCoolingDown]);
 
   // Daily Kits vanish once done; permanent Kits always show.
   const visibleKits = kits.filter((k) => !(k.daily && k.done));
