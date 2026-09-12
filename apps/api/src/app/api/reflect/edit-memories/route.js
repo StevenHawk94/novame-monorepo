@@ -96,14 +96,16 @@ export async function POST(request) {
     if (result?.reflect_id && !result.already_finalized) {
       const { data: draft } = await supabase.from('reflect_drafts').select('*')
         .eq('user_id', input.userId).eq('saved_reflect_id', result.reflect_id).maybeSingle()
-      if (draft?.body?.trim()) {
+      const journalKind = draft?.journal_kind || (draft?.friend_user_id
+        ? 'remember_together' : draft?.mode === 'prompt' ? 'tap_your_day' : 'write_freely')
+      if (draft?.ai_enhancement_eligible === true && journalKind !== 'remember_together'
+        && draft?.body?.trim()) {
         try {
           const queued = await enqueueReflectAnalysisJob(supabase, {
             reflectId: result.reflect_id,
             userId: input.userId,
             localDate: draft.local_date,
-            journalKind: draft.journal_kind || (draft.friend_user_id
-              ? 'remember_together' : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely'),
+            journalKind,
           })
           if (queued) after(() => processReflectAnalysisJobs({ reflectId: result.reflect_id }))
         } catch (queueError) {

@@ -35,8 +35,10 @@ import {
   subscribeConnectionHistory,
 } from '@/lib/friends-api';
 import {
-  consumeNewConnectionHomeMessage,
+  acknowledgeNewConnectionHomeMessage,
+  stageNewConnectionHomeMessage,
   prepareHomeConnectionMessage,
+  type PendingConnectionHomeMessage,
 } from '@/lib/connection-home-prompt';
 import { storage } from '@/lib/storage';
 import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
@@ -103,9 +105,10 @@ export default function HomeScreen() {
   } | null>(null);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
-  const [connectionUpdateSpeech, setConnectionUpdateSpeech] = useState<string | null>(null);
+  const [connectionUpdateSpeech, setConnectionUpdateSpeech] = useState<PendingConnectionHomeMessage | null>(null);
   const [failedAndroidSceneUri, setFailedAndroidSceneUri] = useState<string | null>(null);
   const aiBubbleRef = useRef(aiBubble);
+  const subscriptionTierRef = useRef(subscriptionTier);
   const homeFocusedRef = useRef(false);
   const navigate = useNavigationAction();
   const [measuredLayoutParts, setMeasuredLayoutParts] = useState<string[]>([]);
@@ -127,6 +130,8 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    subscriptionTierRef.current = subscriptionTier;
+    if (subscriptionTier === 'free') setConnectionUpdateSpeech(null);
     applyAiBubble(visibleAiBubble(subscriptionTier));
   }, [applyAiBubble, subscriptionTier]);
 
@@ -147,15 +152,31 @@ export default function HomeScreen() {
   }), [applyAiBubble, subscriptionTier]);
 
   const applyConnectionUpdateSpeech = useCallback((result = getCachedConnectionHistory()) => {
-    if (!homeFocusedRef.current || subscriptionTier === 'free') return;
+    if (!homeFocusedRef.current || subscriptionTierRef.current === 'free') return;
     const partnerId = getCachedPairing()?.partner?.userId ?? null;
-    const line = consumeNewConnectionHomeMessage(result, partnerId);
-    if (line) setConnectionUpdateSpeech(line);
-  }, [subscriptionTier]);
+    const message = stageNewConnectionHomeMessage(result, partnerId);
+    if (message) setConnectionUpdateSpeech((current) => (
+      current?.partnerId === message.partnerId && current.cardId === message.cardId
+        ? current : message
+    ));
+  }, []);
 
   useEffect(() => subscribeConnectionHistory((result) => {
     applyConnectionUpdateSpeech(result);
   }), [applyConnectionUpdateSpeech]);
+
+  // A Connection notice becomes consumed only after the entry cover is gone
+  // and the Home bubble has had two paint frames. If navigation interrupts the
+  // hand-off, the durable pending id remains and is shown on the next visit.
+  useEffect(() => {
+    if (!connectionUpdateSpeech || homeEntry.pending || !homeFocusedRef.current) return;
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        acknowledgeNewConnectionHomeMessage(connectionUpdateSpeech);
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [connectionUpdateSpeech, homeEntry.pending]);
 
   // A new Reflect replaces the old AI line and starts a fresh six-hour timer.
   // If the app stays open, expiry switches to the next local-time default line.
@@ -239,7 +260,6 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       homeFocusedRef.current = true;
-      setConnectionUpdateSpeech(null);
       applyConnectionUpdateSpeech();
       // Outfit/scene selection is local-only. Repaint Home only when that
       // actual selection changed, rather than on every return from Focus or
@@ -249,7 +269,6 @@ export default function HomeScreen() {
         personalizationKeyRef.current = nextPersonalizationKey;
         setPersonalizationRevision((current) => current + 1);
       }
-      applyAiBubble(visibleAiBubble(subscriptionTier));
       // Stack returns (notably Focus) must paint Home before any cache
       // reconciliation. Notification entry remains owned by HomeEntryGate.
       const cancelDeferred = afterUiSettles(() => {
@@ -263,7 +282,7 @@ export default function HomeScreen() {
         homeFocusedRef.current = false;
         setConnectionUpdateSpeech(null);
       };
-    }, [applyAiBubble, applyConnectionUpdateSpeech, refreshHomeBubbles, subscriptionTier]),
+    }, [applyConnectionUpdateSpeech, refreshHomeBubbles]),
   );
 
   const onBubblePopped = useCallback((bubbleId: string) => {
@@ -380,7 +399,7 @@ export default function HomeScreen() {
             <View style={styles.bubbleWrap}>
               <View style={styles.bubble}>
                 <Text style={styles.bubbleText}>
-                  {connectionUpdateSpeech ?? aiBubble?.line ?? defaultSpeech}
+                  {connectionUpdateSpeech?.line ?? aiBubble?.line ?? defaultSpeech}
                 </Text>
                 <View style={styles.bubbleTail} />
               </View>

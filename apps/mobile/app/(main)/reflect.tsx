@@ -18,9 +18,11 @@ import { warmItemSprites } from '@/components/ui/item-sprite';
 import {
   fetchJournalEntryStates,
   getJournalEntryStatesToday,
+  getPlusAiRemainingToday,
   type JournalEntryStates,
   type JournalKind,
 } from '@/lib/reflect-api';
+import { appAlert } from '@/components/ui/app-dialog';
 
 const TAN_OFFSET = '#E5B57E';
 
@@ -44,12 +46,17 @@ export default function ReflectEntryScreen() {
   }>();
   const hasPreset = typeof params.presetPrompt === 'string' && params.presetPrompt.length > 0;
   const [entryStates, setEntryStates] = useState<JournalEntryStates>(getJournalEntryStatesToday);
+  const [plusAiRemaining, setPlusAiRemaining] = useState(getPlusAiRemainingToday);
 
   useFocusEffect(useCallback(() => {
     let active = true;
     setEntryStates(getJournalEntryStatesToday());
+    setPlusAiRemaining(getPlusAiRemainingToday());
     void fetchJournalEntryStates().then((state) => {
-      if (active) setEntryStates(state.entries);
+      if (active) {
+        setEntryStates(state.entries);
+        setPlusAiRemaining(state.plusAiRemaining);
+      }
     });
     return () => { active = false; };
   }, []));
@@ -115,7 +122,8 @@ export default function ReflectEntryScreen() {
           <Text style={styles.lead}>How would you like to journal?</Text>
           <Text style={styles.leadSub}>Pick a way.</Text>
           {ways.map((w) => {
-            const status = entryStates[w.journalKind];
+            const status = isPaid && w.journalKind === 'write_freely'
+              ? 'available' : entryStates[w.journalKind];
             const unavailable = status !== 'available';
             return (
             <OffsetCard
@@ -125,12 +133,25 @@ export default function ReflectEntryScreen() {
               radius={30}
               onPress={() => {
                 if (unavailable) return;
-                void haptics.pageOpen();
                 if (w.key === 'shared' && !isPaid) {
+                  void haptics.pageOpen();
                   router.push('/(main)/(modals)/subscription-paywall?phase=plans' as never);
                   return;
                 }
-                router.push(w.route as never);
+                const openJournal = () => {
+                  void haptics.pageOpen();
+                  router.push(w.route as never);
+                };
+                if (isPaid && plusAiRemaining <= 0
+                  && (w.journalKind === 'write_freely' || w.journalKind === 'tap_your_day')) {
+                  appAlert(
+                    "You've hit your Plus limit for today.",
+                    'You can still journal, entries will be saved to your log, and you can manually edit your memories anytime.',
+                    [{ text: 'Continue', onPress: openJournal }],
+                  );
+                  return;
+                }
+                openJournal();
               }}
               disabled={unavailable}
               cardStyle={[styles.wayCard, unavailable && styles.wayCardDisabled]}

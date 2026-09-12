@@ -82,14 +82,16 @@ export async function POST(request) {
     // waiting on the settlement screen. Next's after() keeps the task alive
     // after the response has been sent. A failed row + recovery flag lets the
     // next Connection visit retry only this latest reflection.
-    if (!result?.already_finalized && draft.body?.trim() && result?.reflect_id) {
+    const journalKind = draft.journal_kind || (draft.friend_user_id ? 'remember_together'
+      : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely')
+    if (!result?.already_finalized && journalKind !== 'remember_together'
+      && draft.ai_enhancement_eligible === true && draft.body?.trim() && result?.reflect_id) {
       try {
         const queued = await enqueueReflectAnalysisJob(supabase, {
           reflectId: result.reflect_id,
           userId,
           localDate: draft.local_date,
-          journalKind: draft.journal_kind || (draft.friend_user_id ? 'remember_together'
-            : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely'),
+          journalKind,
         })
         if (queued) after(() => processReflectAnalysisJobs({ reflectId: result.reflect_id }))
       } catch (queueError) {

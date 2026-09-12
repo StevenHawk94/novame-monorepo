@@ -39,12 +39,6 @@ import { MemoryEditorSheet } from '@/components/main/reflect-settlement';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { invalidateMineBagsCache } from '@/lib/bags-api';
 import { AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
-import { itemRuleContext, refreshItemRules } from '@/lib/item-rule-cache';
-import {
-  getCachedPairing,
-  invalidateCommonItemsCache,
-  invalidateEditedSharedReflect,
-} from '@/lib/friends-api';
 
 function toMemoryDrafts(data: ReflectMemoryEditorData): ReflectMemoryDraft[] {
   return data.items.map((item) => ({
@@ -224,8 +218,7 @@ export default function ReflectDetailScreen() {
     }
 
     setSavingBody(true);
-    await refreshItemRules();
-    const result = await editJournalEntry(reflectId, body, itemRuleContext().version);
+    const result = await editJournalEntry(reflectId, body);
     setSavingBody(false);
     if (!result.ok) {
       const message = result.error === 'not_found'
@@ -239,25 +232,10 @@ export default function ReflectDetailScreen() {
       return;
     }
 
-    const itemIds = result.matchedItems.map((item) => item.itemId);
-    const hasMemories = result.memories.some((memory) => memory.text.trim().length > 0);
-    setFeed(patchCachedReflectEntry(reflectId, { body: result.body, itemIds, hasMemories }));
-    setEditor(null);
-    setEditorMemories([]);
-    invalidateMineBagsCache();
-    invalidateCommonItemsCache();
-    const pairing = getCachedPairing();
-    if (result.shared && pairing?.paired && pairing.partner?.userId) {
-      invalidateEditedSharedReflect(pairing.partner.userId, reflectId);
-    }
+    setFeed(patchCachedReflectEntry(reflectId, { body: result.body }));
     Keyboard.dismiss();
     setEditingBody(false);
-    void Promise.all([
-      fetchReflectFeed({ force: true }).then(setFeed),
-      fetchReflectMemories(reflectId, { force: true }).then((data) => {
-        if (data) adoptEditorData(data);
-      }),
-    ]);
+    void fetchReflectFeed({ force: true }).then(setFeed);
     void haptics.success();
   }
 

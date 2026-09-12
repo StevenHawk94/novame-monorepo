@@ -22,8 +22,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     }
     if (!draft.saved_reflect_id) return NextResponse.json({ error: 'saved_reflect_required' }, { status: 409 })
-    const latest = profile?.ai_consent_at && draft.body?.trim()
-      ? await generateSavedReflectCopy(supabase, draft, userId) : draft
+    let eligibleDraft = draft
+    if (profile?.ai_consent_at && draft.body?.trim() && draft.ai_enhancement_eligible !== true) {
+      const reflectId = draft.saved_reflect_id || draft.finalized_reflect_id
+      const { data: allowance, error: allowanceError } = await supabase.rpc(
+        'claim_reflect_ai_enhancement',
+        { p_user_id: userId, p_reflect_id: reflectId },
+      )
+      if (allowanceError || allowance?.error) throw allowanceError || new Error(allowance.error)
+      eligibleDraft = { ...draft, ai_enhancement_eligible: allowance?.eligible === true }
+    }
+    const latest = eligibleDraft.ai_enhancement_eligible === true
+      ? await generateSavedReflectCopy(supabase, eligibleDraft, userId) : eligibleDraft
     const allowed = new Set(Array.isArray(emptyItemIds) ? emptyItemIds : [])
     return NextResponse.json({
       success: true,

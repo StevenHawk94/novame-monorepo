@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 import { Redirect } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
 import { hasSeenIntro } from '@/lib/onboarding';
-import { hideSplashOnce } from '@/lib/splash';
 import { beginHomeEntry, getHomeEntryState } from '@/lib/home-entry-readiness';
 
 /**
@@ -74,22 +72,12 @@ export default function Index() {
   }, []);
 
   if (route === null) {
-    if (Platform.OS === 'android') {
-      // Do not hide the Android native splash here. The destination screen
-      // owns the hand-off via hideSplashOnce() after its first real frame.
-      return <View style={styles.splash} />;
-    }
-
-    return (
-      <View style={styles.splash}>
-        <ExpoImage
-          source={require('../assets/splash-full.png')}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          onLoad={hideSplashOnce}
-        />
-      </View>
-    );
+    // Keep the native launch screen above this neutral fallback until the
+    // resolved destination has mounted its own first-paint cover. Hiding it
+    // from this intermediate redirect route exposed the navigator background
+    // for one frame on iOS. Home/Paired, onboarding and auth each own their
+    // final hideSplashOnce() hand-off.
+    return <View style={styles.splash} />;
   }
   if (route === 'main') return <Redirect href="/(main)/(tabs)" />;
   if (route === 'friends') return <Redirect href="/(main)/(tabs)/friends" />;

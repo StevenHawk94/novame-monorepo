@@ -133,8 +133,8 @@ export async function POST(request) {
     const weekStr = isoWeek(dateStr)
     const journalKind = journalKindForInput({ friendUserId, mode }, mode)
 
-    // XP is a flat 30. The RPC's daily gate (not this endpoint) enforces 3/day,
-    // so a successful submit is always one of the first three and pays 30.
+    // The RPC owns both save limits and rewards. Plus can keep saving Write
+    // Freely, while the existing three-reward daily ceiling remains intact.
     const submitArgs = {
       p_user_id: userId,
       p_prompt_id: promptId,
@@ -168,6 +168,21 @@ export async function POST(request) {
     let matchedItems = []
     let sharedItems = []
     const reflectId = result?.reflect_id
+    let aiEligible = false
+    let plusAiRemaining = 0
+    if (reflectId && isPaid && hasConsent && body.trim()) {
+      const { data: allowance, error: allowanceError } = await supabase.rpc(
+        'claim_reflect_ai_enhancement',
+        { p_user_id: userId, p_reflect_id: reflectId },
+      )
+      if (allowanceError || allowance?.error) {
+        console.warn('[reflect] AI allowance claim failed; saving without AI:',
+          allowanceError?.message || allowance?.error)
+      } else {
+        aiEligible = allowance?.eligible === true
+        plusAiRemaining = Number(allowance?.plus_ai_remaining ?? 0)
+      }
+    }
     if (reflectId) {
       try {
         // typing: engine match minus the chips the user dismissed in the live
@@ -257,8 +272,8 @@ export async function POST(request) {
     // Connection analysis uses the same durable two-stage background queue as
     // current clients; private item/Bunny copy remains part of this response.
     let bubble = null
-    if (reflectId && isPaid && hasConsent) {
-      if (body.trim()) {
+    if (reflectId && aiEligible) {
+      if (body.trim() && journalKind !== 'remember_together') {
         try {
           const queued = await enqueueReflectAnalysisJob(supabase, {
             reflectId, userId, localDate: dateStr, journalKind,
@@ -352,7 +367,10 @@ export async function POST(request) {
       if (finalSharedItems) sharedItems = finalSharedItems
     }
 
-    return NextResponse.json({ success: true, ...result, matchedItems, sharedItems, bubble })
+    return NextResponse.json({
+      success: true, ...result, matchedItems, sharedItems, bubble,
+      aiEligible, plusAiRemaining,
+    })
   } catch (err) {
     console.error('[reflect] unexpected:', err && err.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

@@ -12,8 +12,6 @@ import {
   isHomeEntryRoute, retryHomeEntry, timeoutHomeEntry, type HomeEntryAsset,
 } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
-import { ICONS } from '@/lib/icons';
-import { GridBackground } from '@/components/ui/grid-background';
 import { hideSplashOnce } from '@/lib/splash';
 import { registerOverlay, useOverlayPresent } from '@/lib/overlay-presence';
 import { useRatingTransitionBusy } from '@/lib/rating-navigation';
@@ -195,9 +193,16 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
       </View>
       {visible ? (
         <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
-          <GridBackground />
-          <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
-          <ActivityIndicator size="small" color="#8A6240" />
+          {/* This is the exact bitmap used by the native launch screen. The
+              native layer can therefore hand off to this JS readiness cover
+              without a visible scale/position jump. */}
+          <ExpoImage
+            source={require('../../../assets/splash-full.png')}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={0}
+          />
+          <ActivityIndicator style={styles.spinner} size="small" color="#8A6240" />
         </View>
       ) : null}
     </View>
@@ -207,5 +212,5 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
-  bunny: { width: 132, height: 158, marginBottom: 24 },
+  spinner: { position: 'absolute', top: '59%' },
 });

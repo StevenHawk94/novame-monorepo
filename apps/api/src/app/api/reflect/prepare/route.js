@@ -1,7 +1,7 @@
 import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
-import { createMemoryFallbacks, isoWeek, journalKindForInput, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
+import { isoWeek, journalKindForInput, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 
@@ -48,8 +48,9 @@ export async function POST(request) {
     const reserveArgs = {
       p_user_id: input.userId, p_payload: payload, p_xp: XP_RULES.reflect.award,
       p_week: isoWeek(localDate),
-      p_memories: isPaid && profile.ai_consent_at && resolved.body
-        ? createMemoryFallbacks({ body: resolved.body, matches: resolved.matches }) : {},
+      // Start with empty Memory copy. Eligible entries populate this after the
+      // atomic allowance claim; record-only entries must remain manual-only.
+      p_memories: {},
     }
     let { data: reserved, error: reserveError } = await supabase.rpc('begin_saved_reflect', reserveArgs)
     if (reserveError) throw reserveError
@@ -76,9 +77,19 @@ export async function POST(request) {
     })
     let draft = reserved?.draft
     if (!draft) throw new Error('save_not_confirmed')
+    const reflectId = draft.saved_reflect_id || draft.finalized_reflect_id
+    if (!reflectId) throw new Error('saved_reflect_required')
+    const { data: allowance, error: allowanceError } = await supabase.rpc(
+      'claim_reflect_ai_enhancement',
+      { p_user_id: input.userId, p_reflect_id: reflectId },
+    )
+    if (allowanceError || allowance?.error) {
+      throw allowanceError || new Error(allowance.error)
+    }
+    const aiEligible = allowance?.eligible === true
+    draft = { ...draft, ai_enhancement_eligible: aiEligible }
     // Admin evidence only. Confirmed removal never changes matching rules.
     // Do not accept client-provided keywords or store the journal in this queue.
-    const reflectId = draft.saved_reflect_id || draft.finalized_reflect_id
     if (reflectId && resolved.removedMatches?.length && draft.body === resolved.body) {
       const rows = resolved.removedMatches.flatMap(item => (item.matchedKeywords || []).slice(0, 10).map(keyword => ({
         reflect_id: reflectId, item_id: item.itemId, icon_name: item.displayName,
@@ -92,7 +103,7 @@ export async function POST(request) {
         if (feedbackError) console.warn('[item-learning] removal feedback failed:', feedbackError.message)
       })
     }
-    if (isPaid && profile.ai_consent_at && draft.body) {
+    if (aiEligible) {
       draft = await generateSavedReflectCopy(supabase, draft, input.userId)
     }
     return NextResponse.json({
@@ -101,6 +112,8 @@ export async function POST(request) {
       memories: draft.settlement_memories, matches: draft.matches || [],
       aiMemories: draft.ai_memories || {}, bubble: draft.bubble || null,
       isPaid, reflectsRemaining: draft.save_receipt?.reflects_remaining ?? 0,
+      xpAwarded: Number(draft.save_receipt?.xp_awarded ?? 0),
+      aiEligible, plusAiRemaining: Number(allowance?.plus_ai_remaining ?? 0),
       journalKind: draft.journal_kind || journalKind,
     })
   } catch (error) {

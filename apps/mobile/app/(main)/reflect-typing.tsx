@@ -40,6 +40,7 @@ import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import { RC, ReflectTopBar } from '../../src/components/main/reflect-shared';
 import { MatchedItemsReviewSheet, ReflectSettlementView } from '../../src/components/main/reflect-settlement';
+import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const MAX_CHARS = 5000;
 
@@ -67,6 +68,7 @@ type Phase = 'pick' | 'write' | 'result';
 export default function ReflectTypingScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const isPaid = useSubscriptionTier() !== 'free';
   const { play: playCompletionSound } = useCompletionSound();
 
   const params = useLocalSearchParams<{
@@ -114,7 +116,7 @@ export default function ReflectTypingScreen() {
 
   const shownMatches = liveMatched.filter((m) => !removedIds.has(m.itemId));
 
-  const atLimit = remaining <= 0;
+  const atLimit = !isPaid && remaining <= 0;
   const selectedPrompt = presetPrompt
     ? { id: 9, title: 'New Lens', text: presetPrompt }
     : REFLECT_PROMPTS.find((p) => p.id === promptId);

@@ -71,6 +71,10 @@ export interface PreparedReflect {
   aiMemories: Record<string, string>;
   bubble: string | null;
   isPaid: boolean;
+  xpAwarded: number;
+  /** Server-owned permission for Memory copy and Connection on this entry. */
+  aiEligible: boolean;
+  plusAiRemaining: number;
   reflectsRemaining: number;
   journalKind: JournalKind;
 }
@@ -121,6 +125,7 @@ interface CachedState {
   date: string; // YYYY-MM-DD (device-local) this count belongs to
   reflectsToday: number;
   entries?: JournalEntryStates;
+  plusAiRemaining?: number;
   lastSnapshot?: ReflectSnapshot;
 }
 
@@ -157,6 +162,8 @@ function writeCache(state: CachedState): void {
   storage.set(kReflectState.name, JSON.stringify({
     ...state,
     entries: state.entries ?? (previous?.date === state.date ? previous.entries : undefined),
+    plusAiRemaining: state.plusAiRemaining
+      ?? (previous?.date === state.date ? previous.plusAiRemaining : undefined),
   }));
 }
 
@@ -190,34 +197,51 @@ export function getJournalEntryStatesToday(): JournalEntryStates {
     : { ...AVAILABLE_ENTRIES };
 }
 
+/** Optimistic default avoids a false warning before the first server status. */
+export function getPlusAiRemainingToday(): number {
+  const cache = readCache();
+  return cache?.date === localDateStr() && typeof cache.plusAiRemaining === 'number'
+    ? Math.max(0, cache.plusAiRemaining)
+    : 2;
+}
+
 export async function fetchJournalEntryStates(): Promise<{
   entries: JournalEntryStates;
   reflectsToday: number;
   reflectsRemaining: number;
+  plusAiRemaining: number;
 }> {
   const local = getReflectStateToday();
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user?.id;
-    if (!userId) return { entries: getJournalEntryStatesToday(), ...local };
+    if (!userId) return {
+      entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
+    };
     const wire = await apiClient.get<{
       success?: boolean;
       localDate?: string;
       reflectsToday?: number;
       reflectsRemaining?: number;
+      plusAiRemaining?: number;
       journalKind?: JournalKind;
       entries?: Partial<JournalEntryStates>;
     }>(`/api/reflect/status?userId=${encodeURIComponent(userId)}`);
     if (!wire.success || wire.localDate !== localDateStr()) {
-      return { entries: getJournalEntryStatesToday(), ...local };
+      return {
+        entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
+      };
     }
     const entries = { ...AVAILABLE_ENTRIES, ...(wire.entries || {}) };
     const reflectsToday = wire.reflectsToday ?? local.reflectsToday;
     const reflectsRemaining = wire.reflectsRemaining ?? Math.max(0, DAILY_LIMIT - reflectsToday);
-    writeCache({ date: wire.localDate, reflectsToday, entries });
-    return { entries, reflectsToday, reflectsRemaining };
+    const plusAiRemaining = wire.plusAiRemaining ?? getPlusAiRemainingToday();
+    writeCache({ date: wire.localDate, reflectsToday, entries, plusAiRemaining });
+    return { entries, reflectsToday, reflectsRemaining, plusAiRemaining };
   } catch {
-    return { entries: getJournalEntryStatesToday(), ...local };
+    return {
+      entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
+    };
   }
 }
 
@@ -299,6 +323,9 @@ export async function prepareReflect(params: {
       aiMemories?: Record<string, string>;
       bubble?: string | null;
       isPaid?: boolean;
+      xpAwarded?: number;
+      aiEligible?: boolean;
+      plusAiRemaining?: number;
       reflectsRemaining?: number;
       journalKind?: JournalKind;
     }>('/api/reflect/prepare', {
@@ -330,7 +357,12 @@ export async function prepareReflect(params: {
       writeCache({
         date: localDateStr(),
         reflectsToday: DAILY_LIMIT - (wire.reflectsRemaining ?? 0),
-        entries: { ...getJournalEntryStatesToday(), [journalKind]: 'in_progress' },
+        entries: {
+          ...getJournalEntryStatesToday(),
+          [journalKind]: journalKind === 'write_freely' && wire.isPaid === true
+            ? 'available' : 'in_progress',
+        },
+        plusAiRemaining: wire.plusAiRemaining ?? getPlusAiRemainingToday(),
       });
     }
     return {
@@ -344,6 +376,9 @@ export async function prepareReflect(params: {
         aiMemories: wire.aiMemories ?? {},
         bubble: wire.bubble ?? null,
         isPaid: wire.isPaid === true,
+        xpAwarded: wire.xpAwarded ?? 0,
+        aiEligible: wire.aiEligible === true,
+        plusAiRemaining: wire.plusAiRemaining ?? getPlusAiRemainingToday(),
         reflectsRemaining: wire.reflectsRemaining ?? getReflectStateToday().reflectsRemaining,
         journalKind,
       },
@@ -440,7 +475,12 @@ export async function finalizeReflect(
       date: localDateStr(),
       reflectsToday: snapshot.reflectsToday,
       lastSnapshot: snapshot,
-      entries: { ...getJournalEntryStatesToday(), [draft.journalKind]: 'completed' },
+      entries: {
+        ...getJournalEntryStatesToday(),
+        [draft.journalKind]: draft.journalKind === 'write_freely' && draft.isPaid
+          ? 'available' : 'completed',
+      },
+      plusAiRemaining: draft.plusAiRemaining,
     });
     confirmCloverAward(snapshot.xpAwarded);
     return { ok: true, snapshot };
@@ -627,21 +667,16 @@ export type EditJournalEntryResult =
   | {
     ok: true;
     body: string;
-    matchedItems: MatchedItem[];
-    memories: ReflectMemoryDraft[];
-    shared: boolean;
   }
   | { ok: false; error: EditJournalEntryError };
 
 /**
- * Re-save one Journal Feed entry. Matching is deliberately server-owned: the
- * supplied rule revision only selects the already-published dictionary, while
- * the API returns the authoritative icons and Memory projection.
+ * Edit the written body of one published Journal. Derived Icons, Memories and
+ * Connection insights remain exactly as they were at the original save.
  */
 export async function editJournalEntry(
   reflectId: string,
   body: string,
-  matchingVersion?: { catalog: string; revision: number; itemsVersion?: string },
 ): Promise<EditJournalEntryResult> {
   const normalizedBody = body.trim();
   if (normalizedBody.length > 5000) return { ok: false, error: 'too_long' };
@@ -652,23 +687,15 @@ export async function editJournalEntry(
     const result = await apiClient.post<{
       success?: boolean;
       body?: string;
-      shared?: boolean;
-      matchedItems?: MatchedItem[];
-      memories?: ReflectMemoryDraft[];
     }>('/api/reflect/edit-entry', {
       userId,
       reflectId,
       body: normalizedBody,
-      matchingVersion,
     });
     if (!result.success) return { ok: false, error: 'network' };
-    reflectMemoryCache.delete(reflectMemoryCacheKey(userId, reflectId));
     return {
       ok: true,
       body: result.body ?? normalizedBody,
-      matchedItems: result.matchedItems ?? [],
-      memories: result.memories ?? [],
-      shared: result.shared === true,
     };
   } catch (error) {
     const code = error instanceof ApiError && typeof error.body === 'object' && error.body

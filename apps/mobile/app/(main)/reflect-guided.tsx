@@ -10,7 +10,15 @@ import { useCustomTapItems } from '@/lib/custom-tap-items';
 import { CustomTapItemSheet } from '@/components/main/custom-tap-item-sheet';
 import { canAddCustomTapItem, customTapGroupsForQuestion } from '@/lib/custom-tap-catalog';
 
-import { getReflectStateToday, prepareReflect, SELECTION_UNAVAILABLE_MESSAGE, type PreparedReflect, type ReflectError } from '@/lib/reflect-api';
+import {
+  fetchJournalEntryStates,
+  getJournalEntryStatesToday,
+  prepareReflect,
+  SELECTION_UNAVAILABLE_MESSAGE,
+  type JournalEntryStatus,
+  type PreparedReflect,
+  type ReflectError,
+} from '@/lib/reflect-api';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
 import { cacheReflectItems, fetchBags } from '@/lib/bags-api';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
@@ -45,7 +53,9 @@ export default function ReflectGuidedScreen() {
   const [selected, setSelected] = useState<Map<string, DayChoice>>(() => new Map());
   const [note, setNote] = useState('');
   const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
-  const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
+  const [tapStatus, setTapStatus] = useState<JournalEntryStatus>(
+    () => getJournalEntryStatesToday().tap_your_day,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [matching] = useState(itemRuleContext);
   const [error, setError] = useState<ReflectError | null>(null);
@@ -66,7 +76,12 @@ export default function ReflectGuidedScreen() {
   const { cellWidth } = tapItemGridMetrics(gridWidth, fontScale);
 
   useFocusEffect(useCallback(() => {
-    setRemaining(getReflectStateToday().reflectsRemaining);
+    let active = true;
+    setTapStatus(getJournalEntryStatesToday().tap_your_day);
+    void fetchJournalEntryStates().then((state) => {
+      if (active) setTapStatus(state.entries.tap_your_day);
+    });
+    return () => { active = false; };
   }, []));
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -129,7 +144,7 @@ export default function ReflectGuidedScreen() {
         // An old server may have created a partial draft. After deployment,
         // retry with a fresh key but retain every selection and the note.
         if (result.error === 'selection_unavailable') requestKey.current = null;
-        if (result.error === 'daily_limit') setRemaining(0);
+        if (result.error === 'journal_kind_used') setTapStatus('completed');
         return;
       }
       Keyboard.dismiss();
@@ -153,10 +168,10 @@ export default function ReflectGuidedScreen() {
             <ReflectTopBar onBack={onBack} />
             {phase === 'steps' && canAddCustomTapItem(question) && <Pressable disabled={!custom.ready} onPress={() => { void haptics.light(); setAddOpen(true); }} style={{ backgroundColor: '#50351D', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Inter_700Bold' }}>＋ Add</Text></Pressable>}
           </View>}
-          {remaining <= 0 && phase !== 'result' ? (
+          {tapStatus !== 'available' && phase !== 'result' ? (
             <View style={styles.center}>
-              <Text style={styles.title}>That’s three for today</Text>
-              <Text style={styles.hint}>You&apos;ve journaled 3 times today. Rest up — come back tomorrow.</Text>
+              <Text style={styles.title}>Done for today</Text>
+              <Text style={styles.hint}>You&apos;ve already used Tap Your Day today. It will be available again tomorrow.</Text>
             </View>
           ) : phase === 'steps' ? (
             <View style={{ flex: 1 }}>
@@ -215,7 +230,7 @@ export default function ReflectGuidedScreen() {
           ) : preparedDraft && (
             <ReflectSettlementView draft={preparedDraft} itemWord="Selected" onPresented={playCompletionSound} onFinalized={(snapshot) => {
               cacheReflectItems(snapshot);
-              setRemaining(snapshot.reflectsRemaining);
+              setTapStatus('completed');
               void fetchReflectFeed({ force: true });
               void fetchBags('mine');
               router.back();

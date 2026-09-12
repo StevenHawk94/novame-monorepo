@@ -5,7 +5,7 @@ import { REFLECT_COPY_VERSION, isUsableReflectMemoryCopy } from './reflect-ai'
 // An atomic, durable claim is shared by prepare and upgrade/enrich. A timeout,
 // HTTP retry, concurrent client or fresh Metro process never repeats this AI call.
 export async function generateSavedReflectCopy(supabase, draft, userId) {
-  if (!draft.saved_reflect_id || draft.finalized_reflect_id) return draft
+  if (!draft.saved_reflect_id || draft.finalized_reflect_id || draft.ai_enhancement_eligible !== true) return draft
   const { data: claimed, error } = await supabase.from('reflect_drafts')
     .update({ ai_claimed_at: new Date().toISOString() })
     .eq('id', draft.id).eq('user_id', userId)

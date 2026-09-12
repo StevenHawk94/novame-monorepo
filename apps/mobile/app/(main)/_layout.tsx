@@ -51,7 +51,10 @@ export default function MainLayout() {
           screenListeners={ratingNavigationListeners}
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#4C331B' },
+            // The launch cover owns the transition into every main screen.
+            // Keep the navigator fallback visually continuous with it so no
+            // intermediate native-stack frame can expose deep brown.
+            contentStyle: { backgroundColor: '#F8E2C1' },
           }}
         >
           <Stack.Screen

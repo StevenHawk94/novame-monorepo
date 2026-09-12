@@ -414,13 +414,13 @@ export function ReflectSettlementView({
   const [shareOpen, setShareOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [enriching, setEnriching] = useState(false);
-  const [rewardToast, setRewardToast] = useState(true);
+  const [rewardToast, setRewardToast] = useState(draft.xpAwarded > 0);
   const handleRewardDone = useCallback(() => setRewardToast(false), []);
 
   useEffect(() => { Keyboard.dismiss(); }, []);
 
   useEffect(() => {
-    if (!isPaid || !draft.hasContext || enriched.current) return;
+    if (!isPaid || !draft.aiEligible || !draft.hasContext || enriched.current) return;
     enriched.current = true;
     const empty = memories.filter((memory) => !memory.text.trim()).map((memory) => memory.itemId);
     if (empty.length === 0) return;
@@ -435,7 +435,7 @@ export function ReflectSettlementView({
       }
       setEnriching(false);
     });
-  }, [draft.draftId, draft.hasContext, isPaid]);
+  }, [draft.aiEligible, draft.draftId, draft.hasContext, isPaid]);
 
   const savedCount = memories.filter((memory) => memory.text.trim()).length;
   const hiddenCount = shared ? 0 : memories.filter((memory) => !memory.visible).length;
@@ -493,8 +493,8 @@ export function ReflectSettlementView({
           </View>
         )}
         <View pointerEvents="none" style={styles.rewardSlot}>
-          {rewardToast && (
-            <CloverBurst amount={30} durationMs={2000} riseDistance={4} onDone={handleRewardDone} />
+          {rewardToast && draft.xpAwarded > 0 && (
+            <CloverBurst amount={draft.xpAwarded} durationMs={2000} riseDistance={4} onDone={handleRewardDone} />
           )}
         </View>
         <Text style={styles.celebration}>🎉</Text>

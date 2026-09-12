@@ -122,6 +122,10 @@ async function analyzeClaimedJob(supabase, job) {
   const reflect = reflectResult.data
   const profile = profileResult.data
   if (!reflect) throw new Error('reflect_not_found')
+  // A My Logs correction must not alter the source of an already queued AI
+  // task. Migration 85 snapshots this at insert; fallback keeps deployments
+  // compatible while the API and database roll out independently.
+  const sourceBody = typeof job.source_body === 'string' ? job.source_body : reflect.body
   const journalKind = reflect.journal_kind || job.journal_kind || 'write_freely'
   if (journalKind === 'remember_together') {
     await updateJob(supabase, reflectId, {
@@ -129,7 +133,7 @@ async function analyzeClaimedJob(supabase, job) {
     })
     return { status: 'skipped' }
   }
-  if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at || !reflect.body?.trim()) {
+  if ((profile?.subscription_tier || 'free') === 'free' || !profile?.ai_consent_at || !sourceBody?.trim()) {
     await updateJob(supabase, reflectId, {
       status: 'skipped', error: null, failure_stage: null, processed_at: new Date().toISOString(),
     })
@@ -157,7 +161,7 @@ async function analyzeClaimedJob(supabase, job) {
       ? await atStage('family_index', () => readConnectionFamilies(supabase)) : []
     const generated = await atStage('connection_router', () => runConnectionRouter({
       reflectId,
-      journal: reflect.body,
+      journal: sourceBody,
       matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
       connectionEnabled: context.connectionEligible,
       familyCatalog: families,

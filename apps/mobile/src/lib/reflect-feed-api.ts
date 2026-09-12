@@ -71,7 +71,7 @@ export function getCachedFeed(): FeedDay[] {
  * fetchedAtMs=0 keeps the API authoritative on the next normal read. */
 export function patchCachedReflectEntry(
   reflectId: string,
-  patch: { body: string; itemIds: string[]; hasMemories: boolean },
+  patch: { body: string; itemIds?: string[]; hasMemories?: boolean },
 ): FeedDay[] {
   const current = getCachedFeed();
   const days = current.map((day) => {

@@ -572,13 +572,12 @@ function RootLayout() {
                 <MetaPrivacyProvider>
                   <Stack
                     screenOptions={{
-                      // Global default = the app's deep brown. The native
-                      // splash->JS handoff gap on first launch (and the index.tsx
-                      // redirect window) shows this navigator content background;
-                      // brown keeps it seamless with the Home/Quests ground
-                      // (2026-07-30 — was black, read as a purple flash).
+                      // Match the launch/entry cover. Destination screens paint
+                      // their own backgrounds, while any native-to-JS redirect
+                      // gap must remain the same light grid base rather than
+                      // flashing the historical deep-brown navigator color.
                       headerShown: false,
-                      contentStyle: { backgroundColor: '#4C331B' },
+                      contentStyle: { backgroundColor: '#F8E2C1' },
                       animation: 'none',
                     }}
                   />

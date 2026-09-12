@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { randomUUID } from 'expo-crypto';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import {
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { matchItems } from '@novame/engine';
 import { itemRuleContext } from '@/lib/item-rule-cache';
@@ -39,8 +39,10 @@ import { ReflectCelebration } from '@/components/main/reflect-celebration';
 import { BACKGROUNDS } from '@/lib/icons';
 import { fetchReflectFeed } from '@/lib/reflect-feed-api';
 import {
-  getReflectStateToday,
+  fetchJournalEntryStates,
+  getJournalEntryStatesToday,
   prepareReflect,
+  type JournalEntryStatus,
   type MatchedItem,
   type PreparedReflect,
   type ReflectError,
@@ -83,8 +85,19 @@ export default function SharedMemoryCreateScreen() {
   const submitLock = useRef(false);
   useReflectExitGuard(submitting);
   const [preparedDraft, setPreparedDraft] = useState<PreparedReflect | null>(null);
-  const [remaining, setRemaining] = useState(() => getReflectStateToday().reflectsRemaining);
+  const [rememberStatus, setRememberStatus] = useState<JournalEntryStatus>(
+    () => getJournalEntryStatesToday().remember_together,
+  );
   const isPaid = useSubscriptionTier() !== 'free';
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setRememberStatus(getJournalEntryStatesToday().remember_together);
+    void fetchJournalEntryStates().then((state) => {
+      if (active) setRememberStatus(state.entries.remember_together);
+    });
+    return () => { active = false; };
+  }, []));
 
   useEffect(() => {
     if (routeFriendId) {
@@ -109,7 +122,7 @@ export default function SharedMemoryCreateScreen() {
   }, [text]);
 
   const shownMatches = liveMatched.filter((match) => !removedIds.has(match.itemId));
-  const atLimit = remaining <= 0;
+  const atLimit = rememberStatus !== 'available';
 
   function removeMatch(itemId: string) {
     void haptics.light();
@@ -150,7 +163,7 @@ export default function SharedMemoryCreateScreen() {
         router.replace('/(main)/(modals)/subscription-paywall?phase=plans' as never);
         return;
       }
-      if (response.error === 'daily_limit') setRemaining(0);
+      if (response.error === 'journal_kind_used') setRememberStatus('completed');
       appAlert('Could not save that', ERROR_MESSAGE[response.error]);
       return;
     }
@@ -180,7 +193,7 @@ export default function SharedMemoryCreateScreen() {
                 itemWord="Matched"
                 shared
                 onFinalized={(snapshot) => {
-                  setRemaining(snapshot.reflectsRemaining);
+                  setRememberStatus('completed');
                   if (snapshot.bubble) setReflectBubble(snapshot.bubble);
                   notifySharedBoxChanged(friendUserId, snapshot.sharedItems.map((item) => ({
                     ...item,
@@ -202,8 +215,8 @@ export default function SharedMemoryCreateScreen() {
             </View>
           ) : atLimit ? (
             <View style={styles.centerState}>
-              <Text style={styles.stateTitle}>That’s three for today</Text>
-              <Text style={styles.stateBody}>{ERROR_MESSAGE.daily_limit}</Text>
+              <Text style={styles.stateTitle}>Done for today</Text>
+              <Text style={styles.stateBody}>{ERROR_MESSAGE.journal_kind_used}</Text>
             </View>
           ) : (
             <View style={styles.form}>
