@@ -322,6 +322,7 @@ test('final Quest completion preserves the active run across the picker and prel
     '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
     '@/lib/haptics': { haptics: { success() {}, pageOpen() {} } },
     '@/lib/use-completion-sound': { useCompletionSound: () => ({ play: () => soundCount++ }) },
+    '@/lib/ui-idle': { afterUiSettles: (fn) => { fn(); return () => {}; } },
     '@/lib/cosmetics-api': { optimisticCloverAward(amount) {
       awards.push(amount); return { commit: (amount) => awards.push(amount), rollback() { assert.fail('unexpected rollback'); } };
     } },

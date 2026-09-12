@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, type AppStateStatus } from 'react-native';
+import { AppState, Linking, Platform, type AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Sentry from '@sentry/react-native';
@@ -69,6 +69,7 @@ import {
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
 import { warmEntryBackgrounds } from '@/lib/prefetch';
 import { MetaPrivacyProvider } from '@/components/privacy/meta-privacy-provider';
+import { stageForegroundJobs } from '@/lib/ui-idle';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -362,28 +363,37 @@ function RootLayout() {
 
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
+    let cancelForegroundJobs: (() => void) | null = null;
     const handleAppStateChange = (state: AppStateStatus) => {
       observeHomeEntryAppState(state);
+      cancelForegroundJobs?.();
+      cancelForegroundJobs = null;
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
-        // R2 work runs only while the app is in use. Android waits for the
-        // first bundled destination to paint, then fills P0 through one idle,
-        // file-only worker; visible requests can move to the front.
-        resumeDownloadQueue();
-        void touchActivity();
-        void reconcileDailyReminderSchedule();
-        void syncRemoteNotificationRegistration();
-        void checkContentVersionInBackground();
-        void resumeSubscriptionRealtime().catch((error) => {
-          console.warn('[layout] entitlement realtime resume failed:', error);
-        });
-        // Google Play can complete a pending purchase while the app is in the
-        // background. Re-query on every foreground entry so entitlement and
-        // acknowledgement recover without another Subscribe tap.
-        void reconcileAvailablePurchases();
-        void resumePairingRealtime().catch((error) => {
-          console.warn('[layout] pairing realtime resume failed:', error);
-        });
+        // Cache is already paintable. Stagger recovery work after the first
+        // interaction frame instead of starting seven native/network jobs at
+        // once while Home or the current tab is becoming visible.
+        cancelForegroundJobs = stageForegroundJobs([
+          { delayMs: 0, run: () => { void touchActivity(); } },
+          { delayMs: 80, run: () => {
+            void resumeSubscriptionRealtime().catch((error) => {
+              console.warn('[layout] entitlement realtime resume failed:', error);
+            });
+          } },
+          { delayMs: 180, run: () => {
+            void resumePairingRealtime().catch((error) => {
+              console.warn('[layout] pairing realtime resume failed:', error);
+            });
+          } },
+          // Google Play can complete a pending purchase in the background.
+          { delayMs: 420, run: () => { void reconcileAvailablePurchases(); } },
+          { delayMs: 650, run: () => { void syncRemoteNotificationRegistration(); } },
+          { delayMs: 900, run: () => { void reconcileDailyReminderSchedule(); } },
+          { delayMs: 1_150, run: () => { void checkContentVersionInBackground(); } },
+          // R2 work is file-only/idle on Android, but starting its native task
+          // inventory after recovery prevents competition with the first tab.
+          { delayMs: Platform.OS === 'android' ? 3_800 : 1_350, run: resumeDownloadQueue },
+        ]);
       } else {
         supabase.auth.stopAutoRefresh();
         pauseDownloadQueue();
@@ -528,6 +538,7 @@ function RootLayout() {
     });
 
     return () => {
+      cancelForegroundJobs?.();
       appStateSub.remove();
       authSub.unsubscribe();
       void stopSubscriptionRealtime().catch((error) => {

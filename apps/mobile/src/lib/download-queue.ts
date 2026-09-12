@@ -75,6 +75,9 @@ type QueueTask = {
 const tasks = new Map<string, QueueTask>();
 const taskWaiters = new Map<string, Set<(ok: boolean) => void>>();
 const listeners = new Set<() => void>();
+const keyedListeners = new Map<string, Set<() => void>>();
+const keyedRevisions = new Map<string, number>();
+const pendingReadyKeys = new Set<string>();
 let activeCount = 0;
 let started = false;
 let paused = AppState.currentState !== 'active';
@@ -84,16 +87,30 @@ let revision = 0;
 let androidUiReady = false;
 let androidIdlePermit = false;
 let androidIdleHandle: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
+let uiYieldGeneration = 0;
 
-function notifyAssetReady(): void {
+function notifyAssetReady(key: string): void {
   revision += 1;
+  if (keyedListeners.has(key)) {
+    keyedRevisions.set(key, (keyedRevisions.get(key) ?? 0) + 1);
+    pendingReadyKeys.add(key);
+  }
   // A fresh install can finish dozens of tiny thumbnails in quick succession.
   // Coalesce their UI invalidations so Home/Closet do not re-render once per
   // file while preserving immediate eventual repaint after failures recover.
-  if (listeners.size === 0 || notifyTimer) return;
+  if (listeners.size === 0 && keyedListeners.size === 0) {
+    pendingReadyKeys.clear();
+    return;
+  }
+  if (notifyTimer) return;
   notifyTimer = setTimeout(() => {
     notifyTimer = null;
     for (const listener of listeners) listener();
+    const readyKeys = [...pendingReadyKeys];
+    pendingReadyKeys.clear();
+    for (const readyKey of readyKeys) {
+      for (const listener of keyedListeners.get(readyKey) ?? []) listener();
+    }
   }, 200);
 }
 
@@ -119,6 +136,20 @@ export function subscribeR2AssetChanges(listener: () => void): () => void {
 
 export function getR2AssetRevision(): number {
   return revision;
+}
+
+export function subscribeR2AssetKeyChanges(key: string, listener: () => void): () => void {
+  const current = keyedListeners.get(key) ?? new Set<() => void>();
+  current.add(listener);
+  keyedListeners.set(key, current);
+  return () => {
+    current.delete(listener);
+    if (current.size === 0) keyedListeners.delete(key);
+  };
+}
+
+export function getR2AssetKeyRevision(key: string): number {
+  return keyedRevisions.get(key) ?? 0;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -213,7 +244,7 @@ async function runTask(task: QueueTask): Promise<void> {
     // Background Android P0 files are intentionally silent: no mounted screen
     // needs them yet, so repainting Home after every file would create jank.
     // A promoted/visible task (or the tiny catalog) still publishes promptly.
-    if (!IS_ANDROID || task.priority < 0) notifyAssetReady();
+    if (!IS_ANDROID || task.priority < 0) notifyAssetReady(task.key);
     settleTask(task.key, true);
   } catch {
     task.attempts += 1;
@@ -519,6 +550,18 @@ export function resumeDownloadQueue(): void {
   pump();
 }
 
+/** Give navigation/stack transitions priority over speculative disk work. */
+export function yieldDownloadQueueForInteraction(): void {
+  const expectedGeneration = ++uiYieldGeneration;
+  pauseDownloadQueue();
+  InteractionManager.runAfterInteractions(() => {
+    setTimeout(() => {
+      if (expectedGeneration !== uiYieldGeneration || AppState.currentState !== 'active') return;
+      resumeDownloadQueue();
+    }, 120);
+  });
+}
+
 /** Called only after Android's first bundled destination has painted. */
 export function markAndroidP0UiReady(): void {
   if (!IS_ANDROID || androidUiReady) return;
@@ -563,8 +606,11 @@ export function bumpToFront(filename: string): void {
 }
 
 export function resetDownloadQueue(): void {
+  uiYieldGeneration += 1;
   for (const key of taskWaiters.keys()) settleTask(key, false);
   tasks.clear();
+  keyedRevisions.clear();
+  pendingReadyKeys.clear();
   activeCount = 0;
   started = false;
   paused = true;

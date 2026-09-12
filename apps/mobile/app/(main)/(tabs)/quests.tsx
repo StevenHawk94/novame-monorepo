@@ -26,6 +26,7 @@ import {
   getCachedStatus,
   type QuestStatus,
 } from '@/lib/quests-api';
+import { afterUiSettles } from '@/lib/ui-idle';
 
 
 const THEME_ART: Record<string, { icon: ImageSourcePropType; color: string }> = {
@@ -67,27 +68,38 @@ export default function QuestsScreen() {
   const checkInFlight = useRef(false);
   const statusRevision = useRef(0);
   const navigationInFlight = useRef(false);
+  const cancelBlurReset = useRef<(() => void) | null>(null);
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      cancelBlurReset.current?.();
+      cancelBlurReset.current = null;
       screenActive.current = true;
       navigationInFlight.current = false;
       const revision = statusRevision.current;
       const epoch = sessionEpoch();
-      void fetchQuestStatus().then((next) => {
-        if (screenActive.current && epoch === sessionEpoch() && revision === statusRevision.current) setStatus(next);
-      });
+      const cancelRefresh = afterUiSettles(() => {
+        void fetchQuestStatus().then((next) => {
+          if (screenActive.current && epoch === sessionEpoch() && revision === statusRevision.current) {
+            setStatus((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+          }
+        });
+      }, { delayMs: 80 });
       return () => {
+        cancelRefresh();
         screenActive.current = false;
         pendingPlanReward.current = null;
-        // A tab is retained, not unmounted. Consume its visual event on exit;
-        // returning to Quests must never replay a previous task completion.
+        // A tab is retained, not unmounted. Consume its visual event after the
+        // navigation transition so blur does not rebuild a hidden heavy tree.
         celebrationPlaying.current = false;
         celebrationKey.current += 1;
-        setCelebrationRun({ key: celebrationKey.current, active: false });
         rewardKey.current += 1;
-        setRewardRun(null);
+        cancelBlurReset.current = afterUiSettles(() => {
+          if (screenActive.current) return;
+          setCelebrationRun({ key: celebrationKey.current, active: false });
+          setRewardRun(null);
+        }, { delayMs: 80, requireForeground: false });
       };
     }, []),
   );

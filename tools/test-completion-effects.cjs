@@ -113,6 +113,7 @@ test('sound hook preloads only while focused, dedupes a draft and cannot auto-re
       const p = player(); players.push(p); return p;
     } },
     './completion-sound-player': h.controller,
+    './ui-idle': { afterUiSettles: (fn) => { fn(); return () => {}; } },
     '../../assets/music/reflection-finished.mp3': 123,
   });
   const hook = useCompletionSound(); assert.equal(players.length, 0);

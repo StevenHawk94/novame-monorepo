@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { requireAiConsent } from '@/lib/ai-consent';
-import { prioritizeR2Image } from '@/lib/download-queue';
+import { prioritizeR2Image, subscribeR2AssetChanges } from '@/lib/download-queue';
 import { invalidateAndroidR2CachedFile } from '@/lib/android-r2-file-cache';
 import { useR2AssetRevision } from '@/lib/use-r2-asset-revision';
 import { haptics } from '@/lib/haptics';
@@ -40,6 +40,8 @@ import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
 import { syncWidgetLatestFriend } from '@/lib/widget-sync';
 import { getCachedFriendFeed } from '@/lib/friends-api';
 import { consumeHomeRefresh, subscribeHomeRefresh } from '@/lib/home-refresh-signal';
+import { afterUiSettles } from '@/lib/ui-idle';
+import { getEquippedOutfitKey } from '@/lib/outfits';
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -63,17 +65,39 @@ function visibleAiBubble(tier: ReturnType<typeof useSubscriptionTierState>): Fre
   return getFreshBubbleState();
 }
 
+function sameMemoryBubbles(a: MemoryBubble[], b: MemoryBubble[]): boolean {
+  return a.length === b.length && a.every((item, index) => {
+    const other = b[index];
+    return item.id === other?.id
+      && item.memoryText === other.memoryText
+      && item.friendName === other.friendName
+      && item.slot === other.slot;
+  });
+}
+
+function sameFreshBubble(a: FreshBubble | null, b: FreshBubble | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.line === b.line && a.atMs === b.atMs && a.expiresAtMs === b.expiresAtMs;
+}
+
 export default function HomeScreen() {
   const homeEntry = useHomeEntry();
-  const r2AssetRevision = useR2AssetRevision();
+  const selectedSceneRemoteUrl = getHomeSceneRemoteUrl();
+  // Unrelated P0 completions must not recycle Home's full-screen scene. Only
+  // the selected scene file can advance this revision.
+  const r2AssetRevision = useR2AssetRevision(selectedSceneRemoteUrl);
   const router = useRouter();
   const subscriptionTier = useSubscriptionTierState();
   const [bubbles, setBubbles] = useState<MemoryBubble[]>(getCachedTodayBubbles);
+  const [, setPersonalizationRevision] = useState(0);
+  const personalizationKeyRef = useRef(
+    `${selectedSceneRemoteUrl ?? 'bundled'}|${getEquippedOutfitKey() ?? 'default'}`,
+  );
   const [firstPartnerReflect, setFirstPartnerReflect] = useState<{
     partnerId: string;
     name: string;
   } | null>(null);
-  const [, setCosmeticTick] = useState(0);
   const [defaultSpeech, setDefaultSpeech] = useState(getLaunchDefaultBubble);
   const [aiBubble, setAiBubble] = useState<FreshBubble | null>(() => visibleAiBubble(subscriptionTier));
   const [connectionUpdateSpeech, setConnectionUpdateSpeech] = useState<string | null>(null);
@@ -92,7 +116,7 @@ export default function HomeScreen() {
   const applyAiBubble = useCallback((next: FreshBubble | null) => {
     const previous = aiBubbleRef.current;
     aiBubbleRef.current = next;
-    setAiBubble(next);
+    setAiBubble((current) => sameFreshBubble(current, next) ? current : next);
     // Covers both a live timeout and returning from a long background pause.
     if (previous && !next && Date.now() >= previous.expiresAtMs) {
       setDefaultSpeech(advanceDefaultBubble());
@@ -104,18 +128,13 @@ export default function HomeScreen() {
   }, [applyAiBubble, subscriptionTier]);
 
   useEffect(() => {
-    // A completed R2 cache write increments the revision. Let Android retry a
-    // scene that previously failed instead of pinning the bundled fallback for
-    // the rest of the process lifetime.
-    if (Platform.OS === 'android') setFailedAndroidSceneUri(null);
-  }, [r2AssetRevision]);
-
-  useEffect(() => {
     // R2 icon replacements finish asynchronously after the feed itself. Push
     // the newly cached image paths into both native widgets on that revision,
     // instead of leaving the widget on its previous bundled image.
-    void syncWidgetLatestFriend(getCachedFriendFeed(), getCachedPairing());
-  }, [r2AssetRevision]);
+    return subscribeR2AssetChanges(() => {
+      void syncWidgetLatestFriend(getCachedFriendFeed(), getCachedPairing());
+    });
+  }, []);
 
   // Reflect finalization writes MMKV before its route closes. Subscribe to
   // that local write so Home is already showing the new line when revealed,
@@ -169,7 +188,7 @@ export default function HomeScreen() {
 
   const refreshHomeBubbles = useCallback(async (force = false) => {
     const nextBubbles = await loadTodayBubbles({ force });
-    setBubbles(nextBubbles);
+    setBubbles((current) => sameMemoryBubbles(current, nextBubbles) ? current : nextBubbles);
     // Mark data ready only after the bubble state is queued for the mounted
     // Home. HomeEntryGate adds two paint frames before reveal, so users never
     // see an empty Home followed by bubbles/feed popping into place.
@@ -195,7 +214,7 @@ export default function HomeScreen() {
     // ordinary modal-close refreshes still update Home without a full gate.
     if (getHomeEntryState().pending) return;
     consumeHomeRefresh();
-    void refreshHomeBubbles(true);
+    afterUiSettles(() => { void refreshHomeBubbles(true); }, { delayMs: 80 });
   }), [refreshHomeBubbles]);
 
   useEffect(() => {
@@ -209,19 +228,25 @@ export default function HomeScreen() {
       homeFocusedRef.current = true;
       setConnectionUpdateSpeech(null);
       applyConnectionUpdateSpeech();
-      // Cache refreshes are independent of the bounded navigation tap guard.
-      // A slow read or a queued automatic prompt never disables Home.
-      setCosmeticTick((t) => t + 1);
-      applyAiBubble(visibleAiBubble(subscriptionTier));
-      // A pending entry attempt is handled by the effect above so its forced
-      // notification refresh cannot race a second cache-first request.
-      if (!getHomeEntryState().pending) {
-        void refreshHomeBubbles(consumeHomeRefresh());
+      // Outfit/scene selection is local-only. Repaint Home only when that
+      // actual selection changed, rather than on every return from Focus or
+      // another retained screen.
+      const nextPersonalizationKey = `${getHomeSceneRemoteUrl() ?? 'bundled'}|${getEquippedOutfitKey() ?? 'default'}`;
+      if (nextPersonalizationKey !== personalizationKeyRef.current) {
+        personalizationKeyRef.current = nextPersonalizationKey;
+        setPersonalizationRevision((current) => current + 1);
       }
-      // Warm every tab's cache in the background (throttled) so switching
-      // tabs paints instantly instead of cold-loading.
-      prefetchAppData();
+      applyAiBubble(visibleAiBubble(subscriptionTier));
+      // Stack returns (notably Focus) must paint Home before any cache
+      // reconciliation. Notification entry remains owned by HomeEntryGate.
+      const cancelDeferred = afterUiSettles(() => {
+        if (!getHomeEntryState().pending) {
+          void refreshHomeBubbles(consumeHomeRefresh());
+        }
+        prefetchAppData();
+      }, { delayMs: 80 });
       return () => {
+        cancelDeferred();
         homeFocusedRef.current = false;
         setConnectionUpdateSpeech(null);
       };
@@ -254,7 +279,6 @@ export default function HomeScreen() {
   });
 
   const selectedSceneImg = getHomeSceneSource();
-  const selectedSceneRemoteUrl = getHomeSceneRemoteUrl();
   const selectedSceneUri = typeof selectedSceneImg === 'object' ? selectedSceneImg.uri : null;
   const sceneImg = Platform.OS === 'android'
     && selectedSceneUri

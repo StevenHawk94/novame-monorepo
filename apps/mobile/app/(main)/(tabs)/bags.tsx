@@ -34,6 +34,8 @@ import { haptics } from '@/lib/haptics';
 import { refreshRemoteItems } from '@/lib/remote-items';
 import { subscribePairingRealtime } from '@/lib/pairing-realtime';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { subscribeToReflectBubble } from '@/lib/bubble-store';
+import { afterUiSettles } from '@/lib/ui-idle';
 
 type CollectionTab = 'mine' | 'their' | 'ours';
 
@@ -50,6 +52,36 @@ const TAB_GRID: Record<CollectionTab, { base: string; line: string }> = {
 };
 
 const COLLECTION_PAGE_SIZE = 100;
+
+function sameItems(a: CollectedItem[], b: CollectedItem[]): boolean {
+  return a.length === b.length && a.every((item, index) => {
+    const other = b[index];
+    return Boolean(other)
+      && item.itemId === other.itemId
+      && item.displayName === other.displayName
+      && item.rarity === other.rarity
+      && item.emoji === other.emoji
+      && item.category === other.category
+      && item.count === other.count
+      && item.firstSeenAt === other.firstSeenAt
+      && item.memoriesComplete === other.memoriesComplete
+      && item.nextMemoryBeforeCreatedAt === other.nextMemoryBeforeCreatedAt
+      && item.nextMemoryBeforeId === other.nextMemoryBeforeId
+      && item.memories.length === other.memories.length
+      && item.memories.every((memory, memoryIndex) => {
+        const otherMemory = other.memories[memoryIndex];
+        return Boolean(otherMemory)
+          && memory.excerpt === otherMemory.excerpt
+          && memory.rawExcerpt === otherMemory.rawExcerpt
+          && memory.reflectId === otherMemory.reflectId
+          && memory.createdAt === otherMemory.createdAt;
+      });
+  });
+}
+
+function samePairing(a: PairingStatus | null, b: PairingStatus | null): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 /**
  * Bags is one collection split by ownership:
@@ -102,7 +134,7 @@ export default function BagsScreen() {
     const currentIds = new Set(ourItemsRef.current.map((item) => item.itemId));
     const newlyVisible = next.reduce((count, item) => count + (currentIds.has(item.itemId) ? 0 : 1), 0);
     ourItemsRef.current = next;
-    setOurItems(next);
+    setOurItems((current) => sameItems(current, next) ? current : next);
     // Keep every tile that was already visible in view when new unique items
     // are prepended. Otherwise slice(0, 100) makes the same number of old tail
     // tiles appear to have been overwritten until another pagination event.
@@ -121,34 +153,19 @@ export default function BagsScreen() {
     useCallback(() => {
       let active = true;
       const screenGeneration = ++screenRefreshGeneration.current;
-      // Six-hour TTL is evaluated lazily here; rendering always uses the local
-      // bundled + cached dictionary first.
-      void refreshRemoteItems();
-      // Repaint persistent snapshots first. Network work only runs when the
-      // corresponding snapshot is stale, so revisiting this tab is instant.
-      const cachedPair = getCachedPairing();
-      setMineItems(getCachedBags());
-      setMineHistoryComplete(isBagsHistoryComplete('mine'));
-      if (cachedPair) setPairing(cachedPair);
-      if (cachedPair?.paired && cachedPair.partner) {
-        setTheirItems(getCachedTheirBags(cachedPair.partner.userId));
-        setTheirHistoryComplete(isBagsHistoryComplete('their', cachedPair.partner.userId));
-        const cachedShared = getCachedSharedBox(cachedPair.partner.userId);
-        applyOurItems(cachedShared.items);
-        setOursUnread(cachedShared.hasUnreadFromPartner);
-        setOursReadThrough(cachedShared.readThrough);
-        setOursHistoryComplete(cachedShared.historyComplete);
-      }
-      setLoaded(true);
-
-      const pairPromise = cachedPair && !isPairingCacheStale()
-        ? Promise.resolve(cachedPair)
-        : fetchPairing();
-      void Promise.all([refreshBagsIfStale(), pairPromise]).then(async ([mine, pair]) => {
+      const cancelDeferred = afterUiSettles(() => {
+        // The mounted/preloaded state is the first frame. Cache parsing and
+        // TTL reconciliation start only after the tab transition settles.
+        void refreshRemoteItems();
+        const cachedPair = getCachedPairing();
+        const pairPromise = cachedPair && !isPairingCacheStale()
+          ? Promise.resolve(cachedPair)
+          : fetchPairing();
+        void Promise.all([refreshBagsIfStale(), pairPromise]).then(async ([mine, pair]) => {
         if (!active || screenGeneration !== screenRefreshGeneration.current) return;
-        setMineItems(mine);
+        setMineItems((current) => sameItems(current, mine) ? current : mine);
         setMineHistoryComplete(isBagsHistoryComplete('mine'));
-        setPairing(pair);
+        setPairing((current) => samePairing(current, pair) ? current : pair);
 
         if (pair.paired && pair.partner) {
           const sharedGeneration = ++sharedRefreshGeneration.current;
@@ -160,7 +177,7 @@ export default function BagsScreen() {
               : Promise.resolve(cachedShared),
           ]);
           if (!active || screenGeneration !== screenRefreshGeneration.current) return;
-          setTheirItems(theirs);
+          setTheirItems((current) => sameItems(current, theirs) ? current : theirs);
           setTheirHistoryComplete(isBagsHistoryComplete('their', pair.partner.userId));
           if (sharedGeneration === sharedRefreshGeneration.current) {
             applyOurItems(shared.items);
@@ -177,10 +194,23 @@ export default function BagsScreen() {
           setOursHistoryComplete(true);
         }
         setLoaded(true);
-      });
-      return () => { active = false; };
+        });
+      }, { delayMs: 80 });
+      return () => {
+        active = false;
+        cancelDeferred();
+      };
     }, [applyOurItems]),
   );
+
+  // Own Journal settlement updates the Mine cache before publishing its Home
+  // bubble signal. Keep the preloaded Memories tree current without waiting
+  // for its next focus callback to parse and repaint the full collection.
+  useEffect(() => subscribeToReflectBubble(() => {
+    const next = getCachedBags();
+    setMineItems((current) => sameItems(current, next) ? current : next);
+    setMineHistoryComplete(isBagsHistoryComplete('mine'));
+  }), []);
 
   const shown = useMemo(() => {
     if (tab === 'their') return theirItems;
@@ -254,7 +284,7 @@ export default function BagsScreen() {
   useEffect(() => {
     return subscribePairingRealtime((snapshot) => {
       const nextPartner = snapshot.pairing.paired ? snapshot.pairing.partner : null;
-      setPairing(snapshot.pairing);
+      setPairing((current) => samePairing(current, snapshot.pairing) ? current : snapshot.pairing);
       if (!nextPartner) {
         setTheirItems([]);
         setTheirHistoryComplete(true);
@@ -262,7 +292,8 @@ export default function BagsScreen() {
       }
       // Realtime carries only an invalidation. pairing-realtime has already
       // refreshed the protected Bags endpoint before publishing this snapshot.
-      setTheirItems(getCachedTheirBags(nextPartner.userId));
+      const nextItems = getCachedTheirBags(nextPartner.userId);
+      setTheirItems((current) => sameItems(current, nextItems) ? current : nextItems);
       setTheirHistoryComplete(isBagsHistoryComplete('their', nextPartner.userId));
     });
   }, []);

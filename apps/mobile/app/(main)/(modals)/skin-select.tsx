@@ -40,6 +40,7 @@ import {
   setEquippedOutfitKey,
   type OutfitDef,
 } from '../../../src/lib/outfits';
+import { afterUiSettles } from '../../../src/lib/ui-idle';
 
 type OutfitGridItem =
   | { kind: 'default' }
@@ -84,27 +85,47 @@ export default function OutfitClosetScreen() {
     router.back();
   };
 
-  useEffect(() => subscribeCosmetics(setCosmetics), []);
+  useEffect(() => subscribeCosmetics((next) => {
+    setCosmetics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+  }), []);
 
   useFocusEffect(
     useCallback(() => {
       closing.current = false;
       setBusy(false);
       setSwitching(false);
-      void fetchOutfitCatalog().then(setCatalog);
-      void fetchCosmetics().then(setCosmetics);
+      return afterUiSettles(() => {
+        void fetchOutfitCatalog().then((next) => {
+          setCatalog((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        });
+        void fetchCosmetics().then((next) => {
+          setCosmetics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        });
+      }, { delayMs: 100 });
     }, []),
   );
 
   // Prefetch worn-preview images so tapping cards feels instant.
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      for (const outfit of catalog.slice(0, 6)) {
-        prioritizeR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion));
+    let stopped = false;
+    const cancelDeferred = afterUiSettles(() => {
+      if (Platform.OS === 'android') {
+        for (const outfit of catalog.slice(0, 6)) {
+          prioritizeR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion));
+        }
+        return;
       }
-      return;
-    }
-    for (const o of catalog) void ExpoImage.prefetch(outfitAssetUrl(o.bunny, o.assetVersion));
+      void (async () => {
+        for (const outfit of catalog) {
+          if (stopped) return;
+          await ExpoImage.prefetch(outfitAssetUrl(outfit.bunny, outfit.assetVersion), { cachePolicy: 'memory-disk' });
+        }
+      })();
+    }, { delayMs: 140 });
+    return () => {
+      stopped = true;
+      cancelDeferred();
+    };
   }, [catalog]);
 
   const preview = catalog.find((o) => o.key === previewKey) ?? null;

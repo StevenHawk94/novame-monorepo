@@ -11,6 +11,7 @@ import { ICONS } from '@/lib/icons';
 import { HomeEntryImage } from './home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { isHomeEntryRoute, markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
+import { yieldDownloadQueueForInteraction } from '@/lib/download-queue';
 
 /**
  * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
@@ -29,8 +30,8 @@ const TABS: ReadonlyArray<{ name: 'index' | 'bags' | 'quests' | 'friends' | 'sta
 // inactive route without focusing it, so useFocusEffect network refreshes do
 // not run until the user actually visits the tab.
 const TAB_PRELOAD_ORDER = ['quests', 'friends', 'bags', 'status'] as const;
-const TAB_PRELOAD_START_DELAY_MS = 400;
-const TAB_PRELOAD_SETTLE_MS = 500;
+const TAB_PRELOAD_START_DELAY_MS = 650;
+const TAB_PRELOAD_SETTLE_MS = 700;
 
 type TabBarTheme = {
   background: string;
@@ -171,7 +172,10 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const handleTabPress = (routeName: string, isFocused: boolean) => {
     // A real user action always outranks speculative background mounting.
-    if (!isFocused) stopPreloading.current?.();
+    if (!isFocused) {
+      stopPreloading.current?.();
+      yieldDownloadQueueForInteraction();
+    }
     void haptics.pageOpen();
     const route = routesByName.get(routeName);
     if (!route) return;

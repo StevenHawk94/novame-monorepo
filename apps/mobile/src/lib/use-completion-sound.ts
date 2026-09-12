@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { createCompletionSoundPlayer } from './completion-sound-player';
+import { afterUiSettles } from './ui-idle';
 
 const COMPLETION_SOUND = require('../../assets/music/reflection-finished.mp3');
 
@@ -33,13 +34,15 @@ export function useCompletionSound() {
         console.warn('[completion-sound] audio unavailable:', error);
       }
     };
-    prepare();
+    let cancelPrepare = afterUiSettles(prepare, { delayMs: 80 });
     const appState = AppState.addEventListener('change', (state) => {
       // Release rather than merely pause: expo-audio can auto-resume previously
       // playing native players on foreground. A completed chime must not resume.
-      if (state === 'active') prepare(); else release();
+      cancelPrepare();
+      if (state === 'active') cancelPrepare = afterUiSettles(prepare, { delayMs: 80 });
+      else release();
     });
-    return () => { appState.remove(); release(); };
+    return () => { cancelPrepare(); appState.remove(); release(); };
   }, []));
   const play = useCallback((eventId?: string) => {
     if (eventId && lastEvent.current === eventId) return;

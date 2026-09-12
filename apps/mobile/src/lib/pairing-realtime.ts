@@ -4,16 +4,21 @@ import {
   fetchFriendFeed,
   fetchFriends,
   fetchConnectionHistory,
+  fetchInsights,
   fetchPairing,
+  getCachedConnectionHistory,
   getCachedPairing,
   notifyRemoteSharedBoxChanged,
   type FeedEntry,
   type FriendsStatus,
   type PairingStatus,
+  markConnectionDashboardRefreshed,
+  shouldRefreshConnectionDashboard,
 } from './friends-api';
 import { supabase } from './supabase';
 import { invalidateConnectionDashboard } from './connection-analysis-cache';
 import { fetchBags } from './bags-api';
+import { getCachedSubscriptionTier } from './subscription';
 
 export type PairingRealtimeSnapshot = {
   pairing: PairingStatus;
@@ -34,8 +39,11 @@ let channel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
 let generation = 0;
 let reconcileInFlight: Promise<void> | null = null;
+let reconcileQueued: 'pairing' | 'reflect' | null = null;
 let friendshipReconcileInFlight: Promise<void> | null = null;
 let friendshipReconcileQueued = false;
+let connectionReconcileInFlight: Promise<void> | null = null;
+let connectionReconcileQueuedChanged = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectAttempted = false;
 let channelHealthy = false;
@@ -80,6 +88,54 @@ function publishConnectionChanged(): void {
   }
 }
 
+async function reconcileConnection(
+  userId: string,
+  expectedGeneration: number,
+  options?: { knownChanged?: boolean },
+): Promise<void> {
+  if (connectionReconcileInFlight) {
+    if (options?.knownChanged) connectionReconcileQueuedChanged = true;
+    return connectionReconcileInFlight;
+  }
+  const request = (async () => {
+    const previousHistory = getCachedConnectionHistory();
+    if (options?.knownChanged) invalidateConnectionDashboard();
+    const nextHistory = await fetchConnectionHistory({ incremental: true });
+    const historyChanged = nextHistory.ok && (
+      !previousHistory?.ok
+      || nextHistory.cards.length !== previousHistory.cards.length
+      || nextHistory.cards[0]?.id !== previousHistory.cards[0]?.id
+    );
+    const shouldFetchDashboard = getCachedSubscriptionTier() !== 'free'
+      && (options?.knownChanged === true || historyChanged || shouldRefreshConnectionDashboard());
+    const insightResult = shouldFetchDashboard ? await fetchInsights() : null;
+    if (activeUserId !== userId || generation !== expectedGeneration) return;
+    if (insightResult?.ok && insightResult.refreshPending !== true) {
+      markConnectionDashboardRefreshed();
+    }
+    // Publish only after persistent caches contain the recovered result. A
+    // preloaded hidden Connection screen can then update once, off the user's
+    // navigation frame, and the next click paints the latest snapshot.
+    publishConnectionChanged();
+  })().catch((error) => {
+    console.warn('[pairing] Connection reconcile failed:', error);
+  }).finally(() => {
+    // An old account's request may settle after stop/start has installed a new
+    // in-flight request. It must not consume the new account's queued signal.
+    if (connectionReconcileInFlight === request) {
+      connectionReconcileInFlight = null;
+      if (connectionReconcileQueuedChanged) {
+        connectionReconcileQueuedChanged = false;
+        if (activeUserId === userId && generation === expectedGeneration) {
+          void reconcileConnection(userId, expectedGeneration, { knownChanged: true });
+        }
+      }
+    }
+  });
+  connectionReconcileInFlight = request;
+  return request;
+}
+
 async function reconcileFriendships(userId: string, expectedGeneration: number): Promise<void> {
   if (friendshipReconcileInFlight) {
     // Coalesce any number of overlapping invalidations into exactly one
@@ -96,11 +152,13 @@ async function reconcileFriendships(userId: string, expectedGeneration: number):
       console.warn('[pairing] friendship realtime reconcile failed:', error);
     }
   })().finally(() => {
-    if (friendshipReconcileInFlight === request) friendshipReconcileInFlight = null;
-    if (friendshipReconcileQueued) {
-      friendshipReconcileQueued = false;
-      if (activeUserId === userId && generation === expectedGeneration) {
-        void reconcileFriendships(userId, expectedGeneration);
+    if (friendshipReconcileInFlight === request) {
+      friendshipReconcileInFlight = null;
+      if (friendshipReconcileQueued) {
+        friendshipReconcileQueued = false;
+        if (activeUserId === userId && generation === expectedGeneration) {
+          void reconcileFriendships(userId, expectedGeneration);
+        }
       }
     }
   });
@@ -132,7 +190,10 @@ function scheduleSingleReconnect(userId: string, expectedGeneration: number): vo
 }
 
 async function reconcile(userId: string, expectedGeneration: number): Promise<void> {
-  if (reconcileInFlight) return reconcileInFlight;
+  if (reconcileInFlight) {
+    reconcileQueued = 'pairing';
+    return reconcileInFlight;
+  }
   const request = (async () => {
     try {
       // A pairing notification is an explicit invalidation signal, so these
@@ -143,12 +204,19 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
         fetchFriends({ force: true }),
       ]);
       const partnerId = pairing.paired ? pairing.partner?.userId : undefined;
-      const [feed] = await Promise.all([
-        pairing.paired ? fetchFriendFeed(undefined, { force: true }) : Promise.resolve([]),
-        partnerId ? fetchBags('their', partnerId) : Promise.resolve([]),
-      ]);
+      const feed = pairing.paired ? await fetchFriendFeed(undefined, { force: true }) : [];
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });
+      // The first visible Paired/Connection caches must not wait for the
+      // heavier grouped Memories endpoint. Reconcile it independently, then
+      // notify the already-preloaded Memories tab once its cache is ready.
+      if (partnerId) void fetchBags('their', partnerId).then(() => {
+        if (activeUserId === userId && generation === expectedGeneration) {
+          publish({ pairing, friends, feed });
+        }
+      }).catch((error) => {
+        console.warn('[pairing] partner Memories reconcile failed:', error);
+      });
     } catch (error) {
       // The next channel reconnect or app foreground retries. Existing cached
       // state stays visible instead of turning a transport failure into a UI
@@ -156,14 +224,27 @@ async function reconcile(userId: string, expectedGeneration: number): Promise<vo
       console.warn('[pairing] realtime reconcile failed:', error);
     }
   })().finally(() => {
-    if (reconcileInFlight === request) reconcileInFlight = null;
+    if (reconcileInFlight === request) {
+      reconcileInFlight = null;
+      const queued = reconcileQueued;
+      reconcileQueued = null;
+      if (queued && activeUserId === userId && generation === expectedGeneration) {
+        if (queued === 'reflect') void reconcileReflectFeed(userId, expectedGeneration);
+        else void reconcile(userId, expectedGeneration);
+      }
+    }
   });
   reconcileInFlight = request;
   return request;
 }
 
 async function reconcileReflectFeed(userId: string, expectedGeneration: number): Promise<void> {
-  if (reconcileInFlight) return reconcileInFlight;
+  if (reconcileInFlight) {
+    // A reflection invalidation is more specific than a pairing resume. Do not
+    // lose it when foreground reconciliation is already in flight.
+    reconcileQueued = 'reflect';
+    return reconcileInFlight;
+  }
   const request = (async () => {
     try {
       const pairing = getCachedPairing() ?? await fetchPairing({ force: true });
@@ -171,15 +252,29 @@ async function reconcileReflectFeed(userId: string, expectedGeneration: number):
       const [friends, feed] = await Promise.all([
         fetchFriends({ force: true }),
         pairing.paired ? fetchFriendFeed(undefined, { force: true }) : Promise.resolve([]),
-        partnerId ? fetchBags('their', partnerId) : Promise.resolve([]),
       ]);
       if (activeUserId !== userId || generation !== expectedGeneration) return;
       publish({ pairing, friends, feed });
+      if (partnerId) void fetchBags('their', partnerId).then(() => {
+        if (activeUserId === userId && generation === expectedGeneration) {
+          publish({ pairing, friends, feed });
+        }
+      }).catch((error) => {
+        console.warn('[pairing] partner Memories reflect reconcile failed:', error);
+      });
     } catch (error) {
       console.warn('[pairing] reflect feed reconcile failed:', error);
     }
   })().finally(() => {
-    if (reconcileInFlight === request) reconcileInFlight = null;
+    if (reconcileInFlight === request) {
+      reconcileInFlight = null;
+      const queued = reconcileQueued;
+      reconcileQueued = null;
+      if (queued && activeUserId === userId && generation === expectedGeneration) {
+        if (queued === 'reflect') void reconcileReflectFeed(userId, expectedGeneration);
+        else void reconcile(userId, expectedGeneration);
+      }
+    }
   });
   reconcileInFlight = request;
   return request;
@@ -253,14 +348,9 @@ export async function startPairingRealtime(
         void reconcileReflectFeed(userId, subscribedGeneration);
       })
       .on('broadcast', { event: 'connection_changed' }, () => {
-        // Payload is an invalidation only. Refresh the append-only History
-        // cache incrementally even when its screen is not mounted; the next
-        // open paints from storage without a loading pass.
-        invalidateConnectionDashboard();
-        void fetchConnectionHistory({ incremental: true }).catch((error) => {
-          console.warn('[pairing] Connection history reconcile failed:', error);
-        });
-        publishConnectionChanged();
+        // Payload is an invalidation only. Refresh both the current dashboard
+        // and append-only History globally, even when the tab is hidden.
+        void reconcileConnection(userId, subscribedGeneration, { knownChanged: true });
       })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;
@@ -289,10 +379,7 @@ export async function startPairingRealtime(
           // A private broadcast may have been missed while backgrounded.
           // Invalidate once per reconnect and silently catch up only History
           // rows not already present in the local append-only cache.
-          invalidateConnectionDashboard();
-          void fetchConnectionHistory({ incremental: true }).catch((error) => {
-            console.warn('[pairing] Connection history reconnect failed:', error);
-          });
+          void reconcileConnection(userId, subscribedGeneration);
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           channelHealthy = false;
           // One temporary recovery attempt for this failure incident. There is
@@ -327,8 +414,11 @@ export async function stopPairingRealtime(): Promise<void> {
   activeUserId = null;
   channelHealthy = false;
   reconcileInFlight = null;
+  reconcileQueued = null;
   friendshipReconcileInFlight = null;
   friendshipReconcileQueued = false;
+  connectionReconcileInFlight = null;
+  connectionReconcileQueuedChanged = false;
   const current = channel;
   channel = null;
   if (!current) return;

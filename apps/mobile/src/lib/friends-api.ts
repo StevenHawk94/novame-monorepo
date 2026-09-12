@@ -1281,6 +1281,9 @@ type ConnectionHistoryListener = (result: ConnectionHistoryResult) => void;
 
 const connectionHistoryListeners = new Set<ConnectionHistoryListener>();
 let connectionHistoryRequest: Promise<ConnectionHistoryResult> | null = null;
+let connectionInsightsRequest: Promise<InsightsResult> | null = null;
+let connectionInsightsRequestResumes = false;
+let connectionInsightsResumeFollowup: Promise<InsightsResult> | null = null;
 
 export type InsightsResult =
   | { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
@@ -1331,47 +1334,67 @@ export function markConnectionDashboardRefreshed(): void {
 }
 
 /** Plus Connection modules. The server may catch up one latest reflection. */
-export async function fetchInsights(options?: { resume?: boolean }): Promise<
-  { ok: true; insights: ConnectionInsights | null; refreshPending?: boolean; resumed?: boolean }
-  | { ok: false; error: 'plus_required' | 'network' }
-> {
-  const { data: sess } = await supabase.auth.getSession();
-  const userId = sess.session?.user?.id;
-  if (!userId) return { ok: false, error: 'network' };
-  const date = localDateKey();
-  try {
-    const data = await apiClient.get<{
-      success?: boolean;
-      error?: string;
-      insights?: ConnectionInsights | null;
-      refreshPending?: boolean;
-      resumed?: boolean;
-    }>(
-      `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view${options?.resume ? '&resume=1' : ''}`,
-    );
-    if (data.success) {
-      const cachedResult: InsightsResult = {
-        ok: true,
-        insights: normalizeConnectionInsights(data.insights),
-      };
-      patchAnalysisCache({ insights: cachedResult });
-      return {
-        ...cachedResult,
-        refreshPending: data.refreshPending === true,
-        resumed: data.resumed === true,
-      };
+export function fetchInsights(options?: { resume?: boolean }): Promise<InsightsResult> {
+  if (connectionInsightsRequest) {
+    if (!options?.resume || connectionInsightsRequestResumes) return connectionInsightsRequest;
+    // A normal cache reconciliation must not swallow the stronger resume
+    // request that retries a pending durable analysis job.
+    if (!connectionInsightsResumeFollowup) {
+      connectionInsightsResumeFollowup = connectionInsightsRequest
+        .then(() => fetchInsights({ resume: true }))
+        .finally(() => {
+          connectionInsightsResumeFollowup = null;
+        });
     }
-    if (data.error === 'plus_required') {
-      const res: InsightsResult = { ok: false, error: 'plus_required' };
-      patchAnalysisCache({ insights: res });
-      return res;
-    }
-    return getCachedInsights() ?? { ok: false, error: 'network' };
-  } catch (err) {
-    const e = (err as { body?: { error?: string } })?.body?.error;
-    if (e === 'plus_required') return { ok: false, error: e };
-    return getCachedInsights() ?? { ok: false, error: 'network' };
+    return connectionInsightsResumeFollowup;
   }
+  connectionInsightsRequestResumes = options?.resume === true;
+  const request = (async (): Promise<InsightsResult> => {
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) return { ok: false, error: 'network' };
+    const date = localDateKey();
+    try {
+      const data = await apiClient.get<{
+        success?: boolean;
+        error?: string;
+        insights?: ConnectionInsights | null;
+        refreshPending?: boolean;
+        resumed?: boolean;
+      }>(
+        `/api/friends/insights?userId=${encodeURIComponent(userId)}&date=${date}&intent=view${options?.resume ? '&resume=1' : ''}`,
+      );
+      if (data.success) {
+        const cachedResult: InsightsResult = {
+          ok: true,
+          insights: normalizeConnectionInsights(data.insights),
+        };
+        patchAnalysisCache({ insights: cachedResult });
+        return {
+          ...cachedResult,
+          refreshPending: data.refreshPending === true,
+          resumed: data.resumed === true,
+        };
+      }
+      if (data.error === 'plus_required') {
+        const res: InsightsResult = { ok: false, error: 'plus_required' };
+        patchAnalysisCache({ insights: res });
+        return res;
+      }
+      return getCachedInsights() ?? { ok: false, error: 'network' };
+    } catch (err) {
+      const e = (err as { body?: { error?: string } })?.body?.error;
+      if (e === 'plus_required') return { ok: false, error: e };
+      return getCachedInsights() ?? { ok: false, error: 'network' };
+    }
+  })().finally(() => {
+    if (connectionInsightsRequest === request) {
+      connectionInsightsRequest = null;
+      connectionInsightsRequestResumes = false;
+    }
+  });
+  connectionInsightsRequest = request;
+  return request;
 }
 
 function mergeConnectionHistoryCards(

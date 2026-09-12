@@ -26,6 +26,7 @@ import { subscribeConnectionRealtime } from '@/lib/pairing-realtime';
 import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscription';
 import { supabase } from '@/lib/supabase';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { afterUiSettles } from '@/lib/ui-idle';
 
 type SectionDefinition = {
   section: 'missed' | 'world' | 'ways_in' | 'between';
@@ -133,6 +134,7 @@ export default function ConnectionDashboardScreen() {
   const cachedResult = initialCache.result;
   const cachedInsightValue = initialCache.insights;
   const cachedPaid = initialCache.paid;
+  const [initialProfile] = useState(() => getCachedMeStats());
 
   const [pairing, setPairing] = useState<PairingStatus | null>(() => getCachedPairing());
   const [isPaid, setIsPaid] = useState(cachedPaid);
@@ -145,10 +147,14 @@ export default function ConnectionDashboardScreen() {
     return cachedResult.error;
   });
   const [refreshingLatest, setRefreshingLatest] = useState(false);
-  const [myName, setMyName] = useState('Me');
+  const [myName, setMyName] = useState(() => (
+    initialProfile?.displayName && initialProfile.displayName !== 'user'
+      ? initialProfile.displayName
+      : getBunnyName() || 'Me'
+  ));
   const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [myAvatarUrl, setMyAvatarUrl] = useState('');
-  const [myIsDefaultAvatar, setMyIsDefaultAvatar] = useState<boolean | undefined>();
+  const [myAvatarUrl, setMyAvatarUrl] = useState(initialProfile?.avatarUrl ?? '');
+  const [myIsDefaultAvatar, setMyIsDefaultAvatar] = useState<boolean | undefined>(initialProfile?.isDefaultAvatar);
   const liveTier = useSubscriptionTier();
   const refreshInFlight = useRef(false);
 
@@ -164,7 +170,8 @@ export default function ConnectionDashboardScreen() {
     try {
       const result = await fetchInsights({ resume });
       if (result.ok) {
-        setInsights(validInsights(result.insights));
+        const nextInsights = validInsights(result.insights);
+        setInsights((current) => JSON.stringify(current) === JSON.stringify(nextInsights) ? current : nextInsights);
         setInsightsGate('ok');
         return result.refreshPending !== true;
       } else if (result.error === 'plus_required') {
@@ -181,74 +188,87 @@ export default function ConnectionDashboardScreen() {
     useCallback(() => {
       let active = true;
       const resumeAfterAbsence = shouldShowConnectionResumeLoading();
-      if (resumeAfterAbsence && getCachedPairing()?.paired && cachedPaid) {
-        setRefreshingLatest(true);
-      }
       const previousPartnerId = getCachedPairing()?.partner?.userId ?? null;
-      void (async () => {
-        const [{ data }, nextPairing] = await Promise.all([
-          supabase.auth.getSession(),
-          fetchPairing(),
-        ]);
-        if (!active) return;
-        const uid = data.session?.user?.id;
-        let paid = getCachedSubscriptionTier() !== 'free';
-        if (uid) {
-          try {
-            paid = (await fetchSubscriptionTier(uid)).tier !== 'free';
-          } catch {
-            // Cache remains authoritative while offline.
-          }
+      const cancelDeferred = afterUiSettles(() => {
+        // A cached dashboard stays fully interactive while this reconciliation
+        // runs. Only a true cache miss may show the small non-blocking toast.
+        if (resumeAfterAbsence && !cachedInsightValue && getCachedPairing()?.paired && cachedPaid) {
+          setRefreshingLatest(true);
         }
-        if (!active) return;
-        setIsPaid(paid);
-        setPairing(nextPairing);
-        if (!nextPairing.paired) {
-          setInsights(null);
-          setInsightsGate(null);
-          setRefreshingLatest(false);
-          return;
-        }
-        if (!paid) {
-          setInsightsGate('plus_required');
-          setRefreshingLatest(false);
-          return;
-        }
-        const partnerChanged = previousPartnerId !== nextPairing.partner?.userId;
-        if (partnerChanged || resumeAfterAbsence || shouldRefreshConnectionDashboard()) {
-          const refreshCompleted = await refreshInsights(resumeAfterAbsence);
+        void (async () => {
+          const [{ data }, nextPairing] = await Promise.all([
+            supabase.auth.getSession(),
+            fetchPairing(),
+          ]);
           if (!active) return;
-          if (refreshCompleted) markConnectionDashboardRefreshed();
-        } else {
-          setRefreshingLatest(false);
-        }
-      })().catch(() => {
-        if (active) setRefreshingLatest(false);
-      });
+          const uid = data.session?.user?.id;
+          let paid = getCachedSubscriptionTier() !== 'free';
+          if (uid) {
+            try {
+              paid = (await fetchSubscriptionTier(uid)).tier !== 'free';
+            } catch {
+              // Cache remains authoritative while offline.
+            }
+          }
+          if (!active) return;
+          setIsPaid((current) => current === paid ? current : paid);
+          setPairing((current) => JSON.stringify(current) === JSON.stringify(nextPairing) ? current : nextPairing);
+          if (!nextPairing.paired) {
+            setInsights(null);
+            setInsightsGate(null);
+            setRefreshingLatest(false);
+            return;
+          }
+          if (!paid) {
+            setInsightsGate('plus_required');
+            setRefreshingLatest(false);
+            return;
+          }
+          const partnerChanged = previousPartnerId !== nextPairing.partner?.userId;
+          if (partnerChanged || resumeAfterAbsence || shouldRefreshConnectionDashboard()) {
+            const refreshCompleted = await refreshInsights(resumeAfterAbsence && !cachedInsightValue);
+            if (!active) return;
+            if (refreshCompleted) markConnectionDashboardRefreshed();
+          } else {
+            setRefreshingLatest(false);
+          }
+        })().catch(() => {
+          if (active) setRefreshingLatest(false);
+        });
 
-      void supabase.auth.getSession().then(({ data }) => {
-        if (!active) return;
-        setMyUserId(data.session?.user?.id ?? null);
-        const cached = getCachedMeStats();
-        const profileName = cached?.displayName && cached.displayName !== 'user'
-          ? cached.displayName : '';
-        const name = profileName || getBunnyName()
-          || (data.session?.user?.email?.split('@')[0] as string | undefined);
-        if (name) setMyName(name);
-        setMyAvatarUrl(cached?.avatarUrl ?? '');
-        setMyIsDefaultAvatar(cached?.isDefaultAvatar);
-      });
-      return () => { active = false; };
-    }, [cachedPaid, refreshInsights]),
+        void supabase.auth.getSession().then(({ data }) => {
+          if (!active) return;
+          setMyUserId(data.session?.user?.id ?? null);
+          const cached = getCachedMeStats();
+          const profileName = cached?.displayName && cached.displayName !== 'user'
+            ? cached.displayName : '';
+          const name = profileName || getBunnyName()
+            || (data.session?.user?.email?.split('@')[0] as string | undefined);
+          if (name) setMyName(name);
+          setMyAvatarUrl(cached?.avatarUrl ?? '');
+          setMyIsDefaultAvatar(cached?.isDefaultAvatar);
+        });
+      }, { delayMs: 80 });
+      return () => {
+        active = false;
+        cancelDeferred();
+      };
+    }, [cachedInsightValue, cachedPaid, refreshInsights]),
   );
 
   useEffect(() => subscribeConnectionRealtime(() => {
-    if (getCachedSubscriptionTier() !== 'free') {
-      void refreshInsights(false).then((completed) => {
-        if (completed) markConnectionDashboardRefreshed();
-      });
+    if (getCachedSubscriptionTier() === 'free') return;
+    // pairing-realtime publishes only after it has refreshed the persistent
+    // dashboard cache. Apply that snapshot without issuing a duplicate API
+    // request from this preloaded/possibly hidden screen.
+    const result = getCachedInsights();
+    if (result?.ok) {
+      const nextInsights = validInsights(result.insights);
+      setInsights((current) => JSON.stringify(current) === JSON.stringify(nextInsights) ? current : nextInsights);
+      setInsightsGate('ok');
+      setRefreshingLatest(false);
     }
-  }), [refreshInsights]);
+  }), []);
 
   const partner = pairing?.partner ?? null;
   const contentLocked = !isPaid || insightsGate === 'plus_required';

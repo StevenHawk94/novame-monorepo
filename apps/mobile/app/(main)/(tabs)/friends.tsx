@@ -31,6 +31,10 @@ import { subscribeFriendshipRealtime, subscribePairingRealtime } from '@/lib/pai
 import { HomeEntryImage } from '@/components/main/home-entry-gate';
 import { getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
+import { afterUiSettles } from '@/lib/ui-idle';
+
+const FRIENDS_BACKGROUND_WIDTH = 841;
+const FRIENDS_BACKGROUND_HEIGHT = 1870;
 
 /**
  * Friends Cave (mocks 1:1). Full-bleed meadow art; centered title; mail
@@ -52,12 +56,19 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function sameSnapshot(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+}
+
 export default function FriendsScreen() {
   const homeEntry = useHomeEntry();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Narrow screens (iPhone SE) fit 3 item tiles per feed row; wider fit 4.
   const { width } = useWindowDimensions();
+  const androidBackgroundHeight = width
+    * (FRIENDS_BACKGROUND_HEIGHT / FRIENDS_BACKGROUND_WIDTH);
   const maxTiles = width < 400 ? 3 : 4;
   // Paired-card tile sizing (mock 2026-08-08): tiles fill the full row width
   // edge-to-edge. Inner width = window − panel margins/padding − card padding;
@@ -112,7 +123,7 @@ export default function FriendsScreen() {
     // this screen regains focus so an expired request cannot keep the UI stuck
     // in Pending after the user returns to Paired.
     void fetchGoodVibeDailyStatus().then((dailyStatus) => {
-      if (dailyStatus) setGoodVibeStatus(dailyStatus);
+      if (dailyStatus) setGoodVibeStatus((current) => sameSnapshot(current, dailyStatus) ? current : dailyStatus);
     });
     const statusRequest = fetchFriends({ force: true });
     const nextPairing = await fetchPairing({ force: forceLatest });
@@ -120,8 +131,8 @@ export default function FriendsScreen() {
       ? fetchFriendFeedPage(undefined, { force: forceLatest })
       : Promise.resolve(null);
     const [nextStatus, page] = await Promise.all([statusRequest, feedRequest]);
-    setStatus(nextStatus);
-    setPairing(nextPairing);
+    setStatus((current) => sameSnapshot(current, nextStatus) ? current : nextStatus);
+    setPairing((current) => sameSnapshot(current, nextPairing) ? current : nextPairing);
     if (!nextPairing.paired || !page) {
       setFeed([]);
       setFeedHasMore(false);
@@ -129,7 +140,7 @@ export default function FriendsScreen() {
       setNextFeedId(null);
       return;
     }
-    setFeed(page.feed); setFeedHasMore(page.hasMore);
+    setFeed((current) => sameSnapshot(current, page.feed) ? current : page.feed); setFeedHasMore(page.hasMore);
     setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
     setNextFeedId(page.nextBeforeId ?? null);
   }, []);
@@ -145,16 +156,19 @@ export default function FriendsScreen() {
   useFocusEffect(useCallback(() => {
     const entry = getHomeEntryState();
     if (entry.pending && entry.target === 'friends') return;
-    void load(false);
+    // The preloaded page is already paintable. Preserve a pure navigation
+    // frame, then perform Paired's required authoritative status check.
+    return afterUiSettles(() => { void load(false); }, { delayMs: 80 });
   }, [load]));
 
   // The accepting device refreshes synchronously in respondFriend(). The
   // requester can remain on this screen, so listen for the private server
   // invalidation and apply the already-refreshed snapshots immediately.
   useEffect(() => subscribePairingRealtime((snapshot) => {
-    setStatus(snapshot.friends);
-    setPairing(snapshot.pairing);
-    setFeed(snapshot.pairing.paired ? snapshot.feed : []);
+    setStatus((current) => sameSnapshot(current, snapshot.friends) ? current : snapshot.friends);
+    setPairing((current) => sameSnapshot(current, snapshot.pairing) ? current : snapshot.pairing);
+    const nextFeed = snapshot.pairing.paired ? snapshot.feed : [];
+    setFeed((current) => sameSnapshot(current, nextFeed) ? current : nextFeed);
     const cached = getCachedFriendFeedPage();
     setFeedHasMore(snapshot.pairing.paired && cached.hasMore);
     setNextFeedCreatedAt(cached.nextBeforeCreatedAt ?? null);
@@ -316,8 +330,10 @@ export default function FriendsScreen() {
       <HomeEntryImage
         asset="friends-background"
         source={BACKGROUNDS.friends}
-        style={Platform.OS === 'android' ? styles.androidBackground : StyleSheet.absoluteFill}
-        contentFit="cover"
+        style={Platform.OS === 'android'
+          ? [styles.androidBackground, { width, height: androidBackgroundHeight }]
+          : StyleSheet.absoluteFill}
+        contentFit={Platform.OS === 'android' ? 'fill' : 'cover'}
         contentPosition="top"
       />
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
@@ -631,16 +647,15 @@ function PrivacySheet({ visible, mode, saving, onMode, onClose, onSave }: {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#6B4226' },
   androidRoot: { overflow: 'hidden' },
-  // friends.webp is 841x1870. Android's full-screen `cover` scales this tall
-  // artwork by viewport height and crops its left/right edges. Give the image
-  // its intrinsic aspect ratio instead, so it always spans the screen width,
-  // stays anchored at the top, and only its bottom can overflow/crop.
+  // Android bundled drawables can apply density-aware cover scaling after
+  // React Native resolves aspectRatio. The caller therefore supplies explicit
+  // dimensions derived from the 841x1870 source and uses `fill`: the container
+  // already has the exact source ratio, so the full width remains visible and
+  // only the image's bottom can overflow the screen.
   androidBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '100%',
-    aspectRatio: 841 / 1870,
   },
 
   headerRow: { height: 56, justifyContent: 'center' },

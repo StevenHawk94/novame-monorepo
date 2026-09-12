@@ -40,6 +40,7 @@ import {
   subscribeCosmetics,
   type CosmeticsState,
 } from '../../../src/lib/cosmetics-api';
+import { afterUiSettles } from '../../../src/lib/ui-idle';
 
 type SceneGridItem =
   | { kind: 'default' }
@@ -72,15 +73,23 @@ export default function SceneSelectScreen() {
     ...catalog.map((scene) => ({ kind: 'scene' as const, scene })),
   ];
 
-  useEffect(() => subscribeCosmetics(setCosmetics), []);
+  useEffect(() => subscribeCosmetics((next) => {
+    setCosmetics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+  }), []);
 
   useFocusEffect(
     useCallback(() => {
       closingRef.current = false;
       setBusy(false);
       setSwitching(false);
-      void fetchSceneCatalog().then(setCatalog);
-      void fetchCosmetics().then(setCosmetics);
+      return afterUiSettles(() => {
+        void fetchSceneCatalog().then((next) => {
+          setCatalog((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        });
+        void fetchCosmetics().then((next) => {
+          setCosmetics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+        });
+      }, { delayMs: 100 });
     }, []),
   );
 
@@ -97,29 +106,34 @@ export default function SceneSelectScreen() {
   // limited to the current/owned set and warmed one at a time (current first),
   // so opening Maps never starts sixteen large competing downloads.
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      for (const scene of catalog.slice(0, 6)) {
-        prioritizeR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion));
+    let stopped = false;
+    const cancelDeferred = afterUiSettles(() => {
+      if (Platform.OS === 'android') {
+        for (const scene of catalog.slice(0, 6)) {
+          prioritizeR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion));
+        }
+        return;
       }
-      return;
-    }
-    const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb, scene.assetVersion));
-    if (thumbUrls.length > 0) {
-      void ExpoImage.prefetch(thumbUrls, { cachePolicy: 'disk' });
-    }
+      const thumbUrls = catalog.map((scene) => sceneAssetUrl(scene.thumb, scene.assetVersion));
+      if (thumbUrls.length > 0) {
+        void ExpoImage.prefetch(thumbUrls, { cachePolicy: 'disk' });
+      }
 
-    const fullUrls = catalog
-      .filter((scene) => scene.key === current || isUnlocked(cosmetics, 'scene', scene.key))
-      .sort((a, b) => Number(b.key === current) - Number(a.key === current))
-      .map((scene) => sceneAssetUrl(scene.image, scene.assetVersion));
-    let cancelled = false;
-    void (async () => {
-      for (const url of fullUrls) {
-        if (cancelled) return;
-        await ExpoImage.prefetch(url, { cachePolicy: 'memory-disk' });
-      }
-    })();
-    return () => { cancelled = true; };
+      const fullUrls = catalog
+        .filter((scene) => scene.key === current || isUnlocked(cosmetics, 'scene', scene.key))
+        .sort((a, b) => Number(b.key === current) - Number(a.key === current))
+        .map((scene) => sceneAssetUrl(scene.image, scene.assetVersion));
+      void (async () => {
+        for (const url of fullUrls) {
+          if (stopped) return;
+          await ExpoImage.prefetch(url, { cachePolicy: 'memory-disk' });
+        }
+      })();
+    }, { delayMs: 140 });
+    return () => {
+      stopped = true;
+      cancelDeferred();
+    };
   }, [catalog, cosmetics, current]);
 
   const isCurrent = (key: string) =>

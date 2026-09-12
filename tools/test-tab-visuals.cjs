@@ -41,9 +41,10 @@ function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok
     },
     '@/lib/haptics': { haptics: { pageOpen: () => feedback.push('light') } },
     '@/lib/icons': { ICONS: { connect1: 1, connect2: 2, connect3: 3, connect4: 4, history: 5 } },
-    '@/lib/me-stats': {}, '@/lib/onboarding': {}, '@/lib/pairing-realtime': {},
+    '@/lib/me-stats': { getCachedMeStats: () => null }, '@/lib/onboarding': { getBunnyName: () => '' }, '@/lib/pairing-realtime': {},
     '@/lib/subscription': { getCachedSubscriptionTier: () => tier }, '@/lib/supabase': {},
     '@/lib/use-subscription-tier': { useSubscriptionTier: () => tier },
+    '@/lib/ui-idle': { afterUiSettles: () => () => {} },
   });
   const tree = Screen();
   return { tree, pushes, feedback, typography };
@@ -141,4 +142,20 @@ test('Memories and both Quests states consume the shared header typography', () 
   assert.equal((quests.match(/Weekly Goal/g) || []).length, 2);
   assert.equal((quests.match(/One goal, broken into daily small steps\./g) || []).length, 2);
   assert.doesNotMatch(quests, /Weekly To-Do List|Select your main goal of the week/);
+});
+
+test('Paired background keeps the complete source width on Android without changing iOS cover', () => {
+  const friends = fs.readFileSync(
+    path.join(root, 'apps/mobile/app/(main)/(tabs)/friends.tsx'),
+    'utf8',
+  );
+  assert.match(friends, /const FRIENDS_BACKGROUND_WIDTH = 841;/);
+  assert.match(friends, /const FRIENDS_BACKGROUND_HEIGHT = 1870;/);
+  assert.match(
+    friends,
+    /androidBackgroundHeight = width\s*\* \(FRIENDS_BACKGROUND_HEIGHT \/ FRIENDS_BACKGROUND_WIDTH\)/,
+  );
+  assert.match(friends, /\{ width, height: androidBackgroundHeight \}/);
+  assert.match(friends, /contentFit=\{Platform\.OS === 'android' \? 'fill' : 'cover'\}/);
+  assert.match(friends, /contentPosition="top"/);
 });

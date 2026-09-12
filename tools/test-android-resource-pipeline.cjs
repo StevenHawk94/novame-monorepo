@@ -57,7 +57,7 @@ test('Android P0 uses one idle lane in the confirmed manifest order', () => {
   assert.match(queue, /export function markAndroidP0UiReady/);
   assert.match(queue, /const MAX_ATTEMPTS = 3/);
   assert.match(queue, /Date\.now\(\) \+ MAX_RETRY_BACKOFF_MS/);
-  assert.match(queue, /if \(!IS_ANDROID \|\| task\.priority < 0\) notifyAssetReady\(\)/);
+  assert.match(queue, /if \(!IS_ANDROID \|\| task\.priority < 0\) notifyAssetReady\(task\.key\)/);
   assert.match(queue, /timeoutMs: IS_ANDROID \? null : undefined/);
 
   const p0 = queue.slice(queue.indexOf('function stageAndroidP0'), queue.indexOf('function stageScene'));

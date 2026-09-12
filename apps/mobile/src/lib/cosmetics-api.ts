@@ -8,6 +8,7 @@ import { kCosmeticUnlocks } from '../shared/storage/keys';
 import { apiClient } from './api';
 import { storage } from './storage';
 import { supabase } from './supabase';
+import { afterUiSettles } from './ui-idle';
 
 export const COSMETIC_PRICE = 500;
 
@@ -91,7 +92,7 @@ export function awardCachedClovers(amount: number): void {
 /** Server confirmed an award: update instantly, then silently verify it. */
 export function confirmCloverAward(amount: number): void {
   awardCachedClovers(amount);
-  void fetchCosmetics({ force: true });
+  afterUiSettles(() => { void fetchCosmetics({ force: true }); }, { delayMs: 500 });
 }
 
 /**
@@ -119,13 +120,15 @@ export function optimisticCloverAward(expectedAmount: number): {
       settled = true;
       const actual = Math.max(0, Math.floor(actualAmount));
       adjust(actual - expected);
-      void fetchCosmetics({ force: true });
+      // The award response is already authoritative for this mutation. Verify
+      // the aggregate balance after navigation/audio transitions have ended.
+      afterUiSettles(() => { void fetchCosmetics({ force: true }); }, { delayMs: 500 });
     },
     rollback() {
       if (settled) return;
       settled = true;
       adjust(-expected);
-      void fetchCosmetics({ force: true });
+      afterUiSettles(() => { void fetchCosmetics({ force: true }); }, { delayMs: 500 });
     },
   };
 }
