@@ -14,7 +14,7 @@
 const GEMINI_API_KEY = () => process.env.GEMINI_API_KEY
 const DEEPSEEK_API_KEY = () => process.env.DEEPSEEK_API_KEY
 
-const GEMINI_MODELS = [
+const DEFAULT_GEMINI_MODELS = [
   'gemini-2.5-flash',
 ]
 
@@ -165,6 +165,7 @@ async function callDeepSeek({ systemInstruction, userText, generationConfig, req
  * @param {boolean} opts.skipDeepSeek      — true for multimodal requests (DeepSeek can't do audio)
  * @param {number} opts.totalTimeoutMs     — optional total budget shared by all provider attempts
  * @param {string} opts.cachedContent      — Gemini explicit cachedContents resource name
+ * @param {string} opts.geminiModel        — optional primary Gemini model override
  * @returns {{ text, model, provider, usage }}
  */
 export async function callAI(opts) {
@@ -180,8 +181,13 @@ export async function callAI(opts) {
     return { ...opts, requestTimeoutMs: remaining }
   }
 
-  // Tier 1 & 2: Gemini models
-  for (const model of GEMINI_MODELS) {
+  const geminiModels = typeof opts.geminiModel === 'string' && opts.geminiModel.trim()
+    ? [opts.geminiModel.trim()]
+    : DEFAULT_GEMINI_MODELS
+
+  // Gemini primary. Individual workloads may choose a cheaper model while
+  // retaining the shared provider fallback and timeout behavior.
+  for (const model of geminiModels) {
     try {
       const result = await callGemini(model, withRemainingTimeout())
       return result

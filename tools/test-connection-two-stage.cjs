@@ -163,9 +163,11 @@ test('router performs value/family routing in one bounded first-stage call', asy
   assert.equal(result.data.eligibleSignals[0].familyKey, 'milestone_or_quiet_win');
   assert.equal(ai.__calls.length, 1);
   const request = JSON.parse(ai.__calls[0].userText);
-  assert.equal(request.operation, 'ROUTE');
+  assert.equal(request.journal, 'private input');
+  assert.equal(request.families.length, 1);
+  assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash-lite');
   assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 192);
-  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 1024);
 });
 
 test('second stage matches scenarios and writes matched and custom cards in one call', async () => {
@@ -177,17 +179,16 @@ test('second stage matches scenarios and writes matched and custom cards in one 
     hasUpdate: true, clearExisting: true, cards: [missedCard('career_win')],
   };
   const ai = connectionAiWithResponses([{
-    signalResults: [
+    results: [
       {
-        signalId: 'career_win', outcome: 'matched', familyKey: 'milestone_or_quiet_win',
-        scenarioKey: 'quiet_threshold', moduleKey: 'worth_knowing',
+        signalId: 'career_win', outcome: 'matched', scenarioKey: 'quiet_threshold',
+        card: missedCard('career_win'),
       },
       {
-        signalId: 'need_space', outcome: 'custom', familyKey: null,
-        scenarioKey: null, moduleKey: 'how_to_show_up',
+        signalId: 'need_space', outcome: 'custom', scenarioKey: null,
+        card: waysCard('need_space'),
       },
     ],
-    connectionUpdates: updates,
   }]);
   const selectedSignals = [
     signal('career_win', 'missed', 'milestone_or_quiet_win'),
@@ -206,31 +207,34 @@ test('second stage matches scenarios and writes matched and custom cards in one 
   });
   assert.equal(generated.signalResults.length, 2);
   assert.equal(generated.data.worth_knowing.cards.length, 1);
-  assert.equal(generated.data.how_to_show_up.cards.length, 1);
+  assert.equal(generated.data.talk_about.cards.length, 1);
   assert.equal(generated.data.worth_knowing.clearExisting, false);
   assert.equal(ai.__calls.length, 1);
   const request = JSON.parse(ai.__calls[0].userText);
-  assert.equal(request.operation, 'MATCH_AND_WRITE');
+  assert.equal(request.signals.length, 2);
+  assert.equal(request.templates.length, 1);
+  assert.deepEqual(Object.keys(request.templates[0]), [
+    'familyKey', 'scenarioKey', 'label', 'title', 'observation', 'meaning', 'takeaway',
+  ]);
   assert.equal(request.journal, undefined);
-  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 768);
-  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 4096);
+  assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash');
+  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 512);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
 });
 
-test('shared cached prompt enforces both operation contracts and writing quality', () => {
+test('operation prompts are separate, concise, and retain the essential contracts', () => {
   const ai = connectionAiWithResponses([]);
-  const prompt = ai.CONNECTION_COMMON_SYSTEM_PROMPT;
-  assert.match(prompt, /OPERATION ROUTE/);
-  assert.match(prompt, /OPERATION MATCH_AND_WRITE/);
-  assert.match(prompt, /Every matched or custom result must include exactly one complete card/i);
-  assert.match(prompt, /only as they, them, their, or theirs/i);
-  assert.match(prompt, /Never begin with “It sounds like/i);
-  assert.match(prompt, /give one low-pressure action usable now/i);
-  assert.match(prompt, /days 1–5/i);
-  assert.match(prompt, /days 6–10/i);
-  // Gemini explicit caching requires at least 2,048 input tokens. The cache
-  // API remains the runtime authority; this guard catches accidental prompt
-  // shrinkage well before the known-safe current prompt size.
-  assert.ok(prompt.length > 9000);
+  const router = ai.CONNECTION_ROUTER_SYSTEM_PROMPT;
+  const writer = ai.CONNECTION_MATCH_WRITER_SYSTEM_PROMPT;
+  assert.match(router, /at most 3 distinct signals/i);
+  assert.match(router, /recent5d/i);
+  assert.doesNotMatch(router, /matched\/custom require one complete card/i);
+  assert.match(writer, /matched\/custom require one complete card/i);
+  assert.match(writer, /they\/them\/their/i);
+  assert.match(writer, /one specific low-pressure takeaway/i);
+  assert.doesNotMatch(writer, /literal icon gaps/i);
+  assert.ok(router.length < 2400);
+  assert.ok(writer.length < 2400);
 });
 
 test('combined second stage rejects mismatched scenarios and normalizes custom card metadata', async () => {
@@ -268,7 +272,7 @@ test('combined second stage rejects mismatched scenarios and normalizes custom c
   assert.equal(normalized.topicKey, 'signal_two_topic');
 });
 
-test('second stage retries MAX_TOKENS once with 6144 and reuses explicit cache', async () => {
+test('second stage retries MAX_TOKENS once with 3072 and reuses explicit cache', async () => {
   const updates = emptyUpdates();
   updates.worth_knowing = {
     hasUpdate: true, clearExisting: false, cards: [missedCard('career_win')],
@@ -289,8 +293,8 @@ test('second stage retries MAX_TOKENS once with 6144 and reuses explicit cache',
     scenarioIndex: [], currentConnectionBoard: null,
   });
   assert.equal(result.results.length, 2);
-  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 4096);
-  assert.equal(ai.__calls[1].generationConfig.maxOutputTokens, 6144);
+  assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
+  assert.equal(ai.__calls[1].generationConfig.maxOutputTokens, 3072);
   assert.equal(ai.__calls[0].cachedContent, 'cachedContents/global-connection');
   assert.equal(ai.__calls[1].cachedContent, 'cachedContents/global-connection');
 });
@@ -314,7 +318,15 @@ test('job pipeline has two AI stages and preserves partial-retry boundaries', ()
   assert.match(jobs, /stage_one_result/);
 });
 
-test('explicit cache registry is global, private, leased, and seven-day renewable', () => {
+test('Connection page resumes a durable job instead of starting a third paid catch-up call', () => {
+  const route = source('apps/api/src/app/api/friends/insights/route.js');
+  assert.match(route, /from\('connection_analysis_jobs'\)/);
+  assert.match(route, /processReflectAnalysisJobs\(\{ reflectId: activeJob\.reflect_id \}\)/);
+  assert.match(route, /refreshPending: true/);
+  assert.ok(route.indexOf("from('connection_analysis_jobs')") < route.indexOf('generateBrief(supabase'));
+});
+
+test('explicit cache is leased, seven-day renewable, and automatically cost-gated', () => {
   const sql = source('supabase/migrations/20260912000084_ai_context_cache_registry.sql');
   const cache = source('apps/api/src/lib/connection-context-cache.js');
   assert.match(sql, /create table if not exists public\.ai_context_caches/i);
@@ -325,8 +337,29 @@ test('explicit cache registry is global, private, leased, and seven-day renewabl
   assert.match(cache, /24 \* 60 \* 60 \* 1000/);
   assert.match(cache, /5 \* 60 \* 1000/);
   assert.match(cache, /claim_ai_context_cache/);
+  assert.match(cache, /AUTO_MIN_CALLS = 623/);
+  assert.match(cache, /GEMINI_EXPLICIT_CACHE_MIN_TOKENS = 2048/);
+  assert.match(cache, /CONNECTION_EXPLICIT_CACHE_MODE/);
   assert.match(cache, /systemInstruction/);
   assert.match(cache, /ttl: `\$\{CACHE_TTL_SECONDS\}s`/);
+});
+
+test('obviously low-information journals skip Gemini without blocking meaningful short events', async () => {
+  const ai = connectionAiWithResponses([]);
+  const skipped = await ai.runConnectionRouter({
+    reflectId: 'reflect-bored', journal: 'bored', connectionEnabled: true,
+    familyCatalog: [], currentConnectionBoard: null,
+  });
+  assert.equal(skipped.data.decision, 'no_update');
+  assert.equal(skipped.result, null);
+  assert.equal(ai.__calls.length, 0);
+
+  const meaningful = connectionAiWithResponses([{ decision: 'no_update', signals: [], learning: [] }]);
+  await meaningful.runConnectionRouter({
+    reflectId: 'reflect-engaged', journal: 'got engaged', connectionEnabled: true,
+    familyCatalog: [], currentConnectionBoard: null,
+  });
+  assert.equal(meaningful.__calls.length, 1);
 });
 
 test('evidence window keeps latest plus days 1–5 and compressed days 6–10 only', () => {

@@ -168,19 +168,20 @@ async function analyzeClaimedJob(supabase, job) {
     stageOne = { ...generated, promptVersion: CONNECTION_ROUTER_VERSION }
     await updateJob(supabase, reflectId, {
       stage_one_result: { data: generated.data, promptVersion: CONNECTION_ROUTER_VERSION },
-      stage_one_usage: generated.result.usage || null,
+      stage_one_usage: generated.result?.usage || null,
     })
-    await Promise.all([
-      enqueueItemLearning(supabase, reflectId, generated.data.visualConcepts, matchedItems),
-      recordResultUsage(supabase, {
+    const followups = [enqueueItemLearning(supabase, reflectId, generated.data.visualConcepts, matchedItems)]
+    if (generated.result) {
+      followups.push(recordResultUsage(supabase, {
         userId: reflect.user_id,
         feature: 'connection_router',
         promptVersion: CONNECTION_ROUTER_VERSION,
         result: generated.result,
         latencyMs: generated.latencyMs,
         refId: reflectId,
-      }),
-    ])
+      }))
+    }
+    await Promise.all(followups)
   }
 
   const baseAnalyzer = {

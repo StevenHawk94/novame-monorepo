@@ -34,7 +34,10 @@ import {
   getCachedPairing,
   subscribeConnectionHistory,
 } from '@/lib/friends-api';
-import { consumeNewConnectionHomeMessage } from '@/lib/connection-home-prompt';
+import {
+  consumeNewConnectionHomeMessage,
+  prepareHomeConnectionMessage,
+} from '@/lib/connection-home-prompt';
 import { storage } from '@/lib/storage';
 import { kFirstPartnerReflectGuide } from '@/shared/storage/keys';
 import { syncWidgetLatestFriend } from '@/lib/widget-sync';
@@ -221,6 +224,16 @@ export default function HomeScreen() {
     if (!homeEntry.pending || homeEntry.target !== 'home') return;
     const signaledRefresh = consumeHomeRefresh();
     void refreshHomeBubbles(homeEntry.forceData || signaledRefresh);
+    const attempt = homeEntry.attempt;
+    void prepareHomeConnectionMessage()
+      .then((line) => {
+        if (getHomeEntryState().attempt !== attempt) return;
+        if (line) setConnectionUpdateSpeech(line);
+      })
+      .catch((error) => {
+        console.warn('[home] companion copy prewarm failed:', (error as Error)?.message || error);
+      })
+      .finally(() => markHomeEntryAsset('home-copy', attempt));
   }, [homeEntry.pending, homeEntry.attempt, homeEntry.forceData, homeEntry.target, refreshHomeBubbles]);
 
   useFocusEffect(

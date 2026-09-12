@@ -94,7 +94,11 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   const [after, setAfter] = useState<'notification-settings' | null>(null);
   // iOS keeps its proven visual-readiness hand-off. Android must not depend
   // on an image callback that R8/device-specific decoding can suppress.
-  const ready = Platform.OS === 'android' || homeEntryIsReady();
+  // Android skips native image callback gating, but Home data/copy readiness
+  // is deterministic JavaScript state and must settle before the cover lifts.
+  const androidHomeDataReady = entry.target !== 'home'
+    || (entry.ready.includes('home-data') && entry.ready.includes('home-copy'));
+  const ready = Platform.OS === 'android' ? androidHomeDataReady : homeEntryIsReady();
 
   useLayoutEffect(() => {
     if (!entry.resumeRequired || otherOverlay) return;
@@ -159,7 +163,8 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
     if (!visible || !foreground) return;
     // Never trap an entry on slow network or a missing native display event.
     // The cached destination is already mounted underneath, so fail open.
-    const timeoutMs = Platform.OS === 'android' ? ANDROID_ENTRY_TIMEOUT_MS : HOME_ENTRY_TIMEOUT_MS;
+    const timeoutMs = Platform.OS === 'android' && entry.target !== 'home'
+      ? ANDROID_ENTRY_TIMEOUT_MS : HOME_ENTRY_TIMEOUT_MS;
     const timer = setTimeout(() => setAfter(timeoutHomeEntry(entry.attempt)), timeoutMs);
     return () => clearTimeout(timer);
   }, [visible, entry.attempt, foreground]);

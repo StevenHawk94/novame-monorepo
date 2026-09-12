@@ -1,4 +1,8 @@
-import type { ConnectionHistoryResult } from './friends-api';
+import {
+  fetchConnectionHistory,
+  fetchPairing,
+  type ConnectionHistoryResult,
+} from './friends-api';
 import { kConnectionHomePrompt } from '../shared/storage/keys';
 import { storage } from './storage';
 
@@ -58,4 +62,17 @@ export function consumeNewConnectionHomeMessage(
 
   writeStoredPrompt({ partnerId, latestCardId: newestId });
   return NEW_CONNECTION_HOME_MESSAGE;
+}
+
+/**
+ * Reconcile the one-off Home companion line while the entry cover is still
+ * visible. Both reads remain cache-first on failure, and the returned line is
+ * consumed exactly once before Home is revealed.
+ */
+export async function prepareHomeConnectionMessage(): Promise<string | null> {
+  const pairing = await fetchPairing({ force: true });
+  const partnerId = pairing.paired ? pairing.partner?.userId ?? null : null;
+  if (!partnerId) return null;
+  const history = await fetchConnectionHistory({ incremental: true });
+  return consumeNewConnectionHomeMessage(history, partnerId);
 }

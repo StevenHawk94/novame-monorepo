@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { generateBrief } from '@/lib/connection-brief'
 import { connectionCardsDuplicate, publicConnectionCard } from '@/lib/connection-card'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 
 export const runtime = 'edge'
+export const maxDuration = 60
 
 const MODULE_KEYS = [
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
@@ -91,6 +93,33 @@ export async function GET(request) {
     if (!intentView || (me?.connection_resume_required !== true && !forceResume && !needsRecovery)) {
       return NextResponse.json({
         success: true, paired: true, insights: cachedInsights, cached: true,
+      })
+    }
+    // The durable Journal job owns generation and retry. Do not launch a
+    // second catch-up analysis while that job can still finish from its saved
+    // router checkpoint; serve the latest cache and resume it in background.
+    const { data: activeJob, error: activeJobError } = await supabase
+      .from('connection_analysis_jobs')
+      .select('reflect_id,status,attempts')
+      .eq('user_id', partnerId)
+      .in('status', ['pending', 'processing', 'failed'])
+      .lt('attempts', 3)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (activeJobError) throw activeJobError
+    if (activeJob?.reflect_id) {
+      if (activeJob.status === 'failed') {
+        const { error: retryError } = await supabase.from('connection_analysis_jobs').update({
+          next_attempt_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq('reflect_id', activeJob.reflect_id)
+        if (retryError) throw retryError
+      }
+      after(() => processReflectAnalysisJobs({ reflectId: activeJob.reflect_id }))
+      return NextResponse.json({
+        success: true, paired: true, insights: cachedInsights,
+        cached: true, refreshPending: true,
       })
     }
     const result = await generateBrief(supabase, {

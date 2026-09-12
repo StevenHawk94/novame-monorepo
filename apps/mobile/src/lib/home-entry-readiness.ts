@@ -7,6 +7,7 @@ export const HOME_ENTRY_ASSETS = [
   'scene', 'companion', 'menu', 'outfits', 'scenes',
   'tab:index', 'tab:bags', 'tab:quests', 'tab:friends', 'tab:status',
   'home-layout', 'home-data', 'tabs-layout',
+  'home-copy',
   'friends-background', 'friends-data', 'entry-copy',
 ] as const;
 
@@ -30,7 +31,7 @@ const SHARED_ASSETS: readonly HomeEntryAsset[] = [
 ];
 const HOME_ASSETS: readonly HomeEntryAsset[] = [
   ...SHARED_ASSETS,
-  'scene', 'companion', 'menu', 'outfits', 'scenes', 'home-layout', 'home-data',
+  'scene', 'companion', 'menu', 'outfits', 'scenes', 'home-layout', 'home-data', 'home-copy',
 ];
 const FRIENDS_ASSETS: readonly HomeEntryAsset[] = [
   ...SHARED_ASSETS, 'friends-background', 'friends-data',
