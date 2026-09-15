@@ -10,7 +10,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "apps/mobile/assets/items/each"
+SOURCE = ROOT / "tools/item-source/memory-items/each"
 OUTPUT = ROOT / "apps/admin/public/item-atlas"
 GENERATED = ROOT / "apps/admin/src/generated/item-atlas.json"
 METADATA = ROOT / "packages/engine/src/items/rule-metadata.json"

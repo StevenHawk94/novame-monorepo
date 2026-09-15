@@ -42,7 +42,7 @@ const expected = [
   ['Events', 'memory.2261_event_ticket', '0ad2d89f02aa7737ebe2be2a24af92091daa2b12faa22dd68dbbd54f4cfa759a'],
   ['Volunteering', 'memory.1594_volunteer_center', '9c569bb892edccd9b5940925256ba646809f87214ca0130da22d39b110c7cd80'],
   ['Movies', 'memory.1363_movie_theater', '2023378e8a60c6e8d94362a18f32ce56f537b181856b0d500f658107618b448a'],
-  ['TV', 'memory.1362_television', '70ae1e0ffc4c7627306e0335f8bcd56401060f7af20cbe260042071b4bdd8a14'],
+  ['TV', 'memory.1362_television', '0f4eadf480904c189879f7879677b3430d14ee1666b73e73d6182e0bc741fe36'],
   ['Social Media', 'memory.5385_social_media', '37af815184079c41f16b7f53f4c76fb0a96be0b8092e3e08d6d85dffe809d7f0'],
   ['Writing', 'memory.2876_notebook', '78abbe436fedca3961cbb764088a657c23e5fa38aebb79f470cb8cf54bea0b89'],
 ];
@@ -70,13 +70,23 @@ test('ItemSprite has one canonical path per item, without a Tap Your Day art bra
   assert.doesNotMatch(source, /TAP_YOUR_DAY_IMAGES|tapYourDay/);
   assert.equal(fs.existsSync(path.join(root, 'apps/mobile/src/lib/tap-your-day-images.ts')), false);
   const { ItemSprite } = load('apps/mobile/src/components/ui/item-sprite.tsx', {
-    react: { memo: (fn) => fn },
+    react: {
+      memo: (fn) => fn,
+      useEffect() {},
+      useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
+      useSyncExternalStore() {},
+    },
     'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': { View: 'View', Text: 'Text', StyleSheet: { create: (value) => value } },
-    'expo-image': { Image: 'Image' },
+    'react-native': { Platform: { OS: 'ios' }, View: 'View', Text: 'Text', StyleSheet: { create: (value) => value } },
+    'expo-image': { Image: Object.assign('Image', { loadAsync: async () => null }) },
     '@novame/engine': { ITEM_DICTIONARY: { items: {} } },
     '../../lib/item-images.g': { ITEM_IMAGES: canonical },
     '../../lib/tap-person-images': { TAP_PERSON_IMAGES: people },
+    '../../lib/base-item-icons': { baseItemIconUrl: () => '' },
+    '../../lib/remote-items': { mergedItemDictionary: () => ({ items: {} }), remoteImageUri: () => '' },
+    '../../lib/download-queue': { ensurePriorityR2Image: async () => null },
+    '../../lib/item-manifest-cache': { getCachedRemoteItemManifest: () => null, subscribeRemoteItemManifest: () => () => {} },
+    '../../lib/android-r2-file-cache': { getAndroidR2CachedUri: () => null, invalidateAndroidR2CachedFile() {} },
   });
   const art = (id) => ItemSprite({ itemId: id, size: 58 }).props.children.props.source;
   for (const [, id] of expected) assert.equal(art(id), canonical[id]);

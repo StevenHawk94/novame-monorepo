@@ -22,7 +22,8 @@ import {
   type FreshBubble,
 } from '@/lib/bubble-store';
 import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
-import { prefetchAppData } from '@/lib/prefetch';
+import { prefetchAppData, prewarmCachedTabItemIcons } from '@/lib/prefetch';
+import { prewarmItemIcons } from '@/lib/item-icon-prewarm';
 import { getCachedTodayBubbles, loadTodayBubbles, type MemoryBubble } from '@/lib/home-bubbles';
 import { MemoryBubbles } from '@/components/main/memory-bubbles';
 import { AnnouncementGate } from '@/components/main/announcement-gate';
@@ -47,6 +48,8 @@ import { getCachedFriendFeed } from '@/lib/friends-api';
 import { consumeHomeRefresh, subscribeHomeRefresh } from '@/lib/home-refresh-signal';
 import { afterUiSettles } from '@/lib/ui-idle';
 import { getEquippedOutfitKey } from '@/lib/outfits';
+
+const HOME_BUBBLE_ICON_WAIT_MS = 1_200;
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
@@ -213,12 +216,29 @@ export default function HomeScreen() {
   const refreshHomeBubbles = useCallback(async (force = false) => {
     const nextBubbles = await loadTodayBubbles({ force });
     setBubbles((current) => sameMemoryBubbles(current, nextBubbles) ? current : nextBubbles);
-    // Mark data ready only after the bubble state is queued for the mounted
-    // Home. HomeEntryGate adds two paint frames before reveal, so users never
-    // see an empty Home followed by bubbles/feed popping into place.
     const entry = getHomeEntryState();
+    const homeIconsReady = prewarmItemIcons(nextBubbles.map((bubble) => bubble.itemId), {
+      deadlineMs: entry.pending ? HOME_BUBBLE_ICON_WAIT_MS : 0,
+      allowBeforeAndroidUi: entry.pending,
+      maxIcons: 6,
+      priority: -500,
+    });
+    // Offscreen tabs never extend Home's entry gate. Their first useful rows
+    // simply use the same covered/idle interval to reach persistent cache.
+    prewarmCachedTabItemIcons(getCachedFriendFeedPage().feed, {
+      allowBeforeAndroidUi: entry.pending,
+    });
+    // Home's own six bubbles are visible immediately, so give their tiny files
+    // a strict nested budget before declaring the mounted data visually ready.
+    // The outer five-second gate still fails open on a slow/offline network.
     if (entry.pending) {
-      requestAnimationFrame(() => markHomeEntryAsset('home-data', entry.attempt));
+      const attempt = entry.attempt;
+      await homeIconsReady;
+      if (getHomeEntryState().pending && getHomeEntryState().attempt === attempt) {
+        requestAnimationFrame(() => markHomeEntryAsset('home-data', attempt));
+      }
+    } else {
+      void homeIconsReady;
     }
     const pairing = getCachedPairing();
     const page = getCachedFriendFeedPage();
@@ -243,6 +263,17 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!homeEntry.pending || homeEntry.target !== 'home') return;
+    // Start disk work from the last-good snapshots immediately, in parallel
+    // with the authoritative feed request below. Fresh ids are reconciled by
+    // refreshHomeBubbles before the cover is allowed to lift.
+    void prewarmItemIcons(getCachedTodayBubbles().map((bubble) => bubble.itemId), {
+      allowBeforeAndroidUi: true,
+      maxIcons: 6,
+      priority: -500,
+    });
+    prewarmCachedTabItemIcons(getCachedFriendFeedPage().feed, {
+      allowBeforeAndroidUi: true,
+    });
     const signaledRefresh = consumeHomeRefresh();
     void refreshHomeBubbles(homeEntry.forceData || signaledRefresh);
     const attempt = homeEntry.attempt;

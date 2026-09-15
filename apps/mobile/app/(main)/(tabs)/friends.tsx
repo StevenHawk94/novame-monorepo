@@ -32,6 +32,7 @@ import { HomeEntryImage } from '@/components/main/home-entry-gate';
 import { getHomeEntryState, markHomeEntryAsset } from '@/lib/home-entry-readiness';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { afterUiSettles } from '@/lib/ui-idle';
+import { prewarmPairedFeedItemIcons } from '@/lib/prefetch';
 
 const FRIENDS_BACKGROUND_WIDTH = 841;
 const FRIENDS_BACKGROUND_HEIGHT = 1870;
@@ -43,7 +44,8 @@ const FRIENDS_BACKGROUND_HEIGHT = 1870;
  * soil; with friends, the pill sits under the title above the cream Messages
  * panel ("Latest memories of your friends" + the Friends List chip).
  *
- * Item art isn't ready — item slots render as blank tiles on purpose.
+ * Remote item art is prewarmed for the first feed cards. A neutral memory
+ * glyph remains visible if a cold/offline request has not settled yet.
  */
 
 function timeAgo(iso: string): string {
@@ -138,17 +140,21 @@ export default function FriendsScreen() {
       setFeedHasMore(false);
       setNextFeedCreatedAt(null);
       setNextFeedId(null);
-      return;
+      return [];
     }
     setFeed((current) => sameSnapshot(current, page.feed) ? current : page.feed); setFeedHasMore(page.hasMore);
     setNextFeedCreatedAt(page.nextBeforeCreatedAt ?? null);
     setNextFeedId(page.nextBeforeId ?? null);
+    return page.feed;
   }, []);
 
   useEffect(() => {
     if (!homeEntry.pending || homeEntry.target !== 'friends') return;
     const attempt = homeEntry.attempt;
-    void load(true).finally(() => {
+    void load(true).then((nextFeed) => prewarmPairedFeedItemIcons(nextFeed, {
+      allowBeforeAndroidUi: true,
+      deadlineMs: 1_200,
+    })).finally(() => {
       requestAnimationFrame(() => markHomeEntryAsset('friends-data', attempt));
     });
   }, [homeEntry.pending, homeEntry.target, homeEntry.attempt, load]);

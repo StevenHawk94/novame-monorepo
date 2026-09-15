@@ -1,10 +1,10 @@
 /**
  * Foreground-only R2 completion queue.
  *
- * Android keeps the 5,439 bundled item images as its offline baseline, then
- * fills the confirmed R2 P0 set into file caches with one foreground/idle
- * worker. Visible work can move ahead of that worker. iOS retains the existing
- * warm-up path unchanged.
+ * Both platforms keep only the curated bundled item set as their offline
+ * baseline. Remote-only item icons are downloaded only when a mounted tile,
+ * journal match, or widget actually needs one. Mutable R2 assets continue
+ * through one foreground/idle scheduler.
  *
  * Pages keep their existing cache-first behavior. Android warm-up is disk-only
  * with bounded backoff; it never pre-decodes the background image library or
@@ -37,6 +37,7 @@ import {
   isAndroidR2FileCached,
 } from './android-r2-file-cache';
 import type { RemoteItemManifest } from '@novame/engine';
+import { isBaseItemIconUrl } from './base-item-icons';
 
 const IS_ANDROID = Platform.OS === 'android';
 const MAX_CONCURRENCY = IS_ANDROID ? 1 : 2;
@@ -45,7 +46,7 @@ const MAX_RETRY_BACKOFF_MS = 5 * 60_000;
 const MAX_ATTEMPTS = 3;
 
 // Lower number = earlier. Explicit visible work and announcements may outrank
-// the confirmed P0 order. Equal-priority tasks retain manifest insertion order.
+// the confirmed download order. Equal-priority tasks retain insertion order.
 const PRIORITY = {
   urgent: IS_ANDROID ? -300 : -100,
   catalog: -40,
@@ -72,6 +73,11 @@ type QueueTask = {
   requiresAndroidIdle?: boolean;
 };
 
+type PriorityImageOptions = {
+  /** Entry-cover visuals may download before Android's first Home paint. */
+  allowBeforeAndroidUi?: boolean;
+};
+
 const tasks = new Map<string, QueueTask>();
 const taskWaiters = new Map<string, Set<(ok: boolean) => void>>();
 const listeners = new Set<() => void>();
@@ -88,6 +94,11 @@ let androidUiReady = false;
 let androidIdlePermit = false;
 let androidIdleHandle: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
 let uiYieldGeneration = 0;
+
+function isBaseIconTask(task: QueueTask): boolean {
+  return task.key.startsWith('image:')
+    && isBaseItemIconUrl(task.key.slice('image:'.length));
+}
 
 function notifyAssetReady(key: string): void {
   revision += 1;
@@ -223,36 +234,37 @@ function scheduleAndroidIdlePump(): void {
   });
 }
 
-async function runTask(task: QueueTask): Promise<void> {
+async function runTask(task: QueueTask): Promise<boolean> {
   try {
     if (task.isReady && await task.isReady()) {
-      if (IS_ANDROID) tasks.delete(task.key);
+      if (IS_ANDROID || isBaseIconTask(task)) tasks.delete(task.key);
       else task.status = 'done';
       settleTask(task.key, true);
-      return;
+      return true;
     }
     const work = task.run();
     const ok = task.timeoutMs === null
       ? await work
       : await withTimeout(work, task.timeoutMs ?? ATTEMPT_TIMEOUT_MS);
     if (!ok) throw new Error('R2 asset was not cached');
-    if (IS_ANDROID) tasks.delete(task.key);
+    if (IS_ANDROID || isBaseIconTask(task)) tasks.delete(task.key);
     else {
       task.status = 'done';
       task.attempts = 0;
     }
-    // Background Android P0 files are intentionally silent: no mounted screen
+    // Background Android files are intentionally silent: no mounted screen
     // needs them yet, so repainting Home after every file would create jank.
     // A promoted/visible task (or the tiny catalog) still publishes promptly.
     if (!IS_ANDROID || task.priority < 0) notifyAssetReady(task.key);
     settleTask(task.key, true);
+    return true;
   } catch {
     task.attempts += 1;
-    if (IS_ANDROID && task.attempts >= MAX_ATTEMPTS) {
-      // P0 is eventual, but a bad/offline URL must not create a hot retry loop.
+    if (task.attempts >= MAX_ATTEMPTS && (IS_ANDROID || task.priority < 0)) {
+      // Hydration is eventual, but a bad/offline URL must not create a hot retry loop.
       // Start a fresh bounded retry cycle after five minutes; foregrounding or
       // an explicit visible request brings it forward sooner.
-      if (task.requiresAndroidIdle) {
+      if (task.requiresAndroidIdle || task.priority >= 0) {
         task.status = 'queued';
         task.attempts = 0;
         task.nextAttemptAt = Date.now() + MAX_RETRY_BACKOFF_MS;
@@ -260,7 +272,7 @@ async function runTask(task: QueueTask): Promise<void> {
         tasks.delete(task.key);
         settleTask(task.key, false);
       }
-      return;
+      return false;
     }
     const backoff = Math.min(
       1000 * 2 ** Math.min(task.attempts - 1, 8),
@@ -268,6 +280,7 @@ async function runTask(task: QueueTask): Promise<void> {
     );
     task.nextAttemptAt = Date.now() + backoff;
     task.status = 'queued';
+    return false;
   }
 }
 
@@ -297,6 +310,9 @@ function addTask(task: Omit<QueueTask, 'status' | 'attempts' | 'nextAttemptAt'>)
   const existing = tasks.get(task.key);
   if (existing) {
     existing.priority = Math.min(existing.priority, task.priority);
+    // A visible entry-cover request promotes an already-queued background
+    // copy of the same URL instead of waiting for Home to reveal first.
+    existing.requiresAndroidUi = Boolean(existing.requiresAndroidUi && task.requiresAndroidUi);
     existing.requiresAndroidIdle = Boolean(existing.requiresAndroidIdle && task.requiresAndroidIdle);
     if (existing.status !== 'active' && existing.status !== 'done') {
       existing.nextAttemptAt = Math.min(existing.nextAttemptAt, Date.now());
@@ -312,8 +328,13 @@ function addTask(task: Omit<QueueTask, 'status' | 'attempts' | 'nextAttemptAt'>)
 }
 
 /** Add a static R2 image to expo-image's persistent disk cache. */
-export function enqueueR2Image(url: string, priority = 20): void {
+export function enqueueR2Image(
+  url: string,
+  priority = 20,
+  options?: PriorityImageOptions,
+): void {
   if (!url.startsWith('https://media.novameapp.com/')) return;
+  const allowBeforeAndroidUi = options?.allowBeforeAndroidUi === true;
   addTask({
     key: `image:${url}`,
     priority,
@@ -334,27 +355,34 @@ export function enqueueR2Image(url: string, priority = 20): void {
         return false;
       }
     },
-    requiresAndroidUi: IS_ANDROID,
-    requiresAndroidIdle: IS_ANDROID && priority >= 0,
+    requiresAndroidUi: IS_ANDROID && !allowBeforeAndroidUi,
+    requiresAndroidIdle: IS_ANDROID && !allowBeforeAndroidUi && priority >= 0,
     timeoutMs: IS_ANDROID ? null : undefined,
   });
   pump();
 }
 
-/** Await a user-visible Android file while preserving the single queue lane. */
+/** Await a user-visible cached file while preserving the shared queue lanes. */
 export function ensurePriorityR2Image(
   url: string,
   priority: number = PRIORITY.urgent,
+  options?: PriorityImageOptions,
 ): Promise<string | null> {
   if (!IS_ANDROID) {
-    return ExpoImage.prefetch(url, { cachePolicy: 'memory-disk' })
-      .then((ok) => ok ? url : null)
-      .catch(() => null);
+    return (async () => {
+      if (!url.startsWith('https://media.novameapp.com/')) return null;
+      const cached = await ExpoImage.getCachePathAsync(url).catch(() => null);
+      if (cached) return cached;
+      enqueueR2Image(url, priority, options);
+      const ok = await waitForTask(`image:${url}`);
+      if (!ok) return null;
+      return await ExpoImage.getCachePathAsync(url).catch(() => null);
+    })();
   }
   return (async () => {
     if (!url.startsWith('https://media.novameapp.com/')) return null;
     if (await isAndroidR2FileCached(url)) return getAndroidR2CachedUri(url);
-    enqueueR2Image(url, priority);
+    enqueueR2Image(url, priority, options);
     const key = `image:${url}`;
     const ok = await waitForTask(key);
     return ok ? getAndroidR2CachedUri(url) : null;

@@ -364,7 +364,13 @@ function RootLayout() {
   useEffect(() => {
     // ---- AppState: control auto-refresh based on foreground/background ----
     let cancelForegroundJobs: (() => void) | null = null;
+    let previousState = AppState.currentState;
+    let isInitialPass = true;
     const handleAppStateChange = (state: AppStateStatus) => {
+      const becameActive = state === 'active' && previousState !== 'active';
+      const shouldCheckContentVersion = !isInitialPass && becameActive;
+      isInitialPass = false;
+      previousState = state;
       observeHomeEntryAppState(state);
       cancelForegroundJobs?.();
       cancelForegroundJobs = null;
@@ -389,7 +395,11 @@ function RootLayout() {
           { delayMs: 420, run: () => { void reconcileAvailablePurchases(); } },
           { delayMs: 650, run: () => { void syncRemoteNotificationRegistration(); } },
           { delayMs: 900, run: () => { void reconcileDailyReminderSchedule(); } },
-          { delayMs: 1_150, run: () => { void checkContentVersionInBackground(); } },
+          // Cold start already launches this probe above. Only a genuine
+          // background -> foreground transition should launch another one.
+          ...(shouldCheckContentVersion
+            ? [{ delayMs: 1_150, run: () => { void checkContentVersionInBackground(); } }]
+            : []),
           // R2 work is file-only/idle on Android, but starting its native task
           // inventory after recovery prevents competition with the first tab.
           { delayMs: Platform.OS === 'android' ? 3_800 : 1_350, run: resumeDownloadQueue },

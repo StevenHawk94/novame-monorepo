@@ -1,9 +1,10 @@
 import { Asset } from 'expo-asset';
-import { Image as ExpoImage } from 'expo-image';
 
 import { nativeSyncLatestFriendReflect } from '../../modules/widget-sync';
 import { ITEM_IMAGES } from './item-images.g';
 import { TAP_PERSON_IMAGES } from './tap-person-images';
+import { baseItemIconUrl } from './base-item-icons';
+import { ensurePriorityR2Image } from './download-queue';
 import { getProfileDefaultAvatar } from './avatar';
 import { remoteImageUri } from './remote-items';
 import type { FeedEntry, PairingStatus } from './friends-api';
@@ -42,17 +43,20 @@ export async function syncWidgetLatestFriend(
       latest.itemIds.slice(0, 6).map(async (itemId, i) => {
         // A published R2 replacement/addition wins over the bundled fallback,
         // matching ItemSprite everywhere else in the app.
-        let src: string | null = remoteImageUri(itemId) || null;
+        const bundled = ITEM_IMAGES[itemId] ?? TAP_PERSON_IMAGES[itemId];
+        let src: string | null = remoteImageUri(itemId)
+          || (!bundled ? baseItemIconUrl(itemId) : '')
+          || null;
         if (src) {
           // Reuse the exact R2 bytes already rendered by ItemSprite. This
           // avoids a second network race in the widget process and prevents
           // an older bundled icon from lingering after an admin replacement.
-          src = await ExpoImage.getCachePathAsync(src) ?? src;
+          src = await ensurePriorityR2Image(src);
         }
         // Tap Your Day uses its own curated asset table. Without this lookup,
         // those ids fell through to dictionary emoji (for example Family ->
         // the system 🐰), so the widget did not match the in-app Paired UI.
-        const mod = ITEM_IMAGES[itemId] ?? TAP_PERSON_IMAGES[itemId];
+        const mod = bundled;
         if (!src && mod) {
           try {
             const asset = Asset.fromModule(mod);

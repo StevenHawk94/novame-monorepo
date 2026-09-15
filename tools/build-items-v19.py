@@ -7,7 +7,8 @@ assigned to exactly one grid cell by its center, so detached details stay with
 their icon and pixels from neighboring cells cannot leak into the output.
 
 Outputs:
-  apps/mobile/assets/items/each/memory.<icon-name>.webp
+  tools/item-source/memory-items/each/memory.<icon-name>.webp
+  apps/mobile/assets/items/each/ (the selected 256 runtime icons only)
   tools/item-source/memory-items/standardized-preview.html
   tools/item-source/memory-items/items-v31-image-qa.json
 
@@ -40,7 +41,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "tools" / "item-source" / "memory-items"
 # v33 retains the v31 artwork identities; only the source workbook has moved on.
 WORKBOOK = SOURCE_DIR / "Icon_Mapping_Core_Tables_v33.xlsx"
-OUTPUT_DIR = ROOT / "apps" / "mobile" / "assets" / "items" / "each"
+OUTPUT_DIR = SOURCE_DIR / "each"
+RUNTIME_DIR = ROOT / "apps" / "mobile" / "assets" / "items" / "each"
+BUNDLE_PATH = ROOT / "apps" / "mobile" / "src" / "lib" / "bundled-item-ids.json"
 PREVIEW_PATH = SOURCE_DIR / "standardized-preview.html"
 QA_PATH = SOURCE_DIR / "items-v31-image-qa.json"
 PREVIEW_IMAGE_DIR = Path(os.path.relpath(OUTPUT_DIR, PREVIEW_PATH.parent)).as_posix()
@@ -628,6 +631,19 @@ def main() -> None:
     missing = sorted(expected_all_files - disk_files)
     if unexpected or missing:
         raise ValueError(f"Output directory mismatch: unexpected={unexpected[:5]}, missing={missing[:5]}")
+
+    bundled_ids = set(json.loads(BUNDLE_PATH.read_text())["itemIds"])
+    if len(bundled_ids) != 256:
+        raise ValueError(f"Expected 256 bundled item IDs, found {len(bundled_ids)}")
+    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    for existing in RUNTIME_DIR.glob("memory.*.webp"):
+        if existing.stem not in bundled_ids:
+            existing.unlink()
+    for item_id in bundled_ids:
+        shutil.copyfile(OUTPUT_DIR / f"{item_id}.webp", RUNTIME_DIR / f"{item_id}.webp")
+    runtime_files = {path.stem for path in RUNTIME_DIR.glob("memory.*.webp")}
+    if runtime_files != bundled_ids:
+        raise ValueError("Runtime icon directory does not match bundled-item-ids.json")
 
     # Preview metadata is cheap to regenerate and references the existing files;
     # incremental image builds do not need to decode or rewrite old artwork.

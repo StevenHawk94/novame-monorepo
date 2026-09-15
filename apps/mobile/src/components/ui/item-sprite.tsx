@@ -8,8 +8,9 @@
  * (Memories, Guided Reflect, feeds) paint all tiles at once instead of
  * popping in sheet-by-sheet as the old whole-sheet sprite windows decoded.
  *
- * Unknown item or missing art → the item's emoji if the dictionary has
- * one, else a blank tile — screens never break while art catches up.
+ * Unknown item or missing art → the item's emoji, then a neutral sparkle.
+ * Remote-first screens therefore never expose a blank bubble while art catches
+ * up or when the device is offline.
  *
  * New batches: regenerate the dictionary, drop the standardized sheets in
  * assets/items/, then run tools/slice-item-images.py to refresh both the
@@ -21,8 +22,9 @@ import { Image } from 'expo-image';
 
 import { ITEM_IMAGES } from '../../lib/item-images.g';
 import { TAP_PERSON_IMAGES } from '../../lib/tap-person-images';
+import { baseItemIconUrl } from '../../lib/base-item-icons';
 import { mergedItemDictionary, remoteImageUri } from '../../lib/remote-items';
-import { ensurePriorityR2Image, prioritizeR2Image } from '../../lib/download-queue';
+import { ensurePriorityR2Image } from '../../lib/download-queue';
 import { getCachedRemoteItemManifest, subscribeRemoteItemManifest } from '../../lib/item-manifest-cache';
 import {
   getAndroidR2CachedUri,
@@ -92,46 +94,39 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
     () => getCachedRemoteItemManifest()?.version ?? '0',
     () => '0',
   );
-  const remoteUri = remoteImageUri(itemId);
   const bundledArt = TAP_PERSON_IMAGES[itemId] ?? ITEM_IMAGES[itemId];
+  // Admin replacements remain authoritative. Base-catalog R2 is consulted
+  // only when this release deliberately omitted the icon from its 256-file
+  // offline bundle, so common icons never incur a request.
+  const remoteUri = remoteImageUri(itemId) || (!bundledArt ? baseItemIconUrl(itemId) : '');
   const warmedArt = warmedBundledArt.get(itemId);
-  const [androidRemote, setAndroidRemote] = useState<{
+  const [remoteFile, setRemoteFile] = useState<{
     sourceUrl: string | null;
     localUri: string | null;
   }>(() => ({
     sourceUrl: remoteUri,
-    localUri: remoteUri ? getAndroidR2CachedUri(remoteUri) : null,
+    localUri: Platform.OS === 'android' && remoteUri ? getAndroidR2CachedUri(remoteUri) : null,
   }));
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
     let active = true;
     if (!remoteUri) {
-      setAndroidRemote({ sourceUrl: null, localUri: null });
+      setRemoteFile({ sourceUrl: null, localUri: null });
       return () => { active = false; };
     }
-    const cached = getAndroidR2CachedUri(remoteUri);
-    setAndroidRemote({ sourceUrl: remoteUri, localUri: cached });
-    if (!cached) {
-      void ensurePriorityR2Image(remoteUri).then((uri) => {
-        if (active && uri) setAndroidRemote({ sourceUrl: remoteUri, localUri: uri });
-      });
-    }
+    const cached = Platform.OS === 'android' ? getAndroidR2CachedUri(remoteUri) : null;
+    setRemoteFile({ sourceUrl: remoteUri, localUri: cached });
+    void ensurePriorityR2Image(remoteUri).then((uri) => {
+      if (active && uri) setRemoteFile({ sourceUrl: remoteUri, localUri: uri });
+    });
     return () => { active = false; };
   }, [remoteUri]);
-  // Android never lets a mounted grid start an independent remote decode.
-  // Keep showing its bundled fallback until the shared one-lane file worker
-  // publishes a verified local URI. iOS retains the existing remote source.
-  const remoteArt = remoteUri
-    ? Platform.OS === 'android'
-      ? androidRemote.sourceUrl === remoteUri && androidRemote.localUri
-        ? { uri: androidRemote.localUri }
-        : null
-      : { uri: remoteUri }
+  // Neither platform lets a mounted grid open independent remote requests.
+  // The shared bounded queue publishes a verified cache URI, then this one
+  // tile repaints without refreshing its parent screen.
+  const remoteArt = remoteUri && remoteFile.sourceUrl === remoteUri && remoteFile.localUri
+    ? { uri: remoteFile.localUri }
     : null;
   const art = remoteArt ?? warmedArt ?? bundledArt;
-  useEffect(() => {
-    if (Platform.OS !== 'android' && remoteUri) prioritizeR2Image(remoteUri);
-  }, [remoteUri]);
   if (art == null) {
     const item = mergedItemDictionary().items[itemId];
     return (
@@ -142,9 +137,7 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
           style,
         ]}
       >
-        {item?.emoji ? (
-          <Text style={{ fontSize: size * 0.55, lineHeight: size * 0.7 }}>{item.emoji}</Text>
-        ) : null}
+        <Text style={{ fontSize: size * 0.55, lineHeight: size * 0.7 }}>{item?.emoji ?? '✨'}</Text>
       </View>
     );
   }
@@ -164,11 +157,11 @@ export const ItemSprite = memo(function ItemSprite({ itemId, size, radius = Math
         style={{ width: size, height: size }}
         contentFit="contain"
         onError={() => {
-          if (Platform.OS !== 'android' || !remoteUri || !remoteArt) return;
-          invalidateAndroidR2CachedFile(remoteUri);
-          setAndroidRemote({ sourceUrl: remoteUri, localUri: null });
+          if (!remoteUri || !remoteArt) return;
+          if (Platform.OS === 'android') invalidateAndroidR2CachedFile(remoteUri);
+          setRemoteFile({ sourceUrl: remoteUri, localUri: null });
           void ensurePriorityR2Image(remoteUri).then((uri) => {
-            if (uri) setAndroidRemote({ sourceUrl: remoteUri, localUri: uri });
+            if (uri) setRemoteFile({ sourceUrl: remoteUri, localUri: uri });
           });
         }}
       />

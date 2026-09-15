@@ -51,6 +51,10 @@ function getR2Client() {
   cachedClient = new S3Client({
     region: 'auto',
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    // R2's account endpoint expects the bucket in the request path. Without
+    // this, the AWS SDK may generate an unresolvable
+    // `${bucket}.${account}.r2.cloudflarestorage.com` hostname.
+    forcePathStyle: true,
     credentials: { accessKeyId, secretAccessKey },
   });
   return cachedClient;

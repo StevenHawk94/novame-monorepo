@@ -67,7 +67,8 @@ test('Android P0 uses one idle lane in the confirmed manifest order', () => {
   assert.match(queue, /const MAX_CONCURRENCY = IS_ANDROID \? 1 : 2/);
   assert.match(queue, /InteractionManager\.runAfterInteractions/);
   assert.match(queue, /requiresAndroidUi: IS_ANDROID/);
-  assert.match(queue, /requiresAndroidIdle: IS_ANDROID && priority >= 0/);
+  assert.match(queue, /requiresAndroidIdle: IS_ANDROID && !allowBeforeAndroidUi && priority >= 0/);
+  assert.match(queue, /existing\.requiresAndroidUi = Boolean\(existing\.requiresAndroidUi && task\.requiresAndroidUi\)/);
   assert.match(queue, /export function markAndroidP0UiReady/);
   assert.match(queue, /const MAX_ATTEMPTS = 3/);
   assert.match(queue, /Date\.now\(\) \+ MAX_RETRY_BACKOFF_MS/);
@@ -105,7 +106,7 @@ test('Android renderers use verified local files and keep bundled fallbacks', ()
 
   const item = read('apps/mobile/src/components/ui/item-sprite.tsx');
   assert.match(item, /ensurePriorityR2Image\(remoteUri\)/);
-  assert.match(item, /androidRemote\.sourceUrl === remoteUri && androidRemote\.localUri/);
+  assert.match(item, /remoteFile\.sourceUrl === remoteUri && remoteFile\.localUri/);
   assert.match(item, /const art = remoteArt \?\? warmedArt \?\? bundledArt/);
   assert.match(item, /invalidateAndroidR2CachedFile\(remoteUri\)/);
 
@@ -129,7 +130,7 @@ test('outfit and Focus Voice media require atomic completion markers', () => {
   assert.match(focus, /if \(Platform\.OS !== 'android'\)[\s\S]*FileSystem\.downloadAsync\(urlFor\(key\), path\)/);
 });
 
-test('Android runtime waits for first paint, then completes P0 sequentially', async () => {
+test('Android permits only entry icons before first paint, then completes P0 sequentially', async () => {
   const code = ts.transpileModule(read('apps/mobile/src/lib/download-queue.ts'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
@@ -195,6 +196,9 @@ test('Android runtime waits for first paint, then completes P0 sequentially', as
         return `file://${url}`;
       },
     },
+    './base-item-icons': {
+      isBaseItemIconUrl: () => false,
+    },
     '@novame/engine': {},
   };
   vm.runInNewContext(code, {
@@ -210,6 +214,10 @@ test('Android runtime waits for first paint, then completes P0 sequentially', as
   await new Promise(setImmediate);
   assert.deepEqual(downloads, []);
 
+  const entryIcon = 'https://media.novameapp.com/Items/base-icons/v1/entry.webp';
+  await queue.ensurePriorityR2Image(entryIcon, undefined, { allowBeforeAndroidUi: true });
+  assert.deepEqual(downloads, ['Items/base-icons/v1/entry.webp']);
+
   queue.markAndroidP0UiReady();
   for (let guard = 0; guard < 30 && !downloads.includes('focus'); guard += 1) {
     await new Promise(setImmediate);
@@ -219,6 +227,7 @@ test('Android runtime waits for first paint, then completes P0 sequentially', as
   await new Promise(setImmediate);
   assert.equal(maxActive, 1);
   assert.deepEqual(downloads, [
+    'Items/base-icons/v1/entry.webp',
     'Outfits/o1.webp', 'Outfits/o2.webp',
     'Maps/s1-Small.webp',
     'Outfits/o1-Bunny.webp', 'Outfits/o2-Bunny.webp',
