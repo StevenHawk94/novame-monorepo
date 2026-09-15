@@ -15,7 +15,7 @@ import { syncOnboardingCompanion } from '@/lib/onboarding';
  *
  * useStudyClaimDetector() went with the willpower system (D5).
  *
- * Focus/Reflect entry pickers use ordinary stack cards, not separately presented
+ * Thump/Reflect entry pickers use ordinary stack cards, not separately presented
  * transparent native modals. Navigation owns both their visible exit and touch
  * release, avoiding an invisible modal container over Home. Their input/session child
  * routes remain fullScreenModal and do not mount that gesture; losing an
@@ -106,15 +106,14 @@ export default function MainLayout() {
           <Stack.Screen name="reflect-guided" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
           <Stack.Screen name="shared-memory-create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
           <Stack.Screen
-            name="focus"
+            name="thump"
             options={{
               presentation: 'card',
               animation: 'slide_from_bottom',
               animationDuration: 250,
               gestureEnabled: false,
-              // Keep the native transition sky-blue while focus.webp is
-              // decoding so the first visit never flashes deep brown.
-              contentStyle: { backgroundColor: '#169FFE' },
+              // Match the bundled Bunny Court sky while its art decodes.
+              contentStyle: { backgroundColor: '#A9D9E9' },
             }}
           />
         </Stack>

@@ -12,7 +12,6 @@
  */
 
 export type XpSource =
-  | 'focus'
   | 'reflect'
   | 'quietWins'
   | 'newLens'
@@ -32,7 +31,6 @@ interface XpRule {
 export const CURRENCY_CAP = 99999;
 
 // PRD §8.1 values. Notes:
-//  - focus pays twice a day now (was once)
 //  - visitMaster's real gate is the 48h cooldown in the RPC; the day-cap here
 //    only stops double-pay inside one day
 //  - tameEnemy: free users tame three times a day; paid users once per enemy (8/day).
@@ -40,7 +38,6 @@ export const CURRENCY_CAP = 99999;
 //    so maxDailyXp() stays the true upper bound.
 //  - bubble: popping a friend's memory bubble on Home (+5, at most 5 a day)
 export const XP_RULES: Record<XpSource, XpRule> = {
-  focus:       { award: 30,  cap: 2, period: 'day' },
   reflect:     { award: 30,  cap: 3, period: 'day' },
   quietWins:   { award: 20,  cap: 1, period: 'day' },
   newLens:     { award: 20,  cap: 1, period: 'day' },

@@ -21,7 +21,7 @@ test('tab pre-rendering remains enabled while focus reconciliation yields to nav
   }
 });
 
-test('Home ignores unrelated R2 completions and Focus settlement does not force its render', () => {
+test('Home ignores unrelated R2 completions and Thump does not force its render', () => {
   const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
   assert.match(home, /useR2AssetRevision\(selectedSceneRemoteUrl\)/);
   assert.doesNotMatch(home, /setCosmeticTick/);

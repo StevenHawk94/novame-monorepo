@@ -148,7 +148,7 @@ test('when both cadences are due, paywall is first and rating follows dismissal 
 });
 test('navigating, backgrounding, dialogs and walkthroughs defer the request without consuming it', () => {
   const h = gateHarness(); h.set({ route: ['(main)', 'reflect'] }); h.queue({ paywall: true });
-  h.set({ route: ['(main)', 'focus'] }); assert.equal(h.timers.size, 0);
+  h.set({ route: ['(main)', 'thump'] }); assert.equal(h.timers.size, 0);
   h.set({ route: ['(main)', 'reflect'], dialog: true }); assert.equal(h.timers.size, 0);
   h.set({ dialog: false, modal: 'guide' }); assert.equal(h.timers.size, 0);
   h.set({ modal: undefined }); assert.equal(h.timers.size, 1);

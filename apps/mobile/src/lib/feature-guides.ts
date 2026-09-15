@@ -3,7 +3,6 @@ import { kFeatureGuidesPending, kFeatureGuideState } from '../shared/storage/key
 
 export type FeatureGuideId =
   | 'reflect'
-  | 'focus'
   | 'paired'
   | 'connection'
   | 'memories'

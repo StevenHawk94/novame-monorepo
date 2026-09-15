@@ -60,7 +60,7 @@ export function prewarmCachedTabItemIcons(
 /**
  * Decode the two high-frequency bundled entry backgrounds as soon as the JS
  * root starts. Keeping the ImageRefs alive prevents a cold first navigation
- * from waiting on WebP decode; this is deliberately limited to Focus/Reflect
+ * from waiting on image decode; this is deliberately limited to Thump/Reflect
  * rather than warming the full bundled catalog.
  */
 export function warmEntryBackgrounds(): Promise<void> {
@@ -76,7 +76,7 @@ export function warmEntryBackgrounds(): Promise<void> {
     return entryBackgroundWarmRequest;
   }
   entryBackgroundWarmRequest = Promise.allSettled(
-    [BACKGROUNDS.focus, BACKGROUNDS.reflect].map(async (source) => {
+    [BACKGROUNDS.court, BACKGROUNDS.reflect].map(async (source) => {
       const image = await ExpoImage.loadAsync(source);
       warmedEntryBackgrounds.push(image);
     }),

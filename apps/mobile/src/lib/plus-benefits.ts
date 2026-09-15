@@ -4,5 +4,5 @@ export const DEFAULT_PLUS_BENEFITS = [
   'See what matters in your person’s day in real time.',
   'Create and keep the moments you share, together.',
   'Get Bunny Master insights from your moments.',
-  'Unlock exclusive outfits, scenes, and Focus features.',
+  'Unlock exclusive outfits, scenes, and Bunny Court cases.',
 ] as const;

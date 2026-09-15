@@ -1,7 +1,7 @@
 /**
  * OffsetCard — the design language's "8% offset" colored drop: a solid
  * backing layer in a theme color sits a few points below the card, giving the
- * sticker-like lifted look (Focus rows drop teal, Reflect rows drop tan…).
+ * sticker-like lifted look (entry rows can use teal or tan drops).
  * Implemented as a real view rather than a shadow so Android renders the
  * COLORED offset identically to iOS (elevation can't tint shadows).
  */

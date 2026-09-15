@@ -133,16 +133,13 @@ test('sound hook preloads only while focused, dedupes a draft and cannot auto-re
 });
 function descendants(node) { const out = [node]; ts.forEachChild(node, (child) => { out.push(...descendants(child)); }); return out; }
 function ast(file) { return ts.createSourceFile(file, read(file), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX); }
-test('sound wiring is completion-only: Quest guard, Focus didJustFinish, Reflect draft entrance', () => {
+test('sound wiring is completion-only: Quest guard and Reflect draft entrance', () => {
   const quests = ast('apps/mobile/app/(main)/(tabs)/quests.tsx');
   const onCheck = descendants(quests).find((node) => ts.isFunctionDeclaration(node) && node.name?.text === 'onCheck');
   const questText = onCheck.getText(quests);
   assert.ok(questText.indexOf('checkInFlight.current = true') < questText.indexOf('playCompletionSound()'));
   assert.ok(questText.indexOf('playCompletionSound()') < questText.indexOf('checkTask(index)'));
   assert.equal((questText.match(/playCompletionSound\(\)/g) || []).length, 1);
-  const focus = ast('apps/mobile/app/(main)/focus.tsx');
-  const endGuard = descendants(focus).find((node) => ts.isIfStatement(node) && node.expression.getText(focus) === 'status.didJustFinish');
-  assert.match(endGuard.thenStatement.getText(focus), /creditedRef.current = true;\s*playCompletionSound\(\)/);
   const settlement = read('apps/mobile/src/components/main/reflect-settlement.tsx');
   assert.ok(!settlement.includes('useCompletionSound'));
   assert.match(settlement, /onPresented\(draft.draftId\)/);

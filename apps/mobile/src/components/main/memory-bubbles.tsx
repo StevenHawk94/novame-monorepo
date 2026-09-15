@@ -9,7 +9,7 @@
  * composition) with a deterministic per-bubble jitter so the arrangement is
  * stable all day but not grid-like. The overlay itself is pointerEvents
  * box-none — only the bubbles and the open card swallow touches, so the pet,
- * top bar, and Focus/Reflect stay tappable through it.
+ * top bar, and Thump/Journal stay tappable through it.
  *
  * Animations run on reanimated shared values (UI thread): a slow vertical
  * bob with a per-bubble phase offset, and a one-shot pop. No layout thrash.

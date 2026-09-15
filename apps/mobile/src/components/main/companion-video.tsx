@@ -23,9 +23,9 @@ import { DEFAULT_COMPANION_VIDEO } from './companion-video-source';
  * THE VIDEO MUST NEVER SIT PAUSED (product requirement). Three things can stop
  * a muted looping player, and none of them resume it by themselves:
  *   1. app background -> foreground (expo-video pauses on background)
- *   2. iOS audio-session interruptions -- calls, Siri, other apps, and our own
- *      Focus audio activating the session; a muted player still participates
- *      unless it mixes with others
+ *   2. iOS audio-session interruptions -- calls, Siri, other apps, and in-app
+ *      completion sounds; a muted player still participates unless it mixes
+ *      with others
  *   3. anything else (native hiccup, modal presentation edge cases)
  * Defenses, layered:
  *   - audioMixingMode 'mixWithOthers': a muted pet clip has no business

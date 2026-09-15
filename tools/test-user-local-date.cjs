@@ -31,7 +31,7 @@ test('invalid or missing timezones fail safely to UTC', () => {
 
 test('reward mutation routes no longer trust caller localDate', () => {
   const routes = [
-    'focus/route.js', 'lens/complete/route.js', 'quests/check/route.js',
+    'lens/complete/route.js', 'quests/check/route.js',
     'quests/start/route.js', 'tame-enemy/route.js', 'bubbles/pop/route.js',
     'kit/quiet-wins/route.js', 'kit/true-north/route.js', 'reflect/prepare/route.js',
     'master/ask/route.js',

@@ -19,7 +19,7 @@ export function useCompletionSound() {
     const prepare = () => {
       if (sound.current || AppState.currentState !== 'active') return;
       // Configure before completion, not when the chime should already be heard.
-      // Otherwise iOS sound depends on whether Focus happened to set this first.
+      // Configure explicitly so playback never depends on another feature's audio state.
       void setAudioModeAsync({
         shouldPlayInBackground: false,
         playsInSilentMode: true,

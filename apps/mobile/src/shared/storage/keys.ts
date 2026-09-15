@@ -67,8 +67,11 @@ export const kCosmetics = defineKey('novame_cosmetics', 'user');
 /** Last-known bound email for the Connect Account screen (cache-first paint). */
 export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
 
-/** Focus voice rotation state: per-scene next/knownMax/resolved R2 keys. */
+/** Clear-only legacy Focus voice state retained for upgrade cleanup. */
 export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
+
+/** Cache-first Bunny Court catalog, active case and recent verdicts. */
+export const kCourtLobby = defineKey('burrow_court_lobby_v1', 'user');
 
 /** Cache-first Connection/Friends state: pairing, common items, insights. */
 export const kPairingStatus = defineKey('burrow_pairing_status', 'user');

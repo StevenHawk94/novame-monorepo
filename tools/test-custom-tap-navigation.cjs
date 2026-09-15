@@ -110,7 +110,11 @@ function sheetHarness() {
     '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: 34 }) },
     '@novame/engine': { ITEM_DICTIONARY: { items: { coffee: { displayName: 'Coffee' } } }, matchItems: value => value === 'coffee' ? [{ itemId: 'coffee' }] : [] },
-    '@/lib/custom-tap-catalog': catalog, '@/lib/remote-items': { mergedItemDictionary() {} },
+    '@/lib/custom-tap-catalog': catalog,
+    '@/lib/remote-items': {
+      mergedItemDictionary: () => ({ items: { coffee: { displayName: 'Coffee' } } }),
+      remoteIdsForPromptCategory: () => [],
+    },
     '@/components/ui/item-sprite': { ItemSprite: 'ItemSprite' }, '@/lib/haptics': { haptics: { light() {} } },
   });
   let tree;
@@ -192,7 +196,7 @@ test('swipe delegates exit directly to navigation without first hiding content; 
   assert.equal(swipe.calls.length, 1, 'cannot pop twice during closing');
   swipe.cleanup(); assert.equal(swipe.listeners.size, 0);
 });
-test('Focus gesture re-enables after returning from playback without needing another native transition', () => {
+test('entry gesture re-enables after returning from a child without another native transition', () => {
   const swipe = swipeHarness(); swipe.render();
   swipe.listeners.get('transitionEnd')({ data: { closing: false } });
   let handlers = swipe.render(false);
@@ -205,7 +209,7 @@ test('Focus gesture re-enables after returning from playback without needing ano
   assert.deepEqual(swipe.calls, [['dismiss']]);
   swipe.cleanup();
 });
-test('Focus scroll gate, sideways gestures and native closing cannot accidentally dismiss an entry', () => {
+test('entry scroll gate, sideways gestures and native closing cannot accidentally dismiss an entry', () => {
   const swipe = swipeHarness(); let atTop = false;
   const handlers = swipe.render(true, () => atTop);
   swipe.listeners.get('transitionEnd')({ data: { closing: false } });
@@ -218,7 +222,7 @@ test('Focus scroll gate, sideways gestures and native closing cannot accidentall
   assert.equal(swipe.calls.length, 0);
   swipe.cleanup();
 });
-test('only Focus/Reflect entries use native cards; input and companion modal protections stay unchanged', () => {
+test('only Thump/Reflect entries use native cards; input and companion modal protections stay unchanged', () => {
   const { default: MainLayout } = load('apps/mobile/app/(main)/_layout.tsx', {
     react: { useEffect() {} },
     'react-native': { AppState: { addEventListener: () => ({ remove() {} }) } },
@@ -227,9 +231,12 @@ test('only Focus/Reflect entries use native cards; input and companion modal pro
     '@/components/rating/official-rating-gate': { OfficialRatingGate: 'OfficialRatingGate' },
     '@/components/main/home-entry-gate': { HomeEntryGate: 'HomeEntryGate' },
     '@/lib/use-reflect-settlement-recovery': { useReflectSettlementRecovery() {} },
+    '@/components/ui/android-compact-typography': { AndroidCompactTypographyProvider: 'TypographyProvider' },
+    '@/lib/auth': { getCurrentSession: async () => null },
+    '@/lib/onboarding': { syncOnboardingCompanion: async () => ({ ok: true }) },
   });
   const screens = Object.fromEntries(nodes(MainLayout()).filter(node => node.type === 'StackScreen').map(node => [node.props.name, node.props.options]));
-  for (const name of ['focus', 'reflect']) {
+  for (const name of ['thump', 'reflect']) {
     assert.equal(screens[name].presentation, 'card');
     assert.equal(screens[name].animation, 'slide_from_bottom');
     assert.equal(screens[name].animationDuration, 250);

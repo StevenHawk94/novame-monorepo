@@ -30,11 +30,13 @@ type Listener = (snapshot: PairingRealtimeSnapshot) => void;
 type FriendshipListener = (status: FriendsStatus) => void;
 type GoodVibeListener = () => void;
 type ConnectionListener = () => void;
+type CourtListener = (sessionId?: string) => void;
 
 const listeners = new Set<Listener>();
 const friendshipListeners = new Set<FriendshipListener>();
 const goodVibeListeners = new Set<GoodVibeListener>();
 const connectionListeners = new Set<ConnectionListener>();
+const courtListeners = new Set<CourtListener>();
 let channel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
 let generation = 0;
@@ -85,6 +87,13 @@ function publishConnectionChanged(): void {
     } catch (error) {
       console.warn('[pairing] Connection realtime listener failed:', error);
     }
+  }
+}
+
+function publishCourtChanged(sessionId?: string): void {
+  for (const listener of courtListeners) {
+    try { listener(sessionId); }
+    catch (error) { console.warn('[court] realtime listener failed:', error); }
   }
 }
 
@@ -300,6 +309,11 @@ export function subscribeConnectionRealtime(listener: ConnectionListener): () =>
   return () => connectionListeners.delete(listener);
 }
 
+export function subscribeCourtRealtime(listener: CourtListener): () => void {
+  courtListeners.add(listener);
+  return () => courtListeners.delete(listener);
+}
+
 export async function startPairingRealtime(
   userId: string,
   options?: { recovery?: boolean },
@@ -351,6 +365,10 @@ export async function startPairingRealtime(
         // Payload is an invalidation only. Refresh both the current dashboard
         // and append-only History globally, even when the tab is hidden.
         void reconcileConnection(userId, subscribedGeneration, { knownChanged: true });
+      })
+      .on('broadcast', { event: 'court_changed' }, (message) => {
+        const sessionId = message.payload?.session_id;
+        publishCourtChanged(typeof sessionId === 'string' ? sessionId : undefined);
       })
       .on('broadcast', { event: 'shared_box_changed' }, (message) => {
         const partnerUserId = message.payload?.partner_user_id;

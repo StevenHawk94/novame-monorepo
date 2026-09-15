@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/push-notifications",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/bunny-court",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

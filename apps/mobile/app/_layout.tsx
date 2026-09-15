@@ -232,7 +232,18 @@ function RootLayout() {
     let active = true;
     const openNotification = (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return;
-      const data = response.notification.request.content.data as { type?: unknown } | null;
+      const data = response.notification.request.content.data as { type?: unknown; route?: unknown } | null;
+      const isCourt = data?.route === 'thump' && typeof data?.type === 'string' && data.type.startsWith('court_');
+      if (isCourt) {
+        const responseId = response.notification.request.identifier;
+        if (handledNotificationResponses.current.has(responseId)) return;
+        handledNotificationResponses.current.add(responseId);
+        setTimeout(() => {
+          if (active) router.navigate('/(main)/thump' as never);
+        }, 0);
+        Notifications.clearLastNotificationResponse();
+        return;
+      }
       if (data?.type !== 'partner_reflect') return;
       const responseId = response.notification.request.identifier;
       if (handledNotificationResponses.current.has(responseId)) return;

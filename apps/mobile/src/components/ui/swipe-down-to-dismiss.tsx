@@ -21,7 +21,7 @@ type NativeStackTransitionNavigation = {
 /**
  * Full-screen downward-dismiss gesture used only by first-level picker pages.
  * Child input flows deliberately do not mount this wrapper, so an in-progress
- * reflection or focus session cannot be dismissed by an accidental swipe.
+ * reflection or full-screen session cannot be dismissed by an accidental swipe.
  * This wrapper only recognizes intent. The native stack animates the entire
  * route out; never hide its contents before the navigator has removed it.
  */

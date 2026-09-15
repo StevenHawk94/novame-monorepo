@@ -26,6 +26,8 @@ export function getAIModelConfig() {
       || 'gemini-2.5-flash-lite',
     connectionWriter: process.env.AI_MODEL_CONNECTION_WRITER?.trim()
       || defaultGemini,
+    bunnyCourt: process.env.AI_MODEL_BUNNY_COURT?.trim()
+      || defaultGemini,
     fallback: process.env.AI_MODEL_FALLBACK?.trim() || 'deepseek-chat',
   }
 }

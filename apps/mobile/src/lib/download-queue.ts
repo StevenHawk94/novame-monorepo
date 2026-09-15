@@ -28,7 +28,6 @@ import {
   sceneAssetUrl,
   type SceneDef,
 } from './scenes';
-import { syncAllFocusVoiceAssets } from './focus-voice';
 import { getCachedRemoteItemManifest, remoteItemAssetUrl } from './item-manifest-cache';
 import { getSelectedScene } from './cosmetics-store';
 import {
@@ -56,7 +55,6 @@ const PRIORITY = {
   itemIcon: 15,
   sceneFull: 20,
   outfitAnimation: 25,
-  focusVoice: 40,
 } as const;
 
 type QueueTask = {
@@ -208,12 +206,6 @@ function pickNext(): QueueTask | null {
     if (IS_ANDROID && task.requiresAndroidUi && !androidUiReady) continue;
     if (IS_ANDROID && task.requiresAndroidIdle && !androidIdlePermit) continue;
     if (!best || task.priority < best.priority) best = task;
-  }
-  if (!IS_ANDROID && best?.key === 'focus-voice:all') {
-    const hasEarlierWork = [...tasks.values()].some((task) =>
-      task.key !== best?.key && task.priority < PRIORITY.focusVoice
-      && (task.status === 'active' || (task.status === 'queued' && task.nextAttemptAt <= now)));
-    if (hasEarlierWork) return null;
   }
   return best;
 }
@@ -453,7 +445,7 @@ function stageAndroidP0(outfits: OutfitDef[], scenes: SceneDef[]): void {
   }
 
   // Confirmed P0 order: Outfit thumbs → Map thumbs → worn previews → full
-  // Maps → Android outfit animations → Focus Voice. Equal-priority insertion
+  // Maps → Android outfit animations. Equal-priority insertion
   // order follows video-manifest.json.
   for (const outfit of outfits) {
     enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), PRIORITY.outfitThumb);
@@ -470,17 +462,6 @@ function stageAndroidP0(outfits: OutfitDef[], scenes: SceneDef[]): void {
   for (const outfit of outfits) {
     addOutfitVideoTask(outfit, PRIORITY.outfitAnimation, true);
   }
-  addTask({
-    key: 'focus-voice:all',
-    priority: PRIORITY.focusVoice,
-    run: () => syncAllFocusVoiceAssets({
-      shouldContinue: () => !paused && ![...tasks.values()].some((task) =>
-        task.status === 'queued' && task.priority < PRIORITY.focusVoice),
-    }),
-    requiresAndroidUi: true,
-    requiresAndroidIdle: true,
-    timeoutMs: null,
-  });
 }
 
 function stageScene(scene: SceneDef): void {
@@ -509,11 +490,6 @@ async function refreshRuntimeCatalogs(): Promise<boolean> {
   if (!IS_ANDROID) {
     for (const outfit of outfits) stageOutfit(outfit);
     for (const scene of scenes) stageScene(scene);
-    addTask({
-      key: 'focus-voice:all',
-      priority: PRIORITY.focusVoice,
-      run: syncAllFocusVoiceAssets,
-    });
   } else {
     stageAndroidP0(outfits, scenes);
   }

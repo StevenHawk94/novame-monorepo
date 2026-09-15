@@ -46,5 +46,5 @@ all referenced images exist.
   cached.
 - Visible assets jump to the front of the queue. Background warm-up order is:
   Announcement; catalogs; Outfit thumbs; Scene thumbs; Outfit previews; Item
-  overlays; Scene backgrounds; platform Outfit animations; Focus Voice.
+  overlays; Scene backgrounds; and platform Outfit animations.
 - Clearing app data rebuilds the queue from the manifests on next launch.

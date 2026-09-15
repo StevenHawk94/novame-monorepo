@@ -56,19 +56,22 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
         }).eq('id', row.id)
         continue
       }
-      // Deliberately generic: no display name, account id or reflect id leaves
-      // the backend. The authenticated app resolves the fresh Paired feed.
+      const isCourt = String(row.event_type || '').startsWith('court_')
+      const courtTitle = typeof row.payload?.title === 'string' ? row.payload.title.slice(0, 80) : null
+      const courtBody = typeof row.payload?.body === 'string' ? row.payload.body.slice(0, 180) : null
       const visibleMessages = tokens.map((token) => ({
         to: token.expo_push_token,
-        title: 'Burrow',
-        body: 'A little more of your person’s day is here for you.',
+        title: isCourt ? (courtTitle || 'Bunny Court') : 'Burrow',
+        body: isCourt ? (courtBody || 'The court has an update for you.') : 'A little more of your person’s day is here for you.',
         sound: 'default',
         channelId: 'partner-updates',
-        data: { type: 'partner_reflect', route: 'home' },
+        data: isCourt
+          ? { type: row.event_type, route: 'thump', sessionId: row.payload?.sessionId }
+          : { type: 'partner_reflect', route: 'home' },
       }))
       // Send the widget invalidation independently. Its best-effort delivery
       // must never reject, retry, or duplicate the existing visible alert.
-      const backgroundResponsePromise = fetch(EXPO_PUSH_URL, {
+      const backgroundResponsePromise = isCourt ? Promise.resolve(null) : fetch(EXPO_PUSH_URL, {
         method: 'POST',
         headers: {
           Accept: 'application/json', 'Content-Type': 'application/json',

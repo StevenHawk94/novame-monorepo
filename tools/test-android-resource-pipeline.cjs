@@ -82,7 +82,6 @@ test('Android P0 uses one idle lane in the confirmed manifest order', () => {
     'outfitAssetUrl(outfit.bunny',
     'sceneAssetUrl(scene.image',
     'addOutfitVideoTask(outfit, PRIORITY.outfitAnimation',
-    "key: 'focus-voice:all'",
   ].map((needle) => p0.indexOf(needle));
   assert.ok(ordered.every((index) => index >= 0), `missing P0 stage: ${ordered}`);
   assert.deepEqual([...ordered].sort((a, b) => a - b), ordered);
@@ -114,20 +113,13 @@ test('Android renderers use verified local files and keep bundled fallbacks', ()
   assert.match(prefetch, /if \(Platform\.OS === 'android'\) return/);
 });
 
-test('outfit and Focus Voice media require atomic completion markers', () => {
+test('outfit media requires atomic completion markers', () => {
   const outfits = read('apps/mobile/src/lib/outfits.ts');
   assert.match(outfits, /videoCompletePath/);
   assert.match(outfits, /const partial = `\$\{destination\}\.part`/);
   assert.match(outfits, /FileSystem\.moveAsync\(\{ from: partial, to: destination \}\)/);
   assert.match(outfits, /FileSystem\.writeAsStringAsync\(marker, 'ok'\)/);
   assert.match(outfits, /if \(Platform\.OS !== 'android'\)[\s\S]*FileSystem\.downloadAsync\([\s\S]*destination/);
-
-  const focus = read('apps/mobile/src/lib/focus-voice.ts');
-  assert.match(focus, /completePath/);
-  assert.match(focus, /const partial = `\$\{path\}\.part`/);
-  assert.match(focus, /shouldContinue/);
-  assert.match(focus, /FileSystem\.writeAsStringAsync\(marker, 'ok'\)/);
-  assert.match(focus, /if \(Platform\.OS !== 'android'\)[\s\S]*FileSystem\.downloadAsync\(urlFor\(key\), path\)/);
 });
 
 test('Android permits only entry icons before first paint, then completes P0 sequentially', async () => {
@@ -180,9 +172,6 @@ test('Android permits only entry icons before first paint, then completes P0 seq
       fetchSceneCatalog: async () => scenes,
       sceneAssetUrl: (key, version) => `https://media.novameapp.com/${key}?v=${version}`,
     },
-    './focus-voice': {
-      syncAllFocusVoiceAssets: async () => { downloads.push('focus'); return true; },
-    },
     './item-manifest-cache': { getCachedRemoteItemManifest: () => null, remoteItemAssetUrl: () => '' },
     './cosmetics-store': { getSelectedScene: () => 'default' },
     './android-r2-file-cache': {
@@ -219,7 +208,7 @@ test('Android permits only entry icons before first paint, then completes P0 seq
   assert.deepEqual(downloads, ['Items/base-icons/v1/entry.webp']);
 
   queue.markAndroidP0UiReady();
-  for (let guard = 0; guard < 30 && !downloads.includes('focus'); guard += 1) {
+  for (let guard = 0; guard < 30 && downloads.length < 9; guard += 1) {
     await new Promise(setImmediate);
     const next = idle.shift();
     if (next && !next.cancelled) next.fn();
@@ -233,7 +222,6 @@ test('Android permits only entry icons before first paint, then completes P0 seq
     'Outfits/o1-Bunny.webp', 'Outfits/o2-Bunny.webp',
     'Maps/s1.webp',
     'video:o1', 'video:o2',
-    'focus',
   ]);
   queue.resetDownloadQueue();
 });

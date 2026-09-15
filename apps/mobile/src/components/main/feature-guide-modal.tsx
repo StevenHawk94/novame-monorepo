@@ -40,12 +40,6 @@ const GUIDES: Record<FeatureGuideId, GuideCopy> = {
     button: 'Let’s Journal',
     icon: ICONS.reflectEntry3,
   },
-  focus: {
-    title: 'GIVE YOUR BRAIN A HEAD START',
-    body: 'Before work, study, or anything that needs your attention, press play for a short audio reset.',
-    button: 'Let’s Focus',
-    icon: ICONS.guideFocus,
-  },
   paired: {
     title: 'Burrow is better with your person.',
     body: 'Invite someone special to create a private space for two.',

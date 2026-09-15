@@ -53,7 +53,7 @@ const HOME_BUBBLE_ICON_WAIT_MS = 1_200;
 
 /**
  * Home. The companion lives here on a full-screen scene backdrop: a speech
- * bubble above the looping companion video, Focus + Reflect below, the settings
+ * bubble above the looping companion video, Thump + Journal below, the settings
  * menu at top-left, and outfits / scenes / leaderboard at top-right. Tapping the
  * companion opens the interaction sheet with every Kit.
  *
@@ -293,14 +293,14 @@ export default function HomeScreen() {
       homeFocusedRef.current = true;
       applyConnectionUpdateSpeech();
       // Outfit/scene selection is local-only. Repaint Home only when that
-      // actual selection changed, rather than on every return from Focus or
+      // actual selection changed, rather than on every return from Thump or
       // another retained screen.
       const nextPersonalizationKey = `${getHomeSceneRemoteUrl() ?? 'bundled'}|${getEquippedOutfitKey() ?? 'default'}`;
       if (nextPersonalizationKey !== personalizationKeyRef.current) {
         personalizationKeyRef.current = nextPersonalizationKey;
         setPersonalizationRevision((current) => current + 1);
       }
-      // Stack returns (notably Focus) must paint Home before any cache
+      // Stack returns (notably Thump) must paint Home before any cache
       // reconciliation. Notification entry remains owned by HomeEntryGate.
       const cancelDeferred = afterUiSettles(() => {
         if (!getHomeEntryState().pending) {
@@ -327,9 +327,9 @@ export default function HomeScreen() {
     void haptics.pageOpen();
     router.push('/(main)/reflect');
   });
-  const onFocus = () => navigate(() => {
+  const onThump = () => navigate(() => {
     void haptics.pageOpen();
-    router.push('/(main)/focus');
+    router.push('/(main)/thump' as never);
   });
   const onPetTap = () => navigate(() => {
     void haptics.pageOpen();
@@ -349,7 +349,7 @@ export default function HomeScreen() {
     ? DEFAULT_SCENE_BG
     : selectedSceneImg;
   // Short screens (iPhone SE) can't spare 140pt above the companion — scale
-  // the gap with the window so the video never crowds Focus/Reflect.
+  // the gap with the window so the video never crowds Thump/Journal.
   const { height } = useWindowDimensions();
   const scenePadTop = Math.max(60, Math.round(height * 0.14));
   const videoBottom = homeLayout.sceneY + homeLayout.videoY + homeLayout.videoHeight;
@@ -370,8 +370,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!homeEntry.pending || entriesTop == null || measuredLayoutParts.length < 5) return;
-    // All measurements have committed, including the repositioned Focus /
-    // Reflect row. Retry can reuse these measurements without remounting Home.
+    // All measurements have committed, including the repositioned Thump /
+    // Journal row. Retry can reuse these measurements without remounting Home.
     const frame = requestAnimationFrame(() => markHomeEntryAsset('home-layout', homeEntry.attempt));
     return () => cancelAnimationFrame(frame);
   }, [homeEntry.pending, homeEntry.attempt, homeLayout, measuredLayoutParts, entriesTop]);
@@ -457,11 +457,11 @@ export default function HomeScreen() {
             onLayout={(event) => recordLayout({ entriesHeight: event.nativeEvent.layout.height })}
           >
             <Pressable
-              onPressIn={onFocus}
-              onPress={onFocus}
+              onPressIn={onThump}
+              onPress={onThump}
               style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
             >
-              <Text style={styles.entryText}>Focus</Text>
+              <Text style={styles.entryText}>Thump</Text>
             </Pressable>
             <Pressable
               onPressIn={onReflect}
@@ -475,7 +475,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Friend memory bubbles float over the scene; box-none so the pet,
-            top bar, and Focus/Reflect stay tappable through the layer. */}
+            top bar, and Thump/Journal stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
         <FeatureGuideModal
           guide="memories"

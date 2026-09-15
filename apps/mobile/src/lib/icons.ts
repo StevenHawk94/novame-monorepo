@@ -43,7 +43,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   reflectEntry1: require('../../assets/Icons/reflect-entry1.png'),
   reflectEntry2: require('../../assets/Icons/reflect-entry2.png'),
   reflectEntry3: require('../../assets/Icons/reflect-entry3.png'),
-  guideFocus: require('../../assets/Icons/focus-challenge.png'),
   guidePaired: require('../../assets/Icons/friend-list.png'),
   guideConnection: require('../../assets/Icons/reflect-someone.png'),
   guideMemories: require('../../assets/Icons/Memories.png'),
@@ -82,16 +81,6 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 
-/** Focus scene illustrations (design: focus picker rows), keyed by scene id. */
-export const FOCUS_SCENE_ICONS: Record<string, ImageSourcePropType> = {
-  work: require('../../assets/Icons/focus-work.png'),
-  learn: require('../../assets/Icons/focus-learning.png'),
-  connect: require('../../assets/Icons/focus-connect.png'),
-  daily: require('../../assets/Icons/focus-daily-tasks.png'),
-  family: require('../../assets/Icons/focus-family.png'),
-  challenge: require('../../assets/Icons/focus-challenge.png'),
-};
-
 /** Reflect prompt illustrations, keyed by prompt id (domain REFLECT_PROMPTS). */
 export const REFLECT_PROMPT_ICONS: Record<number, ImageSourcePropType> = {
   1: require('../../assets/Icons/reflect-journalling.png'),
@@ -117,7 +106,7 @@ export const FRIEND_ICONS = {
 
 /** Full-bleed screen backgrounds (assets/Background). */
 export const BACKGROUNDS = {
-  focus: require('../../assets/Background/focus.webp'),
+  court: require('../../assets/bunny-court/forest-court.webp'),
   reflect: require('../../assets/Background/reflection.webp'),
   friends: require('../../assets/Background/friends.webp'),
   tameEnemy: require('../../assets/monsters/monster-bg.webp'),

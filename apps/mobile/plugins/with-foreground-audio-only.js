@@ -1,5 +1,5 @@
 /**
- * Keep expo-audio available for in-app Focus tracks and completion sounds,
+ * Keep expo-audio available for in-app completion sounds,
  * while removing its optional background/lock-screen playback service.
  *
  * Burrow deliberately stops audio when the app backgrounds and never calls
