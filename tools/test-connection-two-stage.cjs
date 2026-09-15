@@ -50,12 +50,15 @@ const legacyAi = load('apps/api/src/lib/reflect-ai.js', {
   './connection-evidence': evidence,
   './connection-card': card,
 });
+const templateMatcher = load('apps/api/src/lib/connection-template-matcher.js', {
+  './reflect-ai': { cleanConnectionUpdates: legacyAi.cleanConnectionUpdates },
+});
 
 function connectionAiWithResponses(responses, {
   cachedContent = null,
   models = {
     defaultGemini: 'gemini-2.5-flash',
-    connectionRouter: 'gemini-2.5-flash-lite',
+    connectionRouter: 'gemini-2.5-flash',
     connectionWriter: 'gemini-2.5-flash',
     fallback: 'deepseek-chat',
   },
@@ -84,6 +87,7 @@ function connectionAiWithResponses(responses, {
     },
     './connection-evidence': evidence,
     './reflect-ai': { cleanConnectionUpdates: legacyAi.cleanConnectionUpdates },
+    './connection-template-matcher': templateMatcher,
     './connection-context-cache': {
       getConnectionContextCache: async () => cachedContent,
       invalidateConnectionContextCache: async () => {},
@@ -98,16 +102,69 @@ function signal(id, section, familyKey) {
     signalId: id,
     topicKey: `${id}_topic`,
     kind: section === 'ways_in' ? 'support_need' : 'event',
-    summary: `Safe compact evidence for ${id}.`,
+    summary: `Meaningful effort crossed a quiet threshold for ${id}.`,
+    semanticCue: 'meaningful effort quiet threshold',
     continuity: 'one_off',
     sentiment: 'neutral',
     supportMode: section === 'ways_in' ? 'listen' : null,
+    evidenceStrength: 'moderate',
+    evidenceCount: 1,
+    temporalState: section === 'missed' ? 'completed_progress' : 'current',
+    persistence: 'single_supported_moment',
+    topicDomain: 'work_admin',
+    emotionFamily: 'neutral_mixed',
+    supportOpenness: section === 'ways_in' ? 'explicit' : 'not_applicable',
+    responsePreference: section === 'ways_in' ? 'listening_or_words' : 'not_applicable',
+    boundary: 'none',
+    timing: 'informational',
+    emotionalWeight: 'ordinary',
+    toneMode: 'warm_clear',
+    toneEvidence: 'warm_default',
+    mutuality: section === 'between' ? 'two_sided_independent' : 'not_applicable',
+    depthRecommendation: 'L2',
+    slotValues: {
+      anchorPhrase: null, timingPhrase: null, durationPhrase: null,
+      supportCue: null, sharedAnchor: null, contextCue: null,
+    },
     confidence: 0.9,
+    decision: 'publish',
     cardEligible: true,
     assignedSection: section,
     familyKey,
     newValue: 'Adds a useful second layer.',
     whyQualified: 'The reader gains a concrete implication.',
+  };
+}
+
+function scenario(overrides = {}) {
+  return {
+    familyKey: 'milestone_or_quiet_win', section: 'missed',
+    moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
+    scenario: 'A meaningful effort crosses a quiet threshold.',
+    signalType: 'concrete_development', temporalState: 'completed_progress',
+    persistence: 'single_supported_moment', topicDomain: 'work_admin',
+    emotionFamily: 'neutral_mixed', supportMode: 'none',
+    supportOpenness: 'not_applicable', responsePreference: 'not_applicable',
+    boundary: 'none', timing: 'informational', mutuality: 'not_applicable',
+    emotionalWeight: 'ordinary', depthRange: 'L2-L3',
+    searchAliases: 'quiet threshold|meaningful effort',
+    retrievalText: 'meaningful effort crossed a quiet threshold after sustained progress',
+    ...overrides,
+  };
+}
+
+function variant(overrides = {}) {
+  return {
+    templateVariantId: 'quiet_threshold__lower_warm_clear',
+    scenarioKey: 'quiet_threshold', section: 'missed',
+    variantKey: 'lower-warm_clear', depthBand: 'lower', toneMode: 'warm_clear',
+    playfulEligible: true,
+    templateCard: {
+      label: 'Quiet Win', title: 'The effort finally moved',
+      observation: 'They crossed a meaningful threshold after sustained effort.',
+      meaning: null, takeaway: null,
+    },
+    ...overrides,
   };
 }
 
@@ -174,8 +231,8 @@ test('router performs value/family routing in one bounded first-stage call', asy
   const request = JSON.parse(ai.__calls[0].userText);
   assert.equal(request.journal, 'private input');
   assert.equal(request.families.length, 1);
-  assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash-lite');
-  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 0);
+  assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash');
+  assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 512);
   assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 1024);
   assert.equal(ai.__calls[0].generationConfig.responseMimeType, 'application/json');
   assert.equal(ai.__calls[0].generationConfig.responseSchema.properties.signals.maxItems, 3);
@@ -272,14 +329,17 @@ test('DeepSeek fallback records the failed Gemini attempt for diagnosis', async 
   assert.match(result.providerAttempts[0].error, /synthetic Gemini outage/);
 });
 
-test('Connection stages use their independently configured Gemini models', async () => {
+test('Connection router and unmatched fallback use independently configured Gemini models', async () => {
   const models = {
     defaultGemini: 'gemini-default',
     connectionRouter: 'gemini-router',
     connectionWriter: 'gemini-writer',
     fallback: 'deepseek-fallback',
   };
-  const routed = signal('signal_model', 'missed', 'milestone_or_quiet_win');
+  const routed = {
+    ...signal('signal_model', 'missed', 'milestone_or_quiet_win'),
+    evidenceStrength: 'strong',
+  };
   const router = connectionAiWithResponses([{
     decision: 'update', connectionSignals: [routed],
   }], { models });
@@ -293,80 +353,122 @@ test('Connection stages use their independently configured Gemini models', async
 
   const writer = connectionAiWithResponses([{
     results: [{
-      signalId: 'signal_model', outcome: 'matched', scenarioKey: 'quiet_threshold',
+      signalId: 'signal_model', outcome: 'custom', scenarioKey: null,
       card: missedCard('signal_model'),
     }],
   }], { models });
   await writer.runConnectionMatchWriter({
     reflectId: 'reflect-model-writer',
     selectedSignals: [routed],
-    scenarioIndex: [{
-      familyKey: 'milestone_or_quiet_win', section: 'missed',
-      moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
-      scenario: 'A meaningful effort crosses a quiet threshold.',
-      templateCard: missedCard('template-model'),
-    }],
+    scenarioIndex: [], templateVariants: [],
     currentConnectionBoard: null,
   });
   assert.equal(writer.__calls[0].geminiModel, 'gemini-writer');
 });
 
-test('second stage matches scenarios and writes matched and custom cards in one call', async () => {
-  const updates = emptyUpdates();
-  updates.how_to_show_up = {
-    hasUpdate: true, clearExisting: false, cards: [waysCard('need_space')],
-  };
-  updates.worth_knowing = {
-    hasUpdate: true, clearExisting: true, cards: [missedCard('career_win')],
-  };
+test('reviewed templates render directly and only unmatched signals spend one fallback call', async () => {
   const ai = connectionAiWithResponses([{
     results: [
       {
-        signalId: 'career_win', outcome: 'matched', scenarioKey: 'quiet_threshold',
-        card: missedCard('career_win'),
-      },
-      {
-        signalId: 'need_space', outcome: 'custom', scenarioKey: null,
-        card: waysCard('need_space'),
+        signalId: 'unmapped_moment', outcome: 'custom', scenarioKey: null,
+        card: missedCard('unmapped_moment'),
       },
     ],
   }]);
   const selectedSignals = [
     signal('career_win', 'missed', 'milestone_or_quiet_win'),
-    signal('need_space', 'ways_in', null),
+    { ...signal('unmapped_moment', 'missed', null), evidenceStrength: 'strong' },
   ];
-  const scenarioIndex = [{
-    familyKey: 'milestone_or_quiet_win', section: 'missed',
-    moduleKey: 'worth_knowing', scenarioKey: 'quiet_threshold',
-    scenario: 'A meaningful effort crosses a quiet threshold.',
-    requiredEvidence: ['concrete progress'], disqualifiers: [],
-    templateId: 'template-one', templateCard: { title: 'Structural reference only' },
-  }];
   const generated = await ai.runConnectionMatchWriter({
     reflectId: 'reflect-2', selectedSignals,
-    scenarioIndex, currentConnectionBoard: null,
+    scenarioIndex: [scenario()], templateVariants: [variant()], currentConnectionBoard: null,
   });
   assert.equal(generated.signalResults.length, 2);
-  assert.equal(generated.data.worth_knowing.cards.length, 1);
-  assert.equal(generated.data.talk_about.cards.length, 1);
+  assert.equal(generated.data.worth_knowing.cards.length, 2);
   assert.equal(generated.data.worth_knowing.clearExisting, false);
   assert.equal(ai.__calls.length, 1);
   const request = JSON.parse(ai.__calls[0].userText);
-  assert.equal(request.signals.length, 2);
-  assert.equal(request.templates.length, 1);
-  assert.deepEqual(Object.keys(request.templates[0]), [
-    'familyKey', 'scenarioKey', 'label', 'title', 'observation', 'meaning', 'takeaway',
-  ]);
+  assert.equal(request.signals.length, 1);
+  assert.equal(request.signals[0].signalId, 'unmapped_moment');
+  assert.equal(request.templates, undefined);
   assert.equal(request.journal, undefined);
   assert.equal(ai.__calls[0].geminiModel, 'gemini-2.5-flash');
   assert.equal(ai.__calls[0].generationConfig.thinkingConfig.thinkingBudget, 512);
   assert.equal(ai.__calls[0].generationConfig.maxOutputTokens, 2048);
   assert.equal(ai.__calls[0].generationConfig.responseMimeType, 'application/json');
-  assert.equal(ai.__calls[0].generationConfig.responseSchema.properties.results.minItems, 2);
+  assert.equal(ai.__calls[0].generationConfig.responseSchema.properties.results.minItems, 1);
   assert.deepEqual(
     Array.from(ai.__calls[0].generationConfig.responseSchema.properties.results.items.properties.outcome.enum),
-    ['matched', 'custom'],
+    ['custom'],
   );
+});
+
+test('a confident reviewed match renders stored copy with no second AI call', async () => {
+  const ai = connectionAiWithResponses([]);
+  const reviewed = variant({
+    templateCard: {
+      label: 'OUT IN THE WORLD', title: 'The effort finally moved',
+      observation: 'They crossed a meaningful threshold after sustained effort.',
+      meaning: 'The meaningful threshold reflects sustained effort.', takeaway: null,
+    },
+  });
+  const generated = await ai.runConnectionMatchWriter({
+    reflectId: 'reflect-template-only',
+    selectedSignals: [signal('career_win', 'missed', 'milestone_or_quiet_win')],
+    scenarioIndex: [scenario()], templateVariants: [reviewed], currentConnectionBoard: null,
+  });
+  assert.equal(ai.__calls.length, 0);
+  assert.equal(generated.result, null);
+  assert.equal(generated.signalResults[0].outcome, 'matched');
+  assert.equal(generated.signalResults[0].scenarioKey, 'quiet_threshold');
+  assert.equal(generated.data.worth_knowing.cards[0].title, 'The effort finally moved');
+  assert.equal(generated.data.worth_knowing.cards[0].label, 'OUT IN THE WORLD');
+  assert.equal(generated.data.worth_knowing.cards[0].meaning, 'The meaningful threshold reflects sustained effort.');
+});
+
+test('strict scenario gates reject disqualifiers and unsupported world, ways-in, and between signals', () => {
+  const disqualified = templateMatcher.selectConnectionScenario({
+    ...signal('routine_meeting', 'missed', 'milestone_or_quiet_win'),
+    semanticCue: 'routine meeting no indication it matters',
+    summary: 'Routine meeting with no indication it matters.',
+  }, [scenario({
+    retrievalText: 'routine meeting no indication it matters',
+    disqualifiers: 'Routine meeting; no indication it matters',
+  })]);
+  assert.equal(disqualified.matched, false);
+
+  const unsupportedWorld = templateMatcher.selectConnectionScenario({
+    ...signal('one_off_world', 'world', 'mood_and_energy'),
+    kind: 'pattern',
+    semanticCue: 'ongoing energy pattern',
+  }, [scenario({
+    familyKey: 'mood_and_energy', section: 'world', signalType: 'ongoing_pattern',
+    temporalState: 'ongoing_repeated', persistence: 'repeated_or_explicit_continuity',
+    retrievalText: 'ongoing energy pattern',
+  })]);
+  assert.equal(unsupportedWorld.matched, false);
+
+  const unclearWaysIn = templateMatcher.selectConnectionScenario({
+    ...signal('unclear_support', 'ways_in', 'listening_and_venting'),
+    semanticCue: 'needs someone to listen',
+    supportOpenness: 'unclear',
+  }, [scenario({
+    familyKey: 'listening_and_venting', section: 'ways_in', signalType: 'support_opening',
+    supportMode: 'listen', supportOpenness: 'explicit',
+    responsePreference: 'listening_or_words', retrievalText: 'needs someone to listen',
+  })]);
+  assert.equal(unclearWaysIn.matched, false);
+
+  const oneSidedBetween = templateMatcher.selectConnectionScenario({
+    ...signal('one_sided_pair', 'between', 'parallel_routines'),
+    semanticCue: 'matching weekend routines',
+    mutuality: 'one_sided',
+  }, [scenario({
+    familyKey: 'parallel_routines', section: 'between', signalType: 'shared_pattern',
+    persistence: 'independent_pair_evidence', mutuality: 'two_sided_independent',
+    retrievalText: 'matching weekend routines',
+  })]);
+  assert.equal(oneSidedBetween.matched, false);
 });
 
 test('operation prompts are separate, concise, and retain the essential contracts', () => {
@@ -375,50 +477,46 @@ test('operation prompts are separate, concise, and retain the essential contract
   const writer = ai.CONNECTION_MATCH_WRITER_SYSTEM_PROMPT;
   assert.match(router, /at most 3 distinct signals/i);
   assert.match(router, /recent5d/i);
-  assert.doesNotMatch(router, /matched\/custom require one complete card/i);
-  assert.match(writer, /every supplied signal must produce exactly one card/i);
+  assert.match(router, /never write finished Connection card copy/i);
+  assert.match(writer, /no reviewed template matched/i);
+  assert.match(writer, /Return every supplied signal exactly once/i);
   assert.match(writer, /they\/them\/their/i);
-  assert.match(writer, /one specific low-pressure takeaway/i);
+  assert.match(writer, /takeaway is always null/i);
   assert.doesNotMatch(writer, /literal icon gaps/i);
   assert.ok(router.length < 2400);
   assert.ok(writer.length < 2400);
 });
 
-test('combined second stage downgrades a mismatched scenario to custom and normalizes card metadata', async () => {
-  const custom = waysCard('signal_two');
-  custom.assignedSection = 'missed';
-  custom.signalType = 'event';
-  custom.topicKey = 'model_invented_topic';
-  const updates = emptyUpdates();
-  updates.worth_knowing = { hasUpdate: true, clearExisting: false, cards: [custom] };
+test('strong safe unmatched missed signals use custom fallback while ways-in is suppressed', async () => {
   const ai = connectionAiWithResponses([{
-    signalResults: [
+    results: [
       {
-        signalId: 'signal_one', outcome: 'matched', familyKey: 'wrong_family',
-        scenarioKey: 'wrong_scenario', moduleKey: 'worth_knowing',
-      },
-      {
-        signalId: 'signal_two', outcome: 'custom', familyKey: null,
-        scenarioKey: null, moduleKey: 'how_to_show_up',
+        signalId: 'signal_one', outcome: 'custom', scenarioKey: null,
+        card: missedCard('signal_one'),
       },
     ],
-    connectionUpdates: updates,
   }]);
   const result = await ai.runConnectionMatchWriter({
     reflectId: 'reflect-3',
     selectedSignals: [
-      signal('signal_one', 'missed', 'milestone_or_quiet_win'),
-      signal('signal_two', 'ways_in', null),
+      { ...signal('signal_one', 'missed', 'milestone_or_quiet_win'), topicKey: 'career_progress', evidenceStrength: 'strong' },
+      { ...signal('signal_two', 'ways_in', null), topicKey: 'decompression_space' },
     ],
-    scenarioIndex: [], currentConnectionBoard: null,
+    scenarioIndex: [], templateVariants: [], currentConnectionBoard: null,
   });
   assert.deepEqual(result.signalResults.map((row) => row.signalId), ['signal_one', 'signal_two']);
   assert.equal(result.signalResults[0].outcome, 'custom');
   assert.equal(result.signalResults[0].scenarioKey, null);
-  const normalized = result.data.how_to_show_up.cards[0];
-  assert.equal(normalized.assignedSection, 'ways_in');
-  assert.equal(normalized.signalType, 'action');
-  assert.equal(normalized.topicKey, 'signal_two_topic');
+  assert.equal(result.signalResults[1].outcome, 'no_update');
+  assert.equal(result.signalResults[1].reason, 'custom_fallback_not_eligible');
+  assert.equal(result.data.talk_about.cards.length, 0);
+  const normalized = result.data.worth_knowing.cards[0];
+  assert.equal(normalized.assignedSection, 'missed');
+  assert.equal(normalized.signalType, 'event');
+  assert.equal(normalized.topicKey, 'career_progress');
+  assert.equal(ai.__calls.length, 1);
+  const request = JSON.parse(ai.__calls[0].userText);
+  assert.deepEqual(request.signals.map((row) => row.signalId), ['signal_one']);
 });
 
 test('second stage never spends a second writer call when output reaches MAX_TOKENS', async () => {
@@ -427,7 +525,7 @@ test('second stage never spends a second writer call when output reaches MAX_TOK
   ], { cachedContent: 'cachedContents/global-connection' });
   await assert.rejects(() => ai.runConnectionMatchWriter({
     reflectId: 'reflect-no-retry',
-    selectedSignals: [signal('career_win', 'missed', null)],
+    selectedSignals: [{ ...signal('career_win', 'missed', null), evidenceStrength: 'strong' }],
     scenarioIndex: [], currentConnectionBoard: null,
   }), /connection_match_writer_max_tokens/);
   assert.equal(ai.__calls.length, 1);
@@ -547,6 +645,107 @@ test('migration seeds the reviewed v2 library and durable per-kind slots', () =>
   assert.match(sql, /review_status text not null default 'approved'/i);
 });
 
+test('v6 migration loads all 220 scenarios and four reviewed variants for each', () => {
+  const sql = source('supabase/migrations/20260915000090_connection_template_library_v6.sql');
+  const scenarioBlock = sql.match(/\$connection_scenarios_v6\$([\s\S]*?)\$connection_scenarios_v6\$/)?.[1] || '';
+  const variantBlock = sql.match(/\$connection_variants_v6\$([\s\S]*?)\$connection_variants_v6\$/)?.[1] || '';
+  const scenarios = JSON.parse(scenarioBlock);
+  const variants = JSON.parse(variantBlock);
+  assert.equal(scenarios.length, 220);
+  assert.equal(new Set(scenarios.map((row) => row.scenario_key)).size, 220);
+  assert.equal(variants.length, 880);
+  assert.equal(new Set(variants.map((row) => row.template_variant_id)).size, 880);
+  const counts = new Map();
+  for (const row of variants) counts.set(row.scenario_key, (counts.get(row.scenario_key) || 0) + 1);
+  assert.deepEqual([...new Set(counts.values())], [4]);
+  assert.match(sql, /create table if not exists public\.connection_template_variants/i);
+  assert.match(sql, /library_version='v6'/i);
+});
+
+test('originality monitor counts only cards that were actually accepted for display', async () => {
+  const calls = [];
+  const monitor = load('apps/api/src/lib/connection-output-monitor.js');
+  const supabase = {
+    async rpc(name, args) {
+      calls.push({ name, args });
+      return { data: null, error: null };
+    },
+  };
+  const updates = emptyUpdates();
+  updates.worth_knowing.cards.push({ signalId: 'visible_template' });
+  updates.recent_vibe.cards.push({ signalId: 'visible_original' });
+  const result = await monitor.recordConnectionOutputOutcomes(supabase, {
+    reflectId: 'reflect-monitor',
+    signalResults: [
+      { signalId: 'visible_template', outcome: 'matched', moduleKey: 'worth_knowing' },
+      { signalId: 'visible_original', outcome: 'custom', moduleKey: 'recent_vibe' },
+      { signalId: 'rejected_original', outcome: 'custom', moduleKey: 'recent_vibe' },
+      { signalId: 'suppressed', outcome: 'no_update', moduleKey: 'talk_about' },
+    ],
+    updates,
+  });
+  assert.equal(result.recorded, 2);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].name, 'record_connection_output_outcomes');
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(calls[0].args.p_outcomes)),
+    [
+      { signal_id: 'visible_template', outcome: 'matched', section: 'worth_knowing' },
+      { signal_id: 'visible_original', outcome: 'custom', section: 'recent_vibe' },
+    ],
+  );
+});
+
+test('originality alert uses one idempotent email per completed 100-card window', async () => {
+  const rpcCalls = [];
+  const fetchCalls = [];
+  const monitor = load('apps/api/src/lib/connection-output-monitor.js', {}, {
+    process: {
+      env: {
+        RESEND_API_KEY: 'resend-test',
+        CONNECTION_ALERT_EMAIL: 'owner@example.com',
+      },
+    },
+    fetch: async (url, options) => {
+      fetchCalls.push({ url, options, body: JSON.parse(options.body) });
+      return { ok: true, text: async () => '' };
+    },
+  });
+  const supabase = {
+    async rpc(name, args) {
+      rpcCalls.push({ name, args });
+      if (name === 'claim_connection_output_alert') {
+        return {
+          data: [{
+            id: 7, window_number: 12, total_outputs: 100,
+            original_outputs: 31, original_ratio: 0.31,
+          }],
+          error: null,
+        };
+      }
+      return { data: null, error: null };
+    },
+  };
+  const result = await monitor.sendPendingConnectionOutputAlert(supabase);
+  assert.equal(result.sent, true);
+  assert.equal(fetchCalls.length, 1);
+  assert.equal(fetchCalls[0].options.headers['Idempotency-Key'], 'connection-output-window-12');
+  assert.deepEqual(fetchCalls[0].body.to, ['owner@example.com']);
+  assert.match(fetchCalls[0].body.subject, /31%/);
+  assert.equal(rpcCalls.at(-1).name, 'complete_connection_output_alert');
+  assert.equal(rpcCalls.at(-1).args.p_success, true);
+});
+
+test('originality migration uses unique accepted-card events and alerts only above 30 per 100', () => {
+  const sql = source('supabase/migrations/20260915000091_connection_originality_monitor.sql');
+  assert.match(sql, /unique \(reflect_id, signal_id\)/i);
+  assert.match(sql, /if v_outputs = 100 then/i);
+  assert.match(sql, /if v_originals > 30 then/i);
+  assert.doesNotMatch(sql, /v_originals >= 30/i);
+  assert.match(sql, /on conflict \(reflect_id, signal_id\) do nothing/i);
+  assert.match(sql, /attempts < 5/i);
+});
+
 test('Remember Together skips Bunny and Connection while all three entry states are server-backed', () => {
   const settlement = source('apps/api/src/lib/reflect-settlement.js');
   const jobs = source('apps/api/src/lib/reflect-analysis-jobs.js');
@@ -562,6 +761,7 @@ test('background queue marks Remember Together skipped without claiming AI work'
     './ai-usage': { recordAIUsage: async () => {} },
     './connection-ai': {},
     './connection-template-store': {},
+    './connection-output-monitor': { recordConnectionOutputOutcomes: async () => ({ recorded: 0 }) },
     './reflect-draft': { serviceClient: () => null },
     './reflect-analysis-store': {},
   });

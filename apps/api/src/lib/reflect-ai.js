@@ -336,11 +336,18 @@ function cleanConnectionCard(value, reflectId, moduleKey, order, onReject = null
   }
   const label = connectionLabelForKey(expectedSection, value.labelKey)
   if (!label) return reject('invalid_label_key')
-  const displayLabel = normalizeConnectionLabel(value.label, observation) || label.label
+  // v6 reviewed templates are approved database content and must render
+  // verbatim. Generated labels keep the stricter 1-3 word normalization.
+  const reviewedTemplateLabel = value.reviewedTemplate === true
+    ? text(value.label, 36) : null
+  const displayLabel = reviewedTemplateLabel
+    || normalizeConnectionLabel(value.label, observation) || label.label
   const expiresAtMs = typeof value.expiresAt === 'string' ? Date.parse(value.expiresAt) : NaN
   const meaning = text(value.meaning, 300)
   const takeaway = text(value.takeaway, 240)
-  const fields = pruneConnectionFields({ title, observation, meaning, takeaway })
+  const fields = value.reviewedTemplate === true
+    ? { title, observation, meaning, takeaway }
+    : pruneConnectionFields({ title, observation, meaning, takeaway })
   if (!fields) return reject('missing_observation')
   if (expectedSection === 'ways_in' && !fields.takeaway) return reject('missing_takeaway')
   return {

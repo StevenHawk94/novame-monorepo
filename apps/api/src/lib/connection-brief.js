@@ -7,8 +7,9 @@ import { recordAIUsage } from './ai-usage'
 import { applyConnectionUpdates, loadReflectAnalyzerContext } from './reflect-analysis-store'
 import { compactConnectionEvidence, CONNECTION_RETENTION_DAYS } from './connection-evidence'
 import {
-  readConnectionFamilies, readConnectionScenarioIndex,
+  readConnectionFamilies, readConnectionScenarioIndex, readConnectionTemplateVariants,
 } from './connection-template-store'
+import { recordConnectionOutputOutcomes } from './connection-output-monitor'
 
 const RETENTION_MS = CONNECTION_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
@@ -113,12 +114,14 @@ async function saveRecoveredAnalysis(supabase, {
     connection_stage_one: stageOne?.data || null,
     connection_signal_results: generated.signalResults || null,
     connection_writer_version: CONNECTION_WRITER_VERSION,
-    template_library_version: 'v2',
+    template_library_version: 'v6',
     connection_pipeline_status: pipelineStatus,
     connection_mode: pipelineStatus === 'completed' ? 'caught_up' : 'immediate',
-    provider: generated.result.provider,
-    model: generated.result.model,
-    usage: generated.result.usage || null,
+    provider: generated.result?.provider || stageOne?.result?.provider || null,
+    model: generated.result?.model || stageOne?.result?.model || null,
+    usage: generated.results?.length
+      ? { calls: generated.results.map((result) => result?.usage || null) }
+      : stageOne?.result?.usage || null,
     status: 'completed',
     error: errorText,
     completed_at: new Date().toISOString(),
@@ -248,22 +251,25 @@ export async function generateBrief(supabase, {
         return { ok: true, insights: board, refreshed: false }
       }
     }
-    const scenarioIndex = await readConnectionScenarioIndex(
-      supabase, selectedSignals.map((signal) => signal.familyKey),
-    )
+    const familyKeys = selectedSignals.map((signal) => signal.familyKey)
+    const [scenarioIndex, templateVariants] = await Promise.all([
+      readConnectionScenarioIndex(supabase, familyKeys),
+      readConnectionTemplateVariants(supabase, familyKeys),
+    ])
     let generated
     try {
       generated = await runConnectionMatchWriter({
         reflectId: latest.reflect_id,
         selectedSignals,
         scenarioIndex,
+        templateVariants,
         currentConnectionBoard: board,
         allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
       }, { supabase })
     } catch (error) {
       await Promise.all((error.results || []).map((result) => recordAIUsage(supabase, {
         userId: partnerId,
-        feature: 'connection_catchup_match_writer',
+        feature: 'connection_catchup_fallback_writer',
         promptVersion: CONNECTION_MATCH_WRITER_VERSION,
         result,
         latencyMs: null,
@@ -335,14 +341,19 @@ export async function generateBrief(supabase, {
         latencyMs: stageOne.latencyMs,
         refId: latest.reflect_id,
       })] : []),
-      ...(generated.results || [generated.result]).map((result) => recordAIUsage(supabase, {
+      ...(generated.results || []).map((result) => recordAIUsage(supabase, {
         userId: partnerId,
-        feature: 'connection_catchup_match_writer',
+        feature: 'connection_catchup_fallback_writer',
         promptVersion: CONNECTION_MATCH_WRITER_VERSION,
         result,
         latencyMs: generated.latencyMs,
         refId: latest.reflect_id,
       })),
+      recordConnectionOutputOutcomes(supabase, {
+        reflectId: latest.reflect_id,
+        signalResults: generated.signalResults,
+        updates: generated.data,
+      }),
     ])
     if (missingQualified.length > 0) {
       throw new Error('connection_match_writer_missing_qualified_card')

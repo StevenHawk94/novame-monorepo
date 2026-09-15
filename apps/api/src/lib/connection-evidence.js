@@ -5,7 +5,9 @@ const CONTINUITY = new Set(['one_off', 'ongoing', 'repeated'])
 const SENTIMENTS = new Set(['positive', 'neutral', 'negative', 'mixed'])
 const SUPPORT_MODES = new Set([
   'comfort', 'encourage', 'listen', 'talk', 'companionship', 'practical_help',
-  'give_space', 'share', 'join_in',
+  'give_space', 'share', 'join_in', 'none', 'validate', 'reassure',
+  'reassure_presence', 'celebrate', 'company', 'conversation',
+  'light_distraction', 'follow_up', 'invite_join',
 ])
 const SECTIONS = new Set(['missed', 'world', 'ways_in', 'between'])
 
@@ -71,6 +73,29 @@ export function cleanConnectionSignals(value, reflectId = null, nowMs = Date.now
       cardEligible: raw.cardEligible === true ? true : raw.cardEligible === false ? false : null,
       assignedSection: SECTIONS.has(assignedSection) ? assignedSection : null,
       familyKey,
+      decision: canonical(raw.decision, 30),
+      scenarioFamily: canonical(raw.scenarioFamily || raw.familyKey, 80),
+      semanticCue: text(raw.semanticCue || raw.summary, 96),
+      signalType: canonical(raw.signalType, 40),
+      evidenceStrength: canonical(raw.evidenceStrength, 30),
+      evidenceCount: Math.max(1, Math.min(3, Math.round(Number(raw.evidenceCount) || 1))),
+      temporalState: canonical(raw.temporalState, 40),
+      persistence: canonical(raw.persistence, 50),
+      topicDomain: canonical(raw.topicDomain, 50),
+      emotionFamily: canonical(raw.emotionFamily, 50),
+      supportOpenness: canonical(raw.supportOpenness, 40),
+      responsePreference: canonical(raw.responsePreference, 50),
+      boundary: canonical(raw.boundary, 40),
+      timing: canonical(raw.timing, 40),
+      emotionalWeight: canonical(raw.emotionalWeight, 30),
+      toneMode: canonical(raw.toneMode, 30),
+      toneEvidence: canonical(raw.toneEvidence, 40),
+      mutuality: canonical(raw.mutuality, 40),
+      depthRecommendation: text(raw.depthRecommendation, 10),
+      slotValues: raw.slotValues && typeof raw.slotValues === 'object'
+        ? raw.slotValues : {},
+      fallbackCode: canonical(raw.fallbackCode, 80),
+      suppressionReason: text(raw.suppressionReason, 240),
       newValue: text(raw.newValue, 240),
       whyQualified: text(raw.whyQualified, 240),
       confidence: conf,

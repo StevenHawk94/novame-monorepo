@@ -5,10 +5,11 @@ import {
   CONNECTION_ROUTER_VERSION, CONNECTION_MATCH_WRITER_VERSION, CONNECTION_WRITER_VERSION,
 } from './connection-ai'
 import {
-  readConnectionFamilies, readConnectionScenarioIndex,
+  readConnectionFamilies, readConnectionScenarioIndex, readConnectionTemplateVariants,
 } from './connection-template-store'
 import { serviceClient } from './reflect-draft'
 import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from './reflect-analysis-store'
+import { recordConnectionOutputOutcomes } from './connection-output-monitor'
 
 function errorText(error) {
   return String(error?.message || error || 'analysis_failed').slice(0, 500)
@@ -198,7 +199,7 @@ async function analyzeClaimedJob(supabase, job) {
     },
     connectionStageOne: stageOne.data,
     writerVersion: CONNECTION_WRITER_VERSION,
-    templateLibraryVersion: 'v2',
+    templateLibraryVersion: 'v6',
   }
   // Persist compact evidence before stage two. A later writer outage cannot
   // erase useful history or force the router to spend tokens again.
@@ -250,22 +251,25 @@ async function analyzeClaimedJob(supabase, job) {
     return { status: 'completed' }
   }
 
-  const scenarioIndex = await atStage('scenario_index', () => readConnectionScenarioIndex(
-    supabase, pendingSignals.map((signal) => signal.familyKey),
-  ))
+  const familyKeys = pendingSignals.map((signal) => signal.familyKey)
+  const [scenarioIndex, templateVariants] = await atStage('scenario_index', () => Promise.all([
+    readConnectionScenarioIndex(supabase, familyKeys),
+    readConnectionTemplateVariants(supabase, familyKeys),
+  ]))
   let generated
   try {
     generated = await atStage('connection_match_writer', () => runConnectionMatchWriter({
       reflectId,
       selectedSignals: pendingSignals,
       scenarioIndex,
+      templateVariants,
       currentConnectionBoard: context.currentBoard,
       allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
     }, { supabase }))
   } catch (error) {
     await Promise.all((error.results || []).map((result) => recordResultUsage(supabase, {
       userId: reflect.user_id,
-      feature: 'connection_match_writer',
+      feature: 'connection_fallback_writer',
       promptVersion: CONNECTION_MATCH_WRITER_VERSION,
       result,
       latencyMs: null,
@@ -275,7 +279,7 @@ async function analyzeClaimedJob(supabase, job) {
   }
   await Promise.all((generated.results || [generated.result]).map((result) => recordResultUsage(supabase, {
     userId: reflect.user_id,
-    feature: 'connection_match_writer',
+    feature: 'connection_fallback_writer',
     promptVersion: CONNECTION_MATCH_WRITER_VERSION,
     result,
     latencyMs: generated.latencyMs,
@@ -301,8 +305,8 @@ async function analyzeClaimedJob(supabase, job) {
     reflectsToday: 1,
     analyzer: {
       ...baseAnalyzer,
-      result: generated.result,
-      results: generated.results || [generated.result],
+      result: generated.result || baseAnalyzer.result,
+      results: generated.results?.length ? generated.results : undefined,
       data: { ...baseAnalyzer.data, connectionUpdates: finalUpdates },
       signalResults: settledSignalResults,
     },
@@ -311,6 +315,11 @@ async function analyzeClaimedJob(supabase, job) {
     pipelineStatus: 'completed',
     error: null,
   }))
+  await recordConnectionOutputOutcomes(supabase, {
+    reflectId,
+    signalResults: settledSignalResults,
+    updates: finalUpdates,
+  })
   if (settledWithoutCardCount > 0) {
     console.warn('[reflect-analysis] writer output settled without cards:', {
       reflectId, count: settledWithoutCardCount,

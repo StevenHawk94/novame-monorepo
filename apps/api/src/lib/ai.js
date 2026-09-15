@@ -23,7 +23,7 @@ export function getAIModelConfig() {
   return {
     defaultGemini,
     connectionRouter: process.env.AI_MODEL_CONNECTION_ROUTER?.trim()
-      || 'gemini-2.5-flash-lite',
+      || 'gemini-2.5-flash',
     connectionWriter: process.env.AI_MODEL_CONNECTION_WRITER?.trim()
       || defaultGemini,
     bunnyCourt: process.env.AI_MODEL_BUNNY_COURT?.trim()
