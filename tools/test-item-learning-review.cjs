@@ -73,7 +73,7 @@ test('admin approval is exact, requires fresh revision, and cannot enable ambigu
   await admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin');
   assert.equal(writes[0].p_keyword,row.source_phrase);assert.equal(writes[0].p_action,'enable');
   row={...row,source_phrase:'running'};
-  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin'),/contextual multi-word phrase/);
+  await assert.rejects(admin.publishReview(db,{action:'publish',id:row.id,revision:0},'admin'),/contextual multi-word phrase|NEVER_AUTO/);
   assert.equal(writes.length,1);
 });
 
@@ -143,6 +143,8 @@ before(async()=>{
   await pg.exec(old.slice(old.indexOf('create table if not exists public.item_learning_jobs'),old.indexOf('create table if not exists public.weekly_recaps')));
   const migration=read('20260827000069_item_learning_review.sql');
   await pg.exec(migration);await pg.exec(migration);
+  await pg.exec(read('20260905000077_admin_word_and_never_auto_rules.sql'));
+  await pg.exec(read('20260914000087_batch_admin_item_auto_rules.sql'));
 });
 after(async()=>{await pg?.close()});
 test('migration records one occurrence per reflection and keeps source phrases',async()=>{
@@ -163,6 +165,22 @@ test('rule events support exact historical snapshots and optimistic concurrency'
   await assert.rejects(pg.query("select item_rule_snapshot('test',999999)"),/unknown_rule_revision/);
   const privileges=(await pg.query("select has_function_privilege('authenticated','publish_item_rule(text,text,text,text,bigint,uuid,uuid,uuid)','execute') as allowed")).rows[0];
   assert.equal(privileges.allowed,false);
+});
+test('batch rule publishing is atomic, ordered, and revision-safe',async()=>{
+  const admin='00000000-0000-0000-0000-000000000001';
+  const current=(await pg.query("select item_rule_snapshot('test') as snapshot")).rows[0].snapshot.revision;
+  const rules=JSON.stringify([
+    {keyword:'fresh brew',item_id:'coffee'},
+    {keyword:"today's tennis",item_id:'tennis'},
+  ]);
+  const result=(await pg.query("select publish_item_rules_batch('test',$1::jsonb,$2,$3::uuid) as result",[rules,current,admin])).rows[0].result;
+  assert.equal(result.count,2);
+  const rows=(await pg.query("select keyword,item_id from item_keyword_rule_events where revision>$1 order by revision",[current])).rows;
+  assert.deepEqual(rows.map(row=>[row.keyword,row.item_id]),[['fresh brew','coffee'],["today's tennis",'tennis']]);
+  const before=(await pg.query('select count(*)::int as count from item_keyword_rule_events')).rows[0].count;
+  await assert.rejects(pg.query("select publish_item_rules_batch('test',$1::jsonb,$2,$3::uuid)",[JSON.stringify([{keyword:'later brew',item_id:'coffee'}]),current,admin]),/rule_version_conflict/);
+  const after=(await pg.query('select count(*)::int as count from item_keyword_rule_events')).rows[0].count;
+  assert.equal(after,before);
 });
 test('claim is exclusive, legacy jobs excluded and retries capped at two',async()=>{
   const ids=(await pg.query('insert into reflects select gen_random_uuid() from generate_series(1,2) returning id')).rows;

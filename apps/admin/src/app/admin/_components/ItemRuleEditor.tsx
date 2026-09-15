@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, ApiError } from '@/lib/api-client';
 
 type AtlasThumb = { kind:'atlas'; url:string; x:number; y:number; cellSize:number; sheetSize:number };
 type UrlThumb = { kind:'url'; url:string };
@@ -20,6 +20,20 @@ type ListResponse = {
   page:number; pageSize:number; items:ItemSummary[];
 };
 type DetailResponse = { catalogVersion:string; revision:number; item:ItemDetail };
+type BatchRow = { rowNumber:number; itemId:string; iconName:string; keyword:string; reason?:string };
+type BatchPreview = {
+  revision:number; iconCount:number; keywordCount:number;
+  additions:BatchRow[]; skipped:BatchRow[];
+};
+
+function requestError(error:unknown, fallback:string) {
+  if (error instanceof ApiError && error.body && typeof error.body === 'object') {
+    const body = error.body as { error?:unknown; errors?:unknown };
+    if (Array.isArray(body.errors)) return body.errors.map(String).join('\n');
+    if (typeof body.error === 'string' && body.error.trim()) return body.error;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 function IconThumb({ thumbnail, label, size = 64 }: { thumbnail:Thumbnail; label:string; size?:number }) {
   if (!thumbnail) return <span className="text-2xl" aria-hidden>🎒</span>;
@@ -54,6 +68,12 @@ export default function ItemRuleEditor() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [batchCsv, setBatchCsv] = useState('');
+  const [batchFileName, setBatchFileName] = useState('');
+  const [batchPreview, setBatchPreview] = useState<BatchPreview|null>(null);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchError, setBatchError] = useState('');
+  const [batchNotice, setBatchNotice] = useState('');
   const listRequest = useRef(0);
 
   const loadList = useCallback(async () => {
@@ -99,6 +119,41 @@ export default function ItemRuleEditor() {
     finally { setBusy(false); }
   }
 
+  async function chooseBatchFile(file:File|null) {
+    setBatchPreview(null); setBatchError(''); setBatchNotice('');
+    if (!file) { setBatchCsv(''); setBatchFileName(''); return; }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setBatchCsv(''); setBatchFileName(''); setBatchError('Choose the downloaded .csv template.'); return;
+    }
+    try {
+      setBatchCsv(await file.text()); setBatchFileName(file.name);
+    } catch (e) { setBatchError(requestError(e, 'Could not read this CSV.')); }
+  }
+
+  async function previewBatch() {
+    if (!batchCsv || batchBusy) return;
+    setBatchBusy(true); setBatchError(''); setBatchNotice(''); setBatchPreview(null);
+    try {
+      setBatchPreview(await apiClient.post<BatchPreview>('/api/admin/item-catalog', { action:'preview', csv:batchCsv }));
+    } catch (e) { setBatchError(requestError(e, 'Batch validation failed.')); }
+    finally { setBatchBusy(false); }
+  }
+
+  async function applyBatch() {
+    if (!batchPreview?.keywordCount || batchBusy) return;
+    if (!window.confirm(`Publish ${batchPreview.keywordCount} AUTO keywords across ${batchPreview.iconCount} icons? This batch is atomic and will affect new reflections.`)) return;
+    setBatchBusy(true); setBatchError(''); setBatchNotice('');
+    try {
+      const result = await apiClient.post<{applied:number}>('/api/admin/item-catalog', {
+        action:'apply', csv:batchCsv, revision:batchPreview.revision,
+      });
+      setBatchNotice(`${result.applied} AUTO keywords published successfully.`);
+      setBatchPreview(null); setBatchCsv(''); setBatchFileName(''); setSelected(null);
+      await loadList();
+    } catch (e) { setBatchError(requestError(e, 'Batch publish failed. Preview the current file again.')); }
+    finally { setBatchBusy(false); }
+  }
+
   const totalPages = Math.max(1, Math.ceil((list?.total || 0) / (list?.pageSize || 120)));
   const filteredRules = selected?.item.rules.filter(rule =>
     !ruleQuery.trim() || rule.keyword.includes(ruleQuery.trim().toLowerCase())) || [];
@@ -117,6 +172,29 @@ export default function ItemRuleEditor() {
       </select>
       <button className="border rounded-lg px-4 py-2 bg-white" onClick={() => void loadList()} disabled={loading}>Refresh</button>
     </div>
+    <section className="rounded-xl border bg-white p-4 space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+        <div className="flex-1 space-y-1"><h3 className="font-bold">Bulk add AUTO keywords</h3>
+          <p className="text-sm text-gray-600">Download the current catalog, fill only <code>auto_keywords_to_add</code>, and keep the other columns unchanged. Separate multiple phrases with <code>|</code>, a semicolon, or a new line. Blank rows are ignored.</p></div>
+        <a className="shrink-0 rounded-lg border border-amber-800 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-50" href="/api/admin/item-catalog?export=auto-keyword-template" download>Download CSV template</a>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <label className="min-w-0 flex-1 rounded-lg border border-dashed p-3 text-sm bg-slate-50 cursor-pointer">
+          <span className="font-medium">{batchFileName || 'Choose completed CSV'}</span>
+          <input className="sr-only" type="file" accept=".csv,text/csv" onChange={event => void chooseBatchFile(event.target.files?.[0] || null)} />
+        </label>
+        <button className="rounded-lg bg-amber-900 px-4 py-2 text-white disabled:opacity-40" disabled={!batchCsv || batchBusy} onClick={() => void previewBatch()}>{batchBusy ? 'Checking…' : 'Preview batch'}</button>
+      </div>
+      {batchError && <p role="alert" className="whitespace-pre-line rounded bg-red-50 p-3 text-sm text-red-800">{batchError}</p>}
+      {batchNotice && <p role="status" className="rounded bg-green-50 p-3 text-sm text-green-800">{batchNotice}</p>}
+      {batchPreview && <div className="space-y-3 rounded-lg border p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3"><p className="flex-1 text-sm"><strong>{batchPreview.keywordCount}</strong> new AUTO keywords for <strong>{batchPreview.iconCount}</strong> icons. {batchPreview.skipped.length ? `${batchPreview.skipped.length} existing or duplicate entries will be skipped.` : 'No duplicates found.'}</p>
+          <button className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-40" disabled={!batchPreview.keywordCount || batchBusy} onClick={() => void applyBatch()}>Publish batch</button></div>
+        {batchPreview.keywordCount > 0 && <div className="max-h-72 overflow-auto rounded border"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-slate-100"><tr><th className="p-2">CSV row</th><th className="p-2">Icon</th><th className="p-2">AUTO keyword</th></tr></thead><tbody>
+          {batchPreview.additions.slice(0, 100).map((row) => <tr className="border-t" key={`${row.rowNumber}:${row.itemId}:${row.keyword}`}><td className="p-2">{row.rowNumber}</td><td className="p-2"><span className="font-medium">{row.iconName}</span><span className="block font-mono text-[10px] text-gray-500">{row.itemId}</span></td><td className="p-2">{row.keyword}</td></tr>)}
+        </tbody></table>{batchPreview.keywordCount > 100 && <p className="border-t p-2 text-gray-500">Showing the first 100 of {batchPreview.keywordCount} additions.</p>}</div>}
+      </div>}
+    </section>
     <div className="flex items-center justify-between text-sm text-gray-600">
       <span>{loading ? 'Loading…' : `${list?.total || 0} icons`} · catalog {list?.catalogVersion || '…'} · rule revision {list?.revision ?? '…'}</span>
       <div className="flex items-center gap-2">
