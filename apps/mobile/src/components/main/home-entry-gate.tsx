@@ -4,6 +4,7 @@ import {
   StyleSheet, View,
 } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
+import { GridBackground } from '@/components/ui/grid-background';
 import { router, useSegments } from 'expo-router';
 
 import {
@@ -21,6 +22,7 @@ import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import { markAndroidP0UiReady } from '@/lib/download-queue';
 
 const ANDROID_ENTRY_TIMEOUT_MS = 750;
+const ENTRY_FAVICON = require('../../../assets/favicon.png');
 
 /** Track final display for diagnostics; image callbacks never gate navigation. */
 export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImageProps & { asset: HomeEntryAsset }) {
@@ -193,13 +195,11 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
       </View>
       {visible ? (
         <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
-          {/* This is the exact bitmap used by the native launch screen. The
-              native layer can therefore hand off to this JS readiness cover
-              without a visible scale/position jump. */}
+          <GridBackground />
           <ExpoImage
-            source={require('../../../assets/splash-full.png')}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
+            source={ENTRY_FAVICON}
+            style={styles.entryLogo}
+            contentFit="contain"
             transition={0}
           />
           <ActivityIndicator style={styles.spinner} size="small" color="#8A6240" />
@@ -212,5 +212,6 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
-  spinner: { position: 'absolute', top: '59%' },
+  entryLogo: { width: 120, height: 120 },
+  spinner: { marginTop: 20 },
 });

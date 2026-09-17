@@ -219,28 +219,25 @@ function OnboardingInsightCard({
   card,
   width,
   height,
-  onLayout,
 }: {
   card: (typeof INSIGHT_CAROUSEL_CARDS)[number];
   width: number;
-  height?: number;
-  onLayout?: ComponentProps<typeof View>['onLayout'];
+  height: number;
 }) {
   return (
-    <View
-      onLayout={onLayout}
-      style={[styles.insightCarouselCard, { width }, height ? { height } : null]}
-    >
-      <View style={styles.insightCardLabel}>
-        <Text style={styles.insightCardLabelText}>{card.label}</Text>
-      </View>
-      <Text style={styles.insightCardTitle}>{card.title}</Text>
-      <Text style={styles.insightCardObservation}>{card.observation}</Text>
-      <Text style={styles.insightCardMeaning}>{card.meaning}</Text>
-      <View style={styles.insightCardDivider} />
-      <View style={styles.insightCardTakeawayRow}>
-        <MaterialIcons name="chat-bubble-outline" size={18} color="#815543" />
-        <Text style={styles.insightCardTakeaway}>{card.takeaway}</Text>
+    <View style={[styles.insightCarouselCard, { width, height }]}>
+      <View style={styles.insightCardContent}>
+        <View style={styles.insightCardLabel}>
+          <Text style={styles.insightCardLabelText}>{card.label}</Text>
+        </View>
+        <Text style={styles.insightCardTitle}>{card.title}</Text>
+        <Text style={styles.insightCardObservation}>{card.observation}</Text>
+        <Text style={styles.insightCardMeaning}>{card.meaning}</Text>
+        <View style={styles.insightCardDivider} />
+        <View style={styles.insightCardTakeawayRow}>
+          <MaterialIcons name="chat-bubble-outline" size={18} color="#815543" />
+          <Text style={styles.insightCardTakeaway}>{card.takeaway}</Text>
+        </View>
       </View>
     </View>
   );
@@ -263,9 +260,9 @@ const ONBOARDING_PLUS_BENEFITS = [
 ] as const;
 
 const ONBOARDING_COURT_TYPES = [
-  { icon: ICONS.obCourtLove, title: 'Love Court', body: 'For sweet, silly, “who knows who best?” cases.' },
-  { icon: ICONS.obCourtLife, title: 'Life Court', body: 'For everyday choices, chores, and tiny debates.' },
-  { icon: ICONS.obCourtConflict, title: 'Conflict Court', body: 'For different needs, small conflicts, and fair compromises.' },
+  { icon: require('../../assets/bunny-court/love-court.webp'), title: 'Love Court', body: 'For sweet, silly, “who knows who best?” cases.' },
+  { icon: require('../../assets/bunny-court/life-court.webp'), title: 'Life Court', body: 'For everyday choices, chores, and tiny debates.' },
+  { icon: require('../../assets/bunny-court/conflict-court.webp'), title: 'Conflict Court', body: 'For different needs, small conflicts, and fair compromises.' },
 ] as const;
 
 // Retained only by the unmounted legacy page definitions below. Keeping the
@@ -335,6 +332,7 @@ export default function OnboardingScreen() {
     : null;
   const ob7ArtWidth = Math.min(460, width + Math.min(24, width * 0.06)) * 0.9;
   const insightCardWidth = Math.min(360, Math.max(260, width - 74));
+  const insightCardHeight = Math.round(insightCardWidth * 0.79);
   const insightCardStep = insightCardWidth + 14;
   const router = useRouter();
   const [idx, setIdx] = useState(0);
@@ -356,12 +354,7 @@ export default function OnboardingScreen() {
   const [paywallExitOpen, setPaywallExitOpen] = useState(false);
   const [paywallExitOfferSeen, setPaywallExitOfferSeen] = useState(false);
   const [insightCardIndex, setInsightCardIndex] = useState(0);
-  const [insightCardHeight, setInsightCardHeight] = useState<number>();
   const insightCarouselRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    setInsightCardHeight(undefined);
-  }, [insightCardWidth, onboardingTextScale]);
 
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
@@ -635,14 +628,18 @@ export default function OnboardingScreen() {
       disabled={disabled || busy}
       style={({ pressed }) => [
         styles.cta,
-        { marginBottom: insets.bottom + 16, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
+        { marginBottom: insets.bottom + 16 },
+        disabled && styles.ctaDisabled,
+        pressed && !disabled && !busy && styles.ctaPressed,
       ]}
     >
       {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.ctaText}>{label}</Text>}
     </Pressable>
   );
 
-  const StageHeader = ({ progress, label }: { progress: number; label: string }) => (
+  const storyTotal = FLOW.indexOf('court-types');
+  const storyPosition = Math.min(idx, storyTotal);
+  const StageHeader = () => (
     <View style={styles.stageHeader}>
       <Pressable
         accessibilityRole="button"
@@ -657,9 +654,9 @@ export default function OnboardingScreen() {
         <MaterialIcons name="chevron-left" size={32} color={INK} />
       </Pressable>
       <View style={styles.stageTrack}>
-        <View style={[styles.stageFill, { width: `${Math.max(0, Math.min(1, progress)) * 100}%` }]} />
+        <View style={[styles.stageFill, { width: `${(storyPosition / storyTotal) * 100}%` }]} />
       </View>
-      <Text style={styles.stageLabel}>{label}</Text>
+      <Text style={styles.stageLabel}>{storyPosition}/{storyTotal}</Text>
     </View>
   );
 
@@ -671,6 +668,7 @@ export default function OnboardingScreen() {
         <OnboardingPager requestedPage={step} nextPage={idx < FLOW.length - 1 ? FLOW[idx + 1] : null}>
         <OnboardingPage id="start" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <View style={styles.pageSpacer} />
             <View style={styles.startArtWrap}>
               <OnboardingImage source={ICONS.obIcons} style={styles.startArt} contentFit="contain" />
             </View>
@@ -683,7 +681,7 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="relationship" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={1 / 6} label="1/6" />
+            <StageHeader />
             <Text style={styles.eyebrow}>A LITTLE ABOUT YOU TWO</Text>
             <Text style={styles.newTitle}>How does your relationship feel lately?</Text>
             <View style={styles.answerList}>
@@ -704,22 +702,23 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="relationship-feedback" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={2 / 6} label="2/6" />
-            <View style={styles.feedbackIconWrap}>
-              <OnboardingImage source={ICONS.obRelationship} style={styles.feedbackIcon} contentFit="contain" />
+            <StageHeader />
+            <View style={styles.resultPageCore}>
+              <View style={styles.resultTextAnchor}>
+                <OnboardingImage source={ICONS.obRelationship} style={styles.resultIconAbove} contentFit="contain" />
+                <View style={styles.messagePanel}>
+                  <Text style={styles.newTitle}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].title}</Text>
+                  <Text style={[styles.newBody, styles.messageBody]}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].body}</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.messagePanel}>
-              <Text style={styles.newTitle}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].title}</Text>
-              <Text style={[styles.newBody, styles.messageBody]}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].body}</Text>
-            </View>
-            <View style={styles.pageSpacer} />
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         </OnboardingPage>
 
         <OnboardingPage id="goal" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={3 / 6} label="3/6" />
+            <StageHeader />
             <Text style={styles.eyebrow}>CHOOSE ONE FOR NOW</Text>
             <Text style={styles.newTitle}>What would make your relationship feel even better right now?</Text>
             <View style={styles.answerList}>
@@ -740,19 +739,23 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="goal-feedback" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={4 / 6} label="4/6" />
-            <OnboardingImage source={ICONS.obCloseness} style={styles.smallStoryIcon} contentFit="contain" />
-            <Text style={styles.newTitle}>{GOAL_FEEDBACK[blocker ?? 'included'].title}</Text>
-            <View style={styles.coralRule} />
-            <Text style={[styles.newBody, styles.wideBody]}>{GOAL_FEEDBACK[blocker ?? 'included'].body}</Text>
-            <View style={styles.pageSpacer} />
+            <StageHeader />
+            <View style={styles.resultPageCore}>
+              <View style={styles.resultTextAnchor}>
+                <OnboardingImage source={ICONS.obCloseness} style={styles.resultIconAbove} contentFit="contain" />
+                <Text style={styles.newTitle}>{GOAL_FEEDBACK[blocker ?? 'included'].title}</Text>
+                <View style={styles.coralRule} />
+                <Text style={[styles.newBody, styles.wideBody]}>{GOAL_FEEDBACK[blocker ?? 'included'].body}</Text>
+              </View>
+            </View>
             <Btn label="Continue" onPress={next} />
           </ScrollView>
         </OnboardingPage>
 
         <OnboardingPage id="goal-promise" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={5 / 6} label="5/6" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.newTitle}>{GOAL_PROMISE[blocker ?? 'included'].title}</Text>
             <View style={styles.coralRule} />
             <Text style={[styles.newBody, styles.wideBody]}>{GOAL_PROMISE[blocker ?? 'included'].body}</Text>
@@ -764,7 +767,8 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="path" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={1} label="6/6" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.newTitle}>Three ways to get closer—without making it a whole thing.</Text>
             <View style={styles.pathList}>
               {[
@@ -786,23 +790,18 @@ export default function OnboardingScreen() {
           </ScrollView>
         </OnboardingPage>
 
-        <OnboardingPage id="reflect-write" imageCount={0}>
+        <OnboardingPage id="reflect-write" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.28} label="Reflect" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.eyebrow}>YOUR DAY, IN LITTLE THINGS</Text>
             <Text style={styles.newTitle}>Write naturally. Watch your day come to life.</Text>
-            <View style={styles.journalMock}>
-              <Text style={styles.journalPrompt}>Capture what happened in your day.</Text>
-              <View style={styles.journalInputMock}>
-                <Text style={styles.journalText}>I ate a slice of pizza and did the dishes. Then I used my new lipstick.</Text>
-              </View>
-              <Text style={styles.journalMatchLabel}>Items matched from your reflection</Text>
-              <View style={styles.journalIcons}>
-                {SAMPLE_DAY.slice(0, 3).map((sample) => (
-                  <OnboardingImage key={sample.itemId} source={ITEM_IMAGES[sample.itemId]} style={styles.journalIcon} contentFit="contain" />
-                ))}
-              </View>
-            </View>
+            <OnboardingImage
+              animated
+              source={ICONS.obHowItWorksGif}
+              style={styles.reflectGif}
+              contentFit="contain"
+            />
             <Text style={styles.featureFooter}>Your day stays yours. You decide what becomes shared.</Text>
             <View style={styles.pageSpacer} />
             <Btn label="Continue" onPress={next} />
@@ -811,7 +810,8 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="reflect-share" imageCount={SAMPLE_DAY.length + 1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.48} label="Reflect" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.eyebrow}>A SMALL MOMENT CAN SAY A LOT.</Text>
             <Text style={styles.newTitle}>Imagine seeing a little update like this from your person.</Text>
             <Pressable
@@ -840,7 +840,8 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="insight-question" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.58} label="Insight" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.eyebrow}>WHEN YOU’RE NOT SURE HOW TO SHOW UP</Text>
             <Text style={styles.newTitle}>Care is easy. Timing is the hard part.</Text>
             <View style={styles.insightQuestionRow}>
@@ -856,16 +857,51 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="insight-card" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.72} label="Insight" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.eyebrow}>A BETTER WAY IN</Text>
             <Text style={styles.newTitle}>More context. A more caring next move.</Text>
-            <View style={styles.onboardingInsightCard}>
-              <View style={styles.insightCardLabel}><Text style={styles.insightCardLabelText}>A LITTLE REASSURANCE</Text></View>
-              <Text style={styles.insightCardTitle}>They’re In Their Own Head Again</Text>
-              <Text style={styles.insightCardObservation}>They’ve been second-guessing themselves lately, even while putting in more effort than they realize.</Text>
-              <Text style={styles.insightCardMeaning}>No big speech needed. Remind them that you see how hard they’re trying.</Text>
-              <View style={styles.insightCardDivider} />
-              <Text style={styles.insightCardTakeaway}>Tell them you’re in their corner.</Text>
+            <ScrollView
+              ref={insightCarouselRef}
+              horizontal
+              removeClippedSubviews={false}
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={insightCardStep}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              disableIntervalMomentum
+              nestedScrollEnabled
+              contentContainerStyle={styles.insightCarouselContent}
+              style={[styles.insightCarousel, { height: insightCardHeight }]}
+              onMomentumScrollEnd={(event) => {
+                const nextIndex = Math.round(event.nativeEvent.contentOffset.x / insightCardStep);
+                setInsightCardIndex(Math.max(0, Math.min(INSIGHT_CAROUSEL_CARDS.length - 1, nextIndex)));
+              }}
+            >
+              {INSIGHT_CAROUSEL_CARDS.map((card, cardIndex) => (
+                <OnboardingInsightCard
+                  key={card.label}
+                  card={card}
+                  width={insightCardWidth}
+                  height={insightCardHeight}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.insightDots}>
+              {INSIGHT_CAROUSEL_CARDS.map((card, cardIndex) => (
+                <Pressable
+                  key={card.label}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show insight example ${cardIndex + 1}`}
+                  onPress={() => {
+                    void haptics.light();
+                    setInsightCardIndex(cardIndex);
+                    insightCarouselRef.current?.scrollTo({ x: cardIndex * insightCardStep, animated: true });
+                  }}
+                  hitSlop={8}
+                  style={[styles.insightDot, cardIndex === insightCardIndex && styles.insightDotActive]}
+                />
+              ))}
             </View>
             <Text style={styles.featureFooter}>Built only from moments they choose to share—not their private thoughts.</Text>
             <View style={styles.pageSpacer} />
@@ -875,7 +911,8 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="court-intro" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.84} label="Court" />
+            <StageHeader />
+            <View style={styles.pageSpacer} />
             <Text style={styles.eyebrow}>THE COURT IS NOW IN SESSION</Text>
             <Text style={styles.newTitle}>Some things are easier to say when the bunny makes it a case.</Text>
             <OnboardingImage source={ICONS.obCourtJudge} style={styles.courtJudge} contentFit="contain" />
@@ -887,7 +924,7 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="court-types" imageCount={3}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <StageHeader progress={0.94} label="Court" />
+            <StageHeader />
             <Text style={styles.eyebrow}>MEET IN THE MIDDLE.</Text>
             <Text style={styles.newTitle}>Answer separately. See what each of you actually means. Get a tiny move that fits both of you.</Text>
             <View style={styles.courtTypeList}>
@@ -908,7 +945,7 @@ export default function OnboardingScreen() {
 
         <OnboardingPage id="summary" imageCount={0}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <View style={{ height: 30 }} />
+            <View style={styles.pageSpacer} />
             <Text style={styles.newHeroTitle}>Stay Emotionally Closer and Learn More About Each Other</Text>
             <View style={styles.closenessTable}>
               <View style={styles.closenessHeaderRow}>
@@ -1107,7 +1144,7 @@ export default function OnboardingScreen() {
               disableIntervalMomentum
               nestedScrollEnabled
               contentContainerStyle={styles.insightCarouselContent}
-              style={styles.insightCarousel}
+              style={[styles.insightCarousel, { height: insightCardHeight }]}
               onMomentumScrollEnd={(event) => {
                 const nextIndex = Math.round(event.nativeEvent.contentOffset.x / insightCardStep);
                 setInsightCardIndex(Math.max(0, Math.min(INSIGHT_CAROUSEL_CARDS.length - 1, nextIndex)));
@@ -1119,12 +1156,6 @@ export default function OnboardingScreen() {
                   card={card}
                   width={insightCardWidth}
                   height={insightCardHeight}
-                  onLayout={cardIndex === 0
-                    ? (event) => {
-                        const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
-                        setInsightCardHeight((current) => current === measuredHeight ? current : measuredHeight);
-                      }
-                    : undefined}
                 />
               ))}
             </ScrollView>
@@ -1366,7 +1397,7 @@ export default function OnboardingScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
               <View style={{ flex: 1, minHeight: 24 }} />
-              <Text style={styles.h1}>Meet Your Bunny</Text>
+              <Text style={styles.newTitle}>Meet Your Bunny</Text>
               <Text style={[styles.body, { marginTop: 18 }]}>
                 I’m here to help you stay close to your person, and to be in your corner whenever life
                 feels stuck, scattered, or a little too much.
@@ -1586,8 +1617,8 @@ const styles = StyleSheet.create({
   newPage: { flexGrow: 1, alignItems: 'stretch', paddingTop: 2 },
   pageSpacer: { flex: 1, minHeight: 22 },
   newHeroTitle: {
-    fontSize: 38, lineHeight: 46, fontFamily: SERIF, fontWeight: '700',
-    color: INK, textAlign: 'center', paddingHorizontal: 8,
+    fontSize: 34, lineHeight: 40, fontFamily: SERIF, fontWeight: '700',
+    color: INK, textAlign: 'center', paddingHorizontal: 4,
   },
   newTitle: {
     fontSize: 34, lineHeight: 40, fontFamily: SERIF, fontWeight: '700',
@@ -1602,7 +1633,7 @@ const styles = StyleSheet.create({
     marginTop: 18, marginBottom: 16, fontSize: 14, lineHeight: 19,
     fontFamily: 'Inter_800ExtraBold', color: '#9B5842', textAlign: 'center', letterSpacing: 1.5,
   },
-  startArtWrap: { minHeight: 300, flex: 1, justifyContent: 'center' },
+  startArtWrap: { minHeight: 300, justifyContent: 'center', marginBottom: 34 },
   startArt: { width: '100%', aspectRatio: 1.25, alignSelf: 'center' },
   stageHeader: {
     minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -1632,14 +1663,17 @@ const styles = StyleSheet.create({
     borderColor: '#FF7063', shadowColor: '#FF7063', shadowOpacity: 0.28,
   },
   answerText: { fontSize: 16.5, lineHeight: 22, fontFamily: 'Inter_700Bold', color: '#2A1A12' },
-  feedbackIconWrap: { flex: 0.7, minHeight: 120, justifyContent: 'flex-end' },
-  feedbackIcon: { width: 112, height: 112, alignSelf: 'center', marginBottom: 18 },
+  resultPageCore: { flex: 1, justifyContent: 'center' },
+  resultTextAnchor: { width: '100%', alignSelf: 'center' },
+  resultIconAbove: {
+    position: 'absolute', width: 90, height: 90, left: '50%', marginLeft: -45,
+    bottom: '100%', marginBottom: 28,
+  },
   messagePanel: {
     backgroundColor: 'rgba(255,252,245,0.92)', borderWidth: 2, borderColor: '#1F1712',
     borderRadius: 24, paddingHorizontal: 22, paddingVertical: 34,
   },
   messageBody: { marginTop: 26 },
-  smallStoryIcon: { width: 112, height: 112, alignSelf: 'center', marginTop: 26, marginBottom: 24 },
   coralRule: { width: '42%', height: 8, borderRadius: 4, backgroundColor: '#FF7063', alignSelf: 'center', marginTop: 24 },
   promiseArt: { width: '86%', aspectRatio: 1.25, alignSelf: 'center', marginTop: 22 },
   pathList: { marginTop: 28, gap: 16 },
@@ -1652,19 +1686,10 @@ const styles = StyleSheet.create({
   pathNumberText: { fontSize: 30, fontFamily: 'Inter_900Black', color: '#FFFFFF' },
   pathTitle: { fontSize: 19, lineHeight: 25, fontFamily: 'Inter_800ExtraBold', color: '#17110D' },
   pathBody: { marginTop: 5, fontSize: 15, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#34271E' },
-  journalMock: {
-    marginTop: 28, backgroundColor: '#7A383D', borderRadius: 20,
-    paddingHorizontal: 18, paddingTop: 20, paddingBottom: 16,
+  reflectGif: {
+    width: '90%', aspectRatio: 1, alignSelf: 'center', marginTop: 24,
+    borderRadius: 22, overflow: 'hidden', backgroundColor: '#7A383D',
   },
-  journalPrompt: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF', marginBottom: 12 },
-  journalInputMock: { minHeight: 132, borderRadius: 20, backgroundColor: '#FFFFFF', padding: 18 },
-  journalText: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: '#28211C' },
-  journalMatchLabel: { marginTop: 12, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center' },
-  journalIcons: {
-    minHeight: 62, marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16,
-    borderRadius: 18, backgroundColor: '#FFFDFC', paddingHorizontal: 16,
-  },
-  journalIcon: { width: 44, height: 44 },
   featureFooter: {
     marginTop: 22, paddingHorizontal: 8, fontSize: 14.5, lineHeight: 21,
     fontFamily: 'Inter_700Bold', color: '#17110D', textAlign: 'center',
@@ -1677,10 +1702,6 @@ const styles = StyleSheet.create({
   },
   speechText: { fontSize: 15.5, lineHeight: 22, fontFamily: 'Inter_500Medium', color: '#17110D', textAlign: 'center' },
   insightQuestionArt: { width: '70%', aspectRatio: 1.25, alignSelf: 'center', marginTop: -2 },
-  onboardingInsightCard: {
-    marginTop: 34, borderRadius: 26, backgroundColor: '#FFF8E8',
-    paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22,
-  },
   courtJudge: { width: '78%', aspectRatio: 1, alignSelf: 'center', marginTop: 10, marginBottom: -22 },
   courtTypeList: { marginTop: 26, gap: 16 },
   courtTypeCard: {
@@ -1690,7 +1711,7 @@ const styles = StyleSheet.create({
     shadowColor: '#5A4A18', shadowOpacity: 0.18, shadowRadius: 0,
     shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
-  courtTypeIcon: { width: 64, height: 64 },
+  courtTypeIcon: { width: 78, height: 78 },
   courtTypeTitle: { fontSize: 19, lineHeight: 25, fontFamily: 'Inter_800ExtraBold', color: '#17110D' },
   courtTypeBody: { marginTop: 4, fontSize: 13.5, lineHeight: 19, fontFamily: 'Inter_500Medium', color: '#34271E' },
 
@@ -1742,7 +1763,7 @@ const styles = StyleSheet.create({
     color: INK, textAlign: 'center', marginBottom: 26,
   },
   closenessTable: {
-    overflow: 'hidden', backgroundColor: 'rgba(255,252,244,0.88)',
+    marginTop: 34, overflow: 'hidden', backgroundColor: 'rgba(255,252,244,0.88)',
     borderWidth: 1.5, borderColor: '#A46D4A', borderRadius: 16,
   },
   closenessHeaderRow: {
@@ -1855,33 +1876,34 @@ const styles = StyleSheet.create({
   },
   insightCarouselCard: {
     borderRadius: 24, backgroundColor: '#FFF8E8',
-    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 18,
+    paddingHorizontal: 20, paddingVertical: 12,
   },
+  insightCardContent: { flex: 1, justifyContent: 'center' },
   insightCardLabel: {
     alignSelf: 'flex-start', backgroundColor: '#F8D88B', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 8,
+    paddingHorizontal: 12, paddingVertical: 5,
   },
   insightCardLabelText: {
     fontSize: 11.5, lineHeight: 15, fontFamily: 'Inter_800ExtraBold',
     color: '#72452F', letterSpacing: 0.1,
   },
   insightCardTitle: {
-    marginTop: 16, fontSize: 21, lineHeight: 27,
+    marginTop: 10, fontSize: 21, lineHeight: 27,
     fontFamily: 'Inter_800ExtraBold', color: '#754937',
   },
   insightCardObservation: {
-    marginTop: 14, fontSize: 15.5, lineHeight: 21.5,
+    marginTop: 8, fontSize: 15.5, lineHeight: 21.5,
     fontFamily: 'Inter_700Bold', color: '#754937',
   },
   insightCardMeaning: {
-    marginTop: 14, fontSize: 15, lineHeight: 21,
+    marginTop: 8, fontSize: 15, lineHeight: 21,
     fontFamily: 'Inter_500Medium', color: '#815543',
   },
   insightCardDivider: {
-    height: 1, backgroundColor: '#E5DCCB', marginTop: 16,
+    height: 1, backgroundColor: '#E5DCCB', marginTop: 10,
   },
   insightCardTakeawayRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 13,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8,
   },
   insightCardTakeaway: {
     flex: 1, fontSize: 14, lineHeight: 19,
@@ -1955,7 +1977,15 @@ const styles = StyleSheet.create({
   },
   authBtnLightText: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#161311' },
 
-  cta: { backgroundColor: BTN, borderRadius: 22, paddingVertical: 19, alignItems: 'center' },
+  cta: {
+    backgroundColor: BTN, borderRadius: 22, paddingVertical: 19, alignItems: 'center',
+    shadowColor: '#9A6139', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1, shadowRadius: 0, elevation: 4,
+  },
+  ctaPressed: {
+    transform: [{ translateY: 3 }], shadowOffset: { width: 0, height: 1 }, elevation: 1,
+  },
+  ctaDisabled: { opacity: 0.5 },
   ctaText: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   loginLink: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#161311', textAlign: 'center', marginTop: 20 },
   linkCodeHint: {

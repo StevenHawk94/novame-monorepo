@@ -42,15 +42,24 @@ export async function GET(request) {
         })),
       })
     }
-    if (!pair) return NextResponse.json({ success: true, paired: false, isPlus, cases: [], active: null, history: [] })
+    if (!pair) return NextResponse.json({ success: true, paired: false, isPlus, cases: [], active: null, openSessions: [], history: [] })
     const [pairLow, pairHigh] = pairBounds(userId, pair.partner_user_id)
-    const [{ data: definitions, error }, { data: activeRow }, { data: historyRows }] = await Promise.all([
+    const [
+      { data: definitions, error: definitionsError },
+      { data: openRows, error: openError },
+      { data: historyRows, error: historyError },
+    ] = await Promise.all([
       supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,eligibility,engine,access_tier,question_count,sensitivity').ilike('status', '%Launch').order('access_tier').order('case_id'),
-      supabase.from('court_sessions').select('*').eq('pair_low', pairLow).eq('pair_high', pairHigh).in('status', ['awaiting_initiator','awaiting_partner','processing','ready']).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('court_sessions').select('*').eq('pair_low', pairLow).eq('pair_high', pairHigh).in('status', ['awaiting_initiator','awaiting_partner','processing','ready']).order('updated_at', { ascending: false }).limit(20),
       supabase.from('court_sessions').select('id,case_id,status,completed_at,verdict_ready_at,created_at').eq('pair_low', pairLow).eq('pair_high', pairHigh).in('status', ['completed','ready']).order('updated_at', { ascending: false }).limit(20),
     ])
-    if (error) throw error
-    const active = activeRow ? await sessionView(supabase, activeRow, userId) : null
+    if (definitionsError) throw definitionsError
+    if (openError) throw openError
+    if (historyError) throw historyError
+    const viewedSessions = await Promise.all((openRows || []).map((row) => sessionView(supabase, row, userId)))
+    const openSessions = viewedSessions.filter((item) => item
+      && ['awaiting_initiator', 'awaiting_partner', 'processing', 'ready'].includes(item.status))
+    const active = openSessions[0] || null
     const cases = await Promise.all((definitions || []).map(async (definition) => {
       const relationshipBlocked = definition.category === 'Love Court' && !LOVE_RELATIONSHIPS.has(pair.relationship)
       const plusBlocked = definition.access_tier === 'plus' && !isPlus
@@ -63,7 +72,7 @@ export async function GET(request) {
       }
     }))
     return NextResponse.json({ success: true, paired: true, isPlus, relationship: pair.relationship,
-      partnerUserId: pair.partner_user_id, cases, active, history: historyRows || [] })
+      partnerUserId: pair.partner_user_id, cases, active, openSessions, history: historyRows || [] })
   } catch (error) {
     console.error('[court] catalog failed:', error?.message || error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

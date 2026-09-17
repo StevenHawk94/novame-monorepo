@@ -78,14 +78,15 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obCloseness: require('../../assets/onboarding/page-5.webp'),
   obShareMoments: require('../../assets/onboarding/page-6.webp'),
   obInsightQuestion: require('../../assets/onboarding/page-10.webp'),
+  obHowItWorksGif: require('../../assets/onboarding/ob-6.gif'),
   // Compatibility aliases used by the loading/privacy surfaces and the
   // unmounted pre-redesign onboarding definitions.
   obQuestion: require('../../assets/onboarding/page-3.webp'),
   obWidgetPhone: require('../../assets/onboarding/page-6.webp'),
   obBunnyHead: require('../../assets/characters/Default.webp'),
-  obCourtLove: require('../../assets/bunny-court/love court.webp'),
-  obCourtLife: require('../../assets/bunny-court/life court.webp'),
-  obCourtConflict: require('../../assets/bunny-court/conflict court.webp'),
+  obCourtLove: require('../../assets/bunny-court/love-court.webp'),
+  obCourtLife: require('../../assets/bunny-court/life-court.webp'),
+  obCourtConflict: require('../../assets/bunny-court/conflict-court.webp'),
   obCourtJudge: require('../../assets/bunny-court/judge-bunny.webp'),
   reflectJournalling: require('../../assets/Icons/reflect-journalling.png'),
 };

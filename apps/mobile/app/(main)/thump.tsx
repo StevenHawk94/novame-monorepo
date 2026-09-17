@@ -29,17 +29,17 @@ const CREAM = '#FFF8E9';
 const CORAL = '#F36B6B';
 const YELLOW = '#FFBF12';
 
-const CATEGORY_META: Record<CourtCategory, { icon: keyof typeof MaterialIcons.glyphMap; subtitle: string; color: string }> = {
-  'Love Court': { icon: 'favorite', subtitle: 'For sweet, silly cases to test how well you two really click.', color: '#F58C84' },
-  'Life Court': { icon: 'local-laundry-service', subtitle: 'For everyday choices, chores, and tiny debates.', color: '#F2B84B' },
-  'Conflict Court': { icon: 'handshake', subtitle: 'For different needs, small conflicts, and fair compromises.', color: '#9DBB79' },
-};
+const CATEGORY_META = {
+  'Love Court': { icon: require('../../assets/bunny-court/love-court.webp'), subtitle: 'For sweet, silly cases to test how well you two really click.' },
+  'Life Court': { icon: require('../../assets/bunny-court/life-court.webp'), subtitle: 'For everyday choices, chores, and tiny debates.' },
+  'Conflict Court': { icon: require('../../assets/bunny-court/conflict-court.webp'), subtitle: 'For different needs, small conflicts, and fair compromises.' },
+} satisfies Record<CourtCategory, { icon: number; subtitle: string }>;
 
 type Screen = 'home' | 'cases' | 'intro' | 'session' | 'verdict' | 'history';
 
 function readableError(code: string): string {
   const copy: Record<string, string> = {
-    active_case_exists: 'Finish or close the current case before filing another.',
+    active_case_exists: 'This case is already open. Choose it from Open Cases to continue.',
     plus_required: 'This case is included with Burrow Plus.',
     relationship_not_eligible: 'Love Court is available for partner pairings.',
     already_nudged_today: 'The court already sent a nudge today.',
@@ -107,12 +107,11 @@ export default function ThumpScreen() {
     return true;
   }, []);
 
-  const refreshLobby = useCallback(async (openActive = false) => {
+  const refreshLobby = useCallback(async () => {
     const result = await fetchCourtLobby();
     if (!result.ok) return;
     setLobby(result.data);
-    if (openActive && result.data.active) await openSession(result.data.active.id);
-  }, [openSession]);
+  }, []);
 
   const cases = useMemo(() => lobby?.cases.filter((item) => item.category === category) ?? [], [lobby?.cases, category]);
   const question = questions[questionIndex];
@@ -131,14 +130,13 @@ export default function ThumpScreen() {
     void fetchCourtLobby().then((result) => {
       if (!active || !result.ok) return;
       setLobby(result.data);
-      if (result.data.active) void openSession(result.data.active.id);
     });
     return () => { active = false; };
-  }, [openSession]));
+  }, []));
 
   useEffect(() => subscribeCourtRealtime((sessionId) => {
     if (session?.id && (!sessionId || session.id === sessionId)) void openSession(session.id);
-    else void refreshLobby(true);
+    else void refreshLobby();
   }), [openSession, refreshLobby, session?.id]);
 
   useEffect(() => {
@@ -186,23 +184,29 @@ export default function ThumpScreen() {
     if (!selectedCase || creatingCase) return;
     void haptics.medium();
     setCreatingCase(true);
+    let readyQuestions = previewQuestions;
+    if (readyQuestions.length === 0) {
+      const preview = await fetchCourtCasePreview(selectedCase.id);
+      if (!preview.ok) {
+        setCreatingCase(false);
+        appAlert('Could not open case', readableError(preview.error));
+        return;
+      }
+      readyQuestions = preview.data.questions;
+      setPreviewQuestions(readyQuestions);
+    }
+    if (readyQuestions.length === 0) {
+      setCreatingCase(false);
+      appAlert('Could not open case', 'The questions for this case are unavailable.');
+      return;
+    }
+    // Opening the questionnaire is only a local draft. The durable court
+    // session is created after the final answer, immediately before sealing.
     setSession(null);
-    setQuestions(previewQuestions);
+    setQuestions(readyQuestions);
     setQuestionIndex(0);
     setAnswers({});
     setScreen('session');
-    const result = await createCourtCase(selectedCase.id);
-    if (!result.ok) {
-      setScreen('intro');
-      setQuestions([]);
-      appAlert('Could not file case', readableError(result.error));
-    } else {
-      setSession(result.data.session);
-      const returnedQuestions = Array.isArray(result.data.questions) ? result.data.questions : [];
-      const readyQuestions = returnedQuestions.length > 0 ? returnedQuestions : previewQuestions;
-      setQuestions(readyQuestions);
-      if (readyQuestions.length === 0) void openSession(result.data.session.id);
-    }
     setCreatingCase(false);
   };
 
@@ -215,16 +219,30 @@ export default function ThumpScreen() {
     if (!question || !canContinue || busy) return;
     void haptics.light();
     if (questionIndex < questions.length - 1) { setQuestionIndex((value) => value + 1); return; }
-    if (!session) return;
     setBusy(true);
     const payload: CourtAnswer[] = questions.map((item) => ({ questionNumber: item.number, value: answers[item.number] }));
-    const previousSession = session;
+    let activeSession = session;
+    if (!activeSession) {
+      if (!selectedCase) {
+        setBusy(false);
+        return;
+      }
+      const created = await createCourtCase(selectedCase.id);
+      if (!created.ok) {
+        setBusy(false);
+        appAlert('Could not seal testimony', readableError(created.error));
+        return;
+      }
+      activeSession = created.data.session;
+      setSession(activeSession);
+    }
+    const previousSession = activeSession;
     setSession({
-      ...session,
+      ...activeSession,
       hasSubmitted: true,
-      status: session.otherSubmitted ? 'processing' : 'awaiting_partner',
+      status: activeSession.otherSubmitted ? 'processing' : 'awaiting_partner',
     });
-    const result = await submitCourtAnswers(session.id, payload);
+    const result = await submitCourtAnswers(activeSession.id, payload);
     if (!result.ok) {
       setSession(previousSession);
       appAlert('Could not seal testimony', readableError(result.error));
@@ -246,7 +264,7 @@ export default function ThumpScreen() {
     if (action === 'complete' && result.ok) {
       await refreshLobby();
     } else if (action === 'complete') {
-      await refreshLobby(true);
+      await refreshLobby();
     } else if (action !== 'nudge') {
       await openSession(activeSession.id);
     }
@@ -281,7 +299,7 @@ export default function ThumpScreen() {
     const result = await courtAction(sessionId, { action: 'complete' });
     if (!result.ok) appAlert('Bunny Court', readableError(result.error));
     if (result.ok) await refreshLobby();
-    else await refreshLobby(true);
+    else await refreshLobby();
     setBusy(false);
   };
 
@@ -295,6 +313,21 @@ export default function ThumpScreen() {
     if (screen === 'cases') { setScreen('home'); setCategory(null); return; }
     if (screen === 'intro') { setScreen('cases'); return; }
     if (screen === 'verdict') { setScreen('session'); setRevealed(false); return; }
+    if (screen === 'session') {
+      const returnCategory = session?.case?.category ?? selectedCase?.category ?? category;
+      setSession(null);
+      setQuestions([]);
+      setQuestionIndex(0);
+      setAnswers({});
+      setRevealed(false);
+      if (returnCategory) {
+        setCategory(returnCategory);
+        setScreen('cases');
+      } else {
+        setScreen('home');
+      }
+      return;
+    }
     router.back();
   };
 
@@ -310,13 +343,18 @@ export default function ThumpScreen() {
         </View>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
           <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            {screen === 'home' && <HomeView lobby={lobby} onCategory={chooseCategory} onPair={() => router.replace('/(main)/(tabs)/friends')} />}
+            {screen === 'home' && <HomeView
+              lobby={lobby}
+              onCategory={chooseCategory}
+              onPair={() => router.replace('/(main)/(tabs)/friends')}
+              onOpenSession={(id) => void openSession(id)}
+            />}
             {screen === 'cases' && category && <CasesView category={category} cases={cases} onCase={chooseCase} />}
             {screen === 'intro' && selectedCase && <IntroView item={selectedCase} busy={busy} onFile={fileCase} />}
             {screen === 'history' && lobby && <HistoryView lobby={lobby} onOpen={(id) => void openSession(id, true)} />}
-            {screen === 'session' && (session || creatingCase) && <SessionView
+            {screen === 'session' && (session || questions.length > 0 || creatingCase) && <SessionView
               session={session ?? undefined} question={question} questionIndex={questionIndex} total={questions.length}
-              answer={currentAnswer} memoryOptions={memoryOptions} busy={busy} canContinue={Boolean(canContinue && (questionIndex < questions.length - 1 || session))}
+              answer={currentAnswer} memoryOptions={memoryOptions} busy={busy} canContinue={Boolean(canContinue)}
               onAnswer={setAnswer} onNext={nextQuestion} onNudge={() => void act('nudge')}
               onDecline={() => void act('decline')} onReveal={revealVerdict}
               onClose={() => void closeTerminal()}
@@ -341,7 +379,13 @@ function JudgeArt({ waiting = false, compact = false }: { waiting?: boolean; com
   return <Image source={waiting ? JUDGE_WAITING : JUDGE} style={[styles.judge, compact && styles.judgeCompact]} contentFit="contain" transition={0} />;
 }
 
-function HomeView({ lobby, onCategory, onPair }: { lobby: CourtLobby | null; onCategory: (value: CourtCategory) => void; onPair: () => void }) {
+function HomeView({ lobby, onCategory, onPair, onOpenSession }: {
+  lobby: CourtLobby | null;
+  onCategory: (value: CourtCategory) => void;
+  onPair: () => void;
+  onOpenSession: (id: string) => void;
+}) {
+  const openSessions = lobby?.openSessions ?? (lobby?.active ? [lobby.active] : []);
   return (
     <>
       <CourtHeading title="BUNNY COURT" subtitle="Petty disputes. Adorable verdicts." />
@@ -353,12 +397,28 @@ function HomeView({ lobby, onCategory, onPair }: { lobby: CourtLobby | null; onC
               const meta = CATEGORY_META[name];
               const count = lobby.cases.filter((item) => item.category === name && !item.lockedReason).length;
               return <Pressable key={name} onPress={() => onCategory(name)} style={({ pressed }) => [styles.categoryCard, pressed && styles.pressed]}>
-                <View style={[styles.categoryIcon, { backgroundColor: meta.color }]}><MaterialIcons name={meta.icon} size={30} color={BROWN} /></View>
+                <Image source={meta.icon} style={styles.categoryIcon} contentFit="contain" transition={0} />
                 <View style={styles.flex}><Text style={styles.categoryTitle}>{name}</Text><Text style={styles.categorySubtitle}>{meta.subtitle}</Text><Text style={styles.meta}>{count} available cases</Text></View>
                 <MaterialIcons name="arrow-forward-ios" size={24} color={BROWN} />
               </Pressable>;
             })}
           </View>}
+      {openSessions.length > 0 && <View style={styles.openCases}>
+        <Text style={styles.openCasesTitle}>OPEN CASES</Text>
+        {openSessions.map((item) => <Pressable
+          key={item.id}
+          onPress={() => onOpenSession(item.id)}
+          style={({ pressed }) => [styles.openCaseCard, pressed && styles.pressed]}
+        >
+          <View style={styles.flex}>
+            <Text style={styles.caseTitle}>{item.case?.title ?? 'Bunny Court Case'}</Text>
+            <Text style={styles.meta}>
+              {item.verdict ? 'Verdict ready' : item.hasSubmitted ? 'Waiting for your person' : 'Your testimony is needed'}
+            </Text>
+          </View>
+          <MaterialIcons name="arrow-forward-ios" size={22} color={BROWN} />
+        </Pressable>)}
+      </View>}
       <Text style={styles.footer}>Where every argument gets a fair (and furry) trial.</Text>
     </>
   );
@@ -479,10 +539,17 @@ const styles = StyleSheet.create({
   centerText: { color: BROWN, textAlign: 'center' },
   categoryList: { gap: 14 },
   categoryCard: { minHeight: 100, backgroundColor: CREAM, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 15, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: BROWN, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.8, shadowRadius: 0, elevation: 5 },
-  categoryIcon: { width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  categoryIcon: { width: 64, height: 64 },
   categoryTitle: { color: '#16100C', fontSize: 19, lineHeight: 24, fontFamily: 'Inter_900Black' },
   categorySubtitle: { color: '#16100C', fontSize: 14, lineHeight: 19, fontFamily: 'Inter_600SemiBold' },
   meta: { color: '#755746', fontSize: 12, lineHeight: 16, fontFamily: 'Inter_600SemiBold' },
+  openCases: { marginTop: 8, gap: 10 },
+  openCasesTitle: { color: BROWN, fontSize: 14, lineHeight: 18, fontFamily: 'Inter_900Black', letterSpacing: 1.1 },
+  openCaseCard: {
+    minHeight: 76, backgroundColor: CREAM, borderRadius: 20, paddingHorizontal: 18, paddingVertical: 13,
+    flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: '#B88962',
+    shadowColor: BROWN, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.32, shadowRadius: 0, elevation: 3,
+  },
   footer: { color: BROWN, textAlign: 'center', fontSize: 12, lineHeight: 17, fontFamily: 'Inter_700Bold', marginVertical: 5 },
   caseListHeader: { minHeight: 150, flexDirection: 'row', alignItems: 'center' },
   caseCard: { minHeight: 112, backgroundColor: CREAM, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: BROWN, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.85, shadowRadius: 0, elevation: 5 },

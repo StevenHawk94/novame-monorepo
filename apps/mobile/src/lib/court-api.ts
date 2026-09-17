@@ -65,6 +65,7 @@ export type CourtLobby = {
   partnerUserId?: string;
   cases: CourtCaseSummary[];
   active: CourtSession | null;
+  openSessions: CourtSession[];
   history: { id: string; case_id: string; status: CourtStatus; completed_at?: string; verdict_ready_at?: string; created_at: string }[];
   fetchedAt: number;
 };

@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { Modal, Platform, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 
 import { getCurrentSession } from '@/lib/auth';
 import { refreshAllCaches } from '@/lib/cache-refresh-all';
 import { hideResumeOverlay } from '@/lib/background-resume-store';
+import { GridBackground } from '@/components/ui/grid-background';
 
 /**
  * Full-screen overlay shown when the app returns from a long background.
@@ -16,11 +17,10 @@ import { hideResumeOverlay } from '@/lib/background-resume-store';
  * always for: hold the launch screen while the caches warm.
  *
  * The 8s cap stays. It does not stop the work -- refreshAllCaches keeps going
- * -- it caps how long a bad network may strand the user behind a purple
- * rectangle.
+ * -- it caps how long a bad network may strand the user behind a loading
+ * surface.
  */
-const FULL_SPLASH = require('../../../assets/splash-full.png');
-const ANDROID_SPLASH_ICON = require('../../../assets/splash-icon.png');
+const RESUME_FAVICON = require('../../../assets/favicon.png');
 const RESUME_TIMEOUT_MS = 8000;
 
 export function BackgroundResumeOverlay() {
@@ -56,15 +56,8 @@ export function BackgroundResumeOverlay() {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.root}>
-        {Platform.OS === 'android' ? (
-          <ExpoImage
-            source={ANDROID_SPLASH_ICON}
-            style={styles.androidIcon}
-            contentFit="contain"
-          />
-        ) : (
-          <ExpoImage source={FULL_SPLASH} style={StyleSheet.absoluteFill} contentFit="cover" />
-        )}
+        <GridBackground />
+        <ExpoImage source={RESUME_FAVICON} style={styles.logo} contentFit="contain" />
       </View>
     </Modal>
   );
@@ -77,5 +70,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F8E2C1',
   },
-  androidIcon: { width: 220, height: 220 },
+  logo: { width: 120, height: 120 },
 });

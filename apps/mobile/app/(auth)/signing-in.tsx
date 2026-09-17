@@ -9,7 +9,6 @@ import {
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
-import { ICONS } from '@/lib/icons';
 import { GridBackground } from '@/components/ui/grid-background';
 import { beginHomeEntry, deferHomeEntryNotification } from '@/lib/home-entry-readiness';
 
@@ -18,6 +17,7 @@ const MIN_DISPLAY_MS = 600;
 const SESSION_RESTORE_TIMEOUT_MS = 2000;
 const ANONYMOUS_SESSION_TIMEOUT_MS = 5000;
 const COMPANION_SYNC_TIMEOUT_MS = 5000;
+const FAVICON = require('../../assets/favicon.png');
 
 type TimedResult<T> = { status: 'resolved'; value: T } | { status: 'timeout' };
 
@@ -141,16 +141,16 @@ export default function SigningInScreen() {
   return (
     <View style={styles.root}>
       <GridBackground />
-      <ExpoImage source={ICONS.obBunnyHead} style={styles.bunny} contentFit="contain" />
+      <ExpoImage source={FAVICON} style={styles.logo} contentFit="contain" />
       <ActivityIndicator size="small" color="#8A6240" style={styles.spinner} />
     </View>
   );
 }
 
-// Same look as the entry-gate splash (grid ground + bunny head) so the
-// onboarding→home handoff never flashes a different scene.
+// Match the app-owned entry gate: a lightweight grid surface with the Burrow favicon.
+// The native launch splash remains a separate, one-shot operating-system layer.
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
-  bunny: { width: 132, height: 158, marginBottom: 24 },
+  logo: { width: 120, height: 120, marginBottom: 20 },
   spinner: { marginTop: 4 },
 });
