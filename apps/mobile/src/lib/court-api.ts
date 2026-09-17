@@ -47,6 +47,9 @@ export type CourtSession = {
   expiresAt: string;
   createdAt: string;
   verdict: CourtVerdict | null;
+  answersShareAllowed: boolean;
+  answersVisible: boolean;
+  otherAnswers: { questionNumber: number; prompt: string; value: string | string[] }[];
 };
 
 export type CourtQuestion = {
@@ -144,11 +147,11 @@ export async function fetchCourtSession(sessionId: string): Promise<CourtApiResu
   } catch (error) { return { ok: false, error: errorCode(error).code }; }
 }
 
-export async function submitCourtAnswers(sessionId: string, answers: CourtAnswer[]): Promise<CourtApiResult<CourtSession>> {
-  return courtAction(sessionId, { action: 'submit', answers });
+export async function submitCourtAnswers(sessionId: string, answers: CourtAnswer[], shareAnswers: boolean): Promise<CourtApiResult<CourtSession>> {
+  return courtAction(sessionId, { action: 'submit', answers, shareAnswers });
 }
 
-export async function courtAction(sessionId: string, payload: { action: 'submit'; answers: CourtAnswer[] } | { action: 'decline' | 'nudge' | 'complete' }): Promise<CourtApiResult<CourtSession>> {
+export async function courtAction(sessionId: string, payload: { action: 'submit'; answers: CourtAnswer[]; shareAnswers: boolean } | { action: 'decline' | 'nudge' | 'complete' }): Promise<CourtApiResult<CourtSession>> {
   const id = await userId();
   if (!id) return { ok: false, error: 'no_session' };
   try {

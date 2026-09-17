@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Platform, Pressable,
-  ScrollView, Share, StyleSheet, TextInput, View,
+  Modal, ScrollView, Share, StyleSheet, TextInput, View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -88,6 +88,8 @@ export default function ThumpScreen() {
   const [creatingCase, setCreatingCase] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [memoryOptions, setMemoryOptions] = useState<string[]>([]);
+  const [sharePromptOpen, setSharePromptOpen] = useState(false);
+  const [pendingAnswers, setPendingAnswers] = useState<Record<number, string | string[]> | null>(null);
 
   const openSession = useCallback(async (sessionId: string, revealReady = false) => {
     const result = await fetchCourtSession(sessionId);
@@ -135,9 +137,9 @@ export default function ThumpScreen() {
   }, []));
 
   useEffect(() => subscribeCourtRealtime((sessionId) => {
-    if (session?.id && (!sessionId || session.id === sessionId)) void openSession(session.id);
+    if (session?.id && (!sessionId || session.id === sessionId)) void openSession(session.id, screen === 'verdict' && revealed);
     else void refreshLobby();
-  }), [openSession, refreshLobby, session?.id]);
+  }), [openSession, refreshLobby, revealed, screen, session?.id]);
 
   useEffect(() => {
     if (!session || (session.status !== 'processing' && !(session.status === 'awaiting_partner' && session.hasSubmitted))) return;
@@ -215,12 +217,24 @@ export default function ThumpScreen() {
     setAnswers((previous) => ({ ...previous, [question.number]: value }));
   };
 
-  const nextQuestion = async () => {
-    if (!question || !canContinue || busy) return;
+  const nextQuestion = (answerOverride?: string | string[]) => {
+    if (!question || busy) return;
+    const nextAnswers = answerOverride === undefined ? answers : { ...answers, [question.number]: answerOverride };
+    const nextAnswer = nextAnswers[question.number];
+    const answerReady = !question.required || (Array.isArray(nextAnswer) ? nextAnswer.length > 0 : Boolean(nextAnswer));
+    if (!answerReady) return;
     void haptics.light();
+    setAnswers(nextAnswers);
     if (questionIndex < questions.length - 1) { setQuestionIndex((value) => value + 1); return; }
+    setPendingAnswers(nextAnswers);
+    setSharePromptOpen(true);
+  };
+
+  const sealAnswers = async (shareAnswers: boolean) => {
+    if (!pendingAnswers || busy) return;
+    setSharePromptOpen(false);
     setBusy(true);
-    const payload: CourtAnswer[] = questions.map((item) => ({ questionNumber: item.number, value: answers[item.number] }));
+    const payload: CourtAnswer[] = questions.map((item) => ({ questionNumber: item.number, value: pendingAnswers[item.number] }));
     let activeSession = session;
     if (!activeSession) {
       if (!selectedCase) {
@@ -242,14 +256,24 @@ export default function ThumpScreen() {
       hasSubmitted: true,
       status: activeSession.otherSubmitted ? 'processing' : 'awaiting_partner',
     });
-    const result = await submitCourtAnswers(activeSession.id, payload);
+    const result = await submitCourtAnswers(activeSession.id, payload, shareAnswers);
     if (!result.ok) {
       setSession(previousSession);
       appAlert('Could not seal testimony', readableError(result.error));
     } else {
       setSession(result.data);
     }
+    setPendingAnswers(null);
     setBusy(false);
+  };
+
+  const previousQuestion = () => {
+    if (questionIndex > 0) {
+      void haptics.light();
+      setQuestionIndex((value) => value - 1);
+      return;
+    }
+    back();
   };
 
   const act = async (action: 'decline' | 'nudge' | 'complete') => {
@@ -319,6 +343,8 @@ export default function ThumpScreen() {
       setQuestions([]);
       setQuestionIndex(0);
       setAnswers({});
+      setPendingAnswers(null);
+      setSharePromptOpen(false);
       setRevealed(false);
       if (returnCategory) {
         setCategory(returnCategory);
@@ -336,11 +362,11 @@ export default function ThumpScreen() {
   return (
     <CourtBackground align={backgroundAlign}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={[styles.header, { top: insets.top }]}>
+        {!(screen === 'session' && question && !session?.hasSubmitted) && <View style={[styles.header, { top: insets.top }]}>
           {roundButton(back, screen === 'home' ? 'close' : 'arrow-back')}
           {screen === 'home' && (lobby?.history.length ?? 0) > 0
             && roundButton(() => setScreen('history'), 'history')}
-        </View>
+        </View>}
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
           <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {screen === 'home' && <HomeView
@@ -355,7 +381,8 @@ export default function ThumpScreen() {
             {screen === 'session' && (session || questions.length > 0 || creatingCase) && <SessionView
               session={session ?? undefined} question={question} questionIndex={questionIndex} total={questions.length}
               answer={currentAnswer} memoryOptions={memoryOptions} busy={busy} canContinue={Boolean(canContinue)}
-              onAnswer={setAnswer} onNext={nextQuestion} onNudge={() => void act('nudge')}
+              onAnswer={setAnswer} onSelect={(value) => nextQuestion(value)} onNext={() => nextQuestion()}
+              onPrevious={previousQuestion} onNudge={() => void act('nudge')}
               onDecline={() => void act('decline')} onReveal={revealVerdict}
               onClose={() => void closeTerminal()}
             />}
@@ -366,6 +393,7 @@ export default function ThumpScreen() {
             />}
           </ScrollView>
         </KeyboardAvoidingView>
+        <AnswerSharingPrompt visible={sharePromptOpen} busy={busy} onChoose={(share) => void sealAnswers(share)} />
       </SafeAreaView>
     </CourtBackground>
   );
@@ -386,16 +414,19 @@ function HomeView({ lobby, onCategory, onPair, onOpenSession }: {
   onOpenSession: (id: string) => void;
 }) {
   const openSessions = lobby?.openSessions ?? (lobby?.active ? [lobby.active] : []);
+  const incomingCases = openSessions.filter((item) => item.role === 'partner' && !item.hasSubmitted);
+  const otherOpenCases = openSessions.filter((item) => !incomingCases.some((incoming) => incoming.id === item.id));
   return (
     <>
       <CourtHeading title="BUNNY COURT" subtitle="Petty disputes. Adorable verdicts." />
+      {incomingCases.length > 0 && <OpenCaseList title="Open Cases From Your Partner" sessions={incomingCases} onOpen={onOpenSession} />}
       <JudgeArt />
       {!lobby ? <Paper><ActivityIndicator color={BROWN} /><Text style={styles.centerText}>Opening the court…</Text></Paper>
         : !lobby.paired ? <Paper><Text style={styles.paperTitle}>TWO PLAYERS REQUIRED</Text><Text style={styles.body}>Pair with your person before filing a case. Testimony stays sealed until both of you finish.</Text><PrimaryButton label="PAIR YOUR PERSON" onPress={onPair} /></Paper>
           : <View style={styles.categoryList}>
             {(Object.keys(CATEGORY_META) as CourtCategory[]).map((name) => {
               const meta = CATEGORY_META[name];
-              const count = lobby.cases.filter((item) => item.category === name && !item.lockedReason).length;
+              const count = lobby.cases.filter((item) => item.category === name).length;
               return <Pressable key={name} onPress={() => onCategory(name)} style={({ pressed }) => [styles.categoryCard, pressed && styles.pressed]}>
                 <Image source={meta.icon} style={styles.categoryIcon} contentFit="contain" transition={0} />
                 <View style={styles.flex}><Text style={styles.categoryTitle}>{name}</Text><Text style={styles.categorySubtitle}>{meta.subtitle}</Text><Text style={styles.meta}>{count} available cases</Text></View>
@@ -403,25 +434,23 @@ function HomeView({ lobby, onCategory, onPair, onOpenSession }: {
               </Pressable>;
             })}
           </View>}
-      {openSessions.length > 0 && <View style={styles.openCases}>
-        <Text style={styles.openCasesTitle}>OPEN CASES</Text>
-        {openSessions.map((item) => <Pressable
-          key={item.id}
-          onPress={() => onOpenSession(item.id)}
-          style={({ pressed }) => [styles.openCaseCard, pressed && styles.pressed]}
-        >
-          <View style={styles.flex}>
-            <Text style={styles.caseTitle}>{item.case?.title ?? 'Bunny Court Case'}</Text>
-            <Text style={styles.meta}>
-              {item.verdict ? 'Verdict ready' : item.hasSubmitted ? 'Waiting for your person' : 'Your testimony is needed'}
-            </Text>
-          </View>
-          <MaterialIcons name="arrow-forward-ios" size={22} color={BROWN} />
-        </Pressable>)}
-      </View>}
+      {otherOpenCases.length > 0 && <OpenCaseList title="OPEN CASES" sessions={otherOpenCases} onOpen={onOpenSession} />}
       <Text style={styles.footer}>Where every argument gets a fair (and furry) trial.</Text>
     </>
   );
+}
+
+function OpenCaseList({ title, sessions, onOpen }: { title: string; sessions: CourtSession[]; onOpen: (id: string) => void }) {
+  return <View style={styles.openCases}>
+    <Text style={styles.openCasesTitle}>{title}</Text>
+    {sessions.map((item) => <Pressable key={item.id} onPress={() => onOpen(item.id)} style={({ pressed }) => [styles.openCaseCard, pressed && styles.pressed]}>
+      <View style={styles.flex}>
+        <Text style={styles.caseTitle}>{item.case?.title ?? 'Bunny Court Case'}</Text>
+        <Text style={styles.meta}>{item.verdict ? 'Verdict ready' : item.hasSubmitted ? 'Waiting for your person' : 'Your testimony is needed'}</Text>
+      </View>
+      <MaterialIcons name="arrow-forward-ios" size={22} color={BROWN} />
+    </Pressable>)}
+  </View>;
 }
 
 function CasesView({ category, cases, onCase }: { category: CourtCategory; cases: CourtCaseSummary[]; onCase: (item: CourtCaseSummary) => void }) {
@@ -458,7 +487,7 @@ function HistoryView({ lobby, onOpen }: { lobby: CourtLobby; onOpen: (id: string
       })}</>;
 }
 
-function SessionView(props: { session?: CourtSession; question?: CourtQuestion; questionIndex: number; total: number; answer?: string | string[]; memoryOptions: string[]; busy: boolean; canContinue: boolean; onAnswer: (value: string | string[]) => void; onNext: () => void; onNudge: () => void; onDecline: () => void; onReveal: () => void; onClose: () => void }) {
+function SessionView(props: { session?: CourtSession; question?: CourtQuestion; questionIndex: number; total: number; answer?: string | string[]; memoryOptions: string[]; busy: boolean; canContinue: boolean; onAnswer: (value: string | string[]) => void; onSelect: (value: string | string[]) => void; onNext: () => void; onPrevious: () => void; onNudge: () => void; onDecline: () => void; onReveal: () => void; onClose: () => void }) {
   const { session, question, questionIndex, total, answer, memoryOptions, busy, canContinue } = props;
   if (session?.verdict) return <><CourtHeading title="THE VERDICT IS READY" /><JudgeArt /><Paper><Text style={styles.readyTitle}>Both testimonies received</Text><Text style={styles.body}>The bunny has reviewed the evidence and finished the final verdict. There is no emotionally responsible way back.</Text><PrimaryButton label="CHECK THE RESULT" onPress={props.onReveal} /></Paper></>;
   if (session && ['declined', 'expired', 'cancelled'].includes(session.status)) {
@@ -474,7 +503,18 @@ function SessionView(props: { session?: CourtSession; question?: CourtQuestion; 
     return <><CourtHeading title="TESTIMONY SEALED" /><JudgeArt waiting /><Paper><Text style={styles.readyTitle}>Now we wait for the other side</Text><View style={styles.statusGrid}><StatusSide label="YOU" done /><StatusSide label="YOUR PERSON" done={session.otherSubmitted} /></View><Text style={styles.body}>No peeking. No edits. The court has standards.</Text>{session.role === 'initiator' && !session.otherSubmitted && <PrimaryButton label="NUDGE THEM" onPress={props.onNudge} disabled={busy} />}<PrimaryButton label="LEAVE NOW" onPress={props.onClose} disabled={busy} tone="yellow" /></Paper><Text style={styles.footer}>We’ll let you know when the verdict is ready.</Text></>;
   }
   if (!question) return <Paper><ActivityIndicator color={BROWN} /><Text style={styles.centerText}>Loading testimony…</Text></Paper>;
-  return <><View style={styles.questionJudge}><JudgeArt compact /></View><Paper><View style={styles.questionTopRow}><Text style={styles.questionCount}>{questionIndex + 1}/{total} questions</Text><Pressable hitSlop={12} disabled={!canContinue || busy} onPress={props.onNext} style={({ pressed }) => [(!canContinue || busy) && styles.disabled, pressed && styles.pressed]}><MaterialIcons name="arrow-forward" size={52} color={BROWN} /></Pressable></View><Text style={styles.courtInstruction}>Answer honestly, the court can smell fake chill.</Text><View style={styles.questionDivider} /><Text style={styles.question}>{question.prompt}</Text><AnswerInput question={question} answer={answer} memoryOptions={memoryOptions} onAnswer={props.onAnswer} /></Paper>{session?.role === 'partner' && <Pressable onPress={props.onDecline}><Text style={styles.decline}>Decline this case</Text></Pressable>}</>;
+  const autoAdvance = question.responseType === 'Single select';
+  return <><View style={styles.questionJudge}><JudgeArt compact /></View><Paper>
+    <View style={styles.questionTopRow}>
+      <Pressable hitSlop={12} onPress={props.onPrevious} style={({ pressed }) => [styles.questionBack, pressed && styles.pressed]}><MaterialIcons name="arrow-back" size={26} color="#FFFFFF" /></Pressable>
+      <Text style={styles.questionCount}>{questionIndex + 1}/{total}</Text><View style={styles.questionTopSpacer} />
+    </View>
+    <View style={styles.questionDivider} />
+    <Text style={styles.question}>{question.prompt}</Text>
+    <AnswerInput question={question} answer={answer} memoryOptions={memoryOptions} onAnswer={props.onAnswer} onSelect={autoAdvance ? props.onSelect : undefined} />
+    {!autoAdvance && <PrimaryButton label={questionIndex === total - 1 ? 'SEAL TESTIMONY' : 'CONTINUE'} onPress={props.onNext} disabled={!canContinue || busy} tone="yellow" />}
+    <Text style={styles.courtInstruction}>Answer honestly, the court can smell fake chill.</Text>
+  </Paper>{session?.role === 'partner' && <Pressable onPress={props.onDecline}><Text style={styles.decline}>Decline this case</Text></Pressable>}</>;
 }
 
 function AnalyzingBar() {
@@ -490,7 +530,7 @@ function AnalyzingBar() {
   return <View accessibilityLabel="The judge is analyzing" style={styles.analysisTrack}><Animated.View style={[styles.analysisFill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['18%', '94%'] }) }]} /></View>;
 }
 
-function AnswerInput({ question, answer, memoryOptions, onAnswer }: { question: CourtQuestion; answer?: string | string[]; memoryOptions: string[]; onAnswer: (value: string | string[]) => void }) {
+function AnswerInput({ question, answer, memoryOptions, onAnswer, onSelect }: { question: CourtQuestion; answer?: string | string[]; memoryOptions: string[]; onAnswer: (value: string | string[]) => void; onSelect?: (value: string | string[]) => void }) {
   if (question.responseType === 'Short text' || question.responseType === 'Memory picker') return <View style={styles.options}>
     {question.responseType === 'Memory picker' && memoryOptions.length > 0 && <>
       <Text style={styles.memoryHint}>CHOOSE A SHARED MEMORY</Text>
@@ -506,14 +546,27 @@ function AnswerInput({ question, answer, memoryOptions, onAnswer }: { question: 
     const active = Array.isArray(answer) ? selected.includes(option.value) : answer === option.value;
     return <Pressable key={option.value} onPress={() => {
       if (question.responseType === 'Multi select') onAnswer(active ? selected.filter((value) => value !== option.value) : [...selected, option.value]);
+      else if (onSelect) onSelect(option.value);
       else onAnswer(option.value);
     }} style={({ pressed }) => [styles.option, active && styles.optionActive, pressed && styles.pressed]}><Text style={[styles.optionText, active && styles.optionTextActive]}>{option.label}</Text></Pressable>;
   })}</View>;
 }
 
+function AnswerSharingPrompt({ visible, busy, onChoose }: { visible: boolean; busy: boolean; onChoose: (share: boolean) => void }) {
+  return <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={() => {}}>
+    <View style={styles.consentBackdrop}><View style={styles.consentCard}>
+      <Text style={styles.consentTitle}>SHARE YOUR TESTIMONY?</Text>
+      <Text style={styles.body}>Allow your person to see your selections and written answers after the verdict?</Text>
+      <Text style={styles.consentNote}>Answers are revealed only if both of you choose to share. If either person keeps them private, neither side can view the other’s answers.</Text>
+      <PrimaryButton label="ALLOW SHARING" onPress={() => onChoose(true)} disabled={busy} />
+      <PrimaryButton label="KEEP PRIVATE" onPress={() => onChoose(false)} disabled={busy} tone="yellow" />
+    </View></View>
+  </Modal>;
+}
+
 function VerdictView({ session, busy, onSave, onShare, onRunAgain }: { session: CourtSession; busy: boolean; onSave: () => void; onShare: () => void; onRunAgain: () => void }) {
   const verdict = session.verdict!;
-  return <Paper><Text style={styles.verdictHeadline}>{verdict.headline}</Text><Text style={styles.body}>{verdict.whatCourtHeard}</Text><Text style={styles.body}>{verdict.verdict}</Text><View style={styles.order}><MaterialIcons name="gavel" size={38} color={BROWN} /><View style={styles.flex}><Text style={styles.orderTitle}>COURT ORDERED MOVE</Text><Text style={styles.body}>{verdict.courtOrderedMove}</Text></View></View><PrimaryButton label="SHARE VERDICT" onPress={onShare} disabled={busy} /><PrimaryButton label="DONE" onPress={onSave} disabled={busy} tone="yellow" /><Pressable onPress={onRunAgain} disabled={busy} style={styles.secondaryButton}><MaterialIcons name="replay" size={20} color={BROWN} /><Text style={styles.secondaryText}>RUN IT BACK</Text></Pressable></Paper>;
+  return <Paper><Text style={styles.verdictHeadline}>{verdict.headline}</Text><Text style={styles.body}>{verdict.whatCourtHeard}</Text><Text style={styles.body}>{verdict.verdict}</Text><View style={styles.order}><MaterialIcons name="gavel" size={38} color={BROWN} /><View style={styles.flex}><Text style={styles.orderTitle}>COURT ORDERED MOVE</Text><Text style={styles.body}>{verdict.courtOrderedMove}</Text></View></View>{session.answersVisible && (session.otherAnswers?.length ?? 0) > 0 && <View style={styles.sharedAnswers}><Text style={styles.orderTitle}>THEIR SHARED TESTIMONY</Text>{session.otherAnswers.map((item) => <View key={item.questionNumber} style={styles.sharedAnswer}><Text style={styles.sharedQuestion}>{item.prompt}</Text><Text style={styles.sharedValue}>{Array.isArray(item.value) ? item.value.join(', ') : item.value}</Text></View>)}</View>}<PrimaryButton label="SHARE VERDICT" onPress={onShare} disabled={busy} /><PrimaryButton label="DONE" onPress={onSave} disabled={busy} tone="yellow" /><Pressable onPress={onRunAgain} disabled={busy} style={styles.secondaryButton}><MaterialIcons name="replay" size={20} color={BROWN} /><Text style={styles.secondaryText}>RUN IT BACK</Text></Pressable></Paper>;
 }
 
 function StatusSide({ label, done }: { label: string; done: boolean }) { return <View style={styles.statusSide}><Image source={done ? CHECK : AWAITING} style={styles.statusIcon} contentFit="contain" transition={0} /><Text style={styles.statusLabel}>{label}</Text><Text style={styles.statusMeta}>{done ? 'Testimony received' : 'Waiting for answers'}</Text></View>; }
@@ -574,10 +627,12 @@ const styles = StyleSheet.create({
   analysisTrack: { height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: '#E7D9BE' },
   analysisFill: { height: '100%', borderRadius: 7, backgroundColor: '#FA887F' },
   questionJudge: { marginBottom: -26, zIndex: 1 },
-  questionTopRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  questionCount: { color: '#16100C', fontSize: 18, lineHeight: 23, fontFamily: 'Inter_500Medium' },
-  courtInstruction: { color: '#16100C', fontSize: 15, lineHeight: 21, fontFamily: 'Inter_800ExtraBold', textAlign: 'center' },
-  questionDivider: { height: 4, backgroundColor: '#16100C' },
+  questionTopRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  questionBack: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#271B18', alignItems: 'center', justifyContent: 'center' },
+  questionTopSpacer: { width: 34, height: 34 },
+  questionCount: { color: '#16100C', fontSize: 18, lineHeight: 23, fontFamily: 'Inter_500Medium', textAlign: 'center' },
+  courtInstruction: { color: '#16100C', fontSize: 12, lineHeight: 18, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 8 },
+  questionDivider: { height: 2, backgroundColor: '#16100C' },
   question: { color: '#16100C', fontSize: 23, lineHeight: 30, fontFamily: 'Inter_900Black', textAlign: 'left' },
   options: { gap: 13 },
   option: { minHeight: 62, paddingHorizontal: 14, paddingVertical: 13, borderRadius: 18, backgroundColor: YELLOW, alignItems: 'center', justifyContent: 'center' },
@@ -597,6 +652,14 @@ const styles = StyleSheet.create({
   verdictHeadline: { color: '#16100C', fontSize: 30, lineHeight: 37, fontFamily: 'Inter_900Black', textAlign: 'center' },
   order: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, padding: 18, backgroundColor: '#F7C38E' },
   orderTitle: { color: '#16100C', fontSize: 17, lineHeight: 22, fontFamily: 'Inter_900Black', textAlign: 'center' },
+  sharedAnswers: { gap: 12, borderTopWidth: 1, borderTopColor: '#DCC9A8', paddingTop: 18 },
+  sharedAnswer: { gap: 5, backgroundColor: '#FFF0CE', borderRadius: 16, padding: 14 },
+  sharedQuestion: { color: BROWN, fontSize: 13, lineHeight: 18, fontFamily: 'Inter_700Bold' },
+  sharedValue: { color: '#16100C', fontSize: 16, lineHeight: 22, fontFamily: 'Inter_500Medium' },
+  consentBackdrop: { flex: 1, backgroundColor: 'rgba(22,16,12,0.58)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  consentCard: { width: '100%', maxWidth: 440, backgroundColor: CREAM, borderRadius: 26, padding: 24, gap: 16, shadowColor: '#16100C', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.8, shadowRadius: 0, elevation: 8 },
+  consentTitle: { color: BROWN, fontSize: 24, lineHeight: 30, fontFamily: 'Inter_900Black', textAlign: 'center' },
+  consentNote: { color: '#755746', fontSize: 13, lineHeight: 19, fontFamily: 'Inter_600SemiBold', textAlign: 'center' },
   secondaryButton: { minHeight: 50, borderRadius: 25, borderWidth: 2, borderColor: BROWN, backgroundColor: CREAM, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   secondaryText: { color: BROWN, fontFamily: 'Inter_800ExtraBold' },
   busy: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,248,233,0.34)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },

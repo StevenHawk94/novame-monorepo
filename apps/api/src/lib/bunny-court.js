@@ -570,17 +570,30 @@ export async function sessionView(supabase, session, viewerId) {
     : supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,engine,access_tier,notification_copy').eq('case_id', resolved.case_id).maybeSingle()
   const [{ data: liveContent }, { data: submissions }, { data: verdict }] = await Promise.all([
     liveContentRequest,
-    supabase.from('court_submissions').select('user_id,submitted_at').eq('session_id', resolved.id),
+    supabase.from('court_submissions').select('user_id,submitted_at,answers').eq('session_id', resolved.id),
     supabase.from('court_verdicts').select('outcome_key,headline,what_court_heard,verdict,court_ordered_move,share_text,safety_state,created_at').eq('session_id', resolved.id).maybeSingle(),
   ])
   const content = resolved.content_snapshot?.definition || liveContent
   const mine = submissions?.find((item) => item.user_id === viewerId)
   const other = submissions?.find((item) => item.user_id !== viewerId)
+  const answersVisible = Boolean(mine?.answers?.__share_answers && other?.answers?.__share_answers)
+  const questions = Array.isArray(resolved.content_snapshot?.questions) ? resolved.content_snapshot.questions : []
+  const otherRole = other?.user_id === resolved.initiator_id ? 'initiator' : 'partner'
+  const otherAnswers = answersVisible ? questions.flatMap((question) => {
+    const rawValue = other?.answers?.[question.question_number]
+    if (rawValue == null || rawValue === '' || (Array.isArray(rawValue) && rawValue.length === 0)) return []
+    const optionLabel = (value) => question.options?.find((option) => option.value === value)?.label || value
+    const value = Array.isArray(rawValue) ? rawValue.map(optionLabel) : optionLabel(rawValue)
+    const prompt = otherRole === 'partner' && question.other_player_prompt
+      && !/^same question/i.test(question.other_player_prompt) ? question.other_player_prompt : question.prompt
+    return [{ questionNumber: question.question_number, prompt, value }]
+  }) : []
   return {
     id: resolved.id, status: resolved.status, case: content,
     role: viewerId === resolved.initiator_id ? 'initiator' : 'partner',
     hasSubmitted: Boolean(mine), otherSubmitted: Boolean(other), expiresAt: resolved.expires_at,
     createdAt: resolved.created_at,
+    answersShareAllowed: Boolean(mine?.answers?.__share_answers), answersVisible, otherAnswers,
     verdict: verdict ? {
       outcomeKey: verdict.outcome_key, headline: verdict.headline, whatCourtHeard: verdict.what_court_heard,
       verdict: verdict.verdict, courtOrderedMove: verdict.court_ordered_move, shareText: verdict.share_text,

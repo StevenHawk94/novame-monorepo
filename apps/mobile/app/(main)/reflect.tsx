@@ -119,7 +119,7 @@ export default function ReflectEntryScreen() {
           <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
           </Pressable>
-          <Text style={styles.lead}>How would you like to journal?</Text>
+          <Text style={styles.lead}>How would you like to reflect?</Text>
           <Text style={styles.leadSub}>Pick a way.</Text>
           {ways.map((w) => {
             const status = isPaid && w.journalKind === 'write_freely'

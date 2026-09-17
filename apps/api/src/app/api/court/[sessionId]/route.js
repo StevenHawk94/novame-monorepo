@@ -115,7 +115,10 @@ export async function POST(request, context) {
     let answers
     try { answers = validateCourtAnswers(content.questions, body?.answers) }
     catch (error) { return NextResponse.json({ error: error.message }, { status: 400 }) }
-    const { error: submissionError } = await supabase.from('court_submissions').insert({ session_id: session.id, user_id: userId, answers })
+    const submissionAnswers = { ...answers, __share_answers: body?.shareAnswers === true }
+    const { error: submissionError } = await supabase.from('court_submissions').insert({
+      session_id: session.id, user_id: userId, answers: submissionAnswers,
+    })
     if (submissionError?.code !== '23505' && submissionError) throw submissionError
     const { data: submissions } = await supabase.from('court_submissions').select('user_id,answers').eq('session_id', session.id)
     if ((submissions || []).length < 2) {

@@ -461,21 +461,21 @@ export default function HomeScreen() {
               onPress={onThump}
               style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
             >
-              <Text style={styles.entryText}>Thump</Text>
+              <Text style={styles.entryText}>Court</Text>
             </Pressable>
             <Pressable
               onPressIn={onReflect}
               onPress={onReflect}
               style={({ pressed }) => [styles.entryBtn, pressed && styles.entryBtnPressed]}
             >
-              <Text style={styles.entryText}>Journal</Text>
+              <Text style={styles.entryText}>Reflect</Text>
             </Pressable>
           </View>
 
         </View>
 
         {/* Friend memory bubbles float over the scene; box-none so the pet,
-            top bar, and Thump/Journal stay tappable through the layer. */}
+            top bar, and Court/Reflect stay tappable through the layer. */}
         <MemoryBubbles bubbles={bubbles} onPopped={onBubblePopped} />
         <FeatureGuideModal
           guide="memories"
