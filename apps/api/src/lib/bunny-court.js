@@ -3,6 +3,8 @@ import { callAI, getAIModelConfig, parseAIJson } from './ai'
 import { recordAIUsage } from './ai-usage'
 import { drainPushNotificationOutbox } from './push-notifications'
 import { fixedLaunchOutcomeV2 } from './bunny-court-rules-v2.mjs'
+import { fixedLaunchOutcomeV3 } from './bunny-court-rules-v3.mjs'
+import { resolveUserLocalDate } from './user-local-date'
 
 const EXPIRABLE_STATUSES = ['awaiting_initiator', 'awaiting_partner', 'processing']
 const LOVE_RELATIONSHIPS = new Set(['Lover', 'Partner', 'Someone Special'])
@@ -41,36 +43,6 @@ export async function loadCourtCase(supabase, caseId) {
     questions: questionResult.data || [],
     templates: templateResult.data || [],
   } : null
-}
-
-export function cooldownDays(repeatability) {
-  const value = String(repeatability || '').toLowerCase()
-  if (value.includes('as needed') || value.includes('per visit')) return 0
-  if (value.includes('daily')) return 1
-  if (value.includes('weekly')) return 7
-  if (value.includes('quarterly')) return 90
-  if (value.includes('monthly')) return 30
-  return 0
-}
-
-export async function isCaseCoolingDown(supabase, pairLow, pairHigh, definition) {
-  const days = cooldownDays(definition.repeatability)
-  if (!days) return null
-  const { data, error } = await supabase.from('court_sessions')
-    .select('completed_at,verdict_ready_at,updated_at')
-    .eq('pair_low', pairLow).eq('pair_high', pairHigh).eq('case_id', definition.case_id)
-    .in('status', ['ready', 'completed']).order('updated_at', { ascending: false }).limit(1).maybeSingle()
-  if (error) throw error
-  return cooldownAvailableAt(definition, data)
-}
-
-export function cooldownAvailableAt(definition, row) {
-  const days = cooldownDays(definition.repeatability)
-  if (!days) return null
-  const lastAt = row?.completed_at || row?.verdict_ready_at || row?.updated_at
-  if (!lastAt) return null
-  const availableAt = new Date(new Date(lastAt).getTime() + days * 86400000)
-  return availableAt > new Date() ? availableAt.toISOString() : null
 }
 
 function normalizedAnswerMap(questions, submitted) {
@@ -328,9 +300,12 @@ function fixedLaunchOutcome(definition, questions, first, second) {
 function deterministicOutcome(definition, questions, first, second) {
   const keys = Array.isArray(definition.outcome_keys) ? definition.outcome_keys : []
   if (keys.length <= 1) return keys[0] || 'default'
-  const fixed = Number(definition.content_version || 1) >= 2
-    ? fixedLaunchOutcomeV2(definition, questions, first, second)
-    : fixedLaunchOutcome(definition, questions, first, second)
+  const version = Number(definition.content_version || 1)
+  const fixed = version >= 3
+    ? fixedLaunchOutcomeV3(definition, questions, first, second)
+    : version >= 2
+      ? fixedLaunchOutcomeV2(definition, questions, first, second)
+      : fixedLaunchOutcome(definition, questions, first, second)
   if (fixed && keys.includes(fixed)) return fixed
   let comparable = 0
   let matches = 0
@@ -402,21 +377,30 @@ async function saveVerdict(supabase, session, definition, template, analysisMeth
   }).eq('id', session.id).eq('status', 'processing').select('id').maybeSingle()
   if (statusError) throw statusError
   if (!transitioned) throw new Error('court_session_not_processing')
-  await Promise.allSettled([enqueueCourtNotification(supabase, session.initiator_id, session.id, 'ready', {
-    title: definition.notification_copy?.readyTitle, body: definition.notification_copy?.readyBody,
-  }), enqueueCourtNotification(supabase, session.partner_id, session.id, 'ready', {
-    title: definition.notification_copy?.readyTitle, body: definition.notification_copy?.readyBody,
-  })])
+  // Realtime status changes are broadcast to both devices. The visible ready
+  // push is only for the person who submitted first; the second responder is
+  // already watching the in-court analysis state.
+  const { data: firstSubmission } = await supabase.from('court_submissions').select('user_id')
+    .eq('session_id', session.id).order('submitted_at', { ascending: true }).limit(1).maybeSingle()
+  if (firstSubmission?.user_id) {
+    await enqueueCourtNotification(supabase, firstSubmission.user_id, session.id, 'ready', {
+      title: definition.notification_copy?.readyTitle, body: definition.notification_copy?.readyBody,
+    })
+  }
   return row
 }
 
-export async function generateRuleVerdict(supabase, session, content, submissions) {
+function resolvedRuleTemplate(session, content, submissions) {
   const first = submissions.find((submission) => submission.user_id === session.initiator_id)?.answers || {}
   const second = submissions.find((submission) => submission.user_id === session.partner_id)?.answers || {}
   const outcomeKey = deterministicOutcome(content.definition, content.questions, first, second)
   const template = content.templates.find((item) => item.outcome_key === outcomeKey) || content.templates[0]
   if (!template) throw new Error('court_template_missing')
-  return saveVerdict(supabase, session, content.definition, template, 'deterministic_rules')
+  return template
+}
+
+export async function generateRuleVerdict(supabase, session, content, submissions, analysisMethod = 'deterministic_rules') {
+  return saveVerdict(supabase, session, content.definition, resolvedRuleTemplate(session, content, submissions), analysisMethod)
 }
 
 function containsHeavyText(submissions) {
@@ -424,14 +408,38 @@ function containsHeavyText(submissions) {
     typeof value === 'string' && HEAVY_TEXT.test(value)))
 }
 
-const COURT_SYSTEM_PROMPT = `You are Bunny Court, a warm, playful, privacy-safe judge for two people. Follow the supplied case logic and answer evidence only. Select exactly one allowed outcomeKey and return JSON only.
+function meaningfulOpenText(questions, submissions) {
+  const openNumbers = new Set(questions
+    .filter((question) => question.response_type === 'Short text')
+    .map((question) => String(question.question_number)))
+  return submissions.some((submission) => Object.entries(submission.answers || {}).some(([number, value]) => {
+    if (!openNumbers.has(String(number)) || typeof value !== 'string') return false
+    const text = value.trim()
+    const cjkCharacters = (text.match(/[\u3400-\u9fff]/g) || []).length
+    return text.length >= 8 || cjkCharacters >= 4
+  }))
+}
+
+async function claimCourtAI(supabase, session) {
+  if (session.access_tier_snapshot !== 'plus') return false
+  const localDate = await resolveUserLocalDate(supabase, session.initiator_id)
+  const { data, error } = await supabase.rpc('claim_court_ai_credit', {
+    p_user_id: session.initiator_id,
+    p_session_id: session.id,
+    p_local_date: localDate,
+  })
+  if (error) throw error
+  return data?.eligible === true
+}
+
+const COURT_SYSTEM_PROMPT = `You are Bunny Court, a warm, playful, privacy-safe judge for two people. The deterministic rules already selected the correct verdict branch. Personalize that branch using the supplied private context without changing its conclusion. Return JSON only.
 
 Rules:
 - Never score or rank love, care, attraction, compatibility, trust, commitment, closeness, or relationship health.
-- Meet in the Middle has no winner, loser, guilt assignment, or forced compromise. State each need, the real overlap, and one voluntary trial agreement.
+- Conflict Court has no winner, loser, guilt assignment, diagnosis, or forced compromise. State each need, the real overlap, and one voluntary next step.
 - Never quote, reveal, or place raw open-text testimony in share copy.
 - Keep headline to 3-8 words, What the Court Heard and verdict to 1-2 short sentences each, and the move to one doable action within 7 days.
-- Love and Closeness may be witty and warm. Life should be practical with light humor. Meet in the Middle should be calm, validating, and low-blame.
+- Love may be witty and warm. Life should be practical with light humor. Conflict should be calm, validating, and low-blame.
 - Remove jokes for grief, health, money stress, discrimination, trauma, serious conflict, threats, abuse, coercion, stalking, self-harm, or immediate danger. For danger or coercion set safetyState to safety_redirect, do not mediate, and encourage a trusted nearby person or appropriate local emergency/support resource.`
 
 export async function processCourtVerdictJob(supabase, sessionId) {
@@ -449,8 +457,9 @@ export async function processCourtVerdictJob(supabase, sessionId) {
     if (!session || session.status !== 'processing' || submissions?.length !== 2) throw new Error('court_job_not_ready')
     const content = await loadCourtSessionContent(supabase, session)
     if (!content || content.templates.length === 0) throw new Error('court_content_missing')
+    const ruleTemplate = resolvedRuleTemplate(session, content, submissions || [])
     if (containsHeavyText(submissions || [])) {
-      const template = content.templates[0]
+      const template = ruleTemplate
       await saveVerdict(supabase, session, content.definition, template, 'safety_redirect', null, {
         outcomeKey: template.outcome_key, headline: 'COURT ADJOURNED',
         whatCourtHeard: 'This deserves care beyond a playful verdict.',
@@ -458,6 +467,8 @@ export async function processCourtVerdictJob(supabase, sessionId) {
         courtOrderedMove: 'Reach out to someone you trust nearby or an appropriate local support service.',
         shareText: 'Bunny Court paused this case for safety.', safetyState: 'safety_redirect',
       })
+    } else if (!meaningfulOpenText(content.questions, submissions || []) || !await claimCourtAI(supabase, session)) {
+      await saveVerdict(supabase, session, content.definition, ruleTemplate, 'deterministic_rules')
     } else {
       const safeAnswers = submissions.map((submission) => ({
         role: submission.user_id === session.initiator_id ? 'initiator' : 'partner',
@@ -466,27 +477,28 @@ export async function processCourtVerdictJob(supabase, sessionId) {
           value: submission.answers?.[question.question_number],
         })),
       }))
-      const allowedTemplates = content.templates.map((template) => ({
-        outcomeKey: template.outcome_key, headline: template.headline,
-        whatCourtHeard: template.what_court_heard, verdict: template.verdict,
-        courtOrderedMove: template.court_ordered_move, shareText: template.share_text,
-      }))
       const startedAt = Date.now()
       const ai = await callAI({
         systemInstruction: COURT_SYSTEM_PROMPT,
         userText: JSON.stringify({
           caseId: session.case_id, category: content.definition.category, title: content.definition.title,
-          analysisLogic: content.definition.analysis_logic, allowedOutcomeKeys: content.definition.outcome_keys,
-          templates: allowedTemplates, testimony: safeAnswers,
+          analysisLogic: content.definition.analysis_logic,
+          selectedTemplate: {
+            outcomeKey: ruleTemplate.outcome_key, headline: ruleTemplate.headline,
+            whatCourtHeard: ruleTemplate.what_court_heard, verdict: ruleTemplate.verdict,
+            courtOrderedMove: ruleTemplate.court_ordered_move,
+          },
+          testimony: safeAnswers,
         }),
         geminiModel: getAIModelConfig().bunnyCourt, skipDeepSeek: true, totalTimeoutMs: 30000,
         generationConfig: {
-          temperature: 0.35, maxOutputTokens: 850, responseMimeType: 'application/json',
+          temperature: 0.35, maxOutputTokens: 850, thinkingConfig: { thinkingBudget: 512 },
+          responseMimeType: 'application/json',
           responseSchema: {
-            type: 'OBJECT', required: ['outcomeKey','headline','whatCourtHeard','verdict','courtOrderedMove','shareText','safetyState'],
+            type: 'OBJECT', required: ['headline','whatCourtHeard','verdict','courtOrderedMove','safetyState'],
             properties: {
-              outcomeKey: { type: 'STRING' }, headline: { type: 'STRING' }, whatCourtHeard: { type: 'STRING' },
-              verdict: { type: 'STRING' }, courtOrderedMove: { type: 'STRING' }, shareText: { type: 'STRING' },
+              headline: { type: 'STRING' }, whatCourtHeard: { type: 'STRING' },
+              verdict: { type: 'STRING' }, courtOrderedMove: { type: 'STRING' },
               safetyState: { type: 'STRING' },
             },
           },
@@ -497,18 +509,16 @@ export async function processCourtVerdictJob(supabase, sessionId) {
         result: ai, latencyMs: Date.now() - startedAt, refId: session.id,
       })
       const parsed = parseAIJson(ai.text)
-      const allowed = new Set(content.templates.map((template) => template.outcome_key))
-      const outcomeKey = allowed.has(parsed.outcomeKey) ? parsed.outcomeKey : content.templates[0].outcome_key
-      const template = content.templates.find((item) => item.outcome_key === outcomeKey) || content.templates[0]
-      await saveVerdict(supabase, session, content.definition, template, 'single_pass_ai', ai.model, {
-        outcomeKey, headline: String(parsed.headline || template.headline).slice(0, 100),
-        whatCourtHeard: String(parsed.whatCourtHeard || template.what_court_heard).slice(0, 500),
-        verdict: String(parsed.verdict || template.verdict).slice(0, 500),
-        courtOrderedMove: String(parsed.courtOrderedMove || template.court_ordered_move).slice(0, 300),
+      await saveVerdict(supabase, session, content.definition, ruleTemplate, 'single_pass_ai', ai.model, {
+        outcomeKey: ruleTemplate.outcome_key,
+        headline: String(parsed.headline || ruleTemplate.headline).slice(0, 100),
+        whatCourtHeard: String(parsed.whatCourtHeard || ruleTemplate.what_court_heard).slice(0, 500),
+        verdict: String(parsed.verdict || ruleTemplate.verdict).slice(0, 500),
+        courtOrderedMove: String(parsed.courtOrderedMove || ruleTemplate.court_ordered_move).slice(0, 300),
         // Share copy is always the reviewed static template. Model output may
         // interpret private testimony for the paired verdict, but it can never
         // place either person's raw words into the system share sheet.
-        shareText: template.share_text.slice(0, 240),
+        shareText: ruleTemplate.share_text.slice(0, 240),
         safetyState: parsed.safetyState === 'safety_redirect' ? 'safety_redirect' : 'safe',
       })
     }
@@ -522,9 +532,11 @@ export async function processCourtVerdictJob(supabase, sessionId) {
       try {
         const { data: failedSession } = await supabase.from('court_sessions').select('*').eq('id', sessionId).maybeSingle()
         const fallbackContent = failedSession ? await loadCourtSessionContent(supabase, failedSession) : null
-        const fallbackTemplate = fallbackContent?.templates?.[0]
-        if (failedSession?.status === 'processing' && fallbackTemplate) {
-          await saveVerdict(supabase, failedSession, fallbackContent.definition, fallbackTemplate, 'ai_failure_template')
+        const { data: fallbackSubmissions } = failedSession
+          ? await supabase.from('court_submissions').select('user_id,answers').eq('session_id', sessionId)
+          : { data: null }
+        if (failedSession?.status === 'processing' && fallbackContent && fallbackSubmissions?.length === 2) {
+          await generateRuleVerdict(supabase, failedSession, fallbackContent, fallbackSubmissions, 'ai_failure_template')
           await supabase.from('court_verdict_jobs').update({
             status: 'complete', attempts, locked_at: null,
             last_error: `AI fallback after: ${String(error?.message || error).slice(0, 420)}`,
@@ -555,7 +567,7 @@ export async function sessionView(supabase, session, viewerId) {
   }
   const liveContentRequest = resolved.content_snapshot?.definition
     ? Promise.resolve({ data: null })
-    : supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,engine,access_tier,repeatability,notification_copy').eq('case_id', resolved.case_id).maybeSingle()
+    : supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,engine,access_tier,notification_copy').eq('case_id', resolved.case_id).maybeSingle()
   const [{ data: liveContent }, { data: submissions }, { data: verdict }] = await Promise.all([
     liveContentRequest,
     supabase.from('court_submissions').select('user_id,submitted_at').eq('session_id', resolved.id),

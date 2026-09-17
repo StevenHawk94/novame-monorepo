@@ -3,7 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { drainPushNotificationOutbox } from '@/lib/push-notifications'
 import {
   courtServiceClient, enqueueCourtNotification,
-  generateRuleVerdict, loadCourtSessionContent, loadPair, processCourtVerdictJob,
+  loadCourtSessionContent, loadPair, processCourtVerdictJob,
   sessionView, validateCourtAnswers,
 } from '@/lib/bunny-court'
 
@@ -101,20 +101,22 @@ export async function POST(request, context) {
       if (error) throw error
       return NextResponse.json({ success: true })
     }
-    if (!['awaiting_initiator', 'awaiting_partner'].includes(session.status)) return NextResponse.json({ error: 'case_not_accepting_answers' }, { status: 409 })
-    if (session.status === 'awaiting_initiator' && userId !== session.initiator_id) return NextResponse.json({ error: 'initiator_first' }, { status: 409 })
-    if (session.access_tier_snapshot === 'plus') {
-      const { data: profile } = await supabase.from('profiles').select('ai_consent_at').eq('id', userId).maybeSingle()
-      if (!profile?.ai_consent_at) return NextResponse.json({ error: 'ai_consent_required' }, { status: 403 })
+    if (!['awaiting_initiator', 'awaiting_partner'].includes(session.status)) {
+      const { data: existingSubmission } = await supabase.from('court_submissions').select('session_id')
+        .eq('session_id', session.id).eq('user_id', userId).maybeSingle()
+      if (existingSubmission) {
+        return NextResponse.json({ success: true, session: await sessionView(supabase, session, userId) })
+      }
+      return NextResponse.json({ error: 'case_not_accepting_answers' }, { status: 409 })
     }
+    if (session.status === 'awaiting_initiator' && userId !== session.initiator_id) return NextResponse.json({ error: 'initiator_first' }, { status: 409 })
     const content = await loadCourtSessionContent(supabase, session)
     if (!content) return NextResponse.json({ error: 'content_missing' }, { status: 500 })
     let answers
     try { answers = validateCourtAnswers(content.questions, body?.answers) }
     catch (error) { return NextResponse.json({ error: error.message }, { status: 400 }) }
     const { error: submissionError } = await supabase.from('court_submissions').insert({ session_id: session.id, user_id: userId, answers })
-    if (submissionError?.code === '23505') return NextResponse.json({ error: 'answers_already_sealed' }, { status: 409 })
-    if (submissionError) throw submissionError
+    if (submissionError?.code !== '23505' && submissionError) throw submissionError
     const { data: submissions } = await supabase.from('court_submissions').select('user_id,answers').eq('session_id', session.id)
     if ((submissions || []).length < 2) {
       const now = new Date().toISOString()
@@ -137,20 +139,16 @@ export async function POST(request, context) {
       if (transitionError) throw transitionError
       if (!transitioned) return NextResponse.json({ error: 'case_not_accepting_answers' }, { status: 409 })
       session = { ...session, status: 'processing' }
-      if (session.access_tier_snapshot === 'plus') {
-        const { error: jobError } = await supabase.from('court_verdict_jobs').upsert(
-          { session_id: session.id }, { onConflict: 'session_id', ignoreDuplicates: true },
-        )
-        if (jobError) throw jobError
-        // The sealed submission responds immediately. AI generation runs after
-        // the response and the durable job is retried by polling/cron if the
-        // serverless invocation is interrupted.
-        after(() => processCourtVerdictJob(supabase, session.id).catch((error) => {
-          console.warn('[court/session] verdict deferred:', error?.message || error)
-        }))
-      } else {
-        await generateRuleVerdict(supabase, session, content, submissions || [])
-      }
+      const { error: jobError } = await supabase.from('court_verdict_jobs').upsert(
+        { session_id: session.id }, { onConflict: 'session_id', ignoreDuplicates: true },
+      )
+      if (jobError) throw jobError
+      // Both deterministic and AI verdicts run through the same durable job.
+      // The sealed submission responds immediately; polling/cron recovers an
+      // interrupted serverless invocation without holding either client open.
+      after(() => processCourtVerdictJob(supabase, session.id).catch((error) => {
+        console.warn('[court/session] verdict deferred:', error?.message || error)
+      }))
     }
     session = await sessionFor(supabase, session.id, userId)
     return NextResponse.json({ success: true, session: await sessionView(supabase, session, userId) })

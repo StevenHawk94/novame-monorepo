@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 import { storage } from './storage';
 import { kCourtLobby } from '../shared/storage/keys';
 
-export type CourtCategory = 'Love Court' | 'Closeness Court' | 'Life Court' | 'Meet in the Middle';
+export type CourtCategory = 'Love Court' | 'Life Court' | 'Conflict Court';
 export type CourtStatus = 'awaiting_initiator' | 'awaiting_partner' | 'processing' | 'ready' | 'completed' | 'declined' | 'expired' | 'cancelled';
 
 export type CourtCaseSummary = {
@@ -15,10 +15,8 @@ export type CourtCaseSummary = {
   engine: string;
   accessTier: 'free' | 'plus';
   questionCount: number;
-  repeatability: string;
   sensitivity: string;
-  lockedReason: 'relationship' | 'plus' | 'cooldown' | null;
-  availableAt: string | null;
+  lockedReason: 'relationship' | 'plus' | null;
 };
 
 export type CourtVerdict = {
@@ -42,7 +40,6 @@ export type CourtSession = {
     card_subtitle: string;
     engine: string;
     access_tier: 'free' | 'plus';
-    repeatability: string;
   } | null;
   role: 'initiator' | 'partner';
   hasSubmitted: boolean;
@@ -74,12 +71,12 @@ export type CourtLobby = {
 
 export type CourtSessionPayload = { success: boolean; session: CourtSession; questions: CourtQuestion[] };
 export type CourtAnswer = { questionNumber: number; value: string | string[] };
-export type CourtApiResult<T> = { ok: true; data: T } | { ok: false; error: string; availableAt?: string };
+export type CourtApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-function errorCode(error: unknown): { code: string; availableAt?: string } {
+function errorCode(error: unknown): { code: string } {
   if (error instanceof ApiError && error.body && typeof error.body === 'object') {
-    const body = error.body as { error?: string; availableAt?: string };
-    return { code: body.error || 'network', availableAt: body.availableAt };
+    const body = error.body as { error?: string };
+    return { code: body.error || 'network' };
   }
   return { code: 'network' };
 }
@@ -114,15 +111,26 @@ export async function fetchCourtLobby(): Promise<CourtApiResult<CourtLobby>> {
   }
 }
 
-export async function createCourtCase(caseId: string): Promise<CourtApiResult<CourtSession>> {
+export async function fetchCourtCasePreview(caseId: string): Promise<CourtApiResult<{ questions: CourtQuestion[] }>> {
   const id = await userId();
   if (!id) return { ok: false, error: 'no_session' };
   try {
-    const data = await apiClient.post<{ success: boolean; session: CourtSession }>('/api/court', { userId: id, caseId });
-    return { ok: true, data: data.session };
+    const data = await apiClient.get<{ success: boolean; questions: CourtQuestion[] }>(
+      `/api/court?userId=${encodeURIComponent(id)}&previewCaseId=${encodeURIComponent(caseId)}`,
+    );
+    return { ok: true, data: { questions: Array.isArray(data.questions) ? data.questions : [] } };
+  } catch (error) { return { ok: false, error: errorCode(error).code }; }
+}
+
+export async function createCourtCase(caseId: string): Promise<CourtApiResult<CourtSessionPayload>> {
+  const id = await userId();
+  if (!id) return { ok: false, error: 'no_session' };
+  try {
+    const data = await apiClient.post<CourtSessionPayload>('/api/court', { userId: id, caseId });
+    return { ok: true, data: { ...data, questions: Array.isArray(data.questions) ? data.questions : [] } };
   } catch (error) {
     const parsed = errorCode(error);
-    return { ok: false, error: parsed.code, availableAt: parsed.availableAt };
+    return { ok: false, error: parsed.code };
   }
 }
 
@@ -131,7 +139,7 @@ export async function fetchCourtSession(sessionId: string): Promise<CourtApiResu
   if (!id) return { ok: false, error: 'no_session' };
   try {
     const data = await apiClient.get<CourtSessionPayload>(`/api/court/${encodeURIComponent(sessionId)}?userId=${encodeURIComponent(id)}`);
-    return { ok: true, data };
+    return { ok: true, data: { ...data, questions: Array.isArray(data.questions) ? data.questions : [] } };
   } catch (error) { return { ok: false, error: errorCode(error).code }; }
 }
 
