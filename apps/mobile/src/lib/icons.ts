@@ -74,11 +74,20 @@ export const ICONS: Record<string, ImageSourcePropType> = {
   obCreatorBubble: require('../../assets/Icons/ob-12.png'),
   obPaywallUnlock: require('../../assets/Icons/paywall-unlock.png'),
   obIcons: require('../../assets/onboarding/onboarding-icons.webp'),
-  obQuestion: require('../../assets/onboarding/ob-2.png'),
-  obWidgetPhone: require('../../assets/onboarding/ob-7.webp'),
-  obHowItWorksGif: require('../../assets/onboarding/ob-6.gif'),
+  obRelationship: require('../../assets/onboarding/page-3.webp'),
+  obCloseness: require('../../assets/onboarding/page-5.webp'),
+  obShareMoments: require('../../assets/onboarding/page-6.webp'),
+  obInsightQuestion: require('../../assets/onboarding/page-10.webp'),
+  // Compatibility aliases used by the loading/privacy surfaces and the
+  // unmounted pre-redesign onboarding definitions.
+  obQuestion: require('../../assets/onboarding/page-3.webp'),
+  obWidgetPhone: require('../../assets/onboarding/page-6.webp'),
+  obBunnyHead: require('../../assets/characters/Default.webp'),
+  obCourtLove: require('../../assets/bunny-court/love court.webp'),
+  obCourtLife: require('../../assets/bunny-court/life court.webp'),
+  obCourtConflict: require('../../assets/bunny-court/conflict court.webp'),
+  obCourtJudge: require('../../assets/bunny-court/judge-bunny.webp'),
   reflectJournalling: require('../../assets/Icons/reflect-journalling.png'),
-  obBunnyHead: require('../../assets/onboarding/bunny-head.png'),
 };
 
 /** Reflect prompt illustrations, keyed by prompt id (domain REFLECT_PROMPTS). */

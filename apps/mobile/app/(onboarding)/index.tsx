@@ -44,7 +44,6 @@ import {
   markNotifPromptedAfterPurchase,
   shouldPromptNotifAfterPurchase,
 } from '../../src/lib/notification-settings';
-import { DEFAULT_PLUS_BENEFITS } from '../../src/lib/plus-benefits';
 import { useStoreSubscriptionPricing } from '../../src/hooks/use-store-subscription-pricing';
 
 /**
@@ -58,6 +57,7 @@ import { useStoreSubscriptionPricing } from '../../src/hooks/use-store-subscript
 const INK = '#4A2F17';
 const CARD = '#FFF4E3';
 const BTN = '#4A3220';
+const SERIF = Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
 
 /**
  * Android renders this copy noticeably larger across common display-density
@@ -97,37 +97,97 @@ function Text({ style, maxFontSizeMultiplier, ...props }: ComponentProps<typeof 
   );
 }
 
-const WHO_OPTIONS = [
-  { key: 'partner', icon: ICONS.obWhoPartner, label: 'My partner' },
-  { key: 'parent', icon: ICONS.obWhoMomDad, label: 'My mom or dad' },
-  { key: 'child', icon: ICONS.obWhoSonDaughter, label: 'My son or daughter' },
-  { key: 'bestie', icon: ICONS.obWhoFriends, label: 'My best friend' },
-  { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
-];
+const RELATIONSHIP_OPTIONS = [
+  { key: 'good', label: 'We’re really good — I want to keep it that way' },
+  { key: 'busy', label: 'Close, just busy' },
+  { key: 'sync', label: 'We love each other, but feel a little out of sync' },
+  { key: 'overthinking', label: 'I find myself overthinking sometimes' },
+  { key: 'rough', label: 'We’re working through a rough patch' },
+] as const;
 
-const BLOCKER_OPTIONS = [
-  { key: 'A', label: 'Our days get busy' },
-  { key: 'B', label: 'We live far apart' },
-  { key: 'C', label: 'I don’t want to overwhelm them' },
-  { key: 'D', label: 'I’m not always sure what to say' },
-];
+const RELATIONSHIP_FEEDBACK: Record<string, { title: string; body: string }> = {
+  good: {
+    title: 'That’s worth protecting.',
+    body: 'The best relationships do not stay close by accident. They keep making room for each other’s real, ordinary life.',
+  },
+  busy: {
+    title: 'Being busy should not mean becoming strangers to each other’s day.',
+    body: 'You can love each other deeply and still lose track of the little things that make you feel close.',
+  },
+  sync: {
+    title: 'You can talk every day and still miss each other’s actual life.',
+    body: 'Sometimes what is missing is not more conversation. It is the context behind it.',
+  },
+  overthinking: {
+    title: 'Silence leaves room for stories.',
+    body: 'A little more context can save a lot of made-up ones.',
+  },
+  rough: {
+    title: 'Tiny things get louder when neither person feels fully understood.',
+    body: 'You do not need another fight. You need a better way into the conversation.',
+  },
+};
 
-const BLOCKER_FEEDBACK: Record<string, { title: string; body: string }> = {
-  A: {
-    title: 'It’s easy to care deeply and still miss the little things.',
-    body: 'By the time you finally talk, the small moments that made up the day are often already gone.',
+const GOAL_OPTIONS = [
+  { key: 'included', label: 'Feel more included in their everyday life' },
+  { key: 'support', label: 'Know how to support them better' },
+  { key: 'overthinking', label: 'Stop overthinking the little things' },
+  { key: 'talk', label: 'Have easier ways to bring things up' },
+  { key: 'fun', label: 'Keep the relationship fun and intentional' },
+  { key: 'busy', label: 'Feel close even when life gets busy' },
+] as const;
+
+const GOAL_FEEDBACK: Record<string, { title: string; body: string }> = {
+  included: {
+    title: 'Closeness is easier when you do not have to catch up from zero.',
+    body: 'When you know the little things behind their day, you naturally feel more part of it.',
   },
-  B: {
-    title: 'Distance doesn’t only separate places. It separates everyday moments.',
-    body: 'You hear the big updates, but miss the little moments that make you feel part of their life.',
+  support: {
+    title: 'Care lands differently when it meets the moment.',
+    body: 'It is easier to show up well when you have a better sense of the kind of day they are carrying.',
   },
-  C: {
-    title: 'You shouldn’t have to choose between checking in and giving them space.',
-    body: 'Sometimes the gentlest connection begins with small moments they can share in their own time.',
+  overthinking: {
+    title: 'Silence is hard when it leaves you filling in the blanks.',
+    body: 'A little more context can save a lot of made-up stories.',
   },
-  D: {
-    title: 'Closeness doesn’t always need a big conversation.',
-    body: 'Sometimes the little moments from their day are all it takes to make talking feel natural again.',
+  talk: {
+    title: 'What goes unsaid rarely disappears.',
+    body: 'It just gets harder to say once it has been sitting there for a while.',
+  },
+  fun: {
+    title: 'Closeness needs little moments of “us.”',
+    body: 'Not another serious talk—just more reasons to laugh, learn, and choose each other.',
+  },
+  busy: {
+    title: 'Life does not slow down for love.',
+    body: 'Staying close has to fit inside the real version of your day.',
+  },
+};
+
+const GOAL_PROMISE: Record<string, { title: string; body: string }> = {
+  included: {
+    title: 'Start with the little moments.',
+    body: 'When you share more of real life, closeness has something real to grow from.',
+  },
+  support: {
+    title: 'Better support starts with more context.',
+    body: 'Get gentle context on what may be going on, so you have a better way to reach in.',
+  },
+  overthinking: {
+    title: 'Less guessing starts with more of the real story.',
+    body: 'See more of their real day, then choose a more caring way to show up.',
+  },
+  talk: {
+    title: 'Make the first step lighter.',
+    body: 'Share more of the everyday context behind your days. Then find a lighter way to talk about what is unsaid.',
+  },
+  fun: {
+    title: 'More “us” starts with more to share.',
+    body: 'Share your real day, discover new sides of each other, and keep the connection playful with funny cases.',
+  },
+  busy: {
+    title: 'Staying close starts small.',
+    body: 'No daily report. No pressure to perform. Just small ways to stay in each other’s world.',
   },
 };
 
@@ -194,6 +254,43 @@ const CLOSENESS_ROWS = [
   ['Closeness', 'Loneliness'],
 ] as const;
 
+const ONBOARDING_PLUS_BENEFITS = [
+  'Enjoy every Plus feature as you reflect on your day.',
+  'Unlock real-time insights into what matters in your person’s day.',
+  'Unlock every Bunny Court case.',
+  'Unlock self-growth features that help you become a better partner.',
+  'Unlock exclusive outfits and scenes for your bunny.',
+] as const;
+
+const ONBOARDING_COURT_TYPES = [
+  { icon: ICONS.obCourtLove, title: 'Love Court', body: 'For sweet, silly, “who knows who best?” cases.' },
+  { icon: ICONS.obCourtLife, title: 'Life Court', body: 'For everyday choices, chores, and tiny debates.' },
+  { icon: ICONS.obCourtConflict, title: 'Conflict Court', body: 'For different needs, small conflicts, and fair compromises.' },
+] as const;
+
+// Retained only by the unmounted legacy page definitions below. Keeping the
+// old JSX in place makes the redesign easy to compare/revert without exposing
+// any of these pages through FLOW.
+const WHO_OPTIONS = [
+  { key: 'partner', icon: ICONS.obWhoPartner, label: 'My partner' },
+  { key: 'parent', icon: ICONS.obWhoMomDad, label: 'My mom or dad' },
+  { key: 'child', icon: ICONS.obWhoSonDaughter, label: 'My son or daughter' },
+  { key: 'bestie', icon: ICONS.obWhoFriends, label: 'My best friend' },
+  { key: 'special', icon: ICONS.obWhoSpecial, label: 'Someone special' },
+];
+const BLOCKER_OPTIONS = [
+  { key: 'A', label: 'Our days get busy' },
+  { key: 'B', label: 'We live far apart' },
+  { key: 'C', label: 'I don’t want to overwhelm them' },
+  { key: 'D', label: 'I’m not always sure what to say' },
+];
+const BLOCKER_FEEDBACK: Record<string, { title: string; body: string }> = {
+  A: { title: 'It’s easy to care deeply and still miss the little things.', body: 'By the time you finally talk, the small moments that made up the day are often already gone.' },
+  B: { title: 'Distance separates everyday moments.', body: 'You hear the big updates, but miss the little moments that make you feel part of their life.' },
+  C: { title: 'Checking in and giving space can coexist.', body: 'Sometimes the gentlest connection begins with small moments they can share in their own time.' },
+  D: { title: 'Closeness does not always need a big conversation.', body: 'Sometimes the little moments from their day are all it takes to make talking feel natural again.' },
+};
+
 // Ob5's tappable sample reflection (Babe's card). Keep these IDs on the
 // current v25 catalog: the pre-v19 category-prefixed IDs no longer have bundled
 // art and render as empty tiles.
@@ -210,14 +307,16 @@ const SAMPLE_DAY = [
 ];
 
 type Step =
-  | 'start' | 'someone' | 'who' | 'blocker' | 'feedback' | 'imagine'
-  | 'how' | 'space' | 'insights' | 'boundaries' | 'creator'
-  | 'paywall' | 'plans' | 'name' | 'connect';
+  | 'start' | 'relationship' | 'relationship-feedback' | 'goal' | 'goal-feedback'
+  | 'goal-promise' | 'path' | 'reflect-write' | 'reflect-share'
+  | 'insight-question' | 'insight-card' | 'court-intro' | 'court-types'
+  | 'summary' | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'someone', 'who', 'blocker', 'feedback', 'imagine',
-  'how', 'space', 'insights', 'boundaries', 'creator',
-  'paywall', 'plans', 'name',
+  'start', 'relationship', 'relationship-feedback', 'goal', 'goal-feedback',
+  'goal-promise', 'path', 'reflect-write', 'reflect-share',
+  'insight-question', 'insight-card', 'court-intro', 'court-types',
+  'summary', 'paywall', 'plans', 'name',
 ];
 
 export default function OnboardingScreen() {
@@ -543,6 +642,27 @@ export default function OnboardingScreen() {
     </Pressable>
   );
 
+  const StageHeader = ({ progress, label }: { progress: number; label: string }) => (
+    <View style={styles.stageHeader}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        hitSlop={10}
+        onPress={() => {
+          void haptics.pageClose();
+          setIdx((current) => Math.max(0, current - 1));
+        }}
+        style={({ pressed }) => [styles.stageBack, pressed && { opacity: 0.72 }]}
+      >
+        <MaterialIcons name="chevron-left" size={32} color={INK} />
+      </Pressable>
+      <View style={styles.stageTrack}>
+        <View style={[styles.stageFill, { width: `${Math.max(0, Math.min(1, progress)) * 100}%` }]} />
+      </View>
+      <Text style={styles.stageLabel}>{label}</Text>
+    </View>
+  );
+
   return (
     <OnboardingTextScaleContext.Provider value={onboardingTextScale}>
     <View style={{ flex: 1, backgroundColor: '#F8E2C1' }}>
@@ -550,6 +670,272 @@ export default function OnboardingScreen() {
       <View style={[styles.root, { paddingTop: insets.top + 18 }]}>
         <OnboardingPager requestedPage={step} nextPage={idx < FLOW.length - 1 ? FLOW[idx + 1] : null}>
         <OnboardingPage id="start" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <View style={styles.startArtWrap}>
+              <OnboardingImage source={ICONS.obIcons} style={styles.startArt} contentFit="contain" />
+            </View>
+            <Text style={styles.newHeroTitle}>Stay Closer to Your Partner</Text>
+            <Text style={styles.newBody}>Even when life gets busy and messy.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Start" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="relationship" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={1 / 6} label="1/6" />
+            <Text style={styles.eyebrow}>A LITTLE ABOUT YOU TWO</Text>
+            <Text style={styles.newTitle}>How does your relationship feel lately?</Text>
+            <View style={styles.answerList}>
+              {RELATIONSHIP_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.key}
+                  onPress={() => { void haptics.light(); setWho(option.key); }}
+                  style={[styles.answerCard, who === option.key && styles.answerCardSelected]}
+                >
+                  <Text style={styles.answerText}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} disabled={!who} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="relationship-feedback" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={2 / 6} label="2/6" />
+            <View style={styles.feedbackIconWrap}>
+              <OnboardingImage source={ICONS.obRelationship} style={styles.feedbackIcon} contentFit="contain" />
+            </View>
+            <View style={styles.messagePanel}>
+              <Text style={styles.newTitle}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].title}</Text>
+              <Text style={[styles.newBody, styles.messageBody]}>{RELATIONSHIP_FEEDBACK[who ?? 'good'].body}</Text>
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="goal" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={3 / 6} label="3/6" />
+            <Text style={styles.eyebrow}>CHOOSE ONE FOR NOW</Text>
+            <Text style={styles.newTitle}>What would make your relationship feel even better right now?</Text>
+            <View style={styles.answerList}>
+              {GOAL_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.key}
+                  onPress={() => { void haptics.light(); setBlocker(option.key); }}
+                  style={[styles.answerCard, blocker === option.key && styles.answerCardSelected]}
+                >
+                  <Text style={styles.answerText}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} disabled={!blocker} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="goal-feedback" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={4 / 6} label="4/6" />
+            <OnboardingImage source={ICONS.obCloseness} style={styles.smallStoryIcon} contentFit="contain" />
+            <Text style={styles.newTitle}>{GOAL_FEEDBACK[blocker ?? 'included'].title}</Text>
+            <View style={styles.coralRule} />
+            <Text style={[styles.newBody, styles.wideBody]}>{GOAL_FEEDBACK[blocker ?? 'included'].body}</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="goal-promise" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={5 / 6} label="5/6" />
+            <Text style={styles.newTitle}>{GOAL_PROMISE[blocker ?? 'included'].title}</Text>
+            <View style={styles.coralRule} />
+            <Text style={[styles.newBody, styles.wideBody]}>{GOAL_PROMISE[blocker ?? 'included'].body}</Text>
+            <OnboardingImage source={ICONS.obShareMoments} style={styles.promiseArt} contentFit="contain" />
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="path" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={1} label="6/6" />
+            <Text style={styles.newTitle}>Three ways to get closer—without making it a whole thing.</Text>
+            <View style={styles.pathList}>
+              {[
+                ['1', '#FF6F61', 'See more than “fine.”', 'Little moments make their day easier to understand.'],
+                ['2', '#42A56E', 'Know your way in.', 'A gentler clue for whether to reach in, cheer them on, or give space.'],
+                ['3', '#6279F3', 'Put it before the bunny.', 'A playful way to uncover what you both really mean.'],
+              ].map(([number, color, title, body]) => (
+                <View key={number} style={styles.pathCard}>
+                  <View style={[styles.pathNumber, { backgroundColor: color }]}><Text style={styles.pathNumberText}>{number}</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pathTitle}>{title}</Text>
+                    <Text style={styles.pathBody}>{body}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Show me how" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="reflect-write" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.28} label="Reflect" />
+            <Text style={styles.eyebrow}>YOUR DAY, IN LITTLE THINGS</Text>
+            <Text style={styles.newTitle}>Write naturally. Watch your day come to life.</Text>
+            <View style={styles.journalMock}>
+              <Text style={styles.journalPrompt}>Capture what happened in your day.</Text>
+              <View style={styles.journalInputMock}>
+                <Text style={styles.journalText}>I ate a slice of pizza and did the dishes. Then I used my new lipstick.</Text>
+              </View>
+              <Text style={styles.journalMatchLabel}>Items matched from your reflection</Text>
+              <View style={styles.journalIcons}>
+                {SAMPLE_DAY.slice(0, 3).map((sample) => (
+                  <OnboardingImage key={sample.itemId} source={ITEM_IMAGES[sample.itemId]} style={styles.journalIcon} contentFit="contain" />
+                ))}
+              </View>
+            </View>
+            <Text style={styles.featureFooter}>Your day stays yours. You decide what becomes shared.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="reflect-share" imageCount={SAMPLE_DAY.length + 1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.48} label="Reflect" />
+            <Text style={styles.eyebrow}>A SMALL MOMENT CAN SAY A LOT.</Text>
+            <Text style={styles.newTitle}>Imagine seeing a little update like this from your person.</Text>
+            <Pressable
+              onPress={() => { void haptics.light(); setSampleDetailsOpen(true); }}
+              style={({ pressed }) => [styles.sampleCard, pressed && styles.sampleCardPressed]}
+            >
+              <View style={styles.sampleHeader}>
+                <OnboardingImage source={SAMPLE_AVATAR} style={styles.sampleAvatar} contentFit="cover" />
+                <Text style={styles.sampleName}>babe</Text>
+                <Text style={styles.sampleTime}>10h ago</Text>
+              </View>
+              <View style={styles.sampleRow}>
+                {SAMPLE_DAY.map((sample) => (
+                  <View key={sample.itemId} style={styles.sampleTile}>
+                    <OnboardingImage source={ITEM_IMAGES[sample.itemId]} style={styles.sampleItemImage} contentFit="contain" />
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.sampleHint}>Tap to see their memories</Text>
+            </Pressable>
+            <Text style={styles.featureFooter}>You do not need a long catch-up to still feel included in each other’s life.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="insight-question" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.58} label="Insight" />
+            <Text style={styles.eyebrow}>WHEN YOU’RE NOT SURE HOW TO SHOW UP</Text>
+            <Text style={styles.newTitle}>Care is easy. Timing is the hard part.</Text>
+            <View style={styles.insightQuestionRow}>
+              <View style={styles.speechCard}><Text style={styles.speechText}>Should I check in… or give them space?</Text></View>
+              <View style={styles.speechCard}><Text style={styles.speechText}>Do they need advice or just someone on their side?</Text></View>
+            </View>
+            <OnboardingImage source={ICONS.obInsightQuestion} style={styles.insightQuestionArt} contentFit="contain" />
+            <Text style={styles.featureFooter}>Loving your partner is easier than knowing how to show up at the right moment.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="insight-card" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.72} label="Insight" />
+            <Text style={styles.eyebrow}>A BETTER WAY IN</Text>
+            <Text style={styles.newTitle}>More context. A more caring next move.</Text>
+            <View style={styles.onboardingInsightCard}>
+              <View style={styles.insightCardLabel}><Text style={styles.insightCardLabelText}>A LITTLE REASSURANCE</Text></View>
+              <Text style={styles.insightCardTitle}>They’re In Their Own Head Again</Text>
+              <Text style={styles.insightCardObservation}>They’ve been second-guessing themselves lately, even while putting in more effort than they realize.</Text>
+              <Text style={styles.insightCardMeaning}>No big speech needed. Remind them that you see how hard they’re trying.</Text>
+              <View style={styles.insightCardDivider} />
+              <Text style={styles.insightCardTakeaway}>Tell them you’re in their corner.</Text>
+            </View>
+            <Text style={styles.featureFooter}>Built only from moments they choose to share—not their private thoughts.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="court-intro" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.84} label="Court" />
+            <Text style={styles.eyebrow}>THE COURT IS NOW IN SESSION</Text>
+            <Text style={styles.newTitle}>Some things are easier to say when the bunny makes it a case.</Text>
+            <OnboardingImage source={ICONS.obCourtJudge} style={styles.courtJudge} contentFit="contain" />
+            <Text style={[styles.newBody, styles.wideBody]}>Too small for “we need to talk.”{`\n`}Too real to keep avoiding.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="court-types" imageCount={3}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <StageHeader progress={0.94} label="Court" />
+            <Text style={styles.eyebrow}>MEET IN THE MIDDLE.</Text>
+            <Text style={styles.newTitle}>Answer separately. See what each of you actually means. Get a tiny move that fits both of you.</Text>
+            <View style={styles.courtTypeList}>
+              {ONBOARDING_COURT_TYPES.map((court) => (
+                <View key={court.title} style={styles.courtTypeCard}>
+                  <OnboardingImage source={court.icon} style={styles.courtTypeIcon} contentFit="contain" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.courtTypeTitle}>{court.title}</Text>
+                    <Text style={styles.courtTypeBody}>{court.body}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="summary" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
+            <View style={{ height: 30 }} />
+            <Text style={styles.newHeroTitle}>Stay Emotionally Closer and Learn More About Each Other</Text>
+            <View style={styles.closenessTable}>
+              <View style={styles.closenessHeaderRow}>
+                <Text style={styles.closenessHeaderText}>Feel More</Text>
+                <Text style={styles.closenessHeaderText}>Feel Less</Text>
+              </View>
+              {CLOSENESS_ROWS.map(([more, less], rowIndex) => (
+                <View key={more} style={[styles.closenessRow, rowIndex === CLOSENESS_ROWS.length - 1 && styles.closenessLastRow]}>
+                  <View style={styles.closenessCell}>
+                    <View style={[styles.closenessArrow, styles.closenessArrowUp]}><MaterialIcons name="arrow-upward" size={18} color="#FFFFFF" /></View>
+                    <Text style={styles.closenessCellText}>{more}</Text>
+                  </View>
+                  <View style={[styles.closenessCell, styles.closenessCellRight]}>
+                    <View style={[styles.closenessArrow, styles.closenessArrowDown]}><MaterialIcons name="arrow-downward" size={18} color="#FFFFFF" /></View>
+                    <Text style={styles.closenessCellText}>{less}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.closenessFooter}>That’s how closeness fits into real life for two.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Start Our Burrow" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        {false && <>
+        <OnboardingPage id="legacy-start" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center}>
             <View style={{ flex: 1 }} />
             <OnboardingImage source={ICONS.obIcons} style={styles.iconsGrid} contentFit="contain" />
@@ -842,6 +1228,8 @@ export default function OnboardingScreen() {
           </ScrollView>
         </OnboardingPage>
 
+        </>}
+
         <OnboardingPage id="paywall" imageCount={1}>
           <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={[styles.center, { minHeight: '100%' }]}>
@@ -849,14 +1237,14 @@ export default function OnboardingScreen() {
                 <MaterialIcons name="close" size={22} color="#FFFFFF" />
               </Pressable>
               <View style={{ flex: 1, minHeight: 56 }} />
-              <Text style={styles.h1}>Feel closer through the little things.</Text>
+              <Text style={styles.newTitle}>Stay close without making love feel like work.</Text>
               <View style={styles.plusCard}>
                 <OnboardingImage source={ICONS.obPaywallUnlock} style={styles.plusLockImg} contentFit="contain" />
                 <View style={styles.plusTitleRow}>
                   <Text style={styles.plusTitle}>Burrow</Text>
                   <View style={styles.plusChip}><Text style={styles.plusChipText}>Plus</Text></View>
                 </View>
-                {DEFAULT_PLUS_BENEFITS.map((t, index) => (
+                {ONBOARDING_PLUS_BENEFITS.map((t, index) => (
                   <View key={t}>
                     <View style={styles.benefitRow}>
                       <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -864,7 +1252,7 @@ export default function OnboardingScreen() {
                         <Text style={styles.benefitTitle}>{t}</Text>
                       </View>
                     </View>
-                    {index < DEFAULT_PLUS_BENEFITS.length - 1 && <View style={styles.benefitDivider} />}
+                    {index < ONBOARDING_PLUS_BENEFITS.length - 1 && <View style={styles.benefitDivider} />}
                   </View>
                 ))}
               </View>
@@ -1194,6 +1582,117 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 22 },
   center: { flexGrow: 1, alignItems: 'stretch' },
+
+  newPage: { flexGrow: 1, alignItems: 'stretch', paddingTop: 2 },
+  pageSpacer: { flex: 1, minHeight: 22 },
+  newHeroTitle: {
+    fontSize: 38, lineHeight: 46, fontFamily: SERIF, fontWeight: '700',
+    color: INK, textAlign: 'center', paddingHorizontal: 8,
+  },
+  newTitle: {
+    fontSize: 34, lineHeight: 40, fontFamily: SERIF, fontWeight: '700',
+    color: INK, textAlign: 'center', paddingHorizontal: 4,
+  },
+  newBody: {
+    marginTop: 22, fontSize: 18, lineHeight: 27,
+    fontFamily: 'Inter_500Medium', color: '#211A14', textAlign: 'center',
+  },
+  wideBody: { paddingHorizontal: 10 },
+  eyebrow: {
+    marginTop: 18, marginBottom: 16, fontSize: 14, lineHeight: 19,
+    fontFamily: 'Inter_800ExtraBold', color: '#9B5842', textAlign: 'center', letterSpacing: 1.5,
+  },
+  startArtWrap: { minHeight: 300, flex: 1, justifyContent: 'center' },
+  startArt: { width: '100%', aspectRatio: 1.25, alignSelf: 'center' },
+  stageHeader: {
+    minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginBottom: 20,
+  },
+  stageBack: {
+    width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: '#68452D',
+    backgroundColor: '#FFF9EE', alignItems: 'center', justifyContent: 'center',
+  },
+  stageTrack: {
+    flex: 1, height: 8, borderRadius: 4, overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: '#E5CFB5',
+  },
+  stageFill: { height: '100%', borderRadius: 4, backgroundColor: '#FF7063' },
+  stageLabel: {
+    minWidth: 48, fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#6F4A33', textAlign: 'right',
+  },
+  answerList: { marginTop: 24, gap: 12 },
+  answerCard: {
+    minHeight: 66, justifyContent: 'center', backgroundColor: '#FFF9EE',
+    borderRadius: 22, borderWidth: 2, borderColor: '#9D7A61',
+    paddingHorizontal: 20, paddingVertical: 16,
+    shadowColor: '#7A5237', shadowOpacity: 0.14, shadowRadius: 0,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
+  answerCardSelected: {
+    borderColor: '#FF7063', shadowColor: '#FF7063', shadowOpacity: 0.28,
+  },
+  answerText: { fontSize: 16.5, lineHeight: 22, fontFamily: 'Inter_700Bold', color: '#2A1A12' },
+  feedbackIconWrap: { flex: 0.7, minHeight: 120, justifyContent: 'flex-end' },
+  feedbackIcon: { width: 112, height: 112, alignSelf: 'center', marginBottom: 18 },
+  messagePanel: {
+    backgroundColor: 'rgba(255,252,245,0.92)', borderWidth: 2, borderColor: '#1F1712',
+    borderRadius: 24, paddingHorizontal: 22, paddingVertical: 34,
+  },
+  messageBody: { marginTop: 26 },
+  smallStoryIcon: { width: 112, height: 112, alignSelf: 'center', marginTop: 26, marginBottom: 24 },
+  coralRule: { width: '42%', height: 8, borderRadius: 4, backgroundColor: '#FF7063', alignSelf: 'center', marginTop: 24 },
+  promiseArt: { width: '86%', aspectRatio: 1.25, alignSelf: 'center', marginTop: 22 },
+  pathList: { marginTop: 28, gap: 16 },
+  pathCard: {
+    minHeight: 116, flexDirection: 'row', alignItems: 'center', gap: 16,
+    borderWidth: 2, borderColor: '#17110D', borderRadius: 22,
+    backgroundColor: '#FFF9EE', paddingHorizontal: 18, paddingVertical: 16,
+  },
+  pathNumber: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  pathNumberText: { fontSize: 30, fontFamily: 'Inter_900Black', color: '#FFFFFF' },
+  pathTitle: { fontSize: 19, lineHeight: 25, fontFamily: 'Inter_800ExtraBold', color: '#17110D' },
+  pathBody: { marginTop: 5, fontSize: 15, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#34271E' },
+  journalMock: {
+    marginTop: 28, backgroundColor: '#7A383D', borderRadius: 20,
+    paddingHorizontal: 18, paddingTop: 20, paddingBottom: 16,
+  },
+  journalPrompt: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF', marginBottom: 12 },
+  journalInputMock: { minHeight: 132, borderRadius: 20, backgroundColor: '#FFFFFF', padding: 18 },
+  journalText: { fontSize: 15, lineHeight: 22, fontFamily: 'Inter_500Medium', color: '#28211C' },
+  journalMatchLabel: { marginTop: 12, fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#FFFFFF', textAlign: 'center' },
+  journalIcons: {
+    minHeight: 62, marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16,
+    borderRadius: 18, backgroundColor: '#FFFDFC', paddingHorizontal: 16,
+  },
+  journalIcon: { width: 44, height: 44 },
+  featureFooter: {
+    marginTop: 22, paddingHorizontal: 8, fontSize: 14.5, lineHeight: 21,
+    fontFamily: 'Inter_700Bold', color: '#17110D', textAlign: 'center',
+  },
+  sampleItemImage: { width: 44, height: 44 },
+  insightQuestionRow: { flexDirection: 'row', gap: 14, marginTop: 26 },
+  speechCard: {
+    flex: 1, minHeight: 128, borderRadius: 26, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
+  },
+  speechText: { fontSize: 15.5, lineHeight: 22, fontFamily: 'Inter_500Medium', color: '#17110D', textAlign: 'center' },
+  insightQuestionArt: { width: '70%', aspectRatio: 1.25, alignSelf: 'center', marginTop: -2 },
+  onboardingInsightCard: {
+    marginTop: 34, borderRadius: 26, backgroundColor: '#FFF8E8',
+    paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22,
+  },
+  courtJudge: { width: '78%', aspectRatio: 1, alignSelf: 'center', marginTop: 10, marginBottom: -22 },
+  courtTypeList: { marginTop: 26, gap: 16 },
+  courtTypeCard: {
+    minHeight: 104, flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: '#FFF9EE', borderRadius: 22, borderWidth: 1.5, borderColor: '#B39D5B',
+    paddingHorizontal: 18, paddingVertical: 15,
+    shadowColor: '#5A4A18', shadowOpacity: 0.18, shadowRadius: 0,
+    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
+  courtTypeIcon: { width: 64, height: 64 },
+  courtTypeTitle: { fontSize: 19, lineHeight: 25, fontFamily: 'Inter_800ExtraBold', color: '#17110D' },
+  courtTypeBody: { marginTop: 4, fontSize: 13.5, lineHeight: 19, fontFamily: 'Inter_500Medium', color: '#34271E' },
 
   h1: { fontSize: 30, lineHeight: 40, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
   heroTitle: { fontSize: 32, lineHeight: 42, fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center' },
