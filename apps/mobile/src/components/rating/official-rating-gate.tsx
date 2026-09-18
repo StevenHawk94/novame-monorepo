@@ -5,6 +5,13 @@ import * as StoreReview from 'expo-store-review';
 
 import { subscribeOfficialRatingRequest } from '@/lib/official-rating-prompt';
 import { getNextReflectionPaywallVariant, subscribeReflectionPaywallRequest } from '@/lib/reflection-paywall-count';
+import {
+  claimPartnerReflectPaywall,
+  peekPartnerReflectPaywall,
+  removePartnerReflectPaywall,
+  subscribePartnerReflectPaywallRequest,
+  syncPartnerReflectPaywallRequests,
+} from '@/lib/partner-reflect-paywall';
 import { isNavigationTransitionBusy, useRatingTransitionBusy } from '@/lib/rating-navigation';
 import { useAppDialogVisible } from '@/components/ui/app-dialog';
 import { useSubscriptionTierState } from '@/lib/use-subscription-tier';
@@ -20,11 +27,8 @@ async function requestOfficialRating(canPresent: () => boolean): Promise<boolean
   requestInFlight = true;
   try {
     const supported = await withDeadline(StoreReview.hasAction());
-    // Eligibility may change while the store bridge is preparing its dialog.
     if (!canPresent()) return false;
-    if (supported) {
-      await StoreReview.requestReview();
-    }
+    if (supported) await StoreReview.requestReview();
     return true;
   } catch (error) {
     console.warn('[official-rating] request failed:', error);
@@ -34,18 +38,14 @@ async function requestOfficialRating(canPresent: () => boolean): Promise<boolean
   }
 }
 
-/**
- * Non-blocking post-Reflect queue. A due Free paywall has priority over rating.
- * Present on the first frame after native dismissal, without a fixed delay.
- * Both the Reflect picker and base tabs are safe destinations. A due paywall
- * goes first; rating waits for that paywall/other modals to close.
- */
+/** Non-blocking promotional queue. Partner Reflect offers have first priority. */
 export function OfficialRatingGate() {
   const homeEntry = useHomeEntry();
   const segments = useSegments();
   const routeKey = useMemo(() => segments.join('/'), [segments]);
   const [pending, setPending] = useState(false);
   const [pendingPaywall, setPendingPaywall] = useState(false);
+  const [partnerReflectId, setPartnerReflectId] = useState<string | null>(peekPartnerReflectPaywall);
   const [requestingRating, setRequestingRating] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
   const transitionBusy = useRatingTransitionBusy();
@@ -55,6 +55,7 @@ export function OfficialRatingGate() {
   const overlayPresent = useOverlayPresent();
   const mounted = useRef(true);
   const presentingPaywall = useRef(false);
+  const claimingPartner = useRef(false);
   const presentationRecovery = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const routeSegments = routeKey.split('/');
   const atTabs = routeSegments.includes('(tabs)');
@@ -69,19 +70,25 @@ export function OfficialRatingGate() {
   const eligibility = useRef({ paywall: false, rating: false });
   eligibility.current = {
     paywall: idle && tier === 'free' && (atTabs || atReflectPicker) && !presentingPaywall.current,
-    rating: idle && (atTabs || atReflectPicker) && !pendingPaywall && !presentingPaywall.current,
+    rating: idle && (atTabs || atReflectPicker) && !partnerReflectId && !pendingPaywall && !presentingPaywall.current,
   };
 
   useEffect(() => subscribeOfficialRatingRequest(() => setPending(true)), []);
   useEffect(() => subscribeReflectionPaywallRequest(() => setPendingPaywall(true)), []);
+  useEffect(() => subscribePartnerReflectPaywallRequest(() => {
+    setPartnerReflectId(peekPartnerReflectPaywall());
+  }), []);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; clearTimeout(presentationRecovery.current); };
   }, []);
 
   useEffect(() => {
-    if (routeSegments.includes('reflection-plus-paywall')) {
-      // A push request is not proof of presentation. Consume only on commit.
+    if (routeSegments.includes('partner-reflect-paywall')) {
+      presentingPaywall.current = false;
+      claimingPartner.current = false;
+      clearTimeout(presentationRecovery.current);
+    } else if (routeSegments.includes('reflection-plus-paywall')) {
       setPendingPaywall(false);
       presentingPaywall.current = false;
       clearTimeout(presentationRecovery.current);
@@ -94,27 +101,56 @@ export function OfficialRatingGate() {
   }, []);
 
   useEffect(() => {
-    // A purchase/paired entitlement obtained while waiting cancels the upsell.
-    // Null means hydration is in progress, not that the user is Free.
-    if (pendingPaywall && tier !== null && tier !== 'free') {
-      setPendingPaywall(false);
+    if (appState === 'active') void syncPartnerReflectPaywallRequests();
+  }, [appState]);
+
+  useEffect(() => {
+    if (tier !== null && tier !== 'free') {
+      if (pendingPaywall) setPendingPaywall(false);
+      if (partnerReflectId) {
+        removePartnerReflectPaywall(partnerReflectId);
+        setPartnerReflectId(peekPartnerReflectPaywall());
+      }
       return;
     }
     if (requestingRating) return;
+
+    if (partnerReflectId) {
+      if (!eligibility.current.paywall || claimingPartner.current) return;
+      const frame = requestAnimationFrame(() => {
+        if (!mounted.current || !eligibility.current.paywall || isNavigationTransitionBusy() || isOverlayPresent()) return;
+        claimingPartner.current = true;
+        void claimPartnerReflectPaywall(partnerReflectId).then((result) => {
+          if (!mounted.current) return;
+          claimingPartner.current = false;
+          if (!result.ok) return;
+          removePartnerReflectPaywall(partnerReflectId);
+          setPartnerReflectId(peekPartnerReflectPaywall());
+          if (!result.eligible || !result.assignment || !eligibility.current.paywall) return;
+          presentingPaywall.current = true;
+          try {
+            router.push('/(main)/(modals)/partner-reflect-paywall' as never);
+            clearTimeout(presentationRecovery.current);
+            presentationRecovery.current = setTimeout(() => { presentingPaywall.current = false; }, 1500);
+          } catch (error) {
+            presentingPaywall.current = false;
+            console.warn('[partner-reflect-paywall] presentation failed:', error);
+          }
+        });
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+
     if (pendingPaywall) {
       if (!eligibility.current.paywall) return;
       const frame = requestAnimationFrame(() => {
         if (!mounted.current || AppState.currentState !== 'active' || !eligibility.current.paywall || isNavigationTransitionBusy() || isOverlayPresent()) return;
         presentingPaywall.current = true;
-        eligibility.current.paywall = false;
-        eligibility.current.rating = false;
         try {
           router.push({
             pathname: '/(main)/(modals)/reflection-plus-paywall',
             params: { variant: getNextReflectionPaywallVariant() },
           } as never);
-          // Recovery only: no delay before opening and no screen-wide lock.
-          // If navigation is rejected, the next eligible visit can retry.
           clearTimeout(presentationRecovery.current);
           presentationRecovery.current = setTimeout(() => { presentingPaywall.current = false; }, 1500);
         } catch (error) {
@@ -124,6 +160,7 @@ export function OfficialRatingGate() {
       });
       return () => cancelAnimationFrame(frame);
     }
+
     if (!pending || !eligibility.current.rating) return;
     const frame = requestAnimationFrame(() => {
       if (!mounted.current || !eligibility.current.rating || isNavigationTransitionBusy() || isOverlayPresent()) return;
@@ -136,7 +173,7 @@ export function OfficialRatingGate() {
         });
     });
     return () => cancelAnimationFrame(frame);
-  }, [appState, pending, pendingPaywall, requestingRating, routeKey, transitionBusy, dialogVisible, tier, activeModal, overlayPresent, homeEntry.pending, homeEntry.resumeRequired]);
+  }, [appState, partnerReflectId, pending, pendingPaywall, requestingRating, routeKey, transitionBusy, dialogVisible, tier, activeModal, overlayPresent, homeEntry.pending, homeEntry.resumeRequired]);
 
   return null;
 }

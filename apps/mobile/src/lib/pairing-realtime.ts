@@ -19,6 +19,7 @@ import { supabase } from './supabase';
 import { invalidateConnectionDashboard } from './connection-analysis-cache';
 import { fetchBags } from './bags-api';
 import { getCachedSubscriptionTier } from './subscription';
+import { requestPartnerReflectPaywall } from './partner-reflect-paywall';
 
 export type PairingRealtimeSnapshot = {
   pairing: PairingStatus;
@@ -356,7 +357,9 @@ export async function startPairingRealtime(
         // authoritative for the sender, message and reply state.
         publishGoodVibes();
       })
-      .on('broadcast', { event: 'reflect_feed_changed' }, () => {
+      .on('broadcast', { event: 'reflect_feed_changed' }, (message) => {
+        const reflectId = message.payload?.reflect_id;
+        if (typeof reflectId === 'string' && reflectId) requestPartnerReflectPaywall(reflectId);
         // One tiny invalidation per finalized/edited reflection. No journal or
         // memory text is carried over Realtime and no polling loop is added.
         void reconcileReflectFeed(userId, subscribedGeneration);

@@ -112,7 +112,10 @@ export async function POST(request) {
       })
     }
 
-    await supabase.rpc('broadcast_reflect_feed_change', { p_user_id: userId })
+    await supabase.rpc('broadcast_reflect_feed_change', {
+      p_user_id: userId,
+      p_reflect_id: result?.reflect_id || null,
+    })
     return NextResponse.json({ success: true, ...result })
   } catch (error) {
     console.error('[reflect/finalize] unexpected:', error?.message || error)

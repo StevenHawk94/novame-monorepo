@@ -2000,7 +2000,7 @@ const styles = StyleSheet.create({
   },
   paywallExitCard: {
     minHeight: '78%', justifyContent: 'center',
-    backgroundColor: '#A26D43', borderRadius: 16,
+    backgroundColor: '#7B4B3B', borderRadius: 16,
     paddingHorizontal: 26, paddingTop: 38, paddingBottom: 30,
   },
   paywallExitTitle: {

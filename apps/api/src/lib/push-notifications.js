@@ -5,19 +5,18 @@ const retryAt = (attempts) => new Date(
 ).toISOString()
 
 export async function enqueuePartnerReflectNotification(supabase, userId, reflectId) {
-  const [visibleResult, pairingResult] = await Promise.all([
-    supabase.from('reflect_items').select('item_id').eq('user_id', userId)
-      .eq('reflect_id', reflectId).eq('visible_to_paired', true).limit(1),
-    supabase.from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle(),
-  ])
-  if (visibleResult.error) throw visibleResult.error
-  if (pairingResult.error) throw pairingResult.error
-  const visible = visibleResult.data
-  const pairing = pairingResult.data
-  if (!visible?.length || !pairing?.partner_user_id) return false
+  const { data: pairing, error: pairingError } = await supabase
+    .from('pairings').select('partner_user_id').eq('user_id', userId).maybeSingle()
+  if (pairingError) throw pairingError
+  if (!pairing?.partner_user_id) return false
+  const { error: triggerError } = await supabase.from('marketing_paywall_triggers').upsert({
+    user_id: pairing.partner_user_id, campaign: 'partner_reflect', trigger_key: reflectId,
+  }, { onConflict: 'user_id,campaign,trigger_key', ignoreDuplicates: true })
+  if (triggerError) throw triggerError
   const { error } = await supabase.from('notification_outbox').upsert({
     recipient_user_id: pairing.partner_user_id,
     event_key: `partner-reflect:${reflectId}`,
+    payload: { reflectId },
   }, { onConflict: 'recipient_user_id,event_key', ignoreDuplicates: true })
   if (error) throw error
   return true
@@ -67,7 +66,7 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
         channelId: 'partner-updates',
         data: isCourt
           ? { type: row.event_type, route: 'thump', sessionId: row.payload?.sessionId }
-          : { type: 'partner_reflect', route: 'home' },
+          : { type: 'partner_reflect', route: 'home', reflectId: row.payload?.reflectId },
       }))
       // Send the widget invalidation independently. Its best-effort delivery
       // must never reject, retry, or duplicate the existing visible alert.

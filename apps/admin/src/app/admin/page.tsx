@@ -9,6 +9,7 @@ import OrdersTab from './_components/OrdersTab';
 import PricingTab from './_components/PricingTab';
 import AnalysisTab from './_components/AnalysisTab';
 import ItemsTab from './_components/ItemsTab';
+import MarketingTab from './_components/MarketingTab';
 
 type TabId =
   | 'overview'
@@ -17,8 +18,8 @@ type TabId =
   | 'orders'
   | 'pricing'
   | 'outfits'
-  | 'scenes'
   | 'items'
+  | 'marketing'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -27,8 +28,8 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'orders', icon: '📦', label: 'Orders' },
   { id: 'pricing', icon: '💰', label: 'Pricing' },
   { id: 'outfits', icon: '👕', label: 'Outfits' },
-  { id: 'scenes', icon: '🗺️', label: 'Scenes' },
   { id: 'items', icon: '🎒', label: 'Memory Items' },
+  { id: 'marketing', icon: '📣', label: 'Marketing' },
 ];
 
 /**
@@ -69,8 +70,8 @@ export default function AdminDashboard() {
       {tab === 'orders' && <OrdersTab />}
       {tab === 'pricing' && <PricingTab />}
       {tab === 'outfits' && <OutfitsTab />}
-      {tab === 'scenes' && <ScenesTab />}
       {tab === 'items' && <ItemsTab />}
+      {tab === 'marketing' && <MarketingTab />}
     </>
   );
 }

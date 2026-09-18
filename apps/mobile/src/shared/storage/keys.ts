@@ -288,6 +288,18 @@ export const kFirstPartnerReflectGuide = defineKey(
   'user',
 );
 
+/** Reflect ids waiting to offer the partner-triggered Real-Time Insight paywall. */
+export const kPartnerReflectPaywallQueue = defineKey(
+  'burrow_partner_reflect_paywall_queue_v1',
+  'user',
+);
+
+/** Content claimed from the server for the currently presented paywall. */
+export const kPartnerReflectPaywallAssignment = defineKey(
+  'burrow_partner_reflect_paywall_assignment_v1',
+  'user',
+);
+
 /** Whether the pre-auth onboarding intro has been seen on THIS phone. Device
  *  scope, not user/preauth: it must survive sign-out so a returning user goes
  *  straight to sign-in, never re-watches the intro (C4 decision B). Set true

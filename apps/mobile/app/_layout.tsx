@@ -67,6 +67,7 @@ import {
   syncRemoteNotificationRegistration,
 } from '@/lib/notification-settings';
 import { emitHomeRefresh } from '@/lib/home-refresh-signal';
+import { requestPartnerReflectPaywall } from '@/lib/partner-reflect-paywall';
 import { warmEntryBackgrounds } from '@/lib/prefetch';
 import { MetaPrivacyProvider } from '@/components/privacy/meta-privacy-provider';
 import { stageForegroundJobs } from '@/lib/ui-idle';
@@ -232,7 +233,7 @@ function RootLayout() {
     let active = true;
     const openNotification = (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return;
-      const data = response.notification.request.content.data as { type?: unknown; route?: unknown } | null;
+      const data = response.notification.request.content.data as { type?: unknown; route?: unknown; reflectId?: unknown } | null;
       const isCourt = data?.route === 'thump' && typeof data?.type === 'string' && data.type.startsWith('court_');
       if (isCourt) {
         const responseId = response.notification.request.identifier;
@@ -245,6 +246,7 @@ function RootLayout() {
         return;
       }
       if (data?.type !== 'partner_reflect') return;
+      if (typeof data.reflectId === 'string') requestPartnerReflectPaywall(data.reflectId);
       const responseId = response.notification.request.identifier;
       if (handledNotificationResponses.current.has(responseId)) return;
       handledNotificationResponses.current.add(responseId);
@@ -316,8 +318,9 @@ function RootLayout() {
         void checkContentVersionInBackground();
         const initialUrl = await Linking.getInitialURL().catch(() => null);
         const initialNotification = Notifications.getLastNotificationResponse();
-        const initialNotificationData = initialNotification?.notification.request.content.data as { type?: unknown } | null;
+        const initialNotificationData = initialNotification?.notification.request.content.data as { type?: unknown; reflectId?: unknown } | null;
         if (initialNotificationData?.type === 'partner_reflect') {
+          if (typeof initialNotificationData.reflectId === 'string') requestPartnerReflectPaywall(initialNotificationData.reflectId);
           beginHomeEntry({ target: 'home', forceHomeData: true });
         } else if (isWidgetFriendsUrl(initialUrl)) {
           beginHomeEntry({ target: 'friends', forceHomeData: true });
