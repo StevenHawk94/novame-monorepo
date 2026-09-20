@@ -8,7 +8,7 @@ const PAGE_SIZE = 24
 
 const MODULE_KEYS = new Set([
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
-  'talk_about', 'try_together', 'shared_rhythm',
+  'talk_about', 'try_together', 'shared_rhythm', 'together_moments', 'on_their_mind_us',
 ])
 
 const SECTION_BY_MODULE = {
@@ -19,6 +19,8 @@ const SECTION_BY_MODULE = {
   talk_about: 'ways_in',
   try_together: 'ways_in',
   shared_rhythm: 'between',
+  together_moments: 'together',
+  on_their_mind_us: 'on_their_mind',
 }
 
 const isoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? value : null
@@ -31,6 +33,7 @@ const uuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-
   ? value : null
 function publicCard(row) {
   if (!MODULE_KEYS.has(row?.module_key) || !row?.card || typeof row.card !== 'object') return null
+  if (!String(row.card.contentId || '').startsWith('v8:')) return null
   const card = publicConnectionCard(row.card, row.module_key)
   if (!card) return null
   return {

@@ -11,20 +11,22 @@ export const maxDuration = 60
 
 const MODULE_KEYS = [
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
-  'talk_about', 'try_together', 'shared_rhythm',
+  'talk_about', 'try_together', 'shared_rhythm', 'together_moments', 'on_their_mind_us',
 ]
 const SECTION_BY_MODULE = {
   worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
   how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
   shared_rhythm: 'between',
+  together_moments: 'together',
+  on_their_mind_us: 'on_their_mind',
 }
-const SECTION_LIMITS = { missed: 3, world: 3, ways_in: 3, between: 1 }
+const SECTION_LIMITS = { missed: 2, world: 2, ways_in: 4, between: 1, together: 1, on_their_mind: 1 }
 
 function publicInsights(payload) {
-  if (payload?.schemaVersion !== 2 || !payload.modules) return null
+  if (payload?.schemaVersion !== 3 || !payload.modules) return null
   const modules = {}
   const seenCards = []
-  const sectionCounts = { missed: 0, world: 0, ways_in: 0, between: 0 }
+  const sectionCounts = { missed: 0, world: 0, ways_in: 0, between: 0, together: 0, on_their_mind: 0 }
   for (const key of MODULE_KEYS) {
     const section = SECTION_BY_MODULE[key]
     const remaining = SECTION_LIMITS[section] - sectionCounts[section]
@@ -40,7 +42,7 @@ function publicInsights(payload) {
     modules[key] = visible
     sectionCounts[section] += modules[key].length
   }
-  return { schemaVersion: 2, modules, updatedAt: payload.updatedAt || null }
+  return { schemaVersion: 3, modules, updatedAt: payload.updatedAt || null }
 }
 
 export async function GET(request) {

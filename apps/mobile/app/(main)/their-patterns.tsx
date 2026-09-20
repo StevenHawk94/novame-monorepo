@@ -19,12 +19,15 @@ import {
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { relativeInsightTime } from '@/lib/relative-time';
 
 const TABS: { key: ConnectionHistorySection; label: string }[] = [
   { key: 'missed', label: 'What You May Have Missed' },
   { key: 'world', label: 'Their World Lately' },
   { key: 'ways_in', label: 'Ways In' },
   { key: 'between', label: 'Between You Lately' },
+  { key: 'together', label: 'Together Moments' },
+  { key: 'on_their_mind', label: 'On Their Mind: Us' },
 ];
 
 function shortDate(value: string): string {
@@ -41,7 +44,9 @@ function HistoryCard({ card }: { card: ConnectionHistoryCard }) {
           <MaterialIcons name="chat-bubble" size={16} color="#C7644F" />
           <Text style={styles.badgeText}>{card.label}</Text>
         </View>
-        <Text style={styles.dateText}>{shortDate(card.date)}</Text>
+        <Text style={styles.dateText}>
+          {relativeInsightTime(card.createdAt) || shortDate(card.date)}
+        </Text>
       </View>
       {!!card.title && <Text style={styles.headline}>{card.title}</Text>}
       <Text style={styles.body}>{card.observation}</Text>
@@ -53,6 +58,16 @@ function HistoryCard({ card }: { card: ConnectionHistoryCard }) {
         <View style={styles.actionRow}>
           <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
           <Text style={styles.actionText}>{card.takeaway}</Text>
+        </View>
+      )}
+      {!!card.waysIn && card.section === 'between' && (
+        <View style={styles.actionRow}>
+          <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
+          <View style={{ flex: 1 }}>
+            {!!card.waysIn.title && <Text style={styles.actionText}>{card.waysIn.title}</Text>}
+            {!!card.waysIn.description && <Text style={styles.supporting}>{card.waysIn.description}</Text>}
+            {!!card.waysIn.action && <Text style={styles.actionText}>{card.waysIn.action}</Text>}
+          </View>
         </View>
       )}
     </View>

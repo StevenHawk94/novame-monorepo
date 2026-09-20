@@ -42,6 +42,12 @@ const ai = load('apps/api/src/lib/reflect-ai.js', {
 const analysisStore = load('apps/api/src/lib/reflect-analysis-store.js', {
   './reflect-ai': ai,
   './connection-evidence': evidence,
+  './connection-insight-v8': {
+    CONNECTION_MODULES: [
+      'worth_knowing', 'recent_vibe', 'how_to_show_up', 'shared_rhythm',
+      'together_moments', 'on_their_mind_us',
+    ],
+  },
 });
 
 function emptyUpdates() {
@@ -327,6 +333,7 @@ test('Between You Lately is written identically to both people', async () => {
     updates, reflectId: 'reflect-between', localDate: '2026-09-06',
   });
   assert.equal(calls.length, 2);
+  assert.equal(calls[0].name, 'apply_connection_insight_updates_v3');
   assert.equal(calls[0].args.p_for_user, 'b');
   assert.equal(calls[1].args.p_for_user, 'a');
   assert.deepEqual(calls[1].args.p_updates.shared_rhythm, updates.shared_rhythm);

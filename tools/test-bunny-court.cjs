@@ -82,16 +82,19 @@ test('v2 deterministic engine follows the reviewed Free Rule Engine branches', a
   }
 });
 
-test('private testimony is server-only and AI has no provider fallback', () => {
+test('testimony sharing requires mutual consent and AI has no provider fallback', () => {
   const service = read('apps/api/src/lib/bunny-court.js');
   const sessionRoute = read('apps/api/src/app/api/court/[sessionId]/route.js');
   const view = service.slice(service.indexOf('export async function sessionView'));
-  assert.doesNotMatch(view, /select\([^)]*answers/);
+  assert.match(view, /select\('user_id,submitted_at,answers'\)/);
+  assert.match(view, /mine\?\.answers\?\.__share_answers && other\?\.answers\?\.__share_answers/);
+  assert.match(view, /const otherAnswers = answersVisible \?/);
   assert.match(service, /skipDeepSeek: true/);
   assert.match(service, /ilike\('status', '%Launch'\)/);
   assert.match(service, /feature: 'bunny_court'/);
   assert.match(service, /promptVersion: 'court-v2'/);
-  assert.match(service, /content_version \|\| 1\) >= 2/);
+  assert.match(service, /version >= 3[\s\S]*fixedLaunchOutcomeV3/);
+  assert.match(service, /version >= 2[\s\S]*fixedLaunchOutcomeV2/);
   assert.match(service, /'ai_failure_template'/);
   assert.match(sessionRoute, /after\(\(\) => processCourtVerdictJob/);
   assert.doesNotMatch(sessionRoute, /await processCourtVerdictJob/);
@@ -108,13 +111,16 @@ test('private testimony is server-only and AI has no provider fallback', () => {
   assert.match(migration, /revoke all on public\.court_case_definitions[\s\S]*from public, anon, authenticated/);
 });
 
-test('Focus runtime and reward paths are replaced by Thump', () => {
+test('Focus runtime and reward paths are replaced by Bunny Court', () => {
   const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
+  const tabs = read('apps/mobile/src/components/main/bottom-tab-bar.tsx');
+  const tabLayout = read('apps/mobile/app/(main)/(tabs)/_layout.tsx');
   const layout = read('apps/mobile/app/(main)/_layout.tsx');
   const queue = read('apps/mobile/src/lib/download-queue.ts');
   const xp = read('packages/engine/src/xp.ts');
-  assert.match(home, />Thump</);
-  assert.match(home, /\/\(main\)\/thump/);
+  assert.match(home, />Quests</);
+  assert.match(tabs, /name: 'court'[\s\S]*label: 'Court'/);
+  assert.match(tabLayout, /name="court"/);
   assert.match(layout, /name="thump"/);
   assert.doesNotMatch(queue, /focus-voice|syncAllFocus/);
   assert.doesNotMatch(xp, /\| 'focus'|focus:\s*\{/);

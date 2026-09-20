@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, useSegments } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
@@ -73,6 +73,9 @@ function CourtBackground({ align, children }: { align: 'top' | 'bottom'; childre
 
 export default function ThumpScreen() {
   const router = useRouter();
+  const segments = useSegments();
+  const routePath = segments.join('/');
+  const isCourtTab = routePath.includes('(tabs)') && routePath.endsWith('/court');
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const [lobby, setLobby] = useState<CourtLobby | null>(() => getCachedCourtLobby());
@@ -332,7 +335,11 @@ export default function ThumpScreen() {
   };
 
   const back = () => {
-    if (screen === 'home') { router.back(); return; }
+    if (screen === 'home') {
+      if (isCourtTab) router.replace('/(main)/(tabs)' as never);
+      else router.back();
+      return;
+    }
     if (screen === 'history') { setScreen('home'); return; }
     if (screen === 'cases') { setScreen('home'); setCategory(null); return; }
     if (screen === 'intro') { setScreen('cases'); return; }

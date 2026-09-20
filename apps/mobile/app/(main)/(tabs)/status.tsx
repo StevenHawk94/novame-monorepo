@@ -27,13 +27,15 @@ import { fetchSubscriptionTier, getCachedSubscriptionTier } from '@/lib/subscrip
 import { supabase } from '@/lib/supabase';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 import { afterUiSettles } from '@/lib/ui-idle';
+import { relativeInsightTime } from '@/lib/relative-time';
 
 type SectionDefinition = {
-  section: 'missed' | 'world' | 'ways_in' | 'between';
+  section: 'missed' | 'world' | 'ways_in' | 'between' | 'together' | 'on_their_mind';
   title: string;
   icon: typeof ICONS.connect1;
   modules: ConnectionModuleKey[];
   preset: string;
+  dynamic?: boolean;
 };
 
 const SECTION_DEFINITIONS: SectionDefinition[] = [
@@ -65,6 +67,22 @@ const SECTION_DEFINITIONS: SectionDefinition[] = [
     modules: ['shared_rhythm'],
     preset: 'See the funny, cozy, or chaotic little patterns unfolding between your lives.',
   },
+  {
+    section: 'together',
+    title: 'Together Moments',
+    icon: ICONS.connect4,
+    modules: ['together_moments'],
+    preset: '',
+    dynamic: true,
+  },
+  {
+    section: 'on_their_mind',
+    title: 'On Their Mind: Us',
+    icon: ICONS.connect1,
+    modules: ['on_their_mind_us'],
+    preset: '',
+    dynamic: true,
+  },
 ];
 
 const TEASER_ROWS = [
@@ -75,7 +93,7 @@ const TEASER_ROWS = [
 ];
 
 function validInsights(value: ConnectionInsights | null): ConnectionInsights | null {
-  return value?.schemaVersion === 2 && value.modules ? value : null;
+  return value?.schemaVersion === 3 && value.modules ? value : null;
 }
 
 function cardsForSection(
@@ -92,12 +110,16 @@ function InsightContentCard({
   card, section,
 }: {
   card: ConnectionInsightCard;
-  section: 'missed' | 'world' | 'ways_in' | 'between';
+  section: 'missed' | 'world' | 'ways_in' | 'between' | 'together' | 'on_their_mind';
 }) {
+  const age = relativeInsightTime(card.createdAt);
   return (
     <View style={st.insightCard}>
-      <View style={st.insightBadge}>
-        <Text style={st.insightBadgeText}>{card.label}</Text>
+      <View style={st.insightCardTop}>
+        <View style={st.insightBadge}>
+          <Text style={st.insightBadgeText}>{card.label}</Text>
+        </View>
+        {!!age && <Text style={st.insightAge}>{age}</Text>}
       </View>
       {!!card.title && <Text style={st.insightHeadline}>{card.title}</Text>}
       <Text style={st.insightText}>{card.observation}</Text>
@@ -109,6 +131,21 @@ function InsightContentCard({
         <View style={st.actionRow}>
           <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
           <Text style={st.actionText}>{card.takeaway}</Text>
+        </View>
+      )}
+      {!!card.waysIn && section === 'between' && (
+        <View style={st.nestedWays}>
+          {!!card.waysIn.tag && <Text style={st.nestedWaysTag}>{card.waysIn.tag}</Text>}
+          {!!card.waysIn.title && <Text style={st.nestedWaysTitle}>{card.waysIn.title}</Text>}
+          {!!card.waysIn.description && (
+            <Text style={st.supportingText}>{card.waysIn.description}</Text>
+          )}
+          {!!card.waysIn.action && (
+            <View style={st.actionRow}>
+              <MaterialIcons name="chat-bubble-outline" size={18} color="#8C523D" />
+              <Text style={st.actionText}>{card.waysIn.action}</Text>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -385,6 +422,7 @@ export default function ConnectionDashboardScreen() {
               const cards = !contentLocked
                 ? cardsForSection(insights, section)
                 : [];
+              if (section.dynamic && cards.length === 0) return null;
               return (
                 <View key={section.title}>
                   <View style={st.sectionPillWrap}>
@@ -503,11 +541,16 @@ const st = StyleSheet.create({
     fontFamily: 'Inter_500Medium', color: '#2A2118',
   },
   insightCard: { backgroundColor: '#FFF6E4', borderRadius: 26, padding: 20, marginBottom: 14 },
+  insightCardTop: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+    marginBottom: 14,
+  },
   insightBadge: {
     alignSelf: 'flex-start', backgroundColor: '#F8D88B', borderRadius: 13,
-    paddingHorizontal: 12, paddingVertical: 7, marginBottom: 14,
+    paddingHorizontal: 12, paddingVertical: 7,
   },
   insightBadgeText: { fontSize: 13.5, fontFamily: 'Inter_700Bold', color: '#7A462A' },
+  insightAge: { fontSize: 12.5, fontFamily: 'Inter_600SemiBold', color: '#92715C' },
   insightHeadline: { fontSize: 18, lineHeight: 24, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 8 },
   insightText: { fontSize: 16, lineHeight: 24, fontFamily: 'Inter_500Medium', color: '#2A2118' },
   supportingText: { fontSize: 14, lineHeight: 21, fontFamily: 'Inter_500Medium', color: '#785E49', marginTop: 9 },
@@ -516,6 +559,14 @@ const st = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: 'rgba(122,74,58,0.16)', marginTop: 14, paddingTop: 13,
   },
   actionText: { flex: 1, fontSize: 14.5, lineHeight: 21, fontFamily: 'Inter_600SemiBold', color: '#5B3B29' },
+  nestedWays: {
+    borderTopWidth: 1, borderTopColor: 'rgba(122,74,58,0.16)', marginTop: 16, paddingTop: 15,
+  },
+  nestedWaysTag: {
+    alignSelf: 'flex-start', fontSize: 12.5, fontFamily: 'Inter_700Bold', color: '#8C523D',
+    textTransform: 'uppercase', marginBottom: 6,
+  },
+  nestedWaysTitle: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
   refreshToastWrap: {
     position: 'absolute', zIndex: 50, left: 16, right: 16, alignItems: 'center',
   },

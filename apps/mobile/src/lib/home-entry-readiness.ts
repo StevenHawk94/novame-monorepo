@@ -5,7 +5,7 @@
  */
 export const HOME_ENTRY_ASSETS = [
   'scene', 'companion', 'menu', 'outfits', 'scenes',
-  'tab:index', 'tab:bags', 'tab:quests', 'tab:friends', 'tab:status',
+  'tab:index', 'tab:court', 'tab:friends', 'tab:status', 'tab:bags',
   'home-layout', 'home-data', 'tabs-layout',
   'home-copy',
   'friends-background', 'friends-data', 'entry-copy',
@@ -26,7 +26,7 @@ type EntryState = {
 };
 
 const SHARED_ASSETS: readonly HomeEntryAsset[] = [
-  'tab:index', 'tab:bags', 'tab:quests', 'tab:friends', 'tab:status',
+  'tab:index', 'tab:court', 'tab:friends', 'tab:status', 'tab:bags',
   'tabs-layout', 'entry-copy',
 ];
 const HOME_ASSETS: readonly HomeEntryAsset[] = [

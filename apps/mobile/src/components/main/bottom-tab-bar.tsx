@@ -18,18 +18,18 @@ import { yieldDownloadQueueForInteraction } from '@/lib/download-queue';
  * (assets/Icons), on a warm cream bar to match the Home art. The focused tab
  * reads at full opacity; unfocused tabs dim slightly.
  */
-const TABS: ReadonlyArray<{ name: 'index' | 'bags' | 'quests' | 'friends' | 'status'; icon: ImageSourcePropType; label: string }> = [
+const TABS: ReadonlyArray<{ name: 'index' | 'court' | 'friends' | 'status' | 'bags'; icon: ImageSourcePropType; label: string }> = [
   { name: 'index', icon: ICONS.Home, label: 'Home' },
-  { name: 'bags', icon: ICONS.Memories, label: 'Memories' },
-  { name: 'quests', icon: ICONS.Quests, label: 'Quests' },
-  { name: 'friends', icon: ICONS.Friends, label: 'Paired' },
-  { name: 'status', icon: ICONS.friendList, label: 'Connection' },
+  { name: 'court', icon: ICONS.obCourtJudge, label: 'Court' },
+  { name: 'friends', icon: ICONS.Friends, label: 'Moments' },
+  { name: 'status', icon: ICONS.friendList, label: 'Insights' },
+  { name: 'bags', icon: ICONS.Memories, label: 'Collection' },
 ];
 
 // Lightest first, heaviest last. React Navigation's preload mounts the real
 // inactive route without focusing it, so useFocusEffect network refreshes do
 // not run until the user actually visits the tab.
-const TAB_PRELOAD_ORDER = ['quests', 'friends', 'bags', 'status'] as const;
+const TAB_PRELOAD_ORDER = ['quests', 'court', 'friends', 'bags', 'status'] as const;
 const TAB_PRELOAD_START_DELAY_MS = 650;
 const TAB_PRELOAD_SETTLE_MS = 700;
 
@@ -59,6 +59,12 @@ const TAB_THEMES: Record<string, TabBarTheme> = {
     label: '#FFFFFF',
     activeBackground: 'rgba(255,255,255,0.16)',
     topBorder: 'rgba(255,255,255,0.10)',
+  },
+  court: {
+    background: '#B0BD58',
+    label: '#4A2518',
+    activeBackground: 'rgba(255,248,233,0.72)',
+    topBorder: 'rgba(74,37,24,0.14)',
   },
   friends: {
     background: '#80583B',
@@ -207,8 +213,13 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         {TABS.map((tab) => {
           const route = routesByName.get(tab.name);
           if (!route) return null;
-          const isFocused =
-            state.index === state.routes.findIndex((r) => r.name === tab.name);
+          // Quests is a Home shortcut rather than a persistent tab. Keep Home
+          // selected while that child destination is open so the five-item
+          // navigation remains stable and always has a clear way back.
+          const routeIsFocused = state.index === state.routes.findIndex((r) => r.name === tab.name);
+          const isFocused = activeRouteName === 'quests'
+            ? tab.name === 'index'
+            : routeIsFocused;
           return (
             <TabButton
               key={route.key}
@@ -218,7 +229,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
               isFocused={isFocused}
               labelColor={theme.label}
               activeBackground={theme.activeBackground}
-              onPress={() => handleTabPress(tab.name, isFocused)}
+              onPress={() => handleTabPress(tab.name, routeIsFocused)}
             />
           );
         })}

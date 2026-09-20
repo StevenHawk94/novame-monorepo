@@ -10,6 +10,7 @@ import PricingTab from './_components/PricingTab';
 import AnalysisTab from './_components/AnalysisTab';
 import ItemsTab from './_components/ItemsTab';
 import MarketingTab from './_components/MarketingTab';
+import ConnectionInsightTab from './_components/ConnectionInsightTab';
 
 type TabId =
   | 'overview'
@@ -20,6 +21,7 @@ type TabId =
   | 'outfits'
   | 'items'
   | 'marketing'
+  | 'connection-insight'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -30,6 +32,7 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'outfits', icon: '👕', label: 'Outfits' },
   { id: 'items', icon: '🎒', label: 'Memory Items' },
   { id: 'marketing', icon: '📣', label: 'Marketing' },
+  { id: 'connection-insight', icon: '💡', label: 'Connection Insight' },
 ];
 
 /**
@@ -72,6 +75,7 @@ export default function AdminDashboard() {
       {tab === 'outfits' && <OutfitsTab />}
       {tab === 'items' && <ItemsTab />}
       {tab === 'marketing' && <MarketingTab />}
+      {tab === 'connection-insight' && <ConnectionInsightTab />}
     </>
   );
 }

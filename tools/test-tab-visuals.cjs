@@ -20,7 +20,7 @@ function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok
   const rn = native(platform, width);
   const typography = load('apps/mobile/src/components/ui/tab-header-typography.ts', { 'react-native': rn });
   const pushes = [], feedback = [];
-  const insights = { schemaVersion: 2, modules: { worth_knowing: content ? [{
+  const insights = { schemaVersion: 3, modules: { worth_knowing: content ? [{
     label: 'Worth Noticing', title: null, observation: 'Private paid insight', meaning: null, takeaway: null,
   }] : [] } };
   const { default: Screen } = load('apps/mobile/app/(main)/(tabs)/status.tsx', {
@@ -41,6 +41,7 @@ function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok
     },
     '@/lib/haptics': { haptics: { pageOpen: () => feedback.push('light') } },
     '@/lib/icons': { ICONS: { connect1: 1, connect2: 2, connect3: 3, connect4: 4, history: 5 } },
+    '@/lib/relative-time': { relativeInsightTime: () => '3h ago' },
     '@/lib/me-stats': { getCachedMeStats: () => null }, '@/lib/onboarding': { getBunnyName: () => '' }, '@/lib/pairing-realtime': {},
     '@/lib/subscription': { getCachedSubscriptionTier: () => tier }, '@/lib/supabase': {},
     '@/lib/use-subscription-tier': { useSubscriptionTier: () => tier },
@@ -128,7 +129,7 @@ test('iOS Connection title and subtitle use the shared tab header dimensions', (
     assert.equal(flatten(subtitle.props.style).lineHeight, 19);
   }
 });
-test('Memories and both Quests states consume the shared header typography', () => {
+test('Memories typography and the product-action Quests board stay on-brand', () => {
   const read = name => fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/(tabs)', name), 'utf8');
   const bags = read('bags.tsx'), quests = read('quests.tsx');
   assert.match(bags, /title: \{[^\n]+\.\.\.tabHeaderTypography.title/);
@@ -137,11 +138,11 @@ test('Memories and both Quests states consume the shared header typography', () 
   assert.match(bags, /titleWrap: \{ flex: 1, paddingLeft: 8 \}/);
   assert.match(bags, /adjustsFontSizeToFit=\{Platform.OS !== 'android'\}/);
   assert.doesNotMatch(bags, /source=\{ICONS\.memory\}/);
-  assert.match(quests, /title: \{[^\n]+\.\.\.tabHeaderTypography.title/);
-  assert.match(quests, /subtitle: \{[^\n]+\.\.\.tabHeaderTypography.subtitle/);
-  assert.equal((quests.match(/Weekly Goal/g) || []).length, 2);
-  assert.equal((quests.match(/One goal, broken into daily small steps\./g) || []).length, 2);
-  assert.doesNotMatch(quests, /Weekly To-Do List|Select your main goal of the week/);
+  assert.match(quests, /Daily Quests/);
+  assert.match(quests, /Special Quests/);
+  assert.match(quests, /headerTitle: \{ color: '#FFF9F0'.*fontSize: 27/);
+  assert.match(quests, /GridBackground base=\{BG\} line=\{GRID\}/);
+  assert.doesNotMatch(quests, /Weekly Goal|Weekly To-Do List|Select your main goal of the week/);
 });
 
 test('Paired background keeps the complete source width on Android without changing iOS cover', () => {

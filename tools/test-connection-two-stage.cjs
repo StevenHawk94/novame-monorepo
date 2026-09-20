@@ -558,16 +558,14 @@ test('pipeline migration records recoverable stage status and failure boundary',
   assert.match(sql, /add column if not exists failure_stage text/i);
 });
 
-test('job pipeline has two AI stages and settles writer validation without a paid retry', () => {
+test('job pipeline uses the reviewed V8 group and sub-scenario matching stages', () => {
   const jobs = source('apps/api/src/lib/reflect-analysis-jobs.js');
-  assert.match(jobs, /runConnectionRouter/);
-  assert.match(jobs, /runConnectionMatchWriter/);
-  assert.doesNotMatch(jobs, /runConnectionMatcher/);
-  assert.doesNotMatch(jobs, /runConnectionWriter/);
-  assert.doesNotMatch(jobs, /readConnectionTemplatesByScenarioKeys/);
-  assert.match(jobs, /settleWriterSignalResults/);
-  assert.doesNotMatch(jobs, /throw new Error\('connection_match_writer_missing_qualified_card'\)/);
-  assert.match(jobs, /pendingSignals = eligibleSignals\.filter/);
+  assert.match(jobs, /runConnectionV8Pipeline/);
+  assert.match(jobs, /CONNECTION_GROUP_PROMPT_VERSION/);
+  assert.match(jobs, /CONNECTION_SUBSCENARIO_PROMPT_VERSION/);
+  assert.match(jobs, /connection_event_candidates/);
+  assert.doesNotMatch(jobs, /runConnectionRouter/);
+  assert.doesNotMatch(jobs, /runConnectionMatchWriter/);
   assert.match(jobs, /stage_one_result/);
 });
 
@@ -759,11 +757,18 @@ test('Remember Together skips Bunny and Connection while all three entry states 
 test('background queue marks Remember Together skipped without claiming AI work', async () => {
   const jobs = load('apps/api/src/lib/reflect-analysis-jobs.js', {
     './ai-usage': { recordAIUsage: async () => {} },
-    './connection-ai': {},
-    './connection-template-store': {},
-    './connection-output-monitor': { recordConnectionOutputOutcomes: async () => ({ recorded: 0 }) },
+    './connection-v8-pipeline': { runConnectionV8Pipeline: async () => ({ updates: null }) },
+    './connection-insight-v8': {
+      CONNECTION_CONTENT_VERSION: 'connection_insight_v8',
+      CONNECTION_EVENT_PROMPT_VERSION: 'CONNECTION_EVENT_EXTRACTOR_V8',
+      CONNECTION_GROUP_PROMPT_VERSION: 'CONNECTION_GROUP_MATCHER_V8',
+      CONNECTION_SUBSCENARIO_PROMPT_VERSION: 'CONNECTION_SUBSCENARIO_MATCHER_V8',
+    },
     './reflect-draft': { serviceClient: () => null },
-    './reflect-analysis-store': {},
+    './reflect-analysis-store': {
+      loadReflectAnalyzerContext: async () => ({}),
+      persistReflectAnalyzerResult: async () => ({}),
+    },
   });
   const rows = [];
   const supabase = {

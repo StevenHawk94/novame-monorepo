@@ -1,15 +1,11 @@
 import { recordAIUsage } from './ai-usage'
+import { runConnectionV8Pipeline } from './connection-v8-pipeline'
 import {
-  runConnectionRouter, runConnectionMatchWriter, representedSignalIds,
-  settleWriterSignalResults,
-  CONNECTION_ROUTER_VERSION, CONNECTION_MATCH_WRITER_VERSION, CONNECTION_WRITER_VERSION,
-} from './connection-ai'
-import {
-  readConnectionFamilies, readConnectionScenarioIndex, readConnectionTemplateVariants,
-} from './connection-template-store'
+  CONNECTION_CONTENT_VERSION, CONNECTION_EVENT_PROMPT_VERSION,
+  CONNECTION_GROUP_PROMPT_VERSION, CONNECTION_SUBSCENARIO_PROMPT_VERSION,
+} from './connection-insight-v8'
 import { serviceClient } from './reflect-draft'
 import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from './reflect-analysis-store'
-import { recordConnectionOutputOutcomes } from './connection-output-monitor'
 
 function errorText(error) {
   return String(error?.message || error || 'analysis_failed').slice(0, 500)
@@ -108,7 +104,7 @@ async function recordResultUsage(supabase, { userId, feature, promptVersion, res
 
 async function analyzeClaimedJob(supabase, job) {
   const reflectId = job.reflect_id
-  const [reflectResult, profileResult, itemResult] = await atStage('source_load', () => Promise.all([
+  const [reflectResult, profileResult, itemResult, draftResult] = await atStage('source_load', () => Promise.all([
     supabase.from('reflects')
       .select('id,user_id,body,local_date,shared_to_friends,journal_kind')
       .eq('id', reflectId).maybeSingle(),
@@ -117,8 +113,10 @@ async function analyzeClaimedJob(supabase, job) {
     supabase.from('reflect_items')
       .select('item_id,match_label,source_excerpt,items(display_name,rarity)')
       .eq('reflect_id', reflectId).order('position', { ascending: true }),
+    supabase.from('reflect_drafts').select('connection_event_candidates')
+      .eq('saved_reflect_id', reflectId).maybeSingle(),
   ]))
-  const sourceError = reflectResult.error || profileResult.error || itemResult.error
+  const sourceError = reflectResult.error || profileResult.error || itemResult.error || draftResult.error
   if (sourceError) throw sourceError
   const reflect = reflectResult.data
   const profile = profileResult.data
@@ -156,177 +154,73 @@ async function analyzeClaimedJob(supabase, job) {
     excludeReflectIds: [reflectId],
   }))
 
-  let stageOne = job.stage_one_result?.data ? job.stage_one_result : null
-  if (!stageOne) {
-    const families = context.connectionEligible
-      ? await atStage('family_index', () => readConnectionFamilies(supabase)) : []
-    const generated = await atStage('connection_router', () => runConnectionRouter({
-      reflectId,
-      journal: sourceBody,
-      matchedIcons: matchedItems.map((item) => ({ id: item.itemId, name: item.displayName })),
-      connectionEnabled: context.connectionEligible,
-      familyCatalog: families,
-      currentConnectionBoard: context.connectionEligible ? context.currentBoard : null,
-      writerRecentEvidence: context.writerRecentEvidence,
-      readerRecentEvidence: context.readerRecentEvidence,
-    }, { supabase }))
-    stageOne = { ...generated, promptVersion: CONNECTION_ROUTER_VERSION }
+  const rawEvents = job.stage_one_result?.data?.events
+    || draftResult.data?.connection_event_candidates || []
+  if (!job.stage_one_result?.data?.events) {
     await updateJob(supabase, reflectId, {
-      stage_one_result: { data: generated.data, promptVersion: CONNECTION_ROUTER_VERSION },
-      stage_one_usage: generated.result?.usage || null,
+      stage_one_result: {
+        data: { events: rawEvents },
+        promptVersion: CONNECTION_EVENT_PROMPT_VERSION,
+      },
     })
-    const followups = [enqueueItemLearning(supabase, reflectId, generated.data.visualConcepts, matchedItems)]
-    if (generated.result) {
-      followups.push(recordResultUsage(supabase, {
-        userId: reflect.user_id,
-        feature: 'connection_router',
-        promptVersion: CONNECTION_ROUTER_VERSION,
-        result: generated.result,
-        latencyMs: generated.latencyMs,
-        refId: reflectId,
-      }))
-    }
-    await Promise.all(followups)
   }
-
-  const baseAnalyzer = {
-    result: stageOne.result || { provider: null, model: null, usage: job.stage_one_usage || null },
-    promptVersion: stageOne.promptVersion || 'CONNECTION_ROUTER_V1',
-    data: {
-      visualConcepts: stageOne.data.visualConcepts || [],
-      connectionSignals: stageOne.data.connectionSignals || [],
-      connectionUpdates: null,
-    },
-    connectionStageOne: stageOne.data,
-    writerVersion: CONNECTION_WRITER_VERSION,
-    templateLibraryVersion: 'v6',
-  }
-  // Persist compact evidence before stage two. A later writer outage cannot
-  // erase useful history or force the router to spend tokens again.
-  await atStage('router_persist', () => persistReflectAnalyzerResult(supabase, {
+  const generated = await atStage('connection_v8_match', () => runConnectionV8Pipeline(supabase, {
+    rawEvents,
     reflectId,
-    userId: reflect.user_id,
     localDate: reflect.local_date,
-    reflectsToday: 1,
-    analyzer: baseAnalyzer,
-    context,
-    matchedItems,
-    pipelineStatus: 'router_completed',
-  }))
-
-  const eligibleSignals = (stageOne.data.eligibleSignals || stageOne.data.connectionSignals || [])
-    .filter((signal) => signal.cardEligible === true).slice(0, 3)
-  if (!context.connectionEnabled || eligibleSignals.length === 0) {
-    const pipelineStatus = eligibleSignals.length === 0 ? 'no_update' : 'deferred'
-    const { error: pipelineError } = await supabase.from('reflect_ai_analyses').update({
-      connection_pipeline_status: pipelineStatus,
-      error: null,
-    }).eq('reflect_id', reflectId)
-    if (pipelineError) throw pipelineError
-    await updateJob(supabase, reflectId, {
-      status: eligibleSignals.length === 0 ? 'no_update' : 'completed',
-      error: null,
-      failure_stage: null,
-      processed_at: new Date().toISOString(),
-    })
-    return { status: eligibleSignals.length === 0 ? 'no_update' : 'completed' }
-  }
-
-  // Partial writes are already present on the durable board. A retry reuses
-  // the router checkpoint and sends only unresolved signals to Gemini.
-  const represented = representedSignalIds(null, {
-    currentBoard: context.currentBoard,
-    reflectId,
-  })
-  const pendingSignals = eligibleSignals.filter((signal) => !represented.has(signal.signalId))
-  if (pendingSignals.length === 0) {
-    const { error: pipelineError } = await supabase.from('reflect_ai_analyses').update({
-      connection_pipeline_status: 'completed',
-      error: null,
-    }).eq('reflect_id', reflectId)
-    if (pipelineError) throw pipelineError
-    await updateJob(supabase, reflectId, {
-      status: 'completed', error: null, failure_stage: null, processed_at: new Date().toISOString(),
-    })
-    return { status: 'completed' }
-  }
-
-  const familyKeys = pendingSignals.map((signal) => signal.familyKey)
-  const [scenarioIndex, templateVariants] = await atStage('scenario_index', () => Promise.all([
-    readConnectionScenarioIndex(supabase, familyKeys),
-    readConnectionTemplateVariants(supabase, familyKeys),
-  ]))
-  let generated
-  try {
-    generated = await atStage('connection_match_writer', () => runConnectionMatchWriter({
-      reflectId,
-      selectedSignals: pendingSignals,
-      scenarioIndex,
-      templateVariants,
-      currentConnectionBoard: context.currentBoard,
-      allowSharedRhythm: (context.readerRecentEvidence || []).length > 0,
-    }, { supabase }))
-  } catch (error) {
-    await Promise.all((error.results || []).map((result) => recordResultUsage(supabase, {
-      userId: reflect.user_id,
-      feature: 'connection_fallback_writer',
-      promptVersion: CONNECTION_MATCH_WRITER_VERSION,
-      result,
-      latencyMs: null,
-      refId: reflectId,
-    })))
-    throw error
-  }
-  await Promise.all((generated.results || [generated.result]).map((result) => recordResultUsage(supabase, {
     userId: reflect.user_id,
-    feature: 'connection_fallback_writer',
-    promptVersion: CONNECTION_MATCH_WRITER_VERSION,
-    result,
-    latencyMs: generated.latencyMs,
-    refId: reflectId,
-  })))
-
-  const finalUpdates = generated.data
-  // Stage one already made the value/privacy decision. Stage two is a single
-  // bounded write call. Invalid model rows are settled as no_update instead of
-  // charging for repeated writer calls; accepted siblings are kept.
-  const settledSignalResults = settleWriterSignalResults(
-    pendingSignals, generated.signalResults, finalUpdates,
-    { currentBoard: context.currentBoard, reflectId },
-  )
-  const settledWithoutCardCount = settledSignalResults.filter((row) => (
-    row.outcome === 'no_update'
-    && ['generated_card_rejected', 'writer_result_missing'].includes(row.reason)
-  )).length
+    context,
+  }))
+  const usageWrites = []
+  if (generated.groupResult?.result) {
+    usageWrites.push(recordResultUsage(supabase, {
+      userId: reflect.user_id,
+      feature: 'connection_group_matcher',
+      promptVersion: CONNECTION_GROUP_PROMPT_VERSION,
+      result: generated.groupResult.result,
+      latencyMs: generated.groupResult.latencyMs,
+      refId: reflectId,
+    }))
+  }
+  if (generated.subResult?.result) {
+    usageWrites.push(recordResultUsage(supabase, {
+      userId: reflect.user_id,
+      feature: 'connection_subscenario_matcher',
+      promptVersion: CONNECTION_SUBSCENARIO_PROMPT_VERSION,
+      result: generated.subResult.result,
+      latencyMs: generated.subResult.latencyMs,
+      refId: reflectId,
+    }))
+  }
+  await Promise.all(usageWrites)
+  const finalUpdates = generated.updates
+  const calls = [generated.groupResult?.result, generated.subResult?.result].filter(Boolean)
+  const primaryResult = calls.at(-1) || { provider: null, model: null, usage: null }
   await atStage('connection_persist', () => persistReflectAnalyzerResult(supabase, {
     reflectId,
     userId: reflect.user_id,
     localDate: reflect.local_date,
     reflectsToday: 1,
     analyzer: {
-      ...baseAnalyzer,
-      result: generated.result || baseAnalyzer.result,
-      results: generated.results?.length ? generated.results : undefined,
-      data: { ...baseAnalyzer.data, connectionUpdates: finalUpdates },
-      signalResults: settledSignalResults,
+      result: primaryResult,
+      results: calls.length ? calls : undefined,
+      promptVersion: CONNECTION_EVENT_PROMPT_VERSION,
+      data: {
+        visualConcepts: [],
+        connectionSignals: generated.events,
+        connectionUpdates: finalUpdates,
+      },
+      connectionStageOne: { events: rawEvents },
+      signalResults: generated.events,
+      writerVersion: CONNECTION_SUBSCENARIO_PROMPT_VERSION,
+      templateLibraryVersion: CONNECTION_CONTENT_VERSION,
     },
     context,
     matchedItems,
-    pipelineStatus: 'completed',
+    pipelineStatus: hasCards(finalUpdates) ? 'completed' : 'no_update',
     error: null,
   }))
-  await recordConnectionOutputOutcomes(supabase, {
-    reflectId,
-    signalResults: settledSignalResults,
-    updates: finalUpdates,
-  })
-  if (settledWithoutCardCount > 0) {
-    console.warn('[reflect-analysis] writer output settled without cards:', {
-      reflectId, count: settledWithoutCardCount,
-    })
-  }
-  const status = hasCards(finalUpdates) || pendingSignals.length < eligibleSignals.length
-    ? 'completed' : 'no_update'
+  const status = hasCards(finalUpdates) ? 'completed' : 'no_update'
   await updateJob(supabase, reflectId, {
     status, error: null, failure_stage: null, processed_at: new Date().toISOString(),
   })

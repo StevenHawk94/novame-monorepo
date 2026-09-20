@@ -1,4 +1,5 @@
-import { REFLECT_ANALYZER_VERSION, CONNECTION_DIMENSIONS } from './reflect-ai'
+import { REFLECT_ANALYZER_VERSION } from './reflect-ai'
+import { CONNECTION_MODULES } from './connection-insight-v8'
 import {
   compactConnectionEvidence, CONNECTION_RETENTION_DAYS,
 } from './connection-evidence'
@@ -72,14 +73,14 @@ export async function applyConnectionUpdates(supabase, {
   pair, updates, reflectId, localDate,
 }) {
   if (!pair || !updates) return { changed: false, payload: null }
-  const hasAnyUpdate = CONNECTION_DIMENSIONS.some((key) => (
+  const hasAnyUpdate = CONNECTION_MODULES.some((key) => (
     updates[key]?.hasUpdate && (
       updates[key]?.clearExisting === true
       || (Array.isArray(updates[key]?.cards) && updates[key].cards.length > 0)
     )
   ))
   if (!hasAnyUpdate) return { changed: false, payload: null }
-  const writeForUser = (forUser, nextUpdates) => supabase.rpc('apply_connection_insight_updates_v2', {
+  const writeForUser = (forUser, nextUpdates) => supabase.rpc('apply_connection_insight_updates_v3', {
     p_user_a: pair.ua, p_user_b: pair.ub, p_for_user: forUser,
     p_for_date: localDate, p_reflect_id: reflectId, p_updates: nextUpdates,
   })
@@ -89,7 +90,7 @@ export async function applyConnectionUpdates(supabase, {
   )
   const writes = [writeForUser(pair.readerId, updates)]
   if (mirrorShared && pair.writerId && pair.writerId !== pair.readerId) {
-    const sharedOnly = Object.fromEntries(CONNECTION_DIMENSIONS.map((key) => [key, key === 'shared_rhythm'
+    const sharedOnly = Object.fromEntries(CONNECTION_MODULES.map((key) => [key, key === 'shared_rhythm'
       ? shared
       : { hasUpdate: false, clearExisting: false, cards: [] }]))
     // Between You Lately describes the pair, so both people receive the exact
@@ -110,11 +111,7 @@ export async function persistReflectAnalyzerResult(supabase, {
   pipelineStatus = 'completed', error = null,
 }) {
   const updates = analyzer.data.connectionUpdates
-  const connectionMode = !context.connectionEligible
-    ? 'disabled'
-    : !context.connectionEnabled
-      ? 'inactive'
-      : 'immediate'
+  const connectionMode = context.connectionEligible ? 'immediate' : 'disabled'
 
   const analysisRow = {
     reflect_id: reflectId,

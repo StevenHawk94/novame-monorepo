@@ -275,97 +275,10 @@ test('every Quest particle stays visible until it exits the full screen, and onl
     assert.equal(cancelled.length, 26);
   }
 });
-test('Quest celebration survives switching from completed plan to picker without timer truncation', () => {
+test('Quest rewards use the compact Clover payout animation without legacy confetti state', () => {
   const source = read('apps/mobile/app/(main)/(tabs)/quests.tsx');
-  assert.equal((source.match(/\{celebration\}/g) || []).length, 2);
-  assert.match(source, /key="quest-celebration"/);
-  assert.ok(!source.includes('FALLBACK_MS'));
-  assert.ok(!source.includes('setTimeout'));
-  assert.match(source, /<ReflectCelebration key=\{celebrationRun.key\}/);
-  assert.match(source, /source=\{QUEST_CELEBRATION_SOURCE\}/);
-  assert.ok(!source.includes('ConfettiBurst'));
-  assert.ok(!source.includes('LottieView'));
-});
-
-test('final Quest completion preserves the active run across the picker and preloads the next run', async () => {
-  for (const interrupted of [false, true]) {
-  const slots = [], checked = [], awards = [], alerts = [];
-  let cursor = 0, soundCount = 0, tree, focus;
-  const initial = { active: true, plan: { themeKey: 'study', title: 'Study',
-    tasks: Array.from({ length: 7 }, (_, i) => ({ text: `Task ${i}`, reward: 10, done: i < 6 })),
-    checkedCount: 6, checkedToday: false, day: 7 } };
-  const component = load('apps/mobile/app/(main)/(tabs)/quests.tsx', {
-    react: {
-      useState(initial) { const i = cursor++; slots[i] ??= { value: typeof initial === 'function' ? initial() : initial };
-        return [slots[i].value, (next) => { slots[i].value = typeof next === 'function' ? next(slots[i].value) : next; }]; },
-      useRef(current) { const i = cursor++; slots[i] ??= { current }; return slots[i]; },
-      useCallback: (fn) => fn, useMemo: (fn) => fn(),
-    },
-    'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': { Image: 'Image', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', View: 'View',
-      StyleSheet: { create: (x) => x, absoluteFillObject: { position: 'absolute' } } },
-    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
-    'expo-router': { useRouter: () => ({ push() {} }), useFocusEffect(fn) { focus=fn; } },
-    '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
-    '@novame/domain': { CLOVERS_PER_TASK: 10, COMPLETION_BONUS: 20, themesForScope: () => [] },
-    '@/lib/icons': { ICONS: {} },
-    '@/lib/session-lifecycle': { sessionEpoch: () => 0 },
-    '@/lib/use-subscription-tier': { useSubscriptionTier: () => 'plus' },
-    '@/components/ui/app-dialog': { appAlert(...args) { alerts.push(args); } },
-    '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
-    '@/components/ui/tab-header-typography': load('apps/mobile/src/components/ui/tab-header-typography.ts', {
-      'react-native': { Platform: { OS: 'android' } },
-    }),
-    '@/components/ui/grid-background': { GridBackground: 'GridBackground' },
-    '@/components/main/clover-burst': { CloverBurst: 'CloverBurst' },
-    '@/components/main/reflect-celebration': { ReflectCelebration: 'Celebration' },
-    '@/components/main/feature-guide-modal': { FeatureGuideModal: 'FeatureGuideModal' },
-    '@/lib/haptics': { haptics: { success() {}, pageOpen() {} } },
-    '@/lib/use-completion-sound': { useCompletionSound: () => ({ play: () => soundCount++ }) },
-    '@/lib/ui-idle': { afterUiSettles: (fn) => { fn(); return () => {}; } },
-    '@/lib/cosmetics-api': { optimisticCloverAward(amount) {
-      awards.push(amount); return { commit: (amount) => awards.push(amount), rollback() { assert.fail('unexpected rollback'); } };
-    } },
-    '@/lib/quests-api': { getCachedStatus: () => initial, getCachedCustomTasks: () => [], cacheQuestStatus() {},
-      fetchQuestStatus: async () => ({ active: false }),
-      checkTask: async (index) => { checked.push(index); return { ok: true, allDone: true, cloversEarned: 30 }; } },
-    '../../../assets/animations/quest-dense.json': require('../apps/mobile/assets/animations/quest-dense.json'),
-  }).default;
-  const render = () => { cursor = 0; tree = component(); return nodes(tree).find(n => n.type === 'Celebration'); };
-  const idle = render();
-  const blur=focus();
-  assert.equal(idle.props.active, false);
-  const button = nodes(tree).find(n => n.type === 'Pressable'
-    && nodes(n).some(child => child.type === 'MaterialIcons' && child.props.name === 'check'));
-  button.props.onPress(); button.props.onPress(); // in-flight guard also protects the animation/sound.
-  const running = render();
-  assert.equal(running.props.active, true);
-  assert.equal(running.key, idle.key);
-  if (interrupted) {
-    blur();assert.equal(render().props.active,false);
-    await new Promise(setImmediate);focus();
-    const revisited=render();assert.equal(revisited.props.active,false);
-    running.props.onComplete();assert.equal(render().key,revisited.key);
-    assert.equal(alerts.length,0);assert.equal(soundCount,1);
-    assert.deepEqual(awards,[30,30],'leaving consumes visual event, not the earned reward');
-    continue;
-  }
-  await new Promise(resolve => setImmediate(resolve));
-  const picker = render();
-  assert.ok(nodes(tree).some(n => n.props?.children === 'Weekly Goal'));
-  assert.equal(picker.key, running.key);
-  assert.equal(picker.props.active, true);
-  assert.equal(alerts.length, 0, 'fast final-task response must not cover the confetti');
-  assert.equal(nodes(tree).find(n => n.key === 'quest-celebration').props.pointerEvents, 'none');
-  picker.props.onComplete();
-  const next = render();
-  assert.equal(next.props.active, false);
-  assert.equal(next.key, running.key + 1);
-  assert.deepEqual(alerts, [['Plan complete!', 'You earned 30 clovers.']]);
-  picker.props.onComplete(); // stale callback cannot end/reset the next run.
-  assert.equal(render().key, next.key);
-  assert.equal(soundCount, 1);
-  assert.deepEqual(checked, [6]);
-  assert.deepEqual(awards, [30, 30]);
-  }
+  assert.match(source, /<CloverBurst amount=\{reward\}/);
+  assert.match(source, /confirmCloverAward\(next\.cloversEarned\)/);
+  assert.match(source, /if \(next\.cloversEarned <= 0\) return/);
+  assert.doesNotMatch(source, /ReflectCelebration|QUEST_CELEBRATION_SOURCE|ConfettiBurst/);
 });

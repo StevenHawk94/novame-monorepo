@@ -21,6 +21,21 @@ test('tab pre-rendering remains enabled while focus reconciliation yields to nav
   }
 });
 
+test('primary navigation exposes Court while Home owns the Quests shortcut', () => {
+  const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
+  const tabs = read('apps/mobile/src/components/main/bottom-tab-bar.tsx');
+  const layout = read('apps/mobile/app/(main)/(tabs)/_layout.tsx');
+  const court = read('apps/mobile/app/(main)/(tabs)/court.tsx');
+
+  assert.match(home, /router\.push\('\/\(main\)\/\(tabs\)\/quests'/);
+  assert.match(home, />Quests<\/Text>/);
+  assert.match(home, />Reflect<\/Text>/);
+  assert.match(tabs, /label: 'Home'[\s\S]*label: 'Court'[\s\S]*label: 'Moments'[\s\S]*label: 'Insights'[\s\S]*label: 'Collection'/);
+  assert.doesNotMatch(tabs, /label: 'Paired'|label: 'Connection'|label: 'Memories'/);
+  assert.match(layout, /name="court"/);
+  assert.match(court, /export \{ default \} from '\.\.\/thump'/);
+});
+
 test('Home ignores unrelated R2 completions and Thump does not force its render', () => {
   const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
   assert.match(home, /useR2AssetRevision\(selectedSceneRemoteUrl\)/);

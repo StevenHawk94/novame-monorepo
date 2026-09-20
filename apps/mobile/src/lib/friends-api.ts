@@ -1091,7 +1091,16 @@ export type ConnectionModuleKey =
   | 'how_to_show_up'
   | 'talk_about'
   | 'try_together'
-  | 'shared_rhythm';
+  | 'shared_rhythm'
+  | 'together_moments'
+  | 'on_their_mind_us';
+
+export interface ConnectionWaysIn {
+  tag: string | null;
+  title: string | null;
+  description: string | null;
+  action: string | null;
+}
 
 export interface ConnectionInsightCard {
   label: string;
@@ -1099,10 +1108,15 @@ export interface ConnectionInsightCard {
   observation: string;
   meaning: string | null;
   takeaway: string | null;
+  contentId?: string;
+  parentCardId?: string;
+  createdAt?: string;
+  occurredOn?: string;
+  waysIn?: ConnectionWaysIn;
 }
 
 export interface ConnectionInsights {
-  schemaVersion: 2;
+  schemaVersion: 3;
   modules: Record<ConnectionModuleKey, ConnectionInsightCard[]>;
   updatedAt?: string;
   lastProcessedReflectId?: string;
@@ -1110,21 +1124,26 @@ export interface ConnectionInsights {
 
 const CONNECTION_MODULE_KEYS: ConnectionModuleKey[] = [
   'worth_knowing', 'recent_vibe', 'what_theyre_into', 'how_to_show_up',
-  'talk_about', 'try_together', 'shared_rhythm',
+  'talk_about', 'try_together', 'shared_rhythm', 'together_moments', 'on_their_mind_us',
 ];
 
-export type ConnectionHistorySection = 'missed' | 'world' | 'ways_in' | 'between';
+export type ConnectionHistorySection =
+  | 'missed' | 'world' | 'ways_in' | 'between' | 'together' | 'on_their_mind';
 
 const CONNECTION_SECTION_BY_MODULE: Record<ConnectionModuleKey, ConnectionHistorySection> = {
   worth_knowing: 'missed', recent_vibe: 'world', what_theyre_into: 'world',
   how_to_show_up: 'ways_in', talk_about: 'ways_in', try_together: 'ways_in',
   shared_rhythm: 'between',
+  together_moments: 'together',
+  on_their_mind_us: 'on_their_mind',
 };
 
 const CONNECTION_DEFAULT_LABEL: Record<ConnectionModuleKey, string> = {
   worth_knowing: 'Worth Noticing', recent_vibe: 'Recent Vibe', what_theyre_into: 'Interest',
   how_to_show_up: 'Support', talk_about: 'Conversation', try_together: 'Together',
   shared_rhythm: 'Shared Rhythm',
+  together_moments: 'Together',
+  on_their_mind_us: 'Us',
 };
 
 const CONNECTION_COPY_STOPWORDS = new Set([
@@ -1178,6 +1197,35 @@ function normalizeConnectionCard(
 ): ConnectionInsightCard | null {
   if (!value || typeof value !== 'object') return null;
   const card = value as Record<string, unknown>;
+  const v8 = typeof card.contentId === 'string' && card.contentId.startsWith('v8:');
+  if (v8) {
+    const observation = typeof card.observation === 'string' ? card.observation.trim() : '';
+    if (!observation) return null;
+    const nullable = (input: unknown): string | null => (
+      typeof input === 'string' && input.trim() ? input.trim() : null
+    );
+    const rawWays = card.waysIn && typeof card.waysIn === 'object'
+      ? card.waysIn as Record<string, unknown> : null;
+    return {
+      label: nullable(card.label) || CONNECTION_DEFAULT_LABEL[moduleKey],
+      title: nullable(card.title),
+      observation,
+      meaning: nullable(card.meaning),
+      takeaway: nullable(card.takeaway),
+      contentId: card.contentId as string,
+      ...(typeof card.parentCardId === 'string' ? { parentCardId: card.parentCardId } : {}),
+      ...(typeof card.createdAt === 'string' ? { createdAt: card.createdAt } : {}),
+      ...(typeof card.occurredOn === 'string' ? { occurredOn: card.occurredOn } : {}),
+      ...(rawWays ? {
+        waysIn: {
+          tag: nullable(rawWays.tag),
+          title: nullable(rawWays.title),
+          description: nullable(rawWays.description),
+          action: nullable(rawWays.action),
+        },
+      } : {}),
+    };
+  }
   const rawLabel = typeof card.label === 'string' ? card.label.trim() : '';
   const labelWords = rawLabel.split(/\s+/).filter(Boolean);
   const label = rawLabel.length <= 36 && labelWords.length >= 1 && labelWords.length <= 3
@@ -1208,18 +1256,33 @@ function normalizeConnectionCard(
     || duplicateConnectionCopy(takeaway, meaning, 0.82)) {
     takeaway = null;
   }
-  return { label, title, observation, meaning, takeaway };
+  const waysRaw = card.waysIn && typeof card.waysIn === 'object'
+    ? card.waysIn as Record<string, unknown> : null;
+  const waysIn = waysRaw ? {
+    tag: optional(waysRaw.tag, null),
+    title: optional(waysRaw.title, null),
+    description: optional(waysRaw.description, null),
+    action: optional(waysRaw.action, null),
+  } : undefined;
+  return {
+    label, title, observation, meaning, takeaway,
+    ...(typeof card.contentId === 'string' ? { contentId: card.contentId } : {}),
+    ...(typeof card.parentCardId === 'string' ? { parentCardId: card.parentCardId } : {}),
+    ...(typeof card.createdAt === 'string' ? { createdAt: card.createdAt } : {}),
+    ...(typeof card.occurredOn === 'string' ? { occurredOn: card.occurredOn } : {}),
+    ...(waysIn ? { waysIn } : {}),
+  };
 }
 
 function normalizeConnectionInsights(value: unknown): ConnectionInsights | null {
   if (!value || typeof value !== 'object') return null;
   const insight = value as { schemaVersion?: unknown; modules?: Record<string, unknown>; updatedAt?: unknown };
-  if (insight.schemaVersion !== 2 || !insight.modules) return null;
+  if (insight.schemaVersion !== 3 || !insight.modules) return null;
   const limits: Record<ConnectionHistorySection, number> = {
-    missed: 3, world: 3, ways_in: 3, between: 1,
+    missed: 2, world: 2, ways_in: 4, between: 1, together: 1, on_their_mind: 1,
   };
   const counts: Record<ConnectionHistorySection, number> = {
-    missed: 0, world: 0, ways_in: 0, between: 0,
+    missed: 0, world: 0, ways_in: 0, between: 0, together: 0, on_their_mind: 0,
   };
   const seenCards: ConnectionInsightCard[] = [];
   const modules = Object.fromEntries(CONNECTION_MODULE_KEYS.map((key) => {
@@ -1237,7 +1300,7 @@ function normalizeConnectionInsights(value: unknown): ConnectionInsights | null 
     return [key, cards];
   })) as Record<ConnectionModuleKey, ConnectionInsightCard[]>;
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     modules,
     ...(typeof insight.updatedAt === 'string' ? { updatedAt: insight.updatedAt } : {}),
   };
@@ -1257,7 +1320,8 @@ function normalizeConnectionHistoryCard(value: unknown): ConnectionHistoryCard |
   const moduleKey = raw.moduleKey as ConnectionModuleKey;
   if (typeof raw.id !== 'string' || typeof raw.date !== 'string'
     || typeof raw.createdAt !== 'string' || !CONNECTION_MODULE_KEYS.includes(moduleKey)
-    || !['missed', 'world', 'ways_in', 'between'].includes(String(raw.section))) return null;
+    || !['missed', 'world', 'ways_in', 'between', 'together', 'on_their_mind']
+      .includes(String(raw.section))) return null;
   const card = normalizeConnectionCard(raw, moduleKey);
   if (!card) return null;
   return {

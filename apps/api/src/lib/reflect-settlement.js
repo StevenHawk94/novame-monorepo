@@ -18,13 +18,19 @@ export async function generateSavedReflectCopy(supabase, draft, userId) {
     const generated = await createMemoryCopy({
       body: draft.body,
       matches: targets,
+      extractConnectionEvents: draft.journal_kind !== 'remember_together',
+      localDate: draft.local_date,
       // Remember Together generates only its item memories. It never spends a
       // second AI surface on Bunny/Connection copy.
       generateBunny: draft.journal_kind !== 'remember_together'
         && draft.mode === 'typing' && !draft.bubble,
     })
-    const { data: saved, error: saveError } = await supabase.rpc('store_reflect_generation', {
-      p_user_id: userId, p_draft_id: draft.id, p_memories: generated.memories, p_bubble: generated.bubble,
+    const { data: saved, error: saveError } = await supabase.rpc('store_reflect_generation_v2', {
+      p_user_id: userId,
+      p_draft_id: draft.id,
+      p_memories: generated.memories,
+      p_bubble: generated.bubble,
+      p_connection_events: generated.connectionEvents || [],
     })
     // Fail closed: do not return generated words which have not been saved.
     if (saveError || saved?.error) throw saveError || new Error(saved.error)

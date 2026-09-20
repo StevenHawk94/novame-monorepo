@@ -6,6 +6,8 @@ const SECTION_BY_MODULE = {
   talk_about: 'ways_in',
   try_together: 'ways_in',
   shared_rhythm: 'between',
+  together_moments: 'together',
+  on_their_mind_us: 'on_their_mind',
 }
 
 const LABELS_BY_SECTION = {
@@ -38,6 +40,8 @@ const LABELS_BY_SECTION = {
     contrast: 'Contrast',
     little_pattern: 'Little Pattern',
   },
+  together: {},
+  on_their_mind: {},
 }
 
 const DEFAULT_LABEL_BY_MODULE = {
@@ -48,6 +52,8 @@ const DEFAULT_LABEL_BY_MODULE = {
   talk_about: 'Conversation',
   try_together: 'Together',
   shared_rhythm: 'Shared Rhythm',
+  together_moments: 'Together',
+  on_their_mind_us: 'Us',
 }
 
 const COPY_LIMITS = {
@@ -224,6 +230,29 @@ export function publicConnectionCard(card, moduleKey) {
   if (!card || typeof card !== 'object') return null
   const section = SECTION_BY_MODULE[moduleKey]
   if (!section) return null
+  if (String(card.contentId || '').startsWith('v8:')) {
+    const title = copy(card.title, COPY_LIMITS.title)
+    const observation = copy(card.observation, COPY_LIMITS.observation)
+    if (!observation) return null
+    const meaning = copy(card.meaning, COPY_LIMITS.meaning)
+    const takeaway = copy(card.takeaway, COPY_LIMITS.takeaway)
+    const waysIn = card.waysIn && typeof card.waysIn === 'object' ? {
+      tag: copy(card.waysIn.tag, 80),
+      title: copy(card.waysIn.title, COPY_LIMITS.title),
+      description: copy(card.waysIn.description, COPY_LIMITS.observation),
+      action: copy(card.waysIn.action, COPY_LIMITS.takeaway),
+    } : null
+    return {
+      label: copy(card.label, 80) || DEFAULT_LABEL_BY_MODULE[moduleKey],
+      title, observation, meaning, takeaway,
+      headline: title, body: observation, supportingText: meaning, action: takeaway,
+      contentId: copy(card.contentId, 240),
+      ...(copy(card.parentCardId, 240) ? { parentCardId: copy(card.parentCardId, 240) } : {}),
+      ...(copy(card.createdAt, 40) ? { createdAt: copy(card.createdAt, 40) } : {}),
+      ...(copy(card.occurredOn, 10) ? { occurredOn: copy(card.occurredOn, 10) } : {}),
+      ...(waysIn ? { waysIn } : {}),
+    }
+  }
   const labelResult = connectionLabelForKey(section, card.labelKey)
   const fields = pruneConnectionFields({
     title: copy(card.title, COPY_LIMITS.title) || copy(card.headline, COPY_LIMITS.title),
@@ -244,5 +273,17 @@ export function publicConnectionCard(card, moduleKey) {
     body: fields.observation,
     supportingText: fields.meaning,
     action: fields.takeaway,
+    ...(copy(card.contentId, 240) ? { contentId: copy(card.contentId, 240) } : {}),
+    ...(copy(card.parentCardId, 240) ? { parentCardId: copy(card.parentCardId, 240) } : {}),
+    ...(copy(card.createdAt, 40) ? { createdAt: copy(card.createdAt, 40) } : {}),
+    ...(copy(card.occurredOn, 10) ? { occurredOn: copy(card.occurredOn, 10) } : {}),
+    ...(card.waysIn && typeof card.waysIn === 'object' ? {
+      waysIn: {
+        tag: copy(card.waysIn.tag, 80),
+        title: copy(card.waysIn.title, 140),
+        description: copy(card.waysIn.description, 500),
+        action: copy(card.waysIn.action, 240),
+      },
+    } : {}),
   }
 }

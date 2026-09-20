@@ -7,6 +7,7 @@ import {
   REFLECT_COPY_VERSION,
   runReflectCopy,
 } from '@/lib/reflect-ai'
+import { CONNECTION_EVENT_PROMPT_VERSION } from '@/lib/connection-insight-v8'
 import { recordAIUsage } from '@/lib/ai-usage'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 import { journalKindForInput } from '@/lib/reflect-draft'
@@ -272,12 +273,15 @@ export async function POST(request) {
     // Connection analysis uses the same durable two-stage background queue as
     // current clients; private item/Bunny copy remains part of this response.
     let bubble = null
+    let queuedForAnalysis = false
+    let connectionEvents = []
     if (reflectId && aiEligible) {
       if (body.trim() && journalKind !== 'remember_together') {
         try {
           const queued = await enqueueReflectAnalysisJob(supabase, {
             reflectId, userId, localDate: dateStr, journalKind,
           })
+          queuedForAnalysis = queued
           if (queued) after(() => processReflectAnalysisJobs({ reflectId }))
         } catch (queueError) {
           console.warn('[reflect] analysis enqueue failed:', queueError?.message || queueError)
@@ -314,6 +318,8 @@ export async function POST(request) {
           const copy = await runReflectCopy({
             journal: body,
             generateBunny: true,
+            extractConnectionEvents: true,
+            localDate: dateStr,
             items: targets.map((item) => ({
               id: item.itemId,
               name: item.displayName,
@@ -321,6 +327,7 @@ export async function POST(request) {
             })),
           })
           bubble = copy.data.bunnyText
+          connectionEvents = copy.data.connectionEvents || []
           await Promise.all([
             applyDescriptions(copy.data.items),
             recordAIUsage(supabase, {
@@ -341,15 +348,29 @@ export async function POST(request) {
         try {
           const copy = await runReflectCopy({
             journal: body, generateBunny: false,
+            extractConnectionEvents: journalKind !== 'remember_together',
+            localDate: dateStr,
             items: targets.map((item) => ({
               id: item.itemId,
               name: item.displayName,
               evidence: item.sourceExcerpt || item.label || '',
             })),
           })
+          connectionEvents = copy.data.connectionEvents || []
           await applyDescriptions(copy.data.items)
         } catch (copyErr) {
           console.warn('[reflect] item copy failed (non-fatal):', copyErr && copyErr.message)
+        }
+      }
+      if (queuedForAnalysis) {
+        const { error: checkpointError } = await supabase.from('connection_analysis_jobs').update({
+          stage_one_result: {
+            data: { events: connectionEvents },
+            promptVersion: CONNECTION_EVENT_PROMPT_VERSION,
+          },
+        }).eq('reflect_id', reflectId)
+        if (checkpointError) {
+          console.warn('[reflect] event checkpoint failed:', checkpointError.message)
         }
       }
     }

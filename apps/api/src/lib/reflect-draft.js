@@ -10,6 +10,7 @@ import {
   neutralizeReflectMemoryCopy,
   runReflectCopy,
 } from '@/lib/reflect-ai'
+import { cleanConnectionEvents } from '@/lib/connection-insight-v8'
 
 export const MAX_BODY_CHARS = 5000
 
@@ -110,13 +111,19 @@ export function createMemoryFallbacks({ body, matches }) {
   }).filter(([, value]) => value))
 }
 
-export async function createMemoryCopy({ body, matches, generateBunny }) {
-  if (!body.trim() || matches.length === 0) return { memories: {}, bubble: null, usage: null }
+export async function createMemoryCopy({
+  body, matches, generateBunny, extractConnectionEvents = false, localDate = null,
+}) {
+  if (!body.trim() || (matches.length === 0 && !extractConnectionEvents)) {
+    return { memories: {}, bubble: null, connectionEvents: [], usage: null }
+  }
   const fallbacks = createMemoryFallbacks({ body, matches })
   try {
     const copy = await runReflectCopy({
       journal: body,
       generateBunny,
+      extractConnectionEvents,
+      localDate,
       items: matches.map((item) => ({
         id: item.itemId,
         name: item.displayName,
@@ -134,12 +141,13 @@ export async function createMemoryCopy({ body, matches, generateBunny }) {
     return {
       memories,
       bubble: copy.data.bunnyText || null,
+      connectionEvents: cleanConnectionEvents(copy.data.connectionEvents, localDate),
       usage: copy,
       error: null,
     }
   } catch (error) {
     // A matched item always has deterministic source evidence. AI outages must
     // not turn a paid user's item into an empty or contradictory memory.
-    return { memories: fallbacks, bubble: null, usage: null, error }
+    return { memories: fallbacks, bubble: null, connectionEvents: [], usage: null, error }
   }
 }

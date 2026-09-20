@@ -3,9 +3,6 @@
  *
  * Formats a timestamp as a short relative string suitable for feed
  * rows: "now" / "3m" / "5h" / "2d" / "3w" / "4mo" / "2y".
- *
- * No third-party dependency. Mirrors the abbreviation style used in
- * social-app feeds.
  */
 
 const MIN = 60_000;
@@ -30,4 +27,17 @@ export function formatRelativeShort(input: string | number | Date): string {
   if (elapsed < MONTH) return `${Math.floor(elapsed / WEEK)}w`;
   if (elapsed < YEAR) return `${Math.floor(elapsed / MONTH)}mo`;
   return `${Math.floor(elapsed / YEAR)}y`;
+}
+
+export function relativeInsightTime(value?: string | null, now = Date.now()): string | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+  const seconds = Math.max(0, Math.floor((now - timestamp) / 1000));
+  if (seconds < 60) return 'now';
+  const hours = Math.floor(seconds / 3600);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 14) return `${days}d ago`;
+  return `${Math.floor(days / 7)}w ago`;
 }
