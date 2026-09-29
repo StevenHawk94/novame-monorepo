@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { CLOVERS_PER_TASK, COMPLETION_BONUS } from '@novame/domain'
@@ -49,6 +50,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     const today = await resolveUserLocalDate(supabase, userId)
     const checkArgs = {
       p_user_id: userId,

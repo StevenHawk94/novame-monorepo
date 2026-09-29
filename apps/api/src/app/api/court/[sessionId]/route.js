@@ -1,5 +1,6 @@
 import { after, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { drainPushNotificationOutbox } from '@/lib/push-notifications'
 import {
   courtServiceClient, enqueueCourtNotification,
@@ -28,6 +29,7 @@ export async function GET(request, context) {
     const userId = new URL(request.url).searchParams.get('userId')
     if (!userId || !await authorized(request, userId)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = courtServiceClient()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_retired' }, { status: 410 })
     const session = await sessionFor(supabase, sessionId, userId)
     if (!session) return NextResponse.json({ error: 'not_found' }, { status: 404 })
     if (session.status === 'processing') {
@@ -63,6 +65,7 @@ export async function POST(request, context) {
     const userId = body?.userId
     if (!userId || !await authorized(request, userId)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = courtServiceClient()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_retired' }, { status: 410 })
     let session = await sessionFor(supabase, sessionId, userId)
     if (!session) return NextResponse.json({ error: 'not_found' }, { status: 404 })
     const action = body?.action || 'submit'

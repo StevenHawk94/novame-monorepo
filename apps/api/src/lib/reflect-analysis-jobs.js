@@ -1,4 +1,5 @@
 import { recordAIUsage } from './ai-usage'
+import { majorUpdateEnabled } from './app-major-update'
 import { runConnectionV8Pipeline } from './connection-v8-pipeline'
 import {
   CONNECTION_CONTENT_VERSION, CONNECTION_EVENT_PROMPT_VERSION,
@@ -29,6 +30,7 @@ function hasCards(updates) {
 export async function enqueueReflectAnalysisJob(supabase, {
   reflectId, userId, localDate, journalKind, reset = false,
 }) {
+  if (await majorUpdateEnabled(supabase)) return false
   const row = {
     reflect_id: reflectId,
     user_id: userId,
@@ -228,6 +230,9 @@ async function analyzeClaimedJob(supabase, job) {
 }
 
 export async function processReflectAnalysisJobs({ supabase = serviceClient(), reflectId = null } = {}) {
+  // Keep jobs for rollback, but do not claim/spend tokens during Burrow rollout.
+  // Memory generation uses its own pipeline and is unaffected.
+  if (await majorUpdateEnabled(supabase)) return []
   const jobs = await claimJob(supabase, reflectId)
   const results = []
   for (const job of jobs) {

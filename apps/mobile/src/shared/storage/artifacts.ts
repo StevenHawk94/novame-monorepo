@@ -25,6 +25,11 @@ export const RECORD_DRAFT_AUDIO_PATH: string | null = FileSystem.documentDirecto
   ? `${FileSystem.documentDirectory}novame_record_draft.m4a`
   : null;
 
+/** Durable, already-cropped onboarding avatar waiting for a background upload. */
+export const ONBOARDING_AVATAR_PATH: string | null = FileSystem.documentDirectory
+  ? `${FileSystem.documentDirectory}burrow_onboarding_avatar.jpg`
+  : null;
+
 /** Idempotent. Errors swallowed: a failed cleanup must never block sign-out. */
 export async function deleteRecordDraftAudio(): Promise<void> {
   if (!RECORD_DRAFT_AUDIO_PATH) return;
@@ -32,5 +37,15 @@ export async function deleteRecordDraftAudio(): Promise<void> {
     await FileSystem.deleteAsync(RECORD_DRAFT_AUDIO_PATH, { idempotent: true });
   } catch (e) {
     console.warn('[storage] failed to delete record draft audio:', e);
+  }
+}
+
+/** Idempotent cleanup for an abandoned or completed avatar upload. */
+export async function deleteOnboardingAvatar(): Promise<void> {
+  if (!ONBOARDING_AVATAR_PATH) return;
+  try {
+    await FileSystem.deleteAsync(ONBOARDING_AVATAR_PATH, { idempotent: true });
+  } catch (e) {
+    console.warn('[storage] failed to delete pending onboarding avatar:', e);
   }
 }

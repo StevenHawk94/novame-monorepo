@@ -8,7 +8,7 @@ import { GridBackground } from '@/components/ui/grid-background';
 import { router, useSegments } from 'expo-router';
 
 import {
-  failHomeEntry, finishHomeEntry, homeEntryIsReady, markHomeEntryAsset,
+  failHomeEntry, finishHomeEntry, homeEntryIsReady, homeEntryDataIsReady, markHomeEntryAsset,
   beginHomeEntry, HOME_ENTRY_TIMEOUT_MS, isFriendsEntryRoute,
   isHomeEntryRoute, retryHomeEntry, timeoutHomeEntry, type HomeEntryAsset,
 } from '@/lib/home-entry-readiness';
@@ -96,8 +96,7 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
   // on an image callback that R8/device-specific decoding can suppress.
   // Android skips native image callback gating, but Home data/copy readiness
   // is deterministic JavaScript state and must settle before the cover lifts.
-  const androidHomeDataReady = entry.target !== 'home'
-    || (entry.ready.includes('home-data') && entry.ready.includes('home-copy'));
+  const androidHomeDataReady = homeEntryDataIsReady();
   const ready = Platform.OS === 'android' ? androidHomeDataReady : homeEntryIsReady();
 
   useLayoutEffect(() => {

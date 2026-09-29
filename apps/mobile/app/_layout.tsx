@@ -233,7 +233,7 @@ function RootLayout() {
     let active = true;
     const openNotification = (response: Notifications.NotificationResponse | null) => {
       if (!active || !response) return;
-      const data = response.notification.request.content.data as { type?: unknown; route?: unknown; reflectId?: unknown } | null;
+      const data = response.notification.request.content.data as { type?: unknown; route?: unknown; reflectId?: unknown; sessionId?: unknown } | null;
       const isCourt = data?.route === 'thump' && typeof data?.type === 'string' && data.type.startsWith('court_');
       if (isCourt) {
         const responseId = response.notification.request.identifier;
@@ -242,6 +242,14 @@ function RootLayout() {
         setTimeout(() => {
           if (active) router.navigate('/(main)/thump' as never);
         }, 0);
+        Notifications.clearLastNotificationResponse();
+        return;
+      }
+      if (data?.type === 'game_ready' && typeof data.sessionId === 'string') {
+        const responseId = response.notification.request.identifier;
+        if (handledNotificationResponses.current.has(responseId)) return;
+        handledNotificationResponses.current.add(responseId);
+        setTimeout(() => { if (active) router.push({ pathname: '/(main)/game-room', params: { sessionId: data.sessionId as string } } as never); }, 0);
         Notifications.clearLastNotificationResponse();
         return;
       }

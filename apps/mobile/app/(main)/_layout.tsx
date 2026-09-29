@@ -8,7 +8,11 @@ import { HomeEntryGate } from '@/components/main/home-entry-gate';
 import { useReflectSettlementRecovery } from '@/lib/use-reflect-settlement-recovery';
 import { AndroidCompactTypographyProvider } from '@/components/ui/android-compact-typography';
 import { getCurrentSession } from '@/lib/auth';
-import { syncOnboardingCompanion } from '@/lib/onboarding';
+import { syncOnboardingCompanion, syncOnboardingProfile } from '@/lib/onboarding';
+import { syncProfileAvatar } from '@/lib/avatar-upload-queue';
+import { BurrowMusicGate } from '@/components/burrow/burrow-music';
+import { AdventureArrivalGate } from '@/components/burrow/adventure-arrival-gate';
+import { BurrowSyncGate } from '@/components/burrow/burrow-sync-gate';
 
 /**
  * Authenticated app layout.
@@ -33,6 +37,8 @@ export default function MainLayout() {
       void getCurrentSession().then((session) => {
         if (!active || !session?.user?.id) return;
         void syncOnboardingCompanion(session.user.id, { force });
+        void syncOnboardingProfile(session.user.id, { force });
+        void syncProfileAvatar(session.user.id, { force });
       }).catch(() => {});
     };
     // A cold returning launch goes directly to Main instead of signing-in.
@@ -118,6 +124,9 @@ export default function MainLayout() {
           />
         </Stack>
         <OfficialRatingGate />
+        <BurrowMusicGate />
+        <AdventureArrivalGate />
+        <BurrowSyncGate />
       </HomeEntryGate>
     </AndroidCompactTypographyProvider>
   );

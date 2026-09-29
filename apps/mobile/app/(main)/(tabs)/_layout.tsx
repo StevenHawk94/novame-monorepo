@@ -26,6 +26,10 @@ export default function TabsLayout() {
       <Tabs.Screen name="status" options={{ title: 'Insights' }} />
       <Tabs.Screen name="bags" options={{ title: 'Collection' }} />
       <Tabs.Screen name="quests" options={{ title: 'Quests' }} />
+      <Tabs.Screen name="burrow" options={{ title: 'Burrow' }} />
+      <Tabs.Screen name="shop" options={{ title: 'Shop' }} />
+      <Tabs.Screen name="love" options={{ title: 'Love' }} />
+      <Tabs.Screen name="collection" options={{ title: 'Collection' }} />
       {/* The custom tab bar preloads every non-Home screen sequentially only
           after Home's visual entry gate has released. Keeping this screen lazy
           prevents its heavier card tree from competing with Home's first

@@ -10,6 +10,7 @@ export type CourtStatus = 'awaiting_initiator' | 'awaiting_partner' | 'processin
 export type CourtCaseSummary = {
   id: string;
   category: CourtCategory;
+  subcategory: string;
   title: string;
   subtitle: string;
   engine: string;
@@ -25,6 +26,12 @@ export type CourtVerdict = {
   whatCourtHeard: string;
   verdict: string;
   courtOrderedMove: string;
+  actionA: string | null;
+  actionB: string | null;
+  actionAName: string | null;
+  actionBName: string | null;
+  tryTogether: string | null;
+  closing: string | null;
   shareText: string;
   safetyState: 'safe' | 'safety_redirect';
   createdAt: string;
@@ -36,6 +43,7 @@ export type CourtSession = {
   case: {
     case_id: string;
     category: CourtCategory;
+    subcategory?: string;
     title: string;
     card_subtitle: string;
     engine: string;

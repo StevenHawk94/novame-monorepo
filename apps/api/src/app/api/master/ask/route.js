@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
@@ -62,6 +63,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     // Paid?
     const { data: profile } = await supabase
       .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()

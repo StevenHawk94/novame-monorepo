@@ -2,6 +2,7 @@ import { serviceClient } from './reflect-draft'
 import { runReflectAnalyzer, REFLECT_ANALYZER_VERSION } from './reflect-ai'
 import { loadReflectAnalyzerContext, persistReflectAnalyzerResult } from './reflect-analysis-store'
 import { recordAIUsage } from './ai-usage'
+import { majorUpdateEnabled } from './app-major-update'
 
 async function markConnectionRecoveryRequired(supabase, userId) {
   const { data: pairing } = await supabase.from('pairings')
@@ -14,6 +15,8 @@ async function markConnectionRecoveryRequired(supabase, userId) {
 
 export async function analyzeFinalizedReflect({ userId, draft, result }) {
   const supabase = serviceClient()
+  // A config read failure must not fall through to the legacy failure writer.
+  if (await majorUpdateEnabled(supabase)) return
   let context = {
     connectionEligible: false, connectionEnabled: false, currentBoard: null, pair: null,
   }

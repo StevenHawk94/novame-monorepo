@@ -177,6 +177,9 @@ function settlementHarness(paid = false, platform = 'ios', bottomInset = 34) {
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 47, bottom: bottomInset }) },
     '@/components/ui/app-dialog': {}, '@/components/main/clover-burst': { CloverBurst: 'CloverBurst' },
     '@/components/ui/screen-overlay': { ScreenOverlay: 'Modal' },
+    '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text', AndroidCompactTextInput: 'TextInput' },
+    '@/lib/use-major-update': { useMajorUpdateEnabled: () => false },
+    '@/lib/ad-measurement': { logJournalCompleted() {} },
     '@/components/ui/item-sprite': { ItemSprite: 'ItemSprite' }, '@/components/ui/offset-card': { OffsetCard: 'OffsetCard' },
     '@/components/ui/spring-pop': { SpringPop: 'SpringPop' }, '@/lib/haptics': {}, '@/lib/icons': { ICONS: { Plus: 'plus.png' } },
     '@/lib/reflect-api': {}, '@/lib/official-rating-prompt': {},
@@ -191,7 +194,7 @@ function settlementHarness(paid = false, platform = 'ios', bottomInset = 34) {
 }
 function settlementTree(h, count = 2, shared = false, mode = 'prompt') {
   return h.ReflectSettlementView({
-    draft: { draftId: 'one', mode, hasContext: false, matchedItems: Array.from({ length: count }, (_, i) => ({ itemId: 'item-' + i })), aiMemories: {} },
+    draft: { draftId: 'one', mode, xpAwarded: 30, hasContext: false, matchedItems: Array.from({ length: count }, (_, i) => ({ itemId: 'item-' + i })), aiMemories: {} },
     itemWord: 'Selected', shared, onPresented() {}, onFinalized() {},
   });
 }
@@ -238,8 +241,8 @@ test('sections have fixed gaps in content order; only the Items card grows with 
         .find((node) => node.type === 'ScrollView');
       const blocks = [scroller.props.children].flat(Infinity).filter((node) => node?.type);
       const celebration = blocks.find((node) => node.props.children === '🎉');
-      const title = blocks.find((node) => node.props.children === 'REFLECTION SAVED');
-      const subtitle = blocks.find((node) => node.props.children === 'Your full reflection is private in My Logs.');
+      const title = blocks.find((node) => node.props.children === 'JOURNAL SAVED');
+      const subtitle = blocks.find((node) => node.props.children === 'Your full journal entry is private in My Logs.');
       const summary = blocks.find((node) => nodes(node).some((child) => child.type === 'SpringPop'));
       const share = blocks.find((node) => node.type === 'Pressable');
       const footer = blocks.at(-1);

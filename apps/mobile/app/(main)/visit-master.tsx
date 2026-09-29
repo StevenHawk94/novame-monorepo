@@ -27,6 +27,10 @@ type Phase = 'ask' | 'waiting' | 'reply' | 'history' | 'detail';
  * round close button. A completed visit starts a 72h cooldown.
  */
 export default function VisitMasterScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)" /> : <LegacyVisitMasterScreen />;
+}
+
+function LegacyVisitMasterScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const subscriptionTier = useSubscriptionTierState();
@@ -519,3 +523,5 @@ const styles = StyleSheet.create({
   historyDate: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#8A7A63', marginBottom: 4 },
   historyQ: { fontSize: 15.5, fontFamily: 'Inter_700Bold', color: '#2B2B2B', lineHeight: 22 },
 });
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

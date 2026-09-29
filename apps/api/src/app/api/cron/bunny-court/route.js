@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { EXPIRABLE_STATUSES, courtServiceClient, processCourtVerdictJob } from '@/lib/bunny-court'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -7,6 +8,11 @@ export async function GET(request) {
   const auth = request.headers.get('authorization') || ''
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = courtServiceClient()
+  try {
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ success: true, paused: true, processed: 0 })
+  } catch {
+    return NextResponse.json({ error: 'config_unavailable' }, { status: 503 })
+  }
   const now = new Date().toISOString()
   await supabase.from('court_sessions').update({ status: 'expired', updated_at: now })
     .in('status', EXPIRABLE_STATUSES).lt('expires_at', now)

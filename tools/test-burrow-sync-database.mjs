@@ -1,0 +1,34 @@
+export async function testMemorySync({db,query,rpc,check}) {
+  const a='00000000-0000-0000-0000-000000000081',b='00000000-0000-0000-0000-000000000082',c='00000000-0000-0000-0000-000000000083';
+  await db.query('insert into profiles(id) values($1),($2),($3)',[a,b,c]);
+  await db.query('insert into pairings values($1,$2),($2,$1)',[a,b]);
+  await rpc('burrow_bootstrap_v1',[a]);
+  await db.exec('truncate test_broadcasts');
+  await rpc('burrow_bootstrap_v1',[a]);
+  check((await query('select * from test_broadcasts')).length===0,'repeat bootstrap does not create realtime feedback loop');
+  const saved=await rpc('save_memory_room_durable_v1',[a,b,null,'A little walk',null,'durable-new',null]);
+  check(saved.applied===true,'durable save creates memory');
+  const duplicate=await rpc('save_memory_room_durable_v1',[a,b,null,'A little walk',null,'durable-new',null]);
+  check(duplicate.entryId===saved.entryId&&duplicate.applied===false,'restart replay creates no duplicate');
+  const events=await query('select * from test_broadcasts');
+  check(events.length>0&&events.every(e=>Object.keys(e.payload).length===0&&e.private),'broadcasts have empty private payloads');
+  check(events.every(e=>[a,b].some(id=>e.topic===`burrow:${id}`)),'only current members receive memory invalidation');
+  const version=(await query('select updated_at::text stamp from memory_room_entries where id=$1',[saved.entryId]))[0].stamp;
+  check((await rpc('save_memory_room_durable_v1',[a,c,saved.entryId,'Wrong pair',null,'wrong-pair',version])).error==='pair_changed','stale partner cannot receive queued text');
+  check((await rpc('save_memory_room_durable_v1',[a,b,saved.entryId,'Stale text',null,'stale-edit','2000-01-01'])).error==='memory_conflict','stale edits do not overwrite');
+  const edited=await rpc('save_memory_room_durable_v1',[a,b,saved.entryId,'A longer walk',null,'good-edit',version]);
+  check(edited.applied===true,'matching version edits memory');
+  check((await rpc('save_memory_room_durable_v1',[a,b,saved.entryId,'A longer walk',null,'good-edit',version])).applied===false,'lost edit response replays before version comparison');
+  check((await rpc('save_memory_room_durable_v1',[a,b,saved.entryId,'Changed request',null,'good-edit',version])).error==='idempotency_conflict','same key cannot change queued content');
+  check((await rpc('save_memory_room_durable_v1',[b,a,saved.entryId,'Partner edit',null,'partner-edit',version])).error==='not_found','durable editing remains author only');
+  await db.exec('truncate test_broadcasts');
+  await db.query('update profiles set display_name=display_name where id=$1',[a]);
+  check((await query('select * from test_broadcasts')).length===0,'no-op updates emit no invalidation');
+  await db.query('update pairings set partner_user_id=$2 where user_id=$1',[a,c]);
+  const pairEvents=await query("select * from test_broadcasts where event='pair_changed'");
+  check([a,b,c].every(id=>pairEvents.some(e=>e.topic===`burrow:${id}`)),'pair change invalidates old partner, new partner and actor');
+  check((await rpc('save_memory_room_durable_v1',[a,b,null,'Old queued text',null,'old-queue',null])).error!=null,'old queued saves cannot cross pair boundary');
+  check((await query("select has_function_privilege('authenticated','save_memory_room_durable_v1(uuid,uuid,uuid,text,text,text,timestamptz)','execute') allowed"))[0].allowed===false,'durable RPC service-only');
+  const policy=(await query("select qual from pg_policies where policyname='burrow_broadcast_receive_own'"))[0];
+  check(policy.qual.includes('auth.uid()')&&policy.qual.includes('burrow:'),'realtime subscription policy binds own user topic');
+}

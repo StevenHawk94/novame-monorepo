@@ -1,6 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { Linking, ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, useWindowDimensions, View } from 'react-native';
+import { Linking, ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text as NativeText, TextInput, useWindowDimensions, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -23,7 +27,9 @@ import {
   setBunnyName,
   setChosenCompanion,
   setOnboardingChoices,
+  queueOnboardingProfile,
   syncOnboardingCompanion,
+  syncOnboardingProfile,
 } from '../../src/lib/onboarding';
 import { logOnboardingCompleted, logRegistration } from '../../src/lib/ad-measurement';
 import { useMetaPrivacy } from '../../src/components/privacy/meta-privacy-provider';
@@ -34,6 +40,10 @@ import {
 } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import { reportOnboardingChoices, updateDisplayName } from '../../src/lib/account-api';
+import { queueProfileAvatar, syncProfileAvatar } from '../../src/lib/avatar-upload-queue';
+import { DEFAULT_AVATAR_OPTIONS, type DefaultAvatarId } from '../../src/lib/avatar';
+import { addFriend, fetchFriends, type FriendsStatus } from '../../src/lib/friends-api';
+import { UserAvatar } from '../../src/components/ui/user-avatar';
 import {
   initIAP,
   onPurchaseComplete,
@@ -94,6 +104,128 @@ function Text({ style, maxFontSizeMultiplier, ...props }: ComponentProps<typeof 
           : null,
       ]}
     />
+  );
+}
+
+type OnboardingDateInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  defaultYearsAgo: number;
+  accessibilityLabel: string;
+};
+
+function OnboardingDateInput({
+  value,
+  onChange,
+  defaultYearsAgo,
+  accessibilityLabel,
+}: OnboardingDateInputProps) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(() => dateYearsAgo(defaultYearsAgo));
+  const maximumDate = useMemo(() => startOfLocalDay(new Date()), []);
+  const minimumDate = useMemo(() => new Date(1900, 0, 1, 12), []);
+
+  function showPicker() {
+    const existing = displayDateToLocalDate(value);
+    setDraft(existing ?? dateYearsAgo(defaultYearsAgo));
+    setOpen(true);
+    void haptics.light();
+  }
+
+  function onNativeChange(event: DateTimePickerEvent, selectedDate?: Date) {
+    if (Platform.OS === 'android') {
+      setOpen(false);
+      if (event.type === 'set' && selectedDate) {
+        onChange(formatDisplayDate(selectedDate));
+        void haptics.success();
+      }
+      return;
+    }
+    if (selectedDate) setDraft(selectedDate);
+  }
+
+  function confirm() {
+    onChange(formatDisplayDate(draft));
+    setOpen(false);
+    void haptics.success();
+  }
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Opens a date picker"
+        onPress={showPicker}
+        style={({ pressed }) => [styles.formInputWrap, pressed && styles.formInputWrapPressed]}
+      >
+        <Text style={[styles.formDateValue, !value && styles.formDatePlaceholder]}>
+          {value || 'Select date'}
+        </Text>
+        <MaterialIcons name="calendar-today" size={25} color="#111111" />
+      </Pressable>
+
+      {Platform.OS === 'android' && open ? (
+        <DateTimePicker
+          value={draft}
+          mode="date"
+          display="spinner"
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          onChange={onNativeChange}
+        />
+      ) : null}
+
+      {Platform.OS === 'ios' ? (
+        <Modal
+          visible={open}
+          transparent
+          statusBarTranslucent
+          animationType="fade"
+          onRequestClose={() => setOpen(false)}
+        >
+          <View style={styles.datePickerOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setOpen(false)}
+              accessibilityLabel="Cancel date selection"
+            />
+            <View style={styles.datePickerCard}>
+              <Text style={styles.datePickerTitle}>Select date</Text>
+              <DateTimePicker
+                value={draft}
+                mode="date"
+                display="spinner"
+                themeVariant="light"
+                minimumDate={minimumDate}
+                maximumDate={maximumDate}
+                onChange={onNativeChange}
+                style={styles.datePickerSpinner}
+              />
+              <View style={styles.datePickerActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setOpen(false)}
+                  style={styles.datePickerAction}
+                  hitSlop={8}
+                >
+                  <Text style={styles.datePickerActionText}>Cancel</Text>
+                </Pressable>
+                <View style={styles.datePickerActionDivider} />
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={confirm}
+                  style={styles.datePickerAction}
+                  hitSlop={8}
+                >
+                  <Text style={styles.datePickerActionText}>Confirm</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+    </>
   );
 }
 
@@ -304,17 +436,57 @@ const SAMPLE_DAY = [
 ];
 
 type Step =
-  | 'start' | 'relationship' | 'relationship-feedback' | 'goal' | 'goal-feedback'
+  | 'start' | 'self-info' | 'profile-photo'
+  | 'relationship' | 'relationship-feedback' | 'goal' | 'goal-feedback'
   | 'goal-promise' | 'path' | 'reflect-write' | 'reflect-share'
   | 'insight-question' | 'insight-card' | 'court-intro' | 'court-types'
-  | 'summary' | 'paywall' | 'plans' | 'name' | 'connect';
+  | 'partner-info' | 'pairing' | 'pairing-success' | 'prepaywall'
+  | 'paywall' | 'plans' | 'name' | 'connect';
 
 const FLOW: Step[] = [
-  'start', 'relationship', 'relationship-feedback', 'goal', 'goal-feedback',
+  'start', 'self-info', 'profile-photo',
+  'relationship', 'relationship-feedback', 'goal', 'goal-feedback',
   'goal-promise', 'path', 'reflect-write', 'reflect-share',
   'insight-question', 'insight-card', 'court-intro', 'court-types',
-  'summary', 'paywall', 'plans', 'name',
+  'partner-info', 'pairing', 'pairing-success', 'prepaywall',
+  'paywall', 'plans', 'name',
 ];
+
+function startOfLocalDay(value: Date): Date {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 12);
+}
+
+function dateYearsAgo(years: number): Date {
+  const today = startOfLocalDay(new Date());
+  const date = new Date(today);
+  date.setFullYear(today.getFullYear() - years);
+  return date;
+}
+
+function formatDisplayDate(date: Date): string {
+  return [
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    date.getFullYear(),
+  ].join('/');
+}
+
+function parseDisplayDate(value: string): string | null {
+  const parts = value.trim().replace(/[./-]/g, ' ').split(/\s+/).map(Number);
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) return null;
+  const [day, month, year] = parts;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  if (date.getTime() > Date.now()) return null;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function displayDateToLocalDate(value: string): Date | null {
+  const isoDate = parseDisplayDate(value);
+  if (!isoDate) return null;
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, day, 12);
+}
 
 export default function OnboardingScreen() {
   const { ensureConsentBeforeHome } = useMetaPrivacy();
@@ -336,6 +508,21 @@ export default function OnboardingScreen() {
   const insightCardStep = insightCardWidth + 14;
   const router = useRouter();
   const [idx, setIdx] = useState(0);
+  const [firstName, setFirstName] = useState('');
+  const [birthdayInput, setBirthdayInput] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState<DefaultAvatarId>('default-1');
+  const [pickedPhoto, setPickedPhoto] = useState<{ uri: string } | null>(null);
+  const photoProcessingVersion = useRef(0);
+  const [onboardingUserId, setOnboardingUserId] = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState('');
+  const [relationshipSinceInput, setRelationshipSinceInput] = useState('');
+  const [partnerPronouns, setPartnerPronouns] = useState<'he/him' | 'she/her' | 'they/them' | null>(null);
+  const [pairingStatus, setPairingStatus] = useState<FriendsStatus>({ inviteCode: null, friends: [], pending: [], sent: [] });
+  const [pairCodeOpen, setPairCodeOpen] = useState(false);
+  const [pairCode, setPairCode] = useState('');
+  const [pairingNow, setPairingNow] = useState(false);
+  const [copiedPairCode, setCopiedPairCode] = useState(false);
+  const [resolvedPartner, setResolvedPartner] = useState<{ userId?: string; name: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null>(null);
   const [who, setWho] = useState<string | null>(null);
   const [blocker, setBlocker] = useState<string | null>(null);
   const [sampleDetailsOpen, setSampleDetailsOpen] = useState(false);
@@ -355,6 +542,11 @@ export default function OnboardingScreen() {
   const [paywallExitOfferSeen, setPaywallExitOfferSeen] = useState(false);
   const [insightCardIndex, setInsightCardIndex] = useState(0);
   const insightCarouselRef = useRef<ScrollView>(null);
+  const relationshipDays = useMemo(() => {
+    const since = parseDisplayDate(relationshipSinceInput);
+    if (!since) return null;
+    return Math.max(1, Math.floor((Date.now() - new Date(`${since}T00:00:00Z`).getTime()) / 86_400_000));
+  }, [relationshipSinceInput]);
 
   useEffect(() => {
     const offComplete = onPurchaseComplete(() => {
@@ -376,6 +568,19 @@ export default function OnboardingScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    let active = true;
+    void ImagePicker.getPendingResultAsync().then((pending) => {
+      if (!active || !pending || 'code' in pending || pending.canceled) return;
+      const uri = pending.assets[0]?.uri;
+      if (uri) void processPickedPhoto(uri);
+    }).catch((error) => {
+      console.warn('[onboarding] could not recover Android picker result:', error);
+    });
+    return () => { active = false; };
+  }, []);
+
 
   const step: Step = useMemo(
     () => (idx >= FLOW.length ? 'connect' : FLOW[idx]),
@@ -391,6 +596,140 @@ export default function OnboardingScreen() {
   function next() {
     void haptics.light();
     setIdx((i) => i + 1);
+  }
+
+  async function ensureOnboardingIdentity(): Promise<string | null> {
+    if (onboardingUserId) return onboardingUserId;
+    beginAnonymousOnboardingAuthHandoff();
+    const ok = await ensureSession();
+    const { data } = await supabase.auth.getSession();
+    setTimeout(endAnonymousOnboardingAuthHandoff, 2_000);
+    const userId = ok ? data.session?.user?.id ?? null : null;
+    if (userId) setOnboardingUserId(userId);
+    return userId;
+  }
+
+  function startPendingProfileSync() {
+    void ensureOnboardingIdentity().then((userId) => {
+      if (userId) void syncOnboardingProfile(userId, { force: true });
+    }).catch((error) => {
+      console.warn('[onboarding] background identity setup failed:', error);
+    });
+  }
+
+  function saveSelfInfo() {
+    const trimmedName = firstName.trim().slice(0, 15);
+    const birthday = parseDisplayDate(birthdayInput);
+    if (!trimmedName || !birthday) return;
+    Keyboard.dismiss();
+    setFirstName(trimmedName);
+    setName(trimmedName);
+    setBunnyName(trimmedName);
+    queueOnboardingProfile({ displayName: trimmedName, birthday });
+    next();
+    startPendingProfileSync();
+  }
+
+  function saveProfilePhoto() {
+    if (!pickedPhoto) {
+      queueOnboardingProfile({
+        displayName: firstName,
+        birthday: parseDisplayDate(birthdayInput) || '',
+        defaultAvatarId: selectedAvatar,
+      });
+      startPendingProfileSync();
+    }
+    next();
+  }
+
+  async function processPickedPhoto(uri: string) {
+    const version = ++photoProcessingVersion.current;
+    // Paint the user's crop immediately; compression and upload continue in
+    // the background and never hold the Next button.
+    setPickedPhoto({ uri });
+    void haptics.success();
+    const processed = await manipulateAsync(
+      uri,
+      [{ resize: { width: 512, height: 512 } }],
+      { compress: 0.72, format: SaveFormat.JPEG },
+    );
+    if (version !== photoProcessingVersion.current) return;
+    const durableUri = await queueProfileAvatar(processed.uri);
+    if (version !== photoProcessingVersion.current) return;
+    setPickedPhoto({ uri: durableUri });
+    const userId = await ensureOnboardingIdentity();
+    if (userId) void syncProfileAvatar(userId, { force: true });
+  }
+
+  async function chooseProfilePhoto() {
+    try {
+      // The system image-only picker handles access itself on both iOS and
+      // Android. An eager permission request is unnecessary and could crash an
+      // older native build that did not yet contain expo-image-picker.
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: false,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+        base64: false,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset?.uri) throw new Error('The picker returned no image');
+      await processPickedPhoto(asset.uri);
+    } catch (error) {
+      console.warn('[onboarding] photo selection failed:', error);
+      appAlert('Could not use photo', 'Choose another photo and try again.');
+    }
+  }
+
+  function savePartnerInfo() {
+    const trimmedPartner = partnerName.trim().slice(0, 30);
+    const since = parseDisplayDate(relationshipSinceInput);
+    if (!trimmedPartner || !since || !partnerPronouns) return;
+    Keyboard.dismiss();
+    setPartnerName(trimmedPartner);
+    queueOnboardingProfile({
+      displayName: firstName,
+      birthday: parseDisplayDate(birthdayInput) || '',
+      ...(!pickedPhoto ? { defaultAvatarId: selectedAvatar } : {}),
+      partnerName: trimmedPartner,
+      partnerPronouns,
+      relationshipSince: since,
+    });
+    next();
+    void ensureOnboardingIdentity().then(async (userId) => {
+      if (!userId) return;
+      await syncOnboardingProfile(userId, { force: true });
+      setPairingStatus(await fetchFriends({ force: true }));
+    }).catch((error) => {
+      console.warn('[onboarding] partner profile sync failed; queued for retry:', error);
+    });
+  }
+
+  async function connectDuringOnboarding() {
+    const normalized = pairCode.trim().toUpperCase();
+    if (normalized.length !== 6 || pairingNow) return;
+    Keyboard.dismiss();
+    const relationshipSince = parseDisplayDate(relationshipSinceInput) || undefined;
+    setPairingNow(true);
+    const result = await addFriend(normalized, { relationship: 'Partner', relationshipSince });
+    setPairingNow(false);
+    if (!result.ok) {
+      setResolvedPartner(null);
+      appAlert('Wrong code', '');
+      return;
+    }
+    setResolvedPartner({
+      userId: result.partner?.userId,
+      name: result.partner?.displayName || result.pairedName || partnerName || 'Partner',
+      avatarUrl: result.partner?.avatarUrl,
+      isDefaultAvatar: result.partner?.isDefaultAvatar,
+    });
+    setPairCodeOpen(false);
+    void haptics.success();
+    setIdx(FLOW.indexOf('pairing-success'));
   }
 
   async function onTryFree() {
@@ -585,6 +924,7 @@ export default function OnboardingScreen() {
   async function onLinkEmail() {
     const email = linkEmail.trim();
     if (!email.includes('@') || linking) return;
+    Keyboard.dismiss();
     setLinking(true);
     const result = await sendPasswordlessEmailOtp(email);
     setLinking(false);
@@ -599,6 +939,7 @@ export default function OnboardingScreen() {
   async function onVerifyLinkCode() {
     const token = linkCode.trim();
     if (token.length !== 6 || linking) return;
+    Keyboard.dismiss();
     setLinking(true);
     const res = await verifyPasswordlessEmailOtp(linkEmail.trim(), token, linkMode);
     setLinking(false);
@@ -637,8 +978,24 @@ export default function OnboardingScreen() {
     </Pressable>
   );
 
-  const storyTotal = FLOW.indexOf('court-types');
-  const storyPosition = Math.min(idx, storyTotal);
+  const sixStepProgress: Partial<Record<Step, number>> = {
+    relationship: 1,
+    'relationship-feedback': 2,
+    goal: 3,
+    'goal-feedback': 4,
+    'goal-promise': 5,
+    path: 6,
+  };
+  const sixStepPosition = sixStepProgress[step];
+  const featurePosition = step === 'reflect-write' ? 0.2
+    : step === 'reflect-share' ? 0.34
+    : step === 'insight-question' || step === 'insight-card' ? 0.52
+    : step === 'court-intro' || step === 'court-types' ? 0.72
+    : 0;
+  const stageProgress = sixStepPosition ? sixStepPosition / 6 : featurePosition;
+  const stageLabel = sixStepPosition ? `${sixStepPosition}/6`
+    : step.startsWith('reflect-') ? 'Reflect'
+    : 'Insight';
   const StageHeader = () => (
     <View style={styles.stageHeader}>
       <Pressable
@@ -654,9 +1011,9 @@ export default function OnboardingScreen() {
         <MaterialIcons name="chevron-left" size={32} color={INK} />
       </Pressable>
       <View style={styles.stageTrack}>
-        <View style={[styles.stageFill, { width: `${(storyPosition / storyTotal) * 100}%` }]} />
+        <View style={[styles.stageFill, { width: `${stageProgress * 100}%` }]} />
       </View>
-      <Text style={styles.stageLabel}>{storyPosition}/{storyTotal}</Text>
+      <Text style={styles.stageLabel}>{stageLabel}</Text>
     </View>
   );
 
@@ -676,6 +1033,76 @@ export default function OnboardingScreen() {
             <Text style={styles.newBody}>Even when life gets busy and messy.</Text>
             <View style={styles.pageSpacer} />
             <Btn label="Start" onPress={next} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="self-info" imageCount={0}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView
+              removeClippedSubviews={false}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.formPage}
+            >
+              <Text style={styles.formHero}>Tell us a little bit{`\n`}about yourself</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Your first name</Text>
+                <View style={styles.formInputWrap}>
+                  <TextInput
+                    value={firstName}
+                    onChangeText={(value) => setFirstName(value.slice(0, 15))}
+                    placeholder="Type here"
+                    placeholderTextColor="#77716A"
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={Keyboard.dismiss}
+                    style={styles.formInput}
+                  />
+                  <MaterialIcons name="edit" size={26} color="#111111" />
+                </View>
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Your birthday</Text>
+                <OnboardingDateInput
+                  value={birthdayInput}
+                  onChange={setBirthdayInput}
+                  defaultYearsAgo={25}
+                  accessibilityLabel="Select your birthday"
+                />
+              </View>
+              <View style={styles.pageSpacer} />
+              <Btn
+                label="Next"
+                onPress={() => void saveSelfInfo()}
+                disabled={!firstName.trim() || !parseDisplayDate(birthdayInput)}
+              />
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </OnboardingPage>
+
+        <OnboardingPage id="profile-photo" imageCount={0}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.formPage}>
+            <Pressable onPress={() => void saveProfilePhoto()} style={styles.skipLink} hitSlop={10}>
+              <Text style={styles.skipLinkText}>SKIP</Text>
+            </Pressable>
+            <Text style={styles.formHero}>Add a profile photo</Text>
+            <Text style={styles.photoSubhead}>Your partner will see this as your photo in the app</Text>
+            <Pressable onPress={() => void chooseProfilePhoto()} style={styles.avatarHero}>
+              {pickedPhoto ? (
+                <ExpoImage source={{ uri: pickedPhoto.uri }} style={styles.avatarHeroImage} contentFit="cover" />
+              ) : (
+                <MaterialIcons name="add-a-photo" size={64} color="#FFFFFF" />
+              )}
+              {pickedPhoto ? (
+                <View style={styles.avatarCameraBadge}><MaterialIcons name="edit" size={26} color="#FFFFFF" /></View>
+              ) : null}
+            </Pressable>
+            <Pressable onPress={() => void chooseProfilePhoto()} style={styles.photoPickerButton}>
+              <Text style={styles.photoPickerButtonText}>{pickedPhoto ? 'Change photo' : 'Add a photo'}</Text>
+            </Pressable>
+            <View style={styles.pageSpacer} />
+            <Btn label="Next" onPress={() => void saveProfilePhoto()} />
           </ScrollView>
         </OnboardingPage>
 
@@ -943,31 +1370,199 @@ export default function OnboardingScreen() {
           </ScrollView>
         </OnboardingPage>
 
-        <OnboardingPage id="summary" imageCount={0}>
-          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.newPage}>
-            <View style={styles.pageSpacer} />
-            <Text style={styles.newHeroTitle}>Stay Emotionally Closer and Learn More About Each Other</Text>
-            <View style={styles.closenessTable}>
-              <View style={styles.closenessHeaderRow}>
-                <Text style={styles.closenessHeaderText}>Feel More</Text>
-                <Text style={styles.closenessHeaderText}>Feel Less</Text>
-              </View>
-              {CLOSENESS_ROWS.map(([more, less], rowIndex) => (
-                <View key={more} style={[styles.closenessRow, rowIndex === CLOSENESS_ROWS.length - 1 && styles.closenessLastRow]}>
-                  <View style={styles.closenessCell}>
-                    <View style={[styles.closenessArrow, styles.closenessArrowUp]}><MaterialIcons name="arrow-upward" size={18} color="#FFFFFF" /></View>
-                    <Text style={styles.closenessCellText}>{more}</Text>
-                  </View>
-                  <View style={[styles.closenessCell, styles.closenessCellRight]}>
-                    <View style={[styles.closenessArrow, styles.closenessArrowDown]}><MaterialIcons name="arrow-downward" size={18} color="#FFFFFF" /></View>
-                    <Text style={styles.closenessCellText}>{less}</Text>
-                  </View>
+        <OnboardingPage id="partner-info" imageCount={0}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView
+              removeClippedSubviews={false}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.formPage}
+            >
+              <Text style={styles.partnerKicker}>A few more steps to get ready</Text>
+              <Text style={styles.formHero}>Tell us about your{`\n`}partner</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Their name is</Text>
+                <View style={styles.formInputWrap}>
+                  <TextInput
+                    value={partnerName}
+                    onChangeText={(value) => setPartnerName(value.slice(0, 30))}
+                    placeholder="Type here"
+                    placeholderTextColor="#77716A"
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={Keyboard.dismiss}
+                    style={styles.formInput}
+                  />
+                  <MaterialIcons name="edit" size={26} color="#111111" />
                 </View>
-              ))}
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>When did you get together?</Text>
+                <OnboardingDateInput
+                  value={relationshipSinceInput}
+                  onChange={setRelationshipSinceInput}
+                  defaultYearsAgo={1}
+                  accessibilityLabel="Select when you got together"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Your partner&apos;s pronouns</Text>
+                <View style={styles.pronounOptions}>
+                  {(['he/him', 'she/her', 'they/them'] as const).map((option) => (
+                    <Pressable
+                      key={option}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: partnerPronouns === option }}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setPartnerPronouns(option);
+                        void haptics.light();
+                      }}
+                      style={[styles.pronounOption, partnerPronouns === option && styles.pronounOptionSelected]}
+                    >
+                      <Text style={[styles.pronounOptionText, partnerPronouns === option && styles.pronounOptionTextSelected]}>
+                        {option}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+              <View style={styles.pageSpacer} />
+              <Btn
+                label="Next"
+                onPress={savePartnerInfo}
+                disabled={!partnerName.trim() || !parseDisplayDate(relationshipSinceInput) || !partnerPronouns}
+              />
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </OnboardingPage>
+
+        <OnboardingPage id="pairing" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.formPage}>
+            <Text style={styles.formHero}>Invite Your Partner</Text>
+            <Text style={styles.photoSubhead}>Connect your account with your partner to start getting closer</Text>
+            <View style={styles.invitePanel}>
+              <OnboardingImage source={ICONS.friendList} style={styles.inviteBunnies} contentFit="contain" />
+              <Text style={styles.invitePanelTitle}>Share Your Invite Link</Text>
+              <Pressable
+                onPress={() => {
+                  if (!pairingStatus.inviteCode) return;
+                  void Share.share({ message: `Join my Burrow. Enter my code ${pairingStatus.inviteCode} and we’ll be connected right away.` });
+                }}
+                style={styles.inviteCreamButton}
+              >
+                <MaterialIcons name="link" size={24} color="#2E9A62" />
+                <Text style={styles.inviteCreamText}>Invite Link</Text>
+              </Pressable>
+              <View style={styles.inviteCodeCard}>
+                <Text style={styles.inviteCodeLabel}>My Burrow Code</Text>
+                <Text style={styles.inviteCodeValue}>{pairingStatus.inviteCode ?? '——————'}</Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  if (!pairingStatus.inviteCode || copiedPairCode) return;
+                  void Clipboard.setStringAsync(pairingStatus.inviteCode).then(() => {
+                    setCopiedPairCode(true);
+                    void haptics.success();
+                    setTimeout(() => setCopiedPairCode(false), 1600);
+                  });
+                }}
+                style={styles.inviteCreamButton}
+              >
+                <MaterialIcons name={copiedPairCode ? 'check' : 'content-copy'} size={22} color="#2E9A62" />
+                <Text style={styles.inviteCreamText}>{copiedPairCode ? 'Copied!' : 'Copy ID'}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setPairCode('');
+                  setResolvedPartner(null);
+                  setPairCodeOpen(true);
+                }}
+                hitSlop={10}
+              >
+                <Text style={styles.inviteHaveCode}>I have a code from {partnerName || 'my partner'}</Text>
+              </Pressable>
             </View>
-            <Text style={styles.closenessFooter}>That’s how closeness fits into real life for two.</Text>
             <View style={styles.pageSpacer} />
-            <Btn label="Start Our Burrow" onPress={next} />
+            <Btn label="Continue without connecting" onPress={() => setIdx(FLOW.indexOf('prepaywall'))} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="pairing-success" imageCount={1}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.formPage}>
+            <View style={styles.pageSpacer} />
+            <View style={styles.onboardingSuccessCard}>
+              <View style={styles.onboardingPerson}>
+                {pickedPhoto ? (
+                  <ExpoImage source={{ uri: pickedPhoto.uri }} style={styles.onboardingAvatar} contentFit="cover" />
+                ) : (
+                  <OnboardingImage
+                    source={DEFAULT_AVATAR_OPTIONS.find((option) => option.id === selectedAvatar)?.source}
+                    style={styles.onboardingAvatar}
+                    contentFit="cover"
+                  />
+                )}
+                <Text style={styles.onboardingPersonName}>{firstName || 'You'}</Text>
+              </View>
+              <View style={styles.onboardingSuccessCenter}>
+                <Text style={styles.onboardingRelationship}>Partner</Text>
+                <Text style={styles.onboardingDays}>{relationshipDays ? `For ${relationshipDays} days` : 'Connected'}</Text>
+              </View>
+              <View style={styles.onboardingPerson}>
+                <UserAvatar
+                  userId={resolvedPartner?.userId}
+                  avatarUrl={resolvedPartner?.avatarUrl}
+                  isDefaultAvatar={resolvedPartner?.isDefaultAvatar}
+                  size={66}
+                />
+                <Text style={styles.onboardingPersonName}>{resolvedPartner?.name || partnerName}</Text>
+              </View>
+            </View>
+            <Text style={styles.onboardingSuccessTitle}>Success! You’re now connected with {resolvedPartner?.name || partnerName}</Text>
+            <Text style={styles.photoSubhead}>You can now see each other’s shared daily moments, create memories together, and enjoy Bunny Court.</Text>
+            <View style={styles.pageSpacer} />
+            <Btn label="Next" onPress={() => setIdx(FLOW.indexOf('prepaywall'))} />
+          </ScrollView>
+        </OnboardingPage>
+
+        <OnboardingPage id="prepaywall" imageCount={2}>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.formPage}>
+            <Text style={styles.prepaywallTitle}>Burrow helps couples{`\n`}stay closer</Text>
+            <View style={styles.comparisonWrap}>
+              <View style={styles.withoutColumn}>
+                <Text style={styles.comparisonHeadingDark}>Without Burrow</Text>
+                {[
+                  'Losing each other’s daily context',
+                  'Always guessing their mind',
+                  'Feeling detached and not showing up when needed',
+                  'Avoid deep conversations and feel more emotionally separated',
+                ].map((item) => (
+                  <View key={item} style={styles.comparisonRow}>
+                    <MaterialIcons name="remove-circle-outline" size={24} color="#B5B5B5" />
+                    <Text style={styles.comparisonDarkText}>{item}</Text>
+                  </View>
+                ))}
+                <OnboardingImage source={require('../../assets/onboarding/page-21-left.webp')} style={styles.comparisonArt} contentFit="contain" />
+              </View>
+              <View style={styles.withColumn}>
+                <Text style={styles.comparisonHeadingLight}>With Burrow</Text>
+                {[
+                  'Feel closer by knowing their everyday context',
+                  'Show up at the right time, in the right way',
+                  'Turn hard-to-say things into playful Bunny Court moments',
+                  'Keep the spark alive and stay close emotionally',
+                ].map((item) => (
+                  <View key={item} style={styles.comparisonRow}>
+                    <MaterialIcons name="check-circle" size={24} color="#FFF4D7" />
+                    <Text style={styles.comparisonLightText}>{item}</Text>
+                  </View>
+                ))}
+                <OnboardingImage source={require('../../assets/onboarding/page-21-right.webp')} style={styles.comparisonArt} contentFit="contain" />
+              </View>
+            </View>
+            <View style={styles.pageSpacer} />
+            <Btn label="Continue" onPress={next} />
           </ScrollView>
         </OnboardingPage>
 
@@ -1394,29 +1989,16 @@ export default function OnboardingScreen() {
         </OnboardingPage>
 
         <OnboardingPage id="name" imageCount={1}>
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
-              <View style={{ flex: 1, minHeight: 24 }} />
-              <Text style={styles.newTitle}>Meet Your Bunny</Text>
-              <Text style={[styles.body, { marginTop: 18 }]}>
-                I’m here to help you stay close to your person, and to be in your corner whenever life
-                feels stuck, scattered, or a little too much.
-              </Text>
-              <OnboardingImage source={DEFAULT_BUNNY} style={styles.bunny} contentFit="contain" />
-              <TextInput
-                style={[styles.nameInput, androidNameInputType]}
-                placeholder="So, what should I call you?"
-                placeholderTextColor="#B7A88F"
-                value={name}
-                onChangeText={(t) => setName(t.slice(0, 15))}
-                maxLength={15}
-                textAlign="center"
-                maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
-              />
-              <View style={{ flex: 1 }} />
-              <Btn label="Start" onPress={() => void onFinishName()} busy={finishing} />
-            </ScrollView>
-          </KeyboardAvoidingView>
+          <ScrollView removeClippedSubviews={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.formPage}>
+            <View style={styles.pageSpacer} />
+            <Text style={styles.newTitle}>Meet Your Bunny</Text>
+            <Text style={[styles.body, { marginTop: 18 }]}>
+              I’m the bunny in your burrow. I’ll let you know whenever your partner needs something from you. Let’s start our journey :)
+            </Text>
+            <OnboardingImage source={DEFAULT_BUNNY} style={styles.bunny} contentFit="contain" />
+            <View style={styles.pageSpacer} />
+            <Btn label="Start Burrow" onPress={() => void onFinishName()} busy={finishing} />
+          </ScrollView>
         </OnboardingPage>
 
         <OnboardingPage id="connect" imageCount={0}>
@@ -1460,6 +2042,12 @@ export default function OnboardingScreen() {
                     onChangeText={setLinkEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => {
+                      Keyboard.dismiss();
+                      if (linkEmail.includes('@')) void onLinkEmail();
+                    }}
                     maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
                   />
                   <Pressable
@@ -1486,6 +2074,12 @@ export default function OnboardingScreen() {
                     keyboardType="number-pad"
                     autoFocus
                     maxLength={6}
+                    returnKeyType="done"
+                    blurOnSubmit
+                    onSubmitEditing={() => {
+                      Keyboard.dismiss();
+                      if (linkCode.length === 6) void onVerifyLinkCode();
+                    }}
                     maxFontSizeMultiplier={Platform.OS === 'android' ? 1.15 : undefined}
                   />
                   <Pressable
@@ -1526,6 +2120,58 @@ export default function OnboardingScreen() {
         </OnboardingPage>
         </OnboardingPager>
       </View>
+      <Modal
+        visible={pairCodeOpen}
+        transparent
+        statusBarTranslucent
+        navigationBarTranslucent
+        animationType="fade"
+        onRequestClose={() => setPairCodeOpen(false)}
+      >
+        <KeyboardAvoidingView style={styles.pairCodeOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={styles.pairCodeSheet}>
+            <Pressable onPress={() => setPairCodeOpen(false)} style={styles.pairCodeClose} hitSlop={10}>
+              <MaterialIcons name="close" size={28} color="#32215D" />
+            </Pressable>
+            <Text style={styles.pairCodeTitle}>
+              {`Enter ${partnerName || 'your partner'}’s Burrow code`}
+            </Text>
+            <View style={styles.pairCodeBoxes}>
+              {Array.from({ length: 6 }).map((_, codeIndex) => (
+                <View key={codeIndex} style={[styles.pairCodeBox, pairCode.length === codeIndex && styles.pairCodeBoxActive]}>
+                  <Text style={styles.pairCodeCharacter}>{pairCode[codeIndex] || ''}</Text>
+                </View>
+              ))}
+              <TextInput
+                autoFocus
+                value={pairCode}
+                onChangeText={(value) => {
+                  const normalized = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+                  setPairCode(normalized);
+                  setResolvedPartner(null);
+                }}
+                autoCapitalize="characters"
+                maxLength={6}
+                returnKeyType="done"
+                blurOnSubmit
+                onSubmitEditing={() => {
+                  if (pairCode.length === 6) void connectDuringOnboarding();
+                }}
+                style={styles.pairCodeHiddenInput}
+              />
+            </View>
+            <Pressable
+              onPress={() => void connectDuringOnboarding()}
+              disabled={pairCode.length !== 6 || pairingNow}
+              style={[styles.pairCodeButton, (pairCode.length !== 6 || pairingNow) && { opacity: 0.42 }]}
+            >
+              {pairingNow ? <ActivityIndicator color="#FFFFFF" /> : (
+                <Text style={styles.pairCodeButtonText}>Connect</Text>
+              )}
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       <Modal
         visible={paywallExitOpen}
         transparent
@@ -1613,6 +2259,146 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 22 },
   center: { flexGrow: 1, alignItems: 'stretch' },
+
+  formPage: { flexGrow: 1, alignItems: 'stretch', paddingTop: 26 },
+  formHero: {
+    marginTop: 36, marginBottom: 46, fontSize: 36, lineHeight: 44,
+    fontFamily: 'Inter_800ExtraBold', color: INK, textAlign: 'center',
+  },
+  formGroup: { marginBottom: 28 },
+  formLabel: { marginBottom: 12, fontSize: 20, lineHeight: 27, fontFamily: 'Inter_500Medium', color: '#111111' },
+  formInputWrap: {
+    minHeight: 72, borderRadius: 16, borderWidth: 2, borderColor: '#111111',
+    backgroundColor: '#FFFFFF', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  formInputWrapPressed: { opacity: 0.78 },
+  formInput: { flex: 1, fontSize: 18, fontFamily: 'Inter_700Bold', color: '#161311', paddingVertical: 18 },
+  pronounOptions: { flexDirection: 'row', gap: 10 },
+  pronounOption: {
+    flex: 1, minHeight: 58, borderRadius: 18, borderWidth: 2, borderColor: '#8C735F',
+    backgroundColor: '#FFF9EE', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8,
+  },
+  pronounOptionSelected: { borderColor: '#FF7063', backgroundColor: '#FFE6DC' },
+  pronounOptionText: { fontSize: 16, fontFamily: 'Inter_700Bold', color: '#412A1B' },
+  pronounOptionTextSelected: { color: '#7B3F32' },
+  formDateValue: { flex: 1, fontSize: 18, fontFamily: 'Inter_700Bold', color: '#161311' },
+  formDatePlaceholder: { color: '#77716A' },
+  datePickerOverlay: {
+    flex: 1, justifyContent: 'center', paddingHorizontal: 18,
+    backgroundColor: 'rgba(45,31,22,0.42)',
+  },
+  datePickerCard: {
+    width: '100%', maxWidth: 430, alignSelf: 'center', borderRadius: 28,
+    backgroundColor: '#FFFFFF', paddingTop: 28, paddingHorizontal: 22, paddingBottom: 18,
+    shadowColor: '#24150C', shadowOpacity: 0.2, shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 }, elevation: 12,
+  },
+  datePickerTitle: {
+    fontSize: 24, lineHeight: 30, fontFamily: 'Inter_700Bold', color: '#161311',
+  },
+  datePickerSpinner: { alignSelf: 'stretch', height: 218, marginTop: 4 },
+  datePickerActions: {
+    minHeight: 54, flexDirection: 'row', alignItems: 'center', marginTop: 4,
+  },
+  datePickerAction: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
+  datePickerActionDivider: { width: 1, height: 24, backgroundColor: '#E5E0DA' },
+  datePickerActionText: {
+    fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#161311',
+  },
+  skipLink: { position: 'absolute', right: 0, top: 10, zIndex: 3, padding: 8 },
+  skipLinkText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#17120E', textDecorationLine: 'underline' },
+  photoSubhead: {
+    marginTop: -24, fontSize: 19, lineHeight: 28, fontFamily: 'Inter_500Medium',
+    color: '#211A14', textAlign: 'center', paddingHorizontal: 18,
+  },
+  avatarHero: {
+    width: 150, height: 150, borderRadius: 75, alignSelf: 'center', marginTop: 42,
+    backgroundColor: BTN, alignItems: 'center', justifyContent: 'center', overflow: 'visible',
+  },
+  avatarHeroImage: { width: 138, height: 138, borderRadius: 69 },
+  avatarCameraBadge: {
+    position: 'absolute', right: 0, bottom: 4, width: 48, height: 48, borderRadius: 24,
+    backgroundColor: BTN, borderWidth: 3, borderColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center',
+  },
+  photoPickerButton: {
+    minHeight: 58, minWidth: 230, borderRadius: 16, alignSelf: 'center', marginTop: 28,
+    paddingHorizontal: 26, backgroundColor: '#FFC44D', alignItems: 'center', justifyContent: 'center',
+  },
+  photoPickerButtonText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: INK },
+  avatarPickerLabel: {
+    marginTop: 22, marginBottom: 14, fontSize: 16, fontFamily: 'Inter_700Bold', color: INK, textAlign: 'center',
+  },
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
+  avatarOption: { width: 54, height: 54, borderRadius: 27, padding: 3, borderWidth: 2, borderColor: 'transparent' },
+  avatarOptionSelected: { borderColor: '#FF7063' },
+  avatarOptionImage: { width: 44, height: 44, borderRadius: 22 },
+  partnerKicker: { fontSize: 17, fontFamily: 'Inter_700Bold', color: '#18130F', textAlign: 'center' },
+  invitePanel: {
+    marginTop: 34, borderRadius: 28, backgroundColor: '#865739', paddingHorizontal: 20,
+    paddingTop: 18, paddingBottom: 24, gap: 14,
+  },
+  inviteBunnies: { width: 82, height: 58, alignSelf: 'center' },
+  invitePanelTitle: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center' },
+  inviteCreamButton: {
+    minHeight: 60, borderRadius: 28, backgroundColor: '#FFF3CF', flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'center', gap: 10,
+  },
+  inviteCreamText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
+  inviteCodeCard: { minHeight: 108, borderRadius: 26, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  inviteCodeLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#17120E' },
+  inviteCodeValue: { fontSize: 31, letterSpacing: 4, fontFamily: 'Inter_800ExtraBold', color: '#111111' },
+  inviteHaveCode: {
+    marginTop: 8, fontSize: 17, lineHeight: 23, fontFamily: 'Inter_800ExtraBold',
+    color: '#FFFFFF', textAlign: 'center', textDecorationLine: 'underline',
+  },
+  onboardingSuccessCard: {
+    minHeight: 142, borderRadius: 28, backgroundColor: '#FFF8E8', flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18,
+  },
+  onboardingPerson: { width: 82, alignItems: 'center', gap: 8 },
+  onboardingAvatar: { width: 66, height: 66, borderRadius: 33 },
+  onboardingPersonName: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#211A14', textAlign: 'center' },
+  onboardingSuccessCenter: { flex: 1, alignItems: 'center', gap: 4 },
+  onboardingRelationship: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#1A1511' },
+  onboardingDays: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#796854' },
+  onboardingSuccessTitle: {
+    marginTop: 38, fontSize: 30, lineHeight: 38, fontFamily: 'Inter_800ExtraBold', color: '#241A12', textAlign: 'center',
+  },
+  prepaywallTitle: {
+    marginTop: 18, marginBottom: 28, fontSize: 34, lineHeight: 42,
+    fontFamily: SERIF, fontWeight: '700', color: INK, textAlign: 'center',
+  },
+  comparisonWrap: { flexDirection: 'row', borderRadius: 26, overflow: 'hidden', minHeight: 560 },
+  withoutColumn: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingTop: 24 },
+  withColumn: { flex: 1, backgroundColor: '#A87349', paddingHorizontal: 14, paddingTop: 24 },
+  comparisonHeadingDark: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#111111', textAlign: 'center', marginBottom: 16 },
+  comparisonHeadingLight: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
+  comparisonRow: { minHeight: 88, flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 8 },
+  comparisonDarkText: { flex: 1, fontSize: 13.5, lineHeight: 20, fontFamily: 'Inter_500Medium', color: '#17120E' },
+  comparisonLightText: { flex: 1, fontSize: 13.5, lineHeight: 20, fontFamily: 'Inter_500Medium', color: '#FFFFFF' },
+  comparisonArt: { width: '100%', height: 105, marginTop: 'auto' },
+  pairCodeOverlay: {
+    flex: 1, backgroundColor: 'rgba(55,36,23,0.45)', justifyContent: 'flex-end',
+    paddingHorizontal: 14, paddingBottom: 12,
+  },
+  pairCodeSheet: {
+    width: '100%', maxWidth: 430, alignSelf: 'center', borderRadius: 28,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 18, paddingTop: 58, paddingBottom: 20,
+  },
+  pairCodeClose: { position: 'absolute', right: 18, top: 16 },
+  pairCodeTitle: { fontSize: 25, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: '#32215D', textAlign: 'center' },
+  pairCodeBoxes: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 30, position: 'relative' },
+  pairCodeBox: {
+    width: 42, height: 54, borderRadius: 14, borderWidth: 1.5, borderColor: '#C8C1D2',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pairCodeBoxActive: { borderColor: '#7654A3', borderWidth: 2 },
+  pairCodeCharacter: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#32215D' },
+  pairCodeHiddenInput: { ...StyleSheet.absoluteFillObject, opacity: 0.01, color: 'transparent' },
+  pairCodeButton: {
+    minHeight: 58, borderRadius: 29, backgroundColor: '#7051A0', alignItems: 'center', justifyContent: 'center', marginTop: 24,
+  },
+  pairCodeButtonText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 
   newPage: { flexGrow: 1, alignItems: 'stretch', paddingTop: 2 },
   pageSpacer: { flex: 1, minHeight: 22 },

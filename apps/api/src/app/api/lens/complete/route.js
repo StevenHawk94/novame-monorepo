@@ -5,6 +5,7 @@ import { LENS_THEME_KEYS } from '@novame/domain'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 import { runCompanionDependentRpc } from '@/lib/companion-boundary'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -69,7 +70,7 @@ export async function POST(request) {
       p_response: response,
       p_local_date: dateStr,
       p_iso_week: weekStr,
-      p_xp_amount: XP_RULES.newLens.award,
+      p_xp_amount: await majorUpdateEnabled(supabase) ? 0 : XP_RULES.newLens.award,
     }
     const { data: result, error: rpcErr } = await runCompanionDependentRpc(
       supabase, 'submit_lens', submitArgs, userId,

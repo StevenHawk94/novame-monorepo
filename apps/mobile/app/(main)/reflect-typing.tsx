@@ -39,12 +39,16 @@ import { BACKGROUNDS, REFLECT_PROMPT_ICONS } from '../../src/lib/icons';
 import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import { RC, ReflectTopBar } from '../../src/components/main/reflect-shared';
+import { RecordSharing } from '@/components/burrow/record-sharing';
 import { MatchedItemsReviewSheet, ReflectSettlementView } from '../../src/components/main/reflect-settlement';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const MAX_CHARS = 5000;
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
+  daily_adventure_used: 'Your adventure has started. Save a new day tomorrow.',
+  not_paired: 'Reconnect with your partner before saving.',
+  journal_kind_disabled: 'This record type is no longer available.',
   daily_limit: "You've journaled 3 times today. Rest up — come back tomorrow.",
   journal_kind_used: "You've already used Write Freely today. It will be available again tomorrow.",
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',
@@ -66,6 +70,8 @@ const TAN_OFFSET = '#E5B57E';
 type Phase = 'pick' | 'write' | 'result';
 
 export default function ReflectTypingScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
+  const [shareToPartner,setShareToPartner]=useState(true);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
@@ -91,7 +97,7 @@ export default function ReflectTypingScreen() {
   const [liveMatched, setLiveMatched] = useState<MatchedItem[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [editOpen, setEditOpen] = useState(false);
-  const saveKey = useMemo(() => randomUUID(), [body, promptId, removedIds, sourceKit]);
+  const saveKey = useMemo(() => randomUUID(), [body, promptId, removedIds, sourceKit, shareToPartner]);
   const submitLock = useRef(false);
   useReflectExitGuard(submitting);
 
@@ -116,7 +122,7 @@ export default function ReflectTypingScreen() {
 
   const shownMatches = liveMatched.filter((m) => !removedIds.has(m.itemId));
 
-  const atLimit = !isPaid && remaining <= 0;
+  const atLimit = !majorUpdate && !isPaid && remaining <= 0;
   const selectedPrompt = presetPrompt
     ? { id: 9, title: 'New Lens', text: presetPrompt }
     : REFLECT_PROMPTS.find((p) => p.id === promptId);
@@ -146,6 +152,7 @@ export default function ReflectTypingScreen() {
       matchingVersion: matching.version,
       removedItemIds: [...removedIds],
       idempotencyKey: saveKey,
+      shareToPartner: majorUpdate ? shareToPartner : undefined,
     });
     submitLock.current = false;
     setSubmitting(false);
@@ -220,6 +227,7 @@ export default function ReflectTypingScreen() {
                 <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
               </View>
 
+              {majorUpdate&&<RecordSharing shared={shareToPartner} onChange={setShareToPartner} disabled={submitting}/>}
               {/* Live match bar. */}
               <Text style={styles.matchLabel}>Items matched from your journal</Text>
               <Pressable
@@ -273,7 +281,8 @@ export default function ReflectTypingScreen() {
                     if (snapshot.bubble) setReflectBubble(snapshot.bubble);
                     void fetchReflectFeed({ force: true });
                     void fetchBags('mine');
-                    router.back();
+                    if (majorUpdate) router.replace('/(main)/burrow-detail?section=adventure' as Href);
+                    else router.back();
                   }}
                 />
               </View>
@@ -333,3 +342,5 @@ const styles = StyleSheet.create({
   restTitle: { fontSize: 24, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
   restBody: { fontSize: 16, fontFamily: 'Inter_500Medium', color: 'rgba(255,255,255,0.95)', textAlign: 'center', lineHeight: 24 },
 });
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
+import type { Href } from 'expo-router';

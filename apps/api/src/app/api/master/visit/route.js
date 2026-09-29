@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
@@ -30,6 +31,7 @@ export async function GET(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     const { data: visit } = await supabase
       .from('master_visits')
       .select('id, question, response, created_at')

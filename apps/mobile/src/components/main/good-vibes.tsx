@@ -154,6 +154,10 @@ export function GoodVibesPicker({ visible, onClose, onSent, replyToId }: PickerP
  * minute-by-minute network poll.
  */
 export function GoodVibesInboxGate() {
+  return useMajorUpdateEnabled() ? null : <LegacyGoodVibesInboxGate />;
+}
+
+function LegacyGoodVibesInboxGate() {
   const [vibe, setVibe] = useState<GoodVibeInboxItem | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const checkingRef = useRef(false);
@@ -386,3 +390,4 @@ const styles = StyleSheet.create({
   replyButton: { width: '100%', minHeight: 60, borderRadius: 20, backgroundColor: '#FFDC91', alignItems: 'center', justifyContent: 'center' },
   replyText: { color: '#4C2E16', fontSize: 23, fontFamily: 'Inter_800ExtraBold' },
 });
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

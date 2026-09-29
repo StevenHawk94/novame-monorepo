@@ -4,7 +4,9 @@ import { recordAIUsage } from './ai-usage'
 import { drainPushNotificationOutbox } from './push-notifications'
 import { fixedLaunchOutcomeV2 } from './bunny-court-rules-v2.mjs'
 import { fixedLaunchOutcomeV3 } from './bunny-court-rules-v3.mjs'
+import { resolveCourtOutcomeV4 } from './bunny-court-rules-v4.mjs'
 import { resolveUserLocalDate } from './user-local-date'
+import { majorUpdateEnabled } from './app-major-update'
 
 const EXPIRABLE_STATUSES = ['awaiting_initiator', 'awaiting_partner', 'processing']
 const LOVE_RELATIONSHIPS = new Set(['Lover', 'Partner', 'Someone Special'])
@@ -299,14 +301,15 @@ function fixedLaunchOutcome(definition, questions, first, second) {
 
 function deterministicOutcome(definition, questions, first, second) {
   const keys = Array.isArray(definition.outcome_keys) ? definition.outcome_keys : []
-  if (keys.length <= 1) return keys[0] || 'default'
+  if (keys.length <= 1) return { outcomeKey: keys[0] || 'default', swapRoles: false }
   const version = Number(definition.content_version || 1)
+  if (version >= 4) return resolveCourtOutcomeV4(definition, questions, first, second)
   const fixed = version >= 3
     ? fixedLaunchOutcomeV3(definition, questions, first, second)
     : version >= 2
       ? fixedLaunchOutcomeV2(definition, questions, first, second)
       : fixedLaunchOutcome(definition, questions, first, second)
-  if (fixed && keys.includes(fixed)) return fixed
+  if (fixed && keys.includes(fixed)) return { outcomeKey: fixed, swapRoles: false }
   let comparable = 0
   let matches = 0
   let firstScore = 0
@@ -327,8 +330,8 @@ function deterministicOutcome(definition, questions, first, second) {
     }
   }
   const matchRatio = comparable ? matches / comparable : 0
-  if (matchRatio >= 0.66 || Math.abs(firstScore - secondScore) <= 1) return keys[0]
-  return firstScore > secondScore ? (keys[1] || keys[0]) : (keys[2] || keys[1] || keys[0])
+  if (matchRatio >= 0.66 || Math.abs(firstScore - secondScore) <= 1) return { outcomeKey: keys[0], swapRoles: false }
+  return { outcomeKey: firstScore > secondScore ? (keys[1] || keys[0]) : (keys[2] || keys[1] || keys[0]), swapRoles: false }
 }
 
 export function contentForCourtSession(session, fallback) {
@@ -354,18 +357,41 @@ export async function enqueueCourtNotification(supabase, recipientUserId, sessio
   void drainPushNotificationOutbox(supabase, 10).catch(() => {})
 }
 
+function replaceRoleNames(value, nameA, nameB) {
+  return String(value || '')
+    .replaceAll('[A]', nameA).replaceAll('[B]', nameB)
+    .replaceAll('{{A}}', nameA).replaceAll('{{B}}', nameB)
+}
+
+async function verdictRoleNames(supabase, session, swapRoles) {
+  const { data } = await supabase.from('profiles').select('id,display_name')
+    .in('id', [session.initiator_id, session.partner_id])
+  const names = Object.fromEntries((data || []).map((item) => [item.id, item.display_name]))
+  const initiator = names[session.initiator_id] || 'You'
+  const partner = names[session.partner_id] || 'Your partner'
+  return swapRoles ? { nameA: partner, nameB: initiator } : { nameA: initiator, nameB: partner }
+}
+
 async function saveVerdict(supabase, session, definition, template, analysisMethod, model = null, overrides = {}) {
+  const { nameA, nameB } = await verdictRoleNames(supabase, session, Boolean(template.__swapRoles))
+  const named = (value) => replaceRoleNames(value, nameA, nameB)
   const row = {
     session_id: session.id,
     case_id: session.case_id,
     engine: definition.engine,
     analysis_method: analysisMethod,
     outcome_key: overrides.outcomeKey || template.outcome_key,
-    headline: overrides.headline || template.headline,
-    what_court_heard: overrides.whatCourtHeard || template.what_court_heard,
-    verdict: overrides.verdict || template.verdict,
-    court_ordered_move: overrides.courtOrderedMove || template.court_ordered_move,
-    share_text: overrides.shareText || template.share_text,
+    headline: named(overrides.headline || template.headline),
+    what_court_heard: named(overrides.whatCourtHeard || template.what_court_heard),
+    verdict: named(overrides.verdict || template.verdict),
+    court_ordered_move: named(overrides.courtOrderedMove || template.court_ordered_move),
+    share_text: named(overrides.shareText || template.share_text),
+    action_a: named(overrides.actionA ?? template.action_a),
+    action_b: named(overrides.actionB ?? template.action_b),
+    action_a_name: nameA,
+    action_b_name: nameB,
+    try_together: named(overrides.tryTogether ?? template.try_together),
+    closing: named(overrides.closing ?? template.closing),
     safety_state: overrides.safetyState || 'safe',
     model,
   }
@@ -393,10 +419,10 @@ async function saveVerdict(supabase, session, definition, template, analysisMeth
 function resolvedRuleTemplate(session, content, submissions) {
   const first = submissions.find((submission) => submission.user_id === session.initiator_id)?.answers || {}
   const second = submissions.find((submission) => submission.user_id === session.partner_id)?.answers || {}
-  const outcomeKey = deterministicOutcome(content.definition, content.questions, first, second)
-  const template = content.templates.find((item) => item.outcome_key === outcomeKey) || content.templates[0]
+  const resolved = deterministicOutcome(content.definition, content.questions, first, second)
+  const template = content.templates.find((item) => item.outcome_key === resolved.outcomeKey) || content.templates[0]
   if (!template) throw new Error('court_template_missing')
-  return template
+  return { ...template, __swapRoles: resolved.swapRoles }
 }
 
 export async function generateRuleVerdict(supabase, session, content, submissions, analysisMethod = 'deterministic_rules') {
@@ -443,6 +469,8 @@ Rules:
 - Remove jokes for grief, health, money stress, discrimination, trauma, serious conflict, threats, abuse, coercion, stalking, self-harm, or immediate danger. For danger or coercion set safetyState to safety_redirect, do not mediate, and encourage a trusted nearby person or appropriate local emergency/support resource.`
 
 export async function processCourtVerdictJob(supabase, sessionId) {
+  // Covers direct recovery calls as well as cron; preserve queued work for rollback.
+  if (await majorUpdateEnabled(supabase)) return null
   const now = new Date().toISOString()
   const { data: job } = await supabase.from('court_verdict_jobs').update({
     status: 'processing', locked_at: now, updated_at: now,
@@ -465,6 +493,8 @@ export async function processCourtVerdictJob(supabase, sessionId) {
         whatCourtHeard: 'This deserves care beyond a playful verdict.',
         verdict: 'Bunny Court will not decide safety, coercion, abuse, or immediate-risk situations.',
         courtOrderedMove: 'Reach out to someone you trust nearby or an appropriate local support service.',
+        actionA: 'Reach out to someone you trust nearby or an appropriate local support service.',
+        actionB: '', tryTogether: '', closing: 'Court paused for safety.',
         shareText: 'Bunny Court paused this case for safety.', safetyState: 'safety_redirect',
       })
     } else if (!meaningfulOpenText(content.questions, submissions || []) || !await claimCourtAI(supabase, session)) {
@@ -567,11 +597,11 @@ export async function sessionView(supabase, session, viewerId) {
   }
   const liveContentRequest = resolved.content_snapshot?.definition
     ? Promise.resolve({ data: null })
-    : supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,engine,access_tier,notification_copy').eq('case_id', resolved.case_id).maybeSingle()
+    : supabase.from('court_case_definitions').select('case_id,category,subcategory,title,card_subtitle,engine,access_tier,notification_copy').eq('case_id', resolved.case_id).maybeSingle()
   const [{ data: liveContent }, { data: submissions }, { data: verdict }] = await Promise.all([
     liveContentRequest,
     supabase.from('court_submissions').select('user_id,submitted_at,answers').eq('session_id', resolved.id),
-    supabase.from('court_verdicts').select('outcome_key,headline,what_court_heard,verdict,court_ordered_move,share_text,safety_state,created_at').eq('session_id', resolved.id).maybeSingle(),
+    supabase.from('court_verdicts').select('outcome_key,headline,what_court_heard,verdict,court_ordered_move,share_text,action_a,action_b,action_a_name,action_b_name,try_together,closing,safety_state,created_at').eq('session_id', resolved.id).maybeSingle(),
   ])
   const content = resolved.content_snapshot?.definition || liveContent
   const mine = submissions?.find((item) => item.user_id === viewerId)
@@ -597,6 +627,9 @@ export async function sessionView(supabase, session, viewerId) {
     verdict: verdict ? {
       outcomeKey: verdict.outcome_key, headline: verdict.headline, whatCourtHeard: verdict.what_court_heard,
       verdict: verdict.verdict, courtOrderedMove: verdict.court_ordered_move, shareText: verdict.share_text,
+      actionA: verdict.action_a, actionB: verdict.action_b,
+      actionAName: verdict.action_a_name, actionBName: verdict.action_b_name,
+      tryTogether: verdict.try_together, closing: verdict.closing,
       safetyState: verdict.safety_state, createdAt: verdict.created_at,
     } : null,
   }

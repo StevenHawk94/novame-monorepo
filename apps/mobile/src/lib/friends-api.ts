@@ -1,8 +1,8 @@
 /**
  * Friends data + actions (C11a). A "keep your distance" model: a friend's card
  * shows the emoji of the items they collected today (resolved from the shared
- * dictionary by id), never their reflections. Invite by a stable code; add
- * creates a pending request the other side accepts.
+ * dictionary by id), never their reflections. Entering a stable code pairs
+ * both accounts immediately; there is no recipient approval step.
  */
 import { syncWidgetLatestFriend } from './widget-sync';
 
@@ -227,18 +227,27 @@ export function fetchFriends(options?: { force?: boolean }): Promise<FriendsStat
 export async function addFriend(
   code: string,
   opts?: { relationship?: string; relationshipSince?: string },
-): Promise<{ ok: boolean; error?: string; requestedTo?: string }> {
+): Promise<{ ok: boolean; error?: string; pairedName?: string; partner?: PairingStatus['partner'] }> {
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return { ok: false, error: 'no_session' };
   try {
-    const data = await apiClient.post<{ success?: boolean; error?: string; requestedTo?: string }>(
+    const data = await apiClient.post<{
+      success?: boolean;
+      error?: string;
+      pairedName?: string;
+      partner?: PairingStatus['partner'];
+    }>(
       '/api/friends/add',
       { userId, code, relationship: opts?.relationship, relationshipSince: opts?.relationshipSince },
     );
     if (data.error) return { ok: false, error: data.error };
-    await fetchFriends({ force: true }).catch(() => null);
-    return { ok: true, requestedTo: data.requestedTo };
+    await Promise.all([
+      fetchFriends({ force: true }).catch(() => null),
+      fetchPairing({ force: true }).catch(() => null),
+      fetchSubscriptionTier(userId, { force: true }).catch(() => null),
+    ]);
+    return { ok: true, pairedName: data.pairedName, partner: data.partner ?? null };
   } catch (err) {
     const e = (err as { body?: { error?: string } })?.body?.error;
     return { ok: false, error: e || 'network' };

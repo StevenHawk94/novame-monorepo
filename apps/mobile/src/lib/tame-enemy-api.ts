@@ -6,6 +6,8 @@
  */
 import { MONSTERS, TAME_POINTS_PER_COMPLETION } from '@novame/engine';
 import { ApiError } from '@novame/api-client';
+import { randomUUID } from 'expo-crypto';
+import { withDeadline } from './async-lifecycle';
 
 import { kTameEnemyState, kTameStatus } from '../shared/storage/keys';
 import { apiClient } from './api';
@@ -194,6 +196,7 @@ export async function submitTame(params: {
   monsterId: string;
   skillsUsed: string[];
   hits: number;
+  idempotencyKey?: string;
 }): Promise<{
   ok: boolean;
   error?: string;
@@ -202,6 +205,7 @@ export async function submitTame(params: {
   battlePoints?: number;
   battleTotalPoints?: number;
   milestoneBonus?: number;
+  carrotsAwarded?: number;
 }> {
   const epoch = sessionEpoch();
   const today = localDateStr();
@@ -212,7 +216,7 @@ export async function submitTame(params: {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user?.id;
     if (!userId || epoch !== sessionEpoch()) return { ok: false, error: 'no_session' };
-    const data = await apiClient.post<{
+    const data = await withDeadline(apiClient.post<{
       success?: boolean;
       error?: string;
       xp_awarded?: number;
@@ -222,17 +226,25 @@ export async function submitTame(params: {
       milestoneBonus?: number;
       tamesToday?: number;
       dailyLimit?: number;
+      carrotsAwarded?: number;
+      applied?: boolean;
+      localDate?: string;
+      tamedToday?: boolean;
+      tamedCount?: number;
     }>('/api/tame-enemy', {
       userId,
       monsterId: params.monsterId,
       skillsUsed: params.skillsUsed,
       hits: params.hits,
       localDate: today,
-    });
+      idempotencyKey: params.idempotencyKey ?? randomUUID(),
+    }), 20_000);
     if (epoch !== sessionEpoch()) return { ok: false, error: 'session_changed' };
     if (data.error || !data.success) return { ok: false, error: data.error ?? 'network' };
     statusRevision += 1;
-    markTameEnemyDoneToday(today);
+    const completionDate = data.localDate ?? today;
+    if (typeof data.tamesToday === 'number') storage.set(kTameEnemyState.name, JSON.stringify({ date: completionDate, count: data.tamesToday }));
+    else if (data.applied !== false) markTameEnemyDoneToday(completionDate);
     const cached = getCachedTameStatus();
     const completedToday = data.tamesToday ?? localTameCount(today);
     const monsters = cached.monsters.map(monster => {
@@ -240,18 +252,18 @@ export async function submitTame(params: {
       const currentPoints = Math.max(0, Number(monster.battlePoints) || 0);
       return {
         ...monster,
-        tamedCount: Math.max(0, Number(monster.tamedCount ?? (monster.tamedBefore ? 1 : 0)) || 0) + 1,
+        tamedCount: data.tamedCount ?? Math.max(0, Number(monster.tamedCount ?? (monster.tamedBefore ? 1 : 0)) || 0) + (data.applied === false ? 0 : 1),
         battlePoints: typeof data.battleTotalPoints === 'number'
           ? data.battleTotalPoints
           : currentPoints + (data.battlePoints ?? TAME_POINTS_PER_COMPLETION),
         tamedBefore: true,
-        tamedToday: today === localDateStr(),
+        tamedToday: completionDate === localDateStr() && (data.tamedToday ?? true),
       };
     });
     storage.set(kTameStatus.name, JSON.stringify({
       ...cached,
       monsters,
-      statusDate: localDateStr(),
+      statusDate: completionDate,
       tamesToday: completedToday,
       dailyLimit: data.dailyLimit ?? TAME_DAILY_LIMIT,
       doneToday: completedToday >= (data.dailyLimit ?? TAME_DAILY_LIMIT)
@@ -264,6 +276,7 @@ export async function submitTame(params: {
       battlePoints: data.battlePoints,
       battleTotalPoints: data.battleTotalPoints,
       milestoneBonus: data.milestoneBonus ?? 0,
+      carrotsAwarded: data.carrotsAwarded,
     };
   } catch (error) {
     if (epoch === sessionEpoch() && error instanceof ApiError && error.status === 409) {

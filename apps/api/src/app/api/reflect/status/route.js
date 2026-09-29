@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { serviceClient } from '@/lib/reflect-draft'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -17,6 +18,15 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const supabase = serviceClient()
+    if (await majorUpdateEnabled(supabase)) {
+      const { data: policy, error } = await supabase.rpc('burrow_record_policy_v1', { p_user_id: userId })
+      if (error || policy?.error || !policy) throw error || new Error('policy_unavailable')
+      return NextResponse.json({ success: true, policy, localDate: policy.localDate,
+        reflectsToday: policy.reflectsToday, reflectsRemaining: null, plusAiRemaining: null,
+        entries: { write_freely: policy.canRecord ? 'available' : 'completed',
+          tap_your_day: policy.canRecord ? 'available' : 'completed', remember_together: 'completed' },
+      }, { headers: { 'Cache-Control': 'no-store' } })
+    }
     const localDate = await resolveUserLocalDate(supabase, userId)
     const [
       { data: slots, error: slotError },

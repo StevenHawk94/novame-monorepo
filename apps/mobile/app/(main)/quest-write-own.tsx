@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react';
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +32,9 @@ const MAX_TASK = 120;
  * Empty rows just aren't filled yet; Start unlocks once every row has text.
  */
 export default function QuestWriteOwnScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)/quests" /> : <LegacyQuestWriteOwnScreen />;
+}
+function LegacyQuestWriteOwnScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [tasks, setTasks] = useState<string[]>(() => Array(PLAN_DAYS).fill(''));

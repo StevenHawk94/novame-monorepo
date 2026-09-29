@@ -38,7 +38,20 @@ const CONFIG_KEYS = [
   'shipping_fee',
   'book_unlock_words',
   'cards_unlock_count',
+  'app_major_update_enabled',
+  'app_major_update_content_revision',
 ]
+
+function parseConfigValue(key, value) {
+  if (key === 'app_major_update_enabled') {
+    return value === '1' || value === 'true'
+  }
+  if (key === 'app_major_update_content_revision') {
+    return typeof value === 'string' && value.trim() ? value.trim() : null
+  }
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
 
 function getSupabase() {
   return createClient(
@@ -64,7 +77,8 @@ export async function GET() {
       )
     }
 
-    // Build config object; parseFloat all values so mobile gets numbers.
+    // Build a typed config object. Legacy pricing values are numeric; the
+    // major-update rollout adds one boolean and one content revision string.
     // Missing keys default to null so the client can decide whether to
     // fall back to a hardcoded default (e.g. in case of partial DB seed).
     const config = {}
@@ -72,8 +86,7 @@ export async function GET() {
     for (const key of CONFIG_KEYS) {
       const row = (data || []).find((r) => r.key === key)
       if (row) {
-        const parsed = parseFloat(row.value)
-        config[key] = Number.isFinite(parsed) ? parsed : null
+        config[key] = parseConfigValue(key, row.value)
         if (!latestUpdatedAt || row.updated_at > latestUpdatedAt) {
           latestUpdatedAt = row.updated_at
         }

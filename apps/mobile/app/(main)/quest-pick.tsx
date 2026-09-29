@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +36,9 @@ const GREEN = '#7BB661';
  *     themeKey stays 'custom' so the plan records its origin.
  */
 export default function QuestPickScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)/quests" /> : <LegacyQuestPickScreen />;
+}
+function LegacyQuestPickScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { themeKey, tasksJson, title: titleParam } = useLocalSearchParams<{

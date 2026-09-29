@@ -7,6 +7,7 @@ import {
 } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
 import { runCompanionDependentRpc } from '@/lib/companion-boundary'
+import { majorUpdateEnabled, commandStatus } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -41,7 +42,7 @@ export async function POST(request) {
     if (!verified) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { userId, monsterId, skillsUsed, hits } = await request.json()
+    const { userId, monsterId, skillsUsed, hits, idempotencyKey } = await request.json()
     if (verified.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -54,6 +55,19 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+
+    if (await majorUpdateEnabled(supabase)) {
+      if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim() || idempotencyKey.length > 200
+        || hits !== 20 || !Array.isArray(skillsUsed) || skillsUsed.length !== 1) {
+        return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+      }
+      const { data: result, error } = await supabase.rpc('submit_burrow_rage_v1', {
+        p_user_id: userId, p_monster_id: monsterId, p_hits: hits,
+        p_skills: skillsUsed, p_key: idempotencyKey,
+      })
+      if (error) throw error
+      return NextResponse.json(result?.error ? result : { success: true, ...result }, { status: commandStatus(result?.error) })
+    }
 
     const dateStr = await resolveUserLocalDate(supabase, userId)
     const weekStr = isoWeek(dateStr)

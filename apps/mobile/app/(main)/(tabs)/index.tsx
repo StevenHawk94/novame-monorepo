@@ -90,6 +90,10 @@ function sameFreshBubble(a: FreshBubble | null, b: FreshBubble | null): boolean 
 }
 
 export default function HomeScreen() {
+  return useMajorUpdateEnabled() ? <BurrowScreen section="home" /> : <LegacyHomeScreen />;
+}
+
+function LegacyHomeScreen() {
   const homeEntry = useHomeEntry();
   const selectedSceneRemoteUrl = getHomeSceneRemoteUrl();
   // Unrelated P0 completions must not recycle Home's full-screen scene. Only
@@ -549,3 +553,5 @@ const styles = StyleSheet.create({
   },
   entryText: { fontSize: 20, fontFamily: 'Inter_700Bold', color: '#3A2E1A' },
 });
+import { BurrowScreen } from '@/components/burrow/burrow-screen';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

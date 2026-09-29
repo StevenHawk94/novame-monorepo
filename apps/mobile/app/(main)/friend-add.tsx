@@ -1,329 +1,206 @@
-import { useCallback, useRef, useState } from 'react';
-import { Image, Keyboard, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { FixedColumnGrid } from '@/components/ui/fixed-column-grid';
+import { Image } from 'expo-image';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
 import {
-  fetchFriends, getCachedFriends, addFriend, previewFriend,
+  fetchFriends, getCachedFriends, addFriend,
   type FriendsStatus,
 } from '@/lib/friends-api';
+import { getCachedMeStats } from '@/lib/me-stats';
+import { supabase } from '@/lib/supabase';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { GridBackground } from '@/components/ui/grid-background';
 
-// 2026-07-29 pairing flow (mock 3): the invitation proposes a relationship
-// and its start date.
-const RELATIONSHIPS = ['Partner', 'Best Friend', 'Families', 'Someone Special', 'Others'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-type InviteDraft = {
-  relationship: string | null;
-  since: { y: number; m: number; d: number };
-  dateOpen: boolean;
+type ResolvedPartner = {
+  code: string;
+  name: string;
+  userId?: string;
+  avatarUrl?: string;
+  isDefaultAvatar?: boolean;
 };
 
-function freshInviteDraft(): InviteDraft {
-  const now = new Date();
-  return {
-    relationship: null,
-    since: { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() },
-    dateOpen: false,
-  };
-}
-
 /**
- * Add Friends (mock 2026-08-05, 1:1): brown full screen, vertically centered
- * column — two-bunny art, the one-close-friend copy, Friend ID search, Invite
- * Link, the My Pair ID card, Copy ID — and a white round close at the bottom.
- * Searching opens the Search Result overlay (relationship + since date →
- * Send Invitation). Incoming/outgoing requests live on the Friends tab.
+ * Partner connection is now consent-by-code: either person can enter the
+ * other's exact six-character code and both accounts become paired at once.
+ * There is no pending request or approval screen.
  */
 export default function FriendAddScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // Cache-first: the Pair ID never changes, so paint it instantly from the
-  // cached status; the focus-effect fetch reconciles in the background.
   const [status, setStatus] = useState<FriendsStatus>(() => getCachedFriends());
-  const [query, setQuery] = useState('');
-  // Search-result card (mock 2): the resolved user + the proposed relationship.
-  const [found, setFound] = useState<{ code: string; name: string; userId?: string; avatarUrl?: string; isDefaultAvatar?: boolean } | null>(null);
-  // Relationship and date are one atomic invitation draft. Date-wheel updates
-  // can no longer replace or reset the relationship chosen a moment earlier.
-  const [inviteDraft, setInviteDraft] = useState<InviteDraft>(freshInviteDraft);
-  const { relationship, since, dateOpen } = inviteDraft;
-  const currentYear = new Date().getFullYear();
-  const [sending, setSending] = useState(false);
+  const [myUserId, setMyUserId] = useState<string | undefined>();
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const [pairing, setPairing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const searchInFlightRef = useRef(false);
+  const [connected, setConnected] = useState<ResolvedPartner | null>(null);
+  const me = getCachedMeStats();
 
   const load = useCallback(() => {
-    void fetchFriends().then(setStatus);
+    void fetchFriends({ force: true }).then(setStatus);
   }, []);
   useFocusEffect(load);
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setMyUserId(data.session?.user?.id));
+  }, []);
 
-  async function onSearch() {
-    const code = query.trim().toUpperCase();
-    if (code.length < 4 || searchInFlightRef.current) return;
-    searchInFlightRef.current = true;
-    try {
-      void haptics.medium();
-      const res = await previewFriend(code);
-      if (res.ok && res.targetName) {
-        Keyboard.dismiss();
-        setFound({ code, name: res.targetName, userId: res.targetUserId, avatarUrl: res.targetAvatarUrl, isDefaultAvatar: res.targetIsDefaultAvatar });
-        setInviteDraft(freshInviteDraft());
-      } else {
-        const msg =
-          res.error === 'code_not_found' ? "That ID doesn't look right — double check with your friend."
-          : res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
-          : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
-          : res.error === 'already_friends' ? "You're already friends."
-          : res.error === 'already_pending' ? 'You already have a pending invitation. You can send a new one after it is accepted or expires.'
-          : res.error === 'cannot_add_self' ? "That's your own ID!"
-          : res.error === 'friend_limit_reached' ? 'Your friend slots are full. Burrow Plus holds 99.'
-          : res.error === 'target_friend_limit_reached' ? 'Their friend slots are full right now.'
-          : 'Something went wrong. Try again.';
-        appAlert('Hmm', msg);
-      }
-    } finally {
-      searchInFlightRef.current = false;
-    }
-  }
-
-  async function onSendInvitation() {
-    if (!found || !relationship || sending) return;
+  async function connectNow() {
+    const normalized = code.trim().toUpperCase();
+    if (normalized.length !== 6 || pairing) return;
+    Keyboard.dismiss();
     void haptics.medium();
-    setSending(true);
-    const iso = `${since.y}-${String(since.m + 1).padStart(2, '0')}-${String(since.d).padStart(2, '0')}`;
-    const res = await addFriend(found.code, { relationship, relationshipSince: iso });
-    setSending(false);
-    if (res.ok) {
-      appAlert('Invitation sent', `We've sent your invitation to ${res.requestedTo ?? found.name}.`);
-      setFound(null);
-      setQuery('');
-      setInviteDraft(freshInviteDraft());
-      load();
-    } else {
-      const msg =
-        res.error === 'already_paired' ? 'You are already paired. Unpair first to invite someone else.'
-        : res.error === 'target_already_paired' ? 'They are already paired with someone else.'
-        : res.error === 'already_friends' ? "You're already friends."
-        : res.error === 'already_pending' ? 'You already have a pending invitation. You can send a new one after it is accepted or expires.'
-        : res.error === 'friend_limit_reached' ? 'Your friend slot is still in use. Refresh and try again.'
-        : res.error === 'target_friend_limit_reached' ? 'Their friend slot is full right now.'
-        : 'Something went wrong. Try again.';
-      appAlert('Hmm', msg);
+    setPairing(true);
+    const result = await addFriend(normalized, { relationship: 'Partner' });
+    setPairing(false);
+    if (!result.ok) {
+      appAlert('Wrong code', '');
+      return;
     }
+    void haptics.success();
+    setConnected({
+      code: normalized,
+      name: result.partner?.displayName || result.pairedName || 'Partner',
+      userId: result.partner?.userId,
+      avatarUrl: result.partner?.avatarUrl,
+      isDefaultAvatar: result.partner?.isDefaultAvatar,
+    });
+    setEntryOpen(false);
+    load();
   }
 
-  async function onCopyId() {
+  async function copyCode() {
     if (!status.inviteCode || copied) return;
-    void haptics.light();
     await Clipboard.setStringAsync(status.inviteCode);
     void haptics.success();
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   }
 
-  async function onInviteLink() {
+  async function shareInvite() {
     if (!status.inviteCode) return;
     void haptics.light();
     await Share.share({
-      message: `Add me on Burrow! My Friend ID is ${status.inviteCode} — let's share memory items together.`,
+      message: `Join my Burrow. Enter my code ${status.inviteCode} and we’ll be connected right away.`,
     });
   }
 
-  const closeBottom = insets.bottom + 18;
+  if (connected) {
+    return (
+      <View style={styles.lightRoot}>
+        <GridBackground />
+        <View style={[styles.successPage, { paddingTop: insets.top + 28, paddingBottom: insets.bottom + 22 }]}>
+          <View style={styles.successCard}>
+            <View style={styles.personColumn}>
+              <UserAvatar userId={myUserId} avatarUrl={me?.avatarUrl} isDefaultAvatar={me?.isDefaultAvatar} size={68} />
+              <Text style={styles.personName}>{me?.displayName || 'You'}</Text>
+            </View>
+            <View style={styles.successMiddle}>
+              <Text style={styles.successRelationship}>Partner</Text>
+              <Text style={styles.successDays}>Connected today</Text>
+            </View>
+            <View style={styles.personColumn}>
+              <UserAvatar userId={connected.userId} avatarUrl={connected.avatarUrl} isDefaultAvatar={connected.isDefaultAvatar} size={68} />
+              <Text style={styles.personName}>{connected.name}</Text>
+            </View>
+          </View>
+          <Text style={styles.successTitle}>Success! You’re now connected with {connected.name}</Text>
+          <Text style={styles.successBody}>You can now see each other’s shared daily moments, create memories together, and enjoy Bunny Court.</Text>
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={() => router.back()} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Done</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
       <GridBackground base="#7E5233" line="#956B4C" cell={22} lineWidth={1.2} />
-      {/* Vertically centered column (mock 1). */}
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 26, paddingBottom: insets.bottom + 104 }]}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
-        <Image source={ICONS.friendList} style={styles.bunnies} resizeMode="contain" />
-        <Text style={styles.intro}>
-          You can add 1 closest friend right now, please add someone important
-          that you want to stay closer, even not living together.
-        </Text>
-
-        {/* Friend ID search */}
-        <View style={styles.searchBox}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Enter Friend ID here"
-            placeholderTextColor="#A99A85"
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="characters"
-            onSubmitEditing={() => void onSearch()}
-          />
-          <Pressable onPress={() => void onSearch()} hitSlop={8}>
-            <MaterialIcons name="search" size={28} color="#7A4A2A" />
-          </Pressable>
-        </View>
-
-        {/* Invite Link */}
-        <Pressable
-          onPress={() => void onInviteLink()}
-          style={({ pressed }) => [styles.creamBtn, pressed && { opacity: 0.85 }]}
-        >
-          <MaterialIcons name="link" size={24} color="#2E8B57" />
-          <Text style={styles.creamBtnText}>Invite Link</Text>
+        <Image source={ICONS.friendList} style={styles.bunnies} contentFit="contain" />
+        <Text style={styles.heading}>Share Your Invite Link</Text>
+        <Pressable onPress={() => void shareInvite()} style={styles.creamButton}>
+          <MaterialIcons name="link" size={25} color="#2E9A62" />
+          <Text style={styles.creamButtonText}>Invite Link</Text>
         </Pressable>
-
-        {/* My Pair ID */}
-        <View style={styles.idCard}>
-          <Text style={styles.idLabel}>My Pair ID</Text>
-          <Text style={styles.idValue}>{status.inviteCode ?? '——————'}</Text>
+        <View style={styles.codeCard}>
+          <Text style={styles.codeLabel}>My Burrow Code</Text>
+          <Text style={styles.codeValue}>{status.inviteCode ?? '——————'}</Text>
         </View>
-
-        {/* Copy ID */}
+        <Pressable onPress={() => void copyCode()} style={styles.creamButton}>
+          <MaterialIcons name={copied ? 'check' : 'content-copy'} size={23} color="#2E9A62" />
+          <Text style={styles.creamButtonText}>{copied ? 'Copied!' : 'Copy ID'}</Text>
+        </Pressable>
         <Pressable
-          onPress={() => void onCopyId()}
-          style={({ pressed }) => [styles.creamBtn, pressed && { opacity: 0.85 }]}
+          onPress={() => { void haptics.pageOpen(); setCode(''); setEntryOpen(true); }}
+          hitSlop={10}
         >
-          <MaterialIcons name={copied ? 'check' : 'content-copy'} size={22} color="#2E8B57" />
-          <Text style={styles.creamBtnText}>{copied ? 'Copied!' : 'Copy ID'}</Text>
+          <Text style={styles.haveCode}>I have a code from my partner</Text>
         </Pressable>
       </ScrollView>
-
-      {/* Round white close (mock: bottom center) */}
       <Pressable
         onPress={() => { void haptics.pageClose(); router.back(); }}
-        style={[styles.closeBtn, { bottom: closeBottom }]}
-        hitSlop={8}
+        style={[styles.closeButton, { bottom: insets.bottom + 18 }]}
       >
-        <MaterialIcons name="close" size={28} color="#6B4226" />
+        <MaterialIcons name="close" size={30} color="#6B4226" />
       </Pressable>
 
-      {/* Search Result → relationship + since (mock 2) */}
-      {found && (
-        <View style={styles.modalOverlay}>
-          <GridBackground base="#7E5233" line="#956B4C" cell={22} lineWidth={1.2} />
-          <View style={styles.modalCard}>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={styles.modalTitle}>Search Result</Text>
-            <View style={styles.foundRow}>
-              <UserAvatar userId={found.userId} avatarUrl={found.avatarUrl} isDefaultAvatar={found.isDefaultAvatar} size={52} />
-              <Text style={styles.foundName}>{found.name}</Text>
+      {entryOpen && (
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={styles.entrySheet}>
+            <Pressable
+              onPress={() => { Keyboard.dismiss(); setEntryOpen(false); setCode(''); }}
+              style={styles.sheetClose}
+              hitSlop={10}
+            >
+              <MaterialIcons name="close" size={28} color="#32215D" />
+            </Pressable>
+            <Text style={styles.entryTitle}>Enter your partner’s Burrow code</Text>
+            <View style={styles.codeBoxes}>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <View key={index} style={[styles.codeBox, code.length === index && styles.codeBoxActive]}>
+                  <Text style={styles.codeCharacter}>{code[index] || ''}</Text>
+                </View>
+              ))}
+              <TextInput
+                autoFocus
+                value={code}
+                onChangeText={(value) => {
+                  const nextCode = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+                  setCode(nextCode);
+                }}
+                autoCapitalize="characters"
+                maxLength={6}
+                returnKeyType="done"
+                blurOnSubmit
+                onSubmitEditing={() => {
+                  if (code.length === 6) void connectNow();
+                }}
+                style={styles.hiddenCodeInput}
+              />
             </View>
-
-            <Text style={styles.modalQ}>What is your relationship with them?</Text>
-            <FixedColumnGrid
-              data={RELATIONSHIPS}
-              columns={2}
-              columnGap={10}
-              rowGap={10}
-              style={styles.relGrid}
-              keyExtractor={(value) => value}
-              renderItem={(r) => {
-                const on = relationship === r;
-                return (
-                  <Pressable
-                    onPress={() => {
-                      void haptics.light();
-                      setInviteDraft((current) => ({ ...current, relationship: r }));
-                    }}
-                    style={[styles.relPill, on && styles.relPillOn]}
-                  >
-                    <Text style={[styles.relPillText, on && styles.relPillTextOn]} numberOfLines={1}>{r}</Text>
-                  </Pressable>
-                );
-              }}
-            />
-
-            <Text style={styles.modalQ}>When is the first time you be in the relationship?</Text>
             <Pressable
-              onPress={() => {
-                void haptics.light();
-                setInviteDraft((current) => ({ ...current, dateOpen: !current.dateOpen }));
-              }}
-              style={styles.dateField}
+              onPress={() => void connectNow()}
+              disabled={code.length !== 6 || pairing}
+              style={[styles.pairButton, (code.length !== 6 || pairing) && styles.disabledButton]}
             >
-              <Text style={styles.dateFieldText}>
-                {MONTHS[since.m]} {since.d} {since.y}
-              </Text>
-              <MaterialIcons name={dateOpen ? 'arrow-drop-up' : 'arrow-drop-down'} size={24} color="#4A3220" />
+              {pairing ? <ActivityIndicator color="#FFFFFF" /> : (
+                <Text style={styles.pairButtonText}>Connect</Text>
+              )}
             </Pressable>
-            {dateOpen && (
-              <View style={styles.dateWheels}>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-                  {MONTHS.map((mn, i) => (
-                    <Pressable
-                      key={mn}
-                      onPress={() => setInviteDraft((current) => ({
-                        ...current,
-                        since: { ...current.since, m: i },
-                      }))}
-                      style={[styles.wheelRow, since.m === i && styles.wheelRowOn]}
-                    >
-                      <Text style={[styles.wheelText, since.m === i && styles.wheelTextOn]}>{mn.slice(0, 3)}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <Pressable
-                      key={d}
-                      onPress={() => setInviteDraft((current) => ({
-                        ...current,
-                        since: { ...current.since, d },
-                      }))}
-                      style={[styles.wheelRow, since.d === d && styles.wheelRowOn]}
-                    >
-                      <Text style={[styles.wheelText, since.d === d && styles.wheelTextOn]}>{d}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView style={styles.wheel} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-                  {Array.from({ length: 80 }, (_, i) => currentYear - i).map((y) => (
-                    <Pressable
-                      key={y}
-                      onPress={() => setInviteDraft((current) => ({
-                        ...current,
-                        since: { ...current.since, y },
-                      }))}
-                      style={[styles.wheelRow, since.y === y && styles.wheelRowOn]}
-                    >
-                      <Text style={[styles.wheelText, since.y === y && styles.wheelTextOn]}>{y}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            <Pressable
-              onPress={() => void onSendInvitation()}
-              disabled={!relationship || sending}
-              style={[styles.sendBtn, (!relationship || sending) && { opacity: 0.5 }]}
-            >
-              <Text style={styles.sendBtnText}>{sending ? 'Sending…' : 'Send Invitation'}</Text>
-            </Pressable>
-            </ScrollView>
           </View>
-
-          {/* Same round white close, dismissing the result overlay */}
-          <Pressable
-            onPress={() => {
-              void haptics.pageClose();
-              setFound(null);
-              setInviteDraft(freshInviteDraft());
-            }}
-            style={[styles.closeBtn, { bottom: closeBottom }]}
-            hitSlop={8}
-          >
-            <MaterialIcons name="close" size={28} color="#6B4226" />
-          </Pressable>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </View>
   );
@@ -331,78 +208,38 @@ export default function FriendAddScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#7E5233' },
-
-  scroll: {
-    flexGrow: 1, justifyContent: 'center',
-    paddingHorizontal: 22, paddingBottom: 110, gap: 15,
-  },
-
-  bunnies: { width: 118, height: 88, alignSelf: 'center' },
-  intro: {
-    fontSize: 17, lineHeight: 25, fontFamily: 'Inter_700Bold', color: '#FFFFFF',
-    textAlign: 'center', marginBottom: 8, paddingHorizontal: 4,
-  },
-
-  searchBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 26, paddingHorizontal: 20, paddingVertical: 6,
-  },
-  searchInput: { flex: 1, fontSize: 17, fontFamily: 'Inter_500Medium', color: '#4A3220', paddingVertical: 16 },
-
-  creamBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: '#FBF0CF', borderRadius: 26, paddingVertical: 18,
-  },
-  creamBtnText: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#4A3220' },
-
-  idCard: { backgroundColor: '#FFFFFF', borderRadius: 26, paddingVertical: 22, alignItems: 'center', gap: 6 },
-  idLabel: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B' },
-  idValue: { fontSize: 34, fontFamily: 'Inter_800ExtraBold', color: '#1B1B1B', letterSpacing: 3 },
-
-  closeBtn: {
-    position: 'absolute', alignSelf: 'center',
-    width: 58, height: 58, borderRadius: 29, backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject, backgroundColor: '#7E5233',
-    alignItems: 'center', justifyContent: 'center', padding: 18,
-  },
-  modalCard: { backgroundColor: '#F8E3BF', borderRadius: 30, padding: 20, width: '100%', maxHeight: '88%', marginBottom: 90 },
-  modalTitle: { fontSize: 22, fontFamily: 'Inter_800ExtraBold', color: '#2B2B2B', textAlign: 'center', marginBottom: 14 },
-  foundRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12, marginBottom: 16,
-  },
-  foundName: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#161311' },
-  modalQ: { fontSize: 16, fontFamily: 'Inter_800ExtraBold', color: '#2A2118', marginBottom: 10 },
-  relGrid: { marginBottom: 16 },
-  relPill: {
-    width: '100%', backgroundColor: '#FFFFFF', borderRadius: 22,
-    paddingVertical: 13, alignItems: 'center',
-  },
-  relPillOn: { backgroundColor: '#4A3220' },
-  relPillText: { fontSize: 14.5, fontFamily: 'Inter_700Bold', color: '#161311' },
-  relPillTextOn: { color: '#FFFFFF' },
-  dateField: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 13, marginBottom: 12,
-    alignSelf: 'stretch', maxWidth: 300,
-  },
-  dateFieldText: { fontSize: 17, fontFamily: 'Inter_600SemiBold', color: '#2A2118' },
-  dateWheels: { flexDirection: 'row', gap: 8, height: 120, marginBottom: 12 },
-  wheel: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12 },
-  wheelRow: { paddingVertical: 9, alignItems: 'center' },
-  wheelRowOn: { backgroundColor: '#F0E3D0' },
-  wheelText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: '#6B5A45' },
-  wheelTextOn: { color: '#161311', fontFamily: 'Inter_800ExtraBold' },
-  sendBtn: {
-    backgroundColor: '#4A3220', borderRadius: 24, alignItems: 'center',
-    paddingVertical: 17, marginTop: 6, marginHorizontal: 20,
-  },
-  sendBtnText: { fontSize: 17, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  lightRoot: { flex: 1, backgroundColor: '#F8E2C1' },
+  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 34, gap: 24 },
+  bunnies: { width: 126, height: 98, alignSelf: 'center', marginBottom: 10 },
+  heading: { fontSize: 29, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', marginBottom: 6 },
+  creamButton: { minHeight: 72, borderRadius: 32, backgroundColor: '#FFF3CF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  creamButtonText: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#2A2118' },
+  codeCard: { minHeight: 138, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  codeLabel: { fontSize: 18, fontFamily: 'Inter_800ExtraBold', color: '#18130F' },
+  codeValue: { fontSize: 36, letterSpacing: 5, fontFamily: 'Inter_800ExtraBold', color: '#12100E' },
+  haveCode: { fontSize: 20, lineHeight: 28, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF', textAlign: 'center', textDecorationLine: 'underline', marginTop: 10 },
+  closeButton: { position: 'absolute', alignSelf: 'center', width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(55,36,23,0.45)', justifyContent: 'flex-end', paddingHorizontal: 14, paddingBottom: 12 },
+  entrySheet: { width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 28, paddingHorizontal: 18, paddingTop: 58, paddingBottom: 20 },
+  sheetClose: { position: 'absolute', right: 18, top: 16 },
+  entryTitle: { fontSize: 25, lineHeight: 32, fontFamily: 'Inter_800ExtraBold', color: '#32215D', textAlign: 'center' },
+  codeBoxes: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 30, position: 'relative' },
+  codeBox: { width: 42, height: 54, borderRadius: 14, borderWidth: 1.5, borderColor: '#C8C1D2', alignItems: 'center', justifyContent: 'center' },
+  codeBoxActive: { borderColor: '#7654A3', borderWidth: 2 },
+  codeCharacter: { fontSize: 25, fontFamily: 'Inter_800ExtraBold', color: '#32215D' },
+  hiddenCodeInput: { ...StyleSheet.absoluteFillObject, opacity: 0.01, color: 'transparent' },
+  pairButton: { minHeight: 58, borderRadius: 29, backgroundColor: '#7051A0', alignItems: 'center', justifyContent: 'center', marginTop: 24 },
+  disabledButton: { opacity: 0.42 },
+  pairButtonText: { fontSize: 19, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
+  successPage: { flex: 1, paddingHorizontal: 28, alignItems: 'stretch' },
+  successCard: { marginTop: '42%', minHeight: 138, borderRadius: 28, backgroundColor: '#FFF8E8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+  personColumn: { width: 82, alignItems: 'center', gap: 8 },
+  personName: { fontSize: 14, fontFamily: 'Inter_800ExtraBold', color: '#211A14', textAlign: 'center' },
+  successMiddle: { flex: 1, alignItems: 'center', gap: 4 },
+  successRelationship: { fontSize: 20, fontFamily: 'Inter_800ExtraBold', color: '#1A1511' },
+  successDays: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#796854' },
+  successTitle: { marginTop: 42, fontSize: 30, lineHeight: 38, fontFamily: 'Inter_800ExtraBold', color: '#241A12', textAlign: 'center' },
+  successBody: { marginTop: 24, fontSize: 17, lineHeight: 25, fontFamily: 'Inter_500Medium', color: '#3B3026', textAlign: 'center' },
+  primaryButton: { minHeight: 66, borderRadius: 24, backgroundColor: '#4A3220', alignItems: 'center', justifyContent: 'center' },
+  primaryButtonText: { fontSize: 21, fontFamily: 'Inter_800ExtraBold', color: '#FFFFFF' },
 });

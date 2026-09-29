@@ -21,7 +21,8 @@ import {
   markNotifPromptedAfterPurchase,
 } from '@/lib/notification-settings';
 import { ICONS } from '@/lib/icons';
-import { DEFAULT_PLUS_BENEFITS } from '@/lib/plus-benefits';
+import { DEFAULT_PLUS_BENEFITS, BURROW_PLUS_BENEFITS } from '@/lib/plus-benefits';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { GridBackground } from '@/components/ui/grid-background';
 import { useStoreSubscriptionPricing } from '@/hooks/use-store-subscription-pricing';
 
@@ -44,6 +45,8 @@ const BTN = '#4A3220';
 type Phase = 'benefits' | 'plans';
 
 export default function SubscriptionPaywallModal() {
+  const majorUpdate=useMajorUpdateEnabled();
+  const benefits=majorUpdate?BURROW_PLUS_BENEFITS:DEFAULT_PLUS_BENEFITS;
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ phase?: string }>();
   const isPaid = (getCachedSubscription()?.tier ?? 'free') !== 'free';
@@ -276,7 +279,7 @@ export default function SubscriptionPaywallModal() {
               <View style={styles.plusCard}>
                 <ExpoImage source={ICONS.obPaywallUnlock} style={styles.lockImg} contentFit="contain" />
                 <Text style={styles.plusTitle}>Burrow Plus</Text>
-                {DEFAULT_PLUS_BENEFITS.map((t, index) => (
+                {benefits.map((t, index) => (
                   <View key={t}>
                     <View style={styles.benefitRow}>
                       <MaterialIcons name="check-circle" size={22} color="#FFFFFF" />
@@ -284,7 +287,7 @@ export default function SubscriptionPaywallModal() {
                         <Text style={styles.benefitTitle}>{t}</Text>
                       </View>
                     </View>
-                    {index < DEFAULT_PLUS_BENEFITS.length - 1 && <View style={styles.benefitDivider} />}
+                    {index < benefits.length - 1 && <View style={styles.benefitDivider} />}
                   </View>
                 ))}
               </View>

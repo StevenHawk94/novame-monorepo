@@ -44,6 +44,7 @@ function setup() {
   const lens = load(lib + 'lens-api.ts', common, timing.globals);
   const tame = load(lib + 'tame-enemy-api.ts', {
     ...common,
+    'expo-crypto': { randomUUID: () => 'test-battle-key' },
     '@novame/engine': { MONSTERS: definitions, TAME_POINTS_PER_COMPLETION: 50 },
   }, timing.globals);
   return { timing, storage, values, listeners, identity, pending, quiet, lens, tame, response, calls, apiClient,
@@ -174,6 +175,39 @@ function seedTames(h, { paid = false, count = 0, dailyCount = 0, used = [] } = {
   }));
 }
 const submitTame = h => h.tame.submitTame({ monsterId: 'monster-0', skillsUsed: ['final-1'], hits: 20 });
+
+test('Burrow Rage retry forwards same key and restores authoritative counts without double increment', async () => {
+  const h = setup();
+  seedTames(h, { count: 4, dailyCount: 1, used: ['monster-0'] });
+  const work = h.tame.submitTame({ monsterId: 'monster-0', skillsUsed: ['final-1'], hits: 20, idempotencyKey: 'same-battle' });
+  await flush();
+  h.response.resolve({ success: true, applied: false, xp_awarded: 0, carrotsAwarded: 0,
+    tamedCount: 4, tamedToday: true, tamesToday: 1, battleTotalPoints: 200, battlePoints: 0 });
+  const result = await work;
+  assert.equal(result.carrotsAwarded, 0);
+  assert.equal(h.calls[0].body.idempotencyKey, 'same-battle');
+  assert.equal(h.tame.getCachedTameStatus().monsters[0].tamedCount, 4);
+  assert.equal(h.tame.getCachedTameStatus().monsters[0].battlePoints, 200);
+  assert.equal(JSON.parse(h.values.get('kTameEnemyState')).count, 1);
+});
+
+test('timed-out Rage stops waiting, ignores its late response, and keeps the same retry key', async () => {
+  const h = setup(); seedTames(h);
+  const params = { monsterId: 'monster-0', skillsUsed: ['final-1'], hits: 20, idempotencyKey: 'durable-battle' };
+  const first = h.tame.submitTame(params); await flush(); h.timing.advance(20_001);
+  assert.equal((await first).ok, false);
+  h.response.resolve({ success: true, applied: true, tamedCount: 1, tamesToday: 1, battlePoints: 50 });
+  await flush(); assert.equal(h.tame.getCachedTameStatus().monsters[0].tamedCount, 0);
+  h.apiClient.post = async (path, body) => {
+    h.calls.push({ path, body });
+    return { success: true, applied: false, tamedCount: 1, tamedToday: true, tamesToday: 1,
+      carrotsAwarded: 0, battlePoints: 0, battleTotalPoints: 50 };
+  };
+  assert.equal((await h.tame.submitTame(params)).ok, true);
+  assert.equal(h.calls[0].body.idempotencyKey, h.calls[1].body.idempotencyKey);
+  assert.equal(h.tame.getCachedTameStatus().monsters[0].tamedCount, 1);
+  assert.equal(h.tame.getCachedTameStatus().monsters[0].battlePoints, 50);
+});
 
 test('every monster starts with an independent zero-point Tame History', () => {
   const h = setup();

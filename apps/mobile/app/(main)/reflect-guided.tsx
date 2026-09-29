@@ -29,6 +29,7 @@ import { BACKGROUNDS } from '@/lib/icons';
 import { OffsetCard } from '@/components/ui/offset-card';
 import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } from '@/components/main/tap-your-day-item';
 import { RC, ReflectTopBar } from '@/components/main/reflect-shared';
+import { RecordSharing } from '@/components/burrow/record-sharing';
 import { ReflectSettlementView } from '@/components/main/reflect-settlement';
 import { itemRuleContext } from '@/lib/item-rule-cache';
 import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
@@ -40,6 +41,8 @@ type DayChoice = TapYourDayChoice & Partial<CustomTapItem>;
 
 /** Four skippable questions. Section labels are headings, never navigation tabs. */
 export default function ReflectGuidedScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
+  const [shareToPartner,setShareToPartner]=useState(true);
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height, fontScale } = useWindowDimensions();
   const router = useRouter();
@@ -78,11 +81,11 @@ export default function ReflectGuidedScreen() {
   useFocusEffect(useCallback(() => {
     let active = true;
     setTapStatus(getJournalEntryStatesToday().tap_your_day);
-    void fetchJournalEntryStates().then((state) => {
+    void fetchJournalEntryStates(majorUpdate).then((state) => {
       if (active) setTapStatus(state.entries.tap_your_day);
     });
     return () => { active = false; };
-  }, []));
+  }, [majorUpdate]));
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     setToast(null);
@@ -138,6 +141,7 @@ export default function ReflectGuidedScreen() {
         matchingVersion: matching.version,
         selectedItems: selectedList,
         idempotencyKey: requestKey.current,
+        shareToPartner: majorUpdate ? shareToPartner : undefined,
       });
       if (!result.ok) {
         setError(result.error);
@@ -168,7 +172,7 @@ export default function ReflectGuidedScreen() {
             <ReflectTopBar onBack={onBack} />
             {phase === 'steps' && canAddCustomTapItem(question) && <Pressable disabled={!custom.ready} onPress={() => { void haptics.light(); setAddOpen(true); }} style={{ backgroundColor: '#50351D', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Inter_700Bold' }}>＋ Add</Text></Pressable>}
           </View>}
-          {tapStatus !== 'available' && phase !== 'result' ? (
+          {!majorUpdate && tapStatus !== 'available' && phase !== 'result' ? (
             <View style={styles.center}>
               <Text style={styles.title}>Done for today</Text>
               <Text style={styles.hint}>You&apos;ve already used Tap Your Day today. It will be available again tomorrow.</Text>
@@ -208,6 +212,7 @@ export default function ReflectGuidedScreen() {
                 editable={!submitting} multiline textAlignVertical="top" maxLength={MAX_CHARS}
               />
               <Text style={styles.count}>{note.length} / {MAX_CHARS}</Text>
+              {majorUpdate&&<RecordSharing shared={shareToPartner} onChange={value=>{requestKey.current=null;setShareToPartner(value);}} disabled={submitting}/>}
               <Text style={styles.matchLabel}>Items You Selected</Text>
               <View style={styles.matchBar}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
@@ -218,6 +223,8 @@ export default function ReflectGuidedScreen() {
               </View>
               {!!error && <Text style={styles.errorText}>{error === 'selection_unavailable'
                 ? SELECTION_UNAVAILABLE_MESSAGE
+                : error === 'daily_adventure_used' ? 'Your adventure has started. Save a new day tomorrow.'
+                : error === 'not_paired' ? 'Reconnect with your partner before saving.'
                 : error === 'journal_kind_used' ? "You've already used Tap Your Day today. It will be available again tomorrow."
                 : error === 'too_long' ? 'That’s a little long. Trim it under 5,000 characters.'
                   : 'Couldn’t save that. Check your connection and try again.'}</Text>}
@@ -233,7 +240,8 @@ export default function ReflectGuidedScreen() {
               setTapStatus('completed');
               void fetchReflectFeed({ force: true });
               void fetchBags('mine');
-              router.back();
+              if (majorUpdate) router.replace('/(main)/burrow-detail?section=adventure' as Href);
+              else router.back();
             }} />
           )}
         </View>
@@ -280,3 +288,5 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: '#FFD9D9', marginTop: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
 });
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
+import type { Href } from 'expo-router';

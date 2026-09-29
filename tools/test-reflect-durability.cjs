@@ -83,8 +83,9 @@ function guideHarness() {
   const jsx=(type,props)=>({type,props});
   const animation=()=>({start(){},stop(){}});
   const {FeatureGuideModal}=load('apps/mobile/src/components/main/feature-guide-modal.tsx',{
+    '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text' },
     react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{
-      Animated:{Value:class{constructor(v){this.v=v;}setValue(v){this.v=v;}},timing:animation,sequence:animation,
+      Animated:{Value:class{constructor(v){this.v=v;}setValue(v){this.v=v;}},timing:()=>({start:()=>shown++,stop(){}}),sequence:animation,
         parallel:()=>({start:()=>shown++,stop(){}}),View:'AnimatedView'},
       Easing:{out:x=>x,inOut:x=>x},Image:{resolveAssetSource:()=>({uri:'bundle://guide.png'})},
       Modal:'Modal',Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x,absoluteFillObject:{}},
@@ -108,7 +109,7 @@ function nodes(node){return !node||typeof node!=='object'?[]:[node,...[node.prop
 test('guide waits for decoded icon before presentation, never opens an invisible modal waiting for onDisplay',()=>{
   const h=guideHarness();h.render();assert.equal(h.render().props.visible,false);assert.equal(h.shown(),0);
   h.imageReady();h.render();h.render();let tree=h.render();
-  assert.equal(tree.props.visible,true);assert.equal(h.shown(),1);
+  assert.equal(tree.props.visible,true);tree.props.onShow();assert.equal(h.shown(),1);
   tree.props.onRequestClose();tree.props.onRequestClose();h.render();assert.equal(h.completed(),1);
   h.focus(false);h.render();h.focus(true);h.render();assert.equal(h.render().props.visible,false);
 });

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { EXPIRABLE_STATUSES, LOVE_RELATIONSHIPS, courtServiceClient, loadCourtCase, loadPair, pairBounds, sessionView } from '@/lib/bunny-court'
 
 export const runtime = 'edge'
@@ -17,6 +18,7 @@ export async function GET(request) {
     const previewCaseId = searchParams.get('previewCaseId')
     if (!userId || !await requireUser(request, userId)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = courtServiceClient()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_retired' }, { status: 410 })
     const pair = await loadPair(supabase, userId)
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
     const isPlus = (profile?.subscription_tier || 'free') !== 'free'
@@ -49,7 +51,7 @@ export async function GET(request) {
       { data: openRows, error: openError },
       { data: historyRows, error: historyError },
     ] = await Promise.all([
-      supabase.from('court_case_definitions').select('case_id,category,title,card_subtitle,eligibility,engine,access_tier,question_count,sensitivity').ilike('status', '%Launch').order('access_tier').order('case_id'),
+      supabase.from('court_case_definitions').select('case_id,category,subcategory,title,card_subtitle,eligibility,engine,access_tier,question_count,sensitivity').ilike('status', '%Launch').order('category').order('subcategory').order('case_id'),
       supabase.from('court_sessions').select('*').eq('pair_low', pairLow).eq('pair_high', pairHigh).in('status', ['awaiting_initiator','awaiting_partner','processing','ready']).order('updated_at', { ascending: false }).limit(20),
       supabase.from('court_sessions').select('id,case_id,status,completed_at,verdict_ready_at,created_at').eq('pair_low', pairLow).eq('pair_high', pairHigh).in('status', ['completed','ready']).order('updated_at', { ascending: false }).limit(20),
     ])
@@ -64,7 +66,7 @@ export async function GET(request) {
       const relationshipBlocked = definition.category === 'Love Court' && !LOVE_RELATIONSHIPS.has(pair.relationship)
       const plusBlocked = definition.access_tier === 'plus' && !isPlus
       return {
-        id: definition.case_id, category: definition.category, title: definition.title,
+        id: definition.case_id, category: definition.category, subcategory: definition.subcategory || 'All', title: definition.title,
         subtitle: definition.card_subtitle, engine: definition.engine, accessTier: definition.access_tier,
         questionCount: definition.question_count,
         sensitivity: definition.sensitivity,
@@ -87,6 +89,7 @@ export async function POST(request) {
     const caseId = typeof body?.caseId === 'string' ? body.caseId : ''
     if (!caseId) return NextResponse.json({ error: 'case_required' }, { status: 400 })
     const supabase = courtServiceClient()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_retired' }, { status: 410 })
     const pair = await loadPair(supabase, userId)
     if (!pair) return NextResponse.json({ error: 'not_paired' }, { status: 409 })
     const [pairLow, pairHigh] = pairBounds(userId, pair.partner_user_id)

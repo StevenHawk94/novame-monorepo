@@ -37,6 +37,7 @@ const TAN_OFFSET = '#E5B57E';
  * the params forward straight to reflect-typing (this screen never shows).
  */
 export default function ReflectEntryScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
@@ -47,19 +48,27 @@ export default function ReflectEntryScreen() {
   const hasPreset = typeof params.presetPrompt === 'string' && params.presetPrompt.length > 0;
   const [entryStates, setEntryStates] = useState<JournalEntryStates>(getJournalEntryStatesToday);
   const [plusAiRemaining, setPlusAiRemaining] = useState(getPlusAiRemainingToday);
+  const [recordNotice, setRecordNotice] = useState('Checking today’s adventure…');
+  const [recordReady, setRecordReady] = useState(false);
 
   useFocusEffect(useCallback(() => {
     let active = true;
     setEntryStates(getJournalEntryStatesToday());
     setPlusAiRemaining(getPlusAiRemainingToday());
-    void fetchJournalEntryStates().then((state) => {
+    setRecordReady(false);
+    void fetchJournalEntryStates(majorUpdate).then((state) => {
       if (active) {
         setEntryStates(state.entries);
         setPlusAiRemaining(state.plusAiRemaining);
+        setRecordReady(state.policy?.canRecord === true);
+        setRecordNotice(state.policy?.reason === 'daily_adventure_used'
+          ? 'Your adventure has started. Come back tomorrow to record a new day.'
+          : state.policy?.reason === 'not_paired' ? 'Connect with your partner to start.'
+          : state.policy ? 'Record your day, then start one adventure.' : 'Connect to check today’s adventure. Reopen this page to retry.');
       }
     });
     return () => { active = false; };
-  }, []));
+  }, [majorUpdate]));
 
   useEffect(() => {
     // Cloud additions are only checked when the user enters an item-consuming
@@ -109,7 +118,7 @@ export default function ReflectEntryScreen() {
       icon: ICONS.reflectEntry3,
       route: '/(main)/shared-memory-create' as const,
     },
-  ];
+  ].filter(way => !majorUpdate || way.key !== 'shared');
 
   return (
     <SwipeDownToDismiss onDismiss={() => router.back()}>
@@ -119,10 +128,10 @@ export default function ReflectEntryScreen() {
           <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />
           </Pressable>
-          <Text style={styles.lead}>How would you like to reflect?</Text>
-          <Text style={styles.leadSub}>Pick a way.</Text>
+          <Text style={styles.lead}>{majorUpdate ? 'Start today’s adventure' : 'How would you like to reflect?'}</Text>
+          <Text style={styles.leadSub}>{majorUpdate ? recordNotice : 'Pick a way.'}</Text>
           {ways.map((w) => {
-            const status = isPaid && w.journalKind === 'write_freely'
+            const status = majorUpdate ? (recordReady ? 'available' : 'completed') : isPaid && w.journalKind === 'write_freely'
               ? 'available' : entryStates[w.journalKind];
             const unavailable = status !== 'available';
             return (
@@ -142,7 +151,7 @@ export default function ReflectEntryScreen() {
                   void haptics.pageOpen();
                   router.push(w.route as never);
                 };
-                if (isPaid && plusAiRemaining <= 0
+                if (!majorUpdate && isPaid && plusAiRemaining <= 0
                   && (w.journalKind === 'write_freely' || w.journalKind === 'tap_your_day')) {
                   appAlert(
                     "You've hit your Plus limit for today.",
@@ -200,3 +209,4 @@ const styles = StyleSheet.create({
   doneText: { fontSize: 13, fontFamily: 'Inter_700Bold', color: '#765F50', marginTop: 7 },
   wayIcon: { width: 56, height: 56 },
 });
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

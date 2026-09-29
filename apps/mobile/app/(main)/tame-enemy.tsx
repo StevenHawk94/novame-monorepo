@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LayoutRectangle } from 'react-native';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { randomUUID } from 'expo-crypto';
 import { MaterialIcons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import Animated, {
@@ -39,6 +40,8 @@ import {
   type TameFinalWords,
 } from '../../src/lib/tame-final-words';
 import { SwipeAttackLayer } from '../../src/components/tame-enemy/swipe-attack-layer';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
+import { burrowErrorMessage, refreshBurrow } from '@/lib/burrow-store';
 
 type Phase = 'select' | 'prep' | 'battle' | 'finalWords' | 'exploding' | 'result';
 
@@ -74,6 +77,14 @@ function scaleForHits(hits: number): number {
 export default function TameEnemyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const majorUpdate = useMajorUpdateEnabled();
+  const params = useLocalSearchParams<{ monsterId?: string; friendVisitId?: string; friendAdventureId?: string }>();
+  const friendContext = params.friendVisitId ?? params.friendAdventureId;
+  const openedVisit = useRef<string | null>(null);
+  const battleKey = useRef(randomUUID());
+  const finalChoice = useRef<string | null>(null);
+  const [settling, setSettling] = useState(false);
+  const [settlementError, setSettlementError] = useState<string | null>(null);
   const kit = {
     text: '#3A2E1A', textSub: '#6B5A45', textMuted: '#9A8770',
     card: '#FFFFFF', border: 'rgba(58,46,26,0.12)',
@@ -126,8 +137,18 @@ export default function TameEnemyScreen() {
 
   useFocusEffect(useCallback(() => {
     refreshCachedStatus();
-    void fetchTameStatus();
-  }, [refreshCachedStatus]));
+    let live = true;
+    void fetchTameStatus().then(status => {
+      if (!live || !majorUpdate || !friendContext || openedVisit.current === friendContext) return;
+      const monster = status.monsters.find(item => item.id === params.monsterId);
+      if (!monster) return;
+      openedVisit.current = friendContext;
+      if (status.doneToday || monster.tamedToday) {
+        Alert.alert('A little rest first', 'This battle is not available today. Your friend can wait until tomorrow, or your partner can help.');
+      } else startBattle(monster);
+    });
+    return () => { live = false; };
+  }, [refreshCachedStatus, majorUpdate, friendContext, params.monsterId]));
 
   useEffect(() => () => {
     if (hitTimer.current) clearTimeout(hitTimer.current);
@@ -165,6 +186,10 @@ export default function TameEnemyScreen() {
     submittingRef.current = false;
     setMonsterTarget(null);
     setReward(null);
+    battleKey.current = randomUUID();
+    finalChoice.current = null;
+    setSettlementError(null);
+    setSettling(false);
     setMilestoneBonus(0);
     setHitFlash(false);
     monsterScale.value = 1;
@@ -225,14 +250,22 @@ export default function TameEnemyScreen() {
     cancelAnimation(whiteFilm);
     whiteFilm.value = 0;
     void haptics.heavy();
-    setReward(XP_RULES.tameEnemy.award);
+    setReward(majorUpdate ? null : XP_RULES.tameEnemy.award);
     setMilestoneBonus(0);
     setPhase('exploding');
-    const award = optimisticCloverAward(XP_RULES.tameEnemy.award);
     const variant = selectedFinalWords?.variant ?? 'fallback';
     const choiceId = `${active.id}-final-${variant}-${index + 1}`;
-    void submitTame({ monsterId: active.id, skillsUsed: [choiceId], hits: ATTACKS_TO_TAME }).then((res) => {
-      setReward(res.ok ? (res.xpAwarded ?? null) : null);
+    finalChoice.current = choiceId;
+    settleBattle(choiceId);
+  }
+
+  function settleBattle(choiceId: string) {
+    if (!active || settling) return;
+    setSettling(true);
+    setSettlementError(null);
+    const award = majorUpdate ? null : optimisticCloverAward(XP_RULES.tameEnemy.award);
+    void submitTame({ monsterId: active.id, skillsUsed: [choiceId], hits: ATTACKS_TO_TAME, idempotencyKey: battleKey.current }).then((res) => {
+      setReward(res.ok ? (res.carrotsAwarded ?? res.xpAwarded ?? null) : null);
       setMilestoneBonus(res.ok ? (res.milestoneBonus ?? 0) : 0);
       if (res.ok) {
         if (typeof res.battleTotalPoints === 'number') {
@@ -240,10 +273,13 @@ export default function TameEnemyScreen() {
             ? { ...current, battlePoints: res.battleTotalPoints! }
             : current);
         }
-        award.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
+        award?.commit((res.xpAwarded ?? 0) + (res.milestoneBonus ?? 0));
+        if (majorUpdate) void refreshBurrow();
       } else {
-        award.rollback();
+        award?.rollback();
+        setSettlementError(res.error ?? 'network_error');
       }
+      setSettling(false);
     });
   }
 
@@ -328,7 +364,7 @@ export default function TameEnemyScreen() {
         </Text>
 
         {/* milestone banner: the next three unclaimed 🍀 thresholds */}
-        <View style={styles.milestoneBanner}>
+        {!majorUpdate && <View style={styles.milestoneBanner}>
           {milestones.map((m, i) => (
             <View key={m.n} style={styles.milestoneNodeWrap}>
               {i > 0 && <View style={styles.milestoneLink} />}
@@ -339,7 +375,7 @@ export default function TameEnemyScreen() {
               <Text style={styles.milestoneThreshold}>{m.threshold.toLocaleString()}</Text>
             </View>
           ))}
-        </View>
+        </View>}
 
         {/* history bar (mock): icon + label left, pts chip right */}
         <View style={styles.prepStatsBar}>
@@ -502,7 +538,7 @@ export default function TameEnemyScreen() {
           <View style={styles.resultBackdrop}>
             <Animated.View style={[styles.resultCard, resultAnimatedStyle]}>
               <Text style={styles.victoryLaurel}>{'🌿⭐️🌿'}</Text>
-              <Text style={styles.victoryTitle}>VICTORY!</Text>
+              <Text style={styles.victoryTitle}>{settling ? 'Saving…' : settlementError ? 'One more step' : 'VICTORY!'}</Text>
               {MONSTER_ART[active.id] ? (
                 <ExpoImage source={MONSTER_ART[active.id].normal} style={styles.doneImg} contentFit="contain" />
               ) : (
@@ -514,18 +550,26 @@ export default function TameEnemyScreen() {
                   <View style={styles.rewardRibbon}>
                     <Text style={styles.rewardRibbonText}>Rewards</Text>
                   </View>
-                  <Image source={ICONS.Clover} style={styles.resultClover} resizeMode="contain" />
+                  {majorUpdate ? <Text style={{ fontSize: 40 }}>🥕</Text> : <Image source={ICONS.Clover} style={styles.resultClover} resizeMode="contain" />}
                   <Text style={styles.rewardCount}>x{reward}</Text>
                   {milestoneBonus > 0 && (
                     <Text style={styles.milestoneText}>Milestone bonus +{milestoneBonus} 🍀</Text>
                   )}
                 </View>
               )}
+              {!!settlementError && <>
+                <Text style={styles.victoryText}>{majorUpdate ? burrowErrorMessage(settlementError) : 'Your progress hasn’t been saved yet. Please try again.'}</Text>
+                <Pressable accessibilityRole="button" disabled={settling} onPress={() => finalChoice.current && settleBattle(finalChoice.current)} style={styles.confirmBtn}>
+                  <Text style={styles.confirmText}>Retry saving</Text>
+                </Pressable>
+              </>}
+              {!!friendContext && !settling && !settlementError && <Text style={styles.victoryText}>Return to your friend to finish your story.</Text>}
               <Pressable
+                disabled={settling}
                 onPress={() => { void haptics.pageClose(); router.back(); }}
                 style={({ pressed }) => [styles.confirmBtn, pressed && styles.confirmBtnPressed]}
               >
-                <Text style={styles.confirmText}>Confirm</Text>
+                <Text style={styles.confirmText}>{friendContext ? 'Back to my friend' : 'Confirm'}</Text>
               </Pressable>
             </Animated.View>
           </View>

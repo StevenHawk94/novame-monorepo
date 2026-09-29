@@ -102,6 +102,9 @@ export interface ReflectSnapshot {
 }
 
 export type ReflectError =
+  | 'daily_adventure_used'
+  | 'not_paired'
+  | 'journal_kind_disabled'
   | 'daily_limit' // already reflected 3 times today
   | 'journal_kind_used' // this Journal entry was already used today
   | 'companion_not_ready' // no companion row (should not happen post-onboarding)
@@ -205,21 +208,33 @@ export function getPlusAiRemainingToday(): number {
     : 2;
 }
 
-export async function fetchJournalEntryStates(): Promise<{
+export interface BurrowRecordPolicy {
+  mode: 'burrow'; localDate: string; canRecord: boolean;
+  reason: 'not_paired' | 'daily_adventure_used' | null;
+  hasPlus: boolean; pendingDraftId: string | null;
+}
+
+export async function fetchJournalEntryStates(requireBurrow = false): Promise<{
   entries: JournalEntryStates;
   reflectsToday: number;
   reflectsRemaining: number;
   plusAiRemaining: number;
+  policy?: BurrowRecordPolicy;
 }> {
   const local = getReflectStateToday();
+  const unavailable = { entries: { write_freely: 'completed', tap_your_day: 'completed',
+    remember_together: 'completed' } as JournalEntryStates,
+    reflectsToday: 0, reflectsRemaining: 0, plusAiRemaining: 0 };
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user?.id;
+    if (!userId && requireBurrow) return unavailable;
     if (!userId) return {
       entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
     };
     const wire = await apiClient.get<{
       success?: boolean;
+      policy?: BurrowRecordPolicy;
       localDate?: string;
       reflectsToday?: number;
       reflectsRemaining?: number;
@@ -227,6 +242,16 @@ export async function fetchJournalEntryStates(): Promise<{
       journalKind?: JournalKind;
       entries?: Partial<JournalEntryStates>;
     }>(`/api/reflect/status?userId=${encodeURIComponent(userId)}`);
+    const current = await supabase.auth.getSession();
+    if (current.data.session?.user?.id !== userId) return unavailable;
+    // Server-local date may differ from the device date. Never persist new
+    // policy as an old three-entry quota or treat stale cache as permission.
+    if (wire.success && wire.policy?.mode === 'burrow') return {
+      ...unavailable, policy: wire.policy, reflectsToday: wire.reflectsToday ?? 0,
+      entries: { write_freely: wire.policy.canRecord ? 'available' : 'completed',
+        tap_your_day: wire.policy.canRecord ? 'available' : 'completed', remember_together: 'completed' },
+    };
+    if (requireBurrow) return unavailable;
     if (!wire.success || wire.localDate !== localDateStr()) {
       return {
         entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
@@ -239,6 +264,7 @@ export async function fetchJournalEntryStates(): Promise<{
     writeCache({ date: wire.localDate, reflectsToday, entries, plusAiRemaining });
     return { entries, reflectsToday, reflectsRemaining, plusAiRemaining };
   } catch {
+    if (requireBurrow) return unavailable;
     return {
       entries: getJournalEntryStatesToday(), plusAiRemaining: getPlusAiRemainingToday(), ...local,
     };
@@ -288,6 +314,7 @@ function toSnapshot(w: WireSnapshot): ReflectSnapshot {
 }
 
 export async function prepareReflect(params: {
+  shareToPartner?: boolean;
   promptId: number;
   body: string;
   sourceKit?: 'new_lens';
@@ -315,6 +342,7 @@ export async function prepareReflect(params: {
       success?: boolean;
       error?: string;
       draftId?: string;
+      policyMode?: 'burrow' | 'legacy';
       reflectId?: string;
       localDate?: string;
       revision?: number;
@@ -331,6 +359,7 @@ export async function prepareReflect(params: {
     }>('/api/reflect/prepare', {
       userId,
       promptId: params.promptId,
+      shareToPartner: params.shareToPartner,
       body,
       localDate: localDateStr(),
       sourceKit: params.sourceKit,
@@ -353,7 +382,7 @@ export async function prepareReflect(params: {
     }
     holdReflectSettlement(wire.draftId);
     const journalKind = wire.journalKind || journalKindForPrepare(params);
-    if (wire.reflectId && wire.localDate === localDateStr()) {
+    if (wire.policyMode !== 'burrow' && wire.reflectId && wire.localDate === localDateStr()) {
       writeCache({
         date: localDateStr(),
         reflectsToday: DAILY_LIMIT - (wire.reflectsRemaining ?? 0),
@@ -401,6 +430,9 @@ export async function prepareReflect(params: {
     }
     if (error instanceof ApiError && error.status === 403) return { ok: false, error: 'plus_required' };
     if (error instanceof ApiError && error.status === 409) {
+      if (code === 'daily_adventure_used' || code === 'not_paired' || code === 'journal_kind_disabled') {
+        return { ok: false, error: code };
+      }
       if (code === 'journal_kind_used') {
         const journalKind = journalKindForPrepare(params);
         const state = getReflectStateToday();

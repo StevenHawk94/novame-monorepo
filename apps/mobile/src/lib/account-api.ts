@@ -47,11 +47,95 @@ export function updateDisplayName(
   return postUpdate({ userId, displayName });
 }
 
+export function updateOnboardingProfile(
+  userId: string,
+  fields: {
+    displayName: string;
+    birthday: string;
+    defaultAvatarId?: string;
+    partnerName?: string;
+    partnerPronouns?: string;
+    partnerNickname?: string;
+    relationshipSince?: string;
+  },
+): Promise<UpdateResult> {
+  return postUpdate({ userId, ...fields });
+}
+
 export function updateDefaultAvatar(
   userId: string,
   defaultAvatarId: string,
 ): Promise<UpdateResult> {
   return postUpdate({ userId, defaultAvatarId });
+}
+
+type AvatarUploadWire =
+  | { success: true; avatarUrl: string }
+  | { success?: false; error: string };
+
+type AvatarPrepareWire =
+  | { success: true; path: string; token: string }
+  | { success?: false; error: string };
+
+export type AvatarUploadResult =
+  | { kind: 'success'; avatarUrl: string }
+  | { kind: 'error'; message: string };
+
+export async function uploadProfileAvatar(
+  userId: string,
+  image: { base64: string; mimeType: string },
+): Promise<AvatarUploadResult> {
+  try {
+    const data = await apiClient.post<AvatarUploadWire>('/api/upload-avatar', {
+      userId,
+      ...image,
+    });
+    if (data.success === true) {
+      return { kind: 'success', avatarUrl: data.avatarUrl };
+    }
+    return { kind: 'error', message: (data as { error: string }).error || 'Upload failed' };
+  } catch (error) {
+    return {
+      kind: 'error',
+      message: error instanceof Error ? error.message : 'Network error',
+    };
+  }
+}
+
+export async function prepareProfileAvatarUpload(
+  userId: string,
+): Promise<{ kind: 'success'; path: string; token: string } | { kind: 'error'; message: string }> {
+  try {
+    const data = await apiClient.post<AvatarPrepareWire>('/api/upload-avatar', {
+      action: 'prepare',
+      userId,
+    });
+    if (data.success === true) {
+      return { kind: 'success', path: data.path, token: data.token };
+    }
+    return { kind: 'error', message: (data as { error: string }).error || 'Upload failed' };
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : 'Network error' };
+  }
+}
+
+export async function completeProfileAvatarUpload(
+  userId: string,
+  path: string,
+): Promise<AvatarUploadResult> {
+  try {
+    const data = await apiClient.post<AvatarUploadWire>('/api/upload-avatar', {
+      action: 'complete',
+      userId,
+      path,
+    });
+    if (data.success === true) {
+      return { kind: 'success', avatarUrl: data.avatarUrl };
+    }
+    return { kind: 'error', message: (data as { error: string }).error || 'Upload failed' };
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : 'Network error' };
+  }
 }
 
 /** Onboarding funnel answers — fire-and-forget analytics write. */

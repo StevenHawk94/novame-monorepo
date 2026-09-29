@@ -72,6 +72,10 @@ function CourtBackground({ align, children }: { align: 'top' | 'bottom'; childre
 }
 
 export default function ThumpScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)" /> : <LegacyThumpScreen />;
+}
+
+function LegacyThumpScreen() {
   const router = useRouter();
   const segments = useSegments();
   const routePath = segments.join('/');
@@ -461,14 +465,22 @@ function OpenCaseList({ title, sessions, onOpen }: { title: string; sessions: Co
 }
 
 function CasesView({ category, cases, onCase }: { category: CourtCategory; cases: CourtCaseSummary[]; onCase: (item: CourtCaseSummary) => void }) {
+  const [subcategory, setSubcategory] = useState('All');
+  const subcategories = useMemo(() => ['All', ...new Set(cases.map((item) => item.subcategory).filter(Boolean))], [cases]);
+  const visibleCases = subcategory === 'All' ? cases : cases.filter((item) => item.subcategory === subcategory);
   return (
     <>
       <View style={styles.caseListHeader}><View style={styles.flex}><CourtHeading title={category} subtitle="Pick a case to settle together" /></View><JudgeArt compact /></View>
-      {cases.map((item) => <Pressable key={item.id} onPress={() => onCase(item)} style={({ pressed }) => [styles.caseCard, pressed && styles.pressed, item.lockedReason && styles.locked]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subcategoryRow}>
+        {subcategories.map((item) => <Pressable key={item} onPress={() => setSubcategory(item)} style={[styles.subcategoryPill, subcategory === item && styles.subcategoryPillActive]}>
+          <Text style={[styles.subcategoryText, subcategory === item && styles.subcategoryTextActive]}>{item}</Text>
+        </Pressable>)}
+      </ScrollView>
+      {visibleCases.map((item) => <Pressable key={item.id} onPress={() => onCase(item)} style={({ pressed }) => [styles.caseCard, pressed && styles.pressed, item.lockedReason && styles.locked]}>
         <View style={styles.flex}><View style={styles.badgeRow}><Text style={styles.caseId}>{item.id}</Text>{item.accessTier === 'plus' && <Text style={styles.plusBadge}>PLUS</Text>}</View><Text style={styles.caseTitle}>{item.title}</Text><Text style={styles.caseSubtitle}>{item.subtitle}</Text><Text style={styles.meta}>{item.questionCount} questions</Text></View>
         <MaterialIcons name={item.lockedReason ? 'lock' : 'arrow-forward'} size={26} color={BROWN} />
       </Pressable>)}
-      {cases.length === 0 && <Paper><Text style={styles.body}>No cases are available in this court yet.</Text></Paper>}
+      {visibleCases.length === 0 && <Paper><Text style={styles.body}>No cases are available in this section yet.</Text></Paper>}
     </>
   );
 }
@@ -573,7 +585,16 @@ function AnswerSharingPrompt({ visible, busy, onChoose }: { visible: boolean; bu
 
 function VerdictView({ session, busy, onSave, onShare, onRunAgain }: { session: CourtSession; busy: boolean; onSave: () => void; onShare: () => void; onRunAgain: () => void }) {
   const verdict = session.verdict!;
-  return <Paper><Text style={styles.verdictHeadline}>{verdict.headline}</Text><Text style={styles.body}>{verdict.whatCourtHeard}</Text><Text style={styles.body}>{verdict.verdict}</Text><View style={styles.order}><MaterialIcons name="gavel" size={38} color={BROWN} /><View style={styles.flex}><Text style={styles.orderTitle}>COURT ORDERED MOVE</Text><Text style={styles.body}>{verdict.courtOrderedMove}</Text></View></View>{session.answersVisible && (session.otherAnswers?.length ?? 0) > 0 && <View style={styles.sharedAnswers}><Text style={styles.orderTitle}>THEIR SHARED TESTIMONY</Text>{session.otherAnswers.map((item) => <View key={item.questionNumber} style={styles.sharedAnswer}><Text style={styles.sharedQuestion}>{item.prompt}</Text><Text style={styles.sharedValue}>{Array.isArray(item.value) ? item.value.join(', ') : item.value}</Text></View>)}</View>}<PrimaryButton label="SHARE VERDICT" onPress={onShare} disabled={busy} /><PrimaryButton label="DONE" onPress={onSave} disabled={busy} tone="yellow" /><Pressable onPress={onRunAgain} disabled={busy} style={styles.secondaryButton}><MaterialIcons name="replay" size={20} color={BROWN} /><Text style={styles.secondaryText}>RUN IT BACK</Text></Pressable></Paper>;
+  const hasV4Result = Boolean(verdict.actionA || verdict.actionB || verdict.tryTogether);
+  return <Paper><Text style={styles.verdictHeadline}>{hasV4Result ? 'THE VERDICT' : verdict.headline}</Text><Text style={styles.body}>{verdict.verdict}</Text>
+    {hasV4Result ? <>
+      <Text style={styles.orderTitle}>COURT-ORDERED ACTIONS</Text>
+      {verdict.actionA && <View style={styles.order}><MaterialIcons name="person" size={30} color={BROWN} /><View style={styles.flex}><Text style={styles.actionName}>{verdict.actionAName}</Text><Text style={styles.bodySmall}>{verdict.actionA}</Text></View></View>}
+      {verdict.actionB && <View style={styles.order}><MaterialIcons name="person-outline" size={30} color={BROWN} /><View style={styles.flex}><Text style={styles.actionName}>{verdict.actionBName}</Text><Text style={styles.bodySmall}>{verdict.actionB}</Text></View></View>}
+      {verdict.tryTogether && <View style={styles.together}><Text style={styles.orderTitle}>TRY THIS TOGETHER</Text><Text style={styles.body}>{verdict.tryTogether}</Text></View>}
+      {verdict.closing && <Text style={styles.closing}>{verdict.closing}</Text>}
+    </> : <><Text style={styles.body}>{verdict.whatCourtHeard}</Text><View style={styles.order}><MaterialIcons name="gavel" size={38} color={BROWN} /><View style={styles.flex}><Text style={styles.orderTitle}>COURT ORDERED MOVE</Text><Text style={styles.body}>{verdict.courtOrderedMove}</Text></View></View></>}
+    {session.answersVisible && (session.otherAnswers?.length ?? 0) > 0 && <View style={styles.sharedAnswers}><Text style={styles.orderTitle}>THEIR SHARED TESTIMONY</Text>{session.otherAnswers.map((item) => <View key={item.questionNumber} style={styles.sharedAnswer}><Text style={styles.sharedQuestion}>{item.prompt}</Text><Text style={styles.sharedValue}>{Array.isArray(item.value) ? item.value.join(', ') : item.value}</Text></View>)}</View>}<PrimaryButton label="SHARE VERDICT" onPress={onShare} disabled={busy} /><PrimaryButton label="DONE" onPress={onSave} disabled={busy} tone="yellow" /><Pressable onPress={onRunAgain} disabled={busy} style={styles.secondaryButton}><MaterialIcons name="replay" size={20} color={BROWN} /><Text style={styles.secondaryText}>RUN IT BACK</Text></Pressable></Paper>;
 }
 
 function StatusSide({ label, done }: { label: string; done: boolean }) { return <View style={styles.statusSide}><Image source={done ? CHECK : AWAITING} style={styles.statusIcon} contentFit="contain" transition={0} /><Text style={styles.statusLabel}>{label}</Text><Text style={styles.statusMeta}>{done ? 'Testimony received' : 'Waiting for answers'}</Text></View>; }
@@ -612,6 +633,11 @@ const styles = StyleSheet.create({
   },
   footer: { color: BROWN, textAlign: 'center', fontSize: 12, lineHeight: 17, fontFamily: 'Inter_700Bold', marginVertical: 5 },
   caseListHeader: { minHeight: 150, flexDirection: 'row', alignItems: 'center' },
+  subcategoryRow: { gap: 10, paddingRight: 18, paddingBottom: 6 },
+  subcategoryPill: { minHeight: 44, minWidth: 104, borderRadius: 22, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7C38E' },
+  subcategoryPillActive: { backgroundColor: '#93613F' },
+  subcategoryText: { color: '#16100C', fontSize: 14, lineHeight: 18, fontFamily: 'Inter_700Bold' },
+  subcategoryTextActive: { color: '#FFFFFF' },
   caseCard: { minHeight: 112, backgroundColor: CREAM, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: BROWN, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.85, shadowRadius: 0, elevation: 5 },
   caseId: { color: CORAL, fontSize: 12, lineHeight: 16, fontFamily: 'Inter_900Black' },
   caseTitle: { color: BROWN, fontSize: 20, lineHeight: 25, fontFamily: 'Inter_900Black' },
@@ -659,6 +685,9 @@ const styles = StyleSheet.create({
   verdictHeadline: { color: '#16100C', fontSize: 30, lineHeight: 37, fontFamily: 'Inter_900Black', textAlign: 'center' },
   order: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, padding: 18, backgroundColor: '#F7C38E' },
   orderTitle: { color: '#16100C', fontSize: 17, lineHeight: 22, fontFamily: 'Inter_900Black', textAlign: 'center' },
+  actionName: { color: BROWN, fontSize: 17, lineHeight: 22, fontFamily: 'Inter_900Black' },
+  together: { borderRadius: 22, padding: 18, gap: 8, backgroundColor: '#FFE39A' },
+  closing: { color: BROWN, fontSize: 17, lineHeight: 23, fontFamily: 'Inter_800ExtraBold', textAlign: 'center', fontStyle: 'italic' },
   sharedAnswers: { gap: 12, borderTopWidth: 1, borderTopColor: '#DCC9A8', paddingTop: 18 },
   sharedAnswer: { gap: 5, backgroundColor: '#FFF0CE', borderRadius: 16, padding: 14 },
   sharedQuestion: { color: BROWN, fontSize: 13, lineHeight: 18, fontFamily: 'Inter_700Bold' },
@@ -673,3 +702,5 @@ const styles = StyleSheet.create({
   pressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
   disabled: { opacity: 0.5 },
 });
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

@@ -7,6 +7,7 @@ import { analyzeFinalizedReflect } from '@/lib/reflect-completion'
 import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/reflect-analysis-jobs'
 import { sanitizeSettlementMemories } from '@/lib/reflect-settlement'
 import { drainPushNotificationOutbox, enqueuePartnerReflectNotification } from '@/lib/push-notifications'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 export const maxDuration = 60
@@ -20,6 +21,7 @@ export async function POST(request) {
     const { userId, draftId, memories, visibility, revision, useSaved } = await request.json()
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = serviceClient()
+    const majorUpdate = await majorUpdateEnabled(supabase)
     const { data: draft } = await supabase.from('reflect_drafts').select('*')
       .eq('id', draftId).eq('user_id', userId).maybeSingle()
     if (!draft) return NextResponse.json({ error: 'draft_not_found' }, { status: 404 })
@@ -66,7 +68,7 @@ export async function POST(request) {
       p_draft_id: draftId,
       p_memories: safeMemories,
       p_visibility: safeVisibility,
-      p_xp_amount: XP_RULES.reflect.award,
+      p_xp_amount: majorUpdate ? 0 : XP_RULES.reflect.award,
       p_iso_week: isoWeek(draft.local_date),
     })
     if (rpcError) {
@@ -84,7 +86,13 @@ export async function POST(request) {
     // next Connection visit retry only this latest reflection.
     const journalKind = draft.journal_kind || (draft.friend_user_id ? 'remember_together'
       : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely')
-    if (!result?.already_finalized && journalKind !== 'remember_together'
+    if (majorUpdate && result?.reflect_id && journalKind !== 'remember_together') {
+      const registration = await supabase.rpc('register_adventure_record_v1', { p_user_id: userId, p_record_id: result.reflect_id })
+      // The durable record is already saved. Bootstrap retries registration if
+      // this supplementary request fails; do not lose the user's settlement.
+      if (registration.error || registration.data?.error) console.warn('[reflect/finalize] Burrow registration pending')
+    }
+    if (!majorUpdate && !result?.already_finalized && journalKind !== 'remember_together'
       && draft.ai_enhancement_eligible === true && draft.body?.trim() && result?.reflect_id) {
       try {
         const queued = await enqueueReflectAnalysisJob(supabase, {

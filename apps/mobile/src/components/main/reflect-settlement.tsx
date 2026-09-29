@@ -37,6 +37,7 @@ import { emitOfficialRatingRequest, recordReflectClaimForRating } from '@/lib/of
 import { recordReflectionPaywallClaim } from '@/lib/reflection-paywall-count';
 import { markNavigationTransitionPending } from '@/lib/rating-navigation';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { useMemoryEditorKeyboard } from '@/lib/use-memory-editor-keyboard';
 import { useReflectExitGuard } from '@/lib/use-reflect-exit-guard';
 import {
@@ -334,6 +335,7 @@ export function ReflectSettlementView({
 }) {
   const insets = useSafeAreaInsets();
   const tier = useSubscriptionTier();
+  const majorUpdate = useMajorUpdateEnabled();
   const isPaid = tier !== 'free';
   const presented = useRef<string | null>(null);
   // Prepare normally supplies Plus copy. Still run one blank-only enrichment
@@ -493,7 +495,7 @@ export function ReflectSettlementView({
           </View>
         )}
         <View pointerEvents="none" style={styles.rewardSlot}>
-          {rewardToast && draft.xpAwarded > 0 && (
+          {!majorUpdate && rewardToast && draft.xpAwarded > 0 && (
             <CloverBurst amount={draft.xpAwarded} durationMs={2000} riseDistance={4} onDone={handleRewardDone} />
           )}
         </View>

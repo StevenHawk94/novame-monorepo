@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { CLOVERS_PER_TASK, PLAN_DAYS } from '@novame/domain'
@@ -43,6 +44,7 @@ export async function POST(request) {
     )
 
     // Already has an active plan?
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({error:'feature_replaced'},{status:410})
     const { data: existing } = await supabase
       .from('quest_plans')
       .select('id')

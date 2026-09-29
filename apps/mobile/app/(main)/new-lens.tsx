@@ -9,6 +9,7 @@ import { getNextCard, submitLens, type LensCard } from '../../src/lib/lens-api';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { haptics } from '../../src/lib/haptics';
 import { ICONS } from '../../src/lib/icons';
 import { SpringPop } from '../../src/components/ui/spring-pop';
@@ -18,6 +19,7 @@ import { requireAiConsent } from '@/lib/ai-consent';
 type Phase = 'theme' | 'card' | 'loading' | 'done';
 
 export default function NewLensScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const kit = {
@@ -58,7 +60,7 @@ export default function NewLensScreen() {
     if (!card || !activeTheme || submitting) return;
     setSubmitting(true);
     setError(null);
-    const expected = XP_RULES.newLens.award;
+    const expected = majorUpdate ? 0 : XP_RULES.newLens.award;
     const award = optimisticCloverAward(expected);
     setReward(expected);
     if (response === 'resonates') {
@@ -187,7 +189,7 @@ export default function NewLensScreen() {
 
       {phase === 'done' && (
         <View style={styles.center}>
-          {reward > 0 && <CloverBurst amount={reward} />}
+          {!majorUpdate && reward > 0 && <CloverBurst amount={reward} />}
           <SpringPop boundedBounce>
             <Text style={[styles.doneText, { color: kit.text }]}>Good to notice.</Text>
           </SpringPop>

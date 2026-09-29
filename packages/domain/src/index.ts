@@ -10,3 +10,4 @@ export * from './bubble-lines';
 export * from './quests';
 export * from './guess-replies';
 export * from './skill-library';
+export * from './app-major-update';

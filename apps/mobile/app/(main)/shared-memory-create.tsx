@@ -51,6 +51,9 @@ import {
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
 const ERROR_MESSAGE: Record<ReflectError, string> = {
+  daily_adventure_used: 'Your adventure has started. Save a new day tomorrow.',
+  not_paired: 'Reconnect with your partner before saving.',
+  journal_kind_disabled: 'Use Memories Room to save a shared memory.',
   daily_limit: "You've journaled 3 times today. Rest up — come back tomorrow.",
   journal_kind_used: "You've already used Remember Together today. It will be available again tomorrow.",
   companion_not_ready: 'Your companion isn’t set up yet. Finish onboarding first.',

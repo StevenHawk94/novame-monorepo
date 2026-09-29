@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { AppState, InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
@@ -12,6 +13,7 @@ import { HomeEntryImage } from './home-entry-gate';
 import { useHomeEntry } from '@/lib/use-home-entry';
 import { isHomeEntryRoute, markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
 import { yieldDownloadQueueForInteraction } from '@/lib/download-queue';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 
 /**
  * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
@@ -30,6 +32,13 @@ const TABS: ReadonlyArray<{ name: 'index' | 'court' | 'friends' | 'status' | 'ba
 // inactive route without focusing it, so useFocusEffect network refreshes do
 // not run until the user actually visits the tab.
 const TAB_PRELOAD_ORDER = ['quests', 'court', 'friends', 'bags', 'status'] as const;
+const BURROW_TABS = [
+  { name: 'index', icon: ICONS.Home, label: 'Home' },
+  { name: 'love', icon: ICONS.Friends, label: 'Love' },
+  { name: 'shop', icon: ICONS.Memories, label: 'Shop' },
+  { name: 'friends', icon: ICONS.Friends, label: 'Moments' },
+  { name: 'collection', icon: ICONS.Bags, label: 'Collection' },
+] as const;
 const TAB_PRELOAD_START_DELAY_MS = 650;
 const TAB_PRELOAD_SETTLE_MS = 700;
 
@@ -98,14 +107,17 @@ const BAG_COLLECTION_THEMES: Record<'their' | 'ours', TabBarTheme> = {
 const FALLBACK_THEME = TAB_THEMES.index;
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
+  const majorUpdate = useMajorUpdateEnabled();
+  const tabs = majorUpdate ? BURROW_TABS : TABS;
   const { attempt, pending: homeEntryPending } = useHomeEntry();
   const segments = useSegments();
   const homeIsForeground = isHomeEntryRoute(segments);
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const activeRoute = state.routes[state.index];
   const activeRouteName = activeRoute?.name ?? 'index';
   const collectionTab = (activeRoute?.params as { tab?: string } | undefined)?.tab;
-  const theme = activeRouteName === 'bags' && (collectionTab === 'their' || collectionTab === 'ours')
+  const theme = majorUpdate ? FALLBACK_THEME : activeRouteName === 'bags' && (collectionTab === 'their' || collectionTab === 'ours')
     ? BAG_COLLECTION_THEMES[collectionTab]
     : TAB_THEMES[activeRouteName] ?? FALLBACK_THEME;
   const routesByName = new Map<string, (typeof state.routes)[number]>();
@@ -123,6 +135,8 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
 
   useEffect(() => {
     if (
+      majorUpdate
+      ||
       homeEntryPending
       || !homeIsForeground
       || activeRouteName !== 'index'
@@ -174,7 +188,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
       memorySub.remove();
       if (stopPreloading.current === cancel) stopPreloading.current = null;
     };
-  }, [activeRouteName, appIsActive, homeEntryPending, homeIsForeground, navigation]);
+  }, [activeRouteName, appIsActive, homeEntryPending, homeIsForeground, navigation, majorUpdate]);
 
   const handleTabPress = (routeName: string, isFocused: boolean) => {
     // A real user action always outranks speculative background mounting.
@@ -204,23 +218,24 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         styles.container,
         {
           paddingBottom: insets.bottom,
-          backgroundColor: theme.background,
+          backgroundColor: majorUpdate ? '#FFF5E8' : theme.background,
           borderTopColor: theme.topBorder,
+          ...(majorUpdate ? { height: Math.max(width / 900 * 188, insets.bottom + 58), borderTopLeftRadius: 20, borderTopRightRadius: 20 } : {}),
         },
       ]}
     >
-      <View key={attempt} style={styles.row} onLayout={() => markHomeEntryAsset('tabs-layout', attempt)}>
-        {TABS.map((tab) => {
+      <View key={attempt} style={[styles.row,majorUpdate && styles.burrowRow]} onLayout={() => markHomeEntryAsset('tabs-layout', attempt)}>
+        {tabs.map((tab) => {
           const route = routesByName.get(tab.name);
           if (!route) return null;
           // Quests is a Home shortcut rather than a persistent tab. Keep Home
           // selected while that child destination is open so the five-item
           // navigation remains stable and always has a clear way back.
           const routeIsFocused = state.index === state.routes.findIndex((r) => r.name === tab.name);
-          const isFocused = activeRouteName === 'quests'
+          const isFocused = !majorUpdate && activeRouteName === 'quests'
             ? tab.name === 'index'
             : routeIsFocused;
-          return (
+          return majorUpdate ? <BurrowTabButton key={route.key} name={tab.name as keyof typeof burrowIcons} label={tab.label} isFocused={isFocused} attempt={attempt} onPress={() => handleTabPress(tab.name, routeIsFocused)} /> : (
             <TabButton
               key={route.key}
               icon={tab.icon}
@@ -236,6 +251,14 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
       </View>
     </View>
   );
+}
+
+const burrowIcons = { index: 'home', love: 'explore', shop: 'map', friends: 'shopping-bag', collection: 'pets' } as const;
+function BurrowTabButton({ name, label, isFocused, attempt, onPress }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void }) {
+  return <Pressable accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: isFocused }} onPress={onPress} onLayout={() => markHomeEntryAsset(`tab:${name}`, attempt)} style={styles.burrowTab}>
+    <MaterialIcons name={burrowIcons[name]} size={30} color={isFocused ? '#C75F28' : '#AC8E79'} />
+    <Text style={[styles.burrowLabel,isFocused && styles.burrowLabelActive]}>{label}</Text>
+  </Pressable>;
 }
 
 type TabButtonProps = {
@@ -285,4 +308,8 @@ const styles = StyleSheet.create({
   },
   tabIcon: { width: 40, height: 40 },
   tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold' },
+  burrowRow: { flex: 1, alignItems: 'center', paddingTop: 1, paddingBottom: 0 },
+  burrowTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 },
+  burrowLabel: { color: '#1D1A17', fontSize: 11, lineHeight: 14 },
+  burrowLabelActive: { fontWeight: '700' },
 });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { createClient } from '@supabase/supabase-js'
 import { verifyToken } from '@/lib/auth-guard'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
@@ -84,6 +85,7 @@ export async function GET(request) {
     const userId=new URL(request.url).searchParams.get('userId')
     if (!userId||verified.id!==userId) return NextResponse.json({error:'Unauthorized'},{status:401})
     const supabase=client()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({error:'feature_replaced'},{status:410})
     const localDate=await resolveUserLocalDate(supabase,userId)
     const [{data:activity,error:activityError},{data:claims,error:claimsError},catalog]=await Promise.all([
       supabase.rpc('get_quest_activity_counts_v2',{p_user_id:userId,p_local_date:localDate}),

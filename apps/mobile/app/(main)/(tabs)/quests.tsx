@@ -116,6 +116,10 @@ function SpecialCard({ quest, onPress }: { quest: SpecialRewardQuest; onPress: (
 }
 
 export default function QuestsScreen() {
+  return useMajorUpdateEnabled() ? <BurrowScreen section="quests" /> : <LegacyQuestsScreen />;
+}
+
+function LegacyQuestsScreen() {
   const router = useRouter();
   const { play: playCompletionSound } = useCompletionSound();
   const [status, setStatus] = useState<QuestRewardStatus>(() => getCachedQuestRewards());
@@ -276,3 +280,5 @@ const styles = StyleSheet.create({
   progressLabel: { minWidth: 38, color: TEXT, fontFamily: 'Inter_700Bold', fontSize: 11, textAlign: 'right' },
   rewardOverlay: { position: 'absolute', left: 0, right: 0, top: 110, alignItems: 'center', zIndex: 10 },
 });
+import { BurrowScreen } from '@/components/burrow/burrow-screen';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

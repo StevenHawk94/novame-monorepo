@@ -14,7 +14,7 @@
       "backgroundColor": "#F8E2C1"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.novame.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -59,6 +59,13 @@
         }
       ],
       "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Burrow uses photos you choose for your profile, room frame, and couple doll, visible to your paired partner.",
+          "cameraPermission": "Burrow uses the camera only when you choose to take a photo for your room or couple doll."
+        }
+      ],
       [
         "expo-build-properties",
         {

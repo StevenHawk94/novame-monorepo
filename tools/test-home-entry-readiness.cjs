@@ -47,6 +47,7 @@ function harness(platform = 'android') {
   react.useLayoutEffect = react.useEffect;
   const appState = { currentState: 'active', addEventListener(_event, fn) { appListeners.add(fn); return { remove: () => appListeners.delete(fn) }; } };
   const components = load(gateFile, {
+    '../../../assets/favicon.png': 1,
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': {
       View: 'View', Text: 'Text', Pressable: 'Pressable', ActivityIndicator: 'Spinner', Image: 'NativeImage',
@@ -108,7 +109,7 @@ test('ordinary tab returns do not rearm; releasing a prepared Home preserves the
   assert.equal(h.overlays.size, 0);
 });
 
-test('image and data signals cannot hold the Android entry gate open', () => {
+test('Android waits for JS data but cannot be blocked by a failed image', () => {
   const h = harness(); h.beginHomeEntry();
   const attempt = h.getHomeEntryState().attempt;
   assert.equal(h.homeEntryIsReady(), false);
@@ -116,6 +117,10 @@ test('image and data signals cannot hold the Android entry gate open', () => {
   h.failHomeEntry(attempt);
   assert.equal(h.getHomeEntryState().failed, true);
   const gate = h.component(h.HomeEntryGate, { children: jsx('Home', {}) });
+  gate.render(); h.frame(); h.frame(); gate.render();
+  assert.equal(h.getHomeEntryState().pending, true);
+  h.markHomeEntryAsset('home-data', attempt);
+  h.markHomeEntryAsset('home-copy', attempt);
   gate.render(); h.frame(); h.frame(); gate.render();
   assert.equal(h.getHomeEntryState().pending, false);
   gate.unmount();
@@ -164,7 +169,7 @@ test('defensive timeout releases the page and stale image callbacks stay harmles
   const h = harness(); h.beginHomeEntry(); h.deferHomeEntryNotification();
   const gate = h.component(h.HomeEntryGate, { children: jsx('Home', {}) });
   gate.render(); const oldImage = h.HomeEntryImage({ asset: 'scene' }), oldAttempt = h.getHomeEntryState().attempt;
-  h.expire(750); const tree = gate.render();
+  h.expire(h.HOME_ENTRY_TIMEOUT_MS); const tree = gate.render();
   assert.equal(h.getHomeEntryState().pending, false);
   assert.equal(nodes(tree).some((n) => n.type === 'Spinner'), false);
   oldImage.props.onDisplay(); oldImage.props.onError({ error: 'late' });

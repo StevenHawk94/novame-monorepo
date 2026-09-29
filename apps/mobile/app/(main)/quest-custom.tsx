@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { appAlert } from '@/components/ui/app-dialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +34,9 @@ const MAX_GOAL = 500;
  * stale sessions or a subscription that expires while this screen is open.
  */
 export default function QuestCustomScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)/quests" /> : <LegacyQuestCustomScreen />;
+}
+function LegacyQuestCustomScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [goal, setGoal] = useState('');

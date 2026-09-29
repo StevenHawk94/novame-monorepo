@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleAuth, OAuth2Client } from 'google-auth-library'
+import { verifyGoogleCoin } from '@/lib/burrow-coins.mjs'
 
 export const runtime = 'nodejs'
 
@@ -230,6 +231,15 @@ export async function POST(request) {
       return NextResponse.json({ received: true, test: true })
     }
     if (!decoded.subscriptionNotification) {
+      const coin = decoded.oneTimeProductNotification
+        || (decoded.voidedPurchaseNotification?.productType === 2 ? decoded.voidedPurchaseNotification : null)
+      if (coin) {
+        if (!authenticated.enforced) return NextResponse.json({error:'Coin webhook authentication is required'},{status:503})
+        if (decoded.packageName !== PACKAGE_NAME) return NextResponse.json({error:'Unexpected package'},{status:400})
+        const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY)
+        await verifyGoogleCoin(db,coin.purchaseToken,null,coin.sku,true)
+        return NextResponse.json({received:true})
+      }
       return NextResponse.json({ received: true, ignored: true })
     }
     if (decoded.packageName !== PACKAGE_NAME) {

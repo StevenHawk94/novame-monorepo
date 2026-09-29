@@ -1,4 +1,11 @@
 /** Shared copy for the default Plus paywall in onboarding and the main app. */
+export const BURROW_PLUS_BENEFITS = [
+  'Share Plus benefits with your paired person.',
+  'Your bunny returns from each daily adventure in 2 hours.',
+  'Send affection without the free gesture cooldown.',
+  'Decorate your shared room and explore Plus items.',
+  'Create Memory copy from your records with your AI consent.',
+] as const;
 export const DEFAULT_PLUS_BENEFITS = [
   'Enjoy every Plus feature as you journal.',
   'See what matters in your person’s day in real time.',

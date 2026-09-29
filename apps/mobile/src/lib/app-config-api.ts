@@ -33,6 +33,8 @@ export type AppConfig = {
   shipping_fee: number;
   book_unlock_words: number;
   cards_unlock_count: number;
+  app_major_update_enabled: boolean;
+  app_major_update_content_revision: string;
 };
 
 type CacheRecord = {
@@ -71,6 +73,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   shipping_fee: 0,
   book_unlock_words: 20000,
   cards_unlock_count: 48,
+  // Rollout is deliberately off until the new vertical slice is complete.
+  app_major_update_enabled: false,
+  app_major_update_content_revision: 'burrow-v1-placeholder',
 };
 
 // ============================================================
@@ -91,7 +96,7 @@ function readCacheRecord(): CacheRecord | null {
       && parsed.config !== null
       && typeof parsed.config.printed_book_price === 'number'
     ) {
-      return parsed;
+      return { ...parsed, config: { ...DEFAULT_CONFIG, ...parsed.config } };
     }
     return null;
   } catch {
@@ -196,6 +201,15 @@ export async function fetchAppConfig(options?: {
           typeof data.config.cards_unlock_count === 'number'
             ? data.config.cards_unlock_count
             : DEFAULT_CONFIG.cards_unlock_count,
+        app_major_update_enabled:
+          typeof data.config.app_major_update_enabled === 'boolean'
+            ? data.config.app_major_update_enabled
+            : DEFAULT_CONFIG.app_major_update_enabled,
+        app_major_update_content_revision:
+          typeof data.config.app_major_update_content_revision === 'string'
+            && data.config.app_major_update_content_revision.trim()
+            ? data.config.app_major_update_content_revision.trim()
+            : DEFAULT_CONFIG.app_major_update_content_revision,
       };
 
       writeCacheRecord(merged, data.updatedAt ?? null);

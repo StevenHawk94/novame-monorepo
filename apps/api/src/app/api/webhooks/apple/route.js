@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { coinProduct,appleCoin,applyCoin } from '@/lib/burrow-coins.mjs'
 import { createClient } from '@supabase/supabase-js'
 import {
   decodeNotificationPayload,
@@ -203,6 +204,13 @@ export async function POST(request) {
     }
 
     const supabase = getSupabase()
+
+    if (coinProduct(transactionInfo?.productId)) {
+      if (verifyDisabled) return NextResponse.json({error:'Coin signatures cannot be bypassed'},{status:401})
+      if (!['ONE_TIME_CHARGE','REFUND','REVOKE','REFUND_REVERSED'].includes(notificationType)) return NextResponse.json({received:true,ignored:true})
+      await applyCoin(supabase,appleCoin(transactionInfo,null,notification),true)
+      return NextResponse.json({received:true})
+    }
 
     // Route by notification type
     switch (notificationType) {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 
@@ -61,6 +62,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'bad_id' }, { status: 400 })
     }
 
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     // Resolve price + Plus requirement.
     let price = COSMETIC_PRICE
     let plusRequired = PLUS_ONLY.has(cosmeticId)
@@ -85,12 +92,6 @@ export async function POST(request) {
       }
       // scene id not in the manifest: legacy sceneN — flat price + PLUS_ONLY set.
     }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    )
 
     // Already owned? (idempotent success)
     const { data: existing } = await supabase

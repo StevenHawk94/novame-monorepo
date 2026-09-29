@@ -64,6 +64,10 @@ function sameSnapshot(a: unknown, b: unknown): boolean {
 }
 
 export default function FriendsScreen() {
+  return useMajorUpdateEnabled() ? <BurrowScreen section="moments" /> : <LegacyFriendsScreen />;
+}
+
+function LegacyFriendsScreen() {
   const homeEntry = useHomeEntry();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -793,3 +797,5 @@ const styles = StyleSheet.create({
   privacySaveText: { color: '#2A1A10', fontSize: 21, fontFamily: 'Inter_800ExtraBold' },
   privacyClose: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginTop: 16 },
 });
+import { BurrowScreen } from '@/components/burrow/burrow-screen';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

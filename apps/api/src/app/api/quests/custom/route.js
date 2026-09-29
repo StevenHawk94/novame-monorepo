@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { callAI, parseAIJson } from '@/lib/ai'
@@ -69,6 +70,7 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({error:'feature_replaced'},{status:410})
     const nowIso = new Date().toISOString()
 
     await supabase
@@ -135,6 +137,7 @@ export async function POST(request) {
     )
 
     // Plus gate -- same field the other AI features (master/ask, reflect) use.
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({error:'feature_replaced'},{status:410})
     const { data: profile } = await supabase
       .from('profiles').select('subscription_tier').eq('id', userId).maybeSingle()
     if ((profile?.subscription_tier ?? 'free') === 'free') {

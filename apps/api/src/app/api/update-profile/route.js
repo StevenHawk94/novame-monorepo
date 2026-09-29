@@ -36,6 +36,10 @@ export async function POST(request) {
       newPassword,
       onboardingWho,
       onboardingBlocker,
+      partnerName,
+      partnerPronouns,
+      partnerNickname,
+      relationshipSince,
     } = await request.json()
     
     if (!userId) {
@@ -110,6 +114,22 @@ export async function POST(request) {
 
     if (birthday !== undefined) {
       updateData.birthday = birthday
+    }
+
+    if (partnerName !== undefined) {
+      updateData.onboarding_partner_name = String(partnerName || '').trim().slice(0, 30) || null
+    }
+    if (partnerPronouns !== undefined || partnerNickname !== undefined) {
+      // Keep writing to the existing legacy column so this copy change does not
+      // require another database migration.
+      const normalizedPronouns = partnerPronouns ?? partnerNickname
+      updateData.onboarding_partner_nickname = String(normalizedPronouns || '').trim().slice(0, 30) || null
+    }
+    if (relationshipSince !== undefined) {
+      updateData.onboarding_relationship_since = typeof relationshipSince === 'string'
+        && /^\d{4}-\d{2}-\d{2}$/.test(relationshipSince)
+        ? relationshipSince
+        : null
     }
 
     console.log('[update-profile] updating whitelisted fields for user:', userId, Object.keys(updateData))

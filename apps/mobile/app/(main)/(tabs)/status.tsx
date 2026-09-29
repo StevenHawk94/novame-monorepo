@@ -153,6 +153,10 @@ function InsightContentCard({
 }
 
 export default function ConnectionDashboardScreen() {
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/(tabs)" /> : <LegacyConnectionDashboardScreen />;
+}
+
+function LegacyConnectionDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Read the cache exactly once for this mounted tab. The Connection cache also
@@ -581,3 +585,5 @@ const st = StyleSheet.create({
   refreshToastTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', color: '#4E301D' },
   refreshToastText: { fontSize: 11.5, lineHeight: 16, fontFamily: 'Inter_500Medium', color: '#7B6250', marginTop: 2 },
 });
+import { Redirect } from 'expo-router';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { XP_RULES } from '@novame/engine'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -50,6 +51,7 @@ export async function POST(request) {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({error:'feature_retired'},{status:410})
     const dateStr = await resolveUserLocalDate(supabase, userId)
     const { data: result, error: rpcErr } = await supabase.rpc('pop_bubble', {
       p_user_id: userId,

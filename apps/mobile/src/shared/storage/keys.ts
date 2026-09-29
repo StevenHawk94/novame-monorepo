@@ -1,4 +1,4 @@
-import { deleteRecordDraftAudio } from './artifacts';
+import { deleteOnboardingAvatar, deleteRecordDraftAudio } from './artifacts';
 import { defineKey, definePrefixKey } from './registry';
 
 /**
@@ -103,6 +103,9 @@ export const kReflectFeed = defineKey('novame_reflect_feed', 'user');
 
 /** Durable settlement edits, replayed only for their owning UUID. Not a TTL cache. */
 export const kReflectSettlement = definePrefixKey('burrow_reflect_settlement:', 'user');
+/** Local memories and explicit Save retries. Account + pair scoped, cleared on logout. */
+export const kBurrowMemoryLocal = definePrefixKey('burrow_memory_local:v1:', 'user');
+export const kBurrowPhotoDrafts = definePrefixKey('burrow_photo_drafts:v1:', 'user');
 
 /** Tap Your Day names/groups are private, UUID-scoped local preferences. */
 export const kCustomTapItems = definePrefixKey('custom-tap-items:v1:', 'user');
@@ -270,6 +273,13 @@ export const kNotifPromptedAfterPurchase = defineKey(
  * button, unrelated to auth lifecycle.
  */
 export const kOnboardingState = defineKey('novame_onboarding_state', 'preauth');
+
+/** Cropped profile photo queued before or during anonymous account creation. */
+export const kOnboardingAvatarUpload = defineKey(
+  'burrow_onboarding_avatar_upload_v1',
+  'preauth',
+  { onClear: deleteOnboardingAvatar },
+);
 
 /**
  * Fresh-onboarding handoff for the one-time feature walkthroughs. This is

@@ -756,6 +756,7 @@ test('Remember Together skips Bunny and Connection while all three entry states 
 
 test('background queue marks Remember Together skipped without claiming AI work', async () => {
   const jobs = load('apps/api/src/lib/reflect-analysis-jobs.js', {
+    './app-major-update': { majorUpdateEnabled: async () => false },
     './ai-usage': { recordAIUsage: async () => {} },
     './connection-v8-pipeline': { runConnectionV8Pipeline: async () => ({ updates: null }) },
     './connection-insight-v8': {

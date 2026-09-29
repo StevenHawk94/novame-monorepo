@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
@@ -52,6 +53,7 @@ export async function GET(request) {
     const userId = url.searchParams.get('userId')
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = client()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     const localDate = await resolveUserLocalDate(supabase, userId)
     const [
       { data: vibe, error: vibeError },
@@ -96,6 +98,7 @@ export async function POST(request) {
     const { userId, action, vibeId, messageIndex, replyToId } = await request.json()
     if (verified.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const supabase = client()
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     if (action === 'read') {
       const { error } = await supabase.from('good_vibes').update({ read_at: new Date().toISOString() })
         .eq('id', vibeId).eq('recipient_user_id', userId)

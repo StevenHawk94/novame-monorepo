@@ -47,6 +47,8 @@ const { __test: reveal } = load('apps/mobile/app/(main)/true-north.tsx', {
   '../../src/lib/haptics': {},
   '../../src/components/ui/spring-pop': { SpringPop: 'SpringPop' },
   '../../src/lib/true-north-api': {},
+  '@/lib/use-major-update': { useMajorUpdateEnabled: () => false },
+  '@/components/ui/android-compact-typography': { AndroidCompactText: 'Text' },
 }, '\nexport const __test = { Reveal, stableSample, currentLocalWeekSeed };');
 const flat = (value) => [value].flat(Infinity).filter((child) => child != null && child !== false);
 function nodes(tree) { return flat(tree).flatMap((node) => [node, ...nodes(node?.props?.children)]); }

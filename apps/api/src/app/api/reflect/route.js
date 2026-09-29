@@ -1,4 +1,5 @@
 import { after, NextResponse } from 'next/server'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 import { verifyToken } from '@/lib/auth-guard'
 import { getMergedDictionary } from '@/lib/remote-items'
 import { createClient } from '@supabase/supabase-js'
@@ -75,6 +76,7 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ error: 'feature_replaced' }, { status: 410 })
     const DICT = await getMergedDictionary(typeof matchingVersion?.itemsVersion === 'string'
       ? matchingVersion.itemsVersion : '0')
     const removedForTyping = new Set(Array.isArray(removedItemIds)

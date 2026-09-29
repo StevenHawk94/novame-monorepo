@@ -1,6 +1,14 @@
 {
   "crons": [
     {
+      "path": "/api/cron/room-photo-cleanup",
+      "schedule": "45 * * * *"
+    },
+    {
+      "path": "/api/cron/memory-photo-cleanup",
+      "schedule": "35 * * * *"
+    },
+    {
       "path": "/api/cron/insights-rollup",
       "schedule": "5 * * * *"
     },

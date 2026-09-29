@@ -4,6 +4,7 @@ import { XP_RULES, ITEM_CATALOG_VERSION } from '@novame/engine'
 import { isoWeek, journalKindForInput, resolveDraftInput, serviceClient } from '@/lib/reflect-draft'
 import { generateSavedReflectCopy } from '@/lib/reflect-settlement'
 import { resolveUserLocalDate } from '@/lib/user-local-date'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'edge'
 
@@ -13,6 +14,7 @@ export async function POST(request) {
     const verified = await verifyToken(token)
     if (!verified) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const input = await request.json()
+    if (input.shareToPartner != null && typeof input.shareToPartner !== 'boolean') return NextResponse.json({error:'invalid_request'},{status:400})
     if (verified.id !== input.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!Number.isInteger(input.promptId) || input.promptId < 1 || input.promptId > 9) {
       return NextResponse.json({ error: 'invalid_prompt' }, { status: 400 })
@@ -21,6 +23,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'invalid_idempotency_key' }, { status: 400 })
     }
     const supabase = serviceClient()
+    const majorUpdate = await majorUpdateEnabled(supabase)
     // Matching rules, timezone resolution and entitlement lookup are
     // independent. Running them together removes two network round trips from
     // the Save Reflection spinner, which was most visible for Free accounts.
@@ -33,7 +36,13 @@ export async function POST(request) {
     if (resolved.error) return NextResponse.json({ error: resolved.error }, { status: 400 })
     const { data: profile } = profileResult
     if (!profile) return NextResponse.json({ error: 'profile_not_found' }, { status: 404 })
-    const isPaid = (profile.subscription_tier || 'free') !== 'free'
+    let isPaid = (profile.subscription_tier || 'free') !== 'free'
+    if (majorUpdate) {
+      const { data: policy, error } = await supabase.rpc('burrow_record_policy_v1', { p_user_id: input.userId })
+      if (error || policy?.error || !policy) throw error || new Error('policy_unavailable')
+      isPaid = policy.hasPlus === true
+      // Do not gate retries here: begin_saved_reflect must first return saved receipts.
+    }
     if (input.friendUserId && !isPaid) return NextResponse.json({ error: 'plus_required' }, { status: 403 })
     const journalKind = journalKindForInput(input, resolved.mode)
     const payload = {
@@ -42,18 +51,24 @@ export async function POST(request) {
       source_kit: input.sourceKit === 'new_lens' ? 'new_lens' : null,
       friend_user_id: input.friendUserId || null, matches: resolved.matches,
       journal_kind: journalKind,
+      ...(majorUpdate ? { share_to_partner: input.shareToPartner !== false } : {}),
     }
     // Permanent record, daily quota and reward commit BEFORE spending tokens.
     // Retrying a previously saved key succeeds even when today's quota is full.
     const reserveArgs = {
-      p_user_id: input.userId, p_payload: payload, p_xp: XP_RULES.reflect.award,
+      p_user_id: input.userId, p_payload: payload, p_xp: majorUpdate ? 0 : XP_RULES.reflect.award,
       p_week: isoWeek(localDate),
       // Start with empty Memory copy. Eligible entries populate this after the
       // atomic allowance claim; record-only entries must remain manual-only.
       p_memories: {},
     }
     let { data: reserved, error: reserveError } = await supabase.rpc('begin_saved_reflect', reserveArgs)
-    if (reserveError) throw reserveError
+    if (reserveError) {
+      if (['daily_adventure_used', 'journal_kind_disabled', 'not_paired'].includes(reserveError.message)) {
+        return NextResponse.json({ error: reserveError.message }, { status: 409 })
+      }
+      throw reserveError
+    }
     if (reserved?.error === 'companion_not_initialized') {
       // Fresh onboarding used to launch Home before its fire-and-forget
       // companion sync completed. Repair both that race and already-affected
@@ -73,7 +88,7 @@ export async function POST(request) {
       reserved = retry.data
     }
     if (reserved?.error) return NextResponse.json(reserved, {
-      status: ['daily_limit_reached', 'journal_kind_used'].includes(reserved.error) ? 409 : 400,
+      status: ['daily_limit_reached', 'journal_kind_used', 'daily_adventure_used', 'journal_kind_disabled', 'not_paired'].includes(reserved.error) ? 409 : 400,
     })
     let draft = reserved?.draft
     if (!draft) throw new Error('save_not_confirmed')
@@ -108,6 +123,7 @@ export async function POST(request) {
     }
     return NextResponse.json({
       success: true, draftId: draft.id, reflectId: draft.saved_reflect_id || draft.finalized_reflect_id,
+      policyMode: majorUpdate ? 'burrow' : 'legacy',
       localDate: draft.local_date, revision: draft.settlement_revision || 0,
       memories: draft.settlement_memories, matches: draft.matches || [],
       aiMemories: draft.ai_memories || {}, bubble: draft.bubble || null,

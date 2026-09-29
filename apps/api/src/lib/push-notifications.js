@@ -1,3 +1,5 @@
+import { majorUpdateEnabled } from './app-major-update'
+
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
 const retryAt = (attempts) => new Date(
@@ -23,20 +25,26 @@ export async function enqueuePartnerReflectNotification(supabase, userId, reflec
 }
 
 export async function drainPushNotificationOutbox(supabase, limit = 50) {
+  const majorUpdate = await majorUpdateEnabled(supabase)
   const now = new Date().toISOString()
   // A serverless invocation can be interrupted after claiming a row. Recover
   // stale claims so no partner update remains permanently stuck in `sending`.
   const staleLock = new Date(Date.now() - 10 * 60_000).toISOString()
-  await supabase.from('notification_outbox').update({
+  let recovery = supabase.from('notification_outbox').update({
     status: 'retry', next_attempt_at: now, locked_at: null,
     last_error: 'stale_delivery_claim_recovered',
   }).eq('status', 'sending').lt('locked_at', staleLock)
-  const { data: rows, error } = await supabase.from('notification_outbox')
+  if (majorUpdate) recovery = recovery.not('event_type', 'like', 'court_%')
+  await recovery
+  let pending = supabase.from('notification_outbox')
     .select('*').in('status', ['pending', 'retry']).lte('next_attempt_at', now)
-    .order('created_at', { ascending: true }).limit(limit)
+  // Filter BEFORE limit so paused Court rows cannot starve partner updates.
+  if (majorUpdate) pending = pending.not('event_type', 'like', 'court_%')
+  const { data: rows, error } = await pending.order('created_at', { ascending: true }).limit(limit)
   if (error) throw error
   let sent = 0
   for (const row of rows || []) {
+    if (majorUpdate && String(row.event_type || '').startsWith('court_')) continue
     const attempts = Number(row.attempts || 0) + 1
     const { data: claimed } = await supabase.from('notification_outbox')
       .update({ status: 'sending', attempts, locked_at: now }).eq('id', row.id)
@@ -56,21 +64,24 @@ export async function drainPushNotificationOutbox(supabase, limit = 50) {
         continue
       }
       const isCourt = String(row.event_type || '').startsWith('court_')
+      const isGameReady = row.event_type === 'game_ready'
       const courtTitle = typeof row.payload?.title === 'string' ? row.payload.title.slice(0, 80) : null
       const courtBody = typeof row.payload?.body === 'string' ? row.payload.body.slice(0, 180) : null
       const visibleMessages = tokens.map((token) => ({
         to: token.expo_push_token,
-        title: isCourt ? (courtTitle || 'Bunny Court') : 'Burrow',
-        body: isCourt ? (courtBody || 'The court has an update for you.') : 'A little more of your person’s day is here for you.',
+        title: isCourt ? (courtTitle || 'Bunny Court') : isGameReady ? 'Game Room' : 'Burrow',
+        body: isCourt ? (courtBody || 'The court has an update for you.') : isGameReady ? 'Your results are ready to see!' : 'A little more of your person’s day is here for you.',
         sound: 'default',
         channelId: 'partner-updates',
         data: isCourt
           ? { type: row.event_type, route: 'thump', sessionId: row.payload?.sessionId }
+          : isGameReady
+            ? { type: 'game_ready', route: 'game_room', sessionId: row.payload?.sessionId }
           : { type: 'partner_reflect', route: 'home', reflectId: row.payload?.reflectId },
       }))
       // Send the widget invalidation independently. Its best-effort delivery
       // must never reject, retry, or duplicate the existing visible alert.
-      const backgroundResponsePromise = isCourt ? Promise.resolve(null) : fetch(EXPO_PUSH_URL, {
+      const backgroundResponsePromise = isCourt || isGameReady ? Promise.resolve(null) : fetch(EXPO_PUSH_URL, {
         method: 'POST',
         headers: {
           Accept: 'application/json', 'Content-Type': 'application/json',

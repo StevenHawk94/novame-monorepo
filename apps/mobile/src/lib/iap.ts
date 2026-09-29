@@ -33,6 +33,7 @@
  * lines) -- we only call it.
  */
 import { Platform } from 'react-native';
+import { isCarrotProduct,handleCarrotPurchase,handleCarrotError,coinPurchaseBusy,setSubscriptionPurchaseGuard } from './carrot-iap';
 import * as Crypto from 'expo-crypto';
 import {
   initConnection,
@@ -180,6 +181,8 @@ const processedTransactionIds = new Set<string>();
 // the paywall + show the success alert). Replays / renewals must NOT
 // trigger that UI -- they should just sync silently to the server.
 let userInitiatedInFlight = false;
+export const isSubscriptionPurchaseBusy = () => userInitiatedInFlight;
+setSubscriptionPurchaseGuard(isSubscriptionPurchaseBusy);
 let userInitiatedTimer: ReturnType<typeof setTimeout> | null = null;
 // UUID that launched the active store sheet. It prevents a transaction from
 // being uploaded under a different account if the auth session changes while
@@ -419,6 +422,7 @@ async function initializeIAP(): Promise<void> {
   });
 
   purchaseErrorSub = purchaseErrorListener((error) => {
+    if (handleCarrotError(error)) return;
     if (Platform.OS === 'android' && error.code === ErrorCode.AlreadyOwned) {
       void recoverAlreadyOwnedPurchase(error.productId);
       return;
@@ -441,6 +445,7 @@ async function reconcileAvailablePurchasesInternal(): Promise<boolean> {
     let restored = false;
     const purchases = await getAvailablePurchases();
     for (const purchase of purchases ?? []) {
+      if (isCarrotProduct(purchase.productId)) { await handleCarrotPurchase(purchase); continue; }
       if (!getPurchaseEntitlement(purchase) || isAndroidPurchasePending(purchase)) continue;
       const txnId = String(purchase.id);
       const before = processedTransactionIds.has(txnId);
@@ -697,6 +702,8 @@ export async function fetchStoreSubscriptionPricing(): Promise<StoreSubscription
 export async function purchaseSubscription(
   productId: IOSSubscriptionProductId,
 ): Promise<PurchaseOutcome> {
+  if (coinPurchaseBusy()) throw new Error('Please finish your carrot purchase first.');
+  if (userInitiatedInFlight) throw new Error('A subscription purchase is already in progress.');
   if (!initialized) {
     await initIAP();
   }
@@ -721,6 +728,10 @@ export async function purchaseSubscription(
     );
   }
 
+  // Recheck after asynchronous setup; another checkout may have started while
+  // authentication or the native connection was being prepared.
+  if (coinPurchaseBusy()) throw new Error('Please finish your carrot purchase first.');
+  if (userInitiatedInFlight) throw new Error('A subscription purchase is already in progress.');
   // Mark that the next listener fire originated from a user tap. The
   // listener uses this to decide whether to fire onPurchaseComplete
   // (which closes the paywall + shows success). Replays / renewals
@@ -938,6 +949,7 @@ export async function restoreSubscriptions(): Promise<{
 // ---- Internal: purchase event handling ----
 
 async function handlePurchaseUpdate(purchase: Purchase): Promise<void> {
+  if (isCarrotProduct(purchase.productId)) { await handleCarrotPurchase(purchase); return; }
   const productId = purchase.productId;
   const entitlement = getPurchaseEntitlement(purchase);
   if (!entitlement) {
@@ -1299,6 +1311,7 @@ export type SubscriptionChange =
  */
 export async function presentOfferCodeRedemption(): Promise<void> {
   if (Platform.OS !== 'ios') return;
+  if (coinPurchaseBusy() || userInitiatedInFlight) return;
 
   userInitiatedInFlight = true;
   purchaseIncludesFreeTrialInFlight = false;

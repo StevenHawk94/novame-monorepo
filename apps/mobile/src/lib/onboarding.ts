@@ -15,11 +15,22 @@ import { kOnboardingIntroSeen, kOnboardingState } from '../shared/storage/keys';
 import { storage } from './storage';
 
 const companionSyncs = new Map<string, Promise<boolean>>();
+const profileSyncs = new Map<string, Promise<boolean>>();
 let anonymousAuthHandoffUntil = 0;
 const COMPANION_SYNC_REQUEST_TIMEOUT_MS = 30_000;
 const RETRY_DELAYS_MS = [5_000, 15_000, 60_000, 5 * 60_000] as const;
 
 export type CompanionId = 'pet1' | 'pet2' | 'pet3';
+
+export interface PendingOnboardingProfile {
+  displayName?: string;
+  birthday?: string;
+  defaultAvatarId?: string;
+  partnerName?: string;
+  partnerPronouns?: string;
+  partnerNickname?: string;
+  relationshipSince?: string;
+}
 
 interface OnboardingState {
   companionId?: CompanionId;
@@ -32,6 +43,10 @@ interface OnboardingState {
   /** ob3 choices, kept for the ob4 feedback line + future personalization. */
   whoChoice?: string;
   blockerChoice?: string;
+  pendingProfile?: PendingOnboardingProfile;
+  profileSyncUserId?: string;
+  profileSyncAttempts?: number;
+  profileSyncNextRetryAtMs?: number;
 }
 
 function readState(): OnboardingState {
@@ -184,6 +199,85 @@ export function syncOnboardingCompanion(
   companionSyncs.set(userId, request);
   void request.finally(() => {
     if (companionSyncs.get(userId) === request) companionSyncs.delete(userId);
+  });
+  return request;
+}
+
+/** Persist profile edits synchronously so navigation never waits on auth/network. */
+export function queueOnboardingProfile(fields: PendingOnboardingProfile): void {
+  const state = readState();
+  writeState({
+    ...state,
+    pendingProfile: { ...state.pendingProfile, ...fields },
+    profileSyncAttempts: undefined,
+    profileSyncNextRetryAtMs: undefined,
+  });
+}
+
+/** Resume the durable profile task after anonymous identity creation or relaunch. */
+export function syncOnboardingProfile(
+  userId: string,
+  options?: { force?: boolean },
+): Promise<boolean> {
+  let state = readState();
+  const pending = state.pendingProfile;
+  if (!pending || Object.keys(pending).length === 0) return Promise.resolve(true);
+  if (state.profileSyncUserId && state.profileSyncUserId !== userId) return Promise.resolve(true);
+  if (!state.profileSyncUserId) {
+    state = { ...state, profileSyncUserId: userId };
+    writeState(state);
+  }
+  if (!options?.force && (state.profileSyncNextRetryAtMs ?? 0) > Date.now()) {
+    return Promise.resolve(false);
+  }
+
+  const running = profileSyncs.get(userId);
+  if (running) return running;
+  const snapshot = { ...pending };
+  const request = (async () => {
+    try {
+      await apiClient.post('/api/update-profile', { userId, ...snapshot });
+      const latest = readState();
+      if (latest.profileSyncUserId === userId && latest.pendingProfile) {
+        const remaining = { ...latest.pendingProfile };
+        for (const [key, value] of Object.entries(snapshot)) {
+          const typedKey = key as keyof PendingOnboardingProfile;
+          if (remaining[typedKey] === value) delete remaining[typedKey];
+        }
+        if (Object.keys(remaining).length === 0) {
+          delete latest.pendingProfile;
+          delete latest.profileSyncUserId;
+          delete latest.profileSyncAttempts;
+          delete latest.profileSyncNextRetryAtMs;
+        } else {
+          latest.pendingProfile = remaining;
+          delete latest.profileSyncAttempts;
+          delete latest.profileSyncNextRetryAtMs;
+        }
+        writeState(latest);
+      }
+      return true;
+    } catch (error) {
+      const latest = readState();
+      if (latest.profileSyncUserId === userId && latest.pendingProfile) {
+        const attempts = (latest.profileSyncAttempts ?? 0) + 1;
+        const delay = RETRY_DELAYS_MS[Math.min(attempts - 1, RETRY_DELAYS_MS.length - 1)];
+        writeState({
+          ...latest,
+          profileSyncAttempts: attempts,
+          profileSyncNextRetryAtMs: Date.now() + delay,
+        });
+      }
+      console.warn(
+        '[onboarding] profile sync failed; pending task retained:',
+        error instanceof Error ? error.message : error,
+      );
+      return false;
+    }
+  })();
+  profileSyncs.set(userId, request);
+  void request.finally(() => {
+    if (profileSyncs.get(userId) === request) profileSyncs.delete(userId);
   });
   return request;
 }

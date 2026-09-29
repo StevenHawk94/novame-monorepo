@@ -18,6 +18,7 @@ import {
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 import { haptics } from '../../src/lib/haptics';
 import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
@@ -35,6 +36,7 @@ function shuffled<T extends { id: string }>(items: readonly T[]): T[] {
 }
 
 export default function QuietWinsScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   // Kit screens use a light warm gradient-wave backdrop, so override the dark
@@ -71,7 +73,7 @@ export default function QuietWinsScreen() {
     setSubmitting(true);
     setError(null);
     const ids = [...checked];
-    const expected = XP_RULES.quietWins.award;
+    const expected = majorUpdate ? 0 : XP_RULES.quietWins.award;
     const award = optimisticCloverAward(expected);
     const feedbackSequence = consumeQuietWinsFeedbackSequence(ids);
     setFeedback(quietWinsFeedback(ids, feedbackSequence));
@@ -154,7 +156,7 @@ export default function QuietWinsScreen() {
       ) : (
         <View style={styles.feedbackWrap}>
           <ScrollView contentContainerStyle={styles.feedbackScroll} showsVerticalScrollIndicator={false}>
-            {xpAwarded > 0 && <CloverBurst amount={xpAwarded} />}
+            {!majorUpdate && xpAwarded > 0 && <CloverBurst amount={xpAwarded} />}
             <SpringPop boundedBounce>
               <View style={styles.feedbackCard}>
                 {feedback?.lines.map((line, i) => (

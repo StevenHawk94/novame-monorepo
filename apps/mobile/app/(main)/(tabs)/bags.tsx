@@ -90,6 +90,10 @@ function samePairing(a: PairingStatus | null, b: PairingStatus | null): boolean 
  * Ours = items from the pair's shared collection.
  */
 export default function BagsScreen() {
+  return useMajorUpdateEnabled() ? <BurrowScreen section="collection" /> : <LegacyBagsScreen />;
+}
+
+function LegacyBagsScreen() {
   const router = useRouter();
   const isPaid = useSubscriptionTier() !== 'free';
   const { tab: initialTab } = useLocalSearchParams<{ tab?: string }>();
@@ -544,3 +548,5 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 22,
   },
 });
+import { BurrowScreen } from '@/components/burrow/burrow-screen';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';

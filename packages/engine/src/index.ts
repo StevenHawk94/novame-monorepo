@@ -9,3 +9,4 @@ export * from './skills/card-matcher';
 export * from './items/custom-tap-items';
 export * from './items/item-rules';
 export * from './items/remote-manifest';
+export * from './burrow';

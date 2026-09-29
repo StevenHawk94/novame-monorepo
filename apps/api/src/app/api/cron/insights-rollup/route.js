@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { mergeConnectionCandidatePayload } from '@/lib/reflect-analysis-store'
+import { majorUpdateEnabled } from '@/lib/app-major-update'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -17,6 +18,11 @@ export async function GET(request) {
   }
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } })
+  try {
+    if (await majorUpdateEnabled(supabase)) return NextResponse.json({ ok: true, paused: true, applied: 0 })
+  } catch {
+    return NextResponse.json({ error: 'config_unavailable' }, { status: 503 })
+  }
   const { data: candidates, error } = await supabase.from('connection_update_candidates').select('*')
     .eq('status', 'pending').order('created_at', { ascending: true }).limit(500)
   if (error) return NextResponse.json({ error: 'query_failed' }, { status: 500 })

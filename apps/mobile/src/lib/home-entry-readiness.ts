@@ -9,6 +9,7 @@ export const HOME_ENTRY_ASSETS = [
   'home-layout', 'home-data', 'tabs-layout',
   'home-copy',
   'friends-background', 'friends-data', 'entry-copy',
+  'tab:burrow', 'tab:quests', 'tab:shop', 'tab:love', 'tab:collection', 'burrow-layout', 'burrow-data',
 ] as const;
 
 export type HomeEntryAsset = typeof HOME_ENTRY_ASSETS[number];
@@ -36,6 +37,12 @@ const HOME_ASSETS: readonly HomeEntryAsset[] = [
 const FRIENDS_ASSETS: readonly HomeEntryAsset[] = [
   ...SHARED_ASSETS, 'friends-background', 'friends-data',
 ];
+let experience: 'legacy' | 'burrow' = 'legacy';
+export function setHomeEntryExperience(value: 'legacy' | 'burrow'): void {
+  if (experience === value) return;
+  experience = value;
+  publish({ ...state });
+}
 
 let state: EntryState = {
   pending: false,
@@ -131,6 +138,10 @@ export function deferHomeEntryNotification(): void {
 }
 
 function requiredAssets(target: HomeEntryTarget): readonly HomeEntryAsset[] {
+  if (experience === 'burrow' && target !== 'current') return [
+    'tab:index', 'tab:love', 'tab:shop', 'tab:friends', 'tab:collection',
+    'tabs-layout', 'entry-copy', 'burrow-layout', 'burrow-data',
+  ];
   if (target === 'home') return HOME_ASSETS;
   if (target === 'friends') return FRIENDS_ASSETS;
   return ['entry-copy'];
@@ -138,6 +149,14 @@ function requiredAssets(target: HomeEntryTarget): readonly HomeEntryAsset[] {
 
 export function homeEntryIsReady(): boolean {
   return state.pending && requiredAssets(state.target).every((asset) => state.ready.includes(asset));
+}
+
+/** Android waits for JS data/layout, never for an image decoder callback. */
+export function homeEntryDataIsReady(): boolean {
+  if (experience === 'burrow' && state.target !== 'current') {
+    return state.ready.includes('burrow-data') && state.ready.includes('burrow-layout');
+  }
+  return state.target !== 'home' || (state.ready.includes('home-data') && state.ready.includes('home-copy'));
 }
 
 export function markHomeEntryAsset(asset: HomeEntryAsset, attempt: number): void {

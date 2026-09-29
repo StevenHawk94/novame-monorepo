@@ -11,6 +11,8 @@ import AnalysisTab from './_components/AnalysisTab';
 import ItemsTab from './_components/ItemsTab';
 import MarketingTab from './_components/MarketingTab';
 import ConnectionInsightTab from './_components/ConnectionInsightTab';
+import BunnyCourtTab from './_components/BunnyCourtTab';
+import BurrowContentTab from './_components/BurrowContentTab';
 
 type TabId =
   | 'overview'
@@ -22,6 +24,8 @@ type TabId =
   | 'items'
   | 'marketing'
   | 'connection-insight'
+  | 'bunny-court'
+  | 'burrow-content'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
@@ -33,6 +37,8 @@ const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'items', icon: '🎒', label: 'Memory Items' },
   { id: 'marketing', icon: '📣', label: 'Marketing' },
   { id: 'connection-insight', icon: '💡', label: 'Connection Insight' },
+  { id: 'bunny-court', icon: '⚖️', label: 'Bunny Court' },
+  { id: 'burrow-content', icon: '🐰', label: 'Burrow Content' },
 ];
 
 /**
@@ -76,6 +82,8 @@ export default function AdminDashboard() {
       {tab === 'items' && <ItemsTab />}
       {tab === 'marketing' && <MarketingTab />}
       {tab === 'connection-insight' && <ConnectionInsightTab />}
+      {tab === 'bunny-court' && <BunnyCourtTab />}
+      {tab === 'burrow-content' && <BurrowContentTab />}
     </>
   );
 }

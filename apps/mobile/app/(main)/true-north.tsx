@@ -15,6 +15,7 @@ import { GridBackground } from '../../src/components/ui/grid-background';
 import { CloverBurst } from '../../src/components/main/clover-burst';
 import { XP_RULES } from '@novame/engine';
 import { optimisticCloverAward } from '../../src/lib/cosmetics-api';
+import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { haptics } from '../../src/lib/haptics';
 import { SpringPop } from '../../src/components/ui/spring-pop';
 import { AndroidCompactText as Text } from '@/components/ui/android-compact-typography';
@@ -72,6 +73,7 @@ const KIT_PALETTE = {
 };
 
 export default function TrueNorthScreen() {
+  const majorUpdate = useMajorUpdateEnabled();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const kit = KIT_PALETTE;
@@ -138,7 +140,7 @@ export default function TrueNorthScreen() {
     if (picked.length !== DIMENSION_IDS.length || submitting) return;
     setSubmitting(true);
     setError(null);
-    const expected = XP_RULES.trueNorth.award;
+    const expected = majorUpdate ? 0 : XP_RULES.trueNorth.award;
     const award = optimisticCloverAward(expected);
     setJustEarned(true);
     setRevealRanking(picked);
@@ -244,7 +246,7 @@ export default function TrueNorthScreen() {
         <Reveal
           ranking={revealRanking}
           lastRanking={status.lastRanking}
-          showReward={justEarned}
+          showReward={justEarned && !majorUpdate}
           colors={KIT_PALETTE}
           onDone={() => { void haptics.pageClose(); router.back(); }}
         />
