@@ -15,8 +15,12 @@ export async function GET(request) {
     if (!photoUUID(id)) return reply({ error: 'invalid_request' }, 400)
     const db = appMajorUpdateServiceClient()
     if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
-    const { data, error } = await db.rpc('read_memory_photo_v1', { p_user_id: userId, p_photo_id: id })
+    let { data, error } = await db.rpc('read_memory_photo_v1', { p_user_id: userId, p_photo_id: id })
     if (error) throw error
+    if (data.error === 'not_paired') {
+      ({ data, error } = await db.rpc('solo_burrow_read_memory_photo_v1', { p_user_id: userId, p_photo_id: id }))
+      if (error) throw error
+    }
     if (data.error) return reply(data, commandStatus(data.error))
     const signed = await db.storage.from(bucket).createSignedUrl(data.path, PHOTO_LINK_SECONDS)
     if (signed.error) throw signed.error
@@ -34,8 +38,12 @@ export async function POST(request) {
     if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
     if (body.action === 'remove') {
       if (!photoUUID(body.photoId)) return reply({ error: 'invalid_request' }, 400)
-      const result = await db.rpc('delete_memory_photo_v1', { p_user_id: userId, p_entry_id: body.entryId, p_photo_id: body.photoId })
+      let result = await db.rpc('delete_memory_photo_v1', { p_user_id: userId, p_entry_id: body.entryId, p_photo_id: body.photoId })
       if (result.error) throw result.error
+      if (result.data.error === 'not_paired') {
+        result = await db.rpc('solo_burrow_delete_memory_photo_v1', { p_user_id: userId, p_entry_id: body.entryId, p_photo_id: body.photoId })
+        if (result.error) throw result.error
+      }
       return reply(result.data.error ? result.data : { success: true, ...result.data }, commandStatus(result.data.error))
     }
     if (body.action !== 'upload' || !Number.isInteger(body.slot) || body.slot < 0 || body.slot > 2
@@ -46,17 +54,26 @@ export async function POST(request) {
     if (!limited.data.allowed) return reply({ error: 'upload_limit' }, 429)
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2,'0')).join('')
     if (body.partnerId != null && !photoUUID(body.partnerId)) return reply({error:'invalid_request'},400)
-    const prepared = body.partnerId ? await db.rpc('prepare_burrow_photo_for_pair_v1', {
+    let prepared = body.partnerId ? await db.rpc('prepare_burrow_photo_for_pair_v1', {
       p_user_id:userId,p_partner_id:body.partnerId,p_target:{kind:'memory',entryId:body.entryId,slot:body.slot,expectedPhotoId:body.expectedPhotoId},p_key:body.idempotencyKey,p_digest:digest,
     }) : await db.rpc('prepare_memory_photo_v1', { p_user_id: userId, p_entry_id: body.entryId,
       p_slot: body.slot, p_expected_id: body.expectedPhotoId, p_key: body.idempotencyKey, p_digest: digest })
     if (prepared.error) throw prepared.error
+    if (prepared.data.error === 'not_paired') {
+      prepared = await db.rpc('solo_burrow_prepare_memory_photo_v1', { p_user_id: userId, p_entry_id: body.entryId,
+        p_slot: body.slot, p_expected_id: body.expectedPhotoId, p_key: body.idempotencyKey, p_digest: digest })
+      if (prepared.error) throw prepared.error
+    }
     if (prepared.data.error) return reply(prepared.data, commandStatus(prepared.data.error))
     if (prepared.data.committed) return reply({ success: true, applied: false })
     const uploaded = await db.storage.from(bucket).upload(prepared.data.path, bytes, { contentType: 'image/jpeg', upsert: false, cacheControl: '0' })
     if (uploaded.error && !['409','Duplicate'].includes(String(uploaded.error.statusCode ?? uploaded.error.code))) throw uploaded.error
-    const complete = await db.rpc('complete_memory_photo_v1', { p_user_id: userId, p_ticket_id: prepared.data.ticketId })
+    let complete = await db.rpc('complete_memory_photo_v1', { p_user_id: userId, p_ticket_id: prepared.data.ticketId })
     if (complete.error) throw complete.error
+    if (complete.data.error === 'not_paired' || complete.data.error === 'not_found') {
+      complete = await db.rpc('solo_burrow_complete_memory_photo_v1', { p_user_id: userId, p_ticket_id: prepared.data.ticketId })
+      if (complete.error) throw complete.error
+    }
     // Ambiguous outcomes are retried with the same ticket; garbage collection
     // retires abandoned tickets later, never delete inline after a timeout.
     return reply(complete.data.error ? complete.data : { success: true, ...complete.data }, commandStatus(complete.data.error))

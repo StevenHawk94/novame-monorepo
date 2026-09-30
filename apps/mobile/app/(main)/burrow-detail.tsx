@@ -26,5 +26,5 @@ export default function BurrowDetail(){
   if(section==='our_room')return <Redirect href="/(main)/(tabs)"/>;
   if(section==='game_room')return <GameRoomScreen/>;
   return <BurrowScreen section={section} roomType={params.roomType==='our'?'our':'home'}
-    initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'windows'}/>;
+    initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'cushions'}/>;
 }

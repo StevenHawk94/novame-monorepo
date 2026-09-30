@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { testGameRoom } from './test-burrow-game-room-database.mjs';
+import { testSoloBurrow } from './test-burrow-solo-database.mjs';
 import { seedLegacyRoomPhotos } from './test-burrow-room-photo-cleanup-database.mjs';
 import { scoreGameRoomRound } from '../apps/api/src/lib/burrow-game-room.mjs';
 
@@ -57,12 +58,24 @@ try {
     '128_burrow_memory_photos','129_burrow_sync_and_memory_outbox','130_burrow_room_photo_cleanup',
     '132_burrow_history','133_burrow_content_editor','134_burrow_accessible_affection',
     '135_burrow_photo_pair_binding','136_burrow_pair_adventure_lifecycle','137_burrow_pair_generation',
-    '139_burrow_coin_purchases','142_burrow_game_room']) {
+    '139_burrow_coin_purchases','142_burrow_game_room',
+    '143_burrow_webp_catalog','144_burrow_release_quests',
+    '145_burrow_room_decoration_moments','146_burrow_illustrated_friends',
+    '147_burrow_solo_core','148_burrow_solo_adventure','149_burrow_solo_photos',
+    '150_burrow_solo_memory_photos','151_burrow_solo_diary','152_burrow_solo_plus_diary']) {
     if(suffix.startsWith('130_'))await seedLegacyRoomPhotos({db,rpc});
     await db.exec(readFileSync(resolve(`supabase/migrations/20260920000${suffix}.sql`),'utf8'));
   }
+  // The isolated game harness omits the older journal-policy migration; only
+  // its date helper is needed to exercise the new solo policy here.
+  await db.exec(`create function public.burrow_record_date_v1(p_user_id uuid) returns date
+    language sql stable as $$ select (now() at time zone coalesce(nullif(timezone_name,''),'UTC'))::date
+      from profiles where id=p_user_id $$`);
+  await db.exec(`alter table reflect_drafts add column saved_reflect_id uuid references reflects;
+    alter table reflect_drafts add column created_at timestamptz default now()`);
   await testGameRoom({db,query,rpc,check});
-  console.log(`Game Room PostgreSQL integration: ${assertions} assertions passed.`);
+  await testSoloBurrow({db,query,rpc,check});
+  console.log(`Game Room and Solo Burrow PostgreSQL integration: ${assertions} assertions passed.`);
 } catch(error) {
   console.error(`Game Room PostgreSQL integration failed after ${assertions} assertions: ${error.message}`);
   process.exitCode=1;

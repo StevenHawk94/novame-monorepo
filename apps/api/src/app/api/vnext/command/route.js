@@ -208,8 +208,57 @@ export async function POST(request) {
       return NextResponse.json({ error: 'invalid_action' }, { status: 400 })
     }
 
-    const { data, error } = await supabase.rpc(rpc, args)
+    let { data, error } = await supabase.rpc(rpc, args)
     if (error) throw error
+    // A missing pair does not lock someone out of their own room. Keep every
+    // fallback self-scoped; partner-targeted gifts/affection/games never enter
+    // this path. The database function rechecks the pair inside its transaction.
+    if (data?.error === 'not_paired' || (data?.error === 'not_found'
+      && ['settle_adventure', 'claim_adventure_result', 'complete_friend_interaction'].includes(action))) {
+      let soloRpc = null
+      let soloArgs = null
+      if (action === 'purchase_catalog_item' && (body.recipientId == null || body.recipientId === userId)) {
+        soloRpc = 'solo_burrow_purchase_v1'
+        soloArgs = { p_user_id: userId, p_item_id: body.itemId, p_key: body.idempotencyKey }
+      } else if (action === 'refill_room_need' && body.ownerId === userId) {
+        soloRpc = 'solo_burrow_care_v1'
+        soloArgs = { p_user_id: userId, p_need: body.need, p_key: body.idempotencyKey }
+      } else if (action === 'interact_burrow_toy') {
+        soloRpc = 'solo_burrow_toy_v1'
+        soloArgs = { p_user_id: userId, p_key: body.idempotencyKey }
+      } else if (action === 'save_room_loadout') {
+        soloRpc = 'solo_burrow_loadout_v1'
+        soloArgs = { p_user_id: userId, p_slots: body.slots }
+      } else if (action === 'save_bunny_outfit') {
+        soloRpc = 'solo_burrow_outfit_v1'
+        soloArgs = { p_user_id: userId, p_item_id: body.itemId }
+      } else if (action === 'save_memory') {
+        soloRpc = 'solo_burrow_memory_v1'
+        soloArgs = { p_user_id: userId, p_entry_id: body.entryId || null,
+          p_body: body.body, p_prompt_id: body.promptId || null, p_key: body.idempotencyKey }
+      } else if (action === 'delete_memory') {
+        soloRpc = 'solo_burrow_delete_memory_v1'
+        soloArgs = { p_user_id: userId, p_entry_id: body.entryId }
+      } else if (action === 'start_adventure') {
+        soloRpc = 'solo_burrow_start_adventure_v1'
+        soloArgs = { p_user_id: userId, p_record_id: body.recordId || null, p_key: body.idempotencyKey }
+      } else if (action === 'settle_adventure') {
+        soloRpc = 'solo_burrow_settle_adventure_v1'
+        soloArgs = { p_user_id: userId, p_adventure_id: body.adventureId }
+      } else if (action === 'claim_adventure_result') {
+        soloRpc = 'solo_burrow_claim_adventure_v1'
+        soloArgs = { p_user_id: userId, p_adventure_id: body.adventureId }
+      } else if (action === 'complete_friend_interaction') {
+        soloRpc = 'solo_burrow_friend_interaction_v1'
+        soloArgs = { p_user_id: userId, p_adventure_id: body.adventureId,
+          p_response: body.response && typeof body.response === 'object' ? body.response : {} }
+      }
+      if (soloRpc) {
+        const solo = await supabase.rpc(soloRpc, soloArgs)
+        if (solo.error) throw solo.error
+        data = solo.data
+      }
+    }
     const status = commandStatus(data?.error)
     return NextResponse.json(
       data?.error ? data : { success: true, ...data },

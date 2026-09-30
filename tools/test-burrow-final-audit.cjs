@@ -44,6 +44,7 @@ test('history refresh preserves the frozen editor version and pair change clears
   const {BurrowHistory}=load('apps/mobile/src/components/burrow/burrow-history.tsx',{
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx,Fragment:'Fragment'},
     'react-native':{StyleSheet:{create:x=>x},AppState:{currentState:'active',addEventListener:()=>({remove(){}})},View:'View',Text:'Text',TextInput:'TextInput',Pressable:'Pressable',Alert:{}},
+    'expo-image':{Image:'Image'},'@/lib/item-images.g':{ITEM_IMAGES:{}},
     'expo-router':{router:{}},'@react-navigation/native':{useIsFocused:()=>true},'@/lib/app-major-update-api':{},'@/lib/burrow-store':{},
     '@/lib/burrow-history':{fetchBurrowHistory:async()=>pending?gate.promise:page,historyDayLabel:x=>x,mergeHistory:(a,b)=>[...a,...b]},
     './memory-composer':{MemoryComposer:'Composer'},'./memory-photos':{MemoryPhotos:'Photos'},'./history-calendar':{HistoryCalendar:'Calendar'},'@/lib/api':{},
