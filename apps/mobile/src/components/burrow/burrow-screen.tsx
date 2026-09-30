@@ -83,10 +83,11 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   const {data,loading,error,busy,receivedAt}=useBurrow();
   const {attempt}=useHomeEntry();
   const insets=useSafeAreaInsets();
-  const {width:screenWidth}=useWindowDimensions();
+  const {width:screenWidth,height:screenHeight}=useWindowDimensions();
   const [clock,setClock]=useState(burrowClock());
   const [category,setCategory]=useState<string>(initialCategory);
-  const [collectionTab,setCollectionTab]=useState('furniture');
+  const [collectionTab,setCollectionTab]=useState<'items'|'gifts'|'friends'>('items');
+  const [collectionItemFilter,setCollectionItemFilter]=useState<'all'|'furniture'|'outfits'|'rooms'>('all');
   const [collectionOwner,setCollectionOwner]=useState<'mine'|'partner'>('mine');
   const [selected,setSelected]=useState<MajorUpdateCatalogItem|null>(null);
   const [affection,setAffection]=useState<AffectionType|null>(null);
@@ -273,25 +274,38 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       </>;
     }
     if(section==='friends_room')return <>
-      <FriendVisitCard data={data} busy={busy}/>
-      <Text style={s.creamCopy}>{data.discoveries.filter(d=>d.user_id===data.profile.id).length} friends met on your adventures</Text>
-      <View style={s.grid}>{data.friends.map(friend=>{const found=data.discoveries.some(d=>d.user_id===data.profile.id&&d.friend_id===friend.stable_id);const art=burrowFriendArt(friend.name);return <View key={friend.stable_id} style={s.tile}>{art?<Image source={art} contentFit="contain" style={{width:110,height:110,opacity:found?1:.25}}/>:<Text style={[s.itemIcon,!found&&{opacity:.25}]}>🐾</Text>}<Text style={s.tileTitle}>{found?friend.name:'Someone to meet'}</Text></View>;})}</View>
+      <View style={{height:Math.max(310,screenHeight*.47),justifyContent:'flex-end',alignItems:'center'}} pointerEvents="none">
+        {data.friendVisit&&burrowFriendArt(data.friends.find(friend=>friend.stable_id===data.friendVisit?.friend_id)?.name)&&<Image source={burrowFriendArt(data.friends.find(friend=>friend.stable_id===data.friendVisit?.friend_id)?.name)} contentFit="contain" style={{width:Math.min(screenWidth*.7,320),height:Math.min(screenHeight*.34,300)}}/>}
+      </View>
+      <FriendVisitCard data={data} busy={busy} showArt={false}/>
     </>;
     if(section==='collection'){
       const tab=collectionTab;
       const whose=collectionOwner==='mine'?data.profile.id:data.partner?.id;
       const inventory=data.inventory.filter(i=>i.owner_id===whose);
-      const list=data.catalog.filter(item=>inventory.some(i=>i.item_id===item.stable_id)&&(tab==='gifts'?item.item_type==='souvenir'||inventory.some(i=>i.item_id===item.stable_id&&['friend_visit','gift','adventure_gift'].includes(i.source)):tab==='outfits'?item.item_type==='outfit':['decor','our_room'].includes(item.item_type)));
+      const ownedIds=new Set(inventory.map(i=>i.item_id));
+      const ownedItems=data.catalog.filter(item=>ownedIds.has(item.stable_id)&&['decor','our_room','outfit'].includes(item.item_type));
+      const giftItems=data.catalog.filter(item=>inventory.some(i=>i.item_id===item.stable_id&&['friend_visit','gift','adventure_gift'].includes(i.source)));
+      const list=tab==='gifts'?giftItems:ownedItems.filter(item=>collectionItemFilter==='all'||(collectionItemFilter==='furniture'?item.item_type==='decor':collectionItemFilter==='outfits'?item.item_type==='outfit':item.item_type==='our_room'));
+      const ownedFriends=data.discoveries.filter(d=>d.user_id===whose&&!!d.interaction_completed_at).length;
+      const tileSize=Math.max(52,Math.floor((Math.min(screenWidth,560)-68-(tab==='friends'?16:24))/(tab==='friends'?3:4)));
       return <>
-        {!!data.partner&&<View style={s.row}>{(['mine','partner'] as const).map(value=><Action key={value} secondary={collectionOwner!==value} label={value==='mine'?'Mine':'Partner’s'} onPress={()=>setCollectionOwner(value)}/>)}</View>}
-        <ScrollView horizontal contentContainerStyle={s.chips}>{['furniture','outfits','gifts','friends'].map(value=><Pressable accessibilityRole="button" key={value} style={[s.chip,tab===value&&s.chipSelected]} onPress={()=>setCollectionTab(value)}><Text style={s.chipText}>{categoryName(value)}</Text></Pressable>)}</ScrollView>
+        <Text style={collectionStyles.subtitle}>Everything we’ve found along the way</Text>
+        <View style={collectionStyles.board}>
+        {!!data.partner&&<View style={collectionStyles.ownerRow}>{(['mine','partner'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:collectionOwner===value}} key={value} style={[collectionStyles.owner,collectionOwner===value&&collectionStyles.ownerSelected]} onPress={()=>setCollectionOwner(value)}><Text style={[collectionStyles.ownerText,collectionOwner===value&&collectionStyles.ownerTextSelected]}>{value==='mine'?'My collection':'Partner’s'}</Text></Pressable>)}</View>}
+        <View style={collectionStyles.tabs}>{(['items','gifts','friends'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:tab===value}} key={value} style={[collectionStyles.tab,tab===value&&collectionStyles.activeTab]} onPress={()=>setCollectionTab(value)}><Text style={[collectionStyles.tabText,tab===value&&collectionStyles.activeTabText]}>{value==='items'?'▣  Items':value==='gifts'?'▧  Gifts':'♣  Friends'}</Text></Pressable>)}</View>
+        <View style={collectionStyles.headingRow}><Text style={collectionStyles.heading}>{tab==='items'?'Items':tab==='gifts'?'Gifts':'Friends'}</Text><Text style={collectionStyles.count}>{tab==='items'?ownedItems.length:tab==='gifts'?giftItems.length:ownedFriends} {tab==='friends'?'met':'collected'}</Text></View>
+        {tab==='items'&&<View style={collectionStyles.filters}>{(['all','furniture','outfits','rooms'] as const).map(value=><Pressable accessibilityRole="button" accessibilityState={{selected:collectionItemFilter===value}} key={value} style={collectionStyles.filter} onPress={()=>setCollectionItemFilter(value)}><Text style={[collectionStyles.filterText,collectionItemFilter===value&&collectionStyles.activeFilterText]}>{categoryName(value)}</Text>{collectionItemFilter===value&&<View style={collectionStyles.filterUnderline}/>}</Pressable>)}</View>}
         {collectionOwner==='mine'&&data.affectionInbox.length>0&&<Card title="Your person thought of you" body={AFFECTION_TYPES.map(type=>{const count=data.affectionInbox.filter(e=>e.affection_type===type).length;return count?`${AFFECTION_COPY[type].symbol} ${count}`:'';}).filter(Boolean).join('   ')}><Action label="Love received" disabled={busy} onPress={()=>act('read-affection',()=>markAffectionRead(data.affectionInbox.map(e=>e.id)))}/></Card>}
         {collectionOwner==='mine'&&data.gifts.map(gift=><Card key={gift.id} title={data.catalog.find(i=>i.stable_id===gift.item_id)?.title??'A little gift'}><Action label="Open gift" disabled={busy} onPress={()=>act(`gift:${gift.id}`,()=>claimGift(gift.id))}/></Card>)}
-        <View style={s.grid}>{tab==='friends'?data.friends.map(friend=>{
-          const found=data.discoveries.some(d=>d.user_id===whose&&d.friend_id===friend.stable_id);const friendArt=burrowFriendArt(friend.name);return <View key={friend.stable_id} style={[s.tile,s.collectionTile]}>{friendArt?<Image source={friendArt} contentFit="contain" style={[{width:74,height:74},!found&&{opacity:.2}]}/>:<Text style={[s.itemIcon,!found&&{opacity:.2}]}>{friend.name==='Fenn'?'🦊':'🦫'}</Text>}<Text style={[s.tileTitle,s.collectionTitle]}>{found?friend.name:'Undiscovered'}</Text></View>;
-        }):list.map(item=><Pressable key={item.stable_id} style={[s.tile,s.collectionTile]} accessibilityRole="button" onPress={()=>setSelected(item)}><CatalogArtwork item={item} compact/><Text style={[s.tileTitle,s.collectionTitle]}>{item.title}</Text><Text style={s.price}>Owned ✓</Text></Pressable>)}</View>
-        {tab!=='friends'&&!list.length&&<Card title="Your story is just beginning" body="Adventure finds and things you buy will appear here."/>}
-        <Action label="Decorate my burrow" onPress={()=>openBurrow('decorate')}/>
+        <View style={collectionStyles.grid}>{tab==='friends'?data.friends.map(friend=>{
+          const found=data.discoveries.some(d=>d.user_id===whose&&d.friend_id===friend.stable_id&&!!d.interaction_completed_at);const friendArt=burrowFriendArt(friend.name);return <View key={friend.stable_id} style={[collectionStyles.tile,{width:tileSize}]}>{found&&friendArt?<Image source={friendArt} contentFit="contain" style={{width:tileSize-12,height:tileSize-12}}/>:<Text style={collectionStyles.unknown}>?</Text>}<Text numberOfLines={2} style={collectionStyles.tileTitle}>{found?friend.name:'Undiscovered'}</Text></View>;
+        }):list.map(item=><Pressable key={item.stable_id} style={[collectionStyles.tile,{width:tileSize}]} accessibilityRole="button" accessibilityLabel={`View ${item.title}`} onPress={()=>setSelected(item)}><CatalogArtwork item={item} sizePx={tileSize-12}/><Text numberOfLines={2} style={collectionStyles.tileTitle}>{item.title}</Text><Text style={collectionStyles.owned}>✓ Owned</Text></Pressable>)}
+          {((tab==='items'&&collectionItemFilter==='all')||tab==='gifts')&&data.catalog.filter(item=>!ownedIds.has(item.stable_id)&&(tab==='gifts'?item.item_type==='souvenir':['decor','our_room','outfit'].includes(item.item_type))).slice(0,tab==='gifts'?8:4).map(item=><View key={item.stable_id} style={[collectionStyles.tile,collectionStyles.unknownTile,{width:tileSize}]} accessibilityLabel="Undiscovered item"><Text style={collectionStyles.unknown}>?</Text><Text style={collectionStyles.unknownLabel}>Undiscovered</Text></View>)}
+        </View>
+        {tab!=='friends'&&!list.length&&<Text style={collectionStyles.empty}>Your story is just beginning. Finds and purchases will appear here.</Text>}
+        </View>
+        <Pressable accessibilityRole="button" onPress={()=>tab==='items'?openBurrow('decorate'):tab==='gifts'?router.navigate('/(main)/(tabs)/shop' as Href):openBurrow('friends_room')} style={collectionStyles.footerButton}><Text style={collectionStyles.footerText}>{tab==='items'?'Decorate My Burrow':tab==='gifts'?'Find a Gift':'Visit Friends’ Room'}</Text></Pressable>
       </>;
     }
     if(section==='moments')return <BurrowHistory data={data} kind="moments" busy={busy}/>;
@@ -445,6 +459,39 @@ const shopStyles=StyleSheet.create({
   lightSubtitle:{color:'#805E4D'},
   productTile:{backgroundColor:'#FFFDF8',borderColor:'#F6E8D6',borderWidth:1,shadowColor:'#542413',shadowOpacity:.17,shadowOffset:{width:0,height:3},shadowRadius:2,elevation:2},
   footer:{flexDirection:'row',gap:10,paddingVertical:16},
+});
+
+const collectionStyles=StyleSheet.create({
+  subtitle:{color:'#FCE6D0',fontSize:15,marginTop:-12,marginBottom:8},
+  board:{backgroundColor:'#FFF4E3',borderRadius:25,paddingHorizontal:16,paddingTop:22,paddingBottom:30,gap:16,shadowColor:'#2B140B',shadowOffset:{width:0,height:6},shadowOpacity:.3,shadowRadius:0,elevation:5},
+  ownerRow:{flexDirection:'row',alignSelf:'center',padding:3,borderRadius:16,backgroundColor:'#EBD4B8',gap:3},
+  owner:{paddingHorizontal:17,paddingVertical:9,borderRadius:14},
+  ownerSelected:{backgroundColor:'#FFF9EF'},
+  ownerText:{color:'#75543D',fontSize:13,fontWeight:'700'},
+  ownerTextSelected:{color:'#A44929'},
+  tabs:{flexDirection:'row',borderWidth:1,borderColor:'#E9CFAC',borderRadius:20,padding:4,gap:3},
+  tab:{flex:1,minHeight:50,justifyContent:'center',alignItems:'center',borderRadius:16},
+  activeTab:{backgroundColor:'#BD5F38'},
+  tabText:{color:'#533221',fontWeight:'800',fontSize:15},
+  activeTabText:{color:'#FFF9EF'},
+  headingRow:{flexDirection:'row',alignItems:'baseline',justifyContent:'space-between'},
+  heading:{fontSize:27,fontWeight:'900',color:'#3D2118'},
+  count:{fontSize:13,color:'#88654D'},
+  filters:{flexDirection:'row',justifyContent:'space-between',gap:2},
+  filter:{flex:1,alignItems:'center',paddingVertical:9,gap:6},
+  filterText:{fontSize:12,color:'#805F4A',fontWeight:'600'},
+  activeFilterText:{color:'#BF572B',fontWeight:'800'},
+  filterUnderline:{height:3,width:'72%',backgroundColor:'#C5592B',borderRadius:3},
+  grid:{flexDirection:'row',flexWrap:'wrap',gap:8},
+  tile:{minHeight:145,backgroundColor:'#FFF9EE',borderRadius:15,borderWidth:1,borderColor:'#F2E3CA',alignItems:'center',padding:5,gap:3,justifyContent:'flex-start'},
+  tileTitle:{color:'#3D251A',fontSize:11,lineHeight:14,fontWeight:'800',textAlign:'center',minHeight:28},
+  owned:{fontSize:10,fontWeight:'700',color:'#2F8D72'},
+  unknownTile:{backgroundColor:'#F3E8D9'},
+  unknown:{height:87,textAlignVertical:'center',fontSize:42,color:'#BCA28B',fontWeight:'900'},
+  unknownLabel:{fontSize:9,color:'#8A6F5C',textAlign:'center'},
+  empty:{color:'#7B6049',textAlign:'center',lineHeight:21},
+  footerButton:{backgroundColor:'#FFC653',borderRadius:17,minHeight:57,alignItems:'center',justifyContent:'center',marginHorizontal:16,shadowColor:'#402217',shadowOpacity:.25,shadowOffset:{width:0,height:4},shadowRadius:0,elevation:3},
+  footerText:{color:'#542E1C',fontSize:17,fontWeight:'800'},
 });
 
 const adventureStyles=StyleSheet.create({

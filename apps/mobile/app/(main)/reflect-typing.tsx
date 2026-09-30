@@ -40,6 +40,7 @@ import { OffsetCard } from '../../src/components/ui/offset-card';
 import { ItemSprite } from '../../src/components/ui/item-sprite';
 import { RC, ReflectTopBar } from '../../src/components/main/reflect-shared';
 import { RecordSharing } from '@/components/burrow/record-sharing';
+import { useBurrowSnapshot } from '@/lib/burrow-store';
 import { MatchedItemsReviewSheet, ReflectSettlementView } from '../../src/components/main/reflect-settlement';
 import { useSubscriptionTier } from '@/lib/use-subscription-tier';
 
@@ -71,6 +72,7 @@ type Phase = 'pick' | 'write' | 'result';
 
 export default function ReflectTypingScreen() {
   const majorUpdate = useMajorUpdateEnabled();
+  const {data:burrow}=useBurrowSnapshot();
   const [shareToPartner,setShareToPartner]=useState(true);
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -152,7 +154,7 @@ export default function ReflectTypingScreen() {
       matchingVersion: matching.version,
       removedItemIds: [...removedIds],
       idempotencyKey: saveKey,
-      shareToPartner: majorUpdate ? shareToPartner : undefined,
+      shareToPartner: majorUpdate ? !!burrow?.partner && shareToPartner : undefined,
     });
     submitLock.current = false;
     setSubmitting(false);
@@ -227,7 +229,7 @@ export default function ReflectTypingScreen() {
                 <Text style={styles.count}>{body.length} / {MAX_CHARS}</Text>
               </View>
 
-              {majorUpdate&&<RecordSharing shared={shareToPartner} onChange={setShareToPartner} disabled={submitting}/>}
+              {majorUpdate&&<RecordSharing shared={shareToPartner} canShare={!!burrow?.partner} onChange={setShareToPartner} disabled={submitting}/>}
               {/* Live match bar. */}
               <Text style={styles.matchLabel}>Items matched from your journal</Text>
               <Pressable

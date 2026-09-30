@@ -30,6 +30,7 @@ import { OffsetCard } from '@/components/ui/offset-card';
 import { TAP_GRID_PADDING, TAP_ITEM_GAP, TapYourDayItem, tapItemGridMetrics } from '@/components/main/tap-your-day-item';
 import { RC, ReflectTopBar } from '@/components/main/reflect-shared';
 import { RecordSharing } from '@/components/burrow/record-sharing';
+import { useBurrowSnapshot } from '@/lib/burrow-store';
 import { ReflectSettlementView } from '@/components/main/reflect-settlement';
 import { itemRuleContext } from '@/lib/item-rule-cache';
 import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
@@ -42,6 +43,7 @@ type DayChoice = TapYourDayChoice & Partial<CustomTapItem>;
 /** Four skippable questions. Section labels are headings, never navigation tabs. */
 export default function ReflectGuidedScreen() {
   const majorUpdate = useMajorUpdateEnabled();
+  const {data:burrow}=useBurrowSnapshot();
   const [shareToPartner,setShareToPartner]=useState(true);
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height, fontScale } = useWindowDimensions();
@@ -141,7 +143,7 @@ export default function ReflectGuidedScreen() {
         matchingVersion: matching.version,
         selectedItems: selectedList,
         idempotencyKey: requestKey.current,
-        shareToPartner: majorUpdate ? shareToPartner : undefined,
+        shareToPartner: majorUpdate ? !!burrow?.partner && shareToPartner : undefined,
       });
       if (!result.ok) {
         setError(result.error);
@@ -212,7 +214,7 @@ export default function ReflectGuidedScreen() {
                 editable={!submitting} multiline textAlignVertical="top" maxLength={MAX_CHARS}
               />
               <Text style={styles.count}>{note.length} / {MAX_CHARS}</Text>
-              {majorUpdate&&<RecordSharing shared={shareToPartner} onChange={value=>{requestKey.current=null;setShareToPartner(value);}} disabled={submitting}/>}
+              {majorUpdate&&<RecordSharing shared={shareToPartner} canShare={!!burrow?.partner} onChange={value=>{requestKey.current=null;setShareToPartner(value);}} disabled={submitting}/>}
               <Text style={styles.matchLabel}>Items You Selected</Text>
               <View style={styles.matchBar}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchRow}>
