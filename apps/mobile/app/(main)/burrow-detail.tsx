@@ -23,6 +23,7 @@ export default function BurrowDetail(){
     Alert.alert('Finish your adventure','Claim your treasure and finish your friend’s story first. You can choose Not now when a friend asks for help.');
   },[]));
   if(!enabled)return <Redirect href="/(main)/(tabs)"/>;
+  if(section==='our_room')return <Redirect href="/(main)/(tabs)"/>;
   if(section==='game_room')return <GameRoomScreen/>;
   return <BurrowScreen section={section} roomType={params.roomType==='our'?'our':'home'}
     initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'windows'}/>;

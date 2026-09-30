@@ -11,13 +11,22 @@ export function adventureHasArrived(adventure: Adventure | undefined, now: numbe
 export function adventureIsAway(adventure: Adventure | undefined, now: number) {
   return adventure?.status === 'in_progress' && !adventureHasArrived(adventure, now);
 }
-export function roomSlots(data: MajorUpdateBootstrap, ownerId: string, shared = false) {
+export function roomSlots(data: MajorUpdateBootstrap, ownerId: string, _legacyShared = false) {
   const slots: Record<string, MajorUpdateCatalogItem> = {};
   data.catalog.filter(item => item.metadata.starter && item.metadata.slot &&
-    (shared ? item.item_type === 'our_room' : ['decor', 'outfit'].includes(item.item_type)))
+    ['decor', 'outfit'].includes(item.item_type))
     .forEach(item => { slots[item.metadata.slot!] = item; });
-  data.loadouts.filter(row => shared ? row.room_type === 'our' : row.room_type === 'home' && row.owner_id === ownerId)
+  // Both partners must see the same design. Until the first shared save,
+  // deterministically show the older personal design from the lower user ID.
+  const sharedRows = data.loadouts.filter(row => row.room_type === 'our' && row.slot !== 'outfit' &&
+    data.catalog.some(item => item.stable_id === row.item_id && item.item_type === 'decor'));
+  const legacyOwner = [data.profile.id, data.partner?.id].filter((id): id is string => !!id).sort()[0] ?? ownerId;
+  const rows = sharedRows.length ? sharedRows : data.loadouts.filter(row => row.room_type === 'home' && row.owner_id === legacyOwner && row.slot !== 'outfit');
+  rows
     .forEach(row => { const item = data.catalog.find(item => item.stable_id === row.item_id); if (item) slots[row.slot] = item; });
+  const ownOutfit=data.loadouts.find(row => row.room_type === 'home' && row.owner_id === ownerId && row.slot === 'outfit');
+  const outfit=data.catalog.find(item => item.stable_id === ownOutfit?.item_id);
+  if(outfit) slots.outfit=outfit;
   return slots;
 }
 export function roomNeedDisplay(data: MajorUpdateBootstrap, partner: boolean, now: number) {
@@ -26,6 +35,9 @@ export function roomNeedDisplay(data: MajorUpdateBootstrap, partner: boolean, no
     food: projectedRoomNeed(needs.foodValue ?? needs.food, Date.parse(needs.foodValue == null ? data.serverNow : needs.foodUpdatedAt ?? data.serverNow), now),
     water: projectedRoomNeed(needs.waterValue ?? needs.water, Date.parse(needs.waterValue == null ? data.serverNow : needs.waterUpdatedAt ?? data.serverNow), now),
   };
+}
+export function careProgress(data: MajorUpdateBootstrap | null, kind: 'food' | 'water' | null, now: number) {
+  return data && kind ? roomNeedDisplay(data, false, now)[kind] : null;
 }
 
 /** Resume intent survives forms/modals, but a foreground finish never creates

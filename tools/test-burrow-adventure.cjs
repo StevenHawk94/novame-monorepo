@@ -13,6 +13,8 @@ function card(kind, acceptedAt) {
   const { AdventureFriendCard }=load('apps/mobile/src/components/burrow/adventure-friend-card.tsx',{
     'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{Alert:{alert:(...args)=>alerts.push(args)},Pressable:'Pressable',Text:'Text',View:'View',StyleSheet:{create:x=>x}},
+    'expo-image':{Image:'Image'},
+    '@/lib/burrow-ui-assets':{burrowFriendArt:()=>null},
     'expo-router':{router:{push:r=>routes.push(r)}},
     '@/lib/app-major-update-api':{completeFriendInteraction:async(...args)=>{calls.push(args);return result;}},
     '@/lib/burrow-store':{runBurrowAction:async(_key,fn)=>{if(!ok)return false;await fn();return true;}},

@@ -1,7 +1,9 @@
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { router, type Href } from 'expo-router';
 import { respondFriendVisit, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { runBurrowAction } from '@/lib/burrow-store';
+import { burrowFriendArt } from '@/lib/burrow-ui-assets';
 
 /** The server snapshots dialogue and owns completion/gifting. Reopening this
  * card after a lost response or a restart cannot reroll or double-claim it. */
@@ -36,6 +38,7 @@ export function FriendVisitCard({ data, busy }: { data: MajorUpdateBootstrap; bu
   const feedback = content.feedback[visit.response?.choiceId ?? ''];
   const gift = data.catalog.find(item => item.stable_id === visit.reward_item_id);
   return <View style={styles.card}>
+    {burrowFriendArt(friend?.name)&&<Image source={burrowFriendArt(friend?.name)} contentFit="contain" style={{width:180,height:180,alignSelf:'center'}}/>}
     <Text style={styles.heading}>{friend?.name ?? 'A friend'} stopped by</Text>
     <Text style={styles.copy}>{content.prompt}</Text>
     {visit.declined_at ? <Text style={styles.copy}>“Another time is okay. I’m glad we had a moment together.”</Text>

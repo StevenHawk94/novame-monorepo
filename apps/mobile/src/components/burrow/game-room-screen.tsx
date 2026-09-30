@@ -7,6 +7,7 @@ import { gameOverview, gameSession, unlockGame, startGame, answerGame, notifyGam
 import { gameRoomBackground, gameRoomHero, gameRoomIcons } from '@/lib/burrow-game-room-art';
 import { refreshBurrow, useBurrow } from '@/lib/burrow-store';
 import { requestNotificationPermission, syncRemoteNotificationRegistration } from '@/lib/notification-settings';
+import { BURROW_GAME_RULE_ICONS } from '@/lib/burrow-ui-assets';
 
 const ink = '#3C1D12';
 const muted = '#80604F';
@@ -29,6 +30,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const listRef = useRef<ScrollView>(null);
+  const sessionRequest = useRef(0);
   const tileWidth = Math.max(76, Math.floor((screenWidth - 36 - 3 * 9) / 4));
   const { data: burrow } = useBurrow();
   const [overview, setOverview] = useState<GameOverview | null>(null);
@@ -40,7 +42,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const [showTransition, setShowTransition] = useState(false);
   const [showAllAnswers, setShowAllAnswers] = useState(false);
   const [pairPrompt, setPairPrompt] = useState(false);
+  const [pendingChoice, setPendingChoice] = useState<number | null>(null);
   const partnerName = burrow?.partner?.display_name?.trim() || 'your person';
+  useEffect(() => () => { sessionRequest.current++; }, []);
 
   const loadOverview = useCallback(async () => {
     const value = await gameOverview();
@@ -48,8 +52,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     return value;
   }, []);
   const loadSession = useCallback(async (id: string) => {
+    const request = ++sessionRequest.current;
     const value = await gameSession(id);
-    setSession(value);
+    if (request === sessionRequest.current) setSession(value);
     return value;
   }, []);
   useEffect(() => {
@@ -101,6 +106,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   };
   const begin = (game: GameSummary) => {
     if (!overview?.paired) { setPairPrompt(true); return; }
+    sessionRequest.current++;
     setSelected(game); setSession(null); setShowTransition(false); setShowAllAnswers(false);
   };
   const start = (game: GameSummary) => void perform(async () => {
@@ -114,15 +120,19 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     setShowTransition(next.ownAnswers.length === 6 && next.guesses.length === 0);
   });
   const answer = (choice: number) => {
-    if (!session) return;
+    if (!session || busy) return;
+    setPendingChoice(choice);
     void perform(async () => {
-      await answerGame(session.id, phase, questionIndex, choice);
-      const next = await loadSession(session.id);
-      if (phase === 'own' && next.ownAnswers.length === 6) setShowTransition(true);
-      if (next.completedAt) await loadOverview();
+      try {
+        await new Promise(resolve => setTimeout(resolve, 180));
+        await answerGame(session.id, phase, questionIndex, choice);
+        const next = await loadSession(session.id);
+        if (phase === 'own' && next.ownAnswers.length === 6) setShowTransition(true);
+        if (next.completedAt) await loadOverview();
+      } finally { setPendingChoice(null); }
     });
   };
-  const exitToList = () => { setSession(null); setSelected(null); setShowTransition(false); setShowAllAnswers(false); void loadOverview().catch(() => {}); };
+  const exitToList = () => { sessionRequest.current++; setSession(null); setSelected(null); setShowTransition(false); setShowAllAnswers(false); void loadOverview().catch(() => {}); };
   const goBack = () => {
     if (session || selected) exitToList();
     else router.back();
@@ -183,6 +193,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
           <View style={st.divider}/><View style={st.waitRow}><Text style={st.panelTitle}>{partnerName}</Text><Text style={st.waitStatus}>{session.partnerOwnCount + session.partnerGuessCount}/12</Text></View>
           <Text style={st.hint}>Results unlock when you both finish.</Text></Panel>
         <Text style={st.heroSub}>You can leave. We’ll save your place.</Text>
+        <Button label="Check for results" secondary disabled={busy} onPress={() => void perform(async () => { const next = await loadSession(session.id); if (next.completedAt) await loadOverview(); })}/>
         <Button label="Back to Game Room →" onPress={exitToList}/>
         <Button label={session.notifyReady ? 'Notifications on ✓' : 'Notify me when ready'} secondary onPress={notify} disabled={busy}/>
       </>}
@@ -197,16 +208,16 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
         <Text style={st.heroTitle}>{phase === 'own' ? 'Your answers' : `Guess ${partnerName}’s answers`}</Text>
         <View style={st.progressRow}><Text style={st.progressLabel}>{questionIndex + 1} of 6</Text>{Array.from({ length: 6 }, (_, i) => <View key={i} style={[st.dot, i < questionIndex && st.dotDone, i === questionIndex && st.dotCurrent]}/>)}</View>
         <Panel style={{ marginTop: 22 }}><Text style={st.question}>{phase === 'own' ? question.self : question.partner.replaceAll('[Name]', partnerName)}</Text>
-          {question.options.map((option, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={`${labels[index]}. ${option}`} disabled={busy} onPress={() => answer(index)} style={({ pressed }) => [st.option, pressed && { borderColor: orange }, busy && { opacity: .65 }]}>
-            <Text style={st.optionLetter}>{labels[index]}</Text><Text style={st.optionText}>{option}</Text><Text style={st.optionCircle}>○</Text></Pressable>)}
+          {question.options.map((option, index) => <Pressable key={index} accessibilityRole="button" accessibilityLabel={`${labels[index]}. ${option}`} accessibilityState={{selected:pendingChoice===index,disabled:busy}} disabled={busy} onPress={() => answer(index)} style={({ pressed }) => [st.option, (pressed||pendingChoice===index) && st.optionSelected, busy&&pendingChoice!==index && { opacity: .65 }]}>
+            <Text style={st.optionLetter}>{labels[index]}</Text><Text style={st.optionText}>{option}</Text><Text style={[st.optionCircle,pendingChoice===index&&st.optionCheck]}>{pendingChoice===index?'✓':'○'}</Text></Pressable>)}
         </Panel><Text style={st.hintLight}>Tap an answer to continue · Each choice is saved</Text>
       </>}
       {!loading && !session && selected && <>
         <Text style={st.eyebrow}>{selected.category.toUpperCase()} {selected.spicy !== '—' ? selected.spicy : ''}</Text>
         <Text style={st.heroTitle}>{selected.title}</Text><Text style={st.heroSub}>{selected.hook}</Text>
-        <Panel><View style={st.step}><Text style={st.stepNumber}>01</Text><Text style={st.stepText}>Answer all 6 questions about yourself</Text></View>
-          <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>02</Text><Text style={st.stepText}>Guess your partner’s answers</Text></View>
-          <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>03</Text><Text style={st.stepText}>Compare scores after you both finish</Text></View></Panel>
+        <Panel><View style={st.step}><Text style={st.stepNumber}>01</Text><Image source={BURROW_GAME_RULE_ICONS[0]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Answer all 6 questions about yourself</Text></View>
+          <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>02</Text><Image source={BURROW_GAME_RULE_ICONS[1]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Guess your partner’s answers</Text></View>
+          <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>03</Text><Image source={BURROW_GAME_RULE_ICONS[2]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Compare scores after you both finish</Text></View></Panel>
         {!overview?.availableIds.includes(selected.id) && <Text style={st.hintLight}>Unlock once for 20 carrots. This game stays in your collection.</Text>}
         <Button label={overview?.availableIds.includes(selected.id) ? 'Start game →' : 'Unlock for 🥕 20 & start →'} disabled={busy} onPress={() => {
           if (overview?.availableIds.includes(selected.id)) start(selected);
@@ -276,8 +287,10 @@ const st = StyleSheet.create({
   dot: { width: 19, height: 19, borderRadius: 10, borderColor: '#BA9073', borderWidth: 2 }, dotDone: { backgroundColor: orange, borderColor: orange }, dotCurrent: { backgroundColor: '#F8A62A', borderColor: cream },
   question: { color: ink, fontSize: 26, lineHeight: 32, fontWeight: '900', marginBottom: 6 },
   option: { borderColor: '#F0E2D3', borderWidth: 1.5, borderRadius: 16, padding: 12, minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  optionSelected: { borderColor: orange, backgroundColor: '#FFF3E9' },
   optionLetter: { color: ink, fontSize: 18, fontWeight: '800', backgroundColor: '#F7E9DC', overflow: 'hidden', borderRadius: 22, width: 44, height: 44, textAlign: 'center', textAlignVertical: 'center', lineHeight: 44 },
   optionText: { color: ink, fontSize: 18, fontWeight: '700', flex: 1 }, optionCircle: { color: '#B39A85', fontSize: 29 },
+  optionCheck: { color: orange, fontWeight: '900' },
   transitionIcon: { alignItems: 'center', marginTop: 90 }, transitionEmoji: { fontSize: 100 },
   waitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 }, waitStatus: { color: orange, fontSize: 18, fontWeight: '800' },
   hint: { color: muted, fontSize: 15, textAlign: 'center', lineHeight: 22 }, scoreRow: { flexDirection: 'row' }, scoreCell: { flex: 1, alignItems: 'center' }, score: { color: ink, fontSize: 38, fontWeight: '900' },

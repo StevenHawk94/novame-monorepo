@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { requireAiConsent } from '@/lib/ai-consent';
 import { prioritizeR2Image, subscribeR2AssetChanges } from '@/lib/download-queue';
@@ -90,7 +90,8 @@ function sameFreshBubble(a: FreshBubble | null, b: FreshBubble | null): boolean 
 }
 
 export default function HomeScreen() {
-  return useMajorUpdateEnabled() ? <BurrowScreen section="home" /> : <LegacyHomeScreen />;
+  const { care } = useLocalSearchParams<{care?:string}>();
+  return useMajorUpdateEnabled() ? <BurrowScreen section="home" homeIntent={care} /> : <LegacyHomeScreen />;
 }
 
 function LegacyHomeScreen() {

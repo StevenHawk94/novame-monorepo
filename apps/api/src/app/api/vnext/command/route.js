@@ -57,6 +57,10 @@ export async function POST(request) {
       if (typeof body.sleeping !== 'boolean' || !requiredText(body.idempotencyKey)) return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
       rpc = 'set_room_sleep_v1'
       args = { p_user_id: userId, p_sleeping: body.sleeping, p_key: body.idempotencyKey }
+    } else if (action === 'interact_burrow_toy') {
+      if (!uuid(body.idempotencyKey)) return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+      rpc = 'interact_burrow_toy_v1'
+      args = { p_user_id: userId, p_key: body.idempotencyKey }
     } else if (action === 'respond_friend_visit') {
       if (!uuid(body.visitId) || !body.response || Array.isArray(body.response) || typeof body.response !== 'object') return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
       rpc = 'respond_friend_visit_v1'
@@ -81,6 +85,10 @@ export async function POST(request) {
       }
       rpc = 'save_room_loadout_v1'
       args = { p_user_id: userId, p_room_type: body.roomType, p_slots: body.slots }
+    } else if (action === 'save_bunny_outfit') {
+      if (!requiredText(body.itemId, 160)) return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+      rpc = 'save_bunny_outfit_v1'
+      args = { p_user_id: userId, p_item_id: body.itemId }
     } else if (action === 'visit_partner_room') {
       rpc = 'visit_partner_room_v1'
       args = { p_user_id: userId }

@@ -17,7 +17,7 @@ export interface MajorUpdateCatalogItem {
   tradable: boolean;
   tags: string[];
   asset: Record<string, unknown>;
-  metadata: { slot?: string; starter?: boolean };
+  metadata: { slot?: string; starter?: boolean; artOrdinal?: number };
   is_placeholder: boolean;
 }
 
@@ -154,6 +154,9 @@ async function command<T extends CommandResponse>(
 export function saveRoomLoadout(roomType: 'home' | 'our', slots: Record<string, string>) {
   return command<CommandResponse>('save_room_loadout', { roomType, slots });
 }
+export function saveBunnyOutfit(itemId: string) {
+  return command<CommandResponse>('save_bunny_outfit', { itemId });
+}
 
 export function selectRoomMusic(trackId: string | null) {
   return command<CommandResponse>('select_room_music', { trackId });
@@ -223,6 +226,10 @@ export function refillRoomNeed(
   idempotencyKey = randomUUID(),
 ) {
   return command<CommandResponse>('refill_room_need', { ownerId, need, idempotencyKey });
+}
+
+export function interactBurrowToy(idempotencyKey = randomUUID()) {
+  return command<CommandResponse>('interact_burrow_toy', { idempotencyKey });
 }
 
 export function completeAffection(

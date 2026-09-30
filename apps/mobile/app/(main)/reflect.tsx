@@ -25,6 +25,7 @@ import {
 import { appAlert } from '@/components/ui/app-dialog';
 
 const TAN_OFFSET = '#E5B57E';
+const BURROW_ADVENTURE_BACKGROUND = require('../../assets/burrow-webp/adventure-page-bg.webp');
 
 /**
  * Reflect entry (2026-07-24 design, mock 1:1): "How would you like to
@@ -122,8 +123,8 @@ export default function ReflectEntryScreen() {
 
   return (
     <SwipeDownToDismiss onDismiss={() => router.back()}>
-      <View style={{ flex: 1, backgroundColor: '#FE6F79' }}>
-        <ExpoImage source={BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <View style={{ flex: 1, backgroundColor: majorUpdate ? '#82432D' : '#FE6F79' }}>
+        <ExpoImage source={majorUpdate ? BURROW_ADVENTURE_BACKGROUND : BACKGROUNDS.reflect} style={StyleSheet.absoluteFill} contentFit="cover" />
         <View style={[styles.root, { paddingTop: insets.top + 10 }]}>
           <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.backCircle} hitSlop={10}>
             <MaterialIcons name="arrow-back" size={24} color="#2B2B2B" />

@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { AppState, InteractionManager, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
@@ -34,10 +33,10 @@ const TABS: ReadonlyArray<{ name: 'index' | 'court' | 'friends' | 'status' | 'ba
 const TAB_PRELOAD_ORDER = ['quests', 'court', 'friends', 'bags', 'status'] as const;
 const BURROW_TABS = [
   { name: 'index', icon: ICONS.Home, label: 'Home' },
-  { name: 'love', icon: ICONS.Friends, label: 'Love' },
+  { name: 'burrow', icon: ICONS.Friends, label: 'Burrow' },
+  { name: 'quests', icon: ICONS.Quests, label: 'Quests' },
   { name: 'shop', icon: ICONS.Memories, label: 'Shop' },
   { name: 'friends', icon: ICONS.Friends, label: 'Moments' },
-  { name: 'collection', icon: ICONS.Bags, label: 'Collection' },
 ] as const;
 const TAB_PRELOAD_START_DELAY_MS = 650;
 const TAB_PRELOAD_SETTLE_MS = 700;
@@ -220,7 +219,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
           paddingBottom: insets.bottom,
           backgroundColor: majorUpdate ? '#FFF5E8' : theme.background,
           borderTopColor: theme.topBorder,
-          ...(majorUpdate ? { height: Math.max(width / 900 * 188, insets.bottom + 58), borderTopLeftRadius: 20, borderTopRightRadius: 20 } : {}),
+          ...(majorUpdate ? { height: Math.max(width / 900 * 160, insets.bottom + 58), borderTopLeftRadius: 20, borderTopRightRadius: 20 } : {}),
         },
       ]}
     >
@@ -253,10 +252,17 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-const burrowIcons = { index: 'home', love: 'explore', shop: 'map', friends: 'shopping-bag', collection: 'pets' } as const;
+// The supplied set contains five neutral/selected pairs, not purchasable decor.
+const burrowIcons = {
+  index: { inactive: require('../../../assets/burrow-webp/home tab icons/home.webp'), active: require('../../../assets/burrow-webp/home tab icons/home-selected.webp') },
+  burrow: { inactive: require('../../../assets/burrow-webp/home tab icons/burrow.webp'), active: require('../../../assets/burrow-webp/home tab icons/burrow-selected.webp') },
+  quests: { inactive: require('../../../assets/burrow-webp/home tab icons/quests.webp'), active: require('../../../assets/burrow-webp/home tab icons/quests-selected.webp') },
+  shop: { inactive: require('../../../assets/burrow-webp/home tab icons/shop.webp'), active: require('../../../assets/burrow-webp/home tab icons/shop-selected.webp') },
+  friends: { inactive: require('../../../assets/burrow-webp/home tab icons/moments.webp'), active: require('../../../assets/burrow-webp/home tab icons/moments-selected.webp') },
+} as const;
 function BurrowTabButton({ name, label, isFocused, attempt, onPress }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void }) {
   return <Pressable accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: isFocused }} onPress={onPress} onLayout={() => markHomeEntryAsset(`tab:${name}`, attempt)} style={styles.burrowTab}>
-    <MaterialIcons name={burrowIcons[name]} size={30} color={isFocused ? '#C75F28' : '#AC8E79'} />
+    <HomeEntryImage asset={`tab:${name}`} source={isFocused ? burrowIcons[name].active : burrowIcons[name].inactive} style={styles.burrowIcon} contentFit="contain" />
     <Text style={[styles.burrowLabel,isFocused && styles.burrowLabelActive]}>{label}</Text>
   </Pressable>;
 }
@@ -310,6 +316,7 @@ const styles = StyleSheet.create({
   tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold' },
   burrowRow: { flex: 1, alignItems: 'center', paddingTop: 1, paddingBottom: 0 },
   burrowTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 },
+  burrowIcon: { width: 34, height: 34 },
   burrowLabel: { color: '#1D1A17', fontSize: 11, lineHeight: 14 },
   burrowLabelActive: { fontWeight: '700' },
 });

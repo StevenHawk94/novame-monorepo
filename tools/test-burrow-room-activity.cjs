@@ -12,6 +12,8 @@ function cardHarness(visit) {
   const { FriendVisitCard } = load('apps/mobile/src/components/burrow/friend-visit-card.tsx', {
     'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { Alert: {}, Pressable: 'Pressable', Text: 'Text', View: 'View', StyleSheet: { create: x => x } },
+    'expo-image': { Image: 'Image' },
+    '@/lib/burrow-ui-assets': { burrowFriendArt: () => null },
     'expo-router': { router: { push: route => routes.push(route) } },
     '@/lib/app-major-update-api': { respondFriendVisit: async (id, input) => { commands.push({ id, input }); return response; } },
     '@/lib/burrow-store': { runBurrowAction: async (_, action) => { await action(); return true; } },

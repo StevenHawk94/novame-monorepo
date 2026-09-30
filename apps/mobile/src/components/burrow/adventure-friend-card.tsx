@@ -1,7 +1,9 @@
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
+import { Image } from 'expo-image';
 import { completeFriendInteraction, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { runBurrowAction } from '@/lib/burrow-store';
+import { burrowFriendArt } from '@/lib/burrow-ui-assets';
 
 /** Only render the durable server snapshot; never guess a live replacement. */
 export function AdventureFriendCard({ data, busy, onComplete }: {
@@ -36,6 +38,7 @@ export function AdventureFriendCard({ data, busy, onComplete }: {
     <Text style={styles.buttonText}>{label}</Text>
   </Pressable>;
   return <View style={styles.card}>
+    {burrowFriendArt(metadata?.friendSnapshot?.name)&&<Image source={burrowFriendArt(metadata?.friendSnapshot?.name)} contentFit="contain" style={{width:220,height:220,alignSelf:'center'}}/>}
     <Text style={styles.heading}>{metadata?.friendSnapshot?.name ?? 'Your new friend'}</Text>
     {!content ? <Text style={styles.copy}>This story could not be loaded. Refresh to try again; your discovery is saved.</Text> : <>
       <Text style={styles.copy}>{content.prompt}</Text>

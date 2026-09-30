@@ -17,8 +17,9 @@ export function outfitAppearance(outfit?: MajorUpdateCatalogItem) {
 
 /** Stable pose/outfit boundary for future art. Zero needs never change pose.
  * All current shapes are code-native placeholders, not final bunny artwork. */
-export function BunnyActor({ outfit, pose = 'idle', partner = false, standalone = false }: {
+export function BunnyActor({ outfit, pose = 'idle', partner = false, standalone = false, standaloneSize }: {
   outfit?: MajorUpdateCatalogItem; pose?: BunnyPose; partner?: boolean; standalone?: boolean;
+  standaloneSize?: { width: number; height: number };
 }) {
   const appearance = outfitAppearance(outfit);
   const movement = useRef(new Animated.Value(0)).current;
@@ -47,7 +48,7 @@ export function BunnyActor({ outfit, pose = 'idle', partner = false, standalone 
   const fur = partner ? '#FFF1D6' : '#DFAC79';
   return <Animated.View pointerEvents="none" accessible accessibilityRole="image"
     accessibilityLabel={`${partner ? 'Your person’s bunny' : 'Your bunny'}, ${appearance.title}, ${pose}`}
-    style={[standalone ? styles.standalone : styles.actor, !standalone && partner && styles.partner, { transform: [{ translateY: movement }] }]}>
+    style={[standalone ? styles.standalone : styles.actor, !standalone && partner && styles.partner, standalone && standaloneSize, { transform: [{ translateY: movement }] }]}>
     <Svg viewBox="0 0 100 130" width="100%" height="100%">
       <Ellipse cx="50" cy="121" rx="38" ry="6" fill="#563720" opacity=".18"/>
       <Ellipse cx="34" cy="29" rx="10" ry="26" fill={fur}/><Ellipse cx="65" cy="29" rx="10" ry="26" fill={fur}/>

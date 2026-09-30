@@ -22,6 +22,12 @@ export const BURROW_ROOM_IDS = [
 ] as const;
 export type BurrowRoomId = (typeof BURROW_ROOM_IDS)[number];
 
+/** Visible map destinations. Legacy room IDs stay above for saved data. */
+export const BURROW_RELEASE_ROOM_IDS = [
+  'our_room', 'friends_room', 'game_room',
+  'rage_room', 'memories_room', 'collection_room',
+] as const satisfies readonly BurrowRoomId[];
+
 export const HOME_DECOR_SLOTS = [
   'cushion',
   'table',
@@ -35,6 +41,11 @@ export const HOME_DECOR_SLOTS = [
   'frame',
   'poster',
   'couple_doll',
+  'shelf',
+  'light_string',
+  'ladder',
+  'shelf_decor',
+  'dresser_plant',
 ] as const;
 export type HomeDecorSlot = (typeof HOME_DECOR_SLOTS)[number];
 
@@ -52,14 +63,25 @@ export const SHOP_CATEGORIES = [
   'music_players',
   'frames',
   'couple_dolls',
+  'shelves',
+  'light_strings',
+  'ladders',
+  'shelf_decor',
+  'dresser_plants',
   'our_room',
 ] as const;
 export type ShopCategory = (typeof SHOP_CATEGORIES)[number];
 
+/** The sixteen replaceable Home decorations, excluding legacy shop sections. */
+export const BURROW_DECOR_SHOP_CATEGORIES = [
+  'cushions','tables','rugs','vases','lamps','windows','cabinets','shelves',
+  'shelf_decor','music_players','frames','posters','couple_dolls',
+  'light_strings','ladders','dresser_plants',
+] as const satisfies readonly ShopCategory[];
+
 export const COLLECTION_CATEGORIES = [
-  'decor',
+  'furniture',
   'outfits',
-  'our_room',
   'gifts',
   'friends',
 ] as const;
@@ -107,6 +129,9 @@ export const MOMENT_EVENT_TYPES = [
   'gift_sent',
   'gift_claimed',
   'memory_created',
+  'game_played',
+  'toy_interacted',
+  'room_decor_changed',
 ] as const;
 export type MomentEventType = (typeof MOMENT_EVENT_TYPES)[number];
 
@@ -115,14 +140,12 @@ export const DAILY_QUEST_IDS = [
   'send_affection',
   'water_partner_flower',
   'feed_partner_bunny',
-  'visit_partner_room',
-  'finish_adventure',
   'play_game',
+  'interact_with_toy',
 ] as const;
 export type DailyQuestId = (typeof DAILY_QUEST_IDS)[number];
 
-/** Games are a preview in this release, so game quests cannot be assigned. */
-export const ACTIVE_DAILY_QUEST_IDS = DAILY_QUEST_IDS.filter(id => id !== 'play_game');
+export const ACTIVE_DAILY_QUEST_IDS = DAILY_QUEST_IDS;
 export const SPECIAL_QUEST_STEPS = {
   adventures_completed: 5,
   items_collected: 10,

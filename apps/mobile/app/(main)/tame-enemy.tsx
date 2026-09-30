@@ -53,12 +53,13 @@ const HEART_ANIMATION_SOURCE = Platform.select({
 });
 const HEART_ANIMATION_FALLBACK_MS = 6000;
 const MONSTER_BACKGROUND_SOURCE = require('../../assets/monsters/monster-bg.webp');
+const BURROW_RAGE_BACKGROUND_SOURCE = require('../../assets/burrow-webp/background-collection room,quests,game room,rage room.webp');
 const SWIPE_ICON_SOURCE = require('../../assets/Icons/Swipe.png');
 
-function MonsterBackground() {
+function MonsterBackground({burrow=false}:{burrow?:boolean}) {
   return (
     <ExpoImage
-      source={MONSTER_BACKGROUND_SOURCE}
+      source={burrow?BURROW_RAGE_BACKGROUND_SOURCE:MONSTER_BACKGROUND_SOURCE}
       style={StyleSheet.absoluteFill}
       contentFit="cover"
       contentPosition="center"
@@ -293,7 +294,7 @@ export default function TameEnemyScreen() {
   if (phase === 'select') {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
-        <MonsterBackground />
+        <MonsterBackground burrow={majorUpdate} />
         <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.back} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>
@@ -347,7 +348,7 @@ export default function TameEnemyScreen() {
     }));
     return (
       <View style={[styles.prepRoot, { paddingTop: insets.top + 12 }]}>
-        <MonsterBackground />
+        <MonsterBackground burrow={majorUpdate} />
         <ScrollView contentContainerStyle={styles.prepScroll} showsVerticalScrollIndicator={false}>
         {/* name bubble with a tail pointing at the monster (mock) */}
         <View style={styles.prepNameBubble}>
@@ -417,7 +418,7 @@ export default function TameEnemyScreen() {
 
     return (
       <View style={styles.battleRoot}>
-        <MonsterBackground />
+        <MonsterBackground burrow={majorUpdate} />
 
         <View style={[styles.attackArea, { paddingTop: insets.top + 12 }]}>
           {phase !== 'battle' && (

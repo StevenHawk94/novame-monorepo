@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, AppState, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { haptics } from '@/lib/haptics';
 import Svg, { Path } from 'react-native-svg';
@@ -15,6 +15,35 @@ export const AFFECTION_COPY: Record<AffectionType,{label:string;symbol:string;hi
 };
 
 const heartPoints = [[.5,.35],[.3,.2],[.15,.35],[.2,.55],[.5,.8],[.8,.55],[.85,.35],[.7,.2],[.5,.35]];
+
+function GestureDemo({type}:{type:AffectionType}) {
+  const motion=useRef(new Animated.Value(0)).current;
+  const [reduced,setReduced]=useState(true);
+  const focused=useIsFocused();
+  useEffect(()=>{let live=true;void AccessibilityInfo.isReduceMotionEnabled().then(value=>{if(live)setReduced(value);});const sub=AccessibilityInfo.addEventListener('reduceMotionChanged',setReduced);return()=>{live=false;sub.remove();};},[]);
+  useEffect(()=>{
+    motion.setValue(0);
+    if(reduced||!focused)return;
+    const animation=Animated.loop(Animated.sequence([
+      Animated.timing(motion,{toValue:1,duration:1450,useNativeDriver:true}),
+      Animated.timing(motion,{toValue:0,duration:450,useNativeDriver:true}),
+    ]));
+    animation.start();return()=>{animation.stop();motion.stopAnimation();};
+  },[type,reduced,focused,motion]);
+  const dot=(key:string,x:Animated.AnimatedInterpolation<number>|number,y:Animated.AnimatedInterpolation<number>|number)=><Animated.View key={key} style={[styles.demoFinger,{transform:[{translateX:x},{translateY:y}]}]} />;
+  const spread=motion.interpolate({inputRange:[0,1],outputRange:[-9,-66]});
+  const spreadRight=motion.interpolate({inputRange:[0,1],outputRange:[9,66]});
+  const inward=motion.interpolate({inputRange:[0,1],outputRange:[-67,-9]});
+  const inwardRight=motion.interpolate({inputRange:[0,1],outputRange:[67,9]});
+  const sweep=motion.interpolate({inputRange:[0,.5,1],outputRange:[-55,55,-55]});
+  const traceX=motion.interpolate({inputRange:[0,.13,.25,.38,.5,.63,.75,.88,1],outputRange:[0,-35,-75,-65,0,65,75,35,0]});
+  const traceY=motion.interpolate({inputRange:[0,.13,.25,.38,.5,.63,.75,.88,1],outputRange:[-30,-70,-30,15,70,15,-30,-70,-30]});
+  return <View pointerEvents="none" style={styles.demoLayer} accessibilityLabel={`${AFFECTION_COPY[type].label} gesture demonstration`}>
+    {(type==='kiss'||type==='gratitude')?<>{dot('left',type==='kiss'?spread:inward,70)}{dot('right',type==='kiss'?spreadRight:inwardRight,70)}</>:
+      type==='cuddle'?dot('stroke',sweep,70):type==='miss_you'?dot('trace',traceX,traceY):
+      dot('tap',0,motion.interpolate({inputRange:[0,.5,1],outputRange:[75,57,75]}))}
+  </View>;
+}
 
 export function AffectionGesture({ type, disabled, onComplete }: {
   type: AffectionType; disabled: boolean; onComplete: (metrics: Record<string,number>) => void;
@@ -99,6 +128,7 @@ export function AffectionGesture({ type, disabled, onComplete }: {
   return <View style={styles.card}>
     <Text style={styles.title}>{AFFECTION_COPY[type].label}</Text><Text style={styles.hint}>{AFFECTION_COPY[type].hint}</Text>
     <View style={styles.pad} {...responder.panHandlers} onLayout={e=>{size.current=e.nativeEvent.layout;}}>
+      <GestureDemo type={type}/>
       {type==='miss_you'?<Svg width="100%" height="100%" viewBox="0 0 300 280" pointerEvents="none"><Path d="M150 98 C90 10 5 80 60 154 L150 224 L240 154 C295 80 210 10 150 98Z" fill="none" stroke="#E69C99" strokeWidth="16" strokeDasharray="10 7" /></Svg>:
         <Pressable disabled={disabled||type!=='spicy'} accessibilityRole="button" accessibilityLabel="Tap to add warmth" onPress={()=>{
           if(done.current||!interactive.current)return;const count=++gesture.current.taps;setProgress(count/10);
@@ -119,4 +149,4 @@ export function AffectionGesture({ type, disabled, onComplete }: {
     {done.current && !disabled && <Pressable accessibilityRole="button" onPress={()=>{done.current=false;gesture.current.taps=0;setProgress(0);}}><Text style={styles.hint}>Try gesture again</Text></Pressable>}
   </View>;
 }
-const styles=StyleSheet.create({card:{backgroundColor:'#FFF1E6',borderRadius:28,padding:22,gap:12},title:{fontSize:28,fontWeight:'800',color:'#823F41',textAlign:'center'},hint:{color:'#995B58',textAlign:'center',fontSize:15},pad:{height:250,alignItems:'center',justifyContent:'center'},symbol:{fontSize:90},track:{height:9,borderRadius:8,overflow:'hidden',backgroundColor:'#F5DAD2'},fill:{height:9,backgroundColor:'#E8757A'}});
+const styles=StyleSheet.create({card:{backgroundColor:'#FFF1E6',borderRadius:28,padding:22,gap:12},title:{fontSize:28,fontWeight:'800',color:'#823F41',textAlign:'center'},hint:{color:'#995B58',textAlign:'center',fontSize:15},pad:{height:250,alignItems:'center',justifyContent:'center'},symbol:{fontSize:90},track:{height:9,borderRadius:8,overflow:'hidden',backgroundColor:'#F5DAD2'},fill:{height:9,backgroundColor:'#E8757A'},demoLayer:{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center'},demoFinger:{position:'absolute',width:35,height:35,borderRadius:18,backgroundColor:'#FFF9EE',borderWidth:3,borderColor:'#EC7F84',shadowColor:'#B45C65',shadowOpacity:.26,shadowRadius:5,shadowOffset:{width:0,height:3}}});

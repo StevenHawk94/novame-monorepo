@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {load,hooks,flush,deferred}=require('./lifecycle-test-utils.cjs');
 const engine=load('packages/engine/src/burrow.ts',{'@novame/domain':{SPECIAL_QUEST_STEPS:{}}});
 const presentation=load('apps/mobile/src/lib/burrow-presentation.ts',{'@novame/engine':engine});
-const {createAdventureArrival,adventureHasArrived,adventureIsAway,adventureNeedsCompletion,roomSlots,roomNeedDisplay}=presentation;
+const {createAdventureArrival,adventureHasArrived,adventureIsAway,adventureNeedsCompletion,roomSlots,roomNeedDisplay,careProgress}=presentation;
 const adventure=(status='in_progress',id='a')=>({id,status,started_at:'2026-09-27T00:00:00Z',ends_at:'2026-09-27T08:00:00Z'});
 const snapshot=(status='in_progress')=>({activeAdventure:adventure(status)});
 const jsx=(type,props)=>({type,props});
@@ -76,11 +76,12 @@ test('already open result, changed adventure, and sign-out discard deferred inte
   assert.equal(adventureNeedsCompletion(adventure('completed')),false);
 });
 const item=(id,type,slot,starter=false)=>({stable_id:id,item_type:type,metadata:{slot,starter},asset:{},title:id});
-test('room slots include default outfit and only the selected owner’s saved clothes',()=>{
-  const data={catalog:[item('starter','outfit','outfit',true),item('mine','outfit','outfit'),item('theirs','outfit','outfit'),item('bed','our_room','bed',true)],
-    loadouts:[{owner_id:'me',room_type:'home',slot:'outfit',item_id:'mine'},{owner_id:'partner',room_type:'home',slot:'outfit',item_id:'theirs'}]};
+test('shared furniture is identical for both partners, while outfits stay personal',()=>{
+  const data={profile:{id:'me'},partner:{id:'partner'},catalog:[item('starter','outfit','outfit',true),item('mine','outfit','outfit'),item('theirs','outfit','outfit'),item('lamp-default','decor','lamp',true),item('lamp-shared','decor','lamp')],
+    loadouts:[{owner_id:'me',room_type:'home',slot:'outfit',item_id:'mine'},{owner_id:'partner',room_type:'home',slot:'outfit',item_id:'theirs'},{room_type:'our',slot:'lamp',item_id:'lamp-shared'}]};
   assert.equal(roomSlots(data,'me').outfit.stable_id,'mine');assert.equal(roomSlots(data,'partner').outfit.stable_id,'theirs');
-  assert.equal(roomSlots(data,'new-owner').outfit.stable_id,'starter');assert.equal(roomSlots(data,'me',true).outfit,undefined);
+  assert.equal(roomSlots(data,'new-owner').outfit.stable_id,'starter');
+  assert.equal(roomSlots(data,'me').lamp.stable_id,'lamp-shared');assert.equal(roomSlots(data,'partner').lamp.stable_id,'lamp-shared');
 });
 test('need values use raw bases without double-decay, exact five-minute boundaries, no negative values',()=>{
   const t=Date.parse('2026-09-27T00:00:00Z');
@@ -89,6 +90,9 @@ test('need values use raw bases without double-decay, exact five-minute boundari
   assert.equal(roomNeedDisplay(data,false,t+899999).food,98);assert.equal(roomNeedDisplay(data,false,t+900000).food,97);
   assert.equal(roomNeedDisplay(data,false,t+900000).water,0);assert.equal(roomNeedDisplay(data,true,t+900000).food,49);
   delete data.roomNeeds.foodValue;assert.equal(roomNeedDisplay(data,false,t+600000).food,98,'pre-migration snapshot is not decayed twice');
+  assert.equal(careProgress(null,'food',t),null,'a stale care sheet cannot read a cleared bootstrap');
+  assert.equal(careProgress(data,null,t),null);
+  assert.equal(careProgress(data,'food',t+600000),98);
 });
 
 function actorHarness() {
@@ -148,7 +152,7 @@ test('adventure route blocks removal while results are pending but releases afte
     react:{useCallback:f=>f},'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{Alert:{alert(){}}},
     'expo-router':{Redirect:'Redirect',useLocalSearchParams:()=>({section:'adventure'})},
     '@react-navigation/native':{usePreventRemove:value=>blocked=value},'@novame/domain':{SHOP_CATEGORIES:['outfits']},
-    '@/components/burrow/burrow-screen':{BurrowScreen:'BurrowScreen'},'@/lib/use-major-update':{useMajorUpdateEnabled:()=>enabled},
+    '@/components/burrow/burrow-screen':{BurrowScreen:'BurrowScreen'},'@/components/burrow/game-room-screen':{GameRoomScreen:'GameRoomScreen'},'@/lib/use-major-update':{useMajorUpdateEnabled:()=>enabled},
     '@/lib/burrow-store':{useBurrowSnapshot:()=>({data,busy:false,error})},'@/lib/burrow-presentation':presentation,
   }).default;
   Detail();assert.equal(blocked,true);data={activeAdventure:adventure('interaction_required')};Detail();assert.equal(blocked,true);
