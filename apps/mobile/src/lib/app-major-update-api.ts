@@ -198,6 +198,14 @@ export async function saveRoomPhoto(ownerId: string, kind: 'frame' | 'doll', bas
   return result;
 }
 
+export async function deleteRoomFramePhoto(photoId: string, actorId: string) {
+  const epoch = sessionEpoch();
+  const result = await withDeadline(apiClient.delete<CommandResponse>('/api/vnext/room-photo', { photoId, actorId }), 15_000);
+  if (epoch !== sessionEpoch()) throw new Error('session_changed');
+  if (result.error) throw new Error(result.error);
+  return result;
+}
+
 export function visitPartnerRoom() {
   return command<CommandResponse>('visit_partner_room', {});
 }

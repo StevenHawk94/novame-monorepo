@@ -164,7 +164,7 @@ export const BURROW_ART: Record<string, readonly BurrowArtAsset[]> = {
 };
 
 export const BURROW_BACKGROUNDS = {
-  common: require('../../assets/burrow-webp/background-collection room,quests,game room,rage room.webp'),
+  common: require('../../assets/burrow-webp/basic-bg.webp'),
   home: require('../../assets/burrow-webp/home-background.webp'),
   burrowDay: require('../../assets/burrow-webp/burrow-page-bg-day.webp'),
   burrowNight: require('../../assets/burrow-webp/burrow-page-bg-night.webp'),

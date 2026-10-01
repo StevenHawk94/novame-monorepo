@@ -17,7 +17,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.novame.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Burrow uses only the photos you select for your room frame, doll, and profile.",
+        "NSCameraUsageDescription": "Burrow uses the camera only when you choose to take a room, toy, or profile photo."
       },
       "usesAppleSignIn": true,
       "entitlements": {
@@ -59,6 +61,7 @@
         }
       ],
       "expo-video",
+      ["expo-camera", { "cameraPermission": "Burrow uses the camera only when you choose to align your face inside an interactive toy." }],
       [
         "expo-image-picker",
         {

@@ -67,6 +67,7 @@ export default function MainLayout() {
             name="(tabs)"
             options={{ contentStyle: { backgroundColor: '#E8D5B0' } }}
           />
+          <Stack.Screen name="room-interaction" options={{ gestureEnabled: true, animation: 'slide_from_right', contentStyle: { backgroundColor: '#FFFAF2' } }} />
           <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
           <Stack.Screen
             name="item-sheet"

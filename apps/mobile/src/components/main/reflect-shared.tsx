@@ -22,6 +22,7 @@ import {
 import { KeyboardDismissView } from '@/components/ui/keyboard-dismiss-view';
 import { AndroidCompactText as Text, AndroidCompactTextInput as TextInput } from '@/components/ui/android-compact-typography';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BurrowBackButton } from '@/components/burrow/burrow-back-button';
 import LottieView from 'lottie-react-native';
 import { router } from 'expo-router';
 
@@ -77,9 +78,7 @@ export function itemIdsForCategories(categories: string[]): string[] {
 export function ReflectTopBar({ onBack }: { onBack: () => void }) {
   return (
     <View style={s.topBar}>
-      <Pressable onPress={() => { void haptics.pageClose(); onBack(); }} style={s.backCircle} hitSlop={10}>
-        <MaterialIcons name="arrow-back" size={24} color={RC.ink} />
-      </Pressable>
+      <BurrowBackButton onPress={() => { void haptics.pageClose(); onBack(); }} />
     </View>
   );
 }
@@ -408,10 +407,6 @@ const s = StyleSheet.create({
     color: '#FFFFFF', fontSize: 16, fontFamily: 'Inter_700Bold', textAlign: 'center',
   },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  backCircle: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-  },
 
   gridRow: { gap: 4, paddingHorizontal: 8 },
   gridContent: { gap: 7, paddingVertical: 12 },

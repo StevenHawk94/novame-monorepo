@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { randomUUID } from 'expo-crypto';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BurrowBackButton } from '@/components/burrow/burrow-back-button';
 import LottieView from 'lottie-react-native';
 import Animated, {
   cancelAnimation,
@@ -53,7 +54,7 @@ const HEART_ANIMATION_SOURCE = Platform.select({
 });
 const HEART_ANIMATION_FALLBACK_MS = 6000;
 const MONSTER_BACKGROUND_SOURCE = require('../../assets/monsters/monster-bg.webp');
-const BURROW_RAGE_BACKGROUND_SOURCE = require('../../assets/burrow-webp/background-collection room,quests,game room,rage room.webp');
+const BURROW_RAGE_BACKGROUND_SOURCE = require('../../assets/burrow-webp/basic-bg.webp');
 const SWIPE_ICON_SOURCE = require('../../assets/Icons/Swipe.png');
 
 function MonsterBackground({burrow=false}:{burrow?:boolean}) {
@@ -293,11 +294,9 @@ export default function TameEnemyScreen() {
   // ---- SELECT ----
   if (phase === 'select') {
     return (
-      <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
         <MonsterBackground burrow={majorUpdate} />
-        <Pressable onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.back} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color="#FFFFFF" />
-        </Pressable>
+        <BurrowBackButton onPress={() => { void haptics.pageClose(); router.back(); }} style={styles.back}/>
         {/* Design: brown banner title card. PRD copy kept inside it. */}
         <View style={styles.titleBanner}>
           <Text style={styles.titleBannerText}>What's been loud lately?</Text>

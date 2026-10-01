@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MajorUpdateBootstrap, MajorUpdateQuest } from '@/lib/app-major-update-api';
@@ -25,10 +26,15 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
   data: MajorUpdateBootstrap;
   busy: boolean;
   onGo: (id: DailyId) => void;
-  onClaim: (quest: MajorUpdateQuest) => void;
-  onSpecialClaim: (questId: string, stage: number) => void;
+  onClaim: (quest: MajorUpdateQuest) => Promise<boolean>;
+  onSpecialClaim: (questId: string, stage: number) => Promise<boolean>;
   onSpecialGo: (questId: string) => void;
 }) {
+  const [localClaims,setLocalClaims]=useState<Set<string>>(()=>new Set());
+  const claim=(key:string,request:()=>Promise<boolean>)=>{
+    setLocalClaims(previous=>new Set(previous).add(key));
+    void request().then(ok=>{if(!ok)setLocalClaims(previous=>{const next=new Set(previous);next.delete(key);return next;});});
+  };
   // An older API snapshot can be empty on the first visit. Keep the complete
   // board visible while its real assignments are being created/refreshed.
   const assigned = data.quests.quests;
@@ -47,10 +53,10 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
     <View style={styles.list}>{shown.map(quest => {
       const id = quest.questId as DailyId;
       const done = !!quest.completedAt || quest.progress >= quest.target;
-      const claimed = !!quest.claimedAt;
+      const claimed = !!quest.claimedAt || localClaims.has(quest.assignmentId);
       const pending = quest.assignmentId.startsWith('pending:');
       return <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${dailyCopy[id] ?? id}, ${claimed ? 'reward collected' : done ? 'collect reward' : 'open'}`}
-        disabled={busy || claimed} onPress={() => done && !pending ? onClaim(quest) : onGo(id)}
+        disabled={busy || claimed} onPress={() => done && !pending ? claim(quest.assignmentId,()=>onClaim(quest)) : onGo(id)}
         style={({ pressed }) => [styles.dailyCard, done && styles.doneCard, pressed && styles.pressed]}>
         <Image source={BURROW_QUEST_ICONS[id]} contentFit="contain" style={styles.dailyIcon} />
         <Text numberOfLines={2} style={[styles.dailyTitle, claimed && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
@@ -60,10 +66,11 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
     <Text accessibilityRole="header" style={[styles.heading, styles.specialHeading]}>Special Quests</Text>
     <View style={styles.list}>{specials.map(quest => {
       const complete = quest.progress >= quest.target;
+      const localClaimed=localClaims.has(`${quest.questId}:${quest.stage}`);
       const copy = specialCopy[quest.questId] ?? { title: quest.questId, subtitle: 'Keep going' };
       return <Pressable key={quest.questId} accessibilityRole="button" accessibilityLabel={`${copy.title}, ${quest.progress} of ${quest.target}, ${complete ? 'collect reward' : 'open'}`}
-        disabled={busy} onPress={() => complete && data.specialQuests.some(q => q.questId === quest.questId)
-          ? onSpecialClaim(quest.questId, quest.stage) : onSpecialGo(quest.questId)}
+        disabled={busy||localClaimed} onPress={() => complete && data.specialQuests.some(q => q.questId === quest.questId)
+          ? claim(`${quest.questId}:${quest.stage}`,()=>onSpecialClaim(quest.questId, quest.stage)) : onSpecialGo(quest.questId)}
         style={({ pressed }) => [styles.specialCard, pressed && styles.pressed]}>
         <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} contentFit="contain" style={styles.specialIcon} />
         <View style={styles.specialText}>
@@ -72,7 +79,7 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
           <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, Math.max(0, quest.progress / Math.max(1, quest.target) * 100))}%` }]} /></View>
           <Text style={styles.progress}>{Math.min(quest.progress, quest.target)}/{quest.target}</Text>
         </View>
-        <View style={[styles.status, complete && styles.statusDone]}><Text style={styles.statusText}>{complete ? '★' : '➜'}</Text></View>
+        <View style={[styles.status, complete && styles.statusDone]}><Text style={styles.statusText}>{localClaimed?'✓':complete ? '★' : '➜'}</Text></View>
       </Pressable>;
     })}</View>
   </View>;

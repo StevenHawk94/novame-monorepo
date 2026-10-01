@@ -28,6 +28,22 @@ export async function GET(request) {
   } catch { return reply({ error: 'photo_unavailable' }, 503) }
 }
 
+export async function DELETE(request) {
+  try {
+    const userId = await authenticatedUserId(request)
+    if (!userId) return reply({ error: 'Unauthorized' }, 401)
+    const raw = await request.json()
+    if (raw?.actorId !== userId || !photoUUID(raw.photoId)) return reply({ error: 'invalid_request' }, 400)
+    const db = appMajorUpdateServiceClient()
+    if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
+    // Owner-only; room_photos DELETE trigger retires the private storage path.
+    const { data, error } = await db.from('room_photos').delete().eq('id', raw.photoId).eq('owner_id', userId).eq('kind', 'frame').select('id')
+    if (error) throw error
+    if (!data?.length) return reply({ error: 'not_found' }, 404)
+    return reply({ success: true })
+  } catch { return reply({ error: 'photo_unavailable' }, 503) }
+}
+
 export async function POST(request) {
   try {
     const userId = await authenticatedUserId(request)
@@ -67,7 +83,12 @@ export async function POST(request) {
       if (complete.error) throw complete.error
     }
     // Do not delete on ambiguous failure: the transaction may already have committed.
-    return reply(complete.data.error ? complete.data : { success: true, ...complete.data }, commandStatus(complete.data.error))
+    if (complete.data.error) return reply(complete.data, commandStatus(complete.data.error))
+    const pairLow = body.partnerId && body.partnerId < userId ? body.partnerId : userId
+    const pairHigh = body.partnerId && body.partnerId > userId ? body.partnerId : userId
+    const currentPhoto = await db.from('room_photos').select('id').eq('owner_id', body.ownerId)
+      .eq('kind', body.kind).eq('pair_low', pairLow).eq('pair_high', pairHigh).maybeSingle()
+    return reply({ success: true, ...complete.data, photoId: currentPhoto.data?.id ?? null })
   } catch (error) {
     return reply({ error: error?.message === 'invalid_request' ? 'invalid_request' : 'photo_unavailable' }, error?.message === 'invalid_request' ? 400 : 503)
   }

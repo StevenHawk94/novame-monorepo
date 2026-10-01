@@ -211,6 +211,11 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
     }
   };
 
+  // Burrow and Shop are destinations from Home, not persistent tab pages.
+  // Keep the Home/Quests/Moments bar on those roots, but let these screens
+  // occupy the entire viewport with their own back affordance.
+  if (majorUpdate && (activeRouteName === 'burrow' || activeRouteName === 'shop')) return null;
+
   return (
     <View
       style={[

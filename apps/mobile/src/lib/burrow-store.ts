@@ -15,6 +15,26 @@ const publish = (patch: Partial<State>) => { state = { ...state, ...patch }; lis
 // decide settlement/rewards; this is only a foreground display projection.
 export const burrowClock = () => typeof performance !== 'undefined' ? performance.now() : Date.now();
 export const getBurrowSnapshot = () => state;
+/** Immediate local playback/selection; the next authoritative snapshot wins. */
+export function selectBurrowMusicLocally(trackId: string | null) {
+  if (state.data) publish({ data: { ...state.data, musicTrackId: trackId } });
+}
+export function setBurrowLoadoutLocally(slots: Record<string,string>, ownerId: string, outfit = false) {
+  if (!state.data) return;
+  const previous=state.data.loadouts.filter(row=>outfit
+    ? !(row.room_type==='home'&&row.owner_id===ownerId&&row.slot==='outfit')
+    : !(row.room_type==='our'&&row.slot!=='outfit'));
+  const room_type: 'home'|'our'=outfit?'home':'our';
+  const owner_id=outfit?ownerId:null;
+  publish({data:{...state.data,loadouts:[...previous,...Object.entries(slots).map(([slot,item_id])=>({room_type,owner_id,slot,item_id}))]}});
+}
+/** Show the digging state as soon as the user starts today's journey. */
+export function startBurrowAdventureLocally(recordId: string) {
+  if (!state.data || state.data.activeAdventure || state.data.readyRecordId !== recordId) return;
+  const startedAt=new Date();
+  const endsAt=new Date(startedAt.getTime()+(state.data.hasPlus?2:8)*60*60*1000);
+  publish({data:{...state.data,activeAdventure:{id:`pending:${recordId}`,status:'in_progress',started_at:startedAt.toISOString(),ends_at:endsAt.toISOString()},dailyAdventureUsed:true,readyRecordId:null}});
+}
 function errorCode(error: unknown): string {
   if (error && typeof error === 'object' && 'body' in error) {
     const body = error.body;
@@ -61,51 +81,52 @@ subscribeSessionIdentity(() => {
   publish({ data: null, loading: false, busy: false, error: null, receivedAt: 0 });
 });
 
-export function refreshBurrow() {
+export function refreshBurrow({ silent = false }: { silent?: boolean } = {}) {
   if (flight) return flight;
   const epoch = sessionEpoch();
   const requestRevision = revision;
-  publish({ loading: true, error: null });
+  if (!silent || !state.data) publish({ loading: true, error: null });
   const task = fetchMajorUpdateBootstrap({ force: true }).then(data => {
-    if (epoch === sessionEpoch() && requestRevision === revision) publish({ data, receivedAt: burrowClock() });
+    if (epoch === sessionEpoch() && requestRevision === revision) publish({ data, receivedAt: burrowClock(), error: null });
   }).catch(error => {
     if (epoch === sessionEpoch() && requestRevision === revision) {
       const code = errorCode(error);
       publish({ error: code, ...(['not_paired','feature_disabled'].includes(code) ? { data: null } : {}) });
     }
   }).finally(() => {
-    if (flight === task) { flight = null; publish({ loading: false }); }
+    if (flight === task) { flight = null; if (state.loading) publish({ loading: false }); }
   });
   flight = task;
   return task;
 }
 
 /** A request begun before backgrounding cannot satisfy a resume check. */
-export async function refreshBurrowAfterCurrent() {
+export async function refreshBurrowAfterCurrent({ silent = false }: { silent?: boolean } = {}) {
   const epoch = sessionEpoch();
   if (flight) await flight;
-  if (epoch === sessionEpoch()) await refreshBurrow();
+  if (epoch === sessionEpoch()) await refreshBurrow({ silent });
 }
 
 /** Keep a command key on uncertain failures so the Retry button cannot double debit. */
-export async function runBurrowAction(operation: string, action: (key: string) => Promise<unknown>) {
-  if (state.busy) return false;
+export async function runBurrowAction(operation: string, action: (key: string) => Promise<unknown>, { silent = false }: { silent?: boolean } = {}) {
+  if (!silent && state.busy) return false;
   const epoch = sessionEpoch();
   const actionRevision = revision;
   const key = pendingKeys.get(operation) ?? randomUUID();
   pendingKeys.set(operation, key);
-  publish({ busy: true, error: null });
+  if (!silent) publish({ busy: true, error: null });
   try {
     await action(key);
     if (epoch !== sessionEpoch() || actionRevision !== revision) return false;
     pendingKeys.delete(operation);
-    await refreshBurrow();
+    if (silent) void refreshBurrowAfterCurrent({ silent: true });
+    else await refreshBurrowAfterCurrent({ silent: true });
     return epoch === sessionEpoch() && actionRevision === revision;
   } catch (error) {
     if (epoch === sessionEpoch() && actionRevision === revision) publish({ error: errorCode(error) });
     return false;
   } finally {
-    if (epoch === sessionEpoch() && actionRevision === revision) publish({ busy: false });
+    if (!silent && epoch === sessionEpoch() && actionRevision === revision) publish({ busy: false });
   }
 }
 
@@ -116,8 +137,8 @@ export function useBurrowSnapshot() {
 export function useBurrow() {
   const snapshot = useBurrowSnapshot();
   useFocusEffect(useCallback(() => {
-    void refreshBurrow();
-    const sub = AppState.addEventListener('change', value => { if (value === 'active') void refreshBurrow(); });
+    void refreshBurrow({ silent: !!state.data });
+    const sub = AppState.addEventListener('change', value => { if (value === 'active') void refreshBurrow({ silent: !!state.data }); });
     return () => sub.remove();
   }, []));
   return snapshot;

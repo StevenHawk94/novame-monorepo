@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Image, ImageBackground, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { gameOverview, gameSession, unlockGame, startGame, answerGame, notifyGame,
@@ -8,12 +8,17 @@ import { gameRoomBackground, gameRoomHero, gameRoomIcons } from '@/lib/burrow-ga
 import { refreshBurrow, useBurrow } from '@/lib/burrow-store';
 import { requestNotificationPermission, syncRemoteNotificationRegistration } from '@/lib/notification-settings';
 import { BURROW_GAME_RULE_ICONS } from '@/lib/burrow-ui-assets';
+import { BurrowBackButton } from './burrow-back-button';
+import { useBurrowSwipeBack } from './use-burrow-swipe-back';
+import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
 
 const ink = '#3C1D12';
 const muted = '#80604F';
 const cream = '#FFF9EF';
 const orange = '#CD5932';
 const labels = ['A', 'B', 'C', 'D'];
+let overviewCache: GameOverview | null = null;
+subscribeSessionIdentity(() => { overviewCache = null; });
 
 function Button({ label, onPress, secondary = false, disabled = false }: { label: string; onPress: () => void; secondary?: boolean; disabled?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
@@ -33,10 +38,10 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const sessionRequest = useRef(0);
   const tileWidth = Math.max(76, Math.floor((screenWidth - 36 - 3 * 9) / 4));
   const { data: burrow } = useBurrow();
-  const [overview, setOverview] = useState<GameOverview | null>(null);
+  const [overview, setOverview] = useState<GameOverview | null>(overviewCache);
   const [session, setSession] = useState<GameSession | null>(null);
   const [selected, setSelected] = useState<GameSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!overviewCache || !!initialSessionId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -45,9 +50,18 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const [pendingChoice, setPendingChoice] = useState<number | null>(null);
   const partnerName = burrow?.partner?.display_name?.trim() || 'your person';
   useEffect(() => () => { sessionRequest.current++; }, []);
+  useEffect(() => subscribeSessionIdentity(() => {
+    sessionRequest.current++;
+    setOverview(null);
+    setSession(null);
+    setSelected(null);
+  }), []);
 
   const loadOverview = useCallback(async () => {
+    const epoch = sessionEpoch();
     const value = await gameOverview();
+    if (epoch !== sessionEpoch()) throw new Error('session_changed');
+    overviewCache = value;
     setOverview(value);
     return value;
   }, []);
@@ -59,10 +73,12 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   }, []);
   useEffect(() => {
     let live = true;
+    const epoch = sessionEpoch();
     (async () => {
       try {
         const value = await gameOverview();
-        if (!live) return;
+        if (!live || epoch !== sessionEpoch()) return;
+        overviewCache = value;
         setOverview(value);
         if (initialSessionId) {
           const opened = await gameSession(initialSessionId);
@@ -137,6 +153,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     if (session || selected) exitToList();
     else router.back();
   };
+  const swipeBack=useBurrowSwipeBack(goBack);
   const notify = () => {
     if (!session) return;
     void perform(async () => {
@@ -152,9 +169,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     });
   };
 
-  return <ImageBackground source={gameRoomBackground} resizeMode="stretch" style={st.root}>
+  return <ImageBackground {...swipeBack} source={gameRoomBackground} resizeMode="cover" style={st.root}>
     <View style={[st.top, { paddingTop: insets.top + 12 }]}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Back" style={st.back} onPress={goBack}><Text style={st.backText}>‹</Text></Pressable>
+      <BurrowBackButton light onPress={goBack}/>
       <Text style={[st.topTitle, isCatalogue && st.catalogueTitle]}>Game Room</Text>
       {isCatalogue ? <Pressable accessibilityRole="button" accessibilityLabel="Past rounds" style={st.historyButton} onPress={() => listRef.current?.scrollToEnd({ animated: true })}>
         <Text style={st.historyIcon}>🕘</Text><Text style={st.historyPage}>▤</Text>
@@ -165,8 +182,6 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     <ScrollView ref={listRef} style={st.scroll} contentContainerStyle={[st.content, isCatalogue && st.catalogueContent, { paddingBottom: Math.max(30, insets.bottom + 20) }]}>
       {error && <Panel><Text style={st.error}>{error}</Text><Button label="Try again" secondary onPress={() => void perform(async () => { if (session) await loadSession(session.id); else await loadOverview(); })}/></Panel>}
       {loading && <ActivityIndicator size="large" color={cream} style={{ marginTop: 100 }}/ >}
-      {!loading && pairPrompt && <Panel><Text style={st.panelTitle}>Connect with your person</Text><Text style={st.body}>Browse all 70 games now. Connect when you’re ready to play together.</Text>
-        <Button label="Connect now" onPress={() => router.push('/(main)/friend-add' as Href)}/><Button label="Not now" secondary onPress={() => setPairPrompt(false)}/></Panel>}
       {!loading && session?.completedAt && session.result && <>
         <Text style={st.eyebrow}>RESULTS · {selectedGame?.title}</Text>
         <Text style={st.heroTitle}>{session.result.outcome === 'win' ? 'You won this round!' : session.result.outcome === 'lose' ? `${partnerName} won this round` : 'It’s a draw!'}</Text>
@@ -227,7 +242,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
         }}/>
       </>}
       {!loading && !session && !selected && overview && <>
-        <Image source={gameRoomHero} style={st.catalogueHero} resizeMode="cover" accessibilityLabel="Two bunnies playing a board game in their cozy cave" />
+        <Image source={gameRoomHero} style={[st.catalogueHero, { height: Math.min(screenWidth - 36, 524) * 619 / 1100 }]} resizeMode="cover" accessibilityLabel="Two bunnies playing a board game in their cozy cave" />
         {active.length > 0 && <><Text style={st.sectionTitle}>{active.some(item => item.ownCount + item.guessCount === 0 && item.partnerOwnCount + item.partnerGuessCount > 0) ? `Pending Game from ${partnerName}` : 'Continue playing'}</Text>{active.map(item => {
           const game = overview.games.find(g => g.id === item.gameId);
           return <Pressable key={item.id} accessibilityRole="button" style={st.continueCard} onPress={() => void perform(async () => { await loadSession(item.id); setSelected(game ?? null); setShowTransition(item.ownCount === 6 && item.guessCount === 0); })}>
@@ -250,6 +265,14 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
       </>}
       {busy && <ActivityIndicator color={cream} style={{ marginTop: 14 }}/ >}
     </ScrollView>
+    <Modal visible={pairPrompt} transparent presentationStyle="overFullScreen" animationType="fade" onRequestClose={()=>setPairPrompt(false)}>
+      <View style={st.promptScrim}><Panel style={st.promptPanel}>
+        <Text style={st.panelTitle}>Connect with your person</Text>
+        <Text style={st.body}>You can browse every game now. Connect when you’re ready to play together.</Text>
+        <Button label="Connect now" onPress={() => {setPairPrompt(false);router.push('/(main)/friend-add' as Href);}}/>
+        <Pressable accessibilityRole="button" onPress={()=>setPairPrompt(false)} style={st.promptLater}><Text style={st.promptLaterText}>Not now</Text></Pressable>
+      </Panel></View>
+    </Modal>
   </ImageBackground>;
 }
 
@@ -268,7 +291,7 @@ const st = StyleSheet.create({
   historyIcon: { position: 'absolute', top: 1, left: 5, fontSize: 17, zIndex: 1 }, historyPage: { color: cream, fontSize: 29, lineHeight: 35 },
   wallet: { backgroundColor: cream, borderRadius: 22, paddingHorizontal: 12, paddingVertical: 8 }, walletText: { color: ink, fontWeight: '800' },
   scroll: { flex: 1 }, content: { padding: 18, gap: 18 }, catalogueContent: { paddingTop: 0, gap: 10 },
-  catalogueHero: { width: '100%', aspectRatio: 1.83, borderRadius: 23, borderWidth: 3, borderColor: '#9A5939', overflow: 'hidden', marginBottom: 2 },
+  catalogueHero: { width: '100%', borderRadius: 23, borderWidth: 3, borderColor: '#9A5939', overflow: 'hidden', marginBottom: 2 },
   heroTitle: { color: '#FFF', fontSize: 37, lineHeight: 43, fontWeight: '900', marginTop: 16 },
   heroSub: { color: '#F5D4BE', fontSize: 19, lineHeight: 26 }, eyebrow: { color: '#E7C3A9', fontSize: 15, letterSpacing: 2, fontWeight: '800', marginTop: 22 },
   eyebrowCenter: { color: '#F5D4BE', textAlign: 'center', fontSize: 16, letterSpacing: 2, fontWeight: '800' },
@@ -296,4 +319,8 @@ const st = StyleSheet.create({
   hint: { color: muted, fontSize: 15, textAlign: 'center', lineHeight: 22 }, scoreRow: { flexDirection: 'row' }, scoreCell: { flex: 1, alignItems: 'center' }, score: { color: ink, fontSize: 38, fontWeight: '900' },
   resultQuestion: { borderBottomWidth: 1, borderBottomColor: '#EAD8C4', paddingVertical: 11, gap: 4 }, resultHeading: { color: ink, fontSize: 17, fontWeight: '800' }, resultLine: { color: muted, fontSize: 15 },
   error: { color: '#A92921', fontSize: 17, fontWeight: '700' },
+  promptScrim:{flex:1,backgroundColor:'#1E100DBB',alignItems:'center',justifyContent:'center',padding:24},
+  promptPanel:{width:'100%',maxWidth:440},
+  promptLater:{minHeight:54,borderRadius:28,borderWidth:1.5,borderColor:'#D6BFAA',alignItems:'center',justifyContent:'center'},
+  promptLaterText:{color:ink,fontSize:19,fontWeight:'800'},
 });

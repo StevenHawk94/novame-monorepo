@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { AppState, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { createBurrowAudioController } from '@/lib/burrow-audio-controller';
-import { useBurrowSnapshot, runBurrowAction, burrowErrorMessage } from '@/lib/burrow-store';
+import { useBurrowSnapshot, runBurrowAction, burrowErrorMessage, refreshBurrow, selectBurrowMusicLocally } from '@/lib/burrow-store';
 import { purchaseCatalogItem, selectRoomMusic, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { subscribeSessionIdentity } from '@/lib/session-lifecycle';
@@ -57,7 +57,10 @@ export function BurrowMusicGate() {
 export function BurrowMusicPicker({ data, onClose }: { data: MajorUpdateBootstrap; onClose: () => void }) {
   const { busy, error } = useBurrowSnapshot();
   const { failed } = usePlayback();
-  const choose = (id: string | null) => { void runBurrowAction(`music:${id}`, () => selectRoomMusic(id)); };
+  const choose = (id: string | null) => {
+    selectBurrowMusicLocally(id);
+    void runBurrowAction(`music:${id}`, () => selectRoomMusic(id),{silent:true}).then(ok=>{if(!ok)void refreshBurrow({silent:true});});
+  };
   return <Modal transparent animationType="slide" onRequestClose={onClose}><View style={s.scrim}><View style={s.sheet}>
     <Text style={s.title}>A little background music</Text>
     <Text style={s.copy}>Temporary tunes for now. Your selection follows you through the app, loops while it is open, and stops in the background.</Text>

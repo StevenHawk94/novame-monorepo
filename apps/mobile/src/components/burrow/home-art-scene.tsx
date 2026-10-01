@@ -7,6 +7,7 @@ import type { MajorUpdateBootstrap, MajorUpdateCatalogItem } from '@/lib/app-maj
 import { RoomPhoto } from './room-photo';
 import { BunnyActor } from './bunny-actor';
 import { InteractiveDoll } from './interactive-doll';
+import { dollFaceRect } from '@/lib/burrow-doll-face';
 import { BURROW_BACKGROUNDS, BURROW_FIXED_ART, burrowArtForItem, type BurrowArtAsset } from '@/lib/burrow-art-assets';
 import { HOME_ART_HEIGHT, HOME_ART_WIDTH, homeArtLayout } from '@/lib/burrow-home-layout';
 
@@ -113,7 +114,7 @@ export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy,
           <View style={styles.framePhoto}><RoomPhoto photo={frame} /></View><Image source={asset.source} contentFit="fill" style={styles.fill} />
         </View>; })()}
       {dollArt&&(previewOnly?<View pointerEvents="none" style={anchoredBox(dollArt, dollPlacement, scale)}>
-        <View style={styles.dollPhoto}><RoomPhoto photo={doll} circle /></View><Image source={dollArt.source} contentFit="fill" style={styles.fill} />
+        <View style={[styles.dollPhoto,dollFaceRect(dollArt)]}><RoomPhoto photo={doll} /></View><Image source={dollArt.source} contentFit="fill" style={styles.fill} />
       </View>:<InteractiveDoll asset={dollArt} photo={doll} pulse={toyPulse} disabled={busy} onInteract={onToyInteract} onEditPhoto={onToyPhoto}
         style={box(370, 880, 120, 175)} artStyle={{...anchoredBox(dollArt, dollPlacement, scale),
           left: anchoredBox(dollArt, dollPlacement, scale).left - 370 * scale,
@@ -165,6 +166,6 @@ const styles = StyleSheet.create({
   quests: { backgroundColor: '#56A184' }, adventure: { backgroundColor: '#CA8548' },
   actionText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   framePhoto: { position: 'absolute', top: '29%', left: '30%', width: '40%', height: '54%', overflow: 'hidden' },
-  dollPhoto: { position: 'absolute', top: '25%', left: '29%', width: '42%', height: '30%', borderRadius: 100, overflow: 'hidden' },
+  dollPhoto: { position: 'absolute', overflow: 'hidden' },
   unreadDot: { position: 'absolute', right: 10, top: 8, width: 12, height: 12, borderRadius: 6, backgroundColor: '#E84B45', borderWidth: 2, borderColor: '#FFF8ED' },
 });
