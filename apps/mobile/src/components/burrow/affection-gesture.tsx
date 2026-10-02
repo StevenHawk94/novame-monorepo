@@ -1,152 +1,298 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { haptics } from '@/lib/haptics';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, Path, Stop } from 'react-native-svg';
 import type { AffectionType } from '@novame/domain';
+import { haptics } from '@/lib/haptics';
 
-export const AFFECTION_COPY: Record<AffectionType,{label:string;symbol:string;hint:string}> = {
-  hug:{label:'Hug',symbol:'🤗',hint:'Hold gently for 3 seconds, then release.'},
-  spicy:{label:'Spicy',symbol:'🌶️',hint:'Tap 10 times to turn up the warmth.'},
-  cuddle:{label:'Cuddle',symbol:'🐰',hint:'Stroke left and right four times.'},
-  gratitude:{label:'Gratitude',symbol:'💛',hint:'Bring two fingers together and hold for a second.'},
-  kiss:{label:'Kiss',symbol:'💋',hint:'Spread two fingers apart, then release to send.'},
-  miss_you:{label:'Miss You',symbol:'💗',hint:'Trace the heart clockwise from its top center.'},
+type Copy = { label: string; symbol: string; hint: string; heading: string; instruction: string; encouragement: string; footnote: string; pageTitle: string };
+export const AFFECTION_COPY: Record<AffectionType, Copy> = {
+  hug: { label: 'Hug', symbol: '♥', hint: 'Press and hold for 3 seconds', heading: 'Hold your Hug close', instruction: 'Press and hold for 3 seconds', encouragement: 'Keep holding until the circle fills', footnote: 'Sends when the hold completes', pageTitle: 'Send a Hug' },
+  spicy: { label: 'Spicy', symbol: '♥', hint: 'Tap 10 times', heading: 'Turn up the heat', instruction: 'Tap 10 times', encouragement: 'Each tap adds a little spark', footnote: 'Sends after 10 taps and 3 seconds', pageTitle: 'Send Some Spice' },
+  cuddle: { label: 'Cuddle', symbol: '♥', hint: 'Swipe gently left and right', heading: 'Make it a cuddle', instruction: 'Swipe gently left and right', encouragement: 'Keep stroking to build warmth', footnote: 'Sends when the heart is full', pageTitle: 'Send a Cuddle' },
+  gratitude: { label: 'Gratitude', symbol: '♥', hint: 'Slide two fingers inward, then hold', heading: 'Bring your thanks together', instruction: 'Slide two fingers inward, then hold', encouragement: 'Hold when your fingers meet', footnote: 'Sends after the hold', pageTitle: 'Send Gratitude' },
+  kiss: { label: 'Kiss', symbol: '♥', hint: 'Spread two fingers apart', heading: 'Make your Kiss bigger', instruction: 'Spread two fingers apart', encouragement: 'Feel the gentle taps as it grows', footnote: 'Release to send after 3 seconds', pageTitle: 'Send a Kiss' },
+  miss_you: { label: 'Miss You', symbol: '♥', hint: 'Trace a heart with one finger', heading: 'Draw a heart', instruction: 'Trace a heart with one finger', encouragement: 'Follow the shape in one stroke', footnote: 'Lift to send when complete', pageTitle: 'Say I Miss You' },
 };
 
-const heartPoints = [[.5,.35],[.3,.2],[.15,.35],[.2,.55],[.5,.8],[.8,.55],[.85,.35],[.7,.2],[.5,.35]];
+const DURATION_MS = 3000;
+const HEART_POINTS: [number, number][] = [
+  [.5, .34], [.35, .20], [.20, .32], [.24, .52], [.5, .80],
+  [.76, .52], [.80, .32], [.65, .20], [.5, .34],
+];
+type GestureState = {
+  startedAt: number; touching: boolean; released: boolean; qualified: boolean; assisted: boolean;
+  taps: number; turns: number; travel: number; direction: number; lastX: number;
+  pathPoints: number; initialDistance: number; maxScale: number; inwardAt: number;
+};
+const freshGesture = (): GestureState => ({ startedAt: 0, touching: false, released: false, qualified: false,
+  assisted: false, taps: 0, turns: 0, travel: 0, direction: 0, lastX: 0,
+  pathPoints: 0, initialDistance: 0, maxScale: 1, inwardAt: 0 });
 
-function GestureDemo({type}:{type:AffectionType}) {
-  const motion=useRef(new Animated.Value(0)).current;
-  const [reduced,setReduced]=useState(true);
-  const focused=useIsFocused();
-  useEffect(()=>{let live=true;void AccessibilityInfo.isReduceMotionEnabled().then(value=>{if(live)setReduced(value);});const sub=AccessibilityInfo.addEventListener('reduceMotionChanged',setReduced);return()=>{live=false;sub.remove();};},[]);
-  useEffect(()=>{
+function Finger({ flip = false }: { flip?: boolean }) {
+  return <Svg width={76} height={116} viewBox="0 0 76 116" style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
+    <Defs><LinearGradient id="finger" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#FFF1E7"/><Stop offset="1" stopColor="#FFBFAF"/></LinearGradient></Defs>
+    <Path d="M24 112 L16 57 Q13 43 20 38 Q28 33 33 45 L39 63 L35 17 Q34 5 42 4 Q50 3 51 17 L55 65 Q62 60 67 65 Q74 71 68 83 L60 112 Z" fill="url(#finger)" stroke="#F47D7B" strokeWidth="3" strokeLinejoin="round"/>
+    <Ellipse cx="43" cy="25" rx="6" ry="11" fill="#FFF8F2" opacity=".92"/>
+    <Path d="M34 97 Q40 94 47 96" fill="none" stroke="#F39A92" strokeWidth="3" strokeLinecap="round"/>
+  </Svg>;
+}
+
+/** The guide illustration is still art; only its finger layer moves. */
+function GestureArt({ type }: { type: AffectionType }) {
+  const isKiss = type === 'kiss';
+  const isTrace = type === 'miss_you';
+  return <Svg width="100%" height="100%" viewBox="0 0 300 250" pointerEvents="none">
+    <Defs><LinearGradient id="love" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#FF8E8E"/><Stop offset="1" stopColor="#EF5963"/></LinearGradient></Defs>
+    {isTrace ? <>
+      <Path d="M150 92 C115 37 54 49 51 98 C49 141 101 177 150 213 C199 177 251 141 249 98 C246 49 185 37 150 92Z" fill="none" stroke="#FFC8C6" strokeWidth="8" strokeDasharray="11 12" strokeLinecap="round"/>
+      <Path d="M150 92 C115 37 54 49 51 98 C49 141 101 177 150 213" fill="none" stroke="#F46B70" strokeWidth="10" strokeLinecap="round"/>
+    </> : isKiss ? <>
+      <Path d="M40 137 Q83 101 111 112 Q133 118 150 128 Q167 118 189 112 Q217 101 260 137 Q219 180 150 181 Q81 180 40 137Z" fill="url(#love)"/>
+      <Path d="M40 137 Q100 152 150 142 Q200 152 260 137 Q195 168 150 158 Q105 168 40 137Z" fill="#DF4F58"/>
+      <Path d="M123 139 Q150 129 177 139" fill="none" stroke="#FFD2C8" strokeWidth="4" strokeLinecap="round"/>
+      <Path d="M136 145 Q150 160 164 145 Q150 145 136 145Z" fill="#FFE1DB"/>
+    </> : <>
+      <Path d="M150 78 C121 35 56 43 55 101 C54 153 105 188 150 217 C195 188 246 153 245 101 C244 43 179 35 150 78Z" fill="url(#love)"/>
+      <Path d="M85 92 Q98 64 121 66" fill="none" stroke="#FFADAA" strokeWidth="9" strokeLinecap="round"/>
+      {(type === 'hug' || type === 'cuddle' || type === 'gratitude') && <>
+        <Path d="M64 157 Q99 135 118 150 L150 170 Q121 193 92 181Z" fill="#FFE3D8"/>
+        <Path d="M236 157 Q201 135 182 150 L150 170 Q179 193 208 181Z" fill="#FFE3D8"/>
+      </>}
+      {type === 'spicy' && <Path d="M145 187 C121 157 143 146 148 125 C161 140 160 146 155 155 C177 141 168 121 174 110 C205 140 188 180 161 192 C166 170 156 161 153 157 C153 173 149 179 145 187Z" fill="#FFAD51" stroke="#FFF1D6" strokeWidth="3"/>}
+      {type === 'gratitude' && <>
+        <Path d="M21 133 H55 M21 133 L37 119 M21 133 L37 147 M279 133 H245 M279 133 L263 119 M279 133 L263 147" stroke="#F46B70" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+      </>}
+      {type === 'cuddle' && <Path d="M62 49 H238 M62 49 L77 36 M62 49 L77 62 M238 49 L223 36 M238 49 L223 62" stroke="#F46B70" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>}
+    </>}
+    {!isTrace && <>
+      <Path d="M150 22 V41 M108 31 L117 47 M192 31 L183 47" stroke="#F46B70" strokeWidth="6" strokeLinecap="round"/>
+      <Circle cx="145" cy="125" r="31" fill="none" stroke="#FFF1EC" strokeWidth="5" opacity=".7"/>
+      <Circle cx="145" cy="125" r="19" fill="none" stroke="#FFF1EC" strokeWidth="4" opacity=".7"/>
+    </>}
+  </Svg>;
+}
+
+function GestureDemo({ type, visible }: { type: AffectionType; visible: boolean }) {
+  const motion = useRef(new Animated.Value(0)).current;
+  const focused = useIsFocused();
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (live) setReduced(value); });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
+    return () => { live = false; sub.remove(); };
+  }, []);
+  useEffect(() => {
     motion.setValue(0);
-    if(reduced||!focused)return;
-    const animation=Animated.loop(Animated.sequence([
-      Animated.timing(motion,{toValue:1,duration:1450,useNativeDriver:true}),
-      Animated.timing(motion,{toValue:0,duration:450,useNativeDriver:true}),
+    if (!visible || reduced || !focused) return;
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(motion, { toValue: 1, duration: type === 'miss_you' ? 2100 : 1350, useNativeDriver: true }),
+      Animated.timing(motion, { toValue: 0, duration: 350, useNativeDriver: true }),
     ]));
-    animation.start();return()=>{animation.stop();motion.stopAnimation();};
-  },[type,reduced,focused,motion]);
-  const dot=(key:string,x:Animated.AnimatedInterpolation<number>|number,y:Animated.AnimatedInterpolation<number>|number)=><Animated.View key={key} style={[styles.demoFinger,{transform:[{translateX:x},{translateY:y}]}]} />;
-  const spread=motion.interpolate({inputRange:[0,1],outputRange:[-9,-66]});
-  const spreadRight=motion.interpolate({inputRange:[0,1],outputRange:[9,66]});
-  const inward=motion.interpolate({inputRange:[0,1],outputRange:[-67,-9]});
-  const inwardRight=motion.interpolate({inputRange:[0,1],outputRange:[67,9]});
-  const sweep=motion.interpolate({inputRange:[0,.5,1],outputRange:[-55,55,-55]});
-  const traceX=motion.interpolate({inputRange:[0,.13,.25,.38,.5,.63,.75,.88,1],outputRange:[0,-35,-75,-65,0,65,75,35,0]});
-  const traceY=motion.interpolate({inputRange:[0,.13,.25,.38,.5,.63,.75,.88,1],outputRange:[-30,-70,-30,15,70,15,-30,-70,-30]});
-  return <View pointerEvents="none" style={styles.demoLayer} accessibilityLabel={`${AFFECTION_COPY[type].label} gesture demonstration`}>
-    {(type==='kiss'||type==='gratitude')?<>{dot('left',type==='kiss'?spread:inward,70)}{dot('right',type==='kiss'?spreadRight:inwardRight,70)}</>:
-      type==='cuddle'?dot('stroke',sweep,70):type==='miss_you'?dot('trace',traceX,traceY):
-      dot('tap',0,motion.interpolate({inputRange:[0,.5,1],outputRange:[75,57,75]}))}
+    loop.start();
+    return () => { loop.stop(); motion.stopAnimation(); };
+  }, [visible, reduced, focused, type, motion]);
+  if (!visible) return null;
+  const finger = (key: string, x: Animated.AnimatedInterpolation<number> | number,
+    y: Animated.AnimatedInterpolation<number> | number, flip = false) =>
+    <Animated.View key={key} pointerEvents="none" style={[styles.finger, { transform: [{ translateX: x }, { translateY: y }] }]}><Finger flip={flip}/></Animated.View>;
+  const inward = motion.interpolate({ inputRange: [0, 1], outputRange: [-83, -23] });
+  const inwardRight = motion.interpolate({ inputRange: [0, 1], outputRange: [83, 23] });
+  const outward = motion.interpolate({ inputRange: [0, 1], outputRange: [-20, -92] });
+  const outwardRight = motion.interpolate({ inputRange: [0, 1], outputRange: [20, 92] });
+  const sweep = motion.interpolate({ inputRange: [0, .5, 1], outputRange: [-55, 55, -55] });
+  const tap = motion.interpolate({ inputRange: [0, .55, 1], outputRange: [18, -8, 18] });
+  const traceX = motion.interpolate({ inputRange: [0, .125, .25, .375, .5, .625, .75, .875, 1], outputRange: [0, -39, -77, -68, 0, 68, 77, 39, 0] });
+  const traceY = motion.interpolate({ inputRange: [0, .125, .25, .375, .5, .625, .75, .875, 1], outputRange: [-53, -85, -58, -7, 52, -7, -58, -85, -53] });
+  return <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+    {type === 'gratitude' ? <>{finger('left', inward, 0)}{finger('right', inwardRight, 0, true)}</> :
+      type === 'kiss' ? <>{finger('left', outward, 0)}{finger('right', outwardRight, 0, true)}</> :
+        type === 'cuddle' ? finger('stroke', sweep, 0) :
+          type === 'miss_you' ? finger('trace', traceX, traceY) : finger('press', 0, tap)}
+  </View>;
+}
+
+function ProgressRing({ progress, type, taps }: { progress: number; type: AffectionType; taps: number }) {
+  const radius = 32;
+  const circumference = 2 * Math.PI * radius;
+  return <View pointerEvents="none" style={styles.ring}>
+    <Svg width={78} height={78} viewBox="0 0 78 78" style={StyleSheet.absoluteFillObject}>
+      <Circle cx="39" cy="39" r={radius} stroke="#F8D6D1" strokeWidth="7" fill="none"/>
+      <Circle cx="39" cy="39" r={radius} stroke="#F46B70" strokeWidth="7" fill="none" strokeLinecap="round"
+        strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={circumference * (1 - progress)} rotation={-90} origin="39,39"/>
+    </Svg>
+    <Text style={styles.ringText}>{type === 'spicy' ? `${taps}/10` : `${Math.max(0, Math.ceil((1 - progress) * 3))}s`}</Text>
   </View>;
 }
 
 export function AffectionGesture({ type, disabled, onComplete }: {
-  type: AffectionType; disabled: boolean; onComplete: (metrics: Record<string,number>) => void;
+  type: AffectionType; disabled: boolean; onComplete: (metrics: Record<string, number>) => void;
 }) {
-  const [progress,setProgress]=useState(0);
-  const [active,setActive]=useState(false);
-  const [assist,setAssist]=useState<number|null>(null);
-  const [assistReady,setAssistReady]=useState(false);
-  const focused=useIsFocused();
-  const interactive=useRef(focused&&AppState.currentState==='active');
-  interactive.current=focused&&AppState.currentState==='active';
-  const tracking=useRef(false);
-  const metrics=useRef<Record<string,number>|null>(null);
-  const hapticStep=useRef(0);
-  useEffect(()=>{
-    const step=Math.floor(progress*4);
-    if(interactive.current&&step>hapticStep.current&&step<4)void haptics.light().catch(()=>{});
-    hapticStep.current=step;
-  },[progress]);
-  const gesture=useRef({ started:0, distance:0, maxScale:1, inwardAt:0, turns:0, direction:0, lastX:0, path:0, taps:0 });
-  const done=useRef(false);
-  const size=useRef({width:300,height:280});
-  const callback=useRef(onComplete); callback.current=value=>{metrics.current=value;void haptics.light().catch(()=>{});onComplete(value);};
-  useEffect(()=>{
-    if(!focused){interactive.current=false;tracking.current=false;setActive(false);setAssist(null);setAssistReady(false);}
-    const sub=AppState.addEventListener('change',state=>{interactive.current=focused&&state==='active';if(state!=='active'){tracking.current=false;setActive(false);setAssist(null);setAssistReady(false);}});
-    return()=>sub.remove();
-  },[focused]);
-  useEffect(()=>{if(assist===null)return;const timer=setTimeout(()=>setAssistReady(true),Math.max(0,3000-(performance.now()-assist)));return()=>clearTimeout(timer);},[assist]);
-  useEffect(()=>{ done.current=false;setProgress(0);setActive(false);gesture.current.taps=0; },[type]);
-  useEffect(()=>{
-    if(!active || type!=='hug') return;
-    const timer=setInterval(()=>setProgress(Math.min(1,(performance.now()-gesture.current.started)/3000)),50);
-    return ()=>clearInterval(timer);
-  },[active,type]);
-  const responder=useMemo(()=>PanResponder.create({
-    onStartShouldSetPanResponder:()=>interactive.current && !disabled && !done.current && type!=='spicy',
-    onMoveShouldSetPanResponder:()=>interactive.current && !disabled && !done.current && type!=='spicy',
-    onPanResponderGrant:()=>{
-      if(!interactive.current||disabled)return;
-      tracking.current=true;
-      gesture.current={started:performance.now(),distance:0,maxScale:1,inwardAt:0,turns:0,direction:0,lastX:0,path:0,taps:0};
-      setProgress(0);setActive(true);
-    },
-    onPanResponderMove:(event,state)=>{
-      if(!interactive.current||!tracking.current||disabled)return;
-      const g=gesture.current;
-      const touches=event.nativeEvent.touches;
-      if((type==='kiss'||type==='gratitude') && touches.length===2){
-        const distance=Math.hypot(touches[0].pageX-touches[1].pageX,touches[0].pageY-touches[1].pageY);
-        if(!g.distance) g.distance=Math.max(distance,20);
-        const scale=distance/g.distance;g.maxScale=Math.max(g.maxScale,scale);
-        if(type==='kiss') setProgress(Math.min(1,Math.max(0,(scale-1)/.5)));
-        else if(scale<=.7){ if(!g.inwardAt)g.inwardAt=performance.now();setProgress(Math.min(1,(performance.now()-g.inwardAt)/1000)); }
-        else {g.inwardAt=0;setProgress(0);}
-      } else if(type==='gratitude'){g.inwardAt=0;setProgress(0);}
-      if(type==='cuddle' && Math.abs(state.dx-g.lastX)>28){
-        const direction=Math.sign(state.dx-g.lastX);
-        if(direction!==g.direction){g.turns++;g.direction=direction;}
-        g.lastX=state.dx;setProgress(Math.min(1,g.turns/4));
+  const [progress, setProgress] = useState(0);
+  const [taps, setTaps] = useState(0);
+  const [working, setWorking] = useState(false);
+  const focused = useIsFocused();
+  const callback = useRef(onComplete); callback.current = onComplete;
+  const disabledRef = useRef(disabled); disabledRef.current = disabled;
+  const interactive = useRef(focused && AppState.currentState === 'active');
+  interactive.current = focused && AppState.currentState === 'active';
+  const gesture = useRef<GestureState>(freshGesture());
+  const completed = useRef(false);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const step = useRef(0);
+  const padSize = useRef({ width: 300, height: 250 });
+  const stopTimer = () => { if (timer.current) clearInterval(timer.current); timer.current = null; };
+  const reset = () => { stopTimer(); gesture.current = freshGesture(); step.current = 0; setProgress(0); setTaps(0); setWorking(false); };
+  const finish = () => {
+    if (completed.current || !interactive.current) return;
+    completed.current = true;
+    const g = gesture.current;
+    const durationMs = Math.max(DURATION_MS, Math.round(performance.now() - g.startedAt));
+    stopTimer(); setProgress(1); setWorking(false);
+    void haptics.medium().catch(() => {});
+    callback.current(g.assisted ? { assistedHoldMs: durationMs, durationMs } : {
+      durationMs, taps: g.taps, turns: g.turns, scale: g.maxScale,
+      pathPoints: g.pathPoints, holdMs: g.inwardAt ? Math.round(performance.now() - g.inwardAt) : 0,
+    });
+  };
+  const refresh = () => {
+    const g = gesture.current;
+    if (!g.startedAt || completed.current || !interactive.current) return;
+    const elapsed = performance.now() - g.startedAt;
+    const time = Math.min(1, elapsed / DURATION_MS);
+    const action = g.assisted || type === 'hug' ? 1 : type === 'spicy' ? g.taps / 10 :
+      type === 'cuddle' ? Math.min(1, g.turns / 4) : type === 'gratitude' ?
+        g.inwardAt ? Math.min(1, (performance.now() - g.inwardAt) / 1000) : 0 :
+        type === 'kiss' ? Math.min(1, Math.max(0, (g.maxScale - 1) / .5)) : g.pathPoints / HEART_POINTS.length;
+    const next = Math.min(time, Math.min(1, action));
+    setProgress(next);
+    const nextStep = Math.floor(next * 4);
+    if (nextStep > step.current && nextStep < 4) void haptics.light().catch(() => {});
+    step.current = nextStep;
+    if (elapsed < DURATION_MS || !g.qualified) return;
+    if (!g.assisted && type === 'hug' && !g.touching) return;
+    if (!g.assisted && type === 'gratitude' && (!g.touching || !g.inwardAt || performance.now() - g.inwardAt < 1000)) return;
+    if (!g.assisted && (type === 'kiss' || type === 'miss_you') && !g.released) return;
+    finish();
+  };
+  const begin = () => {
+    if (disabledRef.current || !interactive.current || completed.current) return false;
+    if (!gesture.current.startedAt) {
+      gesture.current.startedAt = performance.now();
+      timer.current = setInterval(refresh, 40);
+      setWorking(true);
+    }
+    return true;
+  };
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => { if (state !== 'active') reset(); });
+    return () => { sub.remove(); stopTimer(); };
+  }, []);
+  useEffect(() => { if (!focused) reset(); }, [focused]);
+  const responder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => type !== 'spicy' && interactive.current && !disabledRef.current && !completed.current,
+    onMoveShouldSetPanResponder: () => type !== 'spicy' && interactive.current && !disabledRef.current && !completed.current,
+    onPanResponderGrant: event => {
+      if (!begin()) return;
+      const g = gesture.current;
+      g.touching = true; g.released = false;
+      if ((type === 'kiss' || type === 'gratitude') && event.nativeEvent.touches.length >= 2) {
+        const touches = event.nativeEvent.touches;
+        g.initialDistance = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
       }
-      if(type==='miss_you'){
-        const point=heartPoints[g.path];
-        if(point && Math.hypot(event.nativeEvent.locationX/size.current.width-point[0],event.nativeEvent.locationY/size.current.height-point[1])<.18){
-          g.path++;setProgress(g.path/heartPoints.length);
+      if (type === 'hug') g.qualified = true;
+      refresh();
+    },
+    onPanResponderMove: (event, state) => {
+      const g = gesture.current;
+      if (!g.startedAt || !g.touching || !interactive.current) return;
+      const touches = event.nativeEvent.touches;
+      if ((type === 'kiss' || type === 'gratitude') && touches.length >= 2) {
+        const distance = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+        if (!g.initialDistance) g.initialDistance = Math.max(distance, 18);
+        const scale = distance / g.initialDistance;
+        if (type === 'kiss') { g.maxScale = Math.max(g.maxScale, scale); g.qualified = g.maxScale >= 1.5; }
+        else if (scale <= .7) { if (!g.inwardAt) g.inwardAt = performance.now(); g.qualified = true; }
+        else { g.inwardAt = 0; g.qualified = false; }
+      } else if (type === 'gratitude') { g.inwardAt = 0; g.qualified = false; }
+      if (type === 'cuddle') {
+        const delta = state.dx - g.lastX;
+        if (Math.abs(delta) >= 23) {
+          const direction = Math.sign(delta);
+          g.travel += Math.abs(delta);
+          if (direction !== g.direction) { g.turns++; g.direction = direction; }
+          g.lastX = state.dx;
+          g.qualified = g.turns >= 4 && g.travel >= 140;
         }
       }
+      if (type === 'miss_you' && touches.length === 1) {
+        const point = HEART_POINTS[g.pathPoints];
+        const x = event.nativeEvent.locationX / padSize.current.width;
+        const y = event.nativeEvent.locationY / padSize.current.height;
+        if (point && Math.hypot(x - point[0], y - point[1]) < .2) g.pathPoints++;
+        g.qualified = g.pathPoints >= HEART_POINTS.length;
+      }
+      refresh();
     },
-    onPanResponderRelease:()=>{
-      if(!interactive.current||!tracking.current||disabled){tracking.current=false;setActive(false);setProgress(0);return;}
-      tracking.current=false;
-      setActive(false);const g=gesture.current;const durationMs=performance.now()-g.started;
-      const valid=type==='hug'?durationMs>=3000:type==='kiss'?g.maxScale>=1.5:
-        type==='gratitude'?g.inwardAt>0&&performance.now()-g.inwardAt>=1000:
-        type==='cuddle'?g.turns>=4:g.path===heartPoints.length;
-      if(valid){done.current=true;setProgress(1);callback.current({durationMs,scale:g.maxScale,turns:g.turns,pathPoints:g.path,holdMs:g.inwardAt?performance.now()-g.inwardAt:0});}
-      else setProgress(0);
+    onPanResponderRelease: () => {
+      const g = gesture.current;
+      g.touching = false; g.released = true;
+      if (!g.qualified || type === 'hug' || type === 'gratitude') { if (!completed.current) reset(); return; }
+      refresh();
     },
-    onPanResponderTerminate:()=>{tracking.current=false;setActive(false);setProgress(0);},
-    onPanResponderTerminationRequest:()=>false,
-  }),[type,disabled]);
+    onPanResponderTerminate: () => { if (!completed.current) reset(); },
+    onPanResponderTerminationRequest: () => false,
+  }), [type]);
+  const tap = () => {
+    if (type !== 'spicy' || !begin()) return;
+    const g = gesture.current;
+    g.taps = Math.min(10, g.taps + 1);
+    g.qualified = g.taps >= 10;
+    setTaps(g.taps);
+    void haptics.light().catch(() => {});
+    refresh();
+  };
+  const accessibleSend = () => {
+    if (!begin()) return;
+    const g = gesture.current;
+    g.assisted = true; g.qualified = true;
+    refresh();
+  };
+  const copy = AFFECTION_COPY[type];
   return <View style={styles.card}>
-    <Text style={styles.title}>{AFFECTION_COPY[type].label}</Text><Text style={styles.hint}>{AFFECTION_COPY[type].hint}</Text>
-    <View style={styles.pad} {...responder.panHandlers} onLayout={e=>{size.current=e.nativeEvent.layout;}}>
-      <GestureDemo type={type}/>
-      {type==='miss_you'?<Svg width="100%" height="100%" viewBox="0 0 300 280" pointerEvents="none"><Path d="M150 98 C90 10 5 80 60 154 L150 224 L240 154 C295 80 210 10 150 98Z" fill="none" stroke="#E69C99" strokeWidth="16" strokeDasharray="10 7" /></Svg>:
-        <Pressable disabled={disabled||type!=='spicy'} accessibilityRole="button" accessibilityLabel="Tap to add warmth" onPress={()=>{
-          if(done.current||!interactive.current)return;const count=++gesture.current.taps;setProgress(count/10);
-          if(count===10){done.current=true;callback.current({taps:count});}
-        }}><Text style={[styles.symbol,{transform:[{scale:1+progress*.25}]}]}>{AFFECTION_COPY[type].symbol}</Text></Pressable>}
+    <Text style={styles.heading}>{copy.heading}</Text>
+    <Text style={styles.instruction}>{copy.instruction}</Text>
+    <View style={styles.stage} {...responder.panHandlers}
+      onLayout={event => { padSize.current = event.nativeEvent.layout; }}
+      accessible accessibilityRole="button" accessibilityLabel={`${copy.instruction}. Three-second gesture area.`}
+      accessibilityHint="Double tap to use the accessible three-second send option"
+      accessibilityActions={[{ name: 'activate', label: 'Use accessible gesture' }]}
+      onAccessibilityAction={accessibleSend}>
+      <View pointerEvents="none" style={styles.art}><GestureArt type={type}/></View>
+      <GestureDemo type={type} visible={!working && !completed.current}/>
+      {type === 'spicy' && <Pressable accessibilityRole="button" accessibilityLabel="Tap to add a spark" onPress={tap} style={StyleSheet.absoluteFillObject}/>}
+      {(type === 'hug' || type === 'spicy') && <ProgressRing progress={progress} type={type} taps={taps}/>}
     </View>
-    <View style={styles.track}><View style={[styles.fill,{width:`${progress*100}%`}]} /></View>
-    <Text style={styles.hint}>{done.current?'Ready to send':`${Math.round(progress*100)}%`}</Text>
-    {!done.current&&<Pressable accessibilityRole="button" accessibilityLabel={assist===null?'Use accessible gesture':assistReady?'Send love':'Cancel accessible gesture'} disabled={disabled} style={{padding:14,borderRadius:16,backgroundColor:'#F5DAD2'}} onPress={()=>{
-      if(!interactive.current||disabled)return;
-      if(assist===null){setAssist(performance.now());setAssistReady(false);return;}
-      const elapsed=performance.now()-assist;
-      if(elapsed>=3000){done.current=true;setProgress(1);callback.current({assistedHoldMs:Math.floor(elapsed)});}
-      setAssist(null);setAssistReady(false);
-    }}><Text style={styles.hint}>{assist===null?'Accessible option · tap, wait 3 seconds, then confirm':assistReady?'Send love':'Preparing… tap to cancel'}</Text></Pressable>}
-    {assistReady&&<Text accessibilityLiveRegion="polite" style={styles.hint}>Ready. Activate Send love to confirm.</Text>}
-    {done.current&&!disabled&&metrics.current&&<Pressable accessibilityRole="button" style={{padding:14}} onPress={()=>callback.current(metrics.current!)}><Text style={styles.hint}>Retry sending</Text></Pressable>}
-    {done.current && !disabled && <Pressable accessibilityRole="button" onPress={()=>{done.current=false;gesture.current.taps=0;setProgress(0);}}><Text style={styles.hint}>Try gesture again</Text></Pressable>}
+    <Text style={styles.encouragement}>{copy.encouragement}</Text>
+    <Text style={styles.footnote}>{copy.footnote}</Text>
+    <View accessibilityLabel={`Gesture progress ${Math.round(progress * 100)} percent`} style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: `${progress * 100}%` }]}/>
+    </View>
   </View>;
 }
-const styles=StyleSheet.create({card:{backgroundColor:'#FFF1E6',borderRadius:28,padding:22,gap:12},title:{fontSize:28,fontWeight:'800',color:'#823F41',textAlign:'center'},hint:{color:'#995B58',textAlign:'center',fontSize:15},pad:{height:250,alignItems:'center',justifyContent:'center'},symbol:{fontSize:90},track:{height:9,borderRadius:8,overflow:'hidden',backgroundColor:'#F5DAD2'},fill:{height:9,backgroundColor:'#E8757A'},demoLayer:{position:'absolute',left:0,right:0,top:0,bottom:0,alignItems:'center',justifyContent:'center'},demoFinger:{position:'absolute',width:35,height:35,borderRadius:18,backgroundColor:'#FFF9EE',borderWidth:3,borderColor:'#EC7F84',shadowColor:'#B45C65',shadowOpacity:.26,shadowRadius:5,shadowOffset:{width:0,height:3}}});
+
+const styles = StyleSheet.create({
+  card: { flex: 1, backgroundColor: '#FFF8F4', borderRadius: 35, paddingHorizontal: 18, paddingTop: 29, paddingBottom: 25, alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden' },
+  heading: { color: '#793337', fontSize: 27, lineHeight: 33, fontWeight: '800', textAlign: 'center' },
+  instruction: { color: '#A84953', fontSize: 18, lineHeight: 25, fontWeight: '600', textAlign: 'center' },
+  stage: { width: '100%', flex: 1, minHeight: 160, maxHeight: 285, justifyContent: 'center', alignItems: 'center' },
+  art: { position: 'absolute', width: '100%', height: '100%' },
+  finger: { position: 'absolute', left: '50%', top: '40%', marginLeft: -38, marginTop: -24 },
+  ring: { position: 'absolute', right: 1, top: '48%', width: 78, height: 78, alignItems: 'center', justifyContent: 'center' },
+  ringText: { color: '#F46B70', fontSize: 20, fontWeight: '800' },
+  encouragement: { color: '#AA4D56', fontSize: 16, lineHeight: 23, fontWeight: '600', textAlign: 'center' },
+  footnote: { color: '#CF9998', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  progressTrack: { height: 5, width: '85%', backgroundColor: '#F8D6D1', borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#F46B70' },
+});

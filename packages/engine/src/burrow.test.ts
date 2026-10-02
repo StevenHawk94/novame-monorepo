@@ -24,9 +24,9 @@ describe('room needs', () => {
 });
 
 describe('affection and adventure timing', () => {
-  it('shares one six-hour free cooldown and bypasses it for Plus', () => {
+  it('temporarily allows repeated free affection sends for testing', () => {
     const hour = 60 * 60 * 1000;
-    expect(affectionCooldownRemainingMs(0, 2 * hour, false)).toBe(4 * hour);
+    expect(affectionCooldownRemainingMs(0, 2 * hour, false)).toBe(0);
     expect(affectionCooldownRemainingMs(0, 2 * hour, true)).toBe(0);
     expect(affectionCooldownRemainingMs(0, 7 * hour, false)).toBe(0);
   });

@@ -287,6 +287,11 @@ export function purchaseCatalogItem(
   });
 }
 
+/** Atomically buy missing decorations and apply the whole previewed room. */
+export function purchaseRoomLoadout(slots: Record<string, string>, idempotencyKey = randomUUID(), outfitItemId?: string) {
+  return command<CommandResponse>('purchase_room_loadout', { slots, idempotencyKey, outfitItemId });
+}
+
 export function claimGift(giftId: string) {
   return command<CommandResponse>('claim_gift', { giftId });
 }

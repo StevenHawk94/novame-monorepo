@@ -1,11 +1,12 @@
 // Metro requires literal paths. Keep all supplied UI artwork in one registry.
 export const BURROW_ROOM_ICONS = {
-  our_room: require('../../assets/burrow-webp/burrow page icons/our-room.webp'),
-  friends_room: require('../../assets/burrow-webp/burrow page icons/friends-room.webp'),
-  game_room: require('../../assets/burrow-webp/burrow page icons/game-room.webp'),
-  rage_room: require('../../assets/burrow-webp/burrow page icons/rage-room.webp'),
-  memories_room: require('../../assets/burrow-webp/burrow page icons/memory room.webp'),
-  collection_room: require('../../assets/burrow-webp/burrow page icons/collection-room.webp'),
+  // Transparent PNGs avoid intermittent blank WebP icons on iOS.
+  our_room: require('../../assets/burrow-webp/burrow page icons/our-room.png'),
+  friends_room: require('../../assets/burrow-webp/burrow page icons/friends-room.png'),
+  game_room: require('../../assets/burrow-webp/burrow page icons/game-room.png'),
+  rage_room: require('../../assets/burrow-webp/burrow page icons/rage-room.png'),
+  memories_room: require('../../assets/burrow-webp/burrow page icons/memory-room.png'),
+  collection_room: require('../../assets/burrow-webp/burrow page icons/collection-room.png'),
 } as const;
 
 export const BURROW_AFFECTION_ICONS = {
@@ -13,21 +14,23 @@ export const BURROW_AFFECTION_ICONS = {
   kiss: require('../../assets/burrow-webp/affection page icons/kiss.webp'),
   cuddle: require('../../assets/burrow-webp/affection page icons/cuddle.webp'),
   spicy: require('../../assets/burrow-webp/affection page icons/spicy.webp'),
-  miss_you: require('../../assets/burrow-webp/affection page icons/miss you.webp'),
+  miss_you: require('../../assets/burrow-webp/affection page icons/miss you.png'),
   gratitude: require('../../assets/burrow-webp/affection page icons/gratitude.webp'),
 } as const;
 
 export const BURROW_QUEST_ICONS = {
-  write_adventure_record: require('../../assets/burrow-webp/quests page icons/daily quests-adventure.webp'),
-  send_affection: require('../../assets/burrow-webp/quests page icons/daily quests-affection.webp'),
-  feed_partner_bunny: require('../../assets/burrow-webp/quests page icons/daily quests-feed bunny.webp'),
-  water_partner_flower: require('../../assets/burrow-webp/quests page icons/daily quests-water flower.webp'),
-  play_game: require('../../assets/burrow-webp/quests page icons/daily quests-game with partner.webp'),
-  interact_with_toy: require('../../assets/burrow-webp/quests page icons/daily quests-toy interation.webp'),
-  adventures_completed: require('../../assets/burrow-webp/quests page icons/special quests-adventure finished..webp'),
-  items_collected: require('../../assets/burrow-webp/quests page icons/special quests-item collected.webp'),
-  friends_met: require('../../assets/burrow-webp/quests page icons/special quests-friends met..webp'),
-  games_played: require('../../assets/burrow-webp/quests page icons/special quests-game played.webp'),
+  // These are lossless PNG copies of the supplied transparent WebP artwork.
+  // iOS Simulator can leave the original WebP source blank in quest cards.
+  write_adventure_record: require('../../assets/burrow-webp/quests page icons/q_adventure.png'),
+  send_affection: require('../../assets/burrow-webp/quests page icons/q_affection.png'),
+  feed_partner_bunny: require('../../assets/burrow-webp/quests page icons/q_feed.png'),
+  water_partner_flower: require('../../assets/burrow-webp/quests page icons/q_water.png'),
+  play_game: require('../../assets/burrow-webp/quests page icons/q_game.png'),
+  interact_with_toy: require('../../assets/burrow-webp/quests page icons/q_toy.png'),
+  adventures_completed: require('../../assets/burrow-webp/quests page icons/q_special_adventure.png'),
+  items_collected: require('../../assets/burrow-webp/quests page icons/q_special_items.png'),
+  friends_met: require('../../assets/burrow-webp/quests page icons/q_special_friends.png'),
+  games_played: require('../../assets/burrow-webp/quests page icons/q_special_games.png'),
 } as const;
 
 export const BURROW_COIN_ART = {

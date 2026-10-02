@@ -177,6 +177,18 @@ export async function POST(request) {
         p_item_id: itemId,
         p_idempotency_key: idempotencyKey,
       }
+    } else if (action === 'purchase_room_loadout') {
+      const idempotencyKey = requiredText(body.idempotencyKey, 120)
+      const slots = body.slots
+      const outfitItemId = body.outfitItemId == null ? null : requiredText(body.outfitItemId, 160)
+      if (!idempotencyKey || !slots || Array.isArray(slots) || typeof slots !== 'object'
+        || Object.keys(slots).length < 1 || Object.keys(slots).length > 18
+        || (body.outfitItemId != null && !outfitItemId)
+        || Object.entries(slots).some(([slot, itemId]) => !requiredText(slot, 60) || !requiredText(itemId, 160))) {
+        return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+      }
+      rpc = 'purchase_room_loadout_v1'
+      args = { p_user_id: userId, p_slots: slots, p_key: idempotencyKey, p_outfit_item_id: outfitItemId }
     } else if (action === 'claim_gift') {
       const giftId = requiredText(body.giftId, 80)
       if (!giftId) {

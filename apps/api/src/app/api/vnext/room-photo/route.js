@@ -52,7 +52,7 @@ export async function POST(request) {
     // Reject a draft from an earlier account if token refresh raced sign-out.
     // actorId never grants authority: it must equal the verified JWT subject.
     if (!body || body.actorId !== userId || !photoUUID(body.ownerId) || !photoUUID(body.idempotencyKey) || !['frame','doll'].includes(body.kind)) return reply({ error: 'invalid_request' }, 400)
-    const bytes = decodeRoomPhoto(body.base64)
+    const bytes = decodeRoomPhoto(body.base64, body.kind === 'frame' ? 'frame' : 'square')
     const db = appMajorUpdateServiceClient()
     if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
     // Upload abuse protection fails closed; the general API limiter fails open.

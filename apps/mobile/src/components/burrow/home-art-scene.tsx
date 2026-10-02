@@ -62,7 +62,9 @@ type Props = {
   onCarrots: () => void;
   onAffection: () => void;
   unreadAffection?: number;
+  previewBottomCrop?: number;
   previewOnly?: boolean;
+  previewInteractive?: boolean;
   initialSize?: { width: number; height: number };
   onToyInteract?: () => void;
   onToyPhoto?: () => void;
@@ -74,7 +76,7 @@ type Props = {
   onSlot: (slot: string) => void;
 };
 
-export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy, onMenu, onCarrots, onAffection, unreadAffection = 0, previewOnly = false, initialSize, onToyInteract, onToyPhoto, toyPulse = 0, onAdventure, onLetter, onBurrows, onDecorate, onSlot }: Props) {
+export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy, onMenu, onCarrots, onAffection, unreadAffection = 0, previewOnly = false, previewInteractive = false, previewBottomCrop = 0, initialSize, onToyInteract, onToyPhoto, toyPulse = 0, onAdventure, onLetter, onBurrows, onDecorate, onSlot }: Props) {
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [layout, setLayout] = useState(() => initialSize ?? {
@@ -100,18 +102,18 @@ export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy,
     {!previewOnly&&<><Image source={BURROW_BACKGROUNDS.home} contentFit="cover" contentPosition="bottom"
       pointerEvents="none" style={styles.backgroundFill} /><View pointerEvents="none" style={styles.backgroundMask} /></>}
     <Image source={BURROW_BACKGROUNDS.home} contentFit="fill" pointerEvents="none"
-      style={[styles.background, { left: artLeft, width: artWidth, height: DESIGN_HEIGHT * scale, bottom: previewOnly ? 0 : -tabBarHeight }]} />
-    <View pointerEvents="box-none" style={[styles.canvas, { left: artLeft, width: artWidth, height: DESIGN_HEIGHT * scale, bottom: previewOnly ? 0 : -tabBarHeight }]}>
+      style={[styles.background, { left: artLeft, width: artWidth, height: DESIGN_HEIGHT * scale, bottom: previewOnly ? -previewBottomCrop * scale : -tabBarHeight }]} />
+    <View pointerEvents="box-none" style={[styles.canvas, { left: artLeft, width: artWidth, height: DESIGN_HEIGHT * scale, bottom: previewOnly ? -previewBottomCrop * scale : -tabBarHeight }]}>
       {art.map(item => {
         const asset = burrowArtForItem(slots[item.slot], item.category);
         return asset && <Image key={item.key} source={asset.source} contentFit="fill" style={anchoredBox(asset, item, scale)} pointerEvents="none" />;
       })}
-      {!away && <View pointerEvents="none" style={box(180, 1109, 205, 240)}><BunnyActor standalone standaloneSize={{width:205*scale,height:240*scale}} pose="sleeping" /></View>}
+      {!away && <View pointerEvents="none" style={box(180, 1109, 205, 240)}><BunnyActor outfit={slots.outfit} standalone standaloneSize={{width:205*scale,height:240*scale}} pose="sleeping" /></View>}
 
       {/* User photos are private and never embedded in the bundled reference art. */}
       {(() => { const asset = burrowArtForItem(slots.frame, 'frames'); const placement: Placement = {key:'frame',category:'frames',slot:'frame',x:639,anchorY:763,visibleWidth:115,anchor:'top'};
         return asset && <View pointerEvents="none" style={anchoredBox(asset, placement, scale)}>
-          <View style={styles.framePhoto}><RoomPhoto photo={frame} /></View><Image source={asset.source} contentFit="fill" style={styles.fill} />
+          <View style={styles.framePhoto}><View style={styles.framePhotoImage}><RoomPhoto photo={frame} /></View></View><Image source={asset.source} contentFit="fill" style={styles.fill} />
         </View>; })()}
       {dollArt&&(previewOnly?<View pointerEvents="none" style={anchoredBox(dollArt, dollPlacement, scale)}>
         <View style={[styles.dollPhoto,dollFaceRect(dollArt)]}><RoomPhoto photo={doll} /></View><Image source={dollArt.source} contentFit="fill" style={styles.fill} />
@@ -120,6 +122,22 @@ export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy,
           left: anchoredBox(dollArt, dollPlacement, scale).left - 370 * scale,
           top: anchoredBox(dollArt, dollPlacement, scale).top - 880 * scale}} />)}
       <Image source={BURROW_FIXED_ART.loveLetter} contentFit="contain" pointerEvents="none" style={box(578, 1228, 66, 51)} />
+
+      {previewInteractive&&art.map(item=>{
+        const asset=burrowArtForItem(slots[item.slot],item.category);
+        if(!asset)return null;
+        const [left,top,right,bottom]=asset.bounds;
+        const placed=anchoredBox(asset,item,scale);
+        return <Pressable key={`select-${item.slot}`} accessibilityRole="button" accessibilityLabel={`Select ${item.category.replaceAll('_',' ')}`}
+          onPress={()=>onSlot(item.slot)} style={{position:'absolute',left:placed.left+left*placed.width/asset.width,
+            top:placed.top+top*placed.height/asset.height,width:(right-left)*placed.width/asset.width,
+            height:(bottom-top)*placed.height/asset.height}}/>;
+      })}
+      {previewInteractive&&<>
+        {hotspot('Select photo frames', 'frame', 635, 755, 125, 190)}
+        {hotspot('Select couple dolls', 'couple_doll', 375, 895, 120, 175)}
+        {hotspot('Select outfits', 'outfit', 190, 1109, 180, 120)}
+      </>}
 
       {!previewOnly&&<>{hotspot(away ? 'Open adventure' : 'Feed bunny', 'bunny', 165, 1080, 250, 300)}
       {hotspot('Water flowers', 'vase', 630, 1090, 160, 240)}
@@ -140,7 +158,7 @@ export function HomeArtScene({ balance, slots, photos = [], ownerId, away, busy,
     </View>
 
     <View style={[styles.actions, { bottom: 133 * scale, paddingHorizontal: 100 * scale, gap: 92 * scale }]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={unreadAffection ? `Affection, ${unreadAffection} unread` : 'Affection'} onPress={onAffection} style={[styles.action, styles.quests, { height: 115 * scale, borderRadius: 30 * scale }]}><Text style={styles.actionText}>Affection</Text>{unreadAffection > 0 && <View style={styles.unreadDot} />}</Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={unreadAffection ? `Affection, ${unreadAffection} unread` : 'Affection'} onPress={onAffection} style={[styles.action, styles.quests, { height: 115 * scale, borderRadius: 30 * scale }]}><Text style={styles.actionText}>Affection</Text>{unreadAffection > 0 && <View style={styles.unreadDot}><Text style={styles.unreadCount}>{unreadAffection > 99 ? '99+' : unreadAffection}</Text></View>}</Pressable>
       <Pressable accessibilityRole="button" onPress={onAdventure} style={[styles.action, styles.adventure, { height: 115 * scale, borderRadius: 30 * scale }]}><Text style={styles.actionText}>Adventure</Text></Pressable>
     </View></>}
   </View>;
@@ -165,7 +183,9 @@ const styles = StyleSheet.create({
   action: { flex: 1, justifyContent: 'center', alignItems: 'center', shadowColor: '#5E3925', shadowOpacity: 0.65, shadowRadius: 0, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   quests: { backgroundColor: '#56A184' }, adventure: { backgroundColor: '#CA8548' },
   actionText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  framePhoto: { position: 'absolute', top: '29%', left: '30%', width: '40%', height: '54%', overflow: 'hidden' },
+  framePhoto: { position: 'absolute', top: '29%', left: '30%', width: '40%', height: '54%', overflow: 'hidden', backgroundColor: '#FFF9ED', alignItems: 'center' },
+  framePhotoImage: { width: '96.428571%', height: '100%' },
   dollPhoto: { position: 'absolute', overflow: 'hidden' },
-  unreadDot: { position: 'absolute', right: 10, top: 8, width: 12, height: 12, borderRadius: 6, backgroundColor: '#E84B45', borderWidth: 2, borderColor: '#FFF8ED' },
+  unreadDot: { position: 'absolute', right: 7, top: 5, minWidth: 25, height: 25, borderRadius: 13, paddingHorizontal: 4, backgroundColor: '#E84B45', borderWidth: 2, borderColor: '#FFF8ED', alignItems: 'center', justifyContent: 'center' },
+  unreadCount: { color: '#FFF', fontSize: 12, fontWeight: '800', textAlign: 'center' },
 });

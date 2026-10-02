@@ -1,4 +1,3 @@
 import { Redirect } from 'expo-router';
-import { BurrowScreen } from '@/components/burrow/burrow-screen';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
-export default function BurrowTab(){return useMajorUpdateEnabled()?<BurrowScreen section="burrow"/>:<Redirect href="/(main)/(tabs)"/>;}
+export default function BurrowTab(){return <Redirect href={useMajorUpdateEnabled()?"/(main)/burrow-detail?section=burrow":"/(main)/(tabs)"}/>;}

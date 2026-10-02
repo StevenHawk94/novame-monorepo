@@ -2,7 +2,9 @@ import { SPECIAL_QUEST_STEPS } from '@novame/domain';
 
 export const ROOM_NEED_MAX = 100;
 export const ROOM_NEED_DECAY_INTERVAL_MS = 5 * 60 * 1000;
-export const FREE_AFFECTION_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+// Temporarily disabled for affection gesture testing. Restore the six-hour
+// value together with the server-side cooldown when testing is complete.
+export const FREE_AFFECTION_COOLDOWN_MS = 0;
 export const FREE_ADVENTURE_DURATION_MS = 8 * 60 * 60 * 1000;
 export const PLUS_ADVENTURE_DURATION_MS = 2 * 60 * 60 * 1000;
 export const DAILY_QUEST_COUNT = 3;

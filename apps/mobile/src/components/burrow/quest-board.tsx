@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MajorUpdateBootstrap, MajorUpdateQuest } from '@/lib/app-major-update-api';
 import { BURROW_QUEST_ICONS } from '@/lib/burrow-ui-assets';
 
@@ -58,7 +57,7 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
       return <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${dailyCopy[id] ?? id}, ${claimed ? 'reward collected' : done ? 'collect reward' : 'open'}`}
         disabled={busy || claimed} onPress={() => done && !pending ? claim(quest.assignmentId,()=>onClaim(quest)) : onGo(id)}
         style={({ pressed }) => [styles.dailyCard, done && styles.doneCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[id]} contentFit="contain" style={styles.dailyIcon} />
+        <Image source={BURROW_QUEST_ICONS[id]} resizeMode="contain" style={styles.dailyIcon} />
         <Text numberOfLines={2} style={[styles.dailyTitle, claimed && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
         <View style={[styles.status, done && styles.statusDone]}><Text style={styles.statusText}>{claimed ? '✓' : done ? '★' : '➜'}</Text></View>
       </Pressable>;
@@ -72,7 +71,7 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
         disabled={busy||localClaimed} onPress={() => complete && data.specialQuests.some(q => q.questId === quest.questId)
           ? claim(`${quest.questId}:${quest.stage}`,()=>onSpecialClaim(quest.questId, quest.stage)) : onSpecialGo(quest.questId)}
         style={({ pressed }) => [styles.specialCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} contentFit="contain" style={styles.specialIcon} />
+        <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} resizeMode="contain" style={styles.specialIcon} />
         <View style={styles.specialText}>
           <Text style={styles.specialTitle}>{copy.title}</Text>
           <Text numberOfLines={2} style={styles.subtitle}>{copy.subtitle}</Text>

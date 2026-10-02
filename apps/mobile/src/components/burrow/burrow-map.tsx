@@ -8,12 +8,12 @@ import { BURROW_ROOM_ICONS } from '@/lib/burrow-ui-assets';
 const ART_WIDTH = 841;
 const ART_HEIGHT = 1870;
 const ROOMS = [
-  { id: 'our_room', title: 'Our Room', x: 267, y: 527 },
-  { id: 'friends_room', title: 'Friends’ Room', x: 599, y: 681 },
-  { id: 'game_room', title: 'Game Room', x: 267, y: 893 },
-  { id: 'rage_room', title: 'Rage Room', x: 600, y: 1051 },
-  { id: 'memories_room', title: 'Memories Room', x: 267, y: 1265 },
-  { id: 'collection_room', title: 'Collection Room', x: 598, y: 1457 },
+  { id: 'our_room', title: 'Our Room', x: 267, y: 530 },
+  { id: 'friends_room', title: 'Friends’ Room', x: 599, y: 700 },
+  { id: 'game_room', title: 'Game Room', x: 267, y: 875 },
+  { id: 'rage_room', title: 'Rage Room', x: 600, y: 1040 },
+  { id: 'memories_room', title: 'Memories Room', x: 267, y: 1215 },
+  { id: 'collection_room', title: 'Collection Room', x: 598, y: 1385 },
 ] as const;
 
 export type BurrowMapRoom = typeof ROOMS[number]['id'];

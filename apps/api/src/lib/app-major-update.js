@@ -20,7 +20,7 @@ export async function authenticatedUserId(request) {
 
 export function commandStatus(error) {
   if (!error) return 200
-  if (error === 'memory_conflict' || error === 'sharing_conflict' || error === 'pair_changed') return 409
+  if (error === 'memory_conflict' || error === 'journal_conflict' || error === 'sharing_conflict' || error === 'pair_changed') return 409
   if (error === 'client_upgrade_required') return 409
   if (error === 'photo_conflict' || error === 'upload_expired') return 409
   if (error === 'not_found') return 404

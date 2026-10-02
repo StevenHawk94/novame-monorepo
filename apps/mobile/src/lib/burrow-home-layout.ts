@@ -3,6 +3,9 @@ export const HOME_ART_HEIGHT = 1950;
 export const HOME_LIGHT_STRING_TOP = 416;
 // Keep a full 66 design pixels above the first replaceable item.
 export const HOME_MAX_TOP_CROP = 350;
+// The room preview can omit empty floor below the rug, while keeping every
+// replaceable object visible and preserving the Home stage's aspect ratio.
+export const HOME_PREVIEW_BOTTOM_CROP = 300;
 
 export function homeArtLayout(width: number, height: number, tabBarHeight: number, preview = false) {
   const widthScale = width / HOME_ART_WIDTH;
@@ -17,10 +20,11 @@ export function homeArtLayout(width: number, height: number, tabBarHeight: numbe
 
 export function decorationPreviewLayout(width: number, availableHeight: number) {
   const scale = Math.min(width / HOME_ART_WIDTH,
-    availableHeight / (HOME_ART_HEIGHT - HOME_MAX_TOP_CROP));
+    availableHeight / (HOME_ART_HEIGHT - HOME_MAX_TOP_CROP - HOME_PREVIEW_BOTTOM_CROP));
   const artWidth = HOME_ART_WIDTH * scale;
   const artHeight = HOME_ART_HEIGHT * scale;
-  const viewportHeight = Math.min(artHeight, availableHeight);
+  const viewportHeight = Math.min((HOME_ART_HEIGHT - HOME_MAX_TOP_CROP - HOME_PREVIEW_BOTTOM_CROP) * scale, availableHeight);
   return { scale, artWidth, artHeight, viewportHeight,
-    cropTop: artHeight - viewportHeight };
+    cropTop: artHeight - HOME_PREVIEW_BOTTOM_CROP * scale - viewportHeight,
+    cropBottom: HOME_PREVIEW_BOTTOM_CROP * scale };
 }

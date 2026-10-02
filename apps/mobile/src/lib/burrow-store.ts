@@ -19,6 +19,14 @@ export const getBurrowSnapshot = () => state;
 export function selectBurrowMusicLocally(trackId: string | null) {
   if (state.data) publish({ data: { ...state.data, musicTrackId: trackId } });
 }
+/** A received gesture disappears from the inbox immediately; sync corrects it if the request fails. */
+export function receiveBurrowAffectionLocally(id: string) {
+  if (!state.data || !state.data.affectionInbox.some(event => event.id === id)) return;
+  publish({ data: { ...state.data,
+    affectionInbox: state.data.affectionInbox.filter(event => event.id !== id),
+    unread: { ...state.data.unread, affection: Math.max(0, state.data.unread.affection - 1) },
+  } });
+}
 export function setBurrowLoadoutLocally(slots: Record<string,string>, ownerId: string, outfit = false) {
   if (!state.data) return;
   const previous=state.data.loadouts.filter(row=>outfit
@@ -70,6 +78,7 @@ export function burrowErrorMessage(code: string): string {
 }
 let flight: Promise<void> | null = null;
 let revision = 0;
+const FOCUS_REFRESH_MIN_MS = 30_000;
 /** Drop private pair data immediately; late snapshots cannot restore it. */
 export function invalidateBurrowPair() {
   revision++; flight = null; pendingKeys.clear();
@@ -98,6 +107,12 @@ export function refreshBurrow({ silent = false }: { silent?: boolean } = {}) {
   });
   flight = task;
   return task;
+}
+
+/** Reopening a recently viewed page uses the shared snapshot without a request. */
+export function refreshBurrowIfStale() {
+  if (state.data && burrowClock() - state.receivedAt < FOCUS_REFRESH_MIN_MS) return Promise.resolve();
+  return refreshBurrow({ silent: !!state.data });
 }
 
 /** A request begun before backgrounding cannot satisfy a resume check. */
@@ -137,8 +152,8 @@ export function useBurrowSnapshot() {
 export function useBurrow() {
   const snapshot = useBurrowSnapshot();
   useFocusEffect(useCallback(() => {
-    void refreshBurrow({ silent: !!state.data });
-    const sub = AppState.addEventListener('change', value => { if (value === 'active') void refreshBurrow({ silent: !!state.data }); });
+    void refreshBurrowIfStale();
+    const sub = AppState.addEventListener('change', value => { if (value === 'active') void refreshBurrowIfStale(); });
     return () => sub.remove();
   }, []));
   return snapshot;

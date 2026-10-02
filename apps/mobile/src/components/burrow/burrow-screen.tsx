@@ -4,10 +4,9 @@ import { router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { AFFECTION_TYPES, BURROW_DECOR_SHOP_CATEGORIES, type AffectionType } from '@novame/domain';
-import { affectionCooldownRemainingMs } from '@novame/engine';
+import { AFFECTION_TYPES, BURROW_DECOR_SHOP_CATEGORIES } from '@novame/domain';
 import {
-  claimAdventureResult, claimDailyQuest, claimSpecialQuest, claimGift, completeAffection,
+  claimAdventureResult, claimDailyQuest, claimSpecialQuest, claimGift,
   deleteMemoryRoomEntry, deleteRoomFramePhoto, interactBurrowToy, saveBunnyOutfit, saveMemoryRoomEntry, setRoomSleep,
   markAffectionRead, purchaseCatalogItem, refillRoomNeed, saveRoomLoadout, settleAdventure,
   startAdventure, visitPartnerRoom, type MajorUpdateBootstrap, type MajorUpdateCatalogItem,
@@ -21,11 +20,12 @@ import { RoomSceneArt as RoomScene } from './room-scene-art';
 import { HomeArtScene } from './home-art-scene';
 import { HomeArtPreview } from './home-art-preview';
 import { CarrotShop } from './carrot-shop';
-import { AFFECTION_COPY, AffectionGesture } from './affection-gesture';
+import { AFFECTION_COPY } from './affection-gesture';
 import { FriendVisitCard } from './friend-visit-card';
 import { AdventureFriendCard } from './adventure-friend-card';
-import { RoomPhotoEditor } from './room-photo';
+import { pickRoomPhoto, uploadRoomPhoto } from './room-photo';
 import { PhotoFrameSheet } from './photo-frame-sheet';
+import { FramePhotoCropper } from './frame-photo-cropper';
 import { InteractiveDoll } from './interactive-doll';
 import { BurrowMusicPicker } from './burrow-music';
 import { BunnyActor } from './bunny-actor';
@@ -34,15 +34,15 @@ import { BurrowHistory } from './burrow-history';
 import { adventureTrail } from '@/lib/adventure-trail';
 import { AdventureTreasure } from './adventure-treasure';
 import { burrowLocalDay } from '@/lib/burrow-local-day';
-import { AffectionDelivery } from './affection-delivery';
+import { AffectionHub } from './affection-hub';
 import { BURROW_BACKGROUNDS, burrowArtFor, burrowArtForItem } from '@/lib/burrow-art-assets';
 import { BURROW_AFFECTION_ICONS, BURROW_QUEST_ICONS, burrowFriendArt } from '@/lib/burrow-ui-assets';
 import { BurrowMap } from './burrow-map';
 import { MomentsHearts } from './moments-hearts';
 import { QuestBoard } from './quest-board';
+import { BurrowShop } from './burrow-shop';
 import { haptics } from '@/lib/haptics';
 import { BurrowBackButton } from './burrow-back-button';
-import { useBurrowSwipeBack } from './use-burrow-swipe-back';
 
 export type BurrowSection = 'home'|'burrow'|'quests'|'shop'|'moments'|'collection'|'adventure'|'affection'|'decorate'|'partner_room'|'our_room'|'friends_room'|'game_room'|'memories_room'|'self_care_room'|'carrot_shop';
 const titles: Record<BurrowSection,string> = {home:'Our Room',burrow:'Our Burrows',quests:'Quests',shop:'Shop',moments:'Our Moments',collection:'Collection',adventure:'Adventure',affection:'Affection',decorate:'Decorate',partner_room:'Partner’s Room',our_room:'Our Room',friends_room:'Friends’ Room',game_room:'Game Room',memories_room:'Memories Room',self_care_room:'Rage Room',carrot_shop:'Carrot Shop'};
@@ -62,7 +62,10 @@ const decorCategories=BURROW_DECOR_SHOP_CATEGORIES;
 const categoryName=(value:string)=>value.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 export function openBurrow(section:BurrowSection,extra?:Record<string,string>){
   if(section==='game_room'){router.push({pathname:'/(main)/game-room',params:extra} as Href);return;}
-  if(section==='burrow'||section==='shop'||section==='quests'||section==='moments'||section==='home'){
+  if(section==='burrow'||section==='shop'){
+    router.push({pathname:'/(main)/burrow-detail',params:{section,...extra}} as Href);return;
+  }
+  if(section==='quests'||section==='moments'||section==='home'){
     const route=section==='home'? '/(main)/(tabs)' : `/(main)/(tabs)/${section==='moments'?'friends':section}`;
     router.navigate(route as Href);return;
   }
@@ -87,7 +90,7 @@ function Card({title,body,children}:{title:string;body?:string;children?:React.R
   return <View style={s.card}><Text style={s.cardTitle}>{title}</Text>{body&&<Text style={s.body}>{body}</Text>}{children}</View>;
 }
 
-export function BurrowScreen({section,roomType='home',initialCategory='cushions',asTab=false,homeIntent}:{section:BurrowSection;roomType?:'home'|'our';initialCategory?:string;asTab?:boolean;homeIntent?:string}){
+export function BurrowScreen({section,roomType='home',initialCategory='cushions',asTab=false,homeIntent,initialInbox=false,ownedOnly=false,initialItemId,collectionOwnerId}:{section:BurrowSection;roomType?:'home'|'our';initialCategory?:string;asTab?:boolean;homeIntent?:string;initialInbox?:boolean;ownedOnly?:boolean;initialItemId?:string;collectionOwnerId?:string}){
   const {data,loading,error,busy,receivedAt}=useBurrow();
   const {attempt}=useHomeEntry();
   const insets=useSafeAreaInsets();
@@ -98,14 +101,11 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   const [collectionItemFilter,setCollectionItemFilter]=useState<'all'|'furniture'|'outfits'|'rooms'>('all');
   const [collectionOwner,setCollectionOwner]=useState<'mine'|'partner'>('mine');
   const [selected,setSelected]=useState<MajorUpdateCatalogItem|null>(null);
-  const [affection,setAffection]=useState<AffectionType|null>(null);
-  const [loveSent,setLoveSent]=useState(false);
   const [draft,setDraft]=useState<Record<string,MajorUpdateCatalogItem>|null>(null);
   const [feedback,setFeedback]=useState<string|null>(null);
   const [editingMemory,setEditingMemory]=useState<string|null>(null);
-  const [photoEditor,setPhotoEditor]=useState<'frame'|'doll'|null>(null);
-  const [photoEditorSource,setPhotoEditorSource]=useState<'camera'|'library'|undefined>();
   const [frameSheetOpen,setFrameSheetOpen]=useState(false);
+  const [frameCropAsset,setFrameCropAsset]=useState<{uri:string;width:number;height:number}|null>(null);
   const [musicOpen,setMusicOpen]=useState(false);
   const [inboxOpen,setInboxOpen]=useState(false);
   const [letterOpen,setLetterOpen]=useState(false);
@@ -117,10 +117,9 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   const [pullRefreshing,setPullRefreshing]=useState(false);
   const toyRecordedDay=useRef<string|null>(null);
   const [pairPrompt,setPairPrompt]=useState<string|null>(null);
-  const modalOpen=!!photoEditor||frameSheetOpen||toyOpen||musicOpen||!!selected||inboxOpen||letterOpen||!!careKind||!!pairPrompt;
+  const modalOpen=frameSheetOpen||!!frameCropAsset||toyOpen||musicOpen||!!selected||inboxOpen||letterOpen||!!careKind||!!pairPrompt;
   useEffect(()=>{if(modalOpen)return registerOverlay({});},[modalOpen]);
   const isTab=asTab||['home','quests','moments'].includes(section);
-  const swipeBack=useBurrowSwipeBack(()=>section==='shop'||section==='burrow'?openBurrow('home'):router.back());
   const openHomeInteraction=(kind:'toy'|'food'|'water'|'frame'|'letter')=>router.push({pathname:'/(main)/room-interaction',params:{kind}} as Href);
   useEffect(()=>{const timer=setInterval(()=>setClock(burrowClock()),1000);return()=>clearInterval(timer);},[]);
   useEffect(()=>{if(data)markHomeEntryAsset('burrow-data',attempt);},[data,attempt]);
@@ -140,13 +139,12 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   const displayedCareProgress=careProgress(data,careKind,now);
   const remaining=adventure?Math.max(0,new Date(adventure.ends_at).getTime()-now):0;
   const countdown=(ms:number)=>`${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m ${Math.floor(ms%60000/1000)}s`;
-  const cooldown=data?affectionCooldownRemainingMs(data.lastAffectionAt?new Date(data.lastAffectionAt).getTime():null,now,data.hasPlus):0;
   const owner=section==='partner_room'&&data?.partner?data.partner.id:data?.profile.id;
   const sceneSlots=useMemo(()=>data?roomSlots(data,owner??data.profile.id,section==='our_room'||roomType==='our'):{},[data,owner,section,roomType]);
   const hour=(()=>{try{return Number(new Intl.DateTimeFormat('en-US',{hour:'2-digit',hourCycle:'h23',timeZone:data?.profile.timezone_name??'UTC'}).format(new Date(now)));}catch{return new Date(now).getHours();}})();
   const background=section==='burrow'?(hour>=19||hour<6?BURROW_BACKGROUNDS.burrowNight:BURROW_BACKGROUNDS.burrowDay)
     :section==='adventure'?(data?.adventureResult?BURROW_BACKGROUNDS.adventureFinish:BURROW_BACKGROUNDS.adventure)
-    :section==='affection'?(loveSent?BURROW_BACKGROUNDS.affectionSend:BURROW_BACKGROUNDS.affectionSelect)
+    :section==='affection'?BURROW_BACKGROUNDS.affectionSelect
     :section==='friends_room'?BURROW_BACKGROUNDS.friendsRoom
     :section==='carrot_shop'?BURROW_BACKGROUNDS.carrotShop
     :BURROW_BACKGROUNDS.common;
@@ -178,9 +176,23 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
   function openToyPhoto(){
     setToyOpen(false);
     if(toyPhotoTimer.current)clearTimeout(toyPhotoTimer.current);
-    // Wait for the toy's native modal to dismiss before presenting the photo
-    // picker sheet; stacking native modals can terminate iOS development builds.
-    toyPhotoTimer.current=setTimeout(()=>{setPhotoEditor('doll');toyPhotoTimer.current=null;},380);
+    toyPhotoTimer.current=setTimeout(()=>{openHomeInteraction('toy');toyPhotoTimer.current=null;},380);
+  }
+  function chooseFramePhoto(source:'camera'|'library'){
+    if(!data)return;
+    setFrameSheetOpen(false);
+    // Dismiss the native sheet before invoking the system camera/library UI.
+    setTimeout(()=>{void (async()=>{
+      try{
+        const asset=await pickRoomPhoto(source,'frame');
+        if(asset)setFrameCropAsset(asset);
+        else setFrameSheetOpen(true);
+      }catch(error){
+        Alert.alert('Photo not saved',error instanceof Error&&error.message==='camera_permission_denied'
+          ? 'Allow camera access in Settings, then try again.':'Please choose a photo and try again.');
+        setFrameSheetOpen(true);
+      }
+    })();},320);
   }
   function buy(item:MajorUpdateCatalogItem,gift=false){
     if(!data)return;
@@ -330,28 +342,16 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         {collectionOwner==='mine'&&data.gifts.map(gift=><Card key={gift.id} title={data.catalog.find(i=>i.stable_id===gift.item_id)?.title??'A little gift'}><Action label="Open gift" disabled={busy} onPress={()=>act(`gift:${gift.id}`,()=>claimGift(gift.id))}/></Card>)}
         <View style={collectionStyles.grid}>{tab==='friends'?data.friends.map(friend=>{
           const found=data.discoveries.some(d=>d.user_id===whose&&d.friend_id===friend.stable_id&&!!d.interaction_completed_at);const friendArt=burrowFriendArt(friend.name);return <View key={friend.stable_id} style={[collectionStyles.tile,{width:tileSize}]}>{found&&friendArt?<Image source={friendArt} contentFit="contain" style={{width:tileSize-12,height:tileSize-12}}/>:<Text style={collectionStyles.unknown}>?</Text>}<Text numberOfLines={2} style={collectionStyles.tileTitle}>{found?friend.name:'Undiscovered'}</Text></View>;
-        }):list.map(item=><Pressable key={item.stable_id} style={[collectionStyles.tile,{width:tileSize}]} accessibilityRole="button" accessibilityLabel={`View ${item.title}`} onPress={()=>setSelected(item)}><CatalogArtwork item={item} sizePx={tileSize-12}/><Text numberOfLines={2} style={collectionStyles.tileTitle}>{item.title}</Text><Text style={collectionStyles.owned}>✓ Owned</Text></Pressable>)}
+        }):list.map(item=><Pressable key={item.stable_id} style={[collectionStyles.tile,{width:tileSize}]} accessibilityRole="button" accessibilityLabel={`Decorate with ${item.title}`} onPress={()=>router.push({pathname:'/(main)/burrow-detail',params:{section:'decorate',category:item.category,ownedOnly:'1',itemId:item.stable_id,ownerId:whose}} as Href)}><CatalogArtwork item={item} sizePx={tileSize-12}/><Text numberOfLines={2} style={collectionStyles.tileTitle}>{item.title}</Text><Text style={collectionStyles.owned}>✓ Owned</Text></Pressable>)}
           {((tab==='items'&&collectionItemFilter==='all')||tab==='gifts')&&data.catalog.filter(item=>!ownedIds.has(item.stable_id)&&(tab==='gifts'?item.item_type==='souvenir':['decor','our_room','outfit'].includes(item.item_type))).slice(0,tab==='gifts'?8:4).map(item=><View key={item.stable_id} style={[collectionStyles.tile,collectionStyles.unknownTile,{width:tileSize}]} accessibilityLabel="Undiscovered item"><Text style={collectionStyles.unknown}>?</Text><Text style={collectionStyles.unknownLabel}>Undiscovered</Text></View>)}
         </View>
         {tab!=='friends'&&!list.length&&<Text style={collectionStyles.empty}>Your story is just beginning. Finds and purchases will appear here.</Text>}
         </View>
-        <Pressable accessibilityRole="button" onPress={()=>tab==='items'?openBurrow('decorate'):tab==='gifts'?router.navigate('/(main)/(tabs)/shop' as Href):openBurrow('friends_room')} style={collectionStyles.footerButton}><Text style={collectionStyles.footerText}>{tab==='items'?'Decorate My Burrow':tab==='gifts'?'Find a Gift':'Visit Friends’ Room'}</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={()=>tab==='items'?router.push({pathname:'/(main)/burrow-detail',params:{section:'decorate',ownedOnly:'1',ownerId:whose}} as Href):tab==='gifts'?router.navigate('/(main)/(tabs)/shop' as Href):openBurrow('friends_room')} style={collectionStyles.footerButton}><Text style={collectionStyles.footerText}>{tab==='items'?'Decorate My Burrow':tab==='gifts'?'Find a Gift':'Visit Friends’ Room'}</Text></Pressable>
       </>;
     }
     if(section==='moments')return <BurrowHistory data={data} kind="moments" busy={busy}/>;
-    if(section==='affection')return loveSent?<>
-      <AffectionDelivery sender={data.profile} recipient={data.partner} sent/>
-      <Card title="Love sent" body="A little warmth is waiting for your person."><Action label="Done" onPress={()=>router.back()}/></Card>
-    </>:affection?<>
-      <AffectionDelivery sender={data.profile} recipient={data.partner} sent={false}/>
-      <AffectionGesture key={affection} type={affection} disabled={busy} onComplete={metrics=>{if(!data.partner){askToPair('Connect with your person to send them a little love.');return;}setLoveSent(true);void runBurrowAction(`affection:${affection}`,key=>completeAffection(affection,metrics,key),{silent:true}).then(ok=>{if(!ok)setLoveSent(false);});}}/>
-      <Action secondary label="Choose a different affection" disabled={busy} onPress={()=>setAffection(null)}/>
-    </>:<>
-      <Text style={affectionStyles.title}>Send a little love</Text>
-      <Text style={affectionStyles.subtitle}>{data.partner?`What do you want to send to ${data.partner.display_name??'your person'}?`:'Choose a gesture. Connect with your person when you’re ready to send it.'}</Text>
-      {cooldown>0&&!!data.partner?<Card title="A little pause between gestures" body={`Your next free gesture is ready in ${countdown(cooldown)}.`}><Action label="Explore Plus · no gesture cooldown" onPress={()=>router.push('/(main)/(modals)/subscription-paywall' as Href)}/></Card>:null}
-      <View style={s.grid}>{(['cuddle','kiss','miss_you','hug','spicy','gratitude'] as const).map(type=><Pressable key={type} style={s.tile} accessibilityRole="button" accessibilityLabel={AFFECTION_COPY[type].label} onPress={()=>!data.partner?askToPair('Connect with your person to send them a little love.'):cooldown>0?Alert.alert('A little pause',`Your next free gesture is ready in ${countdown(cooldown)}.`):setAffection(type)}><Image source={BURROW_AFFECTION_ICONS[type]} contentFit="contain" style={s.affectionIcon}/><Text style={s.tileTitle}>{AFFECTION_COPY[type].label}</Text></Pressable>)}</View>
-    </>;
+    if(section==='affection')return null;
     if(section==='adventure'){
       const result=data.adventureResult;
       const friend=result?.metadata?.friendSnapshot;
@@ -395,7 +395,11 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
     if(section==='game_room')return <Card title="Game Room" body="Choose a game to discover how well you know each other."><Action label="Open games" onPress={()=>router.replace('/(main)/game-room' as Href)}/></Card>;
     return <Card title="Our Burrows" body="Choose a room to spend a little time together."><Action label="Explore rooms" onPress={()=>router.navigate('/(main)/(tabs)/burrow' as Href)}/></Card>;
   }
-  return <LinearGradient {...(!isTab?swipeBack:{})} colors={section==='affection'?['#E88791','#EDABA2']:['#793D29','#B85B35','#D6834B']} style={s.root}>
+  if(section==='affection')return <AffectionHub data={data} loading={loading} initialInbox={initialInbox}/>;
+  if ((section==='shop'||section==='decorate')&&data) return <BurrowShop data={data} section={section}
+    initialCategory={initialCategory} away={adventureIsAway(adventure,now)} ownedOnly={ownedOnly}
+    initialItemId={initialItemId} collectionOwnerId={collectionOwnerId}/>;
+  return <LinearGradient colors={['#793D29','#B85B35','#D6834B']} style={s.root}>
     {section!=='home'&&section!=='burrow'&&<Image source={background} contentFit="cover" contentPosition="top" style={StyleSheet.absoluteFillObject} pointerEvents="none"/>}
     {section==='moments'&&<MomentsHearts/>}
     <View style={[s.frame,section==='home'||section==='burrow'?s.homeFrame:{paddingTop:insets.top}]}>
@@ -404,7 +408,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
         away={adventureIsAway(adventure,now)} busy={busy}
         onToyInteract={()=>openHomeInteraction('toy')} onToyPhoto={()=>openHomeInteraction('toy')}
         onMenu={()=>router.push('/(main)/(modals)/me' as Href)} onCarrots={()=>openBurrow('carrot_shop')}
-        onAffection={()=>data.unread.affection>0?setInboxOpen(true):openBurrow('affection')} unreadAffection={data.unread.affection} onAdventure={()=>openBurrow('adventure')}
+        onAffection={()=>openBurrow('affection',data.unread.affection>0?{inbox:'1'}:undefined)} unreadAffection={data.unread.affection} onAdventure={()=>openBurrow('adventure')}
         onLetter={()=>openHomeInteraction('letter')}
         onBurrows={()=>openBurrow('burrow')}
         onDecorate={()=>openBurrow('decorate')} onSlot={homeSlot}/></View>
@@ -413,7 +417,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       {!data?<View style={s.loading}>{loading?<ActivityIndicator color="#FFF1DB"/>:<Text style={s.creamCopy}>Your burrow needs a connection to load.</Text>}</View>:<ScrollView key={section} style={{flex:1}} onLayout={()=>markHomeEntryAsset('burrow-layout',attempt)} contentContainerStyle={section==='burrow'?s.mapContent:[s.content,{paddingBottom:isTab?24:insets.bottom+24}]} bounces={section!=='burrow'&&section!=='carrot_shop'} alwaysBounceVertical={false} overScrollMode="never" refreshControl={section==='burrow'||section==='carrot_shop'?undefined:<RefreshControl refreshing={pullRefreshing} onRefresh={()=>{setPullRefreshing(true);void refreshBurrow().finally(()=>setPullRefreshing(false));}} tintColor="#FFF1DB"/>}>{content()}</ScrollView>}</>}
       {error&&<View style={[s.error,section==='home'&&s.homeError]} accessibilityRole="alert"><Text style={s.body}>{burrowErrorMessage(error)}</Text><Action secondary label="Refresh" disabled={busy||loading} onPress={()=>void refreshBurrow()}/></View>}
       {busy&&<View style={s.busy} pointerEvents="none"><ActivityIndicator color="#FFF"/><Text style={s.creamCopy}>Saving your little moment…</Text></View>}
-      {section==='burrow'&&<BurrowBackButton onPress={()=>openBurrow('home')} style={{position:'absolute',top:insets.top+12,left:18,zIndex:10}}/>}
+      {section==='burrow'&&<BurrowBackButton onPress={()=>router.back()} style={{position:'absolute',top:insets.top+12,left:18,zIndex:10}}/>}
     </View>
     <Modal visible={toyOpen&&!!data} transparent presentationStyle="overFullScreen" animationType="fade" onRequestClose={()=>setToyOpen(false)}>
       <View style={[s.scrim,{justifyContent:'center',paddingHorizontal:20}]}><View style={[s.sheet,s.toySheet]} accessibilityViewIsModal>
@@ -430,9 +434,11 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
       </View></View>
     </Modal>
     {frameSheetOpen&&data&&<PhotoFrameSheet photo={data.roomPhotos?.find(photo=>photo.ownerId===data.profile.id&&photo.kind==='frame')}
-      onClose={()=>setFrameSheetOpen(false)} onChoose={source=>{setFrameSheetOpen(false);setTimeout(()=>{setPhotoEditorSource(source);setPhotoEditor('frame');},320);}}
+      onClose={()=>setFrameSheetOpen(false)} onChoose={chooseFramePhoto}
       onRemove={async()=>{const photo=data.roomPhotos?.find(item=>item.ownerId===data.profile.id&&item.kind==='frame');if(!photo)return;await deleteRoomFramePhoto(photo.id,data.profile.id);await refreshBurrow();}}/>}
-    {photoEditor&&data&&owner&&<RoomPhotoEditor data={data} ownerId={photoEditor==='doll'?data.profile.id:owner} kind={photoEditor} initialSource={photoEditorSource} onClose={()=>{setPhotoEditor(null);setPhotoEditorSource(undefined);}}/>}
+    {frameCropAsset&&data&&<FramePhotoCropper asset={frameCropAsset}
+      onCancel={()=>{setFrameCropAsset(null);setFrameSheetOpen(true);}}
+      onConfirm={async crop=>{await uploadRoomPhoto(data,data.profile.id,'frame',frameCropAsset,crop);setFrameCropAsset(null);setFrameSheetOpen(true);}}/>}
     {musicOpen&&data&&<BurrowMusicPicker data={data} onClose={()=>setMusicOpen(false)}/>}
     <Modal visible={inboxOpen&&!!data} transparent animationType="slide" onRequestClose={()=>setInboxOpen(false)}>
       <View style={s.scrim}><ScrollView style={s.sheet} contentContainerStyle={{gap:16,paddingBottom:35}}>{data&&<>

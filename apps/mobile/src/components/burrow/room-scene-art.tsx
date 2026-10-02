@@ -69,7 +69,7 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
     })}
     {shared && <View pointerEvents="none" style={[styles.sharedBed, { left: 65 * scale, top: 340 * scale, width: 200 * scale, height: 70 * scale }]} />}
     {frameArt && <View pointerEvents="none" style={artStyle(frameArt, framePlacement, scale)}>
-      <View style={styles.framePhoto}><RoomPhoto photo={photo} /></View>
+      <View style={styles.framePhoto}><View style={styles.framePhotoImage}><RoomPhoto photo={photo} /></View></View>
       <Image source={frameArt.source} contentFit="fill" style={styles.fill} />
     </View>}
     {dollArt && (onSlot?<InteractiveDoll asset={dollArt} photo={doll} disabled={busy}
@@ -99,7 +99,8 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
 const styles = StyleSheet.create({
   scene: { width: '100%', aspectRatio: 360 / 470, borderRadius: 32, overflow: 'hidden', backgroundColor: '#8D5136' },
   fill: { width: '100%', height: '100%' },
-  framePhoto: { position: 'absolute', left: '30%', top: '29%', width: '40%', height: '54%', overflow: 'hidden' },
+  framePhoto: { position: 'absolute', left: '30%', top: '29%', width: '40%', height: '54%', overflow: 'hidden', backgroundColor: '#FFF9ED', alignItems: 'center' },
+  framePhotoImage: { width: '96.428571%', height: '100%' },
   dollPhoto: { position: 'absolute', left: '29%', top: '25%', width: '42%', height: '30%', borderRadius: 100, overflow: 'hidden' },
   sharedBed: { position: 'absolute', borderRadius: 100, borderWidth: 7, borderColor: '#A96D42', backgroundColor: '#EFCA93' },
   sleepLabel: { position: 'absolute', left: '48%', top: '57%', color: '#FFF3CF', fontSize: 23, fontWeight: '700' },

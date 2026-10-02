@@ -12,25 +12,27 @@ const noop = () => {};
 /** Uses the actual Home art and coordinates instead of a second miniature room.
  * The width is fitted first; only small/short screens scale further. The most
  * we can crop from the top is above the string lights at design Y=416. */
-export function HomeArtPreview({ slots, photos, ownerId, away }: {
+export function HomeArtPreview({ slots, photos, ownerId, away, availableHeight, onSlot }: {
   slots: Record<string, MajorUpdateCatalogItem>;
   photos?: MajorUpdateBootstrap['roomPhotos'];
   ownerId: string;
   away?: boolean;
+  availableHeight?: number;
+  onSlot?: (slot: string) => void;
 }) {
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [width, setWidth] = useState(Math.min(524, window.width - 36));
-  const maxHeight = Math.max(360, window.height - insets.top - 96);
+  const maxHeight = availableHeight ?? Math.max(360, window.height - insets.top - 96);
   const { artWidth, viewportHeight } = decorationPreviewLayout(width, maxHeight);
   return <View testID="burrow-decoration-preview" style={[styles.viewport, { height: viewportHeight }]}
     onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <Image source={BURROW_BACKGROUNDS.home} contentFit="cover" contentPosition="bottom" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
     <View pointerEvents="none" style={styles.dimmedBackground} />
     <View style={[styles.artFrame, { width: artWidth, height: viewportHeight }]}>
-      <HomeArtScene previewOnly initialSize={{ width: artWidth, height: viewportHeight }} balance={0} slots={slots} photos={photos} ownerId={ownerId} away={away}
+      <HomeArtScene previewOnly previewBottomCrop={300} initialSize={{ width: artWidth, height: viewportHeight }} balance={0} slots={slots} photos={photos} ownerId={ownerId} away={away}
         onMenu={noop} onCarrots={noop} onAffection={noop} onAdventure={noop} onLetter={noop}
-        onBurrows={noop} onDecorate={noop} onSlot={noop} />
+        onBurrows={noop} onDecorate={noop} onSlot={onSlot ?? noop} previewInteractive={!!onSlot} />
     </View>
   </View>;
 }

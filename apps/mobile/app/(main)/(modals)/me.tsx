@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   Share,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -18,6 +19,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
@@ -57,17 +59,7 @@ import { useMetaPrivacy } from '@/components/privacy/meta-privacy-provider';
 const PRIVACY_URL = 'https://www.burrow-app.com/privacy';
 const TERMS_URL = 'https://www.burrow-app.com/terms';
 
-/**
- * Settings center (design: menu.png), reached from Home's top-left hamburger.
- * Warm cream page: X close, avatar + name, an Enable Notifications card, the
- * Burrow Plus banner, then a white list card of settings rows. All v2 logic
- * (Plan & Billing sheet, Duo seats, sign out, legal) is unchanged from the
- * previous night-theme build — this is a reskin plus the design's new rows
- * (Invite Friends, Rate Us, Report Bugs / Help Centers → support).
- *
- * Row icons are emoji placeholders until the sticker icon set covers them —
- * same convention as the Skills pill on the companion sheet.
- */
+/** Settings center; the menu artwork uses warm paper, copper icons and a curved brown header. */
 export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const planBillingSheetRef = useRef<PlanBillingSheetRef>(null);
@@ -284,13 +276,14 @@ export default function MeScreen() {
   return (
     <BottomSheetModalProvider>
       <View style={styles.root}>
-        <GridBackground base="#F2E6CB" line="#E3D2B2" cell={22} lineWidth={1.2} />
+        <StatusBar hidden />
+        <LinearGradient colors={['#4C3024','#43271E']} style={[styles.hero,{height:Math.max(100,insets.top+42)}]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={() => { void haptics.light(); router.back(); }} style={[styles.closeBtn,{top:Math.max(18,insets.top-36)}]} hitSlop={8}>
+            <MaterialIcons name="close" size={38} color="#FFFFFF" />
+          </Pressable>
+        </LinearGradient>
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
-          {/* Header: brown X + avatar + name */}
-          <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-            <Pressable onPress={() => { void haptics.light(); router.back(); }} style={styles.closeBtn} hitSlop={8}>
-              <MaterialIcons name="close" size={22} color="#FFFFFF" />
-            </Pressable>
+          <View style={styles.header}>
             <View style={styles.userRow}>
               <View style={styles.avatarWrap}>
                 <Image
@@ -308,10 +301,10 @@ export default function MeScreen() {
 
           {/* Enable Notifications card (design) */}
           <View style={styles.notifCard}>
-            <Text style={styles.rowEmoji}>{'🔔'}</Text>
+            <MaterialCommunityIcons name="bell" size={30} color="#BB6848" style={styles.cardIcon} />
             <View style={{ flex: 1 }}>
               <Text style={styles.notifTitle}>Enable Notifications</Text>
-              <Text style={styles.notifSub}>Get reminder to collect your memories.</Text>
+              <Text style={styles.notifSub}>Get reminders to collect your memories.</Text>
             </View>
             <Pressable
               onPress={() => void onEnableNotifications()}
@@ -339,7 +332,7 @@ export default function MeScreen() {
               <Text style={styles.plusSub}>
                 {isPlus
                   ? "You're on Plus. Every premium feature is yours."
-                  : 'Get Plus to unlock all premium features to you and your person.'}
+                  : 'Unlock premium for both of you.'}
               </Text>
             </View>
             <Pressable
@@ -352,26 +345,18 @@ export default function MeScreen() {
 
           {/* Settings list (design rows) */}
           <View style={styles.menuCard}>
-            <MenuRow emoji={'🙂'} label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
-            <MenuRow emoji={'👛'} label="Plan and Billing" onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }} divider />
+            <MenuRow icon="account" label="Account Management" onPress={() => goTo('/(main)/(modals)/account-management')} divider />
+            <MenuRow icon="wallet" label="Plan and Billing" onPress={() => { void haptics.pageOpen(); planBillingSheetRef.current?.present(); }} divider />
             <MenuRow
-              emoji={pairing?.paired ? '🐇' : '🐰'}
+              icon="account-group"
               label={pairing?.paired ? 'My Paired' : 'Invite Friends'}
               onPress={onPairedRow}
               divider
             />
-            <MenuRow emoji={'🔗'} label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
-            {metaPrivacy.applies ? (
-              <MenuRow
-                emoji={'🛡️'}
-                label={`Ad Measurement: ${metaPrivacy.choice === 'granted' ? 'Allowed' : 'Not allowed'}`}
-                onPress={metaPrivacy.openPreferences}
-                divider
-              />
-            ) : null}
-            <MenuRow emoji={'⭐'} label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
-            <MenuRow emoji={'🐞'} label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
-            <MenuRow emoji={'💝'} label="Help Centers" onPress={() => goTo('/(main)/(modals)/support')} />
+            <MenuRow icon="link-variant" label="Connect Account" onPress={() => goTo('/(main)/(modals)/connect-account')} divider />
+            <MenuRow icon="star" label="Rate Us on App Store" onPress={() => void onRateUs()} divider />
+            <MenuRow icon="bug" label="Report Bugs" onPress={() => goTo('/(main)/(modals)/support')} divider />
+            <MenuRow icon="heart" label="Help Center" onPress={() => goTo('/(main)/(modals)/support')} />
           </View>
 
           {/* Duo seat: auto-granted to the paired partner (2026-08-11) —
@@ -409,7 +394,10 @@ export default function MeScreen() {
               <Text style={styles.legalLink}>Terms of Service</Text>
             </Pressable>
           </View>
-          {appVersion ? <Text style={styles.versionText}>VERSION {appVersion}</Text> : null}
+          {metaPrivacy.applies ? <Pressable onPress={metaPrivacy.openPreferences} style={styles.privacyPreferences}>
+            <Text style={styles.legalLink}>Ad Measurement: {metaPrivacy.choice === 'granted' ? 'Allowed' : 'Not allowed'}</Text>
+          </Pressable> : null}
+          {appVersion ? <Text style={styles.versionText}>Version {appVersion}</Text> : null}
         </ScrollView>
 
         <PlanBillingSheet ref={planBillingSheetRef} />
@@ -576,43 +564,42 @@ function formatPairedDate(value?: string | null): string {
   });
 }
 
-function MenuRow({ emoji, label, onPress, divider }: {
-  emoji: string;
+function MenuRow({ icon, label, onPress, divider }: {
+  icon: 'account' | 'wallet' | 'account-group' | 'link-variant' | 'star' | 'bug' | 'heart';
   label: string;
   onPress: () => void;
   divider?: boolean;
 }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.menuRow, divider && styles.menuDivider, { opacity: pressed ? 0.6 : 1 }]}>
-      <Text style={styles.rowEmoji}>{emoji}</Text>
+      <MaterialCommunityIcons name={icon} size={30} color="#B86949" style={styles.menuIcon} />
       <Text style={styles.menuLabel}>{label}</Text>
-      <MaterialIcons name="chevron-right" size={22} color="#C9BCA5" />
+      <MaterialIcons name="chevron-right" size={25} color="#A18A78" />
     </Pressable>
   );
 }
 
-// Warm cream palette from menu.png: page #F2E6CB, cards #FFFFFF, brown accents
-// #4A3423, banner #4A3220, body text #2B2B2B, muted #8A7A63.
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F2E6CB' },
-  scroll: { paddingHorizontal: 20 },
-  header: { marginBottom: 18 },
-  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#4A3423', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatarWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: '#FFF9F0' },
+  hero: { width: '100%', borderBottomLeftRadius: 58, borderBottomRightRadius: 58 },
+  scroll: { paddingHorizontal: 16, paddingTop: 20 },
+  header: { marginBottom: 16 },
+  closeBtn: { position: 'absolute', left: 20, width: 50, height: 50, alignItems: 'center', justifyContent: 'center' },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 6, minHeight: 92 },
+  avatarWrap: { width: 78, height: 78, borderRadius: 39, backgroundColor: '#F2DACA', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImg: { width: '100%', height: '100%' },
-  userName: { color: '#4A3423', fontSize: 24, fontFamily: 'Inter_800ExtraBold' },
+  userName: { color: '#24100D', fontSize: 25, fontFamily: 'Inter_800ExtraBold' },
 
-  rowEmoji: { fontSize: 24 },
+  cardIcon: { width: 35, textAlign: 'center' },
   pressedBtn: { transform: [{ translateY: 1 }], opacity: 0.85 },
 
   notifCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 74,
+    backgroundColor: '#FFFDFC', borderRadius: 18, paddingHorizontal: 15, paddingVertical: 13, marginBottom: 14,
   },
-  notifTitle: { color: '#2B2B2B', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
-  notifSub: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 2 },
-  notifBtn: { backgroundColor: '#8A6240', borderRadius: 22, paddingHorizontal: 18, paddingVertical: 11 },
+  notifTitle: { color: '#24100D', fontSize: 17, fontFamily: 'Inter_700Bold' },
+  notifSub: { color: '#927D6C', fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 2 },
+  notifBtn: { backgroundColor: '#B96646', borderRadius: 22, paddingHorizontal: 17, paddingVertical: 10 },
   notifBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
   notificationPickerBackdrop: {
     flex: 1, backgroundColor: 'rgba(41,27,18,0.58)',
@@ -631,25 +618,26 @@ const styles = StyleSheet.create({
   notificationPickerContent: { alignItems: 'center', paddingTop: 4 },
 
   plusBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#4A3220', borderRadius: 20, padding: 16, marginBottom: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 82,
+    backgroundColor: '#4A2B20', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 15, marginBottom: 14,
   },
   plusIconWrap: {
-    width: 34, height: 34, flexShrink: 0, borderRadius: 17,
+    width: 42, height: 42, flexShrink: 0, borderRadius: 21,
     backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
   },
   plusTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  plusTitle: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_800ExtraBold' },
-  plusChip: { backgroundColor: '#FFFFFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  plusTitle: { color: '#FFFFFF', fontSize: 17, fontFamily: 'Inter_700Bold' },
+  plusChip: { backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 8, paddingVertical: 2 },
   plusChipText: { color: '#4A3220', fontSize: 13, fontFamily: 'Inter_800ExtraBold' },
-  plusSub: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: 3, lineHeight: 18 },
-  plusViewBtn: { backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 20, paddingVertical: 11 },
+  plusSub: { color: '#EBD9CF', fontSize: 12, fontFamily: 'Inter_500Medium', marginTop: 5, lineHeight: 17 },
+  plusViewBtn: { backgroundColor: '#FFFAF5', borderRadius: 24, paddingHorizontal: 23, paddingVertical: 11 },
   plusViewText: { color: '#2B2B2B', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
-  menuCard: { backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 14, paddingHorizontal: 16 },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#F0EAE0' },
-  menuLabel: { flex: 1, color: '#2B2B2B', fontSize: 16, fontFamily: 'Inter_700Bold' },
+  menuCard: { backgroundColor: '#FFFDFC', borderRadius: 20, marginBottom: 14, paddingHorizontal: 14, overflow: 'hidden' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 58, paddingVertical: 12, paddingHorizontal: 3 },
+  menuIcon: { width: 36, textAlign: 'center' },
+  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#EEE6DF' },
+  menuLabel: { flex: 1, color: '#24100D', fontSize: 16, fontFamily: 'Inter_700Bold' },
 
   duoCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E8D5B0' },
   duoTitle: { color: '#4A3423', fontSize: 15, fontFamily: 'Inter_800ExtraBold', marginBottom: 8 },
@@ -711,8 +699,9 @@ const styles = StyleSheet.create({
   confirmUnpairDisabled: { backgroundColor: '#D8C7BE' },
   confirmUnpairText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Inter_800ExtraBold' },
 
-  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 },
-  legalLink: { color: '#8A7A63', fontSize: 13, fontFamily: 'Inter_500Medium' },
+  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 18 },
+  legalLink: { color: '#9A806F', fontSize: 13, fontFamily: 'Inter_500Medium' },
   legalDot: { color: '#C9BCA5' },
-  versionText: { color: '#B8A588', fontSize: 11, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 12, letterSpacing: 1 },
+  privacyPreferences: { alignSelf: 'center', marginTop: 10, padding: 5 },
+  versionText: { color: '#B5A093', fontSize: 12, fontFamily: 'Inter_500Medium', textAlign: 'center', marginTop: 11 },
 });

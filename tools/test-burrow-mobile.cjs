@@ -32,6 +32,11 @@ test('simultaneous screens share one in-flight bootstrap',async()=>{
   const first=h.refreshBurrow(),second=h.refreshBurrow();assert.equal(first,second);assert.equal(h.fetches(),1);
   resolve({profile:{id:'a'}});await first;assert.equal(h.snapshot().data.profile.id,'a');assert.equal(h.snapshot().loading,false);
 });
+test('reopening a Burrow page uses a fresh shared snapshot without another request',async()=>{
+  const h=harness();await h.refreshBurrow();
+  await h.refreshBurrowIfStale();
+  assert.equal(h.fetches(),1);
+});
 test('late private snapshot is discarded after sign-out',async()=>{
   const h=harness();let resolve;h.setFetch(()=>new Promise(r=>resolve=r));const pending=h.refreshBurrow();
   h.signOut();resolve({profile:{id:'old-user'}});await pending;assert.equal(h.snapshot().data,null);

@@ -1,0 +1,20 @@
+/** Exact transparent cutouts of the category symbols supplied with the Shop design. */
+export const BURROW_SHOP_ICONS = {
+  outfits: require('../../assets/burrow-shop-icons/outfits.png'),
+  cushions: require('../../assets/burrow-shop-icons/cushions.png'),
+  tables: require('../../assets/burrow-shop-icons/tables.png'),
+  rugs: require('../../assets/burrow-shop-icons/rugs.png'),
+  vases: require('../../assets/burrow-shop-icons/vases.png'),
+  lamps: require('../../assets/burrow-shop-icons/lamps.png'),
+  windows: require('../../assets/burrow-shop-icons/windows.png'),
+  cabinets: require('../../assets/burrow-shop-icons/cabinets.png'),
+  shelves: require('../../assets/burrow-shop-icons/shelves.png'),
+  shelf_decor: require('../../assets/burrow-shop-icons/shelf_decor.png'),
+  music_players: require('../../assets/burrow-shop-icons/music_players.png'),
+  frames: require('../../assets/burrow-shop-icons/frames.png'),
+  posters: require('../../assets/burrow-shop-icons/posters.png'),
+  couple_dolls: require('../../assets/burrow-shop-icons/couple_dolls.png'),
+  light_strings: require('../../assets/burrow-shop-icons/light_strings.png'),
+  ladders: require('../../assets/burrow-shop-icons/ladders.png'),
+  dresser_plants: require('../../assets/burrow-shop-icons/dresser_plants.png'),
+} as const;

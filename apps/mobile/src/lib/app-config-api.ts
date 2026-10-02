@@ -129,6 +129,11 @@ export function getCachedConfig(): AppConfig {
   return record?.config ?? DEFAULT_CONFIG;
 }
 
+/** Whether a real config has been cached, distinct from the legacy fallback. */
+export function hasCachedConfig(): boolean {
+  return readCacheRecord() !== null;
+}
+
 /**
  * Returns true when cache is older than TTL_MS, missing, or corrupt.
  */

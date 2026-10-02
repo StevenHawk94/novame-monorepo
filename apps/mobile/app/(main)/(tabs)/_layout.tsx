@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
+import { useMajorUpdateReady } from '@/lib/use-major-update';
 
 /**
  * Five visible tabs: Home / Court / Moments / Insights / Collection.
@@ -15,6 +17,8 @@ import { BottomTabBar } from '@/components/main/bottom-tab-bar';
  * so they can wait for Reflect and paywall routes to finish closing.
  */
 export default function TabsLayout() {
+  const rolloutReady = useMajorUpdateReady();
+  if (!rolloutReady) return <View style={styles.waiting} />;
   return (
     <Tabs
       tabBar={(props) => <BottomTabBar {...props} />}
@@ -37,3 +41,5 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({ waiting: { flex: 1, backgroundColor: '#F8E2C1' } });

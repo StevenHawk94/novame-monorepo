@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { ratingNavigationListeners, resetNavigationTransitions } from '@/lib/rating-navigation';
 
@@ -57,6 +57,15 @@ export default function MainLayout() {
           screenListeners={ratingNavigationListeners}
           screenOptions={{
             headerShown: false,
+            // Let native-stack own edge-back gestures so the current page
+            // follows the finger and can spring back when the drag is reversed.
+            gestureEnabled: true,
+            // In react-native-screens, `end` is the maximum x coordinate.
+            // `start: 40` was a minimum x and admitted swipes from the right.
+            fullScreenGestureEnabled: Platform.OS === 'ios',
+            gestureResponseDistance: { end: 24 },
+            animationMatchesGesture: true,
+            animation: 'simple_push',
             // The launch cover owns the transition into every main screen.
             // Keep the navigator fallback visually continuous with it so no
             // intermediate native-stack frame can expose deep brown.
@@ -67,7 +76,11 @@ export default function MainLayout() {
             name="(tabs)"
             options={{ contentStyle: { backgroundColor: '#E8D5B0' } }}
           />
-          <Stack.Screen name="room-interaction" options={{ gestureEnabled: true, animation: 'slide_from_right', contentStyle: { backgroundColor: '#FFFAF2' } }} />
+          <Stack.Screen name="room-interaction" options={{ contentStyle: { backgroundColor: '#FFFAF2' } }} />
+          <Stack.Screen name="burrow-detail" />
+          <Stack.Screen name="affection-detail" options={{ contentStyle: { backgroundColor: '#ED8390' } }} />
+          <Stack.Screen name="game-room" />
+          <Stack.Screen name="shop-detail" />
           <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
           <Stack.Screen
             name="item-sheet"

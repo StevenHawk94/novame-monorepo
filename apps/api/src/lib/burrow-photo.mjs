@@ -23,8 +23,8 @@ export async function readPhotoRequest(request) {
   finally { reader.releaseLock() }
 }
 
-/** Accept a small, square JPEG only. No caller-supplied MIME, URL or storage path. */
-export function decodeRoomPhoto(base64) {
+/** Accept bounded square doll/memory and 5:7 frames; legacy square frames remain valid. */
+export function decodeRoomPhoto(base64, aspect = 'square') {
   if (typeof base64 !== 'string' || base64.length > Math.ceil(PHOTO_MAX_BYTES / 3) * 4 || base64.length % 4 !== 0
       || /[^A-Za-z0-9+/]/.test(base64.replace(/={1,2}$/, ''))) throw new Error('invalid_request')
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
@@ -41,7 +41,8 @@ export function decodeRoomPhoto(base64) {
       if (length < 8) throw new Error('invalid_request')
       const height = bytes[at + 3] * 256 + bytes[at + 4]
       const width = bytes[at + 5] * 256 + bytes[at + 6]
-      if (width !== height || width < 64 || width > 1024) throw new Error('invalid_request')
+      if ((aspect === 'frame' ? width * 7 !== height * 5 && width !== height : width !== height)
+          || width < 64 || height < 64 || width > 1024 || height > 1024) throw new Error('invalid_request')
       dimensions = true
     }
     if (marker === 218) { scan = true; break }

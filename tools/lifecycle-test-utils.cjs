@@ -39,6 +39,8 @@ function hooks() {
       return [slots[i].value, value => { slots[i].value = typeof value === 'function' ? value(slots[i].value) : value; }]; },
     useCallback(fn, deps) { const i=cursor++, old=slots[i];
       if (!old || deps.some((v,n) => v !== old.deps[n])) slots[i] = { deps, fn }; return slots[i].fn; },
+    useMemo(factory, deps) { const i=cursor++, old=slots[i];
+      if (!old || deps.some((v,n) => v !== old.deps[n])) slots[i] = { deps, value: factory() }; return slots[i].value; },
     useEffect(fn, deps) { const i=cursor++, old=slots[i];
       if (!old || deps.some((v,n) => v !== old.deps[n])) {
         const slot = slots[i] = { deps };

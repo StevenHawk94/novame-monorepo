@@ -9,17 +9,15 @@ import { refreshBurrow, useBurrow } from '@/lib/burrow-store';
 import { requestNotificationPermission, syncRemoteNotificationRegistration } from '@/lib/notification-settings';
 import { BURROW_GAME_RULE_ICONS } from '@/lib/burrow-ui-assets';
 import { BurrowBackButton } from './burrow-back-button';
-import { useBurrowSwipeBack } from './use-burrow-swipe-back';
 import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
+import { cacheGameOverview, cacheGameSession, gameOverviewNeedsRefresh, gameSessionNeedsRefresh,
+  getCachedGameOverview, getCachedGameSession } from '@/lib/burrow-game-room-cache';
 
 const ink = '#3C1D12';
 const muted = '#80604F';
 const cream = '#FFF9EF';
 const orange = '#CD5932';
 const labels = ['A', 'B', 'C', 'D'];
-let overviewCache: GameOverview | null = null;
-subscribeSessionIdentity(() => { overviewCache = null; });
-
 function Button({ label, onPress, secondary = false, disabled = false }: { label: string; onPress: () => void; secondary?: boolean; disabled?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
     style={({ pressed }) => [st.button, secondary && st.secondaryButton, (pressed || disabled) && { opacity: .65 }]}>
@@ -35,13 +33,15 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const listRef = useRef<ScrollView>(null);
+  const overviewRequest = useRef(0);
   const sessionRequest = useRef(0);
   const tileWidth = Math.max(76, Math.floor((screenWidth - 36 - 3 * 9) / 4));
   const { data: burrow } = useBurrow();
-  const [overview, setOverview] = useState<GameOverview | null>(overviewCache);
-  const [session, setSession] = useState<GameSession | null>(null);
+  const [overview, setOverview] = useState<GameOverview | null>(getCachedGameOverview);
+  const [session, setSession] = useState<GameSession | null>(() => initialSessionId ? getCachedGameSession(initialSessionId) : null);
   const [selected, setSelected] = useState<GameSummary | null>(null);
-  const [loading, setLoading] = useState(!overviewCache || !!initialSessionId);
+  const [loading, setLoading] = useState(() => initialSessionId
+    ? !getCachedGameSession(initialSessionId) : !getCachedGameOverview());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -49,8 +49,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const [pairPrompt, setPairPrompt] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<number | null>(null);
   const partnerName = burrow?.partner?.display_name?.trim() || 'your person';
-  useEffect(() => () => { sessionRequest.current++; }, []);
+  useEffect(() => () => { overviewRequest.current++; sessionRequest.current++; }, []);
   useEffect(() => subscribeSessionIdentity(() => {
+    overviewRequest.current++;
     sessionRequest.current++;
     setOverview(null);
     setSession(null);
@@ -58,33 +59,50 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   }), []);
 
   const loadOverview = useCallback(async () => {
+    const request = ++overviewRequest.current;
     const epoch = sessionEpoch();
     const value = await gameOverview();
     if (epoch !== sessionEpoch()) throw new Error('session_changed');
-    overviewCache = value;
-    setOverview(value);
+    if (request === overviewRequest.current) { cacheGameOverview(value); setOverview(value); }
     return value;
   }, []);
   const loadSession = useCallback(async (id: string) => {
     const request = ++sessionRequest.current;
+    const epoch = sessionEpoch();
     const value = await gameSession(id);
-    if (request === sessionRequest.current) setSession(value);
+    if (epoch !== sessionEpoch()) throw new Error('session_changed');
+    if (request === sessionRequest.current) { cacheGameSession(value); setSession(value); }
     return value;
   }, []);
   useEffect(() => {
     let live = true;
     const epoch = sessionEpoch();
+    const cachedOverview = getCachedGameOverview();
+    const cachedSession = initialSessionId ? getCachedGameSession(initialSessionId) : null;
+    const refreshOverview = gameOverviewNeedsRefresh();
+    const refreshSession = !!initialSessionId && gameSessionNeedsRefresh(initialSessionId);
+    if (!refreshOverview && !refreshSession) { setLoading(false); return; }
+    const overviewAttempt = refreshOverview ? ++overviewRequest.current : 0;
+    const sessionAttempt = refreshSession ? ++sessionRequest.current : 0;
     (async () => {
       try {
-        const value = await gameOverview();
-        if (!live || epoch !== sessionEpoch()) return;
-        overviewCache = value;
-        setOverview(value);
-        if (initialSessionId) {
-          const opened = await gameSession(initialSessionId);
-          if (live) setSession(opened);
-        }
-      } catch (e) { if (live) setError(e instanceof Error ? e.message : 'Unable to load Game Room.'); }
+        const results = await Promise.allSettled([
+          refreshOverview ? gameOverview().then(value => {
+            if (!live || epoch !== sessionEpoch() || overviewAttempt !== overviewRequest.current) return;
+            cacheGameOverview(value); setOverview(value);
+          }) : Promise.resolve(),
+          refreshSession && initialSessionId ? gameSession(initialSessionId).then(value => {
+            if (!live || epoch !== sessionEpoch() || sessionAttempt !== sessionRequest.current) return;
+            cacheGameSession(value); setSession(value);
+          }) : Promise.resolve(),
+        ]);
+        const error = results.find(result => result.status === 'rejected');
+        if (error?.status === 'rejected') throw error.reason;
+      } catch (e) {
+        // A stale cached page remains usable if background revalidation fails.
+        if (live && (initialSessionId ? !cachedSession : !cachedOverview))
+          setError(e instanceof Error ? e.message : 'Unable to load Game Room.');
+      }
       finally { if (live) setLoading(false); }
     })();
     return () => { live = false; };
@@ -153,7 +171,6 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     if (session || selected) exitToList();
     else router.back();
   };
-  const swipeBack=useBurrowSwipeBack(goBack);
   const notify = () => {
     if (!session) return;
     void perform(async () => {
@@ -169,7 +186,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     });
   };
 
-  return <ImageBackground {...swipeBack} source={gameRoomBackground} resizeMode="cover" style={st.root}>
+  return <ImageBackground source={gameRoomBackground} resizeMode="cover" style={st.root}>
     <View style={[st.top, { paddingTop: insets.top + 12 }]}>
       <BurrowBackButton light onPress={goBack}/>
       <Text style={[st.topTitle, isCatalogue && st.catalogueTitle]}>Game Room</Text>

@@ -23,7 +23,7 @@ export function PhotoFrameSheet({photo,onClose,onChoose,onRemove}:{photo?:Photo;
         <View style={styles.header}><Text style={styles.title}>Photo Frame</Text><Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><Feather name="x" size={27} color="#4A291F"/></Pressable></View>
         <View style={[styles.frameArea,{height:frameSize+65}]}>
           <View style={styles.hanger}><View style={styles.cordLeft}/><View style={styles.cordRight}/><View style={styles.pin}/></View>
-          <View style={[styles.frame,{width:frameSize*.82,height:frameSize}]}>
+          <View style={[styles.frame,{width:(frameSize-40)*5/7+40,height:frameSize}]}>
             <View style={styles.mat}>{photo?<RoomPhoto photo={photo}/>:<View style={styles.placeholder}><Feather name="image" size={68} color="#B7A396"/><View style={styles.plus}><Feather name="plus" size={26} color="#FFF"/></View></View>}</View>
           </View>
         </View>

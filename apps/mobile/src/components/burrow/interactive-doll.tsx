@@ -8,10 +8,10 @@ import { RoomPhoto } from './room-photo';
 import { dollFaceRect } from '@/lib/burrow-doll-face';
 
 type DollPhoto = MajorUpdateBootstrap['roomPhotos'][number] | undefined;
-type HeartParticle = { id: number; drift: number; rise: number; delay: number; size: number; originX: number; originY: number };
+export type HeartParticle = { id: number; drift: number; rise: number; delay: number; size: number; originX: number; originY: number };
 export type DollAction = { kind: 'squeeze' | 'punch'; token: number };
 
-function FloatingHeart({ particle, onDone }: { particle: HeartParticle; onDone: (id: number) => void }) {
+export function FloatingHeart({ particle, onDone }: { particle: HeartParticle; onDone: (id: number) => void }) {
   const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const animation = Animated.timing(progress, {

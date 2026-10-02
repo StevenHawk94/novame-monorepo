@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { BurrowScreen, type BurrowSection } from '@/components/burrow/burrow-screen';
 import { GameRoomScreen } from '@/components/burrow/game-room-screen';
+import { CoupleJournalScreen } from '@/components/burrow/couple-journal-screen';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { useCallback } from 'react';
 import { usePreventRemove } from '@react-navigation/native';
@@ -9,10 +10,10 @@ import { useBurrowSnapshot } from '@/lib/burrow-store';
 import { adventureNeedsCompletion } from '@/lib/burrow-presentation';
 import { SHOP_CATEGORIES } from '@novame/domain';
 
-const allowed:BurrowSection[]=['collection','adventure','affection','decorate','partner_room','our_room','friends_room','game_room','memories_room','self_care_room','carrot_shop'];
+const allowed:BurrowSection[]=['burrow','shop','collection','adventure','affection','decorate','partner_room','our_room','friends_room','game_room','memories_room','self_care_room','carrot_shop'];
 export default function BurrowDetail(){
   const enabled=useMajorUpdateEnabled();
-  const params=useLocalSearchParams<{section?:string;roomType?:string;category?:string}>();
+  const params=useLocalSearchParams<{section?:string;roomType?:string;category?:string;inbox?:string;ownedOnly?:string;itemId?:string;ownerId?:string}>();
   const {data,busy,error}=useBurrowSnapshot();
   const section=allowed.includes(params.section as BurrowSection)?params.section as BurrowSection:'collection';
   const blocked=enabled&&section==='adventure'&&!['not_paired','feature_disabled'].includes(error??'')
@@ -25,6 +26,8 @@ export default function BurrowDetail(){
   if(!enabled)return <Redirect href="/(main)/(tabs)"/>;
   if(section==='our_room')return <Redirect href="/(main)/(tabs)"/>;
   if(section==='game_room')return <GameRoomScreen/>;
+  if(section==='memories_room')return <CoupleJournalScreen/>;
   return <BurrowScreen section={section} roomType={params.roomType==='our'?'our':'home'}
-    initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'cushions'}/>;
+    initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'cushions'} initialInbox={params.inbox==='1'}
+    ownedOnly={params.ownedOnly==='1'} initialItemId={params.itemId} collectionOwnerId={params.ownerId}/>;
 }

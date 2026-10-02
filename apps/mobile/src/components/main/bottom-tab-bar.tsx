@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
 import type { ImageSourcePropType } from 'react-native';
-import { useSegments } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 
 import { haptics } from '@/lib/haptics';
 import { ICONS } from '@/lib/icons';
@@ -196,6 +196,10 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
       yieldDownloadQueueForInteraction();
     }
     void haptics.pageOpen();
+    if (majorUpdate && (routeName === 'burrow' || routeName === 'shop')) {
+      router.push({ pathname: '/(main)/burrow-detail', params: { section: routeName } });
+      return;
+    }
     const route = routesByName.get(routeName);
     if (!route) return;
     const event = navigation.emit({
@@ -224,7 +228,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
           paddingBottom: insets.bottom,
           backgroundColor: majorUpdate ? '#FFF5E8' : theme.background,
           borderTopColor: theme.topBorder,
-          ...(majorUpdate ? { height: Math.max(width / 900 * 160, insets.bottom + 58), borderTopLeftRadius: 20, borderTopRightRadius: 20 } : {}),
+          ...(majorUpdate ? { height: Math.max(width / 900 * 160, insets.bottom + 58) } : {}),
         },
       ]}
     >
@@ -267,8 +271,10 @@ const burrowIcons = {
 } as const;
 function BurrowTabButton({ name, label, isFocused, attempt, onPress }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void }) {
   return <Pressable accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: isFocused }} onPress={onPress} onLayout={() => markHomeEntryAsset(`tab:${name}`, attempt)} style={styles.burrowTab}>
-    <HomeEntryImage asset={`tab:${name}`} source={isFocused ? burrowIcons[name].active : burrowIcons[name].inactive} style={styles.burrowIcon} contentFit="contain" />
-    <Text style={[styles.burrowLabel,isFocused && styles.burrowLabelActive]}>{label}</Text>
+    {({ pressed }) => <>
+      <HomeEntryImage asset={`tab:${name}`} source={isFocused || pressed ? burrowIcons[name].active : burrowIcons[name].inactive} style={styles.burrowIcon} contentFit="contain" />
+      <Text style={[styles.burrowLabel,(isFocused || pressed) && styles.burrowLabelActive]}>{label}</Text>
+    </>}
   </Pressable>;
 }
 
@@ -300,6 +306,7 @@ function TabButton({ icon, asset, label, isFocused, labelColor, activeBackground
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     borderTopWidth: StyleSheet.hairlineWidth,
     shadowColor: '#1F140C',
     shadowOpacity: 0.18,
@@ -323,5 +330,5 @@ const styles = StyleSheet.create({
   burrowTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 },
   burrowIcon: { width: 34, height: 34 },
   burrowLabel: { color: '#1D1A17', fontSize: 11, lineHeight: 14 },
-  burrowLabelActive: { fontWeight: '700' },
+  burrowLabelActive: { color: '#C95D2F', fontWeight: '700' },
 });
