@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image } from './burrow-image';
+import Svg, { Line, Path } from 'react-native-svg';
 import type { AffectionType } from '@novame/domain';
 import { getProfileDefaultAvatar, isDefaultAvatarId } from '@/lib/avatar';
 import { AFFECTION_COPY } from './affection-gesture';
@@ -47,7 +48,9 @@ export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd
     travel.stopAnimation(); travel.setValue(0);
     if (phase !== 'sending') return;
     if (reduced) { ended.current?.(); return; }
-    const animation = Animated.timing(travel, { toValue: 1, duration: 980, useNativeDriver: true });
+    const animation = Animated.timing(travel, {
+      toValue: 1, duration: 1850, easing: Easing.bezier(.34, .04, .57, 1), useNativeDriver: true,
+    });
     animation.start(({ finished }) => { if (finished) ended.current?.(); });
     return () => animation.stop();
   }, [phase, reduced, travel]);
@@ -59,12 +62,17 @@ export function AffectionDelivery({ sender, recipient, type, phase, onTransitEnd
       <Avatar person={sender} fallback="You" size={avatarSize}/>
       <View style={styles.trail} onLayout={event => setTrailWidth(event.nativeEvent.layout.width)}
         accessible accessibilityLabel={phase === 'sending' ? 'Affection travelling to your person' : 'A path between you and your person'}>
-        <View style={styles.dots}><Text numberOfLines={1} adjustsFontSizeToFit style={styles.dotsText}>•  •  •  •  •  •</Text><Text style={styles.arrow}>▶</Text></View>
+        <Svg width="100%" height={70} viewBox={`0 0 ${trailWidth} 70`} pointerEvents="none">
+          <Line x1={4} y1={35} x2={trailWidth - 14} y2={35} stroke="#FFF9F4" strokeWidth={6} strokeDasharray="1 13" strokeLinecap="round"/>
+          <Line x1={trailWidth - 20} y1={35} x2={trailWidth - 12} y2={35} stroke="#FFF9F4" strokeWidth={3}/>
+          <Path d={`M${trailWidth - 13} 25 L${trailWidth} 35 L${trailWidth - 13} 45 Z`} fill="#FFF9F4"/>
+        </Svg>
         {phase === 'sending' && <Animated.Text style={[styles.travellingHeart, {
-          opacity: travel.interpolate({ inputRange: [0, .76, 1], outputRange: [1, 1, 0] }),
+          opacity: travel.interpolate({ inputRange: [0, .08, .83, 1], outputRange: [0, 1, 1, 0] }),
           transform: [
-            { translateX: travel.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(0, trailWidth - 31)] }) },
-            { scale: travel.interpolate({ inputRange: [0, .65, 1], outputRange: [.8, 1.15, .35] }) },
+            { translateX: travel.interpolate({ inputRange: [0, 1], outputRange: [-(avatarSize + 13) / 2 - 28, trailWidth + (avatarSize + 13) / 2 - 28] }) },
+            { translateY: travel.interpolate({ inputRange: [0, .13, .44, .68, .87, 1], outputRange: [0, -21, -65, -54, -25, 0] }) },
+            { scale: travel.interpolate({ inputRange: [0, .11, .32, .57, .78, .94, 1], outputRange: [.55, 1.27, 1.06, 1.19, 1.02, 1.16, .52] }) },
           ],
         }]}>♥</Animated.Text>}
       </View>
@@ -83,10 +91,7 @@ const styles = StyleSheet.create({
   avatar: { width: '100%', height: '100%' },
   name: { color: '#FFF9F4', fontSize: 14, fontWeight: '700', textAlign: 'center', maxWidth: '100%' },
   trail: { flex: 1, minWidth: 65, height: 70, justifyContent: 'center' },
-  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
-  dotsText: { flex: 1, color: '#FFF9F4', fontSize: 16, letterSpacing: -1, textAlign: 'center' },
-  arrow: { color: '#FFF9F4', fontSize: 19, marginLeft: 2 },
-  travellingHeart: { position: 'absolute', left: 0, top: 14, color: '#F95369', fontSize: 35, textShadowColor: '#FFF9F4', textShadowRadius: 12, textShadowOffset: { width: 0, height: 0 } },
+  travellingHeart: { position: 'absolute', left: 0, top: -20, color: '#F95376', fontSize: 56, textShadowColor: '#E94A73', textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } },
   statusPill: { backgroundColor: '#FFF4F0', paddingHorizontal: 18, paddingVertical: 7, borderRadius: 24, maxWidth: '90%' },
   status: { color: '#A44854', fontSize: 15, fontWeight: '600', textAlign: 'center' },
 });

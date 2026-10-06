@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage, resolveBurrowImageSource } from './burrow-image';
 import { Canvas, Fill, ImageShader, Shader, Skia, useCanvasRef, useImage, type SkImage } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, useAnimatedStyle, useDerivedValue, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { dollFaceBounds, dollFaceRect } from '@/lib/burrow-doll-face';
 import { haptics } from '@/lib/haptics';
 import { subscribeSessionIdentity } from '@/lib/session-lifecycle';
-import { clampToyPull, TOY_TEXTURE_PADDING, TOY_WARP_SKSL } from '@/lib/burrow-toy-warp';
+import { clampToyPull, TOY_TAP_SLOP, TOY_TEXTURE_PADDING, TOY_WARP_SKSL } from '@/lib/burrow-toy-warp';
 import { RoomPhoto, useRoomPhotoUri } from './room-photo';
 import { FloatingHeart, InteractiveDoll, type DollAction, type HeartParticle } from './interactive-doll';
 
@@ -17,7 +17,7 @@ type DollPhoto = MajorUpdateBootstrap['roomPhotos'][number] | undefined;
 type Texture = { key: string; image: SkImage };
 type CircleSpec = { x: number; y: number; radius: number };
 
-// The original costume is 600×600. Extra transparent pixels must exist in the
+// Extra transparent pixels must exist in the
 // *source texture*, not just the View, or pulled silhouettes get flat cut edges.
 const TEXTURE_PADDING = TOY_TEXTURE_PADDING;
 const textureCache = new Map<string, SkImage>();
@@ -70,7 +70,9 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
   onInteract: () => void;
 }) {
   const photoUri = useRoomPhotoUri(photo);
-  const costume = useImage(typeof asset.source === 'number' ? asset.source : null);
+  const costumeSource = resolveBurrowImageSource(asset.source);
+  const costume = useImage(typeof costumeSource === 'number' ? costumeSource :
+    costumeSource && typeof costumeSource === 'object' && 'uri' in costumeSource ? costumeSource.uri : null);
   const face = useImage(photoUri);
   const key = `${String(asset.source)}:${photo?.id ?? 'empty'}:${photo?.updatedAt ?? ''}`;
   const [texture, setTexture] = useState<Texture | null>(() => {
@@ -104,6 +106,7 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
   const [hearts, setHearts] = useState<HeartParticle[]>([]);
   const heartId = useRef(0);
   const touched = useRef(false);
+  const moved = useRef(false);
   const centerX = useSharedValue(defaultCircle.x);
   const centerY = useSharedValue(defaultCircle.y);
   const radius = useSharedValue(defaultCircle.radius);
@@ -111,6 +114,12 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
   const pullY = useSharedValue(0);
   const actionKind = useSharedValue(0);
   const impact = useSharedValue(0);
+  const wobble = useSharedValue(0);
+  const shakeX = useSharedValue(0);
+  const shakeY = useSharedValue(0);
+  const motionStyle = useAnimatedStyle(() => ({ transform: [
+    { translateX: shakeX.value }, { translateY: shakeY.value }, { rotate: `${wobble.value * 9}deg` },
+  ] }));
   const uniforms = useDerivedValue(() => ({
     center: [centerX.value, centerY.value],
     pull: [pullX.value, pullY.value],
@@ -118,6 +127,8 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
     action: actionKind.value,
     impact: impact.value,
     bodyCenter: [(TEXTURE_PADDING + asset.width / 2) * scale, (TEXTURE_PADDING + asset.height * .67) * scale],
+    headBottom: (TEXTURE_PADDING + faceBounds[3] + asset.height * .035) * scale,
+    headBlend: asset.height * .05 * scale,
   }));
 
   useEffect(() => {
@@ -172,19 +183,35 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
   }, [size]);
   const removeHeart = useCallback((id: number) => setHearts(previous => previous.filter(heart => heart.id !== id)), []);
   useEffect(() => {
-    if (!action?.token) return;
+    if (!action?.token || warpUnavailable) return; // Fallback owns its own feedback.
+    pullX.value = 0; pullY.value = 0;
+    wobble.value = 0; shakeX.value = 0; shakeY.value = 0;
     actionKind.value = action.kind === 'squeeze' ? 1 : 2;
-    impact.value = 1;
-    impact.value = withTiming(0, { duration: action.kind === 'squeeze' ? 500 : 280 });
+    impact.value = 0;
+    impact.value = action.kind === 'squeeze'
+      ? withSequence(withTiming(1, { duration: 240 }), withTiming(1, { duration: 110 }), withSpring(0, { damping: 12, stiffness: 140 }))
+      : withSequence(withTiming(1, { duration: 55 }), withTiming(1, { duration: 35 }), withSpring(0, { damping: 13, stiffness: 220 }));
+    if (action.kind === 'punch') {
+      const jolt = size * .018;
+      shakeX.value = withSequence(withTiming(-jolt, { duration: 35 }), withTiming(jolt, { duration: 45 }),
+        withTiming(-jolt * .65, { duration: 45 }), withTiming(jolt * .35, { duration: 50 }), withTiming(0, { duration: 70 }));
+      shakeY.value = withSequence(withTiming(jolt * .6, { duration: 45 }), withTiming(-jolt * .25, { duration: 55 }), withTiming(0, { duration: 130 }));
+    }
     emitHearts(action.kind === 'squeeze' ? 5 : 7);
     void (action.kind === 'squeeze' ? haptics.light() : haptics.medium());
-  }, [action?.token]);
+  }, [action?.token, warpUnavailable]);
+
+  useEffect(() => () => {
+    [pullX, pullY, impact, wobble, shakeX, shakeY].forEach(cancelAnimation);
+  }, [pullX, pullY, impact, wobble, shakeX, shakeY]);
 
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: event => {
       touched.current = true;
+      moved.current = false;
+      impact.value = 0; wobble.value = 0; shakeX.value = 0; shakeY.value = 0;
       const x = event.nativeEvent.locationX - canvasLeft;
       const y = event.nativeEvent.locationY - canvasTop;
       const assetY = y / scale - TEXTURE_PADDING;
@@ -196,6 +223,7 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
       setCircle({ x, y, radius: nextRadius });
     },
     onPanResponderMove: (_event, gesture) => {
+      if (Math.hypot(gesture.dx, gesture.dy) > TOY_TAP_SLOP) moved.current = true;
       // Safety valve: no more than 15% of head width. This is a partner's
       // photo; deliberately extreme face distortion stops feeling affectionate.
       const clamped = clampToyPull(gesture.dx, gesture.dy, headWidth);
@@ -205,7 +233,12 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
     onPanResponderRelease: () => {
       pullX.value = withSpring(0, { damping: 15, stiffness: 180 });
       pullY.value = withSpring(0, { damping: 15, stiffness: 180 });
-      if (touched.current) { emitHearts(5); void haptics.light(); onInteract(); }
+      if (touched.current) {
+        if (!moved.current) wobble.value = withSequence(
+          withTiming(.9, { duration: 75 }), withTiming(-.7, { duration: 110 }),
+          withTiming(.45, { duration: 100 }), withTiming(-.2, { duration: 90 }), withTiming(0, { duration: 100 }));
+        emitHearts(5); void haptics.light(); onInteract();
+      }
       touched.current = false;
     },
     onPanResponderTerminate: () => {
@@ -218,6 +251,7 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
     artStyle={artStyle} action={action} onInteract={onInteract}/>;
 
   return <View style={{ width: size, height: size, alignSelf: 'center', overflow: 'visible' }} {...responder.panHandlers}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, motionStyle]}>
     {readyTexture && warpEffect ? <View pointerEvents="none" style={{ position: 'absolute', left: canvasLeft, top: canvasTop,
       width: canvasWidth, height: canvasHeight }}>
       <Canvas ref={canvasRef} style={{ width: canvasWidth, height: canvasHeight }}>
@@ -234,6 +268,7 @@ export function LocalizedToy({ asset, photo, size, artStyle, action, showInfluen
       <View style={[styles.photo, dollFaceRect(asset)]}>{photo ? <RoomPhoto photo={photo} /> : <View style={styles.emptyFace} />}</View>
       <ExpoImage source={asset.source} contentFit="fill" style={styles.fill} />
     </View>}
+    </Animated.View>
     <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
       {hearts.map(heart => <FloatingHeart key={heart.id} particle={heart} onDone={removeHeart} />)}
     </View>

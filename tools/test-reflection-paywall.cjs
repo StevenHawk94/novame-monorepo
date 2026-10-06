@@ -77,7 +77,7 @@ function gateHarness({ slowStore = false, navigation } = {}) {
   const react = {
     useMemo: fn => { cursor++; return fn(); },
     useRef(value) { const i = cursor++; return slots[i] ??= { current: value }; },
-    useState(initial) { const i = cursor++; slots[i] ??= { value: initial }; return [slots[i].value, value => {
+    useState(initial) { const i = cursor++; slots[i] ??= { value: typeof initial === 'function' ? initial() : initial }; return [slots[i].value, value => {
       if (!Object.is(slots[i].value, value)) { slots[i].value = value; dirty = true; }
     }]; },
     useEffect(fn, deps) {
@@ -88,6 +88,7 @@ function gateHarness({ slowStore = false, navigation } = {}) {
     },
   };
   const { OfficialRatingGate } = load('apps/mobile/src/components/rating/official-rating-gate.tsx', {
+    '@/lib/partner-reflect-paywall': { peekPartnerReflectPaywall: () => null, subscribePartnerReflectPaywallRequest: () => () => {}, syncPartnerReflectPaywallRequests: async () => {} },
     react,
     'react-native': { AppState: appState },
     'expo-router': { useSegments: () => env.route, router: { push(route) { pushes.push(typeof route === 'string' ? route : route.pathname); env.route = ['(main)', '(modals)', 'reflection-plus-paywall']; } } },

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -12,26 +12,8 @@ import { AffectionDelivery, type DeliveryPhase } from './affection-delivery';
 import { AFFECTION_COPY, AffectionGesture } from './affection-gesture';
 import { BurrowBackButton } from './burrow-back-button';
 
-const cluster = [
-  [-52, -30, -17, 23], [-14, -51, 14, 20], [25, -46, -15, 18], [56, -31, 20, 22],
-  [-67, 4, 18, 18], [-28, 1, -9, 26], [15, -3, 15, 19], [53, 7, -12, 22],
-  [-48, 37, 13, 19], [-6, 48, -12, 21], [35, 35, 15, 20],
-] as const;
-
-function SentCard({ type, onDone, compact }: { type: AffectionType; onDone: () => void; compact: boolean }) {
-  return <View style={styles.sentCard}>
-    <View style={[styles.heartCluster, compact && { height: 113 }]} pointerEvents="none">
-      {cluster.map(([x, y, angle, size], index) => <Text key={index} style={{ position: 'absolute', left: '50%', top: '50%',
-        marginLeft: x, marginTop: y, color: '#F35E6D', fontSize: size, transform: [{ rotate: `${angle}deg` }] }}>♥</Text>)}
-    </View>
-    <Text style={styles.sentTitle}>{AFFECTION_COPY[type].label} Sent</Text>
-    <Text style={styles.sentBody}>Your person will feel this little love.</Text>
-    <Pressable accessibilityRole="button" onPress={onDone} style={styles.doneButton}><Text style={styles.doneText}>Done</Text></Pressable>
-  </View>;
-}
-
 export function AffectionDetailScreen({ type }: { type: AffectionType }) {
-  const { data, loading } = useBurrow();
+  const { data } = useBurrow();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [phase, setPhase] = useState<DeliveryPhase>('ready');
@@ -44,8 +26,6 @@ export function AffectionDetailScreen({ type }: { type: AffectionType }) {
   const attempt = useRef(false);
   const compact = height < 740;
   const cardHeight = Math.max(350, Math.min(520, height * (compact ? .51 : .48)));
-  const label = AFFECTION_COPY[type].label;
-  const recipientName = data?.partner?.display_name ?? 'your person';
   const ready = !!data?.partner;
 
   useEffect(() => {
@@ -81,17 +61,14 @@ export function AffectionDetailScreen({ type }: { type: AffectionType }) {
         : <ActivityIndicator color="#FFF8F4"/>}
     </View>
     <View style={[styles.lower, { height: cardHeight, marginBottom: insets.bottom + 8 }]}>
-      {phase === 'sent' ? <SentCard type={type} compact={compact} onDone={() => router.back()}/>
-        : server === 'error' ? <View style={styles.errorCard}>
+      {server === 'error' ? <View style={styles.errorCard}>
           <Text style={styles.sentTitle}>Not sent yet</Text>
           <Text style={styles.sentBody}>{error ?? 'Please try again.'}</Text>
           <Pressable accessibilityRole="button" onPress={retry} style={styles.doneButton}><Text style={styles.doneText}>Try sending again</Text></Pressable>
         </View>
-          : phase === 'sending' ? <View style={styles.sendingCard}>
-            <Text style={styles.sentTitle}>Sending your {label}…</Text>
-            <Text style={styles.sentBody}>A little love is travelling to {recipientName}.</Text>
-          </View>
-            : ready ? <AffectionGesture key={type} type={type} disabled={false} onComplete={value => { void send(value); }}/>
+          : ready ? <AffectionGesture key={type} type={type} status={phase} disabled={phase !== 'ready'}
+              recipientName={data.partner?.display_name?.trim() || 'your person'}
+              onComplete={value => { void send(value); }} onDone={() => router.back()}/>
               : <View style={styles.errorCard}><Text style={styles.sentTitle}>Connect first</Text>
                 <Text style={styles.sentBody}>Choose your person before sending affection.</Text>
                 <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.doneButton}><Text style={styles.doneText}>Back</Text></Pressable>
@@ -102,7 +79,7 @@ export function AffectionDetailScreen({ type }: { type: AffectionType }) {
         <View style={styles.helpCard}>
           <Feather name="help-circle" size={32} color="#A84852"/>
           <Text style={styles.helpTitle}>{AFFECTION_COPY[type].heading}</Text>
-          <Text style={styles.helpBody}>{AFFECTION_COPY[type].instruction}. Complete the gesture and the three-second progress to send.</Text>
+          <Text style={styles.helpBody}>{AFFECTION_COPY[type].instruction}. Follow the gesture to send your affection.</Text>
           <Text style={styles.helpBody}>If you use a screen reader, activate the gesture area for an accessible three-second send.</Text>
           <Pressable accessibilityRole="button" onPress={() => setHelp(false)} style={styles.doneButton}><Text style={styles.doneText}>Got it</Text></Pressable>
         </View>
@@ -119,13 +96,10 @@ const styles = StyleSheet.create({
   helpText: { color: '#A34752', fontSize: 30, lineHeight: 36, fontWeight: '700' },
   deliveryArea: { flex: 1, justifyContent: 'center', paddingHorizontal: 12 },
   lower: { marginHorizontal: 9 },
-  sentCard: { flex: 1, alignItems: 'center', backgroundColor: '#FFF4F0', borderRadius: 35, paddingHorizontal: 20, paddingVertical: 25, justifyContent: 'space-around' },
-  heartCluster: { height: 130, width: 190, alignItems: 'center', justifyContent: 'center' },
   sentTitle: { color: '#4D271D', fontSize: 31, lineHeight: 37, fontWeight: '800', textAlign: 'center' },
   sentBody: { color: '#5A332C', fontSize: 18, lineHeight: 26, textAlign: 'center' },
   doneButton: { minHeight: 61, width: '100%', backgroundColor: '#633B32', borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: '#DE9C74', shadowOpacity: .8, shadowOffset: { width: 0, height: 7 }, shadowRadius: 0 },
   doneText: { color: '#FFF9F5', fontSize: 20, fontWeight: '800' },
-  sendingCard: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 25, backgroundColor: '#FFF4F0', borderRadius: 35, padding: 25 },
   errorCard: { flex: 1, alignItems: 'center', justifyContent: 'space-around', backgroundColor: '#FFF4F0', borderRadius: 35, padding: 24 },
   scrim: { flex: 1, backgroundColor: '#391C1DB5', justifyContent: 'center', padding: 22 },
   helpCard: { backgroundColor: '#FFF8F3', borderRadius: 27, padding: 25, alignItems: 'center', gap: 17 },

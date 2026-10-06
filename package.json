@@ -13,6 +13,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
+    "test:reliability": "node --test tools/test-burrow-reliability.cjs tools/test-burrow-receipts.cjs tools/test-burrow-room-photo-cache.cjs tools/test-burrow-mobile.cjs tools/test-burrow-moments.cjs tools/test-burrow-music-ui.cjs tools/test-burrow-quest-claim-ui.cjs tools/test-burrow-game-room-local-content.cjs tools/test-burrow-rollout-flag.cjs tools/test-couple-journal.cjs tools/test-app-lifecycle.cjs tools/test-toy-camera-feedback.cjs tools/test-burrow-seasons.cjs",
+    "test:reliability:db": "node --test tools/test-burrow-reliability-database.cjs",
     "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {

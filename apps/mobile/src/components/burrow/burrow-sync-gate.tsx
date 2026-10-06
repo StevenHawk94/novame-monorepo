@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
 import { createBurrowSync } from '@/lib/burrow-sync-controller';
-import { invalidateBurrowPair, getBurrowSnapshot, refreshBurrowAfterCurrent } from '@/lib/burrow-store';
+import { burrowClock, invalidateBurrowPair, getBurrowSnapshot, refreshBurrowAfterCurrent } from '@/lib/burrow-store';
 import { recoverMemoryJobs, readMemoryLocal, subscribeMemoryLocal, subscribeMemoryRetry } from '@/lib/burrow-memory-local';
 import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
 
@@ -33,7 +33,7 @@ export function BurrowSyncGate() {
         const scope={userId:snap.data.profile.id,partnerId:snap.data.partner.id};
         const count=readMemoryLocal(scope).jobs.filter(j=>!j.blocked).length;
         const ok=await recoverMemoryJobs(scope);
-        if(count&&live&&epoch===sessionEpoch())await refreshBurrowAfterCurrent();
+        if(count&&live&&epoch===sessionEpoch())await refreshBurrowAfterCurrent({ after: burrowClock() });
         return ok;
       },
     });
@@ -46,7 +46,9 @@ export function BurrowSyncGate() {
       try{const next=readMemoryLocal({userId:data.profile.id,partnerId:data.partner.id}).jobs.filter(j=>!j.blocked).map(j=>j.id).join(',');
         if(next!==pending){pending=next;if(next)controller.request(0);}}catch{}
     });
-    const identity=subscribeSessionIdentity(()=>{controller.stop();invalidateBurrowPair();});
+    // Store identity handling already drops old state and restores only the
+    // new owner's snapshot. Do not erase that restored cache a second time.
+    const identity=subscribeSessionIdentity(()=>{controller.stop();setTimeout(()=>{if(live&&AppState.currentState==='active')controller.start();},0);});
     const retry=subscribeMemoryRetry(()=>controller.request(0));
     const auth=supabase.auth.onAuthStateChange(event=>{if(event==='TOKEN_REFRESHED')setTimeout(()=>{if(live&&AppState.currentState==='active')controller.start();},0);});
     return()=>{live=false;controller.stop();app.remove();local();retry();identity();auth.data.subscription.unsubscribe();};

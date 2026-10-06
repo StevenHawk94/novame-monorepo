@@ -15,6 +15,9 @@ test('music page is full screen, selects real tracks instantly and can mute', as
     { stable_id: 'dream', item_type: 'music', title: 'Little Daydream', asset: { bundleKey: 'dream' }, price: 80 },
   ], inventory: [{ owner_id: 'me', item_id: 'calm' }] };
   const { BurrowMusicPicker } = load('apps/mobile/src/components/burrow/burrow-music.tsx', {
+    '@/lib/latest-selection-queue': load('apps/mobile/src/lib/latest-selection-queue.ts'),
+    '@/lib/storage': { storage: { getString() {}, set() {} } },
+    '@/shared/storage/keys': { kBurrowMusicMuted: { name: 'music-muted' } },
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { AppState: {}, Alert: { alert() {} }, Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView',
       StatusBar: 'StatusBar', StyleSheet: { create: value => value, absoluteFillObject: {} }, Text: 'Text', View: 'View' },
@@ -26,10 +29,11 @@ test('music page is full screen, selects real tracks instantly and can mute', as
     '@/lib/burrow-audio-controller': { createBurrowAudioController() {} },
     '@/lib/burrow-store': { useBurrowSnapshot: () => ({ data: room, busy: false, error: null }),
       selectBurrowMusicLocally: id => { room.musicTrackId = id; },
+      confirmBurrowMusicLocally() {}, scheduleBurrowRefresh() {},
       runBurrowAction: async (_key, action) => { await action(); return true; }, refreshBurrow() {}, burrowErrorMessage: value => value },
     '@/lib/app-major-update-api': { selectRoomMusic: async id => { choices.push(id); } },
     '@/lib/use-major-update': { useMajorUpdateEnabled: () => true },
-    '@/lib/session-lifecycle': { subscribeSessionIdentity: () => () => {} },
+    '@/lib/session-lifecycle': { sessionEpoch: () => 1, subscribeSessionIdentity: () => () => {} },
     '@/lib/haptics': { haptics: { light: async () => {} } },
     '../../../assets/burrow/calm.wav': 1, '../../../assets/burrow/dream.wav': 2,
   });

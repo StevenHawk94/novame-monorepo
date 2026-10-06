@@ -30,6 +30,16 @@ export async function GET(request) {
         snapshot = { ...snapshot, activeAdventure, adventureResult: result.data || null, dailyAdventureUsed: true }
       }
     }
+    if (snapshot && !snapshot.error) {
+      // Read the latest care events separately from the 50-item activity feed:
+      // a busy couple can have more than 50 moments within twelve hours.
+      const care = await Promise.all(['food', 'water'].map(need => db.from('moment_events')
+        .select('created_at').eq('target_id', userId).eq('event_type', 'room_need_refilled')
+        .contains('payload', { need }).order('created_at', { ascending: false }).limit(1)))
+      for (const result of care) if (result.error) throw result.error
+      snapshot = { ...snapshot, lastCareAt: { food: care[0].data?.[0]?.created_at || null,
+        water: care[1].data?.[0]?.created_at || null } }
+    }
     return NextResponse.json(snapshot?.error ? snapshot : { success: true, ...snapshot }, {
       status: commandStatus(snapshot?.error), headers: { 'Cache-Control': 'no-store' },
     })

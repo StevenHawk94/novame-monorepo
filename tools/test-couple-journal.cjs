@@ -33,9 +33,11 @@ test('solo journal pages remain private and map icons resolve to bundled files',
 
 test('cached page is immediate on the same day and invalid at pair or date change', () => {
   const journal = load('apps/mobile/src/lib/couple-journal.ts', {
+    './storage': { storage: { getString() {}, set() {} } },
+    '../shared/storage/keys': { kBurrowJournal: { keyFor: value => value } },
     './api': { apiClient: {} },
     './async-lifecycle': { withDeadline: value => value },
-    './session-lifecycle': { sessionEpoch: () => 0, subscribeSessionIdentity: () => () => {} },
+    './session-lifecycle': { sessionUserId: () => 'pair-one', sessionEpoch: () => 0, subscribeSessionIdentity: () => () => {} },
   });
   const parts = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC',
@@ -66,6 +68,8 @@ test('today stays visible after save; history shows one writer and lets the othe
     todayDate: '2026-10-01', timezone: 'UTC', pairVersion: 'v1' };
   const writes = [];
   const { CoupleJournalScreen } = load('apps/mobile/src/components/burrow/couple-journal-screen.tsx', {
+    '@react-navigation/native': { useIsFocused: () => true },
+    '@/lib/burrow-text-drafts': { readBurrowTextDraft: () => null, keepBurrowTextDraft: (_scope, _page, body, expectedUpdatedAt) => ({ key: 'idempotency-key', body, expectedUpdatedAt }), removeBurrowTextDraft() {} },
     react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': {
       ActivityIndicator: 'ActivityIndicator', AppState: { addEventListener: () => ({ remove() {} }) },
@@ -74,10 +78,11 @@ test('today stays visible after save; history shows one writer and lets the othe
       StyleSheet: { create: values => values, absoluteFillObject: {} }, Text: 'Text', TextInput: 'TextInput',
       View: 'View', useWindowDimensions: () => ({ width: 393, height: 852 }),
     },
-    'expo-image': { Image: 'Image' },
+    './burrow-image': { Image: 'Image' },
     'expo-crypto': { randomUUID: () => 'idempotency-key' },
     'expo-router': { router: { back() {} }, useFocusEffect() {} },
     '@expo/vector-icons': { Feather: 'Feather' },
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0 }) },
     '@/lib/burrow-store': { useBurrow: () => ({ data }) },
     '@/lib/couple-journal': {
       cachedCoupleJournal: () => snapshot, cacheCoupleJournal() {},
@@ -89,7 +94,7 @@ test('today stays visible after save; history shows one writer and lets the othe
       },
     },
     '../../../assets/burrow-webp/memories-room.webp': 1,
-  });
+  }, { setInterval: () => 1, clearInterval() {} });
   const render = () => h.render(() => CoupleJournalScreen());
   let tree = render();
   assert.ok(nodes(tree).some(node => node.props?.children === 'Write here...'));

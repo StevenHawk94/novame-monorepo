@@ -3,13 +3,15 @@ import {
   ActivityIndicator, AppState, KeyboardAvoidingView, Platform, Pressable,
   ScrollView, StatusBar, StyleSheet, Text, TextInput, View, useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useBurrow } from '@/lib/burrow-store';
+import { useIsFocused } from '@react-navigation/native';
+import { keepBurrowTextDraft, readBurrowTextDraft, removeBurrowTextDraft, rebaseBurrowTextDraft } from '@/lib/burrow-text-drafts';
 import {
-  cacheCoupleJournal, cachedCoupleJournal, fetchCoupleJournal, saveCoupleJournalAnswer,
+  cacheCoupleJournal, cachedCoupleJournal, fetchCoupleJournal, fetchCoupleJournalPage, saveCoupleJournalAnswer,
   type CoupleJournalAnswer, type CoupleJournalPage, type CoupleJournalSnapshot,
 } from '@/lib/couple-journal';
 
@@ -40,7 +42,8 @@ function replacePage(snapshot: CoupleJournalSnapshot, page: CoupleJournalPage) {
   };
 }
 
-export function CoupleJournalScreen() {
+export function CoupleJournalScreen({ initialPageId }: { initialPageId?: string } = {}) {
+  const focused = useIsFocused();
   const { data, loading: burrowLoading } = useBurrow();
   const { width, height } = useWindowDimensions();
   const sceneWidth = Math.min(width, 560);
@@ -61,6 +64,9 @@ export function CoupleJournalScreen() {
   scopeRef.current = scope;
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
+  const openedTarget = useRef<string | null>(null);
+  const selectedRef = useRef(selectedId);
+  selectedRef.current = selectedId;
 
   const load = useCallback(async (more = false, preserveError = false) => {
     if (!scope || !data?.profile.id) return;
@@ -71,31 +77,44 @@ export function CoupleJournalScreen() {
     else if (!snapshotRef.current) setLoading(true);
     if (!preserveError) setError('');
     try {
-      const fresh = await fetchCoupleJournal(before ?? undefined);
+      const [fresh, target] = await Promise.all([
+        fetchCoupleJournal(before ?? undefined),
+        (initialPageId && openedTarget.current !== initialPageId) || selectedRef.current
+          ? fetchCoupleJournalPage((initialPageId && openedTarget.current !== initialPageId ? initialPageId : selectedRef.current)!)
+          : Promise.resolve(null),
+      ]);
       if (token !== sequence.current || scope !== scopeRef.current) return;
       setSnapshot(previous => {
-        const next = more && previous?.today.id === fresh.today.id
+        let next = more && previous?.today.id === fresh.today.id
           ? { ...fresh, history: [
             ...previous.history,
             ...fresh.history.filter(page => !previous.history.some(old => old.id === page.id)),
           ] }
           : fresh;
+        if (target && target.id !== next.today.id && !next.history.some(page => page.id === target.id))
+          next = { ...next, history: [...next.history, target] };
         cacheCoupleJournal(scope, next);
         return next;
       });
+      if (target && initialPageId && openedTarget.current !== initialPageId) {
+        openedTarget.current = initialPageId;
+        setSelectedId(target.id); setView(target.id === fresh.today.id ? 'today' : 'detail');
+      }
     } catch {
       if (token === sequence.current) setError('Could not load the journal. Pull down or tap Retry.');
     } finally {
       if (token === sequence.current) { setLoading(false); setLoadingMore(false); }
     }
-  }, [scope, data?.profile.id]);
+  }, [scope, data?.profile.id, initialPageId]);
 
   useEffect(() => {
     sequence.current++;
     setSnapshot(scope ? cachedCoupleJournal(scope) : null);
     setView('today');
     setSelectedId(null);
+    openedTarget.current = null;
     setEditor(null);
+    setSaving(false);
     setError('');
   }, [scope]);
   useFocusEffect(useCallback(() => {
@@ -104,10 +123,16 @@ export function CoupleJournalScreen() {
   }, [load]));
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') void load();
+      if (focused && state === 'active' && !saving) void load();
     });
-    return () => sub.remove();
-  }, [load]);
+    // Date rollover is checked only on the visible foreground page, not with
+    // a per-second timer rendering every screen in the navigator.
+    const timer = setInterval(() => {
+      if (!focused || saving || AppState.currentState !== 'active' || !snapshotRef.current) return;
+      if (!cachedCoupleJournal(scope)) void load();
+    }, 30_000);
+    return () => { sub.remove(); clearInterval(timer); };
+  }, [load, focused, saving, scope]);
 
   const chosen = view === 'detail' ? snapshot?.history.find(page => page.id === selectedId) : snapshot?.today;
   const back = () => {
@@ -122,6 +147,9 @@ export function CoupleJournalScreen() {
     if (!page) return;
     const previous = snapshot;
     const old = page.answers.find(answer => answer.authorId === data.profile.id);
+    let durable;
+    try { durable = keepBurrowTextDraft(scope, page.id, editor.body, old?.updatedAt ?? null); }
+    catch { setError('Could not keep your draft. Free some device storage and try again.'); return; }
     const optimistic: CoupleJournalAnswer = {
       id: old?.id ?? `pending:${randomUUID()}`,
       authorId: data.profile.id, body: editor.body.trim(),
@@ -133,13 +161,14 @@ export function CoupleJournalScreen() {
     });
     sequence.current++;
     setSnapshot(draft);
-    cacheCoupleJournal(scope, draft);
+    cacheCoupleJournal(scope, draft, false);
     setEditor(null);
     setSaving(true);
     setError('');
     try {
-      const saved = await saveCoupleJournalAnswer(page.id, optimistic.body, old?.updatedAt ?? null, randomUUID());
+      const saved = await saveCoupleJournalAnswer(page.id, optimistic.body, durable.expectedUpdatedAt, durable.key);
       if (scopeRef.current !== scope) return;
+      removeBurrowTextDraft(scope, page.id, durable.key);
       setSnapshot(current => {
         const next = replacePage(current ?? draft, saved);
         cacheCoupleJournal(scope, next);
@@ -147,6 +176,17 @@ export function CoupleJournalScreen() {
       });
     } catch (cause) {
       if (scopeRef.current !== scope) return;
+      if ((cause as { body?: { error?: string } })?.body?.error === 'journal_conflict') {
+        try {
+          const latest = await fetchCoupleJournalPage(page.id);
+          if (scopeRef.current !== scope) return;
+          rebaseBurrowTextDraft(scope, page.id, durable.key, latest.answers.find(answer => answer.authorId === data.profile.id)?.updatedAt ?? null);
+          const refreshed = replacePage(previous, latest);
+          setSnapshot(refreshed); cacheCoupleJournal(scope, refreshed); setEditor(editor);
+          setError('This answer changed on another device. Your draft is safe. Review it and tap Save again to replace the latest version.');
+          return;
+        } catch { /* Keep the original draft if revalidation is offline. */ }
+      }
       setSnapshot(previous);
       cacheCoupleJournal(scope, previous);
       setEditor(editor);
@@ -158,6 +198,10 @@ export function CoupleJournalScreen() {
   };
 
   const pageSide = 140 * scale;
+  const editAnswer = (page: CoupleJournalPage, answer?: CoupleJournalAnswer) => {
+    const draft = readBurrowTextDraft(scope, page.id);
+    setEditor({ pageId: page.id, body: draft?.body ?? answer?.body ?? '' });
+  };
   const answerCard = (page: CoupleJournalPage, owner: 'me' | 'partner') => {
     if (!data) return null;
     const mine = owner === 'me';
@@ -178,14 +222,17 @@ export function CoupleJournalScreen() {
         }]}><Text style={{ color: '#FFF7E9', fontSize: 34 * scale }}>{initial}</Text></View>
         <Text numberOfLines={1} style={[styles.answerName, { fontSize: 29 * scale }]}>{name}</Text>
         {canEdit && <Pressable accessibilityRole="button" accessibilityLabel={answer ? 'Edit your answer' : 'Write your answer'}
-          onPress={() => setEditor({ pageId: page.id, body: answer?.body ?? '' })}
+          onPress={() => editAnswer(page, answer)}
           hitSlop={12} style={styles.editButton}><Feather name="edit-2" size={29 * scale} color="#8B735B" /></Pressable>}
       </View>
       <View style={[styles.rule, { marginLeft: 94 * scale, marginTop: 6 * scale }]} />
       {editing ? <View style={{ marginTop: 20 * scale }}>
         <TextInput accessibilityLabel="Your journal answer" multiline autoFocus maxLength={1500}
           placeholder="Write here..." placeholderTextColor="#9B8978"
-          value={editor.body} onChangeText={body => setEditor({ pageId: page.id, body })}
+          value={editor.body} onChangeText={body => { setEditor({ pageId: page.id, body });
+            try { keepBurrowTextDraft(scope, page.id, body, answer?.updatedAt ?? null); }
+            catch { setError('Draft could not be saved on this device. Keep this page open until you save.'); }
+          }}
           style={[styles.answerInput, { fontSize: 27 * scale, minHeight: 130 * scale }]} />
         <View style={styles.editorActions}>
           <Pressable accessibilityRole="button" onPress={() => setEditor(null)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancel</Text></Pressable>
@@ -195,7 +242,7 @@ export function CoupleJournalScreen() {
             style={[styles.saveButton, !editor.body.trim() && { opacity: .5 }]}><Text style={styles.saveText}>Save</Text></Pressable>
         </View>
       </View> : <Pressable accessibilityRole={canEdit ? 'button' : undefined}
-        disabled={!canEdit} onPress={() => setEditor({ pageId: page.id, body: answer?.body ?? '' })}>
+        disabled={!canEdit} onPress={() => editAnswer(page, answer)}>
         <Text selectable={!!answer} style={[styles.answerBody, {
           fontSize: 27 * scale, lineHeight: 41 * scale, marginTop: 20 * scale,
           color: answer ? '#34271F' : '#978371',

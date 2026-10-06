@@ -63,9 +63,10 @@ export interface MajorUpdateBootstrap {
   readyRecordId: string | null;
   lastAffectionAt: string | null;
   partnerNeeds: { food: number; water: number; foodValue?: number; waterValue?: number; foodUpdatedAt?: string; waterUpdatedAt?: string };
+  lastCareAt?: { food: string | null; water: string | null };
   inventory: { id: string; owner_id: string; item_id: string; source: string }[];
   loadouts: { room_type: 'home' | 'our'; owner_id: string | null; slot: string; item_id: string }[];
-  moments: { id: string; actor_id: string; event_type: string; created_at: string; payload: Record<string, string> }[];
+  moments: { id: string; actor_id: string; target_id?: string | null; event_type: string; created_at: string; payload: Record<string, string> }[];
   gifts: { id: string; item_id: string; sender_id: string; created_at: string }[];
   friends: { stable_id: string; name: string; subtitle: string }[];
   discoveries: { user_id: string; friend_id: string; interaction_completed_at: string | null }[];
@@ -162,9 +163,9 @@ export function selectRoomMusic(trackId: string | null) {
   return command<CommandResponse>('select_room_music', { trackId });
 }
 
-export async function fetchRoomPhoto(id: string) {
+export async function fetchRoomPhoto(id: string, updatedAt?: string) {
   const epoch = sessionEpoch();
-  const result = await withDeadline(apiClient.get<{ url: string; success: boolean }>(`/api/vnext/room-photo?id=${encodeURIComponent(id)}`), 15_000);
+  const result = await withDeadline(apiClient.get<{ url: string; success: boolean }>(`/api/vnext/room-photo?id=${encodeURIComponent(id)}${updatedAt ? `&version=${encodeURIComponent(updatedAt)}` : ''}`), 15_000);
   if (epoch !== sessionEpoch()) throw new Error('session_changed');
   return result.url;
 }
@@ -192,7 +193,7 @@ export async function deleteMemoryPhoto(entryId: string, photoId: string, actorI
 
 export async function saveRoomPhoto(ownerId: string, kind: 'frame' | 'doll', base64: string, idempotencyKey: string, actorId: string, partnerId?: string) {
   const epoch = sessionEpoch();
-  const result = await withDeadline(apiClient.post<CommandResponse>('/api/vnext/room-photo', { actorId, ownerId, kind, base64, idempotencyKey, ...(partnerId?{partnerId}:{}) }), 30_000);
+  const result = await withDeadline(apiClient.post<CommandResponse & { photo?: MajorUpdateBootstrap['roomPhotos'][number] }>('/api/vnext/room-photo', { actorId, ownerId, kind, base64, idempotencyKey, ...(partnerId?{partnerId}:{}) }), 30_000);
   if (epoch !== sessionEpoch()) throw new Error('session_changed');
   if (result.error) throw new Error(result.error);
   return result;

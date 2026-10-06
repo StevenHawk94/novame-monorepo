@@ -24,17 +24,17 @@ export function AdventureArrivalGate() {
     if (!enabled) { arrival.current.reset(); return; }
     let backgrounded = AppState.currentState !== 'active';
     let generation = 0;
-    const resume = () => {
+    const resume = (afterBackground = false) => {
       const current = ++generation;
       setResumeReady(false);
       arrival.current.resume(getBurrowSnapshot().data);
-      void refreshBurrowAfterCurrent().then(() => { if (current === generation) setResumeReady(true); });
+      void refreshBurrowAfterCurrent(afterBackground ? { after: burrowClock() } : {}).then(() => { if (current === generation) setResumeReady(true); });
     };
     if (AppState.currentState === 'active') resume();
     const app = AppState.addEventListener('change', state => {
       setForeground(state === 'active');
       if (state === 'background') backgrounded = true;
-      else if (state === 'active' && backgrounded) { backgrounded = false; resume(); }
+      else if (state === 'active' && backgrounded) { backgrounded = false; resume(true); }
     });
     const identity = subscribeSessionIdentity(() => { generation++; setResumeReady(false); arrival.current.reset(); });
     return () => { generation++; app.remove(); identity(); };

@@ -1,6 +1,8 @@
 import { storage } from './storage';
 import { apiClient } from './api';
 import { supabase } from './supabase';
+import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 import type { PricingTierKey } from '@novame/core';
 
 /**
@@ -36,6 +38,8 @@ const STORAGE_KEY = 'novame_subscription';
 const SUBSCRIPTION_TTL_MS = 5 * 60 * 1000;
 const fetchesInFlight = new Map<string, Promise<CachedSubscription>>();
 const tierListeners = new Set<() => void>();
+let cacheRevision = 0;
+subscribeSessionIdentity(() => { cacheRevision++; fetchesInFlight.clear(); for (const listener of tierListeners) listener(); });
 
 // ---- types ----
 
@@ -52,6 +56,7 @@ type UserSyncSubscriptionShape = {
 };
 
 export type CachedSubscription = {
+  userId?: string;
   /** Active tier. Defaults to 'free' for users who have never purchased. */
   tier: PricingTierKey;
   /** Wall-clock timestamp of the last successful server fetch. */
@@ -71,7 +76,9 @@ export function getCachedSubscription(): CachedSubscription | null {
   const raw = storage.getString(STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as CachedSubscription;
+    const cached = JSON.parse(raw) as CachedSubscription;
+    return cached && ['free', 'plus'].includes(cached.tier) && Number.isFinite(cached.lastFetchedAtMs)
+      && typeof sessionUserId() === 'string' && cached.userId === sessionUserId() ? cached : null;
   } catch {
     return null;
   }
@@ -103,9 +110,10 @@ export function getCachedSubscriptionTierState(): PricingTierKey | null {
 /**
  * Persists subscription state to MMKV cache.
  */
-export function setCachedSubscription(state: CachedSubscription): void {
+export function setCachedSubscription(state: CachedSubscription, userId = sessionUserId()): void {
+  if (!userId || (sessionUserId() !== undefined && userId !== sessionUserId())) return;
   const previousTierState = getCachedSubscriptionTierState();
-  storage.set(STORAGE_KEY, JSON.stringify(state));
+  storage.set(STORAGE_KEY, JSON.stringify({ ...state, userId }));
   if (previousTierState !== getCachedSubscriptionTierState()) {
     for (const listener of tierListeners) listener();
   }
@@ -122,6 +130,7 @@ export function subscribeToSubscriptionTier(listener: () => void): () => void {
  * Clears cached subscription (sign-out, account switch, etc.).
  */
 export function clearCachedSubscription(): void {
+  cacheRevision++; fetchesInFlight.clear();
   const hadCachedSubscription = getCachedSubscription() !== null;
   storage.remove(STORAGE_KEY);
   if (hadCachedSubscription) {
@@ -149,6 +158,8 @@ export async function fetchSubscriptionTier(
   userId: string,
   options?: { force?: boolean },
 ): Promise<CachedSubscription> {
+  const epoch = sessionEpoch(), revision = cacheRevision;
+  if (sessionUserId() !== undefined && userId !== sessionUserId()) throw new Error('session_changed');
   const cached = getCachedSubscription();
   if (
     !options?.force
@@ -162,9 +173,10 @@ export async function fetchSubscriptionTier(
   if (existing) return existing;
 
   const request = (async () => {
-    const data = await apiClient.get<UserSyncSubscriptionShape>(
+    const data = await withDeadline(apiClient.get<UserSyncSubscriptionShape>(
       `/api/user-sync?userId=${encodeURIComponent(userId)}`,
-    );
+    ), 15_000);
+    if (epoch !== sessionEpoch() || revision !== cacheRevision) throw new Error('session_changed');
     if (!data.success) {
       throw new Error('user-sync GET returned non-success');
     }
@@ -174,10 +186,10 @@ export async function fetchSubscriptionTier(
       lastFetchedAtMs: Date.now(),
       serverConfirmed: true,
     };
-    setCachedSubscription(next);
+    setCachedSubscription(next, userId);
     return next;
   })().finally(() => {
-    fetchesInFlight.delete(userId);
+    if (fetchesInFlight.get(userId) === request) fetchesInFlight.delete(userId);
   });
   fetchesInFlight.set(userId, request);
   return request;
@@ -190,6 +202,7 @@ export async function fetchSubscriptionTier(
  * (reads cache) see the change.
  */
 export async function devSetTier(tier: 'free' | 'plus'): Promise<boolean> {
+  const epoch = sessionEpoch();
   const { data: sess } = await supabase.auth.getSession();
   const userId = sess.session?.user?.id;
   if (!userId) return false;
@@ -197,7 +210,8 @@ export async function devSetTier(tier: 'free' | 'plus'): Promise<boolean> {
     // The server authorizes tester UUIDs. Never embed an upgrade secret in a
     // distributable app bundle.
     await apiClient.post('/api/dev/set-tier', { userId, tier });
-    setCachedSubscription({ tier, lastFetchedAtMs: Date.now(), serverConfirmed: true });
+    if (epoch !== sessionEpoch() || userId !== sessionUserId()) return false;
+    setCachedSubscription({ tier, lastFetchedAtMs: Date.now(), serverConfirmed: true }, userId);
     return true;
   } catch {
     return false;

@@ -47,6 +47,8 @@ function harness(platform = 'android') {
   react.useLayoutEffect = react.useEffect;
   const appState = { currentState: 'active', addEventListener(_event, fn) { appListeners.add(fn); return { remove: () => appListeners.delete(fn) }; } };
   const components = load(gateFile, {
+    './burrow-launch-screen': { BurrowLaunchScreen: 'BurrowLaunchScreen' },
+    '@/lib/burrow-onboarding-design': { BURROW_LAUNCH_BACKGROUND: '#3D160B' },
     '../../../assets/favicon.png': 1,
     react, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': {
@@ -160,7 +162,8 @@ test('opaque full-screen cover blocks touch/accessibility until ready, never sca
   assert.equal(content.props.importantForAccessibility, 'no-hide-descendants');
   assert.equal(content.props.style.flex, 1);
   assert.equal(cover.props.style.position, 'absolute'); assert.equal(cover.props.style.bottom, 0);
-  assert.equal(cover.props.style.backgroundColor, '#F8E2C1');
+  assert.equal(cover.props.style.backgroundColor, '#3D160B');
+  assert.equal(cover.props.children.type, 'BurrowLaunchScreen');
   assert.equal([...h.backListeners][0](), true);
   gate.unmount();
 });
@@ -219,7 +222,7 @@ test('interrupted Home mount invalidates its decoded views and stale native call
 
 test('entry is armed before auth redirects; first Home mounts before notification modal', () => {
   const onboarding = read('apps/mobile/app/(onboarding)/index.tsx');
-  const finish = onboarding.slice(onboarding.indexOf('async function onFinishName()'), onboarding.indexOf('async function onLinkProvider'));
+  const finish = onboarding.slice(onboarding.indexOf('async function finish(verifiedPurchase'), onboarding.indexOf('async function onLinkProvider'));
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('markIntroSeen()'));
   assert.ok(finish.indexOf('beginHomeEntry()') < finish.indexOf('await ensureSession()'));
   const signing = read('apps/mobile/app/(auth)/signing-in.tsx');

@@ -1,6 +1,6 @@
 import { useEffect,useState } from 'react';
 import { Pressable,StyleSheet,Text,View,useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { BURROW_COIN_ART } from '@/lib/burrow-ui-assets';
 import { CARROT_PRODUCTS,fetchCarrotProducts,purchaseCarrots,useCarrotPurchase } from '@/lib/carrot-iap';
 import { initIAP,reconcileAvailablePurchases,isSubscriptionPurchaseBusy } from '@/lib/iap';

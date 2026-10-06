@@ -121,13 +121,13 @@ test('mobile feed keeps private rows private, alerts for empty memories, and ope
   const logs = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/my-logs.tsx'), 'utf8');
   const reflectDetail = fs.readFileSync(path.join(root, 'apps/mobile/app/(main)/reflect-detail.tsx'), 'utf8');
   assert.match(friends, /if \(!e\.sharesDetails\)/);
-  assert.match(friends, /appAlert\('No memories created in this reflection\.'\)/);
+  assert.match(friends, /appAlert\('No memories created in this journal entry\.'\)/);
   assert.match(friends, /<BottomSheetModal/);
   assert.match(friends, /enablePanDownToClose/);
   assert.doesNotMatch(friends, /pathname: '\/\(main\)\/friend-reflect-detail'/);
   assert.doesNotMatch(logs, /You did not type anything on this reflection/);
   assert.doesNotMatch(reflectDetail, /You did not type anything on this reflection/);
-  assert.match(reflectDetail, /You did not write anything for this reflection\./);
+  assert.match(reflectDetail, /You did not write anything for this journal entry\./);
   assert.match(reflectDetail, /entry\?\.mode === 'typing' \? 'Items Matched' : 'Items Selected'/);
   assert.doesNotMatch(reflectDetail, /memTitleIcon/);
 });

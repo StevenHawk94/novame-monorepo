@@ -5,26 +5,30 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const ts=require('typescript');
+const {clock}=require('./lifecycle-test-utils.cjs');
 const root=path.resolve(__dirname,'..');
-function load(file,imports={}){
+function load(file,imports={},globals={}){
   const module={exports:{}};
   const code=ts.transpileModule(fs.readFileSync(path.join(root,file),'utf8'),{
     compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
   }).outputText;
-  vm.runInNewContext(code,{module,exports:module.exports,console,Date,Map,Set,
+  vm.runInNewContext(code,{module,exports:module.exports,console,Date,Map,Set,setTimeout:()=>1,clearTimeout(){},...globals,
     require(name){assert.ok(Object.hasOwn(imports,name),name);return imports[name];}});
   return module.exports;
 }
 function harness(){
+  const time=clock();
   let epoch=1,next=0,fetches=0,fetch=async()=>({profile:{id:'a'}});const identities=[];
   const api=load('apps/mobile/src/lib/burrow-store.ts',{
     react:{useCallback:f=>f,useSyncExternalStore:(_,snapshot)=>snapshot()},
     'expo-router':{useFocusEffect(){}},'react-native':{AppState:{}},
     'expo-crypto':{randomUUID:()=>`key-${++next}`},
     './app-major-update-api':{fetchMajorUpdateBootstrap:()=>{fetches++;return fetch();}},
-    './session-lifecycle':{sessionEpoch:()=>epoch,subscribeSessionIdentity:fn=>identities.push(fn)},
-  });
+    './session-lifecycle':{sessionEpoch:()=>epoch,sessionUserId:()=> 'a',subscribeSessionIdentity:fn=>identities.push(fn)},
+    './burrow-cache':{readBurrowSnapshot:()=>null,readBurrowActionKeys:()=>[],persistBurrowSnapshot(){},persistBurrowActionKeys(){},clearBurrowSnapshot(){}},
+  },{...time.globals,performance:{now:()=>time.globals.Date.now()}});
   return {...api,snapshot:()=>api.useBurrow(),fetches:()=>fetches,setFetch:fn=>fetch=fn,
+    advance:time.advance,
     signOut(){epoch++;identities.forEach(fn=>fn());}};
 }
 test('simultaneous screens share one in-flight bootstrap',async()=>{
@@ -56,13 +60,14 @@ test('a command begun before pair invalidation cannot clear a new command busy s
 });
 test('resume refresh waits for the previous request then obtains a new snapshot',async()=>{
   const h=harness();let resolve;h.setFetch(()=>new Promise(r=>resolve=r));
-  const old=h.refreshBurrow(),resume=h.refreshBurrowAfterCurrent();assert.equal(h.fetches(),1);
+  const old=h.refreshBurrow(),resume=h.refreshBurrowAfterCurrent({after:h.burrowClock()+1});assert.equal(h.fetches(),1);
+  h.advance(1);
   h.setFetch(async()=>({profile:{id:'fresh'}}));resolve({profile:{id:'cached'}});await old;await resume;
   assert.equal(h.fetches(),2);assert.equal(h.snapshot().data.profile.id,'fresh');
 });
 test('resume waiting on an old identity cannot fetch or publish after sign-out',async()=>{
   const h=harness();let resolve;h.setFetch(()=>new Promise(r=>resolve=r));
-  h.refreshBurrow();const resume=h.refreshBurrowAfterCurrent();h.signOut();resolve({profile:{id:'old'}});await resume;
+  h.refreshBurrow();const resume=h.refreshBurrowAfterCurrent({after:h.burrowClock()+1});h.signOut();resolve({profile:{id:'old'}});await resume;
   assert.equal(h.fetches(),1);assert.equal(h.snapshot().data,null);
 });
 test('revoked pairing or rollout clears private room snapshot; ordinary offline failure retains it',async()=>{
@@ -83,7 +88,7 @@ test('uncertain mutation retry reuses key; a confirmed next action gets a fresh 
 test('rapid taps cannot dispatch two concurrent financial commands',async()=>{
   const h=harness();let resolve;let calls=0;
   const pending=h.runBurrowAction('buy',()=>{calls++;return new Promise(r=>resolve=r);});
-  assert.equal(await h.runBurrowAction('buy',async()=>calls++),false);assert.equal(calls,1);
+  assert.equal(h.runBurrowAction('buy',async()=>calls++),pending);assert.equal(calls,1);
   resolve();await pending;
 });
 test('new entry waits for its own native layout/data, not removed legacy assets',()=>{

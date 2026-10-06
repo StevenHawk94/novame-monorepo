@@ -10,10 +10,10 @@ import { useBurrowSnapshot } from '@/lib/burrow-store';
 import { adventureNeedsCompletion } from '@/lib/burrow-presentation';
 import { SHOP_CATEGORIES } from '@novame/domain';
 
-const allowed:BurrowSection[]=['burrow','shop','collection','adventure','affection','decorate','partner_room','our_room','friends_room','game_room','memories_room','self_care_room','carrot_shop'];
+const allowed:BurrowSection[]=['burrow','shop','moments','collection','adventure','affection','decorate','partner_room','our_room','friends_room','game_room','memories_room','self_care_room','carrot_shop'];
 export default function BurrowDetail(){
   const enabled=useMajorUpdateEnabled();
-  const params=useLocalSearchParams<{section?:string;roomType?:string;category?:string;inbox?:string;ownedOnly?:string;itemId?:string;ownerId?:string}>();
+  const params=useLocalSearchParams<{section?:string;roomType?:string;category?:string;inbox?:string;ownedOnly?:string;itemId?:string;ownerId?:string;journalPage?:string}>();
   const {data,busy,error}=useBurrowSnapshot();
   const section=allowed.includes(params.section as BurrowSection)?params.section as BurrowSection:'collection';
   const blocked=enabled&&section==='adventure'&&!['not_paired','feature_disabled'].includes(error??'')
@@ -26,7 +26,7 @@ export default function BurrowDetail(){
   if(!enabled)return <Redirect href="/(main)/(tabs)"/>;
   if(section==='our_room')return <Redirect href="/(main)/(tabs)"/>;
   if(section==='game_room')return <GameRoomScreen/>;
-  if(section==='memories_room')return <CoupleJournalScreen/>;
+  if(section==='memories_room')return <CoupleJournalScreen initialPageId={params.journalPage}/>;
   return <BurrowScreen section={section} roomType={params.roomType==='our'?'our':'home'}
     initialCategory={SHOP_CATEGORIES.find(category=>category===params.category)??'cushions'} initialInbox={params.inbox==='1'}
     ownedOnly={params.ownedOnly==='1'} initialItemId={params.itemId} collectionOwnerId={params.ownerId}/>;

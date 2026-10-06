@@ -95,17 +95,18 @@ function editor({mine=true,cancel=false,waitPick=false}={}) {
   const modules={
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{Modal:'Modal',Text:'Text',View:'View',Pressable:'Pressable',ScrollView:'ScrollView',AppState:{},useWindowDimensions:()=>({width:390,height:844}),PanResponder:{create:()=>({panHandlers:{}})},
       Alert:{alert:(_t,_m,buttons)=>buttons?.find(b=>b.style==='destructive')?.onPress()},StyleSheet:{create:x=>x,absoluteFillObject:{}}},
-    'expo-image':{Image:'Image'},'expo-router':{useFocusEffect(){}},'expo-camera':{CameraView:'CameraView',useCameraPermissions:()=>[{granted:true},async()=>({granted:true})]},'expo-crypto':{randomUUID:()=>`key-${picks.length}`},
+'./burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },'expo-router':{useFocusEffect(){}},'expo-camera':{CameraView:'CameraView',useCameraPermissions:()=>[{granted:true},async()=>({granted:true})]},'expo-crypto':{randomUUID:()=>`key-${picks.length}`},
     'expo-image-picker':{requestMediaLibraryPermissionsAsync:async()=>({granted:true}),requestCameraPermissionsAsync:async()=>({granted:true}),
       launchImageLibraryAsync:async options=>{picks.push(options);return waitPick?waiting.promise:cancel?{canceled:true}:{canceled:false,assets:[{uri:'local',width:900,height:600}]};}},
     'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},manipulateAsync:async(...args)=>{transforms.push(args);return {uri:'crop',base64:'bytes'};}},
     '@/lib/app-major-update-api':{saveMemoryPhoto:async(...args)=>{saves.push(args);if(fail)throw Error('network');},deleteMemoryPhoto:async(...args)=>deletes.push(args)},
+    '@/lib/burrow-room-photo-cache':{cachedRoomPhotoUri:()=>null,loadRoomPhoto:async()=>'',keepRoomPhotoPreview:async()=>'',invalidateRoomPhotoCache(){}},
     '@/lib/burrow-photo-drafts':{readPhotoDraft:()=>null,persistPhotoDraft(){},removePhotoDraft(){}},
     '@/lib/room-photo-errors':load('apps/mobile/src/lib/room-photo-errors.ts'),
     '@/lib/haptics':{haptics:{medium:async()=>{}}},
     '@/lib/burrow-doll-face':{dollFaceBounds:()=>null,dollFaceRect:()=>null},'./burrow-back-button':{BurrowBackButton:'BurrowBackButton'},
     '@/lib/room-photo-crop':load('apps/mobile/src/lib/room-photo-crop.ts'),'./frame-photo-cropper':{FramePhotoCropper:'FramePhotoCropper'},
-    '@/lib/burrow-store':{refreshBurrow:async()=>{}},'@/lib/session-lifecycle':{sessionEpoch:()=>epoch,subscribeSessionIdentity:fn=>{identity=fn;return()=>{};}},
+    '@/lib/burrow-store':{refreshBurrow:async()=>{},refreshBurrowAfterCurrent:async()=>{}},'@/lib/session-lifecycle':{sessionEpoch:()=>epoch,subscribeSessionIdentity:fn=>{identity=fn;return()=>{};}},
   };
   const {RoomPhotoEditor}=load('apps/mobile/src/components/burrow/room-photo.tsx',modules);
   const render=()=>h.render(()=>RoomPhotoEditor({data:{profile:{id:'me'},roomPhotos:[]},kind:'frame',ownerId:mine?'me':'partner',memory:state.memory,onClose:()=>closed++}));
@@ -147,9 +148,10 @@ test('private memory viewer clears on background and identity change, rejects st
   const h=hooks(),requests=[];let app,identity;
   const {RoomPhoto}=load('apps/mobile/src/components/burrow/room-photo.tsx',{
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{AppState:{currentState:'active',addEventListener:(_e,fn)=>{app=fn;return {remove(){}};}},
-      Pressable:'Pressable',Text:'Text',StyleSheet:{create:x=>x}},'expo-image':{Image:'Image'},
+      Pressable:'Pressable',Text:'Text',StyleSheet:{create:x=>x}},'./burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },
     'expo-router':{useFocusEffect:fn=>h.react.useEffect(fn,[fn])},'expo-camera':{CameraView:'CameraView',useCameraPermissions:()=>[{granted:true},async()=>({granted:true})]},'expo-crypto':{},'expo-image-picker':{},'expo-image-manipulator':{},
     '@/lib/app-major-update-api':{fetchMemoryPhoto:()=>{const d=deferred();requests.push(d);return d.promise;}},
+    '@/lib/burrow-room-photo-cache':{cachedRoomPhotoUri:()=>null,loadRoomPhoto:async()=>'',keepRoomPhotoPreview:async()=>'',invalidateRoomPhotoCache(){}},
     '@/lib/burrow-photo-drafts':{readPhotoDraft:()=>null,persistPhotoDraft(){},removePhotoDraft(){}},
     '@/lib/room-photo-errors':load('apps/mobile/src/lib/room-photo-errors.ts'),
     '@/lib/haptics':{haptics:{medium:async()=>{}}},

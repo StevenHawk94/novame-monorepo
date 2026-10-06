@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
 import type { MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { haptics } from '@/lib/haptics';
 import { RoomPhoto } from './room-photo';
-import { dollFaceRect } from '@/lib/burrow-doll-face';
+import { dollFaceBounds, dollFaceRect } from '@/lib/burrow-doll-face';
+import { TOY_PUNCH_HEAD_SCALE, TOY_SQUEEZE_STRETCH, TOY_SQUEEZE_WIDTH } from '@/lib/burrow-toy-warp';
 
 type DollPhoto = MajorUpdateBootstrap['roomPhotos'][number] | undefined;
 export type HeartParticle = { id: number; drift: number; rise: number; delay: number; size: number; originX: number; originY: number };
@@ -32,7 +33,7 @@ export function FloatingHeart({ particle, onDone }: { particle: HeartParticle; o
       ] }]}>{particle.id % 3 === 0 ? '💕' : '♥'}</Animated.Text>;
 }
 
-/** Squash the costume as one layer while counter-scaling the face photo. */
+/** Native-view fallback: photo and costume always share the same transforms. */
 export function InteractiveDoll({ asset, photo, style, artStyle, onInteract, onEditPhoto, action, pulse = 0, disabled = false }: {
   asset: BurrowArtAsset;
   photo?: DollPhoto;
@@ -47,6 +48,8 @@ export function InteractiveDoll({ asset, photo, style, artStyle, onInteract, onE
   const offset = useRef(new Animated.ValueXY()).current;
   const pressed = useRef(new Animated.Value(0)).current;
   const punch = useRef(new Animated.Value(0)).current;
+  const squeeze = useRef(new Animated.Value(0)).current;
+  const shake = useRef(new Animated.Value(0)).current;
   const tilt = useRef(new Animated.Value(0)).current;
   const startedAt = useRef(0);
   const moved = useRef(false);
@@ -72,19 +75,21 @@ export function InteractiveDoll({ asset, photo, style, artStyle, onInteract, onE
     const isPunch = action.kind === 'punch';
     emitHearts(isPunch ? 7 : 5);
     void (isPunch ? haptics.medium() : haptics.light());
-    pressed.stopAnimation(); punch.stopAnimation(); tilt.stopAnimation();
+    pressed.stopAnimation(); punch.stopAnimation(); squeeze.stopAnimation(); shake.stopAnimation(); tilt.stopAnimation();
+    pressed.setValue(0); punch.setValue(0); squeeze.setValue(0); shake.setValue(0); tilt.setValue(0);
     Animated.parallel([
       Animated.sequence([
-        Animated.timing(pressed, { toValue: 1, duration: isPunch ? 65 : 160, useNativeDriver: true }),
-        Animated.spring(pressed, { toValue: 0, damping: isPunch ? 5 : 7, stiffness: isPunch ? 190 : 155, useNativeDriver: true }),
+        Animated.timing(squeeze, { toValue: isPunch ? 0 : 1, duration: isPunch ? 0 : 240, useNativeDriver: true }),
+        Animated.delay(isPunch ? 0 : 110),
+        Animated.spring(squeeze, { toValue: 0, damping: 12, stiffness: 140, useNativeDriver: true }),
       ]),
       Animated.sequence([
         Animated.timing(punch, { toValue: isPunch ? 1 : 0, duration: 65, useNativeDriver: true }),
-        Animated.spring(punch, { toValue: 0, damping: 5, stiffness: 190, useNativeDriver: true }),
+        Animated.spring(punch, { toValue: 0, damping: 13, stiffness: 220, useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.timing(tilt, { toValue: isPunch ? -1 : .2, duration: 65, useNativeDriver: true }),
-        Animated.spring(tilt, { toValue: 0, damping: 5, stiffness: 170, useNativeDriver: true }),
+        ...[isPunch ? -1 : 0, isPunch ? 1 : 0, isPunch ? -.65 : 0, isPunch ? .35 : 0, 0]
+          .map((toValue, index) => Animated.timing(shake, { toValue, duration: [35, 45, 45, 50, 70][index], useNativeDriver: true })),
       ]),
     ]).start();
   }, [action?.token]);
@@ -96,11 +101,18 @@ export function InteractiveDoll({ asset, photo, style, artStyle, onInteract, onE
       Animated.spring(pressed,{toValue:0,damping:7,stiffness:155,useNativeDriver:true}),
     ]).start();
   },[pulse]);
+  useEffect(() => () => {
+    [offset, pressed, punch, squeeze, shake, tilt].forEach(value => value.stopAnimation());
+  }, [offset, pressed, punch, squeeze, shake, tilt]);
   const removeHeart = useCallback((id: number) => setHearts(previous => previous.filter(heart => heart.id !== id)), []);
   const settle = (showFeedback: boolean) => {
     Animated.spring(offset, { toValue: { x: 0, y: 0 }, damping: 7, stiffness: 180, mass: .8, useNativeDriver: true }).start();
     Animated.spring(pressed, { toValue: 0, damping: 7, stiffness: 180, useNativeDriver: true }).start();
-    Animated.spring(tilt, { toValue: 0, damping: 7, stiffness: 180, useNativeDriver: true }).start();
+    if (showFeedback && !moved.current) {
+      tilt.stopAnimation(); tilt.setValue(0);
+      Animated.sequence([.9, -.7, .45, -.2, 0].map((toValue, index) =>
+        Animated.timing(tilt, { toValue, duration: [75, 110, 100, 90, 100][index], useNativeDriver: true }))).start();
+    } else Animated.spring(tilt, { toValue: 0, damping: 7, stiffness: 180, useNativeDriver: true }).start();
     if (!showFeedback || Date.now()-lastFeedback.current<250) return;
     lastFeedback.current=Date.now();
     emitHearts(moved.current ? 6 : 4);
@@ -125,17 +137,38 @@ export function InteractiveDoll({ asset, photo, style, artStyle, onInteract, onE
     onPanResponderTerminate: () => settle(false),
     onPanResponderTerminationRequest: () => false,
   }), [disabled, offset, pressed]);
-  const scaleX = Animated.add(pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 1.13] }), punch.interpolate({ inputRange: [0, 1], outputRange: [0, .1] }));
-  const scaleY = Animated.add(pressed.interpolate({ inputRange: [0, 1], outputRange: [1, .86] }), punch.interpolate({ inputRange: [0, 1], outputRange: [0, -.11] }));
+  const scaleX = Animated.multiply(pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 1.13] }),
+    squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, TOY_SQUEEZE_WIDTH], extrapolate: 'clamp' }));
+  const scaleY = Animated.multiply(pressed.interpolate({ inputRange: [0, 1], outputRange: [1, .86] }),
+    squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, TOY_SQUEEZE_STRETCH], extrapolate: 'clamp' }));
   const rotate = tilt.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-8deg', '0deg', '8deg'] });
+  const flattened = StyleSheet.flatten(artStyle);
+  const artHeight = typeof flattened?.height === 'number' ? flattened.height : stageSize.height;
+  const headHeight = (dollFaceBounds(asset)[3] + asset.height * .035) / asset.height * artHeight;
+  const headScaleY = punch.interpolate({ inputRange: [0, 1], outputRange: [1, TOY_PUNCH_HEAD_SCALE], extrapolate: 'clamp' });
+  const headDrop = punch.interpolate({ inputRange: [0, 1], outputRange: [0, headHeight * (1 - TOY_PUNCH_HEAD_SCALE) / 2], extrapolate: 'clamp' });
   return <Pressable style={style} disabled={disabled} accessibilityRole="button" accessibilityLabel={hearts.length?'Toy sending hearts':'Play with our dolls'}
-    accessibilityHint="Press or drag to make the dolls bounce and send little hearts." onLayout={event=>{const {width,height}=event.nativeEvent.layout;if(width!==stageSize.width||height!==stageSize.height)setStageSize({width,height});}} onPressIn={()=>Animated.spring(pressed,{toValue:1,damping:10,stiffness:220,useNativeDriver:true}).start()} onPress={()=>settle(true)} onPressOut={()=>Animated.spring(pressed,{toValue:0,damping:7,stiffness:180,useNativeDriver:true}).start()}>
+    accessibilityHint="Press or drag to make the dolls bounce and send little hearts." onLayout={event=>{const {width,height}=event.nativeEvent.layout;if(width!==stageSize.width||height!==stageSize.height)setStageSize({width,height});}} onPressIn={()=>{
+      moved.current=false;
+      squeeze.stopAnimation(); squeeze.setValue(0); punch.stopAnimation(); punch.setValue(0); shake.stopAnimation(); shake.setValue(0);
+      Animated.spring(pressed,{toValue:1,damping:10,stiffness:220,useNativeDriver:true}).start();
+    }} onPress={()=>settle(true)} onPressOut={()=>Animated.spring(pressed,{toValue:0,damping:7,stiffness:180,useNativeDriver:true}).start()}>
     <View style={StyleSheet.absoluteFillObject} {...responder.panHandlers}>
-    <Animated.View pointerEvents="none" style={[artStyle, { transform: [{ translateX: offset.x }, { translateY: offset.y }, { rotate }, { scaleX }, { scaleY }] }]}>
-      <Animated.View style={[styles.photo, dollFaceRect(asset), { transform: [
-        { scaleX: Animated.divide(1, scaleX) }, { scaleY: Animated.divide(1, scaleY) },
-      ] }]}>{photo?<RoomPhoto photo={photo} circle />:<View style={styles.emptyFace}/>}</Animated.View>
-      <Image source={asset.source} contentFit="fill" style={styles.fill} />
+    <Animated.View pointerEvents="none" style={[artStyle, { transform: [
+      { translateX: Animated.add(offset.x, shake.interpolate({ inputRange: [-1, 1], outputRange: [-stageSize.width * .018, stageSize.width * .018] })) },
+      { translateY: offset.y }, { rotate }, { scaleX }, { scaleY }] }]}>
+      <Animated.View style={{position:'absolute',left:0,top:0,width:'100%',height:headHeight,overflow:'hidden',
+        transform:[{translateY:headDrop},{scaleY:headScaleY}]}}>
+        <View style={{width:'100%',height:artHeight}}>
+          <View style={[styles.photo,dollFaceRect(asset)]}>{photo?<RoomPhoto photo={photo}/>:null}</View>
+          <Image source={asset.source} contentFit="fill" style={styles.fill}/>
+        </View>
+      </Animated.View>
+      <View style={{position:'absolute',left:0,top:headHeight,bottom:0,width:'100%',overflow:'hidden'}}>
+        <View style={{position:'absolute',top:-headHeight,width:'100%',height:artHeight}}>
+          <Image source={asset.source} contentFit="fill" style={styles.fill}/>
+        </View>
+      </View>
     </Animated.View>
     <View pointerEvents="none" style={styles.emitter}>{hearts.map(heart => <FloatingHeart key={heart.id} particle={heart} onDone={removeHeart} />)}</View>
     </View>

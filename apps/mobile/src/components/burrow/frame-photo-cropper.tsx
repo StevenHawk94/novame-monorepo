@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Modal, PanResponder, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
-import { positionedFrameCrop, type PhotoCrop } from '@/lib/room-photo-crop';
+import { Image } from './burrow-image';
+import { FRAME_PHOTO_ASPECT, positionedFrameCrop, type PhotoCrop } from '@/lib/room-photo-crop';
 
 type Asset = { uri: string; width: number; height: number };
 
@@ -11,8 +11,8 @@ export function FramePhotoCropper({ asset, onCancel, onConfirm }: {
   onConfirm: (crop: PhotoCrop) => Promise<void>;
 }) {
   const window = useWindowDimensions();
-  const previewWidth = Math.max(160, Math.min(window.width - 64, (window.height - 300) * 5 / 7, 330));
-  const previewHeight = previewWidth * 7 / 5;
+  const previewWidth = Math.max(160, Math.min(window.width - 64, (window.height - 300) * FRAME_PHOTO_ASPECT, 330));
+  const previewHeight = previewWidth / FRAME_PHOTO_ASPECT;
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
@@ -45,7 +45,7 @@ export function FramePhotoCropper({ asset, onCancel, onConfirm }: {
     <View style={styles.scrim}>
       <View style={styles.sheet}>
         <Text style={styles.title}>Crop for your frame</Text>
-        <Text style={styles.hint}>The 5:7 area below is what your photo frame will show. Drag to position your photo.</Text>
+        <Text style={styles.hint}>The 201:290 area below is what your photo frame will show. Drag to position your photo.</Text>
         <View style={[styles.viewport, { width: previewWidth, height: previewHeight }]} {...responder.panHandlers}>
           <Image source={{ uri: asset.uri }} contentFit="fill" style={{ position: 'absolute', width: asset.width * geometry.scale,
             height: asset.height * geometry.scale,
@@ -70,7 +70,8 @@ const styles = StyleSheet.create({
   sheet: { width: '100%', maxWidth: 430, backgroundColor: '#FFFCF7', borderRadius: 28, padding: 22, alignItems: 'center', gap: 14 },
   title: { color: '#4C2B22', fontSize: 25, fontWeight: '800' },
   hint: { color: '#79563E', fontSize: 14, lineHeight: 20, textAlign: 'center' },
-  viewport: { overflow: 'hidden', backgroundColor: '#E8C8A0', borderWidth: 3, borderColor: '#C99B70' },
+  // Inset borders would change the effective crop area and hide edge pixels.
+  viewport: { overflow: 'hidden', backgroundColor: '#E8C8A0' },
   zoomRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   zoomButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#F1EDE7', alignItems: 'center', justifyContent: 'center' },
   zoomText: { fontSize: 28, lineHeight: 32, color: '#4C2B22' },

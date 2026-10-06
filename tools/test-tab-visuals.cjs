@@ -24,6 +24,7 @@ function setup(platform, { width = 390, tier = 'free', paired = true, gate = 'ok
     label: 'Worth Noticing', title: null, observation: 'Private paid insight', meaning: null, takeaway: null,
   }] : [] } };
   const { default: Screen } = load('apps/mobile/app/(main)/(tabs)/status.tsx', {
+    '@/lib/use-major-update': { useMajorUpdateEnabled: () => false },
     react: { useCallback: fn => fn, useEffect() {}, useRef: value => ({ current: value }),
       useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}] },
     'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': rn,

@@ -68,7 +68,7 @@ export async function testSoloBurrow({db,query,rpc,check}) {
     await db.query('insert into reflect_drafts(user_id,finalized_reflect_id) values($1,$2)',[me,record]);
     check((await rpc('register_adventure_record_v1',[me,record])).error===null,'solo journal receives registration reward');
     const started=await rpc('solo_burrow_start_adventure_v1',[me,record,'adventure-1']);
-    check(started.applied===true,'solo adventure starts');
+    check(started.applied===true,`solo adventure starts: ${JSON.stringify(started)}`);
     await db.query("update adventures set ends_at=now()-interval '1 second',rules_snapshot=rules_snapshot||'{\"friend_probability\":0}'::jsonb where id=$1",[started.adventureId]);
     check((await rpc('solo_burrow_settle_adventure_v1',[me,started.adventureId])).applied===true,'solo adventure settles');
     check((await rpc('solo_burrow_claim_adventure_v1',[me,started.adventureId])).applied===true,'solo result can be claimed');

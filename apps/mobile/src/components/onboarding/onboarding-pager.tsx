@@ -6,6 +6,7 @@ import {
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Image, type ImageProps } from 'expo-image';
 import { hideSplashOnce } from '../../lib/splash';
+import { BurrowLaunchScreen } from '../main/burrow-launch-screen';
 import { markAndroidP0UiReady } from '../../lib/download-queue';
 
 type PageContextValue = { playing: boolean; imageReady: (key: string) => void };
@@ -85,7 +86,7 @@ export function OnboardingPager({
       })}
       {showWaiting && pending && (
         <View pointerEvents="none" style={displayed ? styles.waiting : styles.initialWaiting}>
-          <ActivityIndicator color="#4A3220" accessibilityLabel="Preparing the next page" />
+          {displayed ? <ActivityIndicator color="#4A3220" accessibilityLabel="Preparing the next page" /> : <BurrowLaunchScreen />}
         </View>
       )}
     </View>

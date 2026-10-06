@@ -103,7 +103,8 @@ test('automatic rating waits outside modal transitions and never renders a block
   function gate({route=['(main)','(tabs)','home'],transition=false,dialog=false}={}){
     const effects=[],timers=new Map();let state=0,calls=0,resolveAction;
     const mod=load('apps/mobile/src/components/rating/official-rating-gate.tsx',{
-      react:{useMemo:fn=>fn(),useRef:current=>({current}),useState:initial=>[state++===0?true:initial,()=>{}],useEffect:fn=>effects.push(fn)},
+      '@/lib/partner-reflect-paywall':{peekPartnerReflectPaywall:()=>null,subscribePartnerReflectPaywallRequest:()=>()=>{},syncPartnerReflectPaywallRequests:async()=>{}},
+      react:{useMemo:fn=>fn(),useRef:current=>({current}),useState:initial=>[state++===0?true:(typeof initial==='function'?initial():initial),()=>{}],useEffect:fn=>effects.push(fn)},
       'react-native':{AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
       'expo-router':{useSegments:()=>route},
       'expo-store-review':{hasAction:()=>new Promise(resolve=>{resolveAction=resolve}),requestReview:async()=>{calls++}},

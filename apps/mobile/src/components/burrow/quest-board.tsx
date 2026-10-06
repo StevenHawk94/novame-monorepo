@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from './burrow-image';
 import type { MajorUpdateBootstrap, MajorUpdateQuest } from '@/lib/app-major-update-api';
 import { BURROW_QUEST_ICONS } from '@/lib/burrow-ui-assets';
+import { QuestClaimBurst } from './care-quest-celebration';
 
 const dailyOrder = ['write_adventure_record', 'send_affection', 'play_game', 'water_partner_flower', 'feed_partner_bunny', 'interact_with_toy'] as const;
 type DailyId = typeof dailyOrder[number];
@@ -25,14 +27,36 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
   data: MajorUpdateBootstrap;
   busy: boolean;
   onGo: (id: DailyId) => void;
-  onClaim: (quest: MajorUpdateQuest) => Promise<boolean>;
-  onSpecialClaim: (questId: string, stage: number) => Promise<boolean>;
+  onClaim: (quest: MajorUpdateQuest) => Promise<number>;
+  onSpecialClaim: (questId: string, stage: number) => Promise<number>;
   onSpecialGo: (questId: string) => void;
 }) {
   const [localClaims,setLocalClaims]=useState<Set<string>>(()=>new Set());
-  const claim=(key:string,request:()=>Promise<boolean>)=>{
+  const [celebration,setCelebration]=useState<number|null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const claiming = useRef(new Set<string>());
+  const activeScope = useRef('');
+  const scope = `${data.profile.id}:${data.localDate}:${data.pairVersion ?? ''}`;
+  activeScope.current = scope;
+  useEffect(() => { claiming.current.clear(); setLocalClaims(new Set()); setCelebration(null); setClaimError(null); }, [scope]);
+  useEffect(() => { if (!claimError) return; const timer = setTimeout(() => setClaimError(null), 2000); return () => clearTimeout(timer); }, [claimError]);
+  const claim=(key:string,expectedReward:number,request:()=>Promise<number>)=>{
+    if(localClaims.has(key) || claiming.current.has(key))return;
+    claiming.current.add(key);
+    const owner = scope;
+    // Claim is optimistic: the card settles on this frame, while the server
+    // confirms the actual credit in the background. A rejection rolls it back.
     setLocalClaims(previous=>new Set(previous).add(key));
-    void request().then(ok=>{if(!ok)setLocalClaims(previous=>{const next=new Set(previous);next.delete(key);return next;});});
+    setCelebration(expectedReward);
+    void request().then(reward=>{
+      if (activeScope.current !== owner) return;
+      // Zero can be a replay of an already credited claim, not a rejection.
+      if (reward > 0 && reward !== expectedReward) setCelebration(reward);
+    }).catch(()=>{
+      if (activeScope.current !== owner) return;
+      setCelebration(null); setClaimError('Couldn’t claim the reward. Tap Claim to retry.');
+      setLocalClaims(previous=>{const next=new Set(previous);next.delete(key);return next;});
+    }).finally(() => { if (activeScope.current === owner) claiming.current.delete(key); });
   };
   // An older API snapshot can be empty on the first visit. Keep the complete
   // board visible while its real assignments are being created/refreshed.
@@ -55,32 +79,37 @@ export function QuestBoard({ data, busy, onGo, onClaim, onSpecialClaim, onSpecia
       const claimed = !!quest.claimedAt || localClaims.has(quest.assignmentId);
       const pending = quest.assignmentId.startsWith('pending:');
       return <Pressable key={id} accessibilityRole="button" accessibilityLabel={`${dailyCopy[id] ?? id}, ${claimed ? 'reward collected' : done ? 'collect reward' : 'open'}`}
-        disabled={busy || claimed} onPress={() => done && !pending ? claim(quest.assignmentId,()=>onClaim(quest)) : onGo(id)}
+        disabled={busy || claimed} onPress={() => done && !pending ? claim(quest.assignmentId,10,()=>onClaim(quest)) : onGo(id)}
         style={({ pressed }) => [styles.dailyCard, done && styles.doneCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[id]} resizeMode="contain" style={styles.dailyIcon} />
-        <Text numberOfLines={2} style={[styles.dailyTitle, claimed && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
-        <View style={[styles.status, done && styles.statusDone]}><Text style={styles.statusText}>{claimed ? '✓' : done ? '★' : '➜'}</Text></View>
+        <Image source={BURROW_QUEST_ICONS[id]} contentFit="contain" style={styles.dailyIcon} />
+        <Text numberOfLines={2} style={[styles.dailyTitle, (done || claimed) && styles.claimedTitle]}>{dailyCopy[id] ?? id}</Text>
+        {!claimed&&(done&&!pending?<View style={styles.claimButton}><Text style={styles.claimText}>Claim</Text></View>
+          :<View style={styles.status}><Text style={styles.statusText}>➜</Text></View>)}
       </Pressable>;
     })}</View>
     <Text accessibilityRole="header" style={[styles.heading, styles.specialHeading]}>Special Quests</Text>
     <View style={styles.list}>{specials.map(quest => {
       const complete = quest.progress >= quest.target;
+      const claimable = complete && data.specialQuests.some(item => item.questId === quest.questId);
       const localClaimed=localClaims.has(`${quest.questId}:${quest.stage}`);
       const copy = specialCopy[quest.questId] ?? { title: quest.questId, subtitle: 'Keep going' };
       return <Pressable key={quest.questId} accessibilityRole="button" accessibilityLabel={`${copy.title}, ${quest.progress} of ${quest.target}, ${complete ? 'collect reward' : 'open'}`}
-        disabled={busy||localClaimed} onPress={() => complete && data.specialQuests.some(q => q.questId === quest.questId)
-          ? claim(`${quest.questId}:${quest.stage}`,()=>onSpecialClaim(quest.questId, quest.stage)) : onSpecialGo(quest.questId)}
+        disabled={busy||localClaimed} onPress={() => claimable
+          ? claim(`${quest.questId}:${quest.stage}`,quest.reward,()=>onSpecialClaim(quest.questId, quest.stage)) : onSpecialGo(quest.questId)}
         style={({ pressed }) => [styles.specialCard, pressed && styles.pressed]}>
-        <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} resizeMode="contain" style={styles.specialIcon} />
+        <Image source={BURROW_QUEST_ICONS[quest.questId as keyof typeof BURROW_QUEST_ICONS]} contentFit="contain" style={styles.specialIcon} />
         <View style={styles.specialText}>
           <Text style={styles.specialTitle}>{copy.title}</Text>
           <Text numberOfLines={2} style={styles.subtitle}>{copy.subtitle}</Text>
           <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, Math.max(0, quest.progress / Math.max(1, quest.target) * 100))}%` }]} /></View>
           <Text style={styles.progress}>{Math.min(quest.progress, quest.target)}/{quest.target}</Text>
         </View>
-        <View style={[styles.status, complete && styles.statusDone]}><Text style={styles.statusText}>{localClaimed?'✓':complete ? '★' : '➜'}</Text></View>
+        {!localClaimed&&(claimable?<View style={styles.claimButton}><Text style={styles.claimText}>Claim</Text></View>
+          :<View style={styles.status}><Text style={styles.statusText}>➜</Text></View>)}
       </Pressable>;
     })}</View>
+    {celebration!=null&&<QuestClaimBurst reward={celebration} onClose={()=>setCelebration(null)}/>}
+    {claimError && <Text accessibilityRole="alert" style={{ color: '#FFF8EC', textAlign: 'center' }}>{claimError}</Text>}
   </View>;
 }
 
@@ -95,7 +124,8 @@ const styles = StyleSheet.create({
   dailyTitle: { flex: 1, color: '#24150D', fontSize: 16, fontWeight: '700', lineHeight: 21 },
   claimedTitle: { textDecorationLine: 'line-through', color: '#FFF9EF' },
   status: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#8B8A86', alignItems: 'center', justifyContent: 'center' },
-  statusDone: { backgroundColor: '#60A871' },
+  claimButton: { minWidth: 70, height: 38, paddingHorizontal: 10, borderRadius: 19, backgroundColor: '#31A36C', alignItems: 'center', justifyContent: 'center' },
+  claimText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
   statusText: { color: '#FFF', fontSize: 28, lineHeight: 32, fontWeight: '800' },
   specialCard: { minHeight: 106, borderRadius: 22, backgroundColor: '#FFFDF8', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 10, paddingVertical: 12, shadowColor: '#231008', shadowOffset: { width: 0, height: 5 }, shadowOpacity: .4, shadowRadius: 0, elevation: 4 },
   specialIcon: { width: 58, height: 58 },

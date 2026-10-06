@@ -10,8 +10,9 @@ export async function GET(request) {
   try {
     const userId = await authenticatedUserId(request)
     if (!userId) return reply({ error: 'Unauthorized' }, 401)
-    const id = new URL(request.url).searchParams.get('id')
-    if (!photoUUID(id)) return reply({ error: 'invalid_request' }, 400)
+    const params = new URL(request.url).searchParams
+    const id = params.get('id'), version = params.get('version')
+    if (!photoUUID(id) || (version && !Number.isFinite(Date.parse(version)))) return reply({ error: 'invalid_request' }, 400)
     const db = appMajorUpdateServiceClient()
     if (!await majorUpdateEnabled(db)) return reply({ error: 'feature_disabled' }, 403)
     let { data, error } = await db.rpc('read_room_photo_v1', { p_user_id: userId, p_photo_id: id })
@@ -22,6 +23,11 @@ export async function GET(request) {
       data = solo.data
     }
     if (data.error) return reply(data, commandStatus(data.error))
+    if (version) {
+      const current = await db.from('room_photos').select('id').eq('id', id).eq('private_path', data.path).eq('updated_at', version).maybeSingle()
+      if (current.error) throw current.error
+      if (!current.data) return reply({ error: 'photo_conflict' }, 409)
+    }
     const signed = await db.storage.from(PHOTO_BUCKET).createSignedUrl(data.path, PHOTO_LINK_SECONDS)
     if (signed.error) throw signed.error
     return reply({ success: true, url: signed.data.signedUrl, expiresIn: PHOTO_LINK_SECONDS })
@@ -72,7 +78,18 @@ export async function POST(request) {
       if (prepared.error) throw prepared.error
     }
     if (prepared.data.error) return reply(prepared.data, commandStatus(prepared.data.error))
-    if (prepared.data.committed) return reply({ success: true, applied: false })
+    const photoReceipt = async (receipt) => {
+      // Bind the version to this ticket's bytes, never to an unrelated newer
+      // photo. A retry after another replacement must not mislabel its JPEG.
+      const current = await db.from('room_photos').select('id,owner_id,kind,updated_at')
+        .eq('private_path', prepared.data.path).eq('owner_id', body.ownerId).eq('kind', body.kind).maybeSingle()
+      if (current.error) throw current.error
+      if (!current.data) return reply({ error: 'photo_conflict' }, 409)
+      const row = current.data
+      return reply({ success: true, ...receipt, photoId: row.id,
+        photo: { id: row.id, ownerId: row.owner_id, kind: row.kind, updatedAt: row.updated_at } })
+    }
+    if (prepared.data.committed) return await photoReceipt({ applied: false })
     // Immutable path + digest-bound ticket: retries cannot overwrite a committed photo.
     const uploaded = await db.storage.from(PHOTO_BUCKET).upload(prepared.data.path, bytes, { contentType: 'image/jpeg', upsert: false, cacheControl: '0' })
     if (uploaded.error && !['409','Duplicate'].includes(String(uploaded.error.statusCode ?? uploaded.error.code))) throw uploaded.error
@@ -84,11 +101,7 @@ export async function POST(request) {
     }
     // Do not delete on ambiguous failure: the transaction may already have committed.
     if (complete.data.error) return reply(complete.data, commandStatus(complete.data.error))
-    const pairLow = body.partnerId && body.partnerId < userId ? body.partnerId : userId
-    const pairHigh = body.partnerId && body.partnerId > userId ? body.partnerId : userId
-    const currentPhoto = await db.from('room_photos').select('id').eq('owner_id', body.ownerId)
-      .eq('kind', body.kind).eq('pair_low', pairLow).eq('pair_high', pairHigh).maybeSingle()
-    return reply({ success: true, ...complete.data, photoId: currentPhoto.data?.id ?? null })
+    return await photoReceipt(complete.data)
   } catch (error) {
     return reply({ error: error?.message === 'invalid_request' ? 'invalid_request' : 'photo_unavailable' }, error?.message === 'invalid_request' ? 400 : 503)
   }

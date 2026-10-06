@@ -77,9 +77,16 @@ export default function MainLayout() {
             options={{ contentStyle: { backgroundColor: '#E8D5B0' } }}
           />
           <Stack.Screen name="room-interaction" options={{ contentStyle: { backgroundColor: '#FFFAF2' } }} />
-          <Stack.Screen name="burrow-detail" />
+          <Stack.Screen name="burrow-detail" options={({ route }) => {
+            const section = (route.params as { section?: string } | undefined)?.section;
+            // Long timeline/map pages use the native edge recognizer so a
+            // vertical scroll through rooms cannot be intercepted by pan-back.
+            return section === 'moments' || section === 'burrow'
+              ? { fullScreenGestureEnabled: false, gestureResponseDistance: { end: 24 } } : {};
+          }} />
           <Stack.Screen name="affection-detail" options={{ contentStyle: { backgroundColor: '#ED8390' } }} />
           <Stack.Screen name="game-room" />
+          <Stack.Screen name="moment-detail" />
           <Stack.Screen name="shop-detail" />
           <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
           <Stack.Screen

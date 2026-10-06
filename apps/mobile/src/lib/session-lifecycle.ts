@@ -13,6 +13,8 @@ export function observeSessionIdentity(userId: string | null): boolean {
   return unchanged;
 }
 export const sessionEpoch = () => epoch;
+/** undefined until auth hydration; null after sign-out. Never infer an owner from disk. */
+export const sessionUserId = () => owner;
 export function subscribeSessionIdentity(listener: () => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };

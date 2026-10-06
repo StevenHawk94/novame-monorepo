@@ -3,6 +3,7 @@ import { ApiError } from '@novame/api-client';
 import { apiClient } from './api';
 import { withDeadline } from './async-lifecycle';
 import { sessionEpoch } from './session-lifecycle';
+import { GAME_ROOM_CONTENT_VERSION, localGameOverview, localGameSession } from './burrow-game-room-content';
 
 export interface GameQuestion { self: string; partner: string; options: string[] }
 export interface GameSummary { id: string; category: string; categoryId: string; number: number; title: string; hook: string; spicy: string; questionCount: number }
@@ -25,19 +26,25 @@ async function checked<T extends { error?: string | null }>(promise: Promise<T>)
 }
 
 export function gameOverview() {
-  return checked(apiClient.get<GameOverview & { error?: string }>('/api/vnext/game-room?mode=overview'));
+  return checked(apiClient.get<Partial<GameOverview> & { error?: string }>(
+    `/api/vnext/game-room?mode=overview&content=local&catalogVersion=${GAME_ROOM_CONTENT_VERSION}`,
+  )).then(localGameOverview);
 }
 export function gameSession(sessionId: string) {
-  return checked(apiClient.get<GameSession & { error?: string }>(`/api/vnext/game-room?mode=session&id=${encodeURIComponent(sessionId)}`));
+  return checked(apiClient.get<Omit<GameSession, 'questions'> & { questions?: GameQuestion[]; error?: string }>(
+    `/api/vnext/game-room?mode=session&id=${encodeURIComponent(sessionId)}&content=local&catalogVersion=${GAME_ROOM_CONTENT_VERSION}`,
+  )).then(localGameSession);
 }
 export function unlockGame(gameId: string) {
   return checked(apiClient.post<{ error?: string; charged?: boolean }>('/api/vnext/game-room', { action: 'unlock', gameId, key: randomUUID() }));
 }
 export function startGame(gameId: string) {
-  return checked(apiClient.post<{ error?: string; sessionId: string }>('/api/vnext/game-room', { action: 'start', gameId }));
+  return checked(apiClient.post<{ error?: string; sessionId: string; session?: GameSession }>('/api/vnext/game-room', { action: 'start', gameId, content: 'local', catalogVersion: GAME_ROOM_CONTENT_VERSION }))
+    .then(result => ({ ...result, session: result.session ? localGameSession(result.session) : undefined }));
 }
 export function answerGame(sessionId: string, phase: 'own'|'guess', index: number, choice: number) {
-  return checked(apiClient.post<{ error?: string }>('/api/vnext/game-room', { action: 'answer', sessionId, phase, index, choice }));
+  return checked(apiClient.post<{ error?: string; session?: GameSession }>('/api/vnext/game-room', { action: 'answer', sessionId, phase, index, choice, content: 'local', catalogVersion: GAME_ROOM_CONTENT_VERSION }))
+    .then(result => ({ ...result, session: result.session ? localGameSession(result.session) : undefined }));
 }
 export function notifyGame(sessionId: string, enabled: boolean) {
   return checked(apiClient.post<{ error?: string }>('/api/vnext/game-room', { action: 'notify', sessionId, enabled }));

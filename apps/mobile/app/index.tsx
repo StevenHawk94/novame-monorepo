@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { BurrowLaunchScreen } from '@/components/main/burrow-launch-screen';
 import { Redirect } from 'expo-router';
 
 import { getCurrentSession } from '@/lib/auth';
@@ -77,7 +77,7 @@ export default function Index() {
     // from this intermediate redirect route exposed the navigator background
     // for one frame on iOS. Home/Paired, onboarding and auth each own their
     // final hideSplashOnce() hand-off.
-    return <View style={styles.splash} />;
+    return <BurrowLaunchScreen />;
   }
   if (route === 'main') return <Redirect href="/(main)/(tabs)" />;
   if (route === 'friends') return <Redirect href="/(main)/(tabs)/friends" />;
@@ -85,7 +85,3 @@ export default function Index() {
   if (route === 'bootstrap') return <Redirect href="/(auth)/signing-in" />;
   return <Redirect href="/(auth)/sign-in" />;
 }
-
-const styles = StyleSheet.create({
-  splash: { flex: 1, backgroundColor: '#F8E2C1' },
-});

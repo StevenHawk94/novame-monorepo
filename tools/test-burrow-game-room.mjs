@@ -30,6 +30,7 @@ try {
   check(scoreGameRoomRound({...sample,partnerGuesses:[0,0,0,1,1,1],guesses:[1,1,1,1,1,1]}).outcome==='win','higher score wins');
   check(scoreGameRoomRound({...sample,completedAt:null})===null,'scores unavailable before both finish');
   await db.exec(`
+    set timezone='UTC';
     create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create schema realtime;
     create table public.test_broadcasts(payload jsonb,event text,topic text,private boolean);

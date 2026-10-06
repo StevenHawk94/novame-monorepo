@@ -44,10 +44,14 @@ function jpeg(width=512,height=512) {
   // Structural fixture, not a renderable photo. Native JPEG codec QA is separate.
   return Buffer.from([255,216,255,192,0,11,8,height>>8,height&255,width>>8,width&255,1,1,17,0,255,218,0,8,1,1,0,0,63,0,42,255,217]).toString('base64');
 }
-test('photo input enforces square doll/memory and 5:7 frame JPEGs with bounded dimensions', async () => {
+test('photo input enforces 201:290 frames and preserves square/5:7 legacy uploads', async () => {
   const { decodeRoomPhoto, readPhotoRequest } = await import('../apps/api/src/lib/burrow-photo.mjs');
   assert.ok(decodeRoomPhoto(jpeg()).length > 0);
   assert.ok(decodeRoomPhoto(jpeg(500,700),'frame').length > 0);
+  assert.ok(decodeRoomPhoto(jpeg(603,870),'frame').length > 0);
+  assert.ok(decodeRoomPhoto(jpeg(201,290),'frame').length > 0);
+  assert.throws(() => decodeRoomPhoto(jpeg(603,869),'frame'));
+  assert.throws(() => decodeRoomPhoto(jpeg(603,870),'square'));
   assert.ok(decodeRoomPhoto(jpeg(512,512),'frame').length > 0,'old clients can still upload square frames');
   assert.throws(() => decodeRoomPhoto(jpeg(500,700)));
   assert.throws(() => decodeRoomPhoto(jpeg(500,600),'frame'));
@@ -116,29 +120,30 @@ function editorHarness({kind='frame',owner='me',used=false,cancel=false}={}) {
   const {RoomPhotoEditor}=load('apps/mobile/src/components/burrow/room-photo.tsx',{
     react:hook.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{AppState:{},Alert:{alert(){}},Modal:'Modal',Pressable:'Pressable',Text:'Text',View:'View',useWindowDimensions:()=>({width:390,height:844}),PanResponder:{create:()=>({panHandlers:{}})},StyleSheet:{create:x=>x,absoluteFillObject:{}}},
-    'expo-image':{Image:'Image'},'expo-router':{useFocusEffect(){}},'expo-camera':{CameraView:'CameraView',useCameraPermissions:()=>[{granted:true},async()=>({granted:true})]},'expo-crypto':{randomUUID:()=>`key-${picks.length}`},
+'./burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },'expo-router':{useFocusEffect(){}},'expo-camera':{CameraView:'CameraView',useCameraPermissions:()=>[{granted:true},async()=>({granted:true})]},'expo-crypto':{randomUUID:()=>`key-${picks.length}`},
     'expo-image-picker':{requestMediaLibraryPermissionsAsync:async()=>({granted:true}),requestCameraPermissionsAsync:async()=>({granted:true}),
       launchImageLibraryAsync:async config=>{picks.push(config);return cancel?{canceled:true}:{canceled:false,assets:[{uri:'local',width:800,height:600}]};}},
     'expo-image-manipulator':{SaveFormat:{JPEG:'jpeg'},manipulateAsync:async(...args)=>{options.push(args);return{uri:'cropped',base64:'jpeg-bytes'};}},
     '@/lib/app-major-update-api':{saveRoomPhoto:async(...args)=>{saves.push(args);if(fail)throw Error('network');}},
+    '@/lib/burrow-room-photo-cache':{cachedRoomPhotoUri:()=>null,loadRoomPhoto:async()=>'',keepRoomPhotoPreview:async()=>'',invalidateRoomPhotoCache(){}},
     '@/lib/burrow-photo-drafts':{readPhotoDraft:()=>null,persistPhotoDraft(){},removePhotoDraft(){}},
     '@/lib/room-photo-errors':load('apps/mobile/src/lib/room-photo-errors.ts'),
     '@/lib/haptics':{haptics:{medium:async()=>{}}},
     '@/lib/burrow-doll-face':{dollFaceBounds:()=>null,dollFaceRect:()=>null},'./burrow-back-button':{BurrowBackButton:'BurrowBackButton'},
     '@/lib/room-photo-crop':load('apps/mobile/src/lib/room-photo-crop.ts'),'./frame-photo-cropper':{FramePhotoCropper:'FramePhotoCropper'},
-    '@/lib/burrow-store':{refreshBurrow:async()=>{}},
+    '@/lib/burrow-store':{refreshBurrow:async()=>{},refreshBurrowAfterCurrent:async()=>{}},
     '@/lib/session-lifecycle':{sessionEpoch:()=>epoch,subscribeSessionIdentity:fn=>{sessionListener=fn;return()=>{};}},
   });
   const render=()=>hook.render(()=>RoomPhotoEditor({data:{profile:{id:'me'},dollChangeUsed:used,roomPhotos:[]},ownerId:owner,kind,onClose:()=>closes++}));
   const button=label=>nodes(render()).find(n=>n.props?.label===label);
   return{saves,picks,options,render,button,cropper:()=>nodes(render()).find(n=>n.type==='FramePhotoCropper'),fail:()=>{fail=true;},closeCount:()=>closes,signout:()=>{epoch++;sessionListener();}};
 }
-test('frame photo editor previews exact 5:7 crop before saving and retries same key',async()=>{
+test('frame photo editor saves exact 201:290 crop and retries same key',async()=>{
   const h=editorHarness();h.button('Photo library').props.onPress();await flush();
   assert.equal(h.picks[0].allowsEditing,false);assert.equal(h.options.length,0);
-  await h.cropper().props.onConfirm({originX:100,originY:0,width:500,height:700});await flush();
+  await h.cropper().props.onConfirm({originX:100,originY:0,width:402,height:580});await flush();
   assert.equal(h.options[0][1][0].crop.originX,100);
-  assert.equal(h.options[0][1][1].resize.width,500);assert.equal(h.options[0][1][1].resize.height,700);assert.equal(h.saves.length,0);
+  assert.equal(h.options[0][1][1].resize.width,603);assert.equal(h.options[0][1][1].resize.height,870);assert.equal(h.saves.length,0);
   h.fail();h.button('Save / retry photo').props.onPress();await flush();h.button('Save / retry photo').props.onPress();await flush();
   assert.equal(h.saves.length,2);assert.equal(h.saves[0][3],h.saves[1][3]);assert.equal(h.closeCount(),0);
 });

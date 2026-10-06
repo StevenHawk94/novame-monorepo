@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Alert, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { randomUUID } from 'expo-crypto';
 import { useFocusEffect } from 'expo-router';
-import { fetchRoomPhoto, saveRoomPhoto, fetchMemoryPhoto, saveMemoryPhoto, deleteMemoryPhoto, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
-import { getBurrowSnapshot, refreshBurrow } from '@/lib/burrow-store';
+import { saveRoomPhoto, fetchMemoryPhoto, saveMemoryPhoto, deleteMemoryPhoto, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
+import { cachedRoomPhotoUri, invalidateRoomPhotoCache, keepRoomPhotoPreview, loadRoomPhoto } from '@/lib/burrow-room-photo-cache';
+import { burrowClock, getBurrowSnapshot, refreshBurrow, refreshBurrowAfterCurrent, setBurrowPhotoLocally, scheduleBurrowRefresh } from '@/lib/burrow-store';
 import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
 import { persistPhotoDraft, readPhotoDraft, removePhotoDraft, type PhotoDraft } from '@/lib/burrow-photo-drafts';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
@@ -16,12 +17,12 @@ import { roomPhotoFailureCode, roomPhotoFailureMessage, TOY_PHOTO_DAILY_LIMIT_ME
 import { BurrowBackButton } from './burrow-back-button';
 import { haptics } from '@/lib/haptics';
 import { FramePhotoCropper } from './frame-photo-cropper';
-import { centeredRoomPhotoCrop, type PhotoCrop } from '@/lib/room-photo-crop';
+import { FRAME_PHOTO_ASPECT, FRAME_PHOTO_OUTPUT_SIZE, centeredRoomPhotoCrop, type PhotoCrop } from '@/lib/room-photo-crop';
 
 type Photo = { id: string; updatedAt: string };
 type MemoryTarget = { entryId: string; slot: number; photo?: Photo; canEdit: boolean };
-// Signed links live for 120 seconds. Reuse them on quick page revisits and
-// renew in the background before expiry; the displayed image never blanks.
+// Memory photos retain short-lived links. Room/Toy photos instead use an
+// account-scoped document file keyed by photo version, not an expiring URL.
 const PHOTO_LINK_REFRESH_MS = 90_000;
 const photoUrlCache = new Map<string, { url: string; fetchedAt: number }>();
 const optimisticPhotoCache = new Map<string, string>();
@@ -29,31 +30,23 @@ subscribeSessionIdentity(() => { photoUrlCache.clear(); optimisticPhotoCache.cle
 function cacheRoomPhotoPreview(photoId: string, uri: string) { optimisticPhotoCache.set(photoId, uri); }
 const photoKey = (photo: Photo | undefined, memory: boolean) => photo ? `${memory ? 'memory' : 'room'}:${photo.id}:${photo.updatedAt}` : '';
 
-/** The Toy's Skia layer uses the same immediate room-photo URL cache as Home. */
+/** The Toy's Skia layer reads the same durable photo file as Home. */
 export function useRoomPhotoUri(photo?: Photo) {
   const key = photoKey(photo, false);
   const [resolved, setResolved] = useState<{ key: string; uri: string } | null>(() => {
-    const uri = photo ? optimisticPhotoCache.get(photo.id) ?? photoUrlCache.get(key)?.url : null;
+    const uri = photo ? cachedRoomPhotoUri(photo) ?? optimisticPhotoCache.get(photo.id) : null;
     return uri ? { key, uri } : null;
   });
   useFocusEffect(useCallback(() => {
     if (!photo) return;
     let live = true;
-    const local = optimisticPhotoCache.get(photo.id);
-    const signed = photoUrlCache.get(key);
-    const cached = local ?? signed?.url;
+    const cached = cachedRoomPhotoUri(photo) ?? optimisticPhotoCache.get(photo.id);
     if (cached) setResolved({ key, uri: cached });
-    if (!signed || Date.now() - signed.fetchedAt >= PHOTO_LINK_REFRESH_MS) {
-      void fetchRoomPhoto(photo.id).then(uri => {
-        if (!live) return;
-        photoUrlCache.set(key, { url: uri, fetchedAt: Date.now() });
-        if (!local) setResolved({ key, uri });
-      }).catch(() => {});
-    }
+    void loadRoomPhoto(photo).then(uri => { if (live) setResolved({ key, uri }); }).catch(() => {});
     const identity = subscribeSessionIdentity(() => setResolved(null));
     return () => { live = false; identity(); };
   }, [key]));
-  return resolved?.key === key ? resolved.uri : null;
+  return (resolved?.key === key ? resolved.uri : null) ?? (photo ? cachedRoomPhotoUri(photo) : null);
 }
 
 export async function pickRoomPhoto(source: 'camera' | 'library', kind: 'frame' | 'doll' = 'doll') {
@@ -61,8 +54,8 @@ export async function pickRoomPhoto(source: 'camera' | 'library', kind: 'frame' 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) throw new Error('camera_permission_denied');
   }
-  // iOS forces its native editor to a square, even when aspect is [5, 7].
-  // Frame photos use our own 5:7 cropper after the camera/library returns.
+  // iOS forces its native editor to a square, regardless of the chosen aspect.
+  // Frame photos use our own 201:290 cropper after camera/library returns.
   const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: kind === 'doll', aspect: [1, 1], quality: .9, exif: false };
   const result = source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
   return result.canceled ? null : result.assets[0];
@@ -72,39 +65,75 @@ export async function uploadRoomPhoto(data: MajorUpdateBootstrap, ownerId: strin
   const epoch = sessionEpoch();
   const image = await manipulateAsync(asset.uri, [
     { crop: crop ?? centeredRoomPhotoCrop(asset.width, asset.height, kind) },
-    { resize: { width: kind === 'frame' ? 500 : 512, height: kind === 'frame' ? 700 : 512 } },
+    { resize: kind === 'frame' ? FRAME_PHOTO_OUTPUT_SIZE : { width: 512, height: 512 } },
   ], { format: SaveFormat.JPEG, compress: .8, base64: true });
   if (!image.base64 || epoch !== sessionEpoch()) throw new Error('photo_session_changed');
-  const saved = await saveRoomPhoto(ownerId, kind, image.base64, randomUUID(), data.profile.id, data.partner?.id ?? '');
+  const scope = { userId: data.profile.id, partnerId: data.partner?.id ?? '' };
+  const draft = { base64: image.base64, key: randomUUID(), expectedPhotoId: null, savedAt: Date.now() };
+  const target = `${kind}:${ownerId}`;
+  persistPhotoDraft(scope, target, draft);
+  const saved = await saveRoomPhoto(ownerId, kind, image.base64, draft.key, data.profile.id, scope.partnerId);
   if (epoch !== sessionEpoch()) throw new Error('photo_session_changed');
-  if (typeof saved.photoId === 'string') cacheRoomPhotoPreview(saved.photoId, image.uri);
-  await refreshBurrow({ silent: true });
-  const latest = getBurrowSnapshot().data?.roomPhotos?.find(photo => photo.ownerId === ownerId && photo.kind === kind);
-  if (latest) cacheRoomPhotoPreview(latest.id, image.uri);
+  await acceptRoomPhotoReceipt(saved, ownerId, kind, image.uri, epoch);
+  removePhotoDraft(scope, target, draft.key);
+  scheduleBurrowRefresh();
 }
 
-/** Signed URLs are kept in session memory so remounting a room never flashes empty. */
+async function acceptRoomPhotoReceipt(saved: Awaited<ReturnType<typeof saveRoomPhoto>>, ownerId: string, kind: 'frame' | 'doll', uri: string, epoch: number) {
+  let receipt = saved.photo;
+  // Compatibility with an API not yet deployed: only trust a fresh snapshot
+  // when it actually succeeded and identifies this upload, never stale metadata.
+  if (!receipt) {
+    const previousVersion = getBurrowSnapshot().data?.roomPhotos.find(photo => photo.ownerId === ownerId && photo.kind === kind)?.updatedAt;
+    await refreshBurrowAfterCurrent({ after: burrowClock() });
+    const snapshot = getBurrowSnapshot();
+    const candidate = snapshot.data?.roomPhotos.find(photo => photo.ownerId === ownerId && photo.kind === kind);
+    if (snapshot.error || !candidate || candidate.id !== saved.photoId || candidate.updatedAt === previousVersion) throw Error('photo_receipt_unavailable');
+    receipt = candidate;
+  }
+  if (epoch !== sessionEpoch()) throw Error('photo_session_changed');
+  cacheRoomPhotoPreview(receipt.id, uri);
+  // If the durable copy fails, retain the draft and let Retry reuse its key.
+  await keepRoomPhotoPreview(receipt, uri);
+  if (epoch !== sessionEpoch()) throw Error('photo_session_changed');
+  setBurrowPhotoLocally(receipt);
+  optimisticPhotoCache.delete(receipt.id);
+}
+
+/** Room/Toy images resolve from an app-private file; memories stay session-only. */
 export function RoomPhoto({ photo, circle = false, memory = false }: { photo?: Photo; circle?: boolean; memory?: boolean }) {
   const key = photoKey(photo, memory);
-  const [url, setUrl] = useState<string | null>(() => photo ? optimisticPhotoCache.get(photo.id) ?? photoUrlCache.get(key)?.url ?? null : null);
+  const [resolved, setResolved] = useState<{key:string;uri:string}|null>(() => {
+    const uri=photo ? memory ? photoUrlCache.get(key)?.url : cachedRoomPhotoUri(photo) ?? optimisticPhotoCache.get(photo.id) : null;
+    return uri ? {key,uri} : null;
+  });
   const [retry, setRetry] = useState(0);
+  const failures = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { failures.current = 0; return () => { if (retryTimer.current) clearTimeout(retryTimer.current); }; }, [key]);
+  const url=(resolved?.key===key?resolved.uri:null)??(!memory&&photo ? cachedRoomPhotoUri(photo)??optimisticPhotoCache.get(photo.id)??null : null);
   useFocusEffect(useCallback(() => {
     let alive = true; let generation = 0;
     const load = () => {
       const request = ++generation;
-      if (!photo || AppState.currentState !== 'active') { if (!photo) setUrl(null); return; }
-      const local=optimisticPhotoCache.get(photo.id);
+      if (!photo || AppState.currentState !== 'active') { if (!photo) setResolved(null); return; }
+      if (!memory) {
+        const cached=cachedRoomPhotoUri(photo)??optimisticPhotoCache.get(photo.id);
+        if(cached)setResolved({key,uri:cached});
+        void loadRoomPhoto(photo).then(uri=>{if(alive&&request===generation)setResolved({key,uri});}).catch(()=>{});
+        return;
+      }
       const signed=photoUrlCache.get(key);
-      const cached=local??signed?.url;
-      if (cached) setUrl(cached);
+      const cached=signed?.url;
+      if (cached) setResolved({key,uri:cached});
       if (signed && Date.now() - signed.fetchedAt < PHOTO_LINK_REFRESH_MS) return;
-      void (memory ? fetchMemoryPhoto : fetchRoomPhoto)(photo.id).then(next => {
-        if (alive && request === generation) { photoUrlCache.set(key,{url:next,fetchedAt:Date.now()}); if(!local)setUrl(next); }
+      void fetchMemoryPhoto(photo.id).then(next => {
+        if (alive && request === generation) { photoUrlCache.set(key,{url:next,fetchedAt:Date.now()}); setResolved({key,uri:next}); }
       }).catch(() => {});
     };
     load();
     const timer = setInterval(load, 100_000);
-    const identity = subscribeSessionIdentity(() => { generation++; setUrl(null); });
+    const identity = subscribeSessionIdentity(() => { generation++; photoUrlCache.delete(key); setResolved(null); });
     const app = AppState.addEventListener('change', state => {
       if (state === 'active') load();
       else if (memory) {
@@ -112,14 +141,16 @@ export function RoomPhoto({ photo, circle = false, memory = false }: { photo?: P
         // session, but discard their signed link once the app is hidden.
         generation++;
         photoUrlCache.delete(key);
-        setUrl(null);
+        setResolved(null);
       }
     });
     return () => { alive = false; generation++; clearInterval(timer); identity(); app.remove(); };
   }, [key, retry]));
   return url ? <Image source={{ uri: url }} cachePolicy={memory ? 'none' : 'memory-disk'} contentFit="cover"
-    onError={() => { if(photo)optimisticPhotoCache.delete(photo.id); photoUrlCache.delete(key); setUrl(null); setRetry(n=>n+1); }} style={[styles.image, circle && { borderRadius: 200 }]} accessibilityLabel={memory ? 'Shared memory photo' : circle ? 'Doll face photo' : 'Room photo'} />
-    : <Pressable accessibilityRole="button" accessibilityLabel="Reload private photo" onPress={() => setRetry(n => n + 1)} style={styles.empty}><Text>{photo ? '↻ Photo' : circle ? '🐰' : '🖼️'}</Text></Pressable>;
+    onError={() => { if(photo){optimisticPhotoCache.delete(photo.id);if(memory)photoUrlCache.delete(key);else invalidateRoomPhotoCache(photo);}setResolved(null);
+      if (failures.current++ < 2) retryTimer.current = setTimeout(() => setRetry(n => n + 1), 1000 * failures.current);
+    }} style={[styles.image, circle && { borderRadius: 200 }]} accessibilityLabel={memory ? 'Shared memory photo' : circle ? 'Doll face photo' : 'Room photo'} />
+    : <Pressable accessibilityRole="button" accessibilityLabel="Reload private photo" onPress={() => { failures.current = 0; setRetry(n => n + 1); }} style={styles.empty}><Text>{photo ? '↻ Photo' : circle ? '🐰' : '🖼️'}</Text></Pressable>;
 }
 
 export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDailyLimit, memory: memoryTarget, embedded = false, toyAsset, initialSource, captureOnly = false, onChooseLibrary }: {
@@ -139,6 +170,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
   const [error, setError] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(captureOnly && initialSource === 'camera');
   const [cameraProcessing, setCameraProcessing] = useState(false);
+  const [capturedPhotoUri, setCapturedPhotoUri] = useState<string | null>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -160,18 +192,18 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
     return () => { alive.current = false; unsubscribe(); };
   }, []);
   useEffect(()=>{
-    try{const restored=readPhotoDraft(scope,target);if(restored)setDraft({...restored,uri:`data:image/jpeg;base64,${restored.base64}`});}
+    try{const restored=readPhotoDraft(scope,target);if(restored){setDraft({...restored,uri:`data:image/jpeg;base64,${restored.base64}`});setCameraOpen(false);}}
     catch{setError('The saved photo draft could not be read. It has not been replaced.');}
   },[]);
   const photo = memory ? memory.photo : data.roomPhotos?.find(p => p.ownerId === ownerId && p.kind === kind);
   const canEdit = memory ? memory.canEdit : kind === 'doll' ? !data.dollChangeUsed : ownerId === data.profile.id;
   async function preparePhoto(uri: string, width: number, height: number, crop?:{originX:number;originY:number;width:number;height:number}) {
       const targetKind = kind === 'frame' && !memory ? 'frame' : 'doll';
-      // Doll and memory photos stay square; a frame draft stays 5:7 all the
+      // Doll and memory photos stay square; a frame draft stays 201:290 all the
       // way through its preview, saved JPEG and Home display.
       const image = await manipulateAsync(uri, [
         { crop: crop ?? centeredRoomPhotoCrop(width, height, targetKind) },
-        { resize: { width: targetKind === 'frame' ? 500 : 512, height: targetKind === 'frame' ? 700 : 512 } },
+        { resize: targetKind === 'frame' ? FRAME_PHOTO_OUTPUT_SIZE : { width: 512, height: 512 } },
       ], { format: SaveFormat.JPEG, compress: 0.8, base64: true });
       if (current() && image.base64) {
         const next={uri:image.uri,base64:image.base64,key:randomUUID(),expectedPhotoId:memory?.photo?.id??null,savedAt:Date.now()};
@@ -191,6 +223,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
         const permission = cameraPermission?.granted ? cameraPermission : await requestCameraPermission();
         if (!current()) return;
         if (!permission.granted) { Alert.alert('Camera permission needed', 'Allow camera access in Settings to take a toy photo.'); if(captureOnly)onClose(); return; }
+        setCapturedPhotoUri(null);
         setCameraOpen(true);
         return;
       }
@@ -214,6 +247,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
   useEffect(()=>{
     if(!initialSource||initialSourceLaunched.current)return;
     initialSourceLaunched.current=true;
+    if (readPhotoDraft(scope,target)) return;
     const timer=setTimeout(()=>void choose(initialSource==='camera'),captureOnly?0:280);
     return()=>clearTimeout(timer);
   },[initialSource]);
@@ -228,6 +262,9 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
     try {
       const captured = await cameraRef.current.takePictureAsync({ quality: .9, exif: false });
       if (!captured || !current()) return;
+      // Hold the exact shutter frame over the camera while encoding/uploading.
+      // Unmounting the live preview before takePictureAsync resolves can cancel the capture.
+      setCapturedPhotoUri(captured.uri);
       let crop: {originX:number;originY:number;width:number;height:number}|undefined;
       if(toyAsset&&cameraArea.width&&cameraArea.height&&cameraStage.width){
         const [left,top,right,bottom]=dollFaceBounds(toyAsset);
@@ -251,6 +288,9 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
       }
     } catch (failure) {
       if (!current()) return;
+      setCapturedPhotoUri(null);
+      const recoverable = readPhotoDraft(scope, target);
+      if (recoverable) { setDraft({ ...recoverable, uri: `data:image/jpeg;base64,${recoverable.base64}` }); setCameraOpen(false); }
       if (captureOnly && roomPhotoFailureCode(failure) === 'daily_limit_reached') {
         onDailyLimit?.();
         onClose();
@@ -264,7 +304,7 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
     setBusy(true); setError(null);
     try {
       let upload=draft;
-      if(kind==='doll'&&toyAsset&&position.zoom>1.001){
+      if(kind==='doll'&&toyAsset&&!draft.submitted&&position.zoom>1.001){
         const [left,top,right,bottom]=dollFaceBounds(toyAsset);
         const faceW=(right-left)/toyAsset.width*toyArt.width;
         const faceH=(bottom-top)/toyAsset.height*toyArt.height;
@@ -277,20 +317,22 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
         if(!adjusted.base64)throw new Error('photo_crop_failed');
         upload={...draft,uri:adjusted.uri,base64:adjusted.base64};
       }
+      if (!current()) return;
+      upload={...upload,submitted:true};
       persistPhotoDraft(scope,target,upload);
+      // Freeze the submitted bytes as the retry draft. Never crop them a
+      // second time with the same idempotency key after a lost response.
+      setDraft(upload); setPosition({x:0,y:0,zoom:1});
       if (memory) await saveMemoryPhoto(memory.entryId, memory.slot, upload.expectedPhotoId, upload.base64, upload.key, data.profile.id,scope.partnerId);
       else {
         const saved=await saveRoomPhoto(ownerId, kind, upload.base64, upload.key, data.profile.id,scope.partnerId);
-        const photoId=typeof saved.photoId==='string'?saved.photoId:photo?.id;
-        if(photoId)cacheRoomPhotoPreview(photoId,upload.uri);
+        await acceptRoomPhotoReceipt(saved, ownerId, kind, upload.uri, epoch.current);
       }
       if (!current()) return;
+      if (memory) await refreshBurrowAfterCurrent({ after: burrowClock() });
+      else scheduleBurrowRefresh();
+      if (!current()) return;
       removePhotoDraft(scope,target,draft.key);
-      await refreshBurrow();
-      if(!memory){
-        const latest=getBurrowSnapshot().data?.roomPhotos?.find(item=>item.ownerId===ownerId&&item.kind===kind);
-        if(latest)cacheRoomPhotoPreview(latest.id,upload.uri);
-      }
       if (current()) { onSaved?.(); onClose(); }
     } catch (failure) {
       if (!current()) return;
@@ -319,22 +361,23 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
       top:(toyHeight-(bottom-top)*scale)/2-top*scale,width:toyAsset.width*scale,height:toyAsset.height*scale};
   })();
   const drag=useMemo(()=>PanResponder.create({
-    onStartShouldSetPanResponder:()=>kind==='doll'&&!!draft,
-    onMoveShouldSetPanResponder:()=>kind==='doll'&&!!draft,
+    onStartShouldSetPanResponder:()=>kind==='doll'&&!!draft&&!draft.submitted&&!busy,
+    onMoveShouldSetPanResponder:()=>kind==='doll'&&!!draft&&!draft.submitted&&!busy,
     onPanResponderGrant:()=>{dragStart.current={x:positionRef.current.x,y:positionRef.current.y};},
     onPanResponderMove:(_event,gesture)=>{
       const limit=Math.max(0,(positionRef.current.zoom-1)*toySize*.42);
       setPosition(previous=>({...previous,x:Math.max(-limit,Math.min(limit,dragStart.current.x+gesture.dx)),
         y:Math.max(-limit,Math.min(limit,dragStart.current.y+gesture.dy))}));
     },
-  }).panHandlers,[draft,kind,toySize]);
+  }).panHandlers,[draft,kind,toySize,busy]);
   const zoom=(direction:1|-1)=>setPosition(previous=>{
     const next=Math.max(1,Math.min(2.5,Math.round((previous.zoom+direction*.15)*100)/100));
     if(next===1)return {x:0,y:0,zoom:1};
     return {...previous,zoom:next};
   });
   const content = cameraOpen && toyAsset ? <View style={styles.cameraPage} onLayout={event=>setCameraArea(event.nativeEvent.layout)}>
-      <CameraView ref={cameraRef} facing="front" mirror style={StyleSheet.absoluteFillObject} />
+      <CameraView ref={cameraRef} facing="front" mirror active={!capturedPhotoUri} style={StyleSheet.absoluteFillObject} />
+      {capturedPhotoUri&&<Image source={{uri:capturedPhotoUri}} contentFit="cover" style={StyleSheet.absoluteFillObject} pointerEvents="none" />}
       <View style={styles.cameraHeader}><BurrowBackButton light onPress={()=>captureOnly?onClose():setCameraOpen(false)}/><Text style={styles.cameraTitle}>Align your face</Text><View style={{width:44}} /></View>
       <View pointerEvents="none" onLayout={event=>setCameraStage(event.nativeEvent.layout)} style={[styles.toyPreview,{width:toySize,height:toyHeight}]}><Image source={toyAsset.source} contentFit="fill" style={[styles.toyArt,toyArt]}/></View>
       {cameraProcessing&&<View style={styles.cameraProcessing} accessibilityRole="progressbar" accessibilityLabel="Processing your photo">
@@ -353,9 +396,9 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
           <View style={[styles.toyFace,dollFaceRect(toyAsset)]} {...drag}>{draft?<Image source={{uri:draft.uri}} cachePolicy="none" contentFit="cover" pointerEvents="none" style={[styles.image,{transform:[{translateX:position.x},{translateY:position.y},{scale:position.zoom}]}]}/>:photo?<RoomPhoto key={`${photo.id}:${photo.updatedAt}`} photo={photo}/>:null}</View>
           <Image source={toyAsset.source} contentFit="fill" style={styles.image} pointerEvents="none" />
         </View>
-      </View>:<View style={[styles.preview,kind==='frame'&&!memory&&styles.framePreview]}>{draft ? <Image source={{ uri: draft.uri }} cachePolicy="none" style={styles.image} /> : <RoomPhoto photo={photo} memory={!!memory} />}</View>}
+      </View>:<View style={[styles.preview,kind==='frame'&&!memory&&styles.framePreview]}>{draft ? <Image source={{ uri: draft.uri }} cachePolicy="none" contentFit="cover" style={styles.image} /> : <RoomPhoto photo={photo} memory={!!memory} />}</View>}
       {kind === 'doll' && data.dollChangeUsed && <Text style={styles.copy}>Today’s doll change is used. You can still view both rooms.</Text>}
-      {kind==='doll'&&draft&&<View style={styles.row}><Button label="− Zoom" onPress={()=>zoom(-1)}/><Button label="+ Zoom" onPress={()=>zoom(1)}/></View>}
+      {kind==='doll'&&draft&&!draft.submitted&&<View style={styles.row}><Button label="− Zoom" disabled={busy} onPress={()=>zoom(-1)}/><Button label="+ Zoom" disabled={busy} onPress={()=>zoom(1)}/></View>}
       {error && <Text accessibilityRole="alert" style={styles.copy}>{error}</Text>}
       {canEdit && <View style={styles.row}><Button label="Photo library" disabled={busy} onPress={() => void choose(false)} /><Button label="Camera" disabled={busy} onPress={() => void choose(true)} /></View>}
       {draft && <><Text style={styles.copy}>Draft kept on this device. Review and tap Save to send; closing the app does not upload it. Signing out removes local drafts.</Text>
@@ -376,7 +419,7 @@ const styles = StyleSheet.create({
   sheet: { width: '100%', maxWidth: 520, maxHeight: '88%', flexGrow: 0, borderRadius: 28, backgroundColor: '#FFF4E1' },
   title: { fontSize: 23, fontWeight: '800', color: '#553521' }, copy: { color: '#79563E', fontSize: 14, lineHeight: 21 },
   preview: { width: 180, height: 180, alignSelf: 'center', overflow: 'hidden', borderRadius: 14, backgroundColor: '#E8C8A0' },
-  framePreview: { height: 252 },
+  framePreview: { height: 180 / FRAME_PHOTO_ASPECT },
   image: { width: '100%', height: '100%' }, empty: { flex: 1, alignItems: 'center', justifyContent: 'center' }, row: { flexDirection: 'row', gap: 12 },
   button: { flexGrow: 1, borderRadius: 16, backgroundColor: '#2F8D72', padding: 14, alignItems: 'center' }, buttonText: { color: '#FFF4E1', fontWeight: '700' },
   embedded:{flex:1,width:'100%',backgroundColor:'#FFFAF2'},embeddedSheet:{flex:1,width:'100%',backgroundColor:'#FFFAF2'},

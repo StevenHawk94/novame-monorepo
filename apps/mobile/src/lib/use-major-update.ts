@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { fetchAppConfig, getCachedConfig, hasCachedConfig } from './app-config-api';
 import { setHomeEntryExperience } from './home-entry-readiness';
 import { sessionEpoch } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 
 let enabled = getCachedConfig().app_major_update_enabled;
 // A cached `false` may be a stale pre-rollout value. Confirm it before ever
@@ -24,10 +25,13 @@ setHomeEntryExperience(enabled ? 'burrow' : 'legacy');
 export function refreshMajorUpdateFlag({ force = false }: { force?: boolean } = {}) {
   if (request) return request;
   const epoch = sessionEpoch();
-  request = fetchAppConfig({ noCache: force }).then(result => {
+  // This build ships Burrow. An empty/offline cache must not revive retired UI.
+  // The server still authorizes every operation, independently of this skin.
+  const fallback = () => hasCachedConfig() ? getCachedConfig().app_major_update_enabled : true;
+  request = withDeadline(fetchAppConfig({ noCache: force }), 5_000).then(result => {
     if (epoch === sessionEpoch() && result.kind === 'success') publish(result.config.app_major_update_enabled);
-    else if (epoch === sessionEpoch() && !resolved) publish(getCachedConfig().app_major_update_enabled);
-  }).finally(() => {
+    else if (epoch === sessionEpoch() && !resolved) publish(fallback());
+  }).catch(() => { if (epoch === sessionEpoch() && !resolved) publish(fallback()); }).finally(() => {
     request = null;
     // Auth may hydrate while the first request is in flight. Its response is
     // deliberately discarded above; retry for the now-current session.

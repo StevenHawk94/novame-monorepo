@@ -30,6 +30,19 @@ export const ONBOARDING_AVATAR_PATH: string | null = FileSystem.documentDirector
   ? `${FileSystem.documentDirectory}burrow_onboarding_avatar.jpg`
   : null;
 
+/** Private room photos survive app restarts, but never an account switch. */
+export const BURROW_ROOM_PHOTO_DIRECTORY: string | null = FileSystem.documentDirectory
+  ? `${FileSystem.documentDirectory}burrow-room-photos/`
+  : null;
+let roomPhotoCleanup: Promise<void> = Promise.resolve();
+export function waitForRoomPhotoCleanup(): Promise<void> { return roomPhotoCleanup; }
+export function deleteBurrowRoomPhotos(): Promise<void> {
+  roomPhotoCleanup = roomPhotoCleanup.then(async () => {
+    if (BURROW_ROOM_PHOTO_DIRECTORY) await FileSystem.deleteAsync(BURROW_ROOM_PHOTO_DIRECTORY, { idempotent: true });
+  }).catch(error => { console.warn('[storage] failed to clear private room photos:', error); });
+  return roomPhotoCleanup;
+}
+
 /** Idempotent. Errors swallowed: a failed cleanup must never block sign-out. */
 export async function deleteRecordDraftAudio(): Promise<void> {
   if (!RECORD_DRAFT_AUDIO_PATH) return;

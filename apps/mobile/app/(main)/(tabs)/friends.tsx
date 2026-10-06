@@ -9,7 +9,7 @@ import {
 import { ScreenOverlay as Modal } from '@/components/ui/screen-overlay';
 import { appAlert } from '@/components/ui/app-dialog';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { haptics } from '@/lib/haptics';
@@ -64,7 +64,7 @@ function sameSnapshot(a: unknown, b: unknown): boolean {
 }
 
 export default function FriendsScreen() {
-  return useMajorUpdateEnabled() ? <BurrowScreen section="moments" /> : <LegacyFriendsScreen />;
+  return useMajorUpdateEnabled() ? <Redirect href="/(main)/burrow-detail?section=moments" /> : <LegacyFriendsScreen />;
 }
 
 function LegacyFriendsScreen() {
@@ -797,5 +797,4 @@ const styles = StyleSheet.create({
   privacySaveText: { color: '#2A1A10', fontSize: 21, fontFamily: 'Inter_800ExtraBold' },
   privacyClose: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginTop: 16 },
 });
-import { BurrowScreen } from '@/components/burrow/burrow-screen';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';

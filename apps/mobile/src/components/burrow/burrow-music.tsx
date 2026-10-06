@@ -6,18 +6,30 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBurrowAudioController } from '@/lib/burrow-audio-controller';
-import { useBurrowSnapshot, runBurrowAction, burrowErrorMessage, refreshBurrow, selectBurrowMusicLocally } from '@/lib/burrow-store';
+import { useBurrowSnapshot, runBurrowAction, burrowErrorMessage, scheduleBurrowRefresh, selectBurrowMusicLocally, confirmBurrowMusicLocally } from '@/lib/burrow-store';
 import { purchaseCatalogItem, selectRoomMusic, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
-import { subscribeSessionIdentity } from '@/lib/session-lifecycle';
+import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
+import { createLatestSelectionQueue } from '@/lib/latest-selection-queue';
+import { storage } from '@/lib/storage';
+import { kBurrowMusicMuted } from '@/shared/storage/keys';
 import { haptics } from '@/lib/haptics';
 
 const tracks: Record<string, number> = { calm: require('../../../assets/burrow/calm.wav'), dream: require('../../../assets/burrow/dream.wav') };
 const listeners = new Set<() => void>();
-let playback = { failed: false, retry: 0, muted: false };
+let playback = { failed: false, selectionFailed: false, retry: 0, muted: storage.getString(kBurrowMusicMuted.name) === 'true' };
 const publish = (patch: Partial<typeof playback>) => { playback = { ...playback, ...patch }; listeners.forEach(fn => fn()); };
 const subscribe = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 const usePlayback = () => useSyncExternalStore(subscribe, () => playback, () => playback);
+function setMuted(muted: boolean) { publish({ muted }); try { storage.set(kBurrowMusicMuted.name, String(muted)); } catch {} }
+let confirmedTrack: string | null | undefined;
+const musicQueue = createLatestSelectionQueue<{ id: string | null; token: number }>(async choice => {
+  const epoch = sessionEpoch();
+  await selectRoomMusic(choice.id);
+  if (epoch !== sessionEpoch()) return;
+  confirmedTrack = choice.id; confirmBurrowMusicLocally(choice.token); scheduleBurrowRefresh();
+}, choice => { confirmBurrowMusicLocally(choice.token, confirmedTrack ?? null); scheduleBurrowRefresh(); publish({ selectionFailed: true }); });
+subscribeSessionIdentity(() => { musicQueue.reset(); confirmedTrack = undefined; publish({ selectionFailed: false, failed: false }); });
 
 function bundledPlayer(key: string) {
   const native = createAudioPlayer(tracks[key], { updateInterval: 1000, keepAudioSessionActive: false });
@@ -63,14 +75,16 @@ export function BurrowMusicPicker({ data, onClose }: { data: MajorUpdateBootstra
   const insets = useSafeAreaInsets();
   const { data: latest, busy, error } = useBurrowSnapshot();
   const room = latest?.profile.id === data.profile.id ? latest : data;
-  const { failed, muted } = usePlayback();
+  const { failed, selectionFailed, muted } = usePlayback();
   const music = room.catalog.filter(item => item.item_type === 'music');
   const current = music.find(item => item.stable_id === room.musicTrackId);
   const choose = (id: string | null) => {
     void haptics.light();
-    if (id) publish({ muted: false });
-    selectBurrowMusicLocally(id);
-    void runBurrowAction(`music:${id}`, () => selectRoomMusic(id),{silent:true}).then(ok=>{if(!ok)void refreshBurrow({silent:true});});
+    if (id) setMuted(false);
+    if (!musicQueue.isPending()) confirmedTrack = room.musicTrackId;
+    publish({ selectionFailed: false });
+    const token = selectBurrowMusicLocally(id);
+    void musicQueue.select({ id, token });
   };
   return <Modal animationType="slide" presentationStyle="fullScreen" statusBarTranslucent onRequestClose={onClose}>
     <View style={s.root}>
@@ -88,7 +102,7 @@ export function BurrowMusicPicker({ data, onClose }: { data: MajorUpdateBootstra
             <Feather name="chevron-left" size={34} color="#F4E8DF" />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={muted?'Unmute music':'Mute music'} accessibilityState={{selected:muted}}
-            onPress={()=>{void haptics.light();publish({muted:!muted});}} hitSlop={10} style={s.navButton}>
+            onPress={()=>{void haptics.light();setMuted(!muted);}} hitSlop={10} style={s.navButton}>
             <Feather name={muted?'volume-x':'volume-2'} size={28} color="#F4E8DF" />
           </Pressable>
         </View>
@@ -104,6 +118,7 @@ export function BurrowMusicPicker({ data, onClose }: { data: MajorUpdateBootstra
         <View style={s.separator}/>
         {error && <Text accessibilityRole="alert" style={s.error}>{burrowErrorMessage(error)}</Text>}
         {failed && <Pressable accessibilityRole="button" onPress={() => publish({ retry: playback.retry + 1 })}><Text style={s.error}>Audio is unavailable. Tap to retry.</Text></Pressable>}
+        {selectionFailed && <Text accessibilityRole="alert" style={s.error}>Couldn’t change the music. Tap a track to retry.</Text>}
         <View style={s.trackList}>
           {music.map((item,index) => {
             const owned = room.inventory.some(row => row.owner_id === room.profile.id && row.item_id === item.stable_id);

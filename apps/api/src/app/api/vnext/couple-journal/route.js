@@ -20,12 +20,13 @@ export async function GET(request) {
   try {
     const userId = await authenticatedUserId(request)
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const before = new URL(request.url).searchParams.get('before')
-    if (before && !validDate(before)) return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+    const params = new URL(request.url).searchParams
+    const before = params.get('before'), page = params.get('page')
+    if ((before && !validDate(before)) || (page && !uuid(page))) return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
     const db = appMajorUpdateServiceClient()
     if (!await majorUpdateEnabled(db)) return NextResponse.json({ error: 'feature_disabled' }, { status: 403 })
-    const { data, error } = await db.rpc('couple_journal_snapshot_v1', {
-      p_user_id: userId, p_before_date: before || null,
+    const { data, error } = await db.rpc(page ? 'read_couple_journal_page_v1' : 'couple_journal_snapshot_v1', {
+      p_user_id: userId, ...(page ? { p_page_id: page } : { p_before_date: before || null }),
     })
     if (error) throw error
     return NextResponse.json(data?.error ? data : { success: true, ...data }, {

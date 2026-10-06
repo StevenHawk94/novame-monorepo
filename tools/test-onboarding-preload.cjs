@@ -55,7 +55,7 @@ function harness() {
   };
   const native = {
     ...Object.fromEntries(['ActivityIndicator', 'View', 'ScrollView', 'Text', 'TextInput', 'Modal', 'Pressable', 'KeyboardAvoidingView'].map((key) => [key, key])),
-    Platform: { OS: 'ios' }, Linking: {}, AppState: appState,
+    Platform: { OS: 'ios' }, Linking: {}, AppState: appState, Keyboard: { dismiss() {} }, Share: { async share() {} },
     useWindowDimensions: () => ({ width: 390, height: 844 }),
     StyleSheet: { create: (s) => s, absoluteFill: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }, absoluteFillObject: { position: 'absolute' } },
   };
@@ -65,6 +65,7 @@ function harness() {
       react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': native,
       'expo-image': { Image: 'NativeImage' }, '../../lib/splash': { hideSplashOnce: () => splashHides++ },
       '../../lib/download-queue': { markAndroidP0UiReady() {} },
+      '../main/burrow-launch-screen': { BurrowLaunchScreen: 'BurrowLaunchScreen' },
     };
     const code = ts.transpileModule(read(file), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
@@ -331,90 +332,187 @@ test('static onboarding images never start animation on either platform', () => 
   }
 });
 
-// Render the actual screen's JSX with only external services stubbed, so the
-// per-page image-count contract cannot silently drift when copy/art is edited.
-function screenHarness(h) {
-  const icons = h.load('apps/mobile/src/lib/icons.ts');
-  const items = h.load('apps/mobile/src/lib/item-images.g.ts');
-  let completed, failed, purchases = 0, sessions = 0;
-  const screen = h.load(screenFile, {
-    '@/components/ui/app-dialog': { appAlert() {} },
+
+// Render real presentation separately from its controller: no payments, auth
+// mutations or remote avatars can run merely because the next page is staged.
+function screenHarness(h, options = {}) {
+  const design = h.load('apps/mobile/src/lib/burrow-onboarding-design.ts');
+  const ui = h.load('apps/mobile/src/components/onboarding/burrow-onboarding-pages.tsx', {
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 40, bottom: 24 }) },
-    'expo-router': { useRouter: () => ({ replace() {} }) },
+    'expo-linear-gradient': { LinearGradient: 'Gradient' },
+    'expo-status-bar': { StatusBar: 'StatusBar' },
+    'react-native-svg': { __esModule: true, default: 'Svg', Path: 'Path' },
+    '@expo/vector-icons': { MaterialIcons: 'Icon' },
+    '@/components/ui/user-avatar': { UserAvatar: 'UserAvatar' },
+    '@/components/ui/grid-background': { GridBackground: 'Grid' },
+    '@/lib/burrow-onboarding-design': design, './onboarding-pager': h,
+    './plus-benefit-icon': { PlusBenefitIcon: 'PlusBenefitIcon' },
+  });
+  let completed, failed, purchases = 0, sessions = 0;
+  const queued = [], alerts = [], routes = [], pairCalls = [], names = [], completions = [];
+  const screen = h.load(screenFile, {
+    '@/components/ui/app-dialog': { appAlert: (...args) => alerts.push(args) },
+    '@/components/onboarding/burrow-onboarding-pages': ui,
+    '@/lib/burrow-onboarding-design': design,
+    '@react-native-community/datetimepicker': { __esModule: true, default: 'DatePicker' },
+    'expo-clipboard': { async setStringAsync() {} },
+    'expo-image-picker': { async launchImageLibraryAsync() { return { canceled: true }; } },
+    'expo-image-manipulator': { manipulateAsync: async uri => ({ uri }), SaveFormat: { JPEG: 'jpeg' } },
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 40, bottom: 24 }) },
+    'expo-router': { useRouter: () => ({ replace: route => routes.push(route) }) },
     '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
-    '../../src/lib/haptics': { haptics: { light() {}, medium() {}, pageOpen() {} } },
-    '../../src/lib/icons': icons,
-    '../../src/components/ui/grid-background': { GridBackground: 'GridBackground' },
-    '../../src/components/ui/item-sprite': { ItemSprite: 'ItemSprite' },
-    '../../src/components/onboarding/onboarding-pager': h,
+    '../../src/lib/haptics': { haptics: { light() {}, medium() {}, success() {}, pageOpen() {} } },
     '../../src/lib/home-entry-readiness': { beginHomeEntry() {}, deferHomeEntryNotification() {} },
-    '../../src/lib/item-images.g': items,
     '../../src/lib/feature-guides': { enableFeatureGuidesForNewUser() {} },
     '../../src/lib/onboarding': {
       beginAnonymousOnboardingAuthHandoff() {}, endAnonymousOnboardingAuthHandoff() {},
-      markIntroSeen() {}, setBunnyName() {}, setChosenCompanion() {}, setOnboardingChoices() {},
+      markIntroSeen: () => completions.push(true), setBunnyName: name => names.push(name), setChosenCompanion() {},
+      queueOnboardingProfile: value => queued.push(value), syncOnboardingProfile: async () => true,
       syncOnboardingCompanion: async () => true,
     },
     '../../src/lib/ad-measurement': { logOnboardingCompleted() {}, logRegistration() {} },
     '../../src/components/privacy/meta-privacy-provider': { useMetaPrivacy: () => ({ ensureConsentBeforeHome: async () => {} }) },
     '../../src/lib/auth': { async ensureSession() { sessions++; return true; } },
-    '../../src/lib/supabase': { supabase: { auth: { getSession: async () => ({ data: { session: null } }) } } },
-    '../../src/lib/account-api': {},
+    '../../src/lib/supabase': { supabase: { auth: { getSession: async () => ({ data: { session: { user: { id: 'owner' } } } }) } } },
+    '../../src/lib/account-api': { updateDisplayName: async () => {} },
+    '../../src/lib/avatar-upload-queue': { queueProfileAvatar: async uri => uri, syncProfileAvatar: async () => true },
+    '../../src/lib/avatar': { DEFAULT_AVATAR_OPTIONS: [{ id: 'default-1', source: 1 }] },
+    '../../src/lib/friends-api': {
+      fetchFriends: async () => ({ inviteCode: 'ABC123', friends: [], pending: [], sent: [] }),
+      addFriend: async (...args) => { pairCalls.push(args); return options.pairResult ?? { ok: true, partner: { userId: 'partner', displayName: 'Alex' } }; },
+    },
     '../../src/lib/iap': {
       onPurchaseComplete(fn) { completed = fn; return () => {}; },
       onPurchaseError(fn) { failed = fn; return () => {}; },
-      async initIAP() {}, async fetchSubscriptionProducts() { return []; },
-      async purchaseSubscription() { purchases++; return { kind: 'cancelled' }; },
+      async initIAP() {},
+      async purchaseSubscription() { purchases++; return options.purchaseOutcome ?? { kind: 'cancelled' }; },
+      restoreSubscriptions: async () => ({ restored: false }),
     },
     '../../src/lib/notification-settings': {},
-    '../../src/lib/plus-benefits': { DEFAULT_PLUS_BENEFITS: [] },
     '../../src/hooks/use-store-subscription-pricing': {
       useStoreSubscriptionPricing: () => ({
-        pricing: {
-          yearlyTrialEligible: true,
-          monthlyAnnualized: '$59.88', yearlyPerMonth: '$4.99',
-          yearly: { displayPrice: '$59.99' }, monthly: { displayPrice: '$5.99' },
-        },
+        pricing: { yearlyTrialEligible: true, monthlyAnnualized: '$59.88', yearlyPerMonth: '$4.99',
+          yearly: { displayPrice: '$59.99' }, monthly: { displayPrice: '$5.99' } },
         status: 'ready', load: async () => null, retry: async () => null,
       }),
     },
   });
-  return { screen, completed: () => completed(), failed: (error) => failed(error), purchases: () => purchases, sessions: () => sessions };
+  const controller = h.component(screen.default, {});
+  return {
+    controller, ui, design, queued, alerts, routes, pairCalls, names, completions,
+    props: () => controller.render().props,
+    render: () => h.component(ui.BurrowOnboardingPages, controller.render().props).render(),
+    completed: () => completed(), failed: error => failed(error), purchases: () => purchases, sessions: () => sessions,
+  };
 }
-test('all 15 real pages declare exactly their image count and every source exists in the bundle', () => {
-  const h = harness(), fixture = screenHarness(h), screen = h.component(fixture.screen.default, {});
-  const tree = screen.render();
-  const pages = nodes(tree).filter((node) => node.type === h.OnboardingPage);
-  assert.equal(pages.length, 15);
+const flush = () => new Promise(setImmediate);
+test('Share invite only loads Share, preserves the real code, and handles dismissal/failure', async () => {
+  assert.doesNotMatch(read(screenFile), /\bimport\s*\(\s*['"]react-native['"]\s*\)/,
+    'Metro namespace imports eagerly evaluate every React Native export');
+  const h = harness(), shares = [];
+  Object.defineProperty(h.native, 'PushNotificationIOS', {
+    enumerable: true,
+    get() { assert.fail('sharing must not evaluate unrelated RN native module getters'); },
+  });
+  h.native.Share.share = async content => { shares.push(content.message); return { action: 'dismissedAction' }; };
+  const f = screenHarness(h);
+  f.props().shareCode(); await flush();
+  assert.equal(shares.length, 0, 'sharing waits for an account-owned code');
+  f.props().go('pairing'); f.props(); await flush();
+  f.props().shareCode(); await flush();
+  assert.equal(shares.length, 1);
+  assert.ok(shares[0].includes('ABC123'));
+  assert.equal(f.alerts.length, 0, 'dismissing the native share sheet is not an error');
+  assert.equal(f.props().step, 'pairing');
+  h.native.Share.share = async () => { throw new Error('Share sheet unavailable'); };
+  f.props().shareCode(); await flush();
+  assert.equal(f.alerts.at(-1)[0], 'Could not share invite');
+  assert.equal(f.props().step, 'pairing');
+  f.controller.unmount();
+});
+test('all 13 new pages declare bundled art accurately; remote avatars never block readiness', () => {
+  const h = harness(), f = screenHarness(h), tree = f.render();
+  const pages = nodes(tree).filter(node => node.type === h.OnboardingPage);
+  assert.equal(pages.length, 13);
   let images = 0;
   for (const page of pages) {
-    const imgs = nodes(page).filter((node) => node.type === h.OnboardingImage);
+    const imgs = nodes(page).filter(node => node.type === h.OnboardingImage);
     assert.equal(imgs.length, page.props.imageCount, page.props.id);
-    assert.ok(!nodes(page).some((node) => ['NativeImage', 'ItemSprite'].includes(node.type)), page.props.id + ' bypasses readiness');
-    for (const img of imgs) {
-      assert.ok(fs.existsSync(img.props.source), String(img.props.source));
-      images++;
-    }
-    for (const scroll of nodes(page).filter((node) => node.type === 'ScrollView')) {
-      assert.equal(scroll.props.removeClippedSubviews, false);
-    }
+    for (const img of imgs) { assert.ok(fs.existsSync(img.props.source), img.props.source); images++; }
+    for (const scroll of nodes(page).filter(node => node.type === 'ScrollView')) assert.equal(scroll.props.removeClippedSubviews, false);
   }
-  assert.equal(images, 20);
-  assert.equal(fixture.purchases(), 0); assert.equal(fixture.sessions(), 0);
-  screen.unmount();
+  assert.equal(images, 9);
+  assert.equal(f.purchases(), 0); assert.equal(f.sessions(), 0);
+  f.controller.unmount();
 });
-
-test('pre-rendering is presentation-only: purchase still needs a tap and completion still leads to naming', async () => {
-  const h = harness(), fixture = screenHarness(h), screen = h.component(fixture.screen.default, {});
-  let tree = screen.render();
-  const page = (id) => nodes(tree).find((node) => node.type === h.OnboardingPage && node.props.id === id);
-  const button = nodes(page('plans')).find((node) => node.props?.label === 'Start Free Trial');
-  assert.equal(fixture.purchases(), 0); assert.equal(fixture.sessions(), 0);
-  button.props.onPress();
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(fixture.purchases(), 1); assert.equal(fixture.sessions(), 1);
-  fixture.completed(); tree = screen.render();
-  assert.equal(nodes(tree).find((node) => node.type === h.OnboardingPager).props.requestedPage, 'name');
-  assert.ok(nodes(page('name')).some((node) => node.type === 'TextInput'));
-  screen.unmount();
+test('five feature pages precede combined info; no birthday/pronouns questionnaire is required', async () => {
+  const h = harness(), f = screenHarness(h);
+  const actual = [];
+  for (let i = 0; i < 7; i++) { actual.push(f.props().step); if (i < 6) f.props().next(); }
+  assert.deepEqual(actual, ['start', 'decorate', 'toy', 'affection', 'games', 'explore', 'self-info']);
+  f.props().saveInfo(); assert.equal(f.props().step, 'self-info');
+  f.props().setFirstName(' Sam '); f.props().setPartnerName(' Babe ');
+  f.props().dateInput.props.onChange('21/12/2023');
+  assert.equal(f.props().validInfo, true);
+  f.props().saveInfo();
+  assert.equal(f.props().step, 'profile-photo');
+  assert.equal(f.queued[0].displayName, 'Sam');
+  assert.equal(f.queued[0].partnerNickname, 'Babe');
+  assert.equal(f.queued[0].relationshipSince, '2023-12-21');
+  assert.equal(f.queued[0].birthday, undefined);
+  f.props().savePhoto(); f.props(); await flush();
+  assert.equal(f.props().step, 'pairing');
+  assert.equal(f.props().inviteCode, 'ABC123');
+  assert.equal(f.queued[1].defaultAvatarId, 'default-1');
+  assert.equal(f.sessions(), 1, 'concurrent background setup shares one identity');
+  f.controller.unmount();
+});
+test('correct normalized code connects immediately; real partner data replaces nickname', async () => {
+  const f = screenHarness(harness());
+  f.props().go('pairing'); await flush();
+  f.props().setPairCode('abc-123'); f.props().pair(); f.props().pair();
+  assert.equal(f.props().pairing, true);
+  await flush();
+  assert.equal(f.pairCalls.length, 1);
+  assert.equal(f.pairCalls[0][0], 'ABC123');
+  assert.equal(f.props().step, 'pairing-success');
+  assert.equal(f.props().partner.name, 'Alex');
+  assert.equal(f.props().pairing, false);
+  f.controller.unmount();
+});
+test('invalid code never renders connected state or advances onboarding', async () => {
+  const f = screenHarness(harness(), { pairResult: { ok: false } });
+  f.props().go('pairing'); f.props().setPairCode('BAD123'); f.props().pair();
+  await flush();
+  assert.equal(f.props().step, 'pairing'); assert.equal(f.props().partner, null);
+  assert.equal(f.alerts[0][0], 'Wrong code'); assert.equal(f.props().pairing, false);
+  f.controller.unmount();
+});
+test('cancelled purchases do not finish; unrelated store events are ignored', async () => {
+  const f = screenHarness(harness());
+  f.props(); f.completed(); assert.equal(f.completions.length, 0);
+  f.props().purchase(); await flush();
+  assert.equal(f.purchases(), 1); f.completed(); await flush();
+  assert.equal(f.completions.length, 0); assert.equal(f.props().purchasing, false);
+  f.controller.unmount();
+});
+test('verified purchase uses latest entered name and proceeds to optional account connection once', async () => {
+  const f = screenHarness(harness(), { purchaseOutcome: { kind: 'completed' } });
+  f.props().setFirstName('Sam'); f.props().purchase(); await flush(); f.props();
+  assert.equal(f.completions.length, 0, 'store sheet alone does not grant access');
+  f.completed(); f.completed(); await flush();
+  assert.equal(f.props().step, 'connect');
+  assert.equal(f.completions.length, 1);
+  assert.ok(f.names.includes('Sam'));
+  f.controller.unmount();
+});
+test('layout dimensions support small phones and 900:1600 without squeezing footer or hero away', () => {
+  const f = screenHarness(harness());
+  for (const [width, height] of [[320,568],[375,667],[390,844],[900,1600]]) {
+    const m = f.design.onboardingMetrics(width,height,24,16);
+    assert.ok(m.heroHeight >= 200 && m.heroHeight + m.footer < height);
+    assert.ok(m.title <= 38 && m.body <= 21);
+    assert.ok(m.buttonHeight >= 50);
+  }
+  f.controller.unmount();
 });

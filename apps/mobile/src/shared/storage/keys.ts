@@ -1,4 +1,4 @@
-import { deleteOnboardingAvatar, deleteRecordDraftAudio } from './artifacts';
+import { deleteBurrowRoomPhotos, deleteOnboardingAvatar, deleteRecordDraftAudio } from './artifacts';
 import { defineKey, definePrefixKey } from './registry';
 
 /**
@@ -67,6 +67,9 @@ export const kCosmetics = defineKey('novame_cosmetics', 'user');
 /** Last-known bound email for the Connect Account screen (cache-first paint). */
 export const kConnectedAccount = defineKey('burrow_connected_account', 'user');
 
+/** Store-account country for seasonal Burrow art; refreshed without blocking UI. */
+export const kBurrowStorefrontCountry = defineKey('burrow_storefront_country', 'user');
+
 /** Clear-only legacy Focus voice state retained for upgrade cleanup. */
 export const kFocusVoice = defineKey('burrow_focus_voice', 'user');
 
@@ -106,6 +109,13 @@ export const kReflectSettlement = definePrefixKey('burrow_reflect_settlement:', 
 /** Local memories and explicit Save retries. Account + pair scoped, cleared on logout. */
 export const kBurrowMemoryLocal = definePrefixKey('burrow_memory_local:v1:', 'user');
 export const kBurrowPhotoDrafts = definePrefixKey('burrow_photo_drafts:v1:', 'user');
+export const kBurrowSnapshot = defineKey('burrow_snapshot:v1', 'user');
+export const kBurrowJournal = definePrefixKey('burrow_journal:v1:', 'user');
+export const kBurrowTextDrafts = definePrefixKey('burrow_text_drafts:v1:', 'user');
+export const kBurrowActionKeys = defineKey('burrow_action_keys:v1', 'user');
+export const kBurrowMusicMuted = defineKey('burrow_music_muted:v1', 'device');
+/** Persistent private frame/Toy photo paths, invalidated by photo version. */
+export const kBurrowRoomPhotoCache = defineKey('burrow_room_photo_cache:v1', 'user', { onClear: deleteBurrowRoomPhotos });
 
 /** Tap Your Day names/groups are private, UUID-scoped local preferences. */
 export const kCustomTapItems = definePrefixKey('custom-tap-items:v1:', 'user');

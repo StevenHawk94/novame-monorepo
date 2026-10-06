@@ -8,6 +8,8 @@ import { storage } from './storage';
 import { kReflectFeed } from '../shared/storage/keys';
 import { supabase } from './supabase';
 import { mergedItemDictionary } from './remote-items';
+import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 
 export interface FeedDay {
   date: string;
@@ -24,6 +26,7 @@ export interface FeedDay {
 }
 
 interface ReflectFeedCache {
+  userId?: string;
   schemaVersion?: number;
   days: FeedDay[];
   fetchedAtMs: number;
@@ -34,6 +37,7 @@ const REFLECT_FEED_TTL_MS = 15 * 60 * 1000;
 let feedInflight: Promise<FeedDay[]> | null = null;
 let feedForcedFollowup: Promise<FeedDay[]> | null = null;
 let feedRevision = 0;
+subscribeSessionIdentity(() => { feedRevision++; feedInflight = null; feedForcedFollowup = null; });
 
 function emojiFor(itemId: string): string {
   return mergedItemDictionary().items[itemId]?.emoji ?? '✨';
@@ -45,7 +49,7 @@ function readCache(): ReflectFeedCache | null {
   try {
     const parsed = JSON.parse(raw) as ReflectFeedCache | FeedDay[];
     if (Array.isArray(parsed)) return { days: parsed, fetchedAtMs: 0 };
-    if (Array.isArray(parsed.days)) return parsed;
+    if (parsed && Array.isArray(parsed.days)) return parsed;
     return null;
   } catch {
     return null;
@@ -53,9 +57,10 @@ function readCache(): ReflectFeedCache | null {
 }
 
 function isCurrentCache(cache: ReflectFeedCache | null): cache is ReflectFeedCache {
-  return !!cache && cache.schemaVersion === REFLECT_FEED_SCHEMA_VERSION && cache.days.every((day) =>
-    day.reflects.every((reflect) =>
-      typeof reflect.hasMemories === 'boolean'
+  return !!cache && typeof sessionUserId() === 'string' && cache.userId === sessionUserId()
+    && cache.schemaVersion === REFLECT_FEED_SCHEMA_VERSION && cache.days.every((day) =>
+    day && Array.isArray(day.reflects) && Array.isArray(day.itemIds) && day.reflects.every((reflect) =>
+      reflect && typeof reflect.hasMemories === 'boolean'
       && ['typing', 'prompt', 'items'].includes(reflect.mode),
     ),
   );
@@ -84,6 +89,7 @@ export function patchCachedReflectEntry(
   });
   feedRevision += 1;
   storage.set(kReflectFeed.name, JSON.stringify({
+    userId: sessionUserId() ?? undefined,
     schemaVersion: REFLECT_FEED_SCHEMA_VERSION,
     days,
     fetchedAtMs: 0,
@@ -100,20 +106,23 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
   if (feedInflight) {
     if (!options?.force) return feedInflight;
     if (!feedForcedFollowup) {
-      feedForcedFollowup = feedInflight
-        .then(() => fetchReflectFeed({ force: true }))
-        .finally(() => { feedForcedFollowup = null; });
+      const epoch = sessionEpoch();
+      const followup = feedInflight
+        .then(() => epoch === sessionEpoch() ? fetchReflectFeed({ force: true }) : [])
+        .finally(() => { if (feedForcedFollowup === followup) feedForcedFollowup = null; });
+      feedForcedFollowup = followup;
     }
     return feedForcedFollowup;
   }
 
   const requestRevision = feedRevision;
-  feedInflight = (async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user?.id;
-    if (!userId) return getCachedFeed();
+  const epoch = sessionEpoch();
+  const task = (async () => {
     try {
-      const data = await apiClient.get<{
+      const { data: sess } = await withDeadline(supabase.auth.getSession(), 5_000);
+      const userId = sess.session?.user?.id;
+      if (!userId || epoch !== sessionEpoch()) return [];
+      const data = await withDeadline(apiClient.get<{
         success?: boolean;
         days?: {
           date: string;
@@ -127,7 +136,8 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
           }[];
           itemIds: string[];
         }[];
-      }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`);
+      }>(`/api/reflect-feed?userId=${encodeURIComponent(userId)}`), 15_000);
+      if (epoch !== sessionEpoch() || requestRevision !== feedRevision) return [];
       if (!data.success || !data.days) return getCachedFeed();
       const responseHasReflectModes = data.days.every((day) => day.reflects.every((reflect) =>
         ['typing', 'prompt', 'items'].includes(reflect.mode ?? ''),
@@ -153,6 +163,7 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
         storage.set(
           kReflectFeed.name,
           JSON.stringify({
+            userId,
             schemaVersion: REFLECT_FEED_SCHEMA_VERSION,
             days,
             fetchedAtMs: Date.now(),
@@ -162,11 +173,11 @@ export function fetchReflectFeed(options?: { force?: boolean }): Promise<FeedDay
       return days;
     } catch {
       return getCachedFeed();
-    } finally {
-      feedInflight = null;
     }
   })();
-  return feedInflight;
+  const request = task.finally(() => { if (feedInflight === request) feedInflight = null; });
+  feedInflight = request;
+  return request;
 }
 
 /** A day label like "Jul 12" from a YYYY-MM-DD string. */

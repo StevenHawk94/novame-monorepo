@@ -1,13 +1,16 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { load, deferred, flush } = require('./lifecycle-test-utils.cjs');
+const { load, clock, deferred, flush } = require('./lifecycle-test-utils.cjs');
 
 function flagHarness({ cached, enabled }) {
+  const time = clock();
+  const deadline = load('apps/mobile/src/lib/async-lifecycle.ts', {}, time.globals);
   let epoch = 0;
   let requests = 0;
   const pending = [];
   const experiences = [];
   const flag = load('apps/mobile/src/lib/use-major-update.ts', {
+    './async-lifecycle': deadline,
     react: { useEffect() {}, useSyncExternalStore: (_subscribe, snapshot) => snapshot() },
     'react-native': { AppState: { addEventListener() { return { remove() {} }; } } },
     './app-config-api': {
@@ -22,9 +25,17 @@ function flagHarness({ cached, enabled }) {
     },
     './home-entry-readiness': { setHomeEntryExperience: value => experiences.push(value) },
     './session-lifecycle': { sessionEpoch: () => epoch },
-  });
-  return { flag, pending, experiences, requests: () => requests, nextEpoch: () => { epoch++; } };
+  }, time.globals);
+  return { flag, pending, experiences, time, requests: () => requests, nextEpoch: () => { epoch++; } };
 }
+
+test('hung first-launch config resolves to this build’s UI after five seconds', async () => {
+  const h = flagHarness({ cached: false, enabled: false });
+  const request = h.flag.refreshMajorUpdateFlag();
+  h.time.advance(5000); await request;
+  assert.equal(h.flag.useMajorUpdateReady(), true);
+  assert.equal(h.flag.useMajorUpdateEnabled(), true);
+});
 
 test('cached Burrow rollout renders immediately without a legacy frame', () => {
   const h = flagHarness({ cached: true, enabled: true });

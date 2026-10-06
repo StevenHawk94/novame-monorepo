@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { Modal } from 'react-native';
 
 import { getCurrentSession } from '@/lib/auth';
 import { refreshAllCaches } from '@/lib/cache-refresh-all';
 import { hideResumeOverlay } from '@/lib/background-resume-store';
-import { GridBackground } from '@/components/ui/grid-background';
+import { BurrowLaunchScreen } from './burrow-launch-screen';
 
 /**
  * Full-screen overlay shown when the app returns from a long background.
@@ -20,7 +19,6 @@ import { GridBackground } from '@/components/ui/grid-background';
  * -- it caps how long a bad network may strand the user behind a loading
  * surface.
  */
-const RESUME_FAVICON = require('../../../assets/favicon.png');
 const RESUME_TIMEOUT_MS = 8000;
 
 export function BackgroundResumeOverlay() {
@@ -55,20 +53,7 @@ export function BackgroundResumeOverlay() {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
-      <View style={styles.root}>
-        <GridBackground />
-        <ExpoImage source={RESUME_FAVICON} style={styles.logo} contentFit="contain" />
-      </View>
+      <BurrowLaunchScreen />
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8E2C1',
-  },
-  logo: { width: 120, height: 120 },
-});

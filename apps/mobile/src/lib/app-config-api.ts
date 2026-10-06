@@ -1,5 +1,6 @@
 import { apiClient } from './api';
 import { storage } from './storage';
+import { withDeadline } from './async-lifecycle';
 
 /**
  * App config -- dynamic pricing + unlock thresholds.
@@ -177,7 +178,11 @@ export async function fetchAppConfig(options?: {
 
   fetchInFlight = (async () => {
     try {
-      const data = await apiClient.get<WireResponse>('/api/app-config');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4_000);
+      let data: WireResponse;
+      try { data = await withDeadline(apiClient.get<WireResponse>('/api/app-config', { signal: controller.signal }), 4_500); }
+      finally { clearTimeout(timer); controller.abort(); }
       if (!data.success || !data.config) {
         return { kind: 'error', message: data.error || 'Failed to load config' };
       }

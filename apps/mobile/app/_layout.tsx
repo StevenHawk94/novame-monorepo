@@ -46,6 +46,7 @@ import { AppDialogHost } from '@/components/ui/app-dialog';
 import { ErrorBoundary } from '@/components/main/error-boundary';
 import { GoodVibesInboxGate } from '@/components/main/good-vibes';
 import { hideSplashOnce } from '@/lib/splash';
+import { BURROW_LAUNCH_BACKGROUND } from '@/lib/burrow-onboarding-design';
 import { beginHomeEntry, observeHomeEntryAppState } from '@/lib/home-entry-readiness';
 import { captureAnalysisLaunchInactivity } from '@/lib/analysis-refresh-policy';
 import { touchActivity } from '@/lib/activity';
@@ -606,10 +607,9 @@ function RootLayout() {
                     screenOptions={{
                       // Match the launch/entry cover. Destination screens paint
                       // their own backgrounds, while any native-to-JS redirect
-                      // gap must remain the same light grid base rather than
-                      // flashing the historical deep-brown navigator color.
+                      // gap stays the same brown as the shared launch logo.
                       headerShown: false,
-                      contentStyle: { backgroundColor: '#F8E2C1' },
+                      contentStyle: { backgroundColor: BURROW_LAUNCH_BACKGROUND },
                       animation: 'none',
                     }}
                   />

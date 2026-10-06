@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TurboModuleRegistry, View, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -6,13 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BURROW_ART, burrowArtForItem } from '@/lib/burrow-art-assets';
 import { roomSlots } from '@/lib/burrow-presentation';
 import { interactBurrowToy, refillRoomNeed, saveMemoryRoomEntry } from '@/lib/app-major-update-api';
-import { runBurrowAction, useBurrow } from '@/lib/burrow-store';
+import { getBurrowSnapshot, runBurrowAction, useBurrow } from '@/lib/burrow-store';
+import { careCoolingDown, careCooldownMessage, markCareCompleted } from '@/lib/burrow-care-cooldown';
 import { roomPhotoFailureCode, roomPhotoFailureMessage, TOY_PHOTO_DAILY_LIMIT_MESSAGE, TOY_PHOTO_DAILY_LIMIT_TITLE } from '@/lib/room-photo-errors';
 import { BurrowBackButton } from '@/components/burrow/burrow-back-button';
 import { FeedInteraction, WaterInteraction } from '@/components/burrow/care-interaction';
+import { CareQuestCelebration } from '@/components/burrow/care-quest-celebration';
 import { InteractiveDoll, type DollAction } from '@/components/burrow/interactive-doll';
 import type { LocalizedToy as LocalizedToyComponent } from '@/components/burrow/localized-toy';
 import { pickRoomPhoto, RoomPhotoEditor, uploadRoomPhoto } from '@/components/burrow/room-photo';
+import { keepBurrowTextDraft, readBurrowTextDraft, removeBurrowTextDraft } from '@/lib/burrow-text-drafts';
+import { sessionEpoch } from '@/lib/session-lifecycle';
 
 type Kind='toy'|'food'|'water'|'frame'|'letter';
 const kinds:Kind[]=['toy','food','water','frame','letter'];
@@ -40,11 +44,16 @@ export default function RoomInteractionScreen(){
   const [action,setAction]=useState<DollAction>();
   const [showToyInfluence,setShowToyInfluence]=useState(false);
   const [completed,setCompleted]=useState(false);
+  const [careCelebration,setCareCelebration]=useState<'food'|'water'|null>(null);
   const [retry,setRetry]=useState(0);
   const [error,setError]=useState<string|null>(null);
   const [letter,setLetter]=useState('');
+  const letterScope = data ? `${data.profile.id}:${data.pairVersion ?? 'solo'}` : '';
+  const activeLetterScope = useRef(letterScope); activeLetterScope.current = letterScope;
+  useEffect(() => { setLetter(readBurrowTextDraft(letterScope, 'letter')?.body ?? ''); setSaving(false); setCompleted(false); }, [letterScope]);
   const [saving,setSaving]=useState(false);
   const [photoSaving,setPhotoSaving]=useState(false);
+  const toyInteractionSerial=useRef(0);
   const slots=useMemo(()=>data?roomSlots(data,data.profile.id):{},[data]);
   const toy=burrowArtForItem(slots.couple_doll,'couple_dolls')??BURROW_ART.couple_dolls[0];
   const flower=burrowArtForItem(slots.vase,'vases')??BURROW_ART.vases[0];
@@ -58,17 +67,27 @@ export default function RoomInteractionScreen(){
   useEffect(()=>setPhotoChangeUsed(false),[data?.profile.id,data?.localDate]);
   function finishCare(which:'food'|'water'){
     if(!data)return;
+    if(careCoolingDown(data,which)){
+      Alert.alert('All cared for',careCooldownMessage(which));
+      setRetry(n=>n+1);
+      return;
+    }
     setCompleted(true);setError(null);
-    // Completion is visible immediately; the server authoritatively checks the
-    // need in the background, then a silent refresh reconciles the room.
     void runBurrowAction(`${which}:${data.profile.id}`,key=>refillRoomNeed(data.profile.id,which,key),{silent:true}).then(ok=>{
-      if(!ok){setCompleted(false);setRetry(n=>n+1);setError('That did not save. Please try again.');}
+      if(ok){markCareCompleted(data.profile.id,which);setCareCelebration(which);}
+      else {
+        setCompleted(false);setRetry(n=>n+1);
+        const code=getBurrowSnapshot().error;
+        if(code==='care_cooldown'||code==='already_full')Alert.alert('All cared for',careCooldownMessage(which));
+        else setError('That did not save. Please try again.');
+      }
     });
   }
   function recordToy(kind?:'squeeze'|'punch'){
     if(!data)return;
     if(kind)setAction(previous=>({kind,token:(previous?.token??0)+1}));
-    void runBurrowAction(`toy:${data.profile.id}:${data.localDate}`,key=>interactBurrowToy(key),{silent:true});
+    const serial=++toyInteractionSerial.current;
+    void runBurrowAction(`toy:${data.profile.id}:${data.localDate}:${Date.now()}:${serial}`,key=>interactBurrowToy(key),{silent:true});
   }
   function openToyPhotoChoice(){
     if(toyPhotoChangeUsed){Alert.alert(TOY_PHOTO_DAILY_LIMIT_TITLE,TOY_PHOTO_DAILY_LIMIT_MESSAGE);return;}
@@ -97,9 +116,15 @@ export default function RoomInteractionScreen(){
   function saveLetter(){
     if(!letter.trim()||saving)return;
     const text=letter.trim();
+    const epoch = sessionEpoch(), scope = letterScope;
+    let draft;
+    try { draft = keepBurrowTextDraft(scope, 'letter', letter); }
+    catch { setError('Could not keep your draft. Free device storage before sending.'); return; }
     setSaving(true);setCompleted(true);setError(null);
-    void runBurrowAction('love-letter',key=>saveMemoryRoomEntry(null,`💌 ${text}`,null,key),{silent:true}).then(ok=>{
+    void runBurrowAction(`love-letter:${draft.key}`,()=>saveMemoryRoomEntry(null,`💌 ${text}`,null,draft.key),{silent:true}).then(ok=>{
+      if (epoch !== sessionEpoch() || activeLetterScope.current !== scope) return;
       setSaving(false);
+      if (ok) removeBurrowTextDraft(scope, 'letter', draft.key);
       if(!ok){setCompleted(false);setError('Your letter is still here. Check your connection and try saving again.');}
     });
   }
@@ -124,13 +149,17 @@ export default function RoomInteractionScreen(){
       :kind==='water'?<WaterInteraction key={retry} flower={flower} complete={completed} onComplete={()=>finishCare('water')}/>
       :<View style={styles.letterPage}>
         <Text style={styles.recipient}>To <Text style={{color:'#4C2B22'}}>{data.partner?.display_name??'my person'}</Text> ❤️</Text>
-        <TextInput accessibilityLabel="Love note" multiline value={letter} onChangeText={setLetter} maxLength={500} placeholder="Write something from your heart…" placeholderTextColor="#A79082" style={styles.letterInput} textAlignVertical="top"/>
+        <TextInput accessibilityLabel="Love note" multiline value={letter} editable={!saving} onChangeText={body => {
+          setLetter(body); setCompleted(false);
+          try { keepBurrowTextDraft(letterScope, 'letter', body); } catch { setError('Draft could not be saved on this device.'); }
+        }} maxLength={500} placeholder="Write something from your heart…" placeholderTextColor="#A79082" style={styles.letterInput} textAlignVertical="top"/>
         <View style={styles.letterCounter}><Text style={styles.counterText}>500 characters max</Text><Text style={styles.counterText}>{letter.length} / 500</Text></View>
         <Pressable accessibilityRole="button" accessibilityState={{disabled:saving||completed||!letter.trim()}} disabled={saving||completed||!letter.trim()} onPress={()=>{Keyboard.dismiss();saveLetter();}} style={[styles.letterSend,(saving||completed||!letter.trim())&&{opacity:.6}]}><Feather name="send" size={23} color="#FFF"/><Text style={styles.buttonText}>{saving?'Sending…':completed?'Saved ✓':data.partner?'Send Love Note':'Save Love Note'}</Text></Pressable>
       </View>}
     {error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     <View style={{height:insets.bottom}}/>
     <Modal transparent visible={photoChoiceOpen} animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setPhotoChoiceOpen(false)}><View style={styles.choiceScrim}><Pressable style={StyleSheet.absoluteFillObject} onPress={()=>setPhotoChoiceOpen(false)}/><View style={styles.choiceCard}><Text style={styles.choiceTitle}>Choose a photo</Text><Text style={styles.caption}>Put your face inside the toy.</Text><Pressable accessibilityRole="button" onPress={()=>selectPhoto('camera')} style={styles.choiceButton}><Text style={styles.buttonText}>Take Photo</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>selectPhoto('library')} style={[styles.choiceButton,styles.choiceButtonSecondary]}><Text style={[styles.buttonText,{color:'#4C2B22'}]}>Photo Library</Text></Pressable><Pressable onPress={()=>setPhotoChoiceOpen(false)} style={styles.choiceCancel}><Text style={styles.counterText}>Cancel</Text></Pressable></View></View></Modal>
+    {careCelebration&&<CareQuestCelebration title={careCelebration==='food'?'Yum!':'Fresh and thirsty no more!'} message={careCelebration==='food'?'Your bunny is full and happy.':undefined} onClose={()=>setCareCelebration(null)}/>}
     {photoMode&&<RoomPhotoEditor key={`${kind}:${photoMode}:${data.profile.id}`} data={data} ownerId={data.profile.id} kind="doll" toyAsset={toy} initialSource={photoMode} captureOnly onSaved={()=>setPhotoChangeUsed(true)} onDailyLimit={()=>setPhotoChangeUsed(true)} onChooseLibrary={()=>{setPhotoMode(null);setTimeout(()=>void openPhotoLibrary(),320);}} onClose={()=>setPhotoMode(null)}/>}
   </KeyboardAvoidingView>;
 }

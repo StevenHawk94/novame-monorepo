@@ -12,6 +12,8 @@ import { BurrowBackButton } from './burrow-back-button';
 import { sessionEpoch, subscribeSessionIdentity } from '@/lib/session-lifecycle';
 import { cacheGameOverview, cacheGameSession, gameOverviewNeedsRefresh, gameSessionNeedsRefresh,
   getCachedGameOverview, getCachedGameSession } from '@/lib/burrow-game-room-cache';
+import { localGameOverview } from '@/lib/burrow-game-room-content';
+import { useIsFocused } from '@react-navigation/native';
 
 const ink = '#3C1D12';
 const muted = '#80604F';
@@ -30,6 +32,9 @@ function Panel({ children, style }: { children: React.ReactNode; style?: object 
 }
 
 export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string }) {
+  const focused = useIsFocused();
+  const operation = useRef(0);
+  const busyRef = useRef(false);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const listRef = useRef<ScrollView>(null);
@@ -37,11 +42,13 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const sessionRequest = useRef(0);
   const tileWidth = Math.max(76, Math.floor((screenWidth - 36 - 3 * 9) / 4));
   const { data: burrow } = useBurrow();
-  const [overview, setOverview] = useState<GameOverview | null>(getCachedGameOverview);
+  const [overview, setOverview] = useState<GameOverview>(() => localGameOverview(getCachedGameOverview()));
+  const [overviewReady, setOverviewReady] = useState(() => !!getCachedGameOverview());
   const [session, setSession] = useState<GameSession | null>(() => initialSessionId ? getCachedGameSession(initialSessionId) : null);
   const [selected, setSelected] = useState<GameSummary | null>(null);
-  const [loading, setLoading] = useState(() => initialSessionId
-    ? !getCachedGameSession(initialSessionId) : !getCachedGameOverview());
+  // No catalogue loader, even on a fresh install with no cache or connection.
+  // Only opening a specific saved round needs its private answer state.
+  const [loading, setLoading] = useState(() => !!initialSessionId && !getCachedGameSession(initialSessionId));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -49,11 +56,14 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const [pairPrompt, setPairPrompt] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<number | null>(null);
   const partnerName = burrow?.partner?.display_name?.trim() || 'your person';
-  useEffect(() => () => { overviewRequest.current++; sessionRequest.current++; }, []);
+  useEffect(() => () => { operation.current++; overviewRequest.current++; sessionRequest.current++; }, []);
+  useEffect(() => { if (!focused) { operation.current++; sessionRequest.current++; overviewRequest.current++; busyRef.current = false; setBusy(false); setPendingChoice(null); } }, [focused]);
   useEffect(() => subscribeSessionIdentity(() => {
     overviewRequest.current++;
     sessionRequest.current++;
-    setOverview(null);
+    operation.current++; busyRef.current = false; setBusy(false); setPendingChoice(null);
+    setOverview(localGameOverview());
+    setOverviewReady(false);
     setSession(null);
     setSelected(null);
   }), []);
@@ -63,7 +73,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     const epoch = sessionEpoch();
     const value = await gameOverview();
     if (epoch !== sessionEpoch()) throw new Error('session_changed');
-    if (request === overviewRequest.current) { cacheGameOverview(value); setOverview(value); }
+    if (request === overviewRequest.current) { cacheGameOverview(value); setOverview(value); setOverviewReady(true); }
     return value;
   }, []);
   const loadSession = useCallback(async (id: string) => {
@@ -75,9 +85,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
     return value;
   }, []);
   useEffect(() => {
+    if (!focused) return;
     let live = true;
     const epoch = sessionEpoch();
-    const cachedOverview = getCachedGameOverview();
     const cachedSession = initialSessionId ? getCachedGameSession(initialSessionId) : null;
     const refreshOverview = gameOverviewNeedsRefresh();
     const refreshSession = !!initialSessionId && gameSessionNeedsRefresh(initialSessionId);
@@ -89,31 +99,52 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
         const results = await Promise.allSettled([
           refreshOverview ? gameOverview().then(value => {
             if (!live || epoch !== sessionEpoch() || overviewAttempt !== overviewRequest.current) return;
-            cacheGameOverview(value); setOverview(value);
+            cacheGameOverview(value); setOverview(value); setOverviewReady(true);
           }) : Promise.resolve(),
           refreshSession && initialSessionId ? gameSession(initialSessionId).then(value => {
             if (!live || epoch !== sessionEpoch() || sessionAttempt !== sessionRequest.current) return;
-            cacheGameSession(value); setSession(value);
+            cacheGameSession(value); setSession(value); setLoading(false);
           }) : Promise.resolve(),
         ]);
-        const error = results.find(result => result.status === 'rejected');
+        // Catalogue revalidation is non-blocking and may fail independently
+        // of an otherwise successfully opened saved round.
+        const error = results[1];
         if (error?.status === 'rejected') throw error.reason;
       } catch (e) {
-        // A stale cached page remains usable if background revalidation fails.
-        if (live && (initialSessionId ? !cachedSession : !cachedOverview))
+        // Browsing never fails because state revalidation is offline/slow.
+        // A saved round still needs answers/results from its owner account.
+        if (live && epoch === sessionEpoch() && initialSessionId && !cachedSession)
           setError(e instanceof Error ? e.message : 'Unable to load Game Room.');
       }
-      finally { if (live) setLoading(false); }
+      finally { if (live && epoch === sessionEpoch()) setLoading(false); }
     })();
     return () => { live = false; };
-  }, [initialSessionId]);
+  }, [initialSessionId, focused]);
+  const wasFocused = useRef(focused);
   useEffect(() => {
-    if (!session || session.ownAnswers.length !== 6 || session.guesses.length !== 6 || session.completedAt) return;
-    const tick = () => { void loadSession(session.id).catch(() => {}); };
-    const timer = setInterval(tick, 12_000);
-    const subscription = AppState.addEventListener('change', state => { if (state === 'active') tick(); });
-    return () => { clearInterval(timer); subscription.remove(); };
-  }, [session?.id, session?.ownAnswers.length, session?.guesses.length, session?.completedAt, loadSession]);
+    const refreshRound = () => { if (session && !session.completedAt && !busyRef.current) void loadSession(session.id).catch(() => {}); };
+    if (focused && !wasFocused.current) refreshRound();
+    wasFocused.current = focused;
+    if (!focused) return;
+    const sub = AppState.addEventListener('change', state => { if (state === 'active') refreshRound(); });
+    return () => sub.remove();
+  }, [focused, session?.id, session?.completedAt, loadSession]);
+  useEffect(() => {
+    if (!focused || !session || session.ownAnswers.length !== 6 || session.guesses.length !== 6 || session.completedAt) return;
+    let live = true, timer: ReturnType<typeof setTimeout> | undefined, running = false;
+    const tick = async () => {
+      if (!live || running || AppState.currentState !== 'active') return;
+      if (busyRef.current) { timer = setTimeout(() => void tick(), 1_000); return; }
+      running = true;
+      try { await loadSession(session.id); } catch {} finally {
+        running = false;
+        if (live) { clearTimeout(timer); timer = setTimeout(() => void tick(), 12_000); }
+      }
+    };
+    void tick();
+    const subscription = AppState.addEventListener('change', state => { clearTimeout(timer); if (state === 'active') void tick(); });
+    return () => { live = false; clearTimeout(timer); subscription.remove(); };
+  }, [focused, session?.id, session?.ownAnswers.length, session?.guesses.length, session?.completedAt, loadSession]);
 
   const selectedGame = selected ?? overview?.games.find(game => game.id === session?.gameId) ?? null;
   const active = useMemo(() => overview?.sessions.filter(item => !item.completedAt) ?? [], [overview]);
@@ -125,55 +156,83 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
   const answering = !!session && !session.completedAt && !waiting && !showTransition;
   const question = answering ? session.questions[questionIndex] : null;
 
-  const perform = async (work: () => Promise<void>) => {
-    if (busy) return;
+  const perform = async (work: (current: () => boolean) => Promise<void>) => {
+    if (busyRef.current) return;
+    const token = ++operation.current, epoch = sessionEpoch();
+    const current = () => operation.current === token && epoch === sessionEpoch();
+    busyRef.current = true;
     setBusy(true); setError(null);
-    try { await work(); }
+    try { await work(current); }
     catch (e) {
+      if (!current()) return;
       const code = e instanceof Error ? e.message : 'Something went wrong.';
       if (code === 'insufficient_balance') Alert.alert('Not enough carrots', 'This game costs 20 carrots to unlock.', [
         { text: 'Later', style: 'cancel' }, { text: 'Carrot Shop', onPress: () => router.push('/(main)/burrow-detail?section=carrot_shop' as Href) },
       ]);
       else if (code === 'not_paired' || code === 'pair_changed') setPairPrompt(true);
-      else setError(code.replaceAll('_', ' '));
-    } finally { setBusy(false); }
+      else setError(code === 'game_content_update_required'
+        ? 'Please update the app to open this version of the game.' : code.replaceAll('_', ' '));
+    } finally { if (current()) { busyRef.current = false; setBusy(false); } }
   };
   const begin = (game: GameSummary) => {
-    if (!overview?.paired) { setPairPrompt(true); return; }
+    operation.current++; busyRef.current = false; setBusy(false); setPendingChoice(null);
     sessionRequest.current++;
     setSelected(game); setSession(null); setShowTransition(false); setShowAllAnswers(false);
   };
-  const start = (game: GameSummary) => void perform(async () => {
-    if (!overview?.availableIds.includes(game.id)) {
+  const launch = async (game: GameSummary, state: GameOverview, current: () => boolean) => {
+    if (!state.availableIds.includes(game.id)) {
       await unlockGame(game.id);
-      await Promise.all([loadOverview(), refreshBurrow()]);
+      if (!current()) return;
+      void loadOverview().catch(() => {}); void refreshBurrow({ silent: true });
     }
     const started = await startGame(game.id);
-    const next = await loadSession(started.sessionId);
+    if (!current()) return;
+    const next = started.session ?? await loadSession(started.sessionId);
+    if (!current()) return;
+    cacheGameSession(next); setSession(next);
     setSelected(game);
     setShowTransition(next.ownAnswers.length === 6 && next.guesses.length === 0);
+  };
+  const start = (game: GameSummary) => void perform(async current => {
+    // Do not mistake an unsynced local catalogue for a real ownership check.
+    // This wait happens only after an explicit Play tap, never on page entry.
+    const state = overviewReady ? overview : await loadOverview();
+    if (!current()) return;
+    if (!state.paired) { setPairPrompt(true); return; }
+    if (!state.availableIds.includes(game.id)) {
+      Alert.alert('Unlock this game?', `Spend 20 carrots to unlock ${game.title} permanently?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Unlock', onPress: () => void perform(current => launch(game, state, current)) },
+      ]);
+      return;
+    }
+    await launch(game, state, current);
   });
   const answer = (choice: number) => {
     if (!session || busy) return;
     setPendingChoice(choice);
-    void perform(async () => {
+    void perform(async current => {
       try {
         await new Promise(resolve => setTimeout(resolve, 180));
-        await answerGame(session.id, phase, questionIndex, choice);
-        const next = await loadSession(session.id);
+        if (!current()) return;
+        const saved = await answerGame(session.id, phase, questionIndex, choice);
+        if (!current()) return;
+        const next = saved.session ?? await loadSession(session.id);
+        if (!current()) return;
+        sessionRequest.current++; cacheGameSession(next); setSession(next);
         if (phase === 'own' && next.ownAnswers.length === 6) setShowTransition(true);
         if (next.completedAt) await loadOverview();
-      } finally { setPendingChoice(null); }
+      } finally { if (current()) setPendingChoice(null); }
     });
   };
-  const exitToList = () => { sessionRequest.current++; setSession(null); setSelected(null); setShowTransition(false); setShowAllAnswers(false); void loadOverview().catch(() => {}); };
+  const exitToList = () => { operation.current++; busyRef.current = false; setBusy(false); setPendingChoice(null); sessionRequest.current++; setSession(null); setSelected(null); setShowTransition(false); setShowAllAnswers(false); void loadOverview().catch(() => {}); };
   const goBack = () => {
     if (session || selected) exitToList();
     else router.back();
   };
   const notify = () => {
     if (!session) return;
-    void perform(async () => {
+    void perform(async current => {
       if (!session.notifyReady) {
         const permission = await requestNotificationPermission();
         if (permission !== 'granted' || !await syncRemoteNotificationRegistration({ force: true })) {
@@ -181,7 +240,9 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
           return;
         }
       }
+      if (!current()) return;
       await notifyGame(session.id, !session.notifyReady);
+      if (!current()) return;
       await loadSession(session.id);
     });
   };
@@ -250,19 +311,15 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
         <Panel><View style={st.step}><Text style={st.stepNumber}>01</Text><Image source={BURROW_GAME_RULE_ICONS[0]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Answer all 6 questions about yourself</Text></View>
           <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>02</Text><Image source={BURROW_GAME_RULE_ICONS[1]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Guess your partner’s answers</Text></View>
           <View style={st.divider}/><View style={st.step}><Text style={st.stepNumber}>03</Text><Image source={BURROW_GAME_RULE_ICONS[2]} style={{width:48,height:48}} resizeMode="contain"/><Text style={st.stepText}>Compare scores after you both finish</Text></View></Panel>
-        {!overview?.availableIds.includes(selected.id) && <Text style={st.hintLight}>Unlock once for 20 carrots. This game stays in your collection.</Text>}
-        <Button label={overview?.availableIds.includes(selected.id) ? 'Start game →' : 'Unlock for 🥕 20 & start →'} disabled={busy} onPress={() => {
-          if (overview?.availableIds.includes(selected.id)) start(selected);
-          else Alert.alert('Unlock this game?', `Spend 20 carrots to unlock ${selected.title} permanently?`, [
-            { text: 'Cancel', style: 'cancel' }, { text: 'Unlock', onPress: () => start(selected) },
-          ]);
-        }}/>
+        {overviewReady && !overview.availableIds.includes(selected.id) && <Text style={st.hintLight}>Unlock once for 20 carrots. This game stays in your collection.</Text>}
+        <Button label={!overviewReady ? 'Play together →' : overview.availableIds.includes(selected.id) ? 'Start game →' : 'Unlock for 🥕 20 & start →'}
+          disabled={busy} onPress={() => start(selected)}/>
       </>}
       {!loading && !session && !selected && overview && <>
         <Image source={gameRoomHero} style={[st.catalogueHero, { height: Math.min(screenWidth - 36, 524) * 619 / 1100 }]} resizeMode="cover" accessibilityLabel="Two bunnies playing a board game in their cozy cave" />
         {active.length > 0 && <><Text style={st.sectionTitle}>{active.some(item => item.ownCount + item.guessCount === 0 && item.partnerOwnCount + item.partnerGuessCount > 0) ? `Pending Game from ${partnerName}` : 'Continue playing'}</Text>{active.map(item => {
           const game = overview.games.find(g => g.id === item.gameId);
-          return <Pressable key={item.id} accessibilityRole="button" style={st.continueCard} onPress={() => void perform(async () => { await loadSession(item.id); setSelected(game ?? null); setShowTransition(item.ownCount === 6 && item.guessCount === 0); })}>
+          return <Pressable key={item.id} accessibilityRole="button" style={st.continueCard} onPress={() => void perform(async current => { await loadSession(item.id); if (!current()) return; setSelected(game ?? null); setShowTransition(item.ownCount === 6 && item.guessCount === 0); })}>
             {game && <Image source={gameRoomIcons[game.id]} style={st.continueIcon} resizeMode="contain" />}<View style={{ flex: 1 }}><Text style={st.continueTitle}>{game?.title ?? item.gameId}</Text><Text style={st.continueSub}>{item.ownCount + item.guessCount}/12 · {item.ownCount + item.guessCount === 12 ? 'Waiting for partner' : 'Continue'}</Text></View><Text style={st.continueArrow}>{item.ownCount + item.guessCount === 0 ? 'Play Now' : 'Continue →'}</Text>
           </Pressable>;
         })}</>}
@@ -274,7 +331,7 @@ export function GameRoomScreen({ initialSessionId }: { initialSessionId?: string
             <GameTile key={game.id} game={game} width={tileWidth} onPress={() => begin(game)}/>)}</ScrollView></View>)}
         {recentResults.length > 0 && <><Text style={st.sectionTitle}>Past rounds</Text>{recentResults.map(item => {
           const game = overview.games.find(g => g.id === item.gameId);
-          return <Pressable key={item.id} accessibilityRole="button" style={st.continueCard} onPress={() => void perform(async () => { await loadSession(item.id); setSelected(game ?? null); setShowAllAnswers(false); })}>
+          return <Pressable key={item.id} accessibilityRole="button" style={st.continueCard} onPress={() => void perform(async current => { await loadSession(item.id); if (!current()) return; setSelected(game ?? null); setShowAllAnswers(false); })}>
             {game && <Image source={gameRoomIcons[game.id]} style={st.continueIcon} resizeMode="contain" />}<View style={{ flex: 1 }}><Text style={st.continueTitle}>{game?.title ?? item.gameId}</Text><Text style={st.continueSub}>See results</Text></View><Text style={st.continueArrow}>→</Text>
           </Pressable>;
         })}</>}

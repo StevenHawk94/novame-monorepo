@@ -1,38 +1,47 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { load, flush } = require('./lifecycle-test-utils.cjs');
+const { load, flush, hooks } = require('./lifecycle-test-utils.cjs');
 const jsx = (type, props) => ({ type, props });
 const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === 'object'
   ? [tree, ...nodes(tree.props?.children)] : tree == null || tree === false ? [] : [tree];
 const copy = tree => nodes(tree).filter(node => typeof node === 'string').join(' ');
 
 function cardHarness(visit) {
+  const h = hooks();
   const commands = [], routes = [];
   let response = {};
   const { FriendVisitCard } = load('apps/mobile/src/components/burrow/friend-visit-card.tsx', {
+    react: h.react,
     'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { Alert: {}, Pressable: 'Pressable', Text: 'Text', View: 'View', StyleSheet: { create: x => x } },
-    'expo-image': { Image: 'Image' },
+'./burrow-image': { Image: 'Image' }, 'expo-image': { Image: 'Image' },
     '@/lib/burrow-ui-assets': { burrowFriendArt: () => null },
-    'expo-router': { router: { push: route => routes.push(route) } },
+    'expo-router': { router: { push: route => routes.push(route), back() {} } },
     '@/lib/app-major-update-api': { respondFriendVisit: async (id, input) => { commands.push({ id, input }); return response; } },
     '@/lib/burrow-store': { runBurrowAction: async (_, action) => { await action(); return true; } },
   });
   const data = { profile: { id: 'a' }, friendVisit: visit, friendVisitTimezone: 'UTC',
     friends: [{ stable_id: 'mole', name: 'Mr. Mole' }], catalog: [{ stable_id: 'lamp', title: 'Firefly Lantern' }] };
-  return { commands, routes, data, response: value => { response = value; },
-    render: (busy = false) => FriendVisitCard({ data, busy }),
-    press(label) { const button = nodes(FriendVisitCard({ data, busy: false })).find(node => node.type === 'Pressable' && copy(node).includes(label)); assert.ok(button, label); button.props.onPress(); },
+  const render = (busy = false) => h.render(() => FriendVisitCard({ data, busy }));
+  return { commands, routes, data, response: value => { response = value; }, render,
+    press(label) {
+      let tree = render();
+      const talk = nodes(tree).find(node => node.type === 'Pressable' && copy(node).startsWith('Talk to'));
+      if (talk && !copy(talk).includes(label)) { talk.props.onPress(); tree = render(); }
+      const button = nodes(tree).find(node => node.type === 'Pressable' && copy(node).includes(label));
+      assert.ok(button, label); button.props.onPress();
+    },
   };
 }
 const visit = kind => ({ id: 'visit-1', friend_id: 'mole', completed_at: null, declined_at: null, accepted_at: null,
   content_snapshot: { content_type: kind, prompt: 'A little story', choices: [{ id: 'yes', label: 'Yes, keep it' }],
     feedback: { yes: 'A bright little memory.' }, rage_monster_id: 'overthinking' } });
 
-test('empty visitor state explains cadence without presenting a claim button', () => {
+test('empty visitor state explains the quiet room and only offers return navigation', () => {
   const h = cardHarness(null);
-  assert.match(copy(h.render()), /seven days/);
-  assert.equal(nodes(h.render()).filter(node => node.type === 'Pressable').length, 0);
+  assert.match(copy(h.render()), /No visitors right now/);
+  assert.equal(nodes(h.render()).filter(node => node.type === 'Pressable').length, 1);
+  assert.match(copy(h.render()), /Back to Burrow/);
 });
 test('insight acknowledgement is sent to the server and busy disables submission', async () => {
   const h = cardHarness(visit('insight'));

@@ -14,11 +14,11 @@ describe('Burrow major update identifiers', () => {
   it('keeps persisted identifiers and release navigation distinct', () => {
     expect(BURROW_ROOM_IDS).toHaveLength(9);
     expect(BURROW_RELEASE_ROOM_IDS).toHaveLength(6);
-    expect(HOME_DECOR_SLOTS).toHaveLength(17);
+    expect(HOME_DECOR_SLOTS).toHaveLength(19);
     expect(AFFECTION_TYPES).toHaveLength(6);
     expect(DAILY_QUEST_IDS).toHaveLength(6);
     expect(COLLECTION_CATEGORIES).toHaveLength(4);
-    expect(SHOP_CATEGORIES).toHaveLength(19);
+    expect(SHOP_CATEGORIES).toHaveLength(21);
     expect(BURROW_DECOR_SHOP_CATEGORIES).toHaveLength(16);
   });
 

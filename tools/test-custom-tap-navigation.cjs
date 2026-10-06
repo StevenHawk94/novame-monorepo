@@ -224,8 +224,12 @@ test('entry scroll gate, sideways gestures and native closing cannot accidentall
 });
 test('only Thump/Reflect entries use native cards; input and companion modal protections stay unchanged', () => {
   const { default: MainLayout } = load('apps/mobile/app/(main)/_layout.tsx', {
+    '@/lib/avatar-upload-queue': { syncProfileAvatar() {} },
+    '@/components/burrow/burrow-music': { BurrowMusicGate: 'BurrowMusicGate' },
+    '@/components/burrow/adventure-arrival-gate': { AdventureArrivalGate: 'AdventureArrivalGate' },
+    '@/components/burrow/burrow-sync-gate': { BurrowSyncGate: 'BurrowSyncGate' },
     react: { useEffect() {} },
-    'react-native': { AppState: { addEventListener: () => ({ remove() {} }) } },
+    'react-native': { Platform: { OS: 'ios' }, AppState: { addEventListener: () => ({ remove() {} }) } },
     'expo-router': { Stack: { Screen: 'StackScreen' } },
     '@/lib/rating-navigation': { ratingNavigationListeners: {} },
     '@/components/rating/official-rating-gate': { OfficialRatingGate: 'OfficialRatingGate' },

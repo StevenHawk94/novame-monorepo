@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import catalog from '@/data/burrow-game-room-v1.json'
 import { appMajorUpdateServiceClient, authenticatedUserId, commandStatus, majorUpdateEnabled } from '@/lib/app-major-update'
-import { scoreGameRoomRound } from '@/lib/burrow-game-room.mjs'
+import { scoreGameRoomRound, sameGameRoomQuestions } from '@/lib/burrow-game-room.mjs'
 
 export const runtime = 'edge'
 
@@ -29,14 +29,27 @@ export async function GET(request) {
     const ctx = await context(request)
     if (ctx.error) return json({ error: ctx.error }, ctx.status)
     const params = new URL(request.url).searchParams
+    const localContent = params.get('content') === 'local'
     if (params.get('mode') === 'overview') {
       const state = await rpc(ctx.db, 'burrow_game_overview_v1', { p_user_id: ctx.userId })
       if (state?.error) return json(state, commandStatus(state.error))
+      // New mobile bundles already contain the catalogue. Keep the full
+      // response for older clients, but sync only user state to local clients.
+      if (localContent) return json({ success: true, version: catalog.version, ...state })
       return json({ success: true, version: catalog.version, categories: catalog.categories, games: gameSummary, ...state })
     }
     if (params.get('mode') === 'session' && uuid(params.get('id'))) {
       const state = await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: params.get('id') })
       if (state?.error) return json(state, commandStatus(state.error))
+      if (localContent) {
+        const game = gameById.get(state.gameId)
+        if (Number(params.get('catalogVersion')) !== catalog.version || !game
+          || !sameGameRoomQuestions(state.questions, game.questions)) {
+          return json({ error: 'game_content_update_required' }, 409)
+        }
+        const { questions, ...progress } = state
+        return json({ success: true, ...progress, result: scoreGameRoomRound(state) })
+      }
       return json({ success: true, ...state, result: scoreGameRoomRound(state) })
     }
     return json({ error: 'invalid_request' }, 400)
@@ -72,6 +85,21 @@ export async function POST(request) {
       args = { p_user_id: ctx.userId, p_session_id: body.sessionId, p_enabled: body.enabled }
     } else return json({ error: 'invalid_request' }, 400)
     const result = await rpc(ctx.db, name, args)
+    if (!result?.error && ['start', 'answer'].includes(body.action)) {
+      const sessionId = body.action === 'start' ? result.sessionId : body.sessionId
+      const session = await rpc(ctx.db, 'burrow_game_state_v1', { p_user_id: ctx.userId, p_session_id: sessionId })
+      if (session?.error) return json(session, commandStatus(session.error))
+      // The same authenticated response carries the post-command answer state;
+      // mobile no longer needs another HTTP round trip for every answer.
+      if (body.content === 'local') {
+        const game = gameById.get(session.gameId)
+        if (Number(body.catalogVersion) !== catalog.version || !game || !sameGameRoomQuestions(session.questions, game.questions))
+          return json({ error: 'game_content_update_required' }, 409)
+        const { questions, ...progress } = session
+        return json({ success: true, ...result, session: { ...progress, result: scoreGameRoomRound(session) } })
+      }
+      return json({ success: true, ...result, session: { ...session, result: scoreGameRoomRound(session) } })
+    }
     return json(result?.error ? result : { success: true, ...result }, commandStatus(result?.error))
   } catch (error) {
     console.error('[vnext/game-room POST]', error?.message || error)

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { MajorUpdateBootstrap, MajorUpdateCatalogItem } from '@/lib/app-major-update-api';
-import { BURROW_BACKGROUNDS } from '@/lib/burrow-art-assets';
+import { burrowArtForItem, burrowArtFor } from '@/lib/burrow-art-assets';
 import { decorationPreviewLayout } from '@/lib/burrow-home-layout';
 import { HomeArtScene } from './home-art-scene';
 
@@ -27,7 +27,7 @@ export function HomeArtPreview({ slots, photos, ownerId, away, availableHeight, 
   const { artWidth, viewportHeight } = decorationPreviewLayout(width, maxHeight);
   return <View testID="burrow-decoration-preview" style={[styles.viewport, { height: viewportHeight }]}
     onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <Image source={BURROW_BACKGROUNDS.home} contentFit="cover" contentPosition="bottom" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <Image source={(burrowArtForItem(slots.wallpaper, 'wallpapers') ?? burrowArtFor('wallpapers'))!.source} contentFit="cover" style={StyleSheet.absoluteFillObject} pointerEvents="none" />
     <View pointerEvents="none" style={styles.dimmedBackground} />
     <View style={[styles.artFrame, { width: artWidth, height: viewportHeight }]}>
       <HomeArtScene previewOnly previewBottomCrop={300} initialSize={{ width: artWidth, height: viewportHeight }} balance={0} slots={slots} photos={photos} ownerId={ownerId} away={away}

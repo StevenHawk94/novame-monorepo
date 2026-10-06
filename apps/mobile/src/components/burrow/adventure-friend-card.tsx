@@ -1,6 +1,6 @@
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { completeFriendInteraction, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { runBurrowAction } from '@/lib/burrow-store';
 import { burrowFriendArt } from '@/lib/burrow-ui-assets';

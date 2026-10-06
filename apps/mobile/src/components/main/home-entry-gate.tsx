@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
 import {
-  ActivityIndicator, AppState, BackHandler, Image as NativeImage, Platform,
+  AppState, BackHandler, Image as NativeImage, Platform,
   StyleSheet, View,
 } from 'react-native';
 import { Image as ExpoImage, type ImageProps } from 'expo-image';
-import { GridBackground } from '@/components/ui/grid-background';
+import { BurrowLaunchScreen } from './burrow-launch-screen';
+import { BURROW_LAUNCH_BACKGROUND } from '@/lib/burrow-onboarding-design';
 import { router, useSegments } from 'expo-router';
 
 import {
@@ -22,7 +23,6 @@ import { prepareUnreadAnnouncement } from '@/lib/announcements-api';
 import { markAndroidP0UiReady } from '@/lib/download-queue';
 
 const ANDROID_ENTRY_TIMEOUT_MS = 750;
-const ENTRY_FAVICON = require('../../../assets/favicon.png');
 
 /** Track final display for diagnostics; image callbacks never gate navigation. */
 export function HomeEntryImage({ asset, onDisplay, onError, ...props }: ImageProps & { asset: HomeEntryAsset }) {
@@ -194,14 +194,7 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
       </View>
       {visible ? (
         <View style={styles.cover} accessibilityViewIsModal onLayout={hideSplashOnce}>
-          <GridBackground />
-          <ExpoImage
-            source={ENTRY_FAVICON}
-            style={styles.entryLogo}
-            contentFit="contain"
-            transition={0}
-          />
-          <ActivityIndicator style={styles.spinner} size="small" color="#8A6240" />
+          <BurrowLaunchScreen />
         </View>
       ) : null}
     </View>
@@ -210,7 +203,5 @@ export function HomeEntryGate({ children }: PropsWithChildren) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
-  entryLogo: { width: 120, height: 120 },
-  spinner: { marginTop: 20 },
+  cover: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 100, backgroundColor: BURROW_LAUNCH_BACKGROUND },
 });

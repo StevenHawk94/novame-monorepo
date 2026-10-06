@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { router, type Href } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { deleteMemoryRoomEntry, saveMemoryRoomEntry, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';

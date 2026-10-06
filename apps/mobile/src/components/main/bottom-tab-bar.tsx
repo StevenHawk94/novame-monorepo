@@ -13,6 +13,7 @@ import { useHomeEntry } from '@/lib/use-home-entry';
 import { isHomeEntryRoute, markHomeEntryAsset, type HomeEntryAsset } from '@/lib/home-entry-readiness';
 import { yieldDownloadQueueForInteraction } from '@/lib/download-queue';
 import { useMajorUpdateEnabled } from '@/lib/use-major-update';
+import { homeTabBarHeight, HOME_TAB_BAR_TOP_SPACE } from '@/lib/burrow-home-layout';
 
 /**
  * Bottom tab bar for (main)/(tabs). Five tabs with the illustrated icon set
@@ -196,8 +197,8 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
       yieldDownloadQueueForInteraction();
     }
     void haptics.pageOpen();
-    if (majorUpdate && (routeName === 'burrow' || routeName === 'shop')) {
-      router.push({ pathname: '/(main)/burrow-detail', params: { section: routeName } });
+    if (majorUpdate && (routeName === 'burrow' || routeName === 'shop' || routeName === 'friends')) {
+      router.push({ pathname: '/(main)/burrow-detail', params: { section: routeName === 'friends' ? 'moments' : routeName } });
       return;
     }
     const route = routesByName.get(routeName);
@@ -215,10 +216,9 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
     }
   };
 
-  // Burrow and Shop are destinations from Home, not persistent tab pages.
-  // Keep the Home/Quests/Moments bar on those roots, but let these screens
-  // occupy the entire viewport with their own back affordance.
-  if (majorUpdate && (activeRouteName === 'burrow' || activeRouteName === 'shop')) return null;
+  // Burrow, Shop and Moments are full-screen destinations, not tab pages.
+  // Also hide the bar during a direct-link redirect from their old tab routes.
+  if (majorUpdate && (activeRouteName === 'burrow' || activeRouteName === 'shop' || activeRouteName === 'friends')) return null;
 
   return (
     <View
@@ -226,9 +226,9 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         styles.container,
         {
           paddingBottom: insets.bottom,
-          backgroundColor: majorUpdate ? '#FFF5E8' : theme.background,
+          backgroundColor: majorUpdate ? '#FFF2DF' : theme.background,
           borderTopColor: theme.topBorder,
-          ...(majorUpdate ? { height: Math.max(width / 900 * 160, insets.bottom + 58) } : {}),
+          ...(majorUpdate ? { height: homeTabBarHeight(width, insets.bottom) } : {}),
         },
       ]}
     >
@@ -270,10 +270,12 @@ const burrowIcons = {
   friends: { inactive: require('../../../assets/burrow-webp/home tab icons/moments.webp'), active: require('../../../assets/burrow-webp/home tab icons/moments-selected.webp') },
 } as const;
 function BurrowTabButton({ name, label, isFocused, attempt, onPress }: { name: keyof typeof burrowIcons; label: string; isFocused: boolean; attempt: number; onPress: () => void }) {
+  const { width } = useWindowDimensions();
+  const scale = width / 900;
   return <Pressable accessibilityRole="tab" accessibilityLabel={label} accessibilityState={{ selected: isFocused }} onPress={onPress} onLayout={() => markHomeEntryAsset(`tab:${name}`, attempt)} style={styles.burrowTab}>
     {({ pressed }) => <>
-      <HomeEntryImage asset={`tab:${name}`} source={isFocused || pressed ? burrowIcons[name].active : burrowIcons[name].inactive} style={styles.burrowIcon} contentFit="contain" />
-      <Text style={[styles.burrowLabel,(isFocused || pressed) && styles.burrowLabelActive]}>{label}</Text>
+      <HomeEntryImage asset={`tab:${name}`} source={isFocused || pressed ? burrowIcons[name].active : burrowIcons[name].inactive} style={[styles.burrowIcon, { width: 64 * scale, height: 64 * scale }]} contentFit="contain" />
+      <Text style={[styles.burrowLabel, { fontSize: 23 * scale, lineHeight: 28 * scale }, (isFocused || pressed) && styles.burrowLabelActive]}>{label}</Text>
     </>}
   </Pressable>;
 }
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
   },
   tabIcon: { width: 40, height: 40 },
   tabLabel: { fontSize: 11, lineHeight: 13, fontFamily: 'Inter_700Bold' },
-  burrowRow: { flex: 1, alignItems: 'center', paddingTop: 1, paddingBottom: 0 },
+  burrowRow: { flex: 1, alignItems: 'center', paddingTop: 1 + HOME_TAB_BAR_TOP_SPACE, paddingBottom: 0 },
   burrowTab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 0 },
   burrowIcon: { width: 34, height: 34 },
   burrowLabel: { color: '#1D1A17', fontSize: 11, lineHeight: 14 },

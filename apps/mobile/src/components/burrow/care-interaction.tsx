@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, Ellipse, G, Path } from 'react-native-svg';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import type { BurrowArtAsset } from '@/lib/burrow-art-assets';
 import { haptics } from '@/lib/haptics';
 

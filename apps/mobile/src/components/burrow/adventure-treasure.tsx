@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import { useIsFocused } from '@react-navigation/native';
 import { haptics } from '@/lib/haptics';
 import { BURROW_FIXED_ART } from '@/lib/burrow-art-assets';

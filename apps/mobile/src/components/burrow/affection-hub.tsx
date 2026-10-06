@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { ActivityIndicator, Alert, Animated, AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import { Image } from './burrow-image';
 import Svg, { Path } from 'react-native-svg';
 import { router, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -84,15 +85,20 @@ export function AffectionHub({ data, loading, initialInbox = false }: {
   data: MajorUpdateBootstrap | null; loading: boolean; initialInbox?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
   const { width } = useWindowDimensions();
   const { receivedAt } = useBurrowSnapshot();
   const [now, setNow] = useState(burrowClock());
   const [inbox, setInbox] = useState(false);
   const openedInitial = useRef(false);
   useEffect(() => {
-    const interval = setInterval(() => setNow(burrowClock()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!focused) return;
+    const tick = () => { if (AppState.currentState === 'active') setNow(burrowClock()); };
+    tick();
+    const interval = setInterval(tick, 1000);
+    const sub = AppState.addEventListener('change', tick);
+    return () => { clearInterval(interval); sub.remove(); };
+  }, [focused]);
   useEffect(() => {
     if (!initialInbox || openedInitial.current || !data) return;
     openedInitial.current = true;

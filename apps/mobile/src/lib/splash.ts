@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
  * Centralized splash-hide control for the "hold splash until the first
  * real screen has rendered" pattern (industry standard).
  *
- * The native splash (purple + mascot, configured in app.json) is kept
+ * The native splash (brown + glowing bunny, configured in app.json) is kept
  * visible by SplashScreen.preventAutoHideAsync() in app/_layout.tsx.
  * It is hidden exactly once, by whichever first destination screen
  * (home / onboarding / auth) finishes its initial layout — see each

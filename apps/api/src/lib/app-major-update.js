@@ -26,7 +26,7 @@ export function commandStatus(error) {
   if (error === 'not_found') return 404
   if (error === 'not_paired' || error === 'plus_required' || error === 'feature_disabled') return 403
   if (error === 'insufficient_balance') return 402
-  if (error === 'cooldown_active' || error === 'daily_adventure_used'
+  if (error === 'cooldown_active' || error === 'care_cooldown' || error === 'daily_adventure_used'
       || error === 'already_full' || error === 'not_completed'
       || error === 'already_owned' || error === 'not_ready'
       || error === 'not_claimable' || error === 'no_eligible_reward'

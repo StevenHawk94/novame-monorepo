@@ -6,9 +6,10 @@ export type HistoryKind = 'moments' | 'memories';
 export type HistoryRow = (MajorUpdateBootstrap['moments'][number] | MajorUpdateBootstrap['memoryEntries'][number]) & { localDate: string; reference_id?: string; reference_type?: string; record?: {id:string;body:string;shared:boolean;version:number;items:{itemId:string;label:string;memory:string|null}[]}|null };
 export type HistoryCursor = { at: string; id: string } | null;
 export interface HistoryPage { rows: HistoryRow[]; next: HistoryCursor; hasMore: boolean; timezone: string }
-export async function fetchBurrowHistory(kind: HistoryKind, partner: string, next: HistoryCursor, date: string) {
+export async function fetchBurrowHistory(kind: HistoryKind, partner: string | undefined, next: HistoryCursor, date: string) {
   const epoch = sessionEpoch();
-  const query = new URLSearchParams({ kind, partner });
+  const query = new URLSearchParams({ kind });
+  if (partner) query.set('partner', partner);
   if (next) { query.set('before', next.at); query.set('id', next.id); }
   if (date) query.set('date', date);
   const result = await withDeadline(apiClient.get<HistoryPage & { success: boolean }>(`/api/vnext/history?${query}`), 20_000);

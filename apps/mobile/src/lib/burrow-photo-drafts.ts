@@ -1,7 +1,7 @@
 import { storage } from './storage';
 import { kBurrowPhotoDrafts } from '../shared/storage/keys';
 export type PhotoDraftScope={userId:string;partnerId:string};
-export type PhotoDraft={base64:string;key:string;expectedPhotoId:string|null;savedAt:number};
+export type PhotoDraft={base64:string;key:string;expectedPhotoId:string|null;savedAt:number;submitted?:boolean};
 const key=(scope:PhotoDraftScope)=>`${kBurrowPhotoDrafts.prefix}${scope.userId}:${scope.partnerId}`;
 function read(scope:PhotoDraftScope):Record<string,PhotoDraft>{
   const raw=storage.getString(key(scope));if(!raw)return {};

@@ -153,6 +153,7 @@ test('adventure route blocks removal while results are pending but releases afte
     'expo-router':{Redirect:'Redirect',useLocalSearchParams:()=>({section:'adventure'})},
     '@react-navigation/native':{usePreventRemove:value=>blocked=value},'@novame/domain':{SHOP_CATEGORIES:['outfits']},
     '@/components/burrow/burrow-screen':{BurrowScreen:'BurrowScreen'},'@/components/burrow/game-room-screen':{GameRoomScreen:'GameRoomScreen'},'@/lib/use-major-update':{useMajorUpdateEnabled:()=>enabled},
+    '@/components/burrow/couple-journal-screen':{CoupleJournalScreen:'CoupleJournalScreen'},
     '@/lib/burrow-store':{useBurrowSnapshot:()=>({data,busy:false,error})},'@/lib/burrow-presentation':presentation,
   }).default;
   Detail();assert.equal(blocked,true);data={activeAdventure:adventure('interaction_required')};Detail();assert.equal(blocked,true);

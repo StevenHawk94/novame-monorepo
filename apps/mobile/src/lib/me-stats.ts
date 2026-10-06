@@ -1,5 +1,7 @@
 import { storage } from './storage';
 import { apiClient } from './api';
+import { sessionEpoch, sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
+import { withDeadline } from './async-lifecycle';
 import type { PricingTierKey } from '@novame/core';
 
 /**
@@ -31,6 +33,8 @@ import type { PricingTierKey } from '@novame/core';
 const STORAGE_KEY = 'novame_me_stats';
 const ME_STATS_TTL_MS = 30 * 60 * 1000;
 const fetchesInFlight = new Map<string, Promise<CachedMeStats>>();
+let cacheRevision = 0;
+subscribeSessionIdentity(() => { cacheRevision++; fetchesInFlight.clear(); });
 
 // ---- defaults ----
 
@@ -102,6 +106,7 @@ type MeStatsResponse = {
 };
 
 export type CachedMeStats = {
+  userId?: string;
   totalWords: number;
   totalCards: number;
   peopleImpacted: number;
@@ -124,17 +129,20 @@ export function getCachedMeStats(): CachedMeStats | null {
   const raw = storage.getString(STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as CachedMeStats;
+    const cached = JSON.parse(raw) as CachedMeStats;
+    return typeof sessionUserId() === 'string' && cached.userId === sessionUserId() ? cached : null;
   } catch {
     return null;
   }
 }
 
-export function setCachedMeStats(state: CachedMeStats): void {
-  storage.set(STORAGE_KEY, JSON.stringify(state));
+export function setCachedMeStats(state: CachedMeStats, userId = sessionUserId()): void {
+  if (!userId || (sessionUserId() !== undefined && userId !== sessionUserId())) return;
+  storage.set(STORAGE_KEY, JSON.stringify({ ...state, userId }));
 }
 
 export function clearCachedMeStats(): void {
+  cacheRevision++; fetchesInFlight.clear();
   storage.remove(STORAGE_KEY);
 }
 
@@ -156,6 +164,8 @@ export async function fetchMeStats(
   userId: string,
   options?: { force?: boolean },
 ): Promise<CachedMeStats> {
+  const epoch = sessionEpoch(), revision = cacheRevision;
+  if (sessionUserId() !== undefined && userId !== sessionUserId()) throw new Error('session_changed');
   const cached = getCachedMeStats();
   if (
     !options?.force
@@ -168,9 +178,10 @@ export async function fetchMeStats(
   if (existing) return existing;
 
   const request = (async () => {
-    const data = await apiClient.get<MeStatsResponse>(
+    const data = await withDeadline(apiClient.get<MeStatsResponse>(
       `/api/me-stats?userId=${encodeURIComponent(userId)}`,
-    );
+    ), 15_000);
+    if (epoch !== sessionEpoch() || revision !== cacheRevision) throw new Error('session_changed');
     if (!data.success) {
       throw new Error('me-stats GET returned non-success');
     }
@@ -189,10 +200,10 @@ export async function fetchMeStats(
       isDefaultAvatar: data.profile.isDefaultAvatar !== false,
       lastFetchedAtMs: Date.now(),
     };
-    setCachedMeStats(next);
+    setCachedMeStats(next, userId);
     return next;
   })().finally(() => {
-    fetchesInFlight.delete(userId);
+    if (fetchesInFlight.get(userId) === request) fetchesInFlight.delete(userId);
   });
   fetchesInFlight.set(userId, request);
   return request;

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { BurrowLaunchScreen } from '@/components/main/burrow-launch-screen';
 
 import { BottomTabBar } from '@/components/main/bottom-tab-bar';
 import { useMajorUpdateReady } from '@/lib/use-major-update';
@@ -18,7 +18,7 @@ import { useMajorUpdateReady } from '@/lib/use-major-update';
  */
 export default function TabsLayout() {
   const rolloutReady = useMajorUpdateReady();
-  if (!rolloutReady) return <View style={styles.waiting} />;
+  if (!rolloutReady) return <BurrowLaunchScreen />;
   return (
     <Tabs
       tabBar={(props) => <BottomTabBar {...props} />}
@@ -41,5 +41,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({ waiting: { flex: 1, backgroundColor: '#F8E2C1' } });

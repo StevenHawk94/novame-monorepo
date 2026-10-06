@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from './burrow-image';
 import type { MajorUpdateCatalogItem, MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { BURROW_BACKGROUNDS, burrowArtForItem, type BurrowArtAsset } from '@/lib/burrow-art-assets';
 import { BunnyActor } from './bunny-actor';
 import { RoomPhoto } from './room-photo';
 import { InteractiveDoll } from './interactive-doll';
+import { dollFaceRect, framePhotoRect } from '@/lib/burrow-doll-face';
 
-type Placement = { category: string; slot: string; x: number; y: number; width: number; anchor: 'top' | 'bottom' };
+type Placement = { category: string; slot: string; x: number; y: number; width: number; anchor: 'top' | 'bottom'; canvasWidth?: number };
 const ROOM_WIDTH = 360;
 const furniture: Placement[] = [
   { category: 'light_strings', slot: 'light_string', x: 45, y: 65, width: 270, anchor: 'top' },
@@ -28,10 +29,10 @@ const furniture: Placement[] = [
 
 function artStyle(asset: BurrowArtAsset, placement: Placement, scale: number) {
   const [left, top, right, bottom] = asset.bounds;
-  const ratio = placement.width / (right - left);
+  const ratio = placement.canvasWidth == null ? placement.width / (right - left) : placement.canvasWidth / asset.width;
   return {
     position: 'absolute' as const,
-    left: (placement.x - left * ratio) * scale,
+    left: (placement.canvasWidth == null ? placement.x - left * ratio : placement.x + placement.width / 2 - placement.canvasWidth / 2) * scale,
     top: (placement.y - (placement.anchor === 'top' ? top : bottom) * ratio) * scale,
     width: asset.width * ratio * scale,
     height: asset.height * ratio * scale,
@@ -55,7 +56,7 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
   const doll = photos.find(item => item.kind === 'doll');
   const frameArt = burrowArtForItem(slots.frame, 'frames');
   const dollArt = burrowArtForItem(slots.couple_doll, 'couple_dolls');
-  const framePlacement: Placement = { category: 'frames', slot: 'frame', x: 261, y: 221, width: 47, anchor: 'top' };
+  const framePlacement: Placement = { category: 'frames', slot: 'frame', x: 261, y: 221, width: 47, canvasWidth: 500 * 47 / 304, anchor: 'top' };
   const dollPlacement: Placement = { category: 'couple_dolls', slot: 'couple_doll', x: 176, y: 300, width: 39, anchor: 'bottom' };
   const target = (slot: string, x: number, y: number, w: number, h: number) =>
     <Pressable key={slot} accessibilityRole="button" accessibilityLabel={slots[slot]?.title ?? slot} disabled={busy || !onSlot} onPress={() => onSlot?.(slot)}
@@ -69,8 +70,8 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
     })}
     {shared && <View pointerEvents="none" style={[styles.sharedBed, { left: 65 * scale, top: 340 * scale, width: 200 * scale, height: 70 * scale }]} />}
     {frameArt && <View pointerEvents="none" style={artStyle(frameArt, framePlacement, scale)}>
-      <View style={styles.framePhoto}><View style={styles.framePhotoImage}><RoomPhoto photo={photo} /></View></View>
       <Image source={frameArt.source} contentFit="fill" style={styles.fill} />
+      {photo && <View style={[styles.framePhoto, framePhotoRect(frameArt)]}><RoomPhoto photo={photo} /></View>}
     </View>}
     {dollArt && (onSlot?<InteractiveDoll asset={dollArt} photo={doll} disabled={busy}
       onInteract={()=>onSlot('couple_doll')} onEditPhoto={()=>onSlot('doll_photo')}
@@ -79,7 +80,7 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
         left:artStyle(dollArt, dollPlacement, scale).left-170*scale,
         top:artStyle(dollArt, dollPlacement, scale).top-240*scale}} />
       :<View pointerEvents="none" style={artStyle(dollArt, dollPlacement, scale)}>
-        <View style={styles.dollPhoto}><RoomPhoto photo={doll} circle /></View>
+        {doll && <View style={[styles.dollPhoto, dollFaceRect(dollArt)]}><RoomPhoto photo={doll} /></View>}
         <Image source={dollArt.source} contentFit="fill" style={styles.fill} />
       </View>)}
     <BunnyActor outfit={slots.outfit} pose={shared && sleeping?.mine ? 'sleeping' : away ? 'away' : 'idle'} />
@@ -99,9 +100,8 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
 const styles = StyleSheet.create({
   scene: { width: '100%', aspectRatio: 360 / 470, borderRadius: 32, overflow: 'hidden', backgroundColor: '#8D5136' },
   fill: { width: '100%', height: '100%' },
-  framePhoto: { position: 'absolute', left: '30%', top: '29%', width: '40%', height: '54%', overflow: 'hidden', backgroundColor: '#FFF9ED', alignItems: 'center' },
-  framePhotoImage: { width: '96.428571%', height: '100%' },
-  dollPhoto: { position: 'absolute', left: '29%', top: '25%', width: '42%', height: '30%', borderRadius: 100, overflow: 'hidden' },
+  framePhoto: { position: 'absolute', overflow: 'hidden' },
+  dollPhoto: { position: 'absolute', overflow: 'hidden' },
   sharedBed: { position: 'absolute', borderRadius: 100, borderWidth: 7, borderColor: '#A96D42', backgroundColor: '#EFCA93' },
   sleepLabel: { position: 'absolute', left: '48%', top: '57%', color: '#FFF3CF', fontSize: 23, fontWeight: '700' },
   label: { position: 'absolute', top: 14, alignSelf: 'center' },

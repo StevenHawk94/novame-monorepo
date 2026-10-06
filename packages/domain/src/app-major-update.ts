@@ -46,6 +46,8 @@ export const HOME_DECOR_SLOTS = [
   'ladder',
   'shelf_decor',
   'dresser_plant',
+  'wallpaper',
+  'background',
 ] as const;
 export type HomeDecorSlot = (typeof HOME_DECOR_SLOTS)[number];
 
@@ -68,6 +70,8 @@ export const SHOP_CATEGORIES = [
   'ladders',
   'shelf_decor',
   'dresser_plants',
+  'wallpapers',
+  'seasons',
   'our_room',
 ] as const;
 export type ShopCategory = (typeof SHOP_CATEGORIES)[number];

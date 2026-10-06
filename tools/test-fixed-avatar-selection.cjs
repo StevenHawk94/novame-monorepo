@@ -27,12 +27,14 @@ assert.doesNotMatch(accountScreen, /styles\.avatarCheck/);
 assert.match(accountScreen, /updateDefaultAvatar/);
 assert.doesNotMatch(accountScreen, /ImagePicker|ImageManipulator|Upload New/);
 assert.match(accountApi, /defaultAvatarId/);
-assert.doesNotMatch(accountApi, /upload-avatar|FormData/);
+assert.doesNotMatch(accountApi, /FormData/);
+assert.match(accountApi, /upload-avatar/); // onboarding now also permits profile photos
 assert.match(updateProfile, /is_default_avatar\s*=\s*true/);
 assert.doesNotMatch(updateProfile, /avatarUrl/);
 assert.doesNotMatch(userSync, /body\.avatarUrl/);
-assert.equal(fs.existsSync(path.join(root, 'apps/api/src/app/api/upload-avatar/route.js')), false);
+assert.equal(fs.existsSync(path.join(root, 'apps/api/src/app/api/upload-avatar/route.js')), true);
+assert.match(read('apps/api/src/app/api/upload-avatar/route.js'), /verifyToken/);
 assert.doesNotMatch(envExample, /GOOGLE_CLOUD_VISION_API_KEY/);
-assert.doesNotMatch(appConfig, /with-photo-permissions|expo-image-picker/);
+assert.match(appConfig, /expo-image-picker/);
 
 console.log('fixed avatar selection checks passed');

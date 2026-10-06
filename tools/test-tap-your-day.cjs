@@ -44,10 +44,12 @@ const personItems = load('packages/engine/src/items/tap-person-items.ts').TAP_PE
 const rawDictionary = require('../packages/engine/src/items/dictionary.json');
 const dictionary = load('packages/engine/src/items/dictionary.ts', { './dictionary.json': rawDictionary, './tap-person-items': { TAP_PERSON_ITEMS: personItems } }).ITEM_DICTIONARY;
 const picks = catalog.TAP_YOUR_DAY_CHOICES.map(({ itemId }) => ({ itemId }));
-const draftInput = (body = '') => ({ mode: 'prompt', selectionVersion: catalog.TAP_YOUR_DAY_VERSION, selectedItems: picks, body });
+const draftInput = (body = '') => ({ mode: 'prompt', selectionVersion: catalog.TAP_YOUR_DAY_VERSION, selectedItems: picks.slice(0, catalog.MAX_TAP_YOUR_DAY_SELECTIONS), body });
 function aiHarness(result = { items: {}, bunnyText: null }) {
   const calls = [];
   const ai = load('apps/api/src/lib/reflect-ai.js', {
+    './connection-evidence': load('apps/api/src/lib/connection-evidence.js'),
+    './connection-card': load('apps/api/src/lib/connection-card.js'),
     './item-learning-evidence': { itemLearningHints: () => [], cleanLearningSignals: () => [] },
     './ai': {
       callAI: async (input) => {
@@ -64,6 +66,10 @@ function aiHarness(result = { items: {}, bunnyText: null }) {
     '@/lib/remote-items': { getMergedDictionary: async () => dictionary },
     '@/lib/item-rule-store': { dictionaryForRevision: async () => dictionary },
     '@/lib/reflect-ai': ai,
+    '@/lib/connection-insight-v8': load('apps/api/src/lib/connection-insight-v8.js', {
+      '../data/connection-insight-v8.json': require('../apps/api/src/data/connection-insight-v8.json'),
+      './ai': { callAI() { throw new Error('Unexpected Connection AI call'); } },
+    }),
   });
   return { ai, draft, calls };
 }
@@ -83,6 +89,10 @@ function routeImports(db, draft, ai) {
     '@/lib/reflect-analysis-store': {},
     '@/lib/reflect-completion': { analyzeFinalizedReflect: async () => {} },
     '@/lib/reflect-settlement': settlement,
+    '@/lib/user-local-date': load('apps/api/src/lib/user-local-date.js'),
+    '@/lib/app-major-update': { majorUpdateEnabled: async () => false },
+    '@/lib/reflect-analysis-jobs': { enqueueReflectAnalysisJob: async () => false, processReflectAnalysisJobs: async () => {} },
+    '@/lib/push-notifications': { enqueuePartnerReflectNotification: async () => false, drainPushNotificationOutbox: async () => {} },
   };
 }
 function dbHarness({ tier = 'plus', consent = true, existing = null, storedDraft = null, matched = [], reflectMode = 'prompt' } = {}) {
@@ -126,7 +136,10 @@ function dbHarness({ tier = 'plus', consent = true, existing = null, storedDraft
         saved = inserted;
         return { data: { draft: saved }, error: null };
       }
-      if (name === 'store_reflect_generation') {
+      if (name === 'claim_reflect_ai_enhancement') {
+        return { data: { eligible: tier !== 'free' && consent && !!saved?.body?.trim() }, error: null };
+      }
+      if (name === 'store_reflect_generation_v2') {
         saved.ai_memories = { ...saved.ai_memories, ...args.p_memories };
         saved.bubble = args.p_bubble;
         return { data: { success: true }, error: null };
@@ -151,12 +164,16 @@ test('all 131 choices reference registered bundled WebP art', () => {
 });
 test('all choices survive resolution, including the 30 feelings and last two picks', async () => {
   const { draft } = aiHarness();
-  const resolved = await draft.resolveDraftInput(null, draftInput('Happy Day'));
-  assert.equal(resolved.error, undefined);
-  assert.equal(resolved.matches.length, 131);
-  assert.equal(resolved.matches.at(-1).displayName, 'Silly');
-  assert.ok(resolved.matches.every((item) => item.sourceExcerpt === ''));
-  assert.equal(resolved.matches.find((item) => item.itemId === 'tap.person.pets').selectionLabel, 'Pets');
+  const matches = [];
+  for (let i = 0; i < picks.length; i += catalog.MAX_TAP_YOUR_DAY_SELECTIONS) {
+    const resolved = await draft.resolveDraftInput(null, { ...draftInput('Happy Day'), selectedItems: picks.slice(i, i + catalog.MAX_TAP_YOUR_DAY_SELECTIONS) });
+    assert.equal(resolved.error, undefined); matches.push(...resolved.matches);
+  }
+  assert.equal(matches.length, 131);
+  assert.equal(matches.at(-1).displayName, 'Silly');
+  assert.ok(matches.every((item) => item.sourceExcerpt === ''));
+  assert.equal(matches.find((item) => item.itemId === 'tap.person.pets').selectionLabel, 'Pets');
+  assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: picks.slice(0, 31) })).error, 'too_many_items');
 });
 test('custom v3 selection keeps its user name/icon and invalid identities are rejected', async () => {
   const { draft } = aiHarness();
@@ -171,16 +188,16 @@ test('custom v3 selection keeps its user name/icon and invalid identities are re
   assert.equal((await draft.resolveDraftInput(null,{...input,selectedItems:[{...selection,label:''}]})).error,'invalid_selection_item');
   assert.equal((await draft.resolveDraftInput(null,{...input,selectionVersion:'tap-your-day-v2'})).error,'invalid_selection_item');
 });
-test('mobile prepare sends all 131 selections and their version without truncation', async () => {
+test('mobile prepare sends all 30 accepted selections and their version without truncation', async () => {
   const mobile = mobileHarness(async (url, body) => {
     assert.equal(url, '/api/reflect/prepare');
     assert.equal(body.selectionVersion, catalog.TAP_YOUR_DAY_VERSION);
-    assert.equal(body.selectedItems.length, 131);
+    assert.equal(body.selectedItems.length, 30);
     return { success: true, draftId: 'one', matches: body.selectedItems };
   });
   const result = await mobile.prepareReflect({ ...draftInput(), promptId: 9 });
   assert.equal(result.ok, true);
-  assert.equal(result.draft.matchedItems.length, 131);
+  assert.equal(result.draft.matchedItems.length, 30);
 });
 for (const code of ['too_many_items_in_category', 'invalid_selection_version', 'unknown_item', 'invalid_selection_item']) {
   test('old API selection incompatibility is not a network failure: ' + code, async () => {
@@ -198,8 +215,8 @@ test('typing unknown-item errors are not incorrectly reclassified as Tap Your Da
   });
   assert.equal((await mobile.prepareReflect({ promptId: 9, mode: 'typing', body: 'Coffee.' })).error, 'network');
 });
-test('mobile refuses a legacy API response that silently loses the final two selections', async () => {
-  const mobile = mobileHarness(async () => ({ success: true, draftId: 'one', matches: picks.slice(0, 100) }));
+test('mobile refuses an API response that silently loses the final two selections', async () => {
+  const mobile = mobileHarness(async () => ({ success: true, draftId: 'one', matches: draftInput().selectedItems.slice(0, -2) }));
   assert.equal((await mobile.prepareReflect({ ...draftInput(), promptId: 9 })).error, 'selection_unavailable');
 });
 test('server rejects unknown versions, uncurated IDs and oversized selection payloads', async () => {
@@ -216,9 +233,9 @@ test('labels are canonical, duplicate taps dedupe, an empty selection cannot sub
   assert.equal(resolved.matches[0].selectionLabel, 'At Home');
   assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: [] })).error, 'empty');
 });
-test('old guided clients retain their category limits; Write Freely matching is unchanged', async () => {
+test('unversioned guided selections use the transport ceiling; Write Freely matching is unchanged', async () => {
   const { draft } = aiHarness();
-  assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectionVersion: undefined })).error, 'too_many_items_in_category');
+  assert.equal((await draft.resolveDraftInput(null, { ...draftInput(), selectedItems: picks, selectionVersion: undefined })).matches.length, 131);
   const typing = await draft.resolveDraftInput(null, { mode: 'typing', body: 'Made coffee.' });
   assert.equal(typing.matches[0].sourceExcerpt, 'Made coffee.');
   assert.equal(typing.matches[0].selectionLabel, undefined);
@@ -247,10 +264,9 @@ test('large selections receive adequate output budget; every item has a safe fai
   const { draft, calls } = aiHarness(new Error('AI offline'));
   const { matches } = await draft.resolveDraftInput(null, draftInput('Dentist at 3pm with Sam.'));
   const result = await draft.createMemoryCopy({ body: 'Dentist at 3pm with Sam.', matches, generateBunny: false });
-  assert.ok(calls[0].generationConfig.maxOutputTokens > 8000);
-  assert.equal(Object.keys(result.memories).length, 131);
-  assert.equal(result.memories['tap.person.pets'], 'Pets.');
-  assert.equal(result.memories['tap.person.just_me'], 'Time alone.');
+  assert.ok(calls[0].generationConfig.maxOutputTokens >= 30 * 96);
+  assert.equal(Object.keys(result.memories).length, 30);
+  assert.equal(result.memories[matches[0].itemId], `${matches[0].selectionLabel}.`);
   assert.ok(Object.values(result.memories).every((text) => !text.includes('Dentist') && !text.includes('Sam')));
 });
 test('absence statements fall back to the selected fact, not a fake no-memory record', async () => {
@@ -264,7 +280,7 @@ test('typing uses the original prompt and original output budget', async () => {
   const { ai, calls } = aiHarness();
   await ai.runReflectCopy({ journal: 'Coffee.', generateBunny: true, items: [{ id: 'coffee', name: 'Coffee', evidence: 'Coffee.' }] });
   assert.equal(calls[0].systemInstruction, ai.REFLECT_COPY_SYSTEM_PROMPT);
-  assert.equal(calls[0].generationConfig.maxOutputTokens, 160);
+  assert.equal(calls[0].generationConfig.maxOutputTokens, 400);
 });
 for (const scenario of [
   { tier: 'free', body: '', consent: false, aiCalls: 0 },
@@ -280,10 +296,10 @@ for (const scenario of [
     const result = await route.POST(request({ ...draftInput(scenario.body), userId: 'writer', promptId: 9, idempotencyKey: 'draft-key-123' }));
     assert.equal(result.status, 200);
     assert.equal(calls.length, scenario.aiCalls);
-    assert.equal(inserted().matches.length, 131);
+    assert.equal(inserted().matches.length, 30);
     assert.equal(inserted().mode, 'prompt');
-    assert.equal(result.body.matches.length, 131);
-    assert.equal(Object.keys(result.body.aiMemories).length, scenario.aiCalls ? 131 : 0);
+    assert.equal(result.body.matches.length, 30);
+    assert.equal(Object.keys(result.body.aiMemories).length, scenario.aiCalls ? 30 : 0);
   });
 }
 test('each new person can prepare a Free reflection without any written note or AI consent', async () => {
@@ -362,9 +378,13 @@ test('v2 has the exact requested food grouping, labels and 16 representative cui
 test('old v1 clients keep all 102 original IDs and meanings, including the retired person option', async () => {
   const { draft } = aiHarness();
   const oldInput = { mode:'prompt', selectionVersion:'tap-your-day-v1', body:'', selectedItems:legacyChoices.map(c=>({itemId:c.itemId})) };
-  const result = await draft.resolveDraftInput(null, oldInput);
-  assert.equal(result.matches.length, 102);
-  assert.deepEqual(plain(result.matches.map(c=>c.selectionLabel)), legacyChoices.map(c=>c.label));
+  const matches = [];
+  for (let i = 0; i < oldInput.selectedItems.length; i += 30) {
+    const result = await draft.resolveDraftInput(null, {...oldInput, selectedItems: oldInput.selectedItems.slice(i, i + 30)});
+    assert.equal(result.error, undefined); matches.push(...result.matches);
+  }
+  assert.equal(matches.length, 102);
+  assert.deepEqual(plain(matches.map(c=>c.selectionLabel)), legacyChoices.map(c=>c.label));
   assert.equal(catalog.tapYourDayChoice('memory.0056_rice_bowl', 'tap-your-day-v1').label, 'Rice & Noodles');
   assert.equal(catalog.tapYourDayChoice('memory.0056_rice_bowl').label, 'Rice');
   assert.equal(catalog.tapYourDayChoice('memory.1542_meeting_room'), undefined);

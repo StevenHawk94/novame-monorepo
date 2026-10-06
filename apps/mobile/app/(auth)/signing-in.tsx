@@ -1,6 +1,4 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { ensureSession, getCurrentSession } from '@/lib/auth';
@@ -9,7 +7,7 @@ import {
 } from '@/lib/subscription';
 import { fetchMeStats } from '@/lib/me-stats';
 import { syncOnboardingCompanion } from '@/lib/onboarding';
-import { GridBackground } from '@/components/ui/grid-background';
+import { BurrowLaunchScreen } from '@/components/main/burrow-launch-screen';
 import { beginHomeEntry, deferHomeEntryNotification } from '@/lib/home-entry-readiness';
 
 /** Bounded auth bootstrap. Remote assets always warm in the background. */
@@ -17,7 +15,6 @@ const MIN_DISPLAY_MS = 600;
 const SESSION_RESTORE_TIMEOUT_MS = 2000;
 const ANONYMOUS_SESSION_TIMEOUT_MS = 5000;
 const COMPANION_SYNC_TIMEOUT_MS = 5000;
-const FAVICON = require('../../assets/favicon.png');
 
 type TimedResult<T> = { status: 'resolved'; value: T } | { status: 'timeout' };
 
@@ -138,19 +135,5 @@ export default function SigningInScreen() {
     };
   }, [params.after]);
 
-  return (
-    <View style={styles.root}>
-      <GridBackground />
-      <ExpoImage source={FAVICON} style={styles.logo} contentFit="contain" />
-      <ActivityIndicator size="small" color="#8A6240" style={styles.spinner} />
-    </View>
-  );
+  return <BurrowLaunchScreen />;
 }
-
-// Match the app-owned entry gate: a lightweight grid surface with the Burrow favicon.
-// The native launch splash remains a separate, one-shot operating-system layer.
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8E2C1', alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 120, height: 120, marginBottom: 20 },
-  spinner: { marginTop: 4 },
-});

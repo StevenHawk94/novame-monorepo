@@ -99,7 +99,7 @@ export async function POST(request) {
       if (!ownerId || !need || !idempotencyKey) {
         return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
       }
-      rpc = 'interact_room_need_v1'
+      rpc = 'interact_room_need_with_cooldown_v1'
       args = {
         p_actor_id: userId,
         p_owner_id: ownerId,
@@ -233,7 +233,7 @@ export async function POST(request) {
         soloRpc = 'solo_burrow_purchase_v1'
         soloArgs = { p_user_id: userId, p_item_id: body.itemId, p_key: body.idempotencyKey }
       } else if (action === 'refill_room_need' && body.ownerId === userId) {
-        soloRpc = 'solo_burrow_care_v1'
+        soloRpc = 'solo_burrow_care_with_cooldown_v1'
         soloArgs = { p_user_id: userId, p_need: body.need, p_key: body.idempotencyKey }
       } else if (action === 'interact_burrow_toy') {
         soloRpc = 'solo_burrow_toy_v1'
@@ -271,6 +271,9 @@ export async function POST(request) {
         data = solo.data
       }
     }
+    // The temporary database trigger shortens the persisted journey even
+    // while the legacy start functions still report their old duration field.
+    if (action === 'start_adventure' && !data?.error && data?.applied) data = { ...data, durationSeconds: 60 }
     const status = commandStatus(data?.error)
     return NextResponse.json(
       data?.error ? data : { success: true, ...data },
