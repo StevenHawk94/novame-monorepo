@@ -6,7 +6,8 @@
 /apps/mobile/
 /docs/
 /supabase/
-/tools/
+/tools/*
+!/tools/build-admin-shop-assets.cjs
 /CODEBASE.md
 /README.md
 /gen-manifest.log
@@ -29,6 +30,7 @@
 # Local configuration, credentials, logs, and generated archives
 **/.env
 **/.env.local
+**/.env.local.*
 **/.env.*.local
 **/*.p8
 **/AuthKey_*.p8

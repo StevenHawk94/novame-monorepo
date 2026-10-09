@@ -1,0 +1,4199 @@
+{
+  "appVersion": "1.0.24",
+  "categories": {
+    "cabinets": [
+      {
+        "name": "Blush",
+        "url": "/shop-art/cbdc2de20349c51f8de81fc8.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          8,
+          0,
+          492,
+          326
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Ivory",
+        "url": "/shop-art/4b184b760f41440d35b276b6.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          9,
+          0,
+          494,
+          315
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Copper",
+        "url": "/shop-art/7517bf8b77ed2b305f3e21be.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          0,
+          490,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Art Deco",
+        "url": "/shop-art/c58e69da46b9d01c23a7c29d.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          0,
+          490,
+          317
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Powder Blue",
+        "url": "/shop-art/f6b59103700bf370b1991bb5.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          0,
+          487,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Bubblegum",
+        "url": "/shop-art/826e29b3ce299cb0729a5d9b.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          8,
+          0,
+          494,
+          316
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac",
+        "url": "/shop-art/8a0d42c0d5c691e15dcbd598.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          1,
+          490,
+          319
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blossom",
+        "url": "/shop-art/aacf4599201ff610c197cee7.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          18,
+          0,
+          484,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cocoa",
+        "url": "/shop-art/052544a48965725463f8aab0.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          14,
+          0,
+          487,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cottage",
+        "url": "/shop-art/804d93a196aadb1ab72643d9.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          0,
+          490,
+          315
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Harbor",
+        "url": "/shop-art/63a12a2ccaa8c89f813ac55e.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          13,
+          0,
+          491,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Honey",
+        "url": "/shop-art/94a9ecdf093e7e7179c67083.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          14,
+          0,
+          487,
+          324
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Jade",
+        "url": "/shop-art/8fbe25132606dbfea012f360.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          18,
+          0,
+          484,
+          324
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Meadow",
+        "url": "/shop-art/8f308f0684ed3f1915aff957.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          6,
+          0,
+          494,
+          318
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mint",
+        "url": "/shop-art/d3c59f675a5fb17e147dae77.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          9,
+          0,
+          493,
+          325
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Monochrome",
+        "url": "/shop-art/3a234202ca2440a2b1ea7838.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          18,
+          0,
+          484,
+          324
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moonbeam",
+        "url": "/shop-art/ed51bc4791b508d529f6931c.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          18,
+          0,
+          484,
+          324
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Oat",
+        "url": "/shop-art/c6c80f4be30731a85a8a218d.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          9,
+          0,
+          492,
+          314
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Retro",
+        "url": "/shop-art/0f04c0d62d4647334a680dd6.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          17,
+          0,
+          484,
+          325
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Ripple",
+        "url": "/shop-art/42c82669324b3d664148e4d8.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          14,
+          0,
+          487,
+          324
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Starlight",
+        "url": "/shop-art/6971325482633dacedd5c58c.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          4,
+          0,
+          496,
+          319
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sunrise",
+        "url": "/shop-art/910a38d4bd4f4a7f5b979c48.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          19,
+          0,
+          485,
+          321
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Terracotta",
+        "url": "/shop-art/970024854d2a9e28d3975c29.webp",
+        "width": 500,
+        "height": 330,
+        "bounds": [
+          3,
+          0,
+          498,
+          321
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "shelves": [
+      {
+        "name": "Knotty Oak",
+        "url": "/shop-art/d69181b39ae345e90e17d12c.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          40,
+          43,
+          584,
+          164
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pale Wood",
+        "url": "/shop-art/930047fb6f98e5d8f31c316e.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          41,
+          47,
+          584,
+          159
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Walnut Groove",
+        "url": "/shop-art/6d07238ecbc9ed82f3cd70e0.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          40,
+          47,
+          584,
+          161
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Scallop",
+        "url": "/shop-art/04c16983e4ec3a5e092bb865.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          40,
+          47,
+          585,
+          158
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Clay Arches",
+        "url": "/shop-art/3442478d521a675423d2e195.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          40,
+          48,
+          584,
+          163
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cream Stripe",
+        "url": "/shop-art/8ae28e2de488e8c019c3d5cb.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          41,
+          47,
+          584,
+          164
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Corners",
+        "url": "/shop-art/eed63d09f3cae56a9fa3d96e.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          41,
+          46,
+          584,
+          169
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pink Hearts",
+        "url": "/shop-art/30b8f01e2996c9e23cd85e2a.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          40,
+          47,
+          587,
+          168
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "light_strings": [
+      {
+        "name": "Classic",
+        "url": "/shop-art/d7f3f88db67ba8567c03c7c0.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          26,
+          625,
+          150
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lantern",
+        "url": "/shop-art/c29e3cae595ba35d07666820.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          20,
+          625,
+          152
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Star",
+        "url": "/shop-art/524932f2ad1f817c8d252c0e.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          28,
+          625,
+          154
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Heart",
+        "url": "/shop-art/5e095dfac966038ca6cb1af2.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          19,
+          625,
+          152
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Daisy",
+        "url": "/shop-art/bb68c93d8603fb811138342d.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          27,
+          625,
+          153
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mushroom",
+        "url": "/shop-art/e42755e3f0a6da06934a6965.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          27,
+          625,
+          159
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Dewdrop",
+        "url": "/shop-art/b385b616ad2dc1480f7391d2.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          26,
+          625,
+          153
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moon",
+        "url": "/shop-art/727a661f7caf85579e186c3a.webp",
+        "width": 625,
+        "height": 187,
+        "bounds": [
+          0,
+          27,
+          625,
+          155
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "windows": [
+      {
+        "name": "Autumn Sunset",
+        "url": "/shop-art/dcf925f9843ea164552d6927.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          31,
+          58,
+          477,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sakura",
+        "url": "/shop-art/4c6b4b980503f498a9a810be.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          30,
+          57,
+          475,
+          499
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Desert Sunset",
+        "url": "/shop-art/8953b0d8db5b567a2deeda0e.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          27,
+          76,
+          477,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Snowy Stone",
+        "url": "/shop-art/d3c3e141cfe9811f69dc0161.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          22,
+          80,
+          482,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Orchard Dusk",
+        "url": "/shop-art/b6a16428bd187ad06bb45f0f.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          24,
+          58,
+          485,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Snowy Night",
+        "url": "/shop-art/ea1d30ecdacb7ca0ec6e1bd4.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          26,
+          41,
+          481,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rainy Forest",
+        "url": "/shop-art/fffe92d9c14be03437baca0f.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          52,
+          480,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Apple Orchard",
+        "url": "/shop-art/7d9257b65882f23e7765b2d0.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          29,
+          116,
+          474,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Autumn Pond",
+        "url": "/shop-art/fbd23a68fbe5032e1c3c63dc.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          76,
+          480,
+          499
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Birch Autumn",
+        "url": "/shop-art/35d166cec58b331ace80174b.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          29,
+          38,
+          479,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cherry Blossom",
+        "url": "/shop-art/84992c7c8dca10c027b0479a.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          34,
+          53,
+          475,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "City Night",
+        "url": "/shop-art/c8f91230f706b85e1e6b5918.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          21,
+          73,
+          484,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Desert Dusk",
+        "url": "/shop-art/51094688638d22e2651d23c8.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          58,
+          479,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fjord",
+        "url": "/shop-art/f8c1c644d794469efdb24de2.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          30,
+          55,
+          477,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Harbor Sail",
+        "url": "/shop-art/d6e33866ecbbc73a9bce1969.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          33,
+          46,
+          475,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lake Meadow",
+        "url": "/shop-art/8ba8c353d285e0616cf015ac.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          29,
+          75,
+          479,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender Fields",
+        "url": "/shop-art/cf22c9ab42820323a8e18837.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          56,
+          478,
+          499
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Love Sunset",
+        "url": "/shop-art/25a6bc473b3e33594b424daa.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          25,
+          61,
+          481,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moonlit Lake",
+        "url": "/shop-art/41e6cf848129bd605c7aaf0b.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          32,
+          49,
+          476,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mushroom Forest",
+        "url": "/shop-art/27526895170aa6354c2c00f0.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          22,
+          51,
+          484,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rainbow Hills",
+        "url": "/shop-art/59376314cbff7443ee670abe.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          11,
+          63,
+          494,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Red Canyon",
+        "url": "/shop-art/714f2581dcbb8a0e531d0c95.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          76,
+          481,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Riviera",
+        "url": "/shop-art/da4bf4d8a0d43f311b097c72.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          28,
+          105,
+          482,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Seaside",
+        "url": "/shop-art/70395128f049ad03aac78728.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          32,
+          53,
+          474,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Starry Lake",
+        "url": "/shop-art/e2a6cd8df7427ac3f0ef9b9b.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          18,
+          52,
+          491,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Tea Hills",
+        "url": "/shop-art/501917978acaf026e5322af5.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          34,
+          47,
+          474,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Twilight Lake",
+        "url": "/shop-art/62b4d1aec6656df7ac7ea715.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          36,
+          39,
+          471,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Twilight Peaks",
+        "url": "/shop-art/920d1116080306506a531427.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          23,
+          68,
+          484,
+          499
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Waterfall",
+        "url": "/shop-art/0e3b2080d9c7d1ffb89c52b0.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          33,
+          45,
+          477,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Windmill Dusk",
+        "url": "/shop-art/8ff34ae24f8cf302bb14045b.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          32,
+          44,
+          476,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Winter Pines",
+        "url": "/shop-art/a6b35438cf1ead9288767250.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          33,
+          50,
+          476,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Wisteria",
+        "url": "/shop-art/1804a46d53c1ffa5601767a7.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          31,
+          76,
+          479,
+          500
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "ladders": [
+      {
+        "name": "Driftwood",
+        "url": "/shop-art/bc0b10126d5d9a46fa99dd14.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          120,
+          12,
+          499,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pine Wood",
+        "url": "/shop-art/21bec208466d0b3bf4daeb9f.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          122,
+          9,
+          509,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Green",
+        "url": "/shop-art/bffbf06a5e2caae9b49ea5b3.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          124,
+          13,
+          500,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Walnut Log",
+        "url": "/shop-art/210b8b9e5db35368195399a5.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          128,
+          23,
+          495,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Terracotta",
+        "url": "/shop-art/a108bdbefdbf3a9ba80f5ad5.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          119,
+          14,
+          496,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Bamboo",
+        "url": "/shop-art/859d367aa1474643947849a3.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          124,
+          20,
+          489,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pink Posts",
+        "url": "/shop-art/abb34fcc1b154d4d9382d0ff.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          125,
+          8,
+          492,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sky Blue",
+        "url": "/shop-art/6f6847c031ede6a006ef75ae.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          124,
+          13,
+          501,
+          600
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "tables": [
+      {
+        "name": "Oak Wood",
+        "url": "/shop-art/832c4e47f5dc419ff900419a.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          44,
+          0,
+          456,
+          279
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Checks",
+        "url": "/shop-art/b9072ec81c54b68b8eeb3160.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          46,
+          0,
+          453,
+          275
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Bauhaus Shapes",
+        "url": "/shop-art/5304b6509865ac0d117f78a2.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          40,
+          0,
+          458,
+          269
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Clouds",
+        "url": "/shop-art/94b2282a390ead432737418b.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          457,
+          284
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Daisies",
+        "url": "/shop-art/c52a3bf1f6affdac531ccbad.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          43,
+          0,
+          457,
+          277
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Fronds",
+        "url": "/shop-art/86f579dcdd9bd6add3eac06a.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          44,
+          1,
+          455,
+          280
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Ripples",
+        "url": "/shop-art/a1bff6fe171eb9c6dbe47c53.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          455,
+          272
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Terrazzo",
+        "url": "/shop-art/534a6fcd7c43f35b49dca92d.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          47,
+          0,
+          457,
+          279
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blush Tulips",
+        "url": "/shop-art/6d0244d5e5d82a2496156a35.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          41,
+          0,
+          457,
+          286
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Brown Swirls",
+        "url": "/shop-art/6e7e755bdb307d52d0c41c09.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          451,
+          281
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Coral Blossoms",
+        "url": "/shop-art/02892749632e245cca8de605.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          49,
+          0,
+          450,
+          289
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Emerald Deco",
+        "url": "/shop-art/19617d2977b9e07fcbfdb6ec.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          41,
+          1,
+          459,
+          285
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Green Arches",
+        "url": "/shop-art/734403f3e0df8277180efbd7.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          453,
+          272
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Green Blossoms",
+        "url": "/shop-art/08824cd9961d084507313f4e.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          48,
+          0,
+          453,
+          288
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Face",
+        "url": "/shop-art/231d7a76123dd1f6589b632c.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          41,
+          0,
+          458,
+          285
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mauve Waves",
+        "url": "/shop-art/6642e82ee2f57af1bc658e58.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          1,
+          456,
+          284
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Sunburst",
+        "url": "/shop-art/8b84f14564d83b9170e0699d.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          43,
+          0,
+          455,
+          280
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Purple Lilies",
+        "url": "/shop-art/ed359f5bd8a2f50649f6440a.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          42,
+          0,
+          459,
+          275
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Leaves",
+        "url": "/shop-art/3669f5e41314dd42f79cea4d.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          455,
+          279
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Tan Weave",
+        "url": "/shop-art/8ddb4c39ee1eed1583795f5b.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          44,
+          0,
+          456,
+          285
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Teal Stars",
+        "url": "/shop-art/efb8e234c23a2c135463881e.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          45,
+          0,
+          453,
+          269
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Terracotta Tiles",
+        "url": "/shop-art/5a33d1ea1e38483fc08673ea.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          43,
+          0,
+          456,
+          275
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "White Marble",
+        "url": "/shop-art/d9a7714673c4da22b40c9f4d.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          47,
+          0,
+          456,
+          285
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Yellow Gingham",
+        "url": "/shop-art/dda8264c7950d4d5cffe58b7.webp",
+        "width": 500,
+        "height": 300,
+        "bounds": [
+          46,
+          0,
+          454,
+          289
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "frames": [
+      {
+        "name": "Classic",
+        "url": "/shop-art/650de54b72f9c7f633ffd6d0.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          98,
+          2,
+          402,
+          470
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Botanical",
+        "url": "/shop-art/6a53d14cf443af5803b3dfb7.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          89,
+          2,
+          412,
+          472
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Celestial",
+        "url": "/shop-art/29340b14dab42cfa00d03b20.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          88,
+          2,
+          412,
+          473
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Colorblock",
+        "url": "/shop-art/a9fa35c8b1b62baeec034f2a.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          95,
+          2,
+          405,
+          473
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Desert Rainbow",
+        "url": "/shop-art/ccb16f3fc6e3b2f3daa6d21d.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          91,
+          2,
+          409,
+          471
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Gingham",
+        "url": "/shop-art/71d97e4c1afb221f4b0a91f2.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          96,
+          2,
+          404,
+          473
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mosaic",
+        "url": "/shop-art/f611bafa14aea88606f61868.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          91,
+          2,
+          409,
+          470
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Stargazer",
+        "url": "/shop-art/7359d6c9f02c2a6d4baed82d.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          91,
+          2,
+          410,
+          472
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sweetheart",
+        "url": "/shop-art/6ae42c746aea3a4a73bef38b.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          95,
+          2,
+          403,
+          473
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Wildflower",
+        "url": "/shop-art/049bd1f02f329c6be7360f9d.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          95,
+          2,
+          405,
+          474
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "lamps": [
+      {
+        "name": "Terra Shade",
+        "url": "/shop-art/461d2f1a43318d636012d87d.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          32,
+          68,
+          272,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Birthday Cake",
+        "url": "/shop-art/f33900f6bf8a55b6a8be7f30.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          14,
+          58,
+          282,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Party Pop",
+        "url": "/shop-art/d6d0a5b6aecd9fac08417a5f.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          34,
+          65,
+          261,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cream Blossom",
+        "url": "/shop-art/6e6a26212aa0fba0b09bcf6b.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          12,
+          66,
+          285,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Amethyst Cluster",
+        "url": "/shop-art/a8993824c9dc87b1d802d8b2.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          17,
+          47,
+          285,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Bamboo Shade",
+        "url": "/shop-art/6733fd192e879e92c77e71be.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          27,
+          71,
+          275,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Dome",
+        "url": "/shop-art/02ef3b794c646b0c102f7857.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          49,
+          68,
+          254,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Geode",
+        "url": "/shop-art/a169bc484d81363cb2d61baf.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          14,
+          63,
+          289,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cocoa Bell",
+        "url": "/shop-art/9db89629cbe81c220d702f88.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          38,
+          68,
+          267,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fern Bell",
+        "url": "/shop-art/e8b6a07c9588e79fee681b21.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          24,
+          66,
+          280,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Golden Acorn",
+        "url": "/shop-art/88f0f835b724c6dc4cc46c58.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          44,
+          66,
+          261,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Golden Glow",
+        "url": "/shop-art/42269147fdc9fae7df1d5765.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          30,
+          58,
+          272,
+          599
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Holly Bell",
+        "url": "/shop-art/2d8c4ec677be81002a32905c.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          26,
+          66,
+          271,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Ivory Drum",
+        "url": "/shop-art/e6a435cf2d9fb546d4d36457.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          54,
+          69,
+          250,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Layered Clay",
+        "url": "/shop-art/25209e636101812f34724333.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          20,
+          56,
+          282,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Little Ghost",
+        "url": "/shop-art/3bf267f62c93976242dcb3e6.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          13,
+          76,
+          284,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Miner’s Glow",
+        "url": "/shop-art/22f4a2384e6618ea415218cc.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          11,
+          53,
+          289,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pink Lotus",
+        "url": "/shop-art/545ce94daf7ee712eaf77c07.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          6,
+          70,
+          296,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pumpkin Grin",
+        "url": "/shop-art/84126a2101f994fe7dc9d155.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          17,
+          50,
+          284,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Root Vein",
+        "url": "/shop-art/41a4d4f40b62f721a57b9d03.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          19,
+          52,
+          280,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Dome",
+        "url": "/shop-art/937fae109009f00c91fc9abb.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          37,
+          67,
+          264,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Santa Cap",
+        "url": "/shop-art/21037225f075d448964c5951.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          25,
+          60,
+          300,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Spotted Shroom",
+        "url": "/shop-art/9ca5f7db6cd70d76162bc54d.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          18,
+          71,
+          285,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Starry Pine",
+        "url": "/shop-art/6a56f91c86743ec2b0931660.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          16,
+          52,
+          281,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Witch Hat",
+        "url": "/shop-art/14425ac3a605cc1962623182.webp",
+        "width": 300,
+        "height": 600,
+        "bounds": [
+          7,
+          45,
+          292,
+          600
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "couple_dolls": [
+      {
+        "name": "Love Bunny",
+        "url": "/shop-art/5be8a7fd16aa7104a48512f2.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          98,
+          95,
+          500,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "BBQ Dad",
+        "url": "/shop-art/de2cfcfc7fab7662db28fd07.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          105,
+          58,
+          494,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Ballerina",
+        "url": "/shop-art/e400fc4bf93acc67857304fe.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          72,
+          51,
+          535,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Baseball Player",
+        "url": "/shop-art/ca912b183d0698e32ef47947.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          94,
+          61,
+          503,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Bunny Babe",
+        "url": "/shop-art/987b8bfa91b57fe27fbd2edb.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          73,
+          19,
+          520,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cheerleader",
+        "url": "/shop-art/1de12ce3a38aa43b41435fb3.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          50,
+          112,
+          554,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cowboy",
+        "url": "/shop-art/cfdd826e126fdb1ab8df325e.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          74,
+          48,
+          532,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cowgirl",
+        "url": "/shop-art/8247b04f7df1429e5129df4f.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          69,
+          52,
+          521,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Disco Queen",
+        "url": "/shop-art/98a78cfa40a57fb1a33a17f1.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          47,
+          88,
+          547,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Farm Girl",
+        "url": "/shop-art/600b7dd6351bb6282c00b7ac.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          64,
+          97,
+          541,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Festival Girl",
+        "url": "/shop-art/e62018589438d9f8429e42d1.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          46,
+          81,
+          538,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fitness Coach",
+        "url": "/shop-art/667b306be290c31c23032ce0.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          108,
+          105,
+          490,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "French Maid",
+        "url": "/shop-art/8ce85144357e3491ab74d189.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          86,
+          113,
+          525,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Gym Bro",
+        "url": "/shop-art/507dea50efbbf7f844bf4ac9.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          78,
+          81,
+          525,
+          797
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Heart Boxers",
+        "url": "/shop-art/c7e21c1d20f33dc2482d6a25.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          99,
+          82,
+          501,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lingerie Babe",
+        "url": "/shop-art/83ff8d834b9905dd34b9e620.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          64,
+          49,
+          535,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lumberjack",
+        "url": "/shop-art/b5eb1576f9cd344f96c308e7.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          99,
+          87,
+          503,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mermaid",
+        "url": "/shop-art/0d3091b7b7cdcafc9dd16d20.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          72,
+          68,
+          516,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Prom Queen",
+        "url": "/shop-art/ca7c5d109a37c82b70631164.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          33,
+          58,
+          560,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Red Riding Hood",
+        "url": "/shop-art/ca9cf921cf75edf3800d8132.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          69,
+          107,
+          533,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Retro Waitress",
+        "url": "/shop-art/9387efa9148a72d3a41c1574.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          82,
+          65,
+          517,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rugby Guy",
+        "url": "/shop-art/e8e5aa1cbbee7bafbd95bf42.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          81,
+          88,
+          528,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sailor Girl",
+        "url": "/shop-art/542cd33ba016ffd182a5ab2d.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          70,
+          99,
+          540,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sailor Man",
+        "url": "/shop-art/b5e0748271f32cebf3e93b40.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          91,
+          69,
+          513,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sleepy Head",
+        "url": "/shop-art/fe5e9f09d4df80f7b07a91ef.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          52,
+          110,
+          568,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Spa Girl",
+        "url": "/shop-art/b347c053818961f97dedb15b.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          79,
+          40,
+          514,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Super Hero",
+        "url": "/shop-art/3148dbd6dbcf556efe0e678f.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          51,
+          88,
+          551,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Surfer Boy",
+        "url": "/shop-art/560b970ce106734a3086b918.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          76,
+          76,
+          517,
+          800
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Witch",
+        "url": "/shop-art/5569f229854e87f166a0826c.webp",
+        "width": 600,
+        "height": 800,
+        "bounds": [
+          67,
+          44,
+          507,
+          800
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "shelf_decor": [
+      {
+        "name": "Book Stack",
+        "url": "/shop-art/4bf81750a54be5126f2f803a.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          51,
+          84,
+          579,
+          598
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moon Globe",
+        "url": "/shop-art/5ff96beab59af0e936cf23f5.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          98,
+          102,
+          509,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Seashell",
+        "url": "/shop-art/011cb39b399ef6b96d67ce2b.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          66,
+          146,
+          550,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Amethyst",
+        "url": "/shop-art/152d29cada0a447254108bd0.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          41,
+          90,
+          554,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Potato Chips",
+        "url": "/shop-art/240465420c210a3360f9cd99.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          73,
+          93,
+          553,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Dog Statue",
+        "url": "/shop-art/d12096a2e729eac4619142a8.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          108,
+          59,
+          497,
+          598
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "dresser_plants": [
+      {
+        "name": "Desert Aloe",
+        "url": "/shop-art/718a7ce3a2a9694a2c392e53.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          73,
+          74,
+          542,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Jade Bloom",
+        "url": "/shop-art/452ac24f8520b7ea904ef40d.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          77,
+          38,
+          533,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Agave",
+        "url": "/shop-art/e16c10b5c3b43c9d6b5af03f.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          77,
+          47,
+          538,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Aloe",
+        "url": "/shop-art/4de57fe38fd8f3cfce076cbc.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          128,
+          53,
+          504,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Echeveria",
+        "url": "/shop-art/788b1a1c1ae404e206a453fd.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          89,
+          87,
+          535,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fire Tips",
+        "url": "/shop-art/9e292c5bdf1b02a19b82e6ab.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          77,
+          64,
+          517,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Peperomia",
+        "url": "/shop-art/7f1c99de70de474d072f5836.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          68,
+          101,
+          563,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "cactus",
+        "url": "/shop-art/ede7da2f1f81f3cb817d0034.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          109,
+          31,
+          479,
+          600
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "rugs": [
+      {
+        "name": "Coral Checkerboard",
+        "url": "/shop-art/84793d70b4c52f44aecb848b.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          14,
+          763,
+          139
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender Moon",
+        "url": "/shop-art/420b22e614e4e3daec77bf2a.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          14,
+          763,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Alpine",
+        "url": "/shop-art/65a0d9aa53af3d036d25560b.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          13,
+          762,
+          139
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Aqua Scallop",
+        "url": "/shop-art/14f86d735ee32eff27de3805.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          14,
+          762,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Berry Blocks",
+        "url": "/shop-art/44ee1a5394332c3c07a99c89.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          763,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Berry Sweetheart",
+        "url": "/shop-art/f52c0b27728277126b2a47a9.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          15,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Burgundy Bloom",
+        "url": "/shop-art/32ac85edecdc778c186ac254.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          13,
+          765,
+          142
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cocoa Houndstooth",
+        "url": "/shop-art/eb5ef8def308dd8ef3004e96.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          14,
+          761,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Desert",
+        "url": "/shop-art/9cb5478e28863b1c07240f87.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          13,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Forest Hills",
+        "url": "/shop-art/4aac24402f043be832c79c8d.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          12,
+          762,
+          139
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Groovy",
+        "url": "/shop-art/4c6b69543268bb3b1a010280.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          45,
+          7,
+          758,
+          142
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Daisy",
+        "url": "/shop-art/153b7cba26140710e9c768c1.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          39,
+          12,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Profile",
+        "url": "/shop-art/9933b1893a3b8d4b63a2d6c8.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          13,
+          761,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Matisse",
+        "url": "/shop-art/cc1080cb8dc6b54dc2e4ab86.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          13,
+          761,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mauve Swirl",
+        "url": "/shop-art/2236828cd58a660623809e0e.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Memphis",
+        "url": "/shop-art/2f02e8ffe061b1a5fed0ec7d.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          14,
+          765,
+          142
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mint Leaf",
+        "url": "/shop-art/5f03d5305566d63d231b3d01.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          15,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moss Camo",
+        "url": "/shop-art/7d45e5bfc82b675020c4c724.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          764,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mustard Diamond",
+        "url": "/shop-art/eea4b98368d811ad0888d217.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          15,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Bauhaus",
+        "url": "/shop-art/63b61448d00a3ee3e650cacd.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          764,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Border",
+        "url": "/shop-art/58d351c7b92f4595feade848.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          39,
+          14,
+          762,
+          143
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Plaid",
+        "url": "/shop-art/a4fd26e32c16fa812c9e47a4.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          15,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Sunrise",
+        "url": "/shop-art/396c6848f485160eb2d9f413.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          13,
+          759,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Navy Wave",
+        "url": "/shop-art/a9b690744f9a6a1065186a4a.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          14,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Olive Arch",
+        "url": "/shop-art/a81dd77727fa4c94776d981a.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          14,
+          763,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Periwinkle Polka",
+        "url": "/shop-art/f5ffcb05126e1acdf700b264.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          14,
+          763,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Plum Checkerboard",
+        "url": "/shop-art/1ca2115fd2b4eedd216b15c2.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          15,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rose Wave",
+        "url": "/shop-art/39f7e7bd1c29c48b9cdd72d1.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          15,
+          759,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rust Kilim",
+        "url": "/shop-art/91ccb4bcfe6e355b869182fd.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          15,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rust Windowpane",
+        "url": "/shop-art/37daa27797db5f759bad82b3.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          14,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Awning",
+        "url": "/shop-art/3ce61fb002a9a7d947ac6292.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          13,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Buffalo",
+        "url": "/shop-art/2e9c3bdf4a1bd028e38c34c6.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          15,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sage Tulip",
+        "url": "/shop-art/4f2c75e007294497a314792c.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          13,
+          765,
+          140
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Seaside",
+        "url": "/shop-art/641741a8befad3ef32760427.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          41,
+          12,
+          762,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Slate Starry",
+        "url": "/shop-art/5214d58ead85796a0bb6e886.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          43,
+          15,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Still Life",
+        "url": "/shop-art/42e1dba5aa650a6a93b7cc36.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Teal Meander",
+        "url": "/shop-art/c62adaf948337e7e6bec4bde.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          40,
+          14,
+          765,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Teal Moon",
+        "url": "/shop-art/7eea22de37cd23cd252541a4.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          39,
+          14,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Terracotta Sun",
+        "url": "/shop-art/98ad9bc71432e1c5e7cb02f4.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          44,
+          16,
+          763,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Terrazzo",
+        "url": "/shop-art/9cb062965f8471574f9d3ae3.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Wine Chevron",
+        "url": "/shop-art/994978483ba3b7cc1c020540.webp",
+        "width": 800,
+        "height": 150,
+        "bounds": [
+          42,
+          14,
+          764,
+          141
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "cushions": [
+      {
+        "name": "Starry Night",
+        "url": "/shop-art/6f5c0e23b8d10bfd4c422412.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          58,
+          15,
+          746,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sunset Arc",
+        "url": "/shop-art/939435065cc32ff66a891d51.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          15,
+          745,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Peach Gingham",
+        "url": "/shop-art/701c4ca2e447afbb4d30fa83.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          63,
+          16,
+          756,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Teal Shell",
+        "url": "/shop-art/6813f3034c08136285e48716.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          58,
+          13,
+          742,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blush Embrace",
+        "url": "/shop-art/476e3582091caa05bf3bb25b.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          65,
+          12,
+          737,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Daisy",
+        "url": "/shop-art/341ed5333a2627d65d343d31.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          55,
+          16,
+          743,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Autumn Acorn",
+        "url": "/shop-art/48612afa9ac08c20c87f6e92.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          57,
+          15,
+          743,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Triangles",
+        "url": "/shop-art/cf944fad3f571f896fe36c87.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          58,
+          15,
+          746,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Tulips",
+        "url": "/shop-art/444ab2e5dcb6d5906d363bc2.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          62,
+          15,
+          740,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Vinyl",
+        "url": "/shop-art/5a9e4793666da43afa9d6314.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          55,
+          13,
+          747,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Blue Wave",
+        "url": "/shop-art/1c587aa4425ca7a6cbd774f9.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          63,
+          9,
+          736,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Brown Café",
+        "url": "/shop-art/9a84b701a1174f87202fb68d.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          14,
+          746,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cobalt Wave",
+        "url": "/shop-art/5148bc9b059e2c524348545c.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          14,
+          745,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fern",
+        "url": "/shop-art/3dcab75a0fa8873c7741f228.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          58,
+          15,
+          749,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Grape Swirl",
+        "url": "/shop-art/a35415f8f55ce51eda2c6e8e.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          58,
+          15,
+          743,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Green Sunflowers",
+        "url": "/shop-art/83ddf9551c086d0c381d31c2.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          68,
+          13,
+          731,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Green Travel",
+        "url": "/shop-art/e4ec3a5b5fc7acfa9a76487b.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          56,
+          14,
+          748,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender Heart",
+        "url": "/shop-art/d642d5b1cddd30a8d1c87d40.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          15,
+          746,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender",
+        "url": "/shop-art/9f6f00b18c4e4d8b276725c7.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          75,
+          15,
+          738,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lilac Candy",
+        "url": "/shop-art/c3527eb466a2ce0224d971f6.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          57,
+          14,
+          747,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mauve Arches",
+        "url": "/shop-art/a658fce5af20f78f96e6510c.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          65,
+          9,
+          736,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mauve Mushroom",
+        "url": "/shop-art/4a4ccafa26e0ac178f62b280.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          60,
+          15,
+          746,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Misty Pine",
+        "url": "/shop-art/28c8989648aea0eb4b87df78.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          64,
+          14,
+          752,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Moss Camo",
+        "url": "/shop-art/31ceaec72c0c3189c674fc13.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          56,
+          16,
+          743,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Ocean Blocks",
+        "url": "/shop-art/bbb85bab397fe7d0f577b13c.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          60,
+          16,
+          749,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Olive Botanical",
+        "url": "/shop-art/ea2e3812bf63b3d10a613c85.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          64,
+          12,
+          741,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Pink Roses",
+        "url": "/shop-art/129c97b446823059838f7a00.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          62,
+          14,
+          745,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Plum Brushstroke",
+        "url": "/shop-art/c292faad7c13260f32a90ad6.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          68,
+          10,
+          740,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Plum Scallop",
+        "url": "/shop-art/35262dd95bb6f3f99b99e0c2.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          61,
+          14,
+          746,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rainbow",
+        "url": "/shop-art/c27cedd5a09ba84837090999.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          56,
+          14,
+          748,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Retro Shapes",
+        "url": "/shop-art/4fd82ac5e68ea4d2a26665a9.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          14,
+          751,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rose Dot",
+        "url": "/shop-art/f3c5ed4d361a388cb695701f.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          59,
+          16,
+          747,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Stained Glass",
+        "url": "/shop-art/68bcc7aab1955d8159133536.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          61,
+          14,
+          742,
+          399
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Still Life",
+        "url": "/shop-art/a6c62774ab0dd8e740e75efe.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          61,
+          18,
+          745,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sunny Confetti",
+        "url": "/shop-art/a4a671a44bba8fb20940cb9a.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          66,
+          11,
+          740,
+          400
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Teal Diamonds",
+        "url": "/shop-art/26ea0b72f1f998c5c314f53e.webp",
+        "width": 800,
+        "height": 400,
+        "bounds": [
+          56,
+          15,
+          744,
+          400
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "vases": [
+      {
+        "name": "Calendula",
+        "url": "/shop-art/b8707780beeafefa0ffc05f2.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          74,
+          38,
+          427,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Carnation",
+        "url": "/shop-art/44e7f04ef51072f0641568ce.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          87,
+          23,
+          439,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cherry Blossom",
+        "url": "/shop-art/97a397af7e8a069704379e2a.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          70,
+          33,
+          426,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Daffodil",
+        "url": "/shop-art/1d191a35e5e2a07fa7e607a6.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          75,
+          15,
+          422,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Daisy",
+        "url": "/shop-art/70f6cb0844bdbba80cb31dde.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          73,
+          16,
+          437,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Hydrangea",
+        "url": "/shop-art/31bab81c8f873ad831b6e1e3.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          66,
+          16,
+          432,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Iris",
+        "url": "/shop-art/33ea06db5cd05acd9e9c2272.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          67,
+          1,
+          455,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender",
+        "url": "/shop-art/374bf06d967e8eb70abdbc7c.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          92,
+          16,
+          422,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lily",
+        "url": "/shop-art/b63171fee58c5a5dcae27683.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          73,
+          8,
+          458,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Peony",
+        "url": "/shop-art/cab1810be2837fce15a8b367.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          53,
+          3,
+          446,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Poppy",
+        "url": "/shop-art/8694302f3419f052aba7a1fd.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          82,
+          15,
+          431,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Rose",
+        "url": "/shop-art/48c900a3886b81948dbe0857.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          74,
+          26,
+          431,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Sunflower",
+        "url": "/shop-art/ff1c9d5297c7aac29ace41cd.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          62,
+          6,
+          433,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Tulip",
+        "url": "/shop-art/cc2dc01ad3b7c5f083429cbc.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          61,
+          14,
+          434,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Zinnia",
+        "url": "/shop-art/99c8da3f8096531173e71d48.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          69,
+          40,
+          419,
+          500
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Baby's Breath",
+        "url": "/shop-art/1e160a4e79db721e07a3e247.webp",
+        "width": 500,
+        "height": 500,
+        "bounds": [
+          88,
+          38,
+          436,
+          500
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "music_players": [
+      {
+        "name": "Candy",
+        "url": "/shop-art/faaa88fd450cd6d71f3add79.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          25,
+          112,
+          577,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Matcha",
+        "url": "/shop-art/27b214ca3eeb12d63db09ae0.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          28,
+          114,
+          577,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Cocoa",
+        "url": "/shop-art/82635c47f73e3a1a30d19109.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          26,
+          114,
+          580,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Mixtape",
+        "url": "/shop-art/04894cee91444cc9390d2e8d.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          25,
+          126,
+          576,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Beats",
+        "url": "/shop-art/05faccdf4e7766204a983beb.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          21,
+          147,
+          583,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Amber",
+        "url": "/shop-art/0697ae152e92e4369839acaa.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          24,
+          115,
+          582,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Lavender",
+        "url": "/shop-art/06ec06d571db3245fc0eed73.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          21,
+          137,
+          579,
+          600
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Fern",
+        "url": "/shop-art/ac986dc466836479bfa00670.webp",
+        "width": 600,
+        "height": 600,
+        "bounds": [
+          28,
+          122,
+          579,
+          600
+        ],
+        "squareThumbnail": false
+      }
+    ],
+    "wallpapers": [
+      {
+        "name": "Vanilla",
+        "url": "/shop-art/f393f6cc89e7bd2ad0307d63.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Birch Plank",
+        "url": "/shop-art/00cbd5627da14507b06e9701.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Blossom Meadow",
+        "url": "/shop-art/95fa40f15cf794247e6cee56.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Blue Brick",
+        "url": "/shop-art/c140ce40a34e732db197cc61.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Blue Plaid",
+        "url": "/shop-art/d6f4e9492041d464d6494ff9.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Blue Stripe",
+        "url": "/shop-art/bb61b598ea7a4d82a0fda368.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Clay Brick",
+        "url": "/shop-art/5ac1e89a1188caa013e643b9.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Cream Brick",
+        "url": "/shop-art/fe9a0f1fefd9407c16f483c0.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Driftwood",
+        "url": "/shop-art/30b50008731d525737d4f81c.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Dusty Rose",
+        "url": "/shop-art/580dd3e19d353515a2ff141e.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Fern Stripe",
+        "url": "/shop-art/b0cc60b25207515c339c1ced.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Folk Heart Blue",
+        "url": "/shop-art/51c61df195c5d8b2a81a6a5e.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Garden Trellis",
+        "url": "/shop-art/0d7600643a8afe69ba074cac.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Golden Heart",
+        "url": "/shop-art/169aa154db9d958f5214e806.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Green Plaid",
+        "url": "/shop-art/87a085035d6532891e93a821.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Heart Tulips",
+        "url": "/shop-art/4b5b28f126e5f10185fb1cd2.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Honey Oak",
+        "url": "/shop-art/824e7c61e8f4d05f097fa66f.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Honey",
+        "url": "/shop-art/371c9e3de5fada1040968e35.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Lilac Plaid",
+        "url": "/shop-art/42b4c6461ae4e44b70171c97.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Lilac Tulip",
+        "url": "/shop-art/7b246e37b8ba0e383adef5f5.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Mahogany Plank",
+        "url": "/shop-art/18d8169d69c4eb3d0c30bee5.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Mauve Stripe",
+        "url": "/shop-art/655859567ef1e6a224c7cdb5.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Midnight Star",
+        "url": "/shop-art/dde163c95d93ced8017f8f23.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Mossy Brick",
+        "url": "/shop-art/dd10ac16777ba9d7b3b32d6d.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Oat Stripe",
+        "url": "/shop-art/2a51ef034c60bb1b05c28cce.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Olive Plank",
+        "url": "/shop-art/67d5f0422a7dac04464fa07b.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Peach Plaid",
+        "url": "/shop-art/090c503a902a222ae189625a.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Peach",
+        "url": "/shop-art/51cad84089447d43fd8d25ce.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Picnic Plaid",
+        "url": "/shop-art/1b761fe52ff954fd214d647f.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Rosy Bricks",
+        "url": "/shop-art/54f5e57701ce61acf860496e.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Sage Daisy",
+        "url": "/shop-art/b87434af7b9f0a78905ac974.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Sandstone",
+        "url": "/shop-art/6949edc996ccd017c166b100.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Starry Sky",
+        "url": "/shop-art/6106c48e15af5bcc4e41a0f3.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      },
+      {
+        "name": "Sunset Stripe",
+        "url": "/shop-art/8be8f2f049e16b5e82d5b7d4.webp",
+        "width": 1086,
+        "height": 1448,
+        "bounds": [
+          0,
+          0,
+          1086,
+          1448
+        ],
+        "squareThumbnail": true
+      }
+    ],
+    "seasons": [
+      {
+        "name": "Background-Autumn",
+        "url": "/shop-art/28f306e004e6271750c3b5b0.webp",
+        "width": 900,
+        "height": 2000,
+        "bounds": [
+          0,
+          0,
+          900,
+          2000
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Background-Spring",
+        "url": "/shop-art/245cb1933afd5fb6c86e22c5.webp",
+        "width": 900,
+        "height": 2000,
+        "bounds": [
+          0,
+          0,
+          900,
+          2000
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Background-Summer",
+        "url": "/shop-art/b16f26c4cb9bc48ba00dab92.webp",
+        "width": 900,
+        "height": 2000,
+        "bounds": [
+          0,
+          0,
+          900,
+          2000
+        ],
+        "squareThumbnail": false
+      },
+      {
+        "name": "Background-Winter",
+        "url": "/shop-art/bcd107675da4b8db931ce271.webp",
+        "width": 900,
+        "height": 2000,
+        "bounds": [
+          0,
+          0,
+          900,
+          2000
+        ],
+        "squareThumbnail": false
+      }
+    ]
+  }
+}

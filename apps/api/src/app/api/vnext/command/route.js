@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { withRewardWallet } from '@/lib/burrow-reward-wallet.mjs'
 import {
   appMajorUpdateServiceClient,
   authenticatedUserId,
@@ -167,28 +168,37 @@ export async function POST(request) {
       const itemId = requiredText(body.itemId, 160)
       const recipientId = requiredText(body.recipientId, 80) || userId
       const idempotencyKey = requiredText(body.idempotencyKey)
-      if (!itemId || !idempotencyKey) {
+      if (!itemId || !idempotencyKey || (body.expectedPrice != null &&
+        (!Number.isSafeInteger(body.expectedPrice) || body.expectedPrice < 1 || body.expectedPrice > 1000000))) {
         return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
       }
-      rpc = 'purchase_catalog_item_v1'
+      rpc = body.expectedPrice == null ? 'purchase_catalog_item_v1' : 'purchase_catalog_item_v2'
       args = {
         p_buyer_id: userId,
         p_recipient_id: recipientId,
         p_item_id: itemId,
         p_idempotency_key: idempotencyKey,
+        ...(body.expectedPrice == null ? {} : { p_expected_price: body.expectedPrice }),
       }
     } else if (action === 'purchase_room_loadout') {
       const idempotencyKey = requiredText(body.idempotencyKey, 120)
       const slots = body.slots
       const outfitItemId = body.outfitItemId == null ? null : requiredText(body.outfitItemId, 160)
       if (!idempotencyKey || !slots || Array.isArray(slots) || typeof slots !== 'object'
-        || Object.keys(slots).length < 1 || Object.keys(slots).length > 18
+        || Object.keys(slots).length < 1 || Object.keys(slots).length > 19
         || (body.outfitItemId != null && !outfitItemId)
         || Object.entries(slots).some(([slot, itemId]) => !requiredText(slot, 60) || !requiredText(itemId, 160))) {
         return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
       }
-      rpc = 'purchase_room_loadout_v1'
+      if (body.expectedPrices != null && (typeof body.expectedPrices !== 'object' || Array.isArray(body.expectedPrices)
+        || Object.keys(body.expectedPrices).length > 20 || Object.entries(body.expectedPrices).some(([id, price]) =>
+          !requiredText(id, 160) || !Number.isSafeInteger(price) || price < 0 || price > 1000000)
+        || [...Object.values(slots), ...(outfitItemId ? [outfitItemId] : [])].some(id => !Object.hasOwn(body.expectedPrices, id)))) {
+        return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+      }
+      rpc = body.expectedPrices == null ? 'purchase_room_loadout_v1' : 'purchase_room_loadout_v2'
       args = { p_user_id: userId, p_slots: slots, p_key: idempotencyKey, p_outfit_item_id: outfitItemId }
+      if (body.expectedPrices != null) args.p_expected_prices = body.expectedPrices
     } else if (action === 'claim_gift') {
       const giftId = requiredText(body.giftId, 80)
       if (!giftId) {
@@ -274,6 +284,12 @@ export async function POST(request) {
     // The temporary database trigger shortens the persisted journey even
     // while the legacy start functions still report their old duration field.
     if (action === 'start_adventure' && !data?.error && data?.applied) data = { ...data, durationSeconds: 60 }
+    // Include the ledger keys already folded into this balance, including
+    // simultaneous claims from another device. Supplementary reads fail open.
+    if (!data?.error && ['claim_daily_quest', 'claim_special_quest', 'complete_affection', 'refill_room_need',
+      'purchase_catalog_item', 'purchase_room_loadout'].includes(action)) {
+      data = await withRewardWallet(supabase, userId, data, { ...body, action })
+    }
     const status = commandStatus(data?.error)
     return NextResponse.json(
       data?.error ? data : { success: true, ...data },

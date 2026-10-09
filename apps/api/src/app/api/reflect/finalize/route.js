@@ -8,6 +8,7 @@ import { enqueueReflectAnalysisJob, processReflectAnalysisJobs } from '@/lib/ref
 import { sanitizeSettlementMemories } from '@/lib/reflect-settlement'
 import { drainPushNotificationOutbox, enqueuePartnerReflectNotification } from '@/lib/push-notifications'
 import { majorUpdateEnabled } from '@/lib/app-major-update'
+import { withRewardWallet } from '@/lib/burrow-reward-wallet.mjs'
 
 export const runtime = 'edge'
 export const maxDuration = 60
@@ -86,11 +87,13 @@ export async function POST(request) {
     // next Connection visit retry only this latest reflection.
     const journalKind = draft.journal_kind || (draft.friend_user_id ? 'remember_together'
       : draft.mode === 'prompt' ? 'tap_your_day' : 'write_freely')
+    let coinReceipt = null
     if (majorUpdate && result?.reflect_id && journalKind !== 'remember_together') {
       const registration = await supabase.rpc('register_adventure_record_v1', { p_user_id: userId, p_record_id: result.reflect_id })
       // The durable record is already saved. Bootstrap retries registration if
       // this supplementary request fails; do not lose the user's settlement.
       if (registration.error || registration.data?.error) console.warn('[reflect/finalize] Burrow registration pending')
+      else coinReceipt = await withRewardWallet(supabase, userId, registration.data, { action: 'record', localDate: draft.local_date })
     }
     if (!majorUpdate && !result?.already_finalized && journalKind !== 'remember_together'
       && draft.ai_enhancement_eligible === true && draft.body?.trim() && result?.reflect_id) {
@@ -124,7 +127,9 @@ export async function POST(request) {
       p_user_id: userId,
       p_reflect_id: result?.reflect_id || null,
     })
-    return NextResponse.json({ success: true, ...result })
+    return NextResponse.json({ success: true, ...result, ...(coinReceipt ? {
+      reward: coinReceipt.reward, coinState: coinReceipt.coinState, coinReward: coinReceipt.coinReward,
+    } : {}) })
   } catch (error) {
     console.error('[reflect/finalize] unexpected:', error?.message || error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

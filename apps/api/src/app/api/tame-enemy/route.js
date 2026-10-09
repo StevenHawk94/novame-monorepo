@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { withRewardWallet } from '@/lib/burrow-reward-wallet.mjs'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import {
@@ -66,7 +67,8 @@ export async function POST(request) {
         p_skills: skillsUsed, p_key: idempotencyKey,
       })
       if (error) throw error
-      return NextResponse.json(result?.error ? result : { success: true, ...result }, { status: commandStatus(result?.error) })
+      const receipt = await withRewardWallet(supabase, userId, result, { action: 'rage' })
+      return NextResponse.json(receipt?.error ? receipt : { success: true, ...receipt }, { status: commandStatus(receipt?.error) })
     }
 
     const dateStr = await resolveUserLocalDate(supabase, userId)

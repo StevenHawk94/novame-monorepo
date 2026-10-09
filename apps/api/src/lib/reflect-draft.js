@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import {
   matchItems, tapYourDaySelectionLimit, tapYourDayChoice, cleanCustomTapItem,
-  CUSTOM_TAP_SELECTION_VERSION, MAX_REFLECT_ITEMS,
+  CUSTOM_TAP_SELECTION_VERSION, MAX_REFLECT_ITEMS, TAP_YOUR_DAY_VERSION, ITEM_DICTIONARY,
 } from '@novame/engine'
 
 import { dictionaryForRevision } from '@/lib/item-rule-store'
@@ -38,7 +38,7 @@ export function isoWeek(dateStr) {
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
-export async function resolveDraftInput(supabase, input) {
+export async function resolveDraftInput(supabase, input, { recordOnly = false } = {}) {
   const mode = input.mode === 'prompt' || input.mode === 'items' ? input.mode : 'typing'
   const body = typeof input.body === 'string' ? input.body.trim() : ''
   if (body.length > MAX_BODY_CHARS) return { error: 'too_long' }
@@ -47,6 +47,25 @@ export async function resolveDraftInput(supabase, input) {
   const isTapYourDay = selectionLimit > 0 && mode === 'prompt'
   if (input.selectionVersion != null && !isTapYourDay) return { error: 'invalid_selection_version' }
 
+  // Modern Write Freely is text-only. Do not fetch the remote dictionary or
+  // infer icons from a journal; historical/shared-memory callers retain theirs.
+  if (recordOnly && mode === 'typing') return { mode, body, matches: [], removedMatches: [] }
+  // v4 resolves the same manual allowlist as mobile, before any R2/rule lookup.
+  if (isTapYourDay && input.selectionVersion === TAP_YOUR_DAY_VERSION) {
+    if (!Array.isArray(input.selectedItems) || !input.selectedItems.length) return { error: 'empty' }
+    if (input.selectedItems.length > selectionLimit) return { error: 'too_many_items' }
+    const matches = [], seen = new Set()
+    for (const selected of input.selectedItems) {
+      const choice = typeof selected?.itemId === 'string' ? tapYourDayChoice(selected.itemId) : null
+      if (!choice) return { error: 'invalid_selection_item' }
+      if (seen.has(choice.itemId)) continue
+      seen.add(choice.itemId)
+      matches.push({ itemId: choice.itemId, displayName: choice.label, label: choice.label,
+        rarity: ITEM_DICTIONARY.items[choice.itemId]?.rarity || 'common', sourceExcerpt: '',
+        selectionLabel: choice.label, selectionKind: choice.kind, ...(choice.custom ? { custom: true } : {}) })
+    }
+    return { mode, body, matches, removedMatches: [] }
+  }
   const dictionary = await dictionaryForRevision(supabase, input.matchingVersion)
   let matches = []
   let removedMatches = []

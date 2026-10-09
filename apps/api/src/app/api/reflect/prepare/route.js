@@ -24,11 +24,12 @@ export async function POST(request) {
     }
     const supabase = serviceClient()
     const majorUpdate = await majorUpdateEnabled(supabase)
+    const recordOnly = majorUpdate && !input.friendUserId
     // Matching rules, timezone resolution and entitlement lookup are
     // independent. Running them together removes two network round trips from
     // the Save Reflection spinner, which was most visible for Free accounts.
     const [resolved, localDate, profileResult] = await Promise.all([
-      resolveDraftInput(supabase, input),
+      resolveDraftInput(supabase, input, { recordOnly }),
       resolveUserLocalDate(supabase, input.userId),
       supabase.from('profiles').select('subscription_tier, ai_consent_at')
         .eq('id', input.userId).single(),
@@ -94,10 +95,12 @@ export async function POST(request) {
     if (!draft) throw new Error('save_not_confirmed')
     const reflectId = draft.saved_reflect_id || draft.finalized_reflect_id
     if (!reflectId) throw new Error('saved_reflect_required')
-    const { data: allowance, error: allowanceError } = await supabase.rpc(
-      'claim_reflect_ai_enhancement',
-      { p_user_id: input.userId, p_reflect_id: reflectId },
-    )
+    // Activity picks are user-authored facts, not AI memories. Saving a day
+    // neither spends an AI allowance nor waits for a copy-generation request.
+    const { data: allowance, error: allowanceError } = recordOnly
+      ? { data: { eligible: false }, error: null }
+      : await supabase.rpc('claim_reflect_ai_enhancement',
+        { p_user_id: input.userId, p_reflect_id: reflectId })
     if (allowanceError || allowance?.error) {
       throw allowanceError || new Error(allowance.error)
     }

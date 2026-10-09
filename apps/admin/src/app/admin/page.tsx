@@ -3,42 +3,23 @@
 import { useState } from 'react';
 import OverviewTab from './_components/OverviewTab';
 import RealUsersTab from './_components/RealUsersTab';
-import OutfitsTab from './_components/OutfitsTab';
-import ScenesTab from './_components/ScenesTab';
-import OrdersTab from './_components/OrdersTab';
-import PricingTab from './_components/PricingTab';
-import AnalysisTab from './_components/AnalysisTab';
-import ItemsTab from './_components/ItemsTab';
 import MarketingTab from './_components/MarketingTab';
-import ConnectionInsightTab from './_components/ConnectionInsightTab';
-import BunnyCourtTab from './_components/BunnyCourtTab';
 import BurrowContentTab from './_components/BurrowContentTab';
+import ShopPricingTab from './_components/ShopPricingTab';
 
 type TabId =
   | 'overview'
-  | 'analysis'
   | 'real-users'
-  | 'orders'
-  | 'pricing'
-  | 'outfits'
-  | 'items'
   | 'marketing'
-  | 'connection-insight'
-  | 'bunny-court'
   | 'burrow-content'
+  | 'shop-pricing'
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
   { id: 'overview', icon: '📊', label: 'Overview' },
-  { id: 'analysis', icon: '📈', label: 'Analysis' },
   { id: 'real-users', icon: '👥', label: 'Real Users' },
-  { id: 'orders', icon: '📦', label: 'Orders' },
-  { id: 'pricing', icon: '💰', label: 'Pricing' },
-  { id: 'outfits', icon: '👕', label: 'Outfits' },
-  { id: 'items', icon: '🎒', label: 'Memory Items' },
   { id: 'marketing', icon: '📣', label: 'Marketing' },
-  { id: 'connection-insight', icon: '💡', label: 'Connection Insight' },
-  { id: 'bunny-court', icon: '⚖️', label: 'Bunny Court' },
   { id: 'burrow-content', icon: '🐰', label: 'Burrow Content' },
+  { id: 'shop-pricing', icon: '🥕', label: 'Shop Pricing' },
 ];
 
 /**
@@ -74,16 +55,10 @@ export default function AdminDashboard() {
       </div>
 
       {tab === 'overview' && <OverviewTab />}
-      {tab === 'analysis' && <AnalysisTab />}
       {tab === 'real-users' && <RealUsersTab />}
-      {tab === 'orders' && <OrdersTab />}
-      {tab === 'pricing' && <PricingTab />}
-      {tab === 'outfits' && <OutfitsTab />}
-      {tab === 'items' && <ItemsTab />}
       {tab === 'marketing' && <MarketingTab />}
-      {tab === 'connection-insight' && <ConnectionInsightTab />}
-      {tab === 'bunny-court' && <BunnyCourtTab />}
       {tab === 'burrow-content' && <BurrowContentTab />}
+      {tab === 'shop-pricing' && <ShopPricingTab />}
     </>
   );
 }

@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/surprise-cleanup",
+      "schedule": "25 * * * *"
+    },
+    {
       "path": "/api/cron/room-photo-cleanup",
       "schedule": "45 * * * *"
     },

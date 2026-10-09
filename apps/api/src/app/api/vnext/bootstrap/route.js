@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { appMajorUpdateServiceClient, authenticatedUserId, commandStatus } from '@/lib/app-major-update'
 import { unpairedBurrowBootstrap } from '@/lib/burrow-unpaired-bootstrap.mjs'
+import { readRewardWallet } from '@/lib/burrow-reward-wallet.mjs'
 
 export const runtime = 'edge'
 
@@ -39,6 +40,10 @@ export async function GET(request) {
       for (const result of care) if (result.error) throw result.error
       snapshot = { ...snapshot, lastCareAt: { food: care[0].data?.[0]?.created_at || null,
         water: care[1].data?.[0]?.created_at || null } }
+    }
+    if (snapshot && !snapshot.error) {
+      const coinState = await readRewardWallet(db, userId)
+      if (coinState) snapshot = { ...snapshot, wallet: coinState.wallet, coinState }
     }
     return NextResponse.json(snapshot?.error ? snapshot : { success: true, ...snapshot }, {
       status: commandStatus(snapshot?.error), headers: { 'Cache-Control': 'no-store' },
