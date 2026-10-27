@@ -26,7 +26,7 @@ function fixture({ancestor=false,fail=false}={}){
 }
 test('both saved-record entry paths share solid background and account-color ready art above the logged heading',()=>{
  const x=fixture();
- for(const [variant,source]of [['biscuit','ready-biscuit'],['pinky','adventure-ready-pinky']]){
+ for(const [variant,source]of [['biscuit','adventure-ready-biscuit'],['pinky','adventure-ready-pinky']]){
   x.setVariant(variant);const tree=x.ready(),all=nodes(tree);
   assert.equal(tree.props.style.backgroundColor,'#461501');
   assert.equal(all.find(n=>n.type==='Image').props.source,source);

@@ -132,6 +132,19 @@ function storeHarness({ cached = false, outbox } = {}) {
   }, { ...time.globals, performance: { now: () => time.globals.Date.now() } });
   return { api, requests, time, session, store };
 }
+test('confirmed first-pair receipt immediately supplies Adventure identity, fences old reads, and does not grant Plus/private readiness',async()=>{
+ const h=storeHarness(),base={...snapshot(),partner:null,pairVersion:undefined,hasPlus:false,wallet:{balance:42,version:1},pairAccessVerified:true};
+ let read=h.api.refreshBurrow();h.requests[0].resolve(base);await read;
+ const stale=h.api.refreshBurrow({silent:true}),version='a'.repeat(32),partner={userId:'B',displayName:'Sam',avatarUrl:'sam-avatar'};
+ assert.equal(h.api.confirmBurrowPair('other',partner,version),false);
+ assert.equal(h.api.confirmBurrowPair('A',partner,'invalid'),false);
+ assert.equal(h.api.confirmBurrowPair('A',partner,version,{userId:'A',partnerId:'B',pairVersion:version,adventureId:null,team:null,joinable:null,nudgeAvailable:false}),true);
+ const state=h.api.getBurrowSnapshot();assert.equal(state.pairInvalidated,false);assert.equal(state.data.partner.id,'B');assert.equal(state.data.partner.display_name,'Sam');
+ assert.equal(state.data.hasPlus,false);assert.equal(state.data.pairAccessVerified,undefined);assert.equal(state.data.wallet.balance,42);
+ h.requests[1].resolve(base);await stale;assert.equal(h.api.getBurrowSnapshot().data.partner.id,'B','late solo read cannot undo the committed pair');
+ assert.equal(h.api.confirmBurrowPair('A',{...partner,userId:'C'},version),false);
+ h.session.change('C');assert.equal(h.api.confirmBurrowPair('A',partner,version),false);
+});
 test('pending cooperative display is attached to own pending record, then authoritative solo replaces all preview coordination',async()=>{
  const h=storeHarness(),read=h.api.refreshBurrow();
  h.requests[0].resolve({...snapshot(),localDate:'2026-10-05',activeAdventure:null});await read;

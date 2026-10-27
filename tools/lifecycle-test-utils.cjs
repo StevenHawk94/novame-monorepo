@@ -18,9 +18,22 @@ function load(file, imports = {}, globals = {}) {
         projectCoinSpend(){},settleCoinSpend(){},rejectCoinSpend(){},getCoinRewardSnapshot:()=>({balance:null}),...imports[name]};
       if(['./ui-idle','@/lib/ui-idle'].includes(name)&&Object.hasOwn(imports,name))return {yieldToUi:async()=>{},...imports[name]};
       if(Object.hasOwn(imports,name))return imports[name];
+      if(['./adventure-friend-identity','@/lib/adventure-friend-identity'].includes(name))return load('apps/mobile/src/lib/adventure-friend-identity.ts');
+      if(name==='./adventure-friend-identities.json')return require('../apps/mobile/src/lib/adventure-friend-identities.json');
+      if(['./friend-text-layout','@/lib/friend-text-layout','./friend-visit-presentation','@/lib/friend-visit-presentation'].includes(name))return load('apps/mobile/src/lib/'+name.split('/').at(-1)+'.ts');
+      if(['./adventure-friend-bounds.json','./adventure-friend-body-anchors.json'].includes(name))return require('../apps/mobile/src/lib/'+name.slice(2));
+      if(name==='./friend-text-panel')return load('apps/mobile/src/components/burrow/friend-text-panel.tsx',{
+        react:imports.react??{createContext:value=>({value}),useContext:c=>c.value},'react/jsx-runtime':imports['react/jsx-runtime'],
+        'react-native':{Pressable:'Button',ScrollView:'Scroll',Text:'Text',View:'View',StyleSheet:{create:x=>x}},
+        './adventure-reveal':{AdventureReveal:'Reveal'},'./burrow-back-button':{BackIcon:'BackIcon'},
+      });
       if(name==='../../../assets/burrow-webp/adventure-page/pinky.webp'){
         assert.ok(fs.existsSync(path.resolve(__dirname,'../apps/mobile/assets/burrow-webp/adventure-page/pinky.webp')));
         return 'adventure-ready-pinky';
+      }
+      if(name==='../../../assets/burrow-webp/adventure-page/biscuit.webp'){
+        assert.ok(fs.existsSync(path.resolve(__dirname,'../apps/mobile/assets/burrow-webp/adventure-page/biscuit.webp')));
+        return 'adventure-ready-biscuit';
       }
       // Older UI fixtures have no authenticated transport. Dedicated entry
       // tests inject the real narrow prefetch controller and lifecycle hook.
@@ -228,6 +241,7 @@ function hooks() {
   const slots = [], effects = [];
   let cursor = 0;
   const react = {
+    createContext(value){return {value,Provider:({children})=>children};},useContext(context){return context.value;},
     memo(component) { return component; },
     useRef(value) { const i = cursor++; return slots[i] ??= { current: value }; },
     useState(initial) { const i = cursor++; slots[i] ??= { value: typeof initial === 'function' ? initial() : initial };

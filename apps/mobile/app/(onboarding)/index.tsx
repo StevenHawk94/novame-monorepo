@@ -314,7 +314,7 @@ export default function OnboardingScreen() {
       if (!await ensureOnboardingIdentity()) throw new Error('Could not prepare your account.');
       await syncBunnyIdentity();
       const result = await addFriend(normalized, {
-        relationship: 'Partner', relationshipSince: parseDisplayDate(relationshipSinceInput) || undefined,
+        relationship: 'Partner', relationshipSince: parseDisplayDate(relationshipSinceInput) || undefined,deferRefresh:true,
       });
       if (!result.ok) { appAlert('Wrong code', 'Double-check your partner’s Burrow code and try again.'); return; }
       setResolvedPartner({ userId: result.partner?.userId,

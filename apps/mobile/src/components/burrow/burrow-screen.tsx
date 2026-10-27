@@ -518,7 +518,7 @@ export function BurrowScreen({section,roomType='home',initialCategory='cushions'
           if(adventureFinishedToday(data,now)){setNappingOpen(true);return;}
           openBurrow('adventure');
         }}
-        onLetter={()=>{if(data)dismissHomeLetterReminder(data);openHomeInteraction('letter',true);}}
+        onLetter={()=>openHomeInteraction('letter')}
         onBurrows={()=>openBurrow('burrow')}
         onSlot={homeSlot}/></View>
       :<>{section!=='burrow'&&section!=='moments'&&section!=='quests'&&!adventureEntry&&!adventureLogged&&!(section==='adventure'&&adventure?.status==='in_progress')&&<View style={[s.header,{paddingVertical:12},section==='shop'&&shopStyles.topHeader]}>{!isTab&&<BurrowBackButton onPress={()=>router.back()}/>}<Text style={[s.heading,['friends_room','game_room','memories_room','collection'].includes(section)&&ROOM_TITLE_STYLE,section==='shop'&&shopStyles.topTitle]}>{titles[section]}</Text>{data&&section!=='friends_room'&&<CoinWallet balance={data.wallet.balance} disabled={section==='carrot_shop'} onPress={()=>openBurrow('carrot_shop')}/>}</View>}

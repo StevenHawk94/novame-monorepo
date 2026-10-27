@@ -49,7 +49,7 @@ function screenHarness(mode='record',options={}){
   react:h.react,'react/jsx-runtime':jsx,'react-native':{ActivityIndicator:'Busy',Pressable:'Pressable',ScrollView:'Scroll',Text:'Text',View:'View',StyleSheet:{create:v=>v,absoluteFillObject:{}},BackHandler:{addEventListener:(_event,fn)=>{backs.push(fn);return{remove:()=>backs.push('removed')};}}},
   '@react-navigation/native':{useIsFocused:()=>true,usePreventRemove:v=>guards.push(v)},'expo-router':{router:{canGoBack:()=>true,back(){routes.push('back');},replace(p){routes.push(p);},push(p){routes.push(p);}},useLocalSearchParams:()=>({mode})},
   '@expo/vector-icons':{Feather:'Icon'},'react-native-reanimated':{useReducedMotion:()=>false,useSharedValue:value=>h.react.useRef({value}).current},'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:40,bottom:20})},
-  '@/lib/touch-note-runtime':{touchCapabilities:async()=>null,touchInitialQuality:()=> 'standard',testTouchVibration:async()=>true,touchVibrationVerified:()=>false,confirmTouchVibration(){}},
+  '@/lib/touch-note-runtime':{touchCapabilities:async()=>options.visualOnly?{hasVibrator:false}:null,touchVisualOnly:c=>c?.hasVibrator===false,touchInitialQuality:()=> 'standard',testTouchVibration:async()=>true,touchVibrationVerified:()=>false,confirmTouchVibration(){}},
   '@/lib/app-viewport':{useAppViewport:()=>({width:390,height:844})},'@/lib/burrow-store':{useBurrow:()=>({data})},'@/lib/burrow-presentation':{roomSlots:()=>({couple_doll:{stable_id:'toy'}})},
   '@/lib/burrow-art-assets':{burrowArtForItem:item=>item&&({name:'toy',width:512,height:512})},'@/lib/burrow-toy-photos':{toyPhotoFor:photos=>photos[0]},'@/lib/plushie-touch-recorder':model,
   '@/lib/use-page-back-gesture':{usePageBackGesture:v=>gestures.push(v)},
@@ -98,4 +98,12 @@ test('a delayed rejection for an overwritten Free message cannot paint an error 
  const old=deferred(),q=screenHarness('inbox',{unprepared:true,prepare:()=>old.promise});
  q.state.meta.items[0].id='new';q.state.ready=['new'];q.render();old.reject(Error('old message removed'));await flush();q.render();
  assert.ok(q.button('Feel Sam’s touch'));assert.ok(!JSON.stringify(q.tree).includes('Could not open this touch note'));assert.equal(q.read.length,0);q.h.unmount();
+});
+test('iPad/no-vibrator recipient can play animation, clear unread, Stop/Continue and Replay without a vibration test',async()=>{
+ const q=screenHarness('inbox',{visualOnly:true});q.button('Feel Sam’s touch').props.onPress();await flush();q.render();
+ assert.equal(q.read.length,0);assert.ok(q.button('Play animation'));q.button('Play animation').props.onPress();q.render();
+ assert.deepEqual(q.read,['msg']);assert.equal(find(q.tree,'Playback').props.paused,false);
+ q.button('Stop').props.onPress();q.render();q.button('Continue').props.onPress();q.render();assert.equal(find(q.tree,'Playback').props.paused,false);
+ find(q.tree,'Playback').props.onFinish();q.render();q.button('Replay').props.onPress();q.render();assert.equal(find(q.tree,'Playback').props.paused,false);
+ q.h.unmount();
 });

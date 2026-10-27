@@ -38,5 +38,8 @@ test('background uses the exact Home floor and active wallpaper with the same de
   const rendered=nodes(draw(selected)).find(n=>n.props?.testID==='plushie-room-wallpaper');
   assert.equal(rendered.props.source,art.burrowArtForItem(selected,'wallpapers').source);
  }
- assert.equal(all.find(n=>n.props?.testID==='plushie-room-wallpaper').props.style.top,0,'wallpaper begins immediately under the header');
+ const wall=all.find(n=>n.props?.testID==='plushie-room-wallpaper').props.style;
+ assert.ok(wall.top<=0,'wallpaper covers the area under the header');
+ assert.ok(wall.top+wall.height>=base.floorY,'wallpaper overlaps the floor seam');
+ assert.equal(wall.height,1200*base.width/900+1,'same width-scaled wallpaper plane as Home, plus one pixel seam overlap');
 });

@@ -20,6 +20,7 @@ export function ToyPortrait({ item, photo, width, height }: {
       top: height - art.height * scale, width: art.width * scale, height: art.height * scale }}>
       <View style={[styles.face, dollFaceRect(art)]}><PlushieFaceMask asset={art} photo={photo} backgroundColor="#FFF6E8"/></View>
       <Image source={art.source} contentFit="fill" style={StyleSheet.absoluteFillObject}/>
+      {photo&&<View style={[styles.face,dollFaceRect(art)]}><PlushieFaceMask asset={art} photo={photo} edgeOnly/></View>}
     </View>
   </View>;
 }

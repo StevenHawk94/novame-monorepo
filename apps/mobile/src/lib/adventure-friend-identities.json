@@ -1,0 +1,17 @@
+[
+  {"id":"adventure_friend_ar","name":"Arlo","gender":"he"},
+  {"id":"adventure_friend_bc","name":"Biscuit","gender":"she"},
+  {"id":"adventure_friend_br","name":"Bruno","gender":"he"},
+  {"id":"adventure_friend_dc","name":"Duchess","gender":"she"},
+  {"id":"adventure_friend_dl","name":"Dillon","gender":"he"},
+  {"id":"adventure_friend_fn","name":"Fenn","gender":"he"},
+  {"id":"adventure_friend_hz","name":"Hazel","gender":"she"},
+  {"id":"adventure_friend_jn","name":"Juniper","gender":"she"},
+  {"id":"adventure_friend_kk","name":"Kiki","gender":"he"},
+  {"id":"adventure_friend_mm","name":"Mr Mole","gender":"he"},
+  {"id":"adventure_friend_os","name":"Oswin","gender":"he"},
+  {"id":"adventure_friend_pk","name":"Pickles","gender":"she"},
+  {"id":"adventure_friend_ru","name":"Rue","gender":"she"},
+  {"id":"adventure_friend_tb","name":"Tobias","gender":"he"},
+  {"id":"adventure_friend_tw","name":"Twig","gender":"she"}
+]

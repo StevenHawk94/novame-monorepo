@@ -62,7 +62,7 @@ test('Android R2 files are atomic, persistent and never decoded while warming', 
   assert.match(keys, /android-r2-p0:file-index:v1/);
 });
 
-test('Android P0 uses one idle lane in the confirmed manifest order', () => {
+test('Android retains one bounded idle lane without staging the retired library', () => {
   const queue = read('apps/mobile/src/lib/download-queue.ts');
   assert.match(queue, /const MAX_CONCURRENCY = IS_ANDROID \? 1 : 2/);
   assert.match(queue, /InteractionManager\.runAfterInteractions/);
@@ -75,23 +75,14 @@ test('Android P0 uses one idle lane in the confirmed manifest order', () => {
   assert.match(queue, /if \(!IS_ANDROID \|\| task\.priority < 0\) notifyAssetReady\(task\.key\)/);
   assert.match(queue, /timeoutMs: IS_ANDROID \? null : undefined/);
 
-  const p0 = queue.slice(queue.indexOf('function stageAndroidP0'), queue.indexOf('function stageScene'));
-  const ordered = [
-    'outfitAssetUrl(outfit.thumb',
-    'sceneAssetUrl(scene.thumb',
-    'outfitAssetUrl(outfit.bunny',
-    'sceneAssetUrl(scene.image',
-    'addOutfitVideoTask(outfit, PRIORITY.outfitAnimation',
-  ].map((needle) => p0.indexOf(needle));
-  assert.ok(ordered.every((index) => index >= 0), `missing P0 stage: ${ordered}`);
-  assert.deepEqual([...ordered].sort((a, b) => a - b), ordered);
+  assert.doesNotMatch(queue, /function stageAndroidP0|function stageOutfit|function stageScene|key: 'catalogs:runtime'/);
 });
 
 test('visible Android assets jump ahead while iOS retains memory-disk warm-up', () => {
   const queue = read('apps/mobile/src/lib/download-queue.ts');
   assert.match(queue, /urgent: IS_ANDROID \? -300 : -100/);
   assert.match(queue, /ensureAndroidR2FileCached\(url\)/);
-  assert.match(queue, /if \(!IS_ANDROID\) \{\s*for \(const outfit of outfits\) stageOutfit/);
+  assert.doesNotMatch(queue, /for \(const outfit of outfits\) stageOutfit/);
   assert.match(queue, /ExpoImage\.prefetch\(url, \{ cachePolicy: 'memory-disk' \}\)/);
 
   const announcements = read('apps/mobile/src/lib/announcements-api.ts');
@@ -110,8 +101,9 @@ test('Android renderers use verified local files without retired scene art; item
   assert.match(item, /const art = remoteArt \?\? warmedArt \?\? bundledArt/);
   assert.match(item, /invalidateAndroidR2CachedFile\(remoteUri\)/);
 
-  const prefetch = read('apps/mobile/src/lib/prefetch.ts');
-  assert.match(prefetch, /if \(Platform\.OS === 'android'\) return/);
+  const prefetch = read('apps/mobile/src/lib/adventure-prefetch.ts');
+  assert.match(prefetch, /result\.gifts\.slice\(0, 2\)/);
+  assert.match(prefetch, /ensurePriorityR2Image\(gift.url, -1\)/);
 });
 
 test('outfit media requires atomic completion markers', () => {
@@ -123,7 +115,7 @@ test('outfit media requires atomic completion markers', () => {
   assert.match(outfits, /if \(Platform\.OS !== 'android'\)[\s\S]*FileSystem\.downloadAsync\([\s\S]*destination/);
 });
 
-test('Android permits only entry icons before first paint, then completes P0 sequentially', async () => {
+test('Android keeps explicit gift downloads sequential without staging retired catalog media', async () => {
   const code = ts.transpileModule(read('apps/mobile/src/lib/download-queue.ts'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
@@ -204,12 +196,12 @@ test('Android permits only entry icons before first paint, then completes P0 seq
   await new Promise(setImmediate);
   assert.deepEqual(downloads, []);
 
-  const entryIcon = 'https://media.novameapp.com/Items/base-icons/v1/entry.webp';
+  const entryIcon = 'https://media.novameapp.com/burrow/adventure-gifts/v1/current.webp';
   await queue.ensurePriorityR2Image(entryIcon, undefined, { allowBeforeAndroidUi: true });
-  assert.deepEqual(downloads, ['Items/base-icons/v1/entry.webp']);
+  assert.deepEqual(downloads, ['burrow/adventure-gifts/v1/current.webp']);
 
   queue.markAndroidP0UiReady();
-  for (let guard = 0; guard < 30 && downloads.length < 9; guard += 1) {
+  for (let guard = 0; guard < 5; guard += 1) {
     await new Promise(setImmediate);
     const next = idle.shift();
     if (next && !next.cancelled) next.fn();
@@ -217,12 +209,7 @@ test('Android permits only entry icons before first paint, then completes P0 seq
   await new Promise(setImmediate);
   assert.equal(maxActive, 1);
   assert.deepEqual(downloads, [
-    'Items/base-icons/v1/entry.webp',
-    'Outfits/o1.webp', 'Outfits/o2.webp',
-    'Maps/s1-Small.webp',
-    'Outfits/o1-Bunny.webp', 'Outfits/o2-Bunny.webp',
-    'Maps/s1.webp',
-    'video:o1', 'video:o2',
+    'burrow/adventure-gifts/v1/current.webp',
   ]);
   queue.resetDownloadQueue();
 });

@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-27",
+  "authorization": {
+    "keepGiftsRemote": true,
+    "refreshGiftArt": true,
+    "retiredLegacyArtMayBeBlank": true,
+    "presentationOnlyProductionUpdate": true,
+    "deployPendingApi": true,
+    "noAppRelease": true,
+    "noAnnouncementOrForcedUpdate": true
+  },
+  "gifts": {
+    "verified": 483,
+    "uploaded": 32,
+    "unchanged": 451,
+    "localBytes": 12473510,
+    "remoteOnly": true,
+    "prefetch": "On journal entry / before Write Freely or Tap Your Day navigation, at most two reserved rewards, before Start Adventure; active arrival gate warms visible result.",
+    "immutableKeys": true,
+    "oldGiftVersionsRetainedForCompatibility": true,
+    "production": {
+      "migration": 278,
+      "gifts": 32,
+      "cdnHashesVerified": 32,
+      "protectedDataAndPermissionsUnchanged": true,
+      "result": [
+        {
+          "protected_tables": 171
+        }
+      ]
+    }
+  },
+  "retirement": {
+    "deletedObjects": 5462,
+    "bytes": 112613082,
+    "oldDiaryIcons": 5439,
+    "namedCharacterAnimations": 22,
+    "oldIconManifest": 1,
+    "oldRootPointers": "Backed up and replaced with valid empty structures",
+    "userRecordsDeleted": 0,
+    "supabaseFilesDeleted": 0,
+    "backup": "outputs/retired-r2-2026-10-27-backup.tar.gz",
+    "backupSha256": "b6d4f4b27ce0660266067298dec5f10316cd2fbd2b80ed4b74b6a9d434d55d29",
+    "verification": {
+      "at": "2026-10-27T13:19:19.240Z",
+      "retiredRemaining": 0,
+      "currentGiftsVerified": 483,
+      "protectedObjectsUnchanged": 583,
+      "objects": 586,
+      "groups": {
+        "Announcements": {
+          "count": 3,
+          "bytes": 429522
+        },
+        "Character Videos-Android": {
+          "count": 1,
+          "bytes": 0
+        },
+        "Character Videos": {
+          "count": 1,
+          "bytes": 0
+        },
+        "burrow": {
+          "count": 579,
+          "bytes": 14673232
+        },
+        "(root)": {
+          "count": 2,
+          "bytes": 293
+        }
+      }
+    }
+  },
+  "deployment": {
+    "id": "dpl_FNs3Na7miuYbV1PnGJceWX15ywev",
+    "url": "https://novame-monorepo-i6uzve7h2-soulsayit.vercel.app",
+    "production": "https://api.soulsayit.com",
+    "state": "READY",
+    "target": "production",
+    "projectId": "prj_M1hAWoSKmvvq5KVVp2z1waeNK2d4",
+    "changedSourceHashes": {
+      "apps/api/src/app/api/friends/add/route.js": "a0fc0c71192274902840984bd87f4634d056cd925e5c0225fb2672023fd12395",
+      "apps/api/src/data/adventure-friends/MM.json": "8b7db9b7e190a16dd2afe1a42d86aa65bf038066265fbdc2e5d24ff938f3e352"
+    },
+    "admin": "No pending Admin source changes; retired preview reads empty R2 manifest, so no redeployment required",
+    "mobile": "Committed source only, requires new native App build; not distributed by Vercel",
+    "smoke": {
+      "at": "2026-10-27T13:16:59.387Z",
+      "catalogRows": 483,
+      "matchingCurrentR2Keys": 483,
+      "checks": [
+        {
+          "path": "/api/app-config",
+          "status": 200
+        },
+        {
+          "path": "/api/friends/add",
+          "status": 401
+        },
+        {
+          "path": "/api/vnext/bootstrap",
+          "status": 401
+        },
+        {
+          "path": "/api/vnext/plushie-touch",
+          "status": 401
+        }
+      ]
+    }
+  },
+  "verification": {
+    "domain": {
+      "passed": 854,
+      "failed": 0
+    },
+    "pendingFixSpecialists": {
+      "passed": 46,
+      "failed": 0
+    },
+    "resourcePipeline": {
+      "passed": 14,
+      "failed": 0
+    },
+    "retirementRuntime": {
+      "passed": 4,
+      "failed": 0,
+      "includedInDomain": true
+    },
+    "isolatedActualSQL": {
+      "checks": 43,
+      "productionWrites": false
+    },
+    "mobileTypes": "passed",
+    "shopCatalog": "passed:555 products,496 active",
+    "diffCheck": "passed",
+    "additionalAssetAudit": {
+      "passed": 10,
+      "failed": 1,
+      "preExisting": true,
+      "reason": "Unreferenced wallpaper-thumbnails/Blossom Meadow.webp already exists at HEAD and has no HEAD runtime reference; outside current exact cleanup list; not hidden or removed."
+    }
+  },
+  "limits": [
+    "No physical-device haptics / Android visual or full two-person transaction testing this R2 release",
+    "Previous native UI/frame QA retained in local outputs; not repeated for this storage-only change",
+    "Old installed App caches may retain retired artwork; current client stops old catalog staging only after next native release",
+    "Large local screenshots and recoverable backup excluded from source commit; preserved on disk"
+  ]
+}

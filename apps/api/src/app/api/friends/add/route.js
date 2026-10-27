@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { verifyToken } from '@/lib/auth-guard'
 import { createClient } from '@supabase/supabase-js'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
@@ -100,11 +100,23 @@ export async function POST(request) {
       return NextResponse.json({ error: result.error }, { status: 409 })
     }
 
-    await autoGrantDuoBothWays(supabase, userId, target.id)
+    // Pairing is already committed. Supplementary entitlement reconciliation
+    // must not turn that receipt into a timeout/failure in the success sheet.
+    after(async () => {
+      try { await autoGrantDuoBothWays(supabase, userId, target.id) }
+      catch (error) { console.error('[friends/add] entitlement reconciliation:', error?.message) }
+    })
+    let coordination = null
+    try {
+      const snapshot = await supabase.rpc('adventure_team_snapshot_v1', { p_user: userId })
+      if (!snapshot.error && snapshot.data?.userId === userId && snapshot.data.partnerId === target.id)
+        coordination = snapshot.data
+    } catch { /* Old servers can still return the confirmed pairing receipt. */ }
     return NextResponse.json({
       success: true,
       pairedWith: target.id,
       pairedName: target.display_name || 'Partner',
+      ...(coordination ? { adventureTeam: coordination, pairVersion: coordination.pairVersion } : {}),
       partner: {
         userId: target.id,
         displayName: target.display_name || 'Partner',

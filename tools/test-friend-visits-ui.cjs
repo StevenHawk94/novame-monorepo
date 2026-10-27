@@ -43,16 +43,19 @@ test('prepared visitor advances one line at a time, answers instantly, survives 
  assert.equal(h.commands.filter(x=>Array.isArray(x)&&x[0]==='answer').length,1);
  assert.doesNotMatch(copy(h.render()),/Done/);h.press('Tap to continue');assert.ok(h.commands.includes('back'));assert.equal(h.row().status,'pending');
 });
-test('completed visit reentry shows the fixed empty-room copy, never friend waiting dialogue or past picks',()=>{
+test('completed visit reentry shows the server waiting copy and reply pose, never an empty room or past picks',()=>{
  const h=harness();h.data.friendVisit.myCompleted=true;h.data.friendVisit.waitingCopy='Waiting for Sam';
- const tree=h.render();assert.ok(nodes(tree).some(n=>n.type==='Text'&&copy(n)==="We'll let you know when a friend stops by."));
- assert.doesNotMatch(copy(tree),/Waiting for Sam|Guess|The room is quiet/);
+ const tree=h.render();assert.match(copy(tree),/Waiting for Sam/);
+ assert.doesNotMatch(copy(tree),/No visitors|Guess|Talk to/);
+ const stage=nodes(tree).find(n=>n.type==='EncounterLayout');assert.equal(stage.props.visitMode,'dialogue');assert.equal(stage.props.answered,true);
+ h.data.friendVisit.partnerCompleted=true;assert.match(copy(h.render()),/No visitors right now/);
+ h.h.unmount();
 });
-test('welcome and quiet states match centered reference hierarchy, while dialogue has no permanent name',()=>{
+test('only the visitor welcome centres badge/title/body/action; dialogue stays left aligned and empty stays centred',()=>{
  const h=harness();let tree=nodes(h.render());
- assert.match(copy(h.render()),/VISITOR Mr Mole is here They have a little story to share/);
+ assert.match(copy(h.render()),/VISITOR Mr Mole is here He has a little story to share/);
  assert.equal(tree.find(n=>n.type==='EncounterLayout').props.visitMode,'invite');
- const title=tree.find(n=>n.type==='Text'&&copy(n)==='Mr Mole is here');assert.equal(title.props.style.textAlign,'center');assert.equal(title.props.style.fontSize,27);
+ const title=tree.find(n=>n.type==='Text'&&copy(n)==='Mr Mole is here');assert.equal(Object.assign({},...title.props.style).textAlign,'center');assert.equal(Object.assign({},...title.props.style).fontSize,26);
  const talk=tree.find(n=>n.type==='Button'&&copy(n).includes('Talk to'));
  assert.equal(talk.props.style({pressed:false})[0].backgroundColor,'#6B3B24');
  const header=tree.find(n=>n.props?.accessibilityRole==='header');assert.equal(copy(header),"Friend's Room");
@@ -60,12 +63,18 @@ test('welcome and quiet states match centered reference hierarchy, while dialogu
  const background=tree.find(n=>n.type==='Image');assert.equal(background.props.contentFit,'cover');assert.equal(background.props.style[1].transform[0].translateY,-926*.12);
  h.press('Talk to');tree=nodes(h.render());assert.equal(tree.find(n=>n.type==='EncounterLayout').props.visitMode,'dialogue');
  assert.doesNotMatch(copy(h.render()),/Mr Mole/);
- const block=tree.find(n=>n.props?.testID==='friend-dialogue-block');assert.equal(block.props.style.width,'80%');assert.equal(block.props.style.alignSelf,'center');
- const text=tree.find(n=>n.type==='Text'&&copy(n)==='Scene');assert.equal(text.props.style.textAlign,'left');assert.equal(text.props.style.fontSize,22);
+ const block=tree.find(n=>n.props?.testID==='friend-dialogue-block');assert.equal(Object.assign({},...block.props.style).width,300);assert.equal(Object.assign({},...block.props.style).alignSelf,'center');
+ const text=tree.find(n=>n.type==='Text'&&copy(n)==='Scene');assert.equal(text.props.style.textAlign,'left');assert.equal(text.props.style.fontSize,18);
  const empty=harness();empty.data.friendVisit=null;tree=nodes(empty.render());
  assert.equal(tree.find(n=>n.type==='EncounterLayout').props.visitMode,'quiet');assert.ok(tree.some(n=>n.type==='EmptyRoomIcon'));
  assert.match(copy(empty.render()),/No visitors right now/);assert.doesNotMatch(copy(empty.render()),/Mr Mole/);
  assert.ok(nodes(empty.render()).some(n=>n.type==='Text'&&copy(n)==="We'll let you know when a friend stops by."));
+ for(const label of ['No visitors right now',"We'll let you know when a friend stops by."]){
+  const text=tree.find(n=>n.type==='Text'&&copy(n)===label);assert.equal(text.props.style.textAlign,'center');
+ }
+ const iconWrapper=tree.find(n=>n.type==='View'&&n.props.children?.type==='EmptyRoomIcon');assert.equal(iconWrapper.props.style.alignItems,'center');
+ const action=tree.find(n=>n.type==='Text'&&copy(n)==='Back to Burrow');assert.equal(action.props.style[0].textAlign,'center');
+ assert.equal(tree.find(n=>n.props?.testID==='friend-dialogue-block').props.style[1].width,300,'centred copy keeps the same padded reading column');
  const legacy=fs.readFileSync('apps/mobile/src/components/burrow/friend-visit-card.tsx','utf8');
  assert.ok(legacy.includes("We'll let you know when a friend stops by."));assert.doesNotMatch(legacy,/The room is quiet/);
 });
@@ -113,7 +122,8 @@ test('duplicate outgoing native taps never skip an unread line or pop two naviga
 });
 test('expiry requests authoritative refresh; stale active conversation clears, local receipt remains',async()=>{
  const h=harness();h.data.friendVisit.expiresAt='2026-10-14T00:00:01Z';h.render();h.time.advance(1000);await flush();assert.ok(h.commands.includes('refresh'));
- h.press('Talk to');await flush();h.data.friendVisit=null;h.render();assert.ok(!copy(h.render()).includes('Guess your partner'));
+ assert.match(copy(h.render()),/No visitors right now/);assert.doesNotMatch(copy(h.render()),/Talk to/);
+ h.data.friendVisit=null;h.render();assert.ok(!copy(h.render()).includes('Guess your partner'));
 });
 test('v2 pending red dot cannot be cleared by merely entering; per-viewer completion/expiry removes it',()=>{
  const at='2026-10-14T00:00:00Z';

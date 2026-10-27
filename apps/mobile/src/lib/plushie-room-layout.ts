@@ -17,3 +17,14 @@ export function plushieFloorBox(width:number,height:number,seam:number,asset:Bur
   return {seam:top,left:(width-(rightBound-leftBound)*scale)/2-leftBound*scale,
     top:top-topBound*scale,width:asset.width*scale,height:asset.height*scale};
 }
+
+/** Home's wallpaper is a 900×1200 plane ending at its floor seam. Translate
+ * that same width-based scale here, with a pixel overlap instead of cover's
+ * viewport-dependent crop or exposed transparent source margins. */
+export function plushieWallpaperBox(width:number,seam:number,asset:BurrowArtAsset){
+  const scale=width/900,height=1200*scale;
+  const [l,t,r,b]=asset.bounds;
+  const ratio=Math.max(width/Math.max(1,r-l),height/Math.max(1,b-t));
+  return {left:(width-(r-l)*ratio)/2-l*ratio,top:seam-height-t*ratio,
+    width:asset.width*ratio,height:asset.height*ratio+1};
+}

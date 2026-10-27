@@ -26,7 +26,9 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
   const nudge=useAdventureNudge(team?.id);
   const plus=team?.plus??data.hasPlus,couple=!!team?.followerId;
   const mode=adventureModeCopy(plus,couple,data.partner?.display_name||'your partner');
-  const canInvite=!!coordination?.nudgeAvailable;
+  // Unknown coordination is not an unpaired/Solo fact. Entry already knows
+  // the confirmed partner while the personal Start receipt reconciles.
+  const canInvite=!!data.partner&&(!coordination||coordination.nudgeAvailable);
   const footerCopy=!couple&&!canInvite
     ?`${plus?'You’re enjoying 2x adventure speed.':'Join Plus to finish 2x faster.'}\n${!data.partner?'Connect a partner to team up on a future adventure.':'Each bunny keeps their own adventure rewards.'}`
     :mode.copy;
@@ -67,9 +69,9 @@ export function AdventureProgressScreen({data,now,onHome}:{data:MajorUpdateBoots
     <View style={{position:'absolute',left:28*scale,right:28*scale,bottom:layout.footerBottom,width:undefined}}>
       {couple?<View accessibilityRole="text" style={[s.mode,{height:layout.buttonHeight}]}><Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{mode.label}</Text></View>
        :<Pressable accessibilityRole="button" disabled={!coordination?.nudgeAvailable||pending||remaining<=600000||nudge==='queued'||nudge==='sent'||!!team?.nudged}
-        onPress={()=>{try{if(team)queueAdventureNudge(team.id);}catch{showBurrowToast('Could not save the invitation. Please try again.');}}}
+        onPress={()=>{try{if(team){queueAdventureNudge(team.id);showBurrowToast('Reminder submitted ✓');}}catch{showBurrowToast('Could not save the invitation. Please try again.');}}}
         style={({pressed})=>[s.mode,{height:layout.buttonHeight},pressed&&s.pressed]}>
-        <Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{nudge==='queued'?'Invitation queued':nudge==='sent'||team?.nudged?'Nudged ✓':!data.partner?'Solo Adventure':remaining<=600000?'Your bunny is almost back':!coordination?.nudgeAvailable?'Solo Adventure':mode.label}</Text>
+        <Text style={[s.homeText,{fontSize:Math.max(18,23*scale)}]}>{nudge==='queued'||nudge==='sent'||team?.nudged?'Reminder submitted ✓':!data.partner?'Solo Adventure':remaining<=600000?'Your bunny is almost back':coordination&&!coordination.nudgeAvailable?'Solo Adventure':mode.label}</Text>
        </Pressable>}
       <Text style={[s.modeCopy,{fontSize:Math.max(12,14*scale)}]}>{footerCopy}</Text>
     </View>

@@ -90,6 +90,7 @@ export function RoomSceneArt({ slots, away, shared = false, sleeping, photos = [
       :<View pointerEvents="none" style={dollBox}>
         <View style={[styles.dollPhoto, dollFaceRect(dollArt)]}><PlushieFaceMask asset={dollArt} photo={doll} placeholder/></View>
         <Image source={dollArt.source} contentFit="fill" style={styles.fill} />
+        {doll&&<View style={[styles.dollPhoto,dollFaceRect(dollArt)]}><PlushieFaceMask asset={dollArt} photo={doll} edgeOnly/></View>}
       </View>)}
     <BunnyActor outfit={slots.outfit} ownerId={ownerId} pose={shared && sleeping?.mine ? 'sleeping' : away ? 'away' : 'idle'} />
     {shared && <BunnyActor partner outfit={partnerOutfit} ownerId={partnerOwnerId} pose={sleeping?.partner ? 'sleeping' : 'idle'} />}

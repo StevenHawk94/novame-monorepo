@@ -29,6 +29,18 @@ test('geometry is only applied to the matching costume canvas and photo bounds',
  assert.equal(lib.plushieFaceMask({...toy,photoBounds:[0,0,100,100]}),null);
  assert.equal(lib.plushieFaceMask({...toy,name:'Unknown'}),null);
 });
+test('white seam overlay touches only near-white pixels connected to the face; all other costume bytes/contours remain original',async()=>{
+ let pixels=0;
+ for(const toy of toys){
+  const {data,info}=await sharp(toy.source).ensureAlpha().raw().toBuffer({resolveWithObject:true}),shape=faceMask(data,info.width,info.height,toy.photoBounds);
+  assert.equal(masks[toy.name].edgePath,shape.edgePath);
+  for(let p=0;p<shape.fringe.length;p++)if(shape.fringe[p]){
+   const rgb=[data[p*4],data[p*4+1],data[p*4+2]];assert.ok(Math.min(...rgb)>=235);assert.ok(Math.max(...rgb)-Math.min(...rgb)<=20);
+   assert.ok(data[p*4+3]>0);pixels++;
+  }
+ }
+ assert.ok(pixels>0,'real source white fringe is covered, not a no-op mask');
+});
 test('native mask clips only SVG primitives, keeps shared photo resolver and fingertip-free camera placeholder',()=>{
  let seq=0;const jsx=(type,props)=>({type,props});const {PlushieFaceMask}=load('apps/mobile/src/components/burrow/plushie-face-mask.tsx',{
   react:{useId:()=>':id'+(++seq)+':'},'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{View:'View'},
@@ -48,7 +60,7 @@ test('native mask clips only SVG primitives, keeps shared photo resolver and fin
  assert.equal(crop.props.x,-5);assert.equal(crop.props.height,140);assert.equal(crop.props.href.uri,'draft');
  assert.notEqual(id,b.props.children[0].props.children.props.id);
 });
-test('Skia photo composition intersects the face mask and restores clipping before original costume',()=>{
+test('Skia restores the original face clip before costume, then covers only the separately clipped white seam',()=>{
  const ts=require('typescript'),vm=require('node:vm'),source=fs.readFileSync('apps/mobile/src/components/burrow/localized-toy.tsx','utf8');
  const ast=ts.createSourceFile('toy.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
  const fn=ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text==='composeTexture').getText(ast),calls=[];
@@ -57,5 +69,6 @@ test('Skia photo composition intersects the face mask and restores clipping befo
   Skia:{Color:x=>x,Paint:()=>({}),Path:{MakeFromSVGString:d=>({offset:(x,y)=>calls.push(['offset',x,y])})},Surface:{Make:()=>({getCanvas:()=>canvas,flush(){},makeImageSnapshot:()=>image})}}};
  vm.runInNewContext(ts.transpileModule(fn+';exports.compose=composeTexture;',{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context);
  const asset=toys.find(t=>t.name==='Super Hero');assert.equal(context.exports.compose({}, {width:()=>512,height:()=>512},asset,100),image);
- assert.deepEqual(calls,['save',['offset',255,191],['clip',1],'face','restore','costume']);
+ assert.deepEqual(calls,['save',['offset',255,191],['clip',1],'face','restore','costume',
+  'save',['offset',255,191],['clip',1],'face','restore']);
 });

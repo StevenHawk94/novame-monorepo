@@ -64,34 +64,22 @@ test('remote base icons are demand-driven and visible tiles download immediately
   assert.doesNotMatch(add, /matchItems|remote-items/);
 });
 
-test('entry icons are bounded, prewarmed under the cover, and never render blank', () => {
-  const queue = read('apps/mobile/src/lib/download-queue.ts');
-  const prewarm = read('apps/mobile/src/lib/item-icon-prewarm.ts');
-  const prefetch = read('apps/mobile/src/lib/prefetch.ts');
-  const home = read('apps/mobile/app/(main)/(tabs)/index.tsx');
-  const friends = read('apps/mobile/app/(main)/(tabs)/friends.tsx');
-  const sprite = read('apps/mobile/src/components/ui/item-sprite.tsx');
-
-  assert.match(queue, /allowBeforeAndroidUi\?: boolean/);
-  assert.match(queue, /requiresAndroidUi: IS_ANDROID && !allowBeforeAndroidUi/);
-  assert.match(prewarm, /A deadline releases the caller only/);
-  assert.match(prefetch, /const MEMORIES_FIRST_VIEW_ICON_LIMIT = 18/);
-  assert.match(prefetch, /const PAIRED_FIRST_VIEW_CARD_LIMIT = 2/);
-  assert.match(prefetch, /const PAIRED_FIRST_VIEW_ICON_LIMIT = 18/);
-  assert.match(home, /const HOME_BUBBLE_ICON_WAIT_MS = 1_200/);
-  assert.match(home, /await homeIconsReady/);
-  assert.ok(home.indexOf('await homeIconsReady') < home.indexOf("markHomeEntryAsset('home-data'"));
-  assert.match(friends, /prewarmPairedFeedItemIcons\(nextFeed/);
-  assert.match(sprite, /item\?\.emoji \?\? '✨'/);
+test('current gift prefetch remains bounded and Tap icons stay bundled after diary art retirement', () => {
+  const prefetch=read('apps/mobile/src/lib/adventure-prefetch.ts');
+  assert.match(prefetch,/result\.gifts\.slice\(0, 2\)/);
+  assert.match(prefetch,/ensurePriorityR2Image\(gift.url, -1\)/);
+  assert.match(read('apps/mobile/src/lib/base-item-icons.ts'),/return ''/);
+  const remote=read('apps/mobile/src/lib/remote-items.ts');
+  const body=remote.slice(remote.indexOf('export function remoteImageUri'),remote.indexOf('let displayManifest'));
+  assert.doesNotMatch(body,/remoteItemAssetUrl\(/);
+  assert.match(body,/return ''/);
 });
 
-test('content version has one cold-start request and one bounded failure retry', () => {
+test('retired catalog probe performs no network work; foreground queue remains shared', () => {
   const contentVersion = read('apps/mobile/src/lib/content-version.ts');
   const layout = read('apps/mobile/app/_layout.tsx');
-  assert.match(contentVersion, /const FAILURE_RETRY_DELAY_MS = 5_000/);
-  assert.match(contentVersion, /if \(allowAutomaticRetry && !retryTimer\)/);
-  assert.match(contentVersion, /runContentVersionCheck\(false\)/);
-  assert.match(contentVersion, /if \(refreshIncomplete\)/);
+  assert.doesNotMatch(contentVersion, /\bfetch\(|setTimeout\(|stageLatestManifest\(/);
+  assert.match(contentVersion, /return Promise.resolve\(\)/);
   assert.match(layout, /const shouldCheckContentVersion = !isInitialPass && becameActive/);
   assert.match(layout, /\.\.\.\(shouldCheckContentVersion/);
 });

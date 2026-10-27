@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {useAppViewport as useWindowDimensions} from '@/lib/app-viewport';
+import { StyleSheet, View } from 'react-native';
 import { claimAdventureResult, completeFriendInteraction, type MajorUpdateBootstrap } from '@/lib/app-major-update-api';
 import { confirmBurrowAdventureClaimLocally, confirmBurrowAdventureItemLocally, runBurrowAction } from '@/lib/burrow-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +8,9 @@ import { AdventureEncounterLayout } from './adventure-encounter-layout';
 import { adventureFriendPresentation, type AdventureFriendPresentation } from '@/lib/adventure-friend-presentation';
 import { AdventureStageTransition } from './adventure-stage-transition';
 import { AdventureRewardScreen } from './adventure-reward-screen';
-import { AdventureReveal } from './adventure-reveal';
 import { FriendDialogue } from './friend-dialogue';
+import {FriendTextPanel} from './friend-text-panel';
+import type {FriendTextPage} from '@/lib/friend-text-layout';
 
 /** Live catalogue edits cannot alter a dialogue or gift already reserved by the server. */
 export function AdventureEncounterCard({ data, onComplete, presentation }: {
@@ -22,8 +22,7 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
   const savedChoice = dialogue?.choices.find(choice => choice.id === pendingChoice);
   const [meeting] = useState(() => presentation ?? adventureFriendPresentation(data));
   const [invited, setInvited] = useState(!meeting.isNewFriend || !!meta.dialogueCompleted || !!savedChoice);
-  const { height } = useWindowDimensions(), insets = useSafeAreaInsets();
-  const compact = height < 730;
+  const insets = useSafeAreaInsets();
   const [line, setLine] = useState(0), [reaction, setReaction] = useState<string[] | null>(meta.dialogueCompleted ? meta.reaction ?? [] : savedChoice?.reaction ?? null);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
   const alive = useRef(true), lock = useRef(false), finishLock = useRef(false);
@@ -36,6 +35,11 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
   const giftReady = !dialogue || (reaction !== null && line >= replies.length);
   const friendName = meeting.friendName;
   const gift = meta.giftSnapshot;
+  const invitePage={title:'Let’s be friends',body:meeting.introduction,action:meeting.talkLabel};
+  const choicePage={body:introduction.at(-1)?.endsWith('?')?introduction.at(-1):'What would you say?',options:dialogue?.choices.map(c=>c.label)};
+  const allPages:FriendTextPage[]=[invitePage,choicePage,...introduction.map(body=>({body,hint:true})),
+    ...(dialogue?.choices.flatMap(c=>c.reaction.map(body=>({body,hint:true})))??[]),...replies.map(body=>({body,hint:true})),...(dialogue?.outro?[{body:dialogue.outro,hint:true}]:[])];
+  const pages=[...new Map(allPages.map(page=>[JSON.stringify(page),page])).values()];
   async function answer(choiceId: string) {
     if (lock.current) return;
     if (meta.encounterV2) {
@@ -87,31 +91,17 @@ export function AdventureEncounterCard({ data, onComplete, presentation }: {
       friendName={friendName} busy={busy} error={error} onClaim={claim}/>
   </AdventureStageTransition>;
   return <View style={[s.root, { paddingTop: insets.top + 42, paddingBottom: insets.bottom + 16 }]}>
-    <AdventureEncounterLayout friendName={friendName} heading={meeting.heading} answered={reaction !== null}>
+    <AdventureEncounterLayout friendName={friendName} heading={meeting.heading} answered={reaction !== null} pages={pages}>
       <AdventureStageTransition compact stageKey={!invited ? 'invite' : choosing ? 'choices'
         : `${reaction === null ? 'intro' : 'reply'}:${giftReady ? Math.max(0, lines.length-1) : line}`}>
-      {!invited && dialogue ? <ScrollView bounces={false} style={s.scroll} contentContainerStyle={[s.invitation, compact && s.compact]}>
-        <AdventureReveal><Text style={s.inviteHeading}>Let’s be friend</Text></AdventureReveal>
-        <AdventureReveal delay={180}><Text style={[s.copy, s.center]}>{meeting.introduction}</Text></AdventureReveal>
-        <AdventureReveal delay={300} style={{width:"100%",alignItems:"center"}}><Pressable accessibilityRole="button" onPress={() => setInvited(true)} style={s.talk}><Text style={s.talkText}>{meeting.talkLabel}</Text></Pressable></AdventureReveal>
-      </ScrollView> : choosing ? <ScrollView bounces={false} style={s.scroll} contentContainerStyle={[s.choices, compact && s.compact]}>
-        <AdventureReveal><Text style={s.copy}>{introduction.at(-1)?.endsWith('?') ? introduction.at(-1) : 'What would you say?'}</Text></AdventureReveal>
-        {dialogue!.choices.map((choice, index) => <AdventureReveal key={choice.id} delay={180 + index * 50}><Pressable accessibilityRole="button" key={choice.id} disabled={busy}
-          accessibilityState={{ disabled: busy }} onPress={() => void answer(choice.id)}
-          style={({ pressed }) => [s.choice, pressed && s.pressed, busy && { opacity: .6 }]}><Text style={s.choiceText}>{choice.label}</Text></Pressable></AdventureReveal>)}
-        {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
-      </ScrollView> : <FriendDialogue key={`${reaction === null ? 'intro' : 'reply'}:${line}`} disabled={busy || giftReady}
+      {!invited && dialogue ? <FriendTextPanel page={{...invitePage,welcome:'adventure'}} onAction={()=>setInvited(true)}/>
+        : choosing ? <FriendTextPanel page={choicePage} disabled={busy} error={error} onChoice={index=>void answer(dialogue!.choices[index].id)}/>
+        : <FriendDialogue key={`${reaction === null ? 'intro' : 'reply'}:${line}`} disabled={busy || giftReady}
         onPress={() => setLine(x => x + 1)}>{giftReady ? lines.at(-1) ?? 'Your bunny brought a little discovery home.' : lines[line]}</FriendDialogue>}
       </AdventureStageTransition>
     </AdventureEncounterLayout>
   </View>;
 }
 const s = StyleSheet.create({
-  root:{flex:1},scroll:{flex:1},
-  invitation:{padding:20,gap:20,flexGrow:1,justifyContent:'space-evenly',alignItems:'center'},
-  choices:{padding:20,gap:10,flexGrow:1,justifyContent:'center'},compact:{padding:16,gap:12},inviteHeading:{fontSize:29,lineHeight:36,fontWeight:'800',color:'#542B14',textAlign:'center'},
-  copy:{fontSize:22,lineHeight:31,fontWeight:'700',color:'#4F2C19',width:'80%',alignSelf:'center',textAlign:'left'},center:{textAlign:'center'},
-  choice:{paddingHorizontal:14,paddingVertical:10,minHeight:48,justifyContent:'center',borderRadius:17,borderWidth:1.5,borderColor:'#C8663A',backgroundColor:'#F8E6D9'},choiceText:{color:'#1E1712',fontWeight:'700',fontSize:19,lineHeight:25,textAlign:'center'},
-  talk:{padding:16,minHeight:52,borderRadius:28,backgroundColor:'#C45637',borderBottomWidth:4,borderBottomColor:'#D99B66',width:'85%'},talkText:{fontSize:20,fontWeight:'800',color:'#FFF',textAlign:'center'},
-  error:{color:'#A13B24',fontSize:15},pressed:{transform:[{translateY:3}],opacity:.85},
+  root:{flex:1},
 });

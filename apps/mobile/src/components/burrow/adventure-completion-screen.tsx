@@ -96,7 +96,7 @@ export function AdventureCompletionScreen({ data }: { data: MajorUpdateBootstrap
         : v2 ? <AdventureEncounterCard data={data} presentation={meeting} onComplete={finish}/>
         : <AdventureEncounterLayout friendName={meeting.friendName} heading={meeting.heading}>
           {finished ? <ScrollView bounces={false} contentContainerStyle={s.panel}><Text style={s.copy}>{finished}</Text><Pressable accessibilityRole="button" style={s.button} onPress={finish}><Text style={s.buttonText}>Back to Home</Text></Pressable></ScrollView>
-            : !legacyInvited ? <ScrollView bounces={false} contentContainerStyle={s.panel}><Text style={s.invite}>Let’s be friend</Text><Text style={s.copy}>{meeting.introduction}</Text><Pressable accessibilityRole="button" style={s.button} onPress={() => setLegacyInvited(true)}><Text style={s.buttonText}>{meeting.talkLabel}</Text></Pressable></ScrollView>
+            : !legacyInvited ? <ScrollView bounces={false} contentContainerStyle={s.panel}><Text style={s.invite}>Let’s be friends</Text><Text style={s.copy}>{meeting.introduction}</Text><Pressable accessibilityRole="button" style={s.button} onPress={() => setLegacyInvited(true)}><Text style={s.buttonText}>{meeting.talkLabel}</Text></Pressable></ScrollView>
             : <ScrollView bounces={false} contentContainerStyle={s.legacyDialogue}><AdventureFriendCard embedded data={data} busy={busy} onComplete={feedback => { confirmBurrowAdventureClaimLocally(adventure.id); setFinished(feedback); }}/></ScrollView>}
         </AdventureEncounterLayout>}
       {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}

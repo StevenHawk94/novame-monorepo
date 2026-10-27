@@ -24,7 +24,7 @@ test('all 30 poses overlap exactly 15% of actual visible height across small/lar
       near(l.image.width, l.image.height);
     }
     const a = model.adventureEncounterLayout(width, height, geometry), b = model.adventureEncounterLayout(width, height, geometry, true);
-    near(a.image.width, b.image.width); near(a.image.left, b.image.left); near(a.panelTop, b.panelTop);
+    near(a.visibleHeight,b.visibleHeight); near(a.bodyCenterX,b.bodyCenterX); near(a.panelTop, b.panelTop);
   }
 });
 
@@ -39,14 +39,16 @@ test('panel scales with screen height rather than current invitation/text/choice
   assert.match(source, /<FriendDialogue/, 'both friend flows share one centered prose/hint group');
 });
 
-test('each pose is reduced by 30% while retaining its shared anchor and 15% panel overlap',()=>{
+test('the entire cast has equal visible height and torso centring without cropping arms or tails',()=>{
   assert.equal(model.FRIEND_SIZE_SCALE,.7);
-  const geometry=bounds['Mr Mole'],w=390,h=700;
-  const result=model.adventureEncounterLayout(w,h,geometry);
-  const left=Math.min(geometry[0][0],geometry[1][0]),right=Math.max(geometry[0][2],geometry[1][2]);
-  const tallest=Math.max(...geometry.map(p=>p[3]-p[1]));
-  const previousScale=Math.min(w*.86/(right-left),(result.panelTop-result.headingBottom)/(.85*tallest));
-  near(result.image.width,768*previousScale*.7);
+  const anchors=require('../apps/mobile/src/lib/adventure-friend-body-anchors.json');
+  for(const width of [320,390,430])for(const height of [380,520,700,900]){
+    const target=model.adventureEncounterLayout(width,height,bounds.Arlo).visibleHeight;
+    for(const[name,geometry]of Object.entries(bounds))for(const answered of [false,true]){
+      const l=model.adventureEncounterLayout(width,height,geometry,answered),scale=l.image.width/768;
+      near(l.visibleHeight,target);near(l.image.left+anchors[name][answered?1:0]*scale,width/2);
+    }
+  }
 });
 
 test('measured retained stage keeps title above the image and panel in front, with no delayed image transition', () => {
@@ -60,15 +62,19 @@ test('measured retained stage keeps title above the image and panel in front, wi
     '@/lib/burrow-ui-assets': { burrowFriendArt: (_, answered) => answered ? 'pose-2' : 'pose-1', burrowFriendArtGeometry: () => bounds['Mr Mole'] },
     './burrow-image': { Image: 'Image' },
   });
-  const render = answered => h.render(() => AdventureEncounterLayout({ friendName: 'Mr Mole', heading: 'You met a new friend!', answered, children: 'dialogue' }));
+  const render = (answered,heading='You met a new friend!') => h.render(() => AdventureEncounterLayout({ friendName: 'Mr Mole', heading, answered, children: 'dialogue' }));
   let tree = render(false), image = nodes(tree).find(n => n.type === 'Image');
   assert.equal(image.props.source, 'pose-1'); assert.equal(image.props.transition, 0);
   assert.equal(tree.props.children[1].props.children.props.children, 'You met a new friend!');
+  assert.equal(tree.props.children[1].props.children.props.style.textAlign,'center');
+  const returning=render(false,'You met Mr Mole again!');
+  assert.equal(returning.props.children[1].props.children.props.style.textAlign,'center');
+  const headingBox=style(returning.props.children[1].props.style);near(headingBox.left+headingBox.width/2,390/2);
   const firstHeight = style(tree.props.children[2].props.style).height;
   tree.props.onLayout({ nativeEvent: { layout: { width: 320, height: 500 } } }); tree = render(false);
   const panel = style(tree.props.children[2].props.style); near(panel.height, 220); assert.equal(panel.bottom, 0);
   assert.equal(tree.props.children[0].props.pointerEvents, 'none'); assert.equal(tree.props.children[1].type, 'Reveal');
-  assert.equal(tree.props.children[2].props.children, 'dialogue');
+  assert.equal(tree.props.children[2].props.children.props.children, 'dialogue');
   tree = render(true); image = nodes(tree).filter(n => n.type === 'Image').at(-1);
   assert.equal(image.props.source, 'pose-2'); near(style(tree.props.children[2].props.style).height, panel.height);
   assert.notEqual(firstHeight, panel.height); h.unmount();
@@ -103,8 +109,8 @@ test('first visitor tap and every dialogue phase keep both actor poses at exactl
    assert.deepEqual(invite.image,dialogue.image);assert.equal(invite.headingBottom,dialogue.headingBottom);
    assert.equal(invite.actorPanelTop,dialogue.actorPanelTop);
   }
-  near(model.adventureEncounterLayout(width,height,geometry,false,'visit-invite').image.width,
-   model.adventureEncounterLayout(width,height,geometry,true,'dialogue').image.width);
+  near(model.adventureEncounterLayout(width,height,geometry,false,'visit-invite').visibleHeight,
+   model.adventureEncounterLayout(width,height,geometry,true,'dialogue').visibleHeight);
  }
 });
 

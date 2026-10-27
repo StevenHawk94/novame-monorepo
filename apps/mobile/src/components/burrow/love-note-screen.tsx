@@ -12,11 +12,12 @@ import {enqueueLoveNote,recoverLoveNote} from '@/lib/burrow-store';
 import {sessionEpoch} from '@/lib/session-lifecycle';
 import {dismissToRetainedTab} from '@/lib/retained-tab-navigation';
 import {BurrowBackButton} from './burrow-back-button';
+import {usePreventRemove} from '@react-navigation/native';
 
-function Header({history=false,canOpenHistory=false}:{history?:boolean;canOpenHistory?:boolean}){
+function Header({history=false,canOpenHistory=false,onBack}:{history?:boolean;canOpenHistory?:boolean;onBack?:()=>void}){
   const insets=useSafeAreaInsets();
   return <View style={[styles.header,{paddingTop:insets.top+10}]}>
-    <BurrowBackButton onPress={()=>router.back()}/>
+    <BurrowBackButton onPress={onBack??(()=>router.back())}/>
     <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={.8} style={styles.headerTitle}>{history?'Love Note History':'Love Note'}</Text>
     {canOpenHistory?<Pressable accessibilityRole="button" accessibilityLabel="Love Note History" onPress={()=>router.push('/(main)/love-note-history')} style={styles.headerAction}><MaterialIcons name="history" size={32} color="#4C2B22"/></Pressable>:<View style={styles.headerAction}/>}
   </View>;
@@ -40,6 +41,10 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
   // reading page with the composer; arrivals must not overwrite a typed draft.
   const [selection,setSelection]=useState<string|null|undefined>(()=>noteId??(compose?null:oldestUnreadLoveNote(notes.rows,unread,notes.loaded&&!notes.hasMore)?.id??(unread.length?undefined:null)));
   const note=notes.rows.find(row=>row.id===selection);
+  const [closingRead,setClosingRead]=useState(false);
+  // Native swipe/back and the visible close share the same read-to-History exit.
+  usePreventRemove(!compose&&!noteId&&selection!==null&&!closingRead,()=>setClosingRead(true));
+  useEffect(()=>{if(closingRead)router.replace('/(main)/love-note-history');},[closingRead]);
   const draftScope=`${data.profile.id}:${data.pairVersion??'solo'}`;
   const [body,setBody]=useState(()=>readBurrowTextDraft(draftScope,'letter')?.body??recoverLoveNote(data)?.body??'');
   const [sent,setSent]=useState(false),[error,setError]=useState<string|null>(null);
@@ -103,7 +108,7 @@ export function LoveNoteScreen({data,compose=false,noteId}:{data:MajorUpdateBoot
     <View style={styles.root}>
     {/* Stable native editor parent; inline feedback never adds a touch-blocking overlay. */}
     <View style={styles.root} collapsable={false}>
-    <Header canOpenHistory={selection===null}/>
+    <Header canOpenHistory={selection===null} onBack={!compose&&!noteId&&selection!==null?()=>setClosingRead(true):undefined}/>
     {selection!==null?<View style={[styles.readPage,{paddingBottom:Math.max(insets.bottom,20)}]}>
       {note?<>
         <View style={styles.from}><Text style={styles.fromTitle}>{received?'From':'To'} {name} ❤️</Text><Text style={styles.date}>{loveNoteDate(note.created_at,data.profile.timezone_name,true)}</Text></View>

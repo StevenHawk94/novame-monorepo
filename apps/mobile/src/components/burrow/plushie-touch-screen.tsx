@@ -16,7 +16,7 @@ import {createTouchRecorder,type TouchRecordingCheckpoint} from '@/lib/plushie-t
 import {usePageBackGesture} from '@/lib/use-page-back-gesture';
 import {showBurrowToast} from '@/lib/burrow-toast';
 import {getInteractionPreferences,setInteractionPreference} from '@/lib/interaction-preferences';
-import {touchCapabilities,touchInitialQuality,testTouchVibration,touchVibrationVerified,confirmTouchVibration,type TouchCapabilities} from '@/lib/touch-note-runtime';
+import {touchCapabilities,touchInitialQuality,touchVisualOnly,testTouchVibration,touchVibrationVerified,confirmTouchVibration,type TouchCapabilities} from '@/lib/touch-note-runtime';
 import {usePlushieTouches,touchMessage,touchDraft,saveTouchDraft,discardTouchDraft,touchGuideSeen,acknowledgeTouchGuide,
  touchRecording,saveTouchRecording,discardTouchRecording,queuePlushieTouch,refreshPlushieTouch,prepareTouchPage,prepareTouchMessage,
  markTouchPlayed,recoverTouchJob,discardBlockedTouchJob,pinTouchMessage,touchSnapshot,type TouchMessage} from '@/lib/plushie-touch-store';
@@ -126,14 +126,14 @@ export function PlushieTouchScreen(){
  function discardRecording(){try{if(composer.jobKey)discardBlockedTouchJob(composer.jobKey,scope);discardTouchDraft();discardTouchRecording();setDiscard(false);defaultPage();}catch{setError('Could not discard your recording. Please try again.');}}
  function startRecording(){try{acknowledgeTouchGuide();setComposer(v=>({...v,phase:'recording'}));setError(null);}catch{setError('Could not save on this phone. Please try again.');}}
  function beginPlayback(){if(!message||!valid)return;try{
-  markTouchPlayed(message.id);setActiveMessage(message);setPlayState('playing');setError(null);setHapticDialog(false);hapticConfirmed.current=true;confirmTouchVibration(data?.profile.id);
+  markTouchPlayed(message.id);setActiveMessage(message);setPlayState('playing');setError(null);setHapticDialog(false);
  }catch{setError('Could not save playback on this phone. Please try again.');}}
  function play(){
   const request=++playbackRequest.current;
   void touchCapabilities().then(current=>{
    if(request!==playbackRequest.current||liveScope.current!==scope)return;
    setCaps(current);setQuality(touchInitialQuality(current,reduced));
-   if(!getInteractionPreferences().haptics||current?.systemHaptics==='disabled'||current?.hasVibrator===false||!hapticConfirmed.current){setHapticDialog(true);return;}
+   if(touchVisualOnly(current)||!getInteractionPreferences().haptics||current?.systemHaptics==='disabled'||!hapticConfirmed.current){setHapticDialog(true);return;}
    beginPlayback();
   });
  }
@@ -170,7 +170,7 @@ export function PlushieTouchScreen(){
     {playing&&message?<><PlushieTouchPlayback key={`${message.id}:${replay}`} message={message} size={size} width={width} height={bodyHeight} initialQuality={quality} paused={playState!=='playing'}
       onQuality={q=>setQuality(q==='full'?'full':'standard')} onPause={reason=>{setPlayState('paused');if(reason)setError(reason);}} onFinish={()=>setPlayState('finished')}/>
      <View style={[s.bottom,{bottom:insets.bottom+24}]}><Action label={playState==='playing'?'Stop':playState==='paused'?'Continue':'Replay'} onPress={()=>{
-      setError(null);if(playState==='playing')setPlayState('paused');else if(playState==='paused'){if(!getInteractionPreferences().haptics){setHapticDialog(true);return;}setPlayState('playing');}
+      setError(null);if(playState==='playing')setPlayState('paused');else if(playState==='paused'){if(!touchVisualOnly(caps)&&!getInteractionPreferences().haptics){setHapticDialog(true);return;}setPlayState('playing');}
       else {setReplay(n=>n+1);setPlayState('playing');}
      }}/></View></>:
      message?<><View style={{position:'absolute',top:toyTop,left:(width-size)/2}}><PlushieTouchToy asset={burrowArtForItem(message.toy,'couple_dolls')!} photo={message.photo??undefined} size={size} quality="light" scope={`preview:${message.id}`}/></View>
@@ -197,10 +197,10 @@ export function PlushieTouchScreen(){
    <Text style={t.hint}>{quotaDialog?state.meta?.hasPlus?'You’ve used today’s send. Your next send is available tomorrow.':'You’ve used this month’s Free send. Join Plus for one send per day. If you already sent today, your next send is available tomorrow.':state.meta?.hasPlus?'You have 1 send available today.':'You have 1 send available this month.'}</Text>
   </TouchNoteDialog>
   <TouchNoteDialog visible={focused&&discard} onClose={()=>setDiscard(false)}><TouchNoteIcon size={80}/><Text style={t.heading}>Your recording won’t be saved</Text><Text style={t.copy}>Are you sure you want to close and leave?</Text><Action dark label="Yes" onPress={discardRecording}/></TouchNoteDialog>
-  <TouchNoteDialog visible={focused&&hapticDialog} onClose={()=>setHapticDialog(false)}><TouchNoteIcon size={80}/><Text style={t.heading}>{caps?.hasVibrator===false?'Vibration is unavailable':'Feel their touch'}</Text>
-   <Text style={t.copy}>{caps?.hasVibrator===false?'This device does not report vibration support. Try a phone with haptics to feel this Touch Note.':hapticHelp||caps?.systemHaptics==='disabled'?'Turn on vibration in your phone’s Sound / Haptics settings, disable power-saving restrictions, then test again. Some system switches cannot be checked by this app.':'Touch Notes use your phone’s vibration. Test it before starting so you can feel the rhythm.'}</Text>
-   {caps?.hasVibrator!==false&&<><Action dark label={!getInteractionPreferences().haptics?'Enable app vibration and test':'Test Vibration'} onPress={()=>{try{if(!getInteractionPreferences().haptics)setInteractionPreference('haptics',true);void testTouchVibration().then(ok=>{setHapticTested(ok);if(!ok)setHapticHelp(true);});}catch{setError('Could not enable vibration. Please try again.');}}}/>
-    <Action label="I felt it · Start Playback" disabled={!hapticTested} onPress={()=>{if(playState==='paused'){setHapticDialog(false);setPlayState('playing');hapticConfirmed.current=true;}else beginPlayback();}}/>
+  <TouchNoteDialog visible={focused&&hapticDialog} onClose={()=>setHapticDialog(false)}><TouchNoteIcon size={80}/><Text style={t.heading}>{touchVisualOnly(caps)?'Vibration is unavailable':'Feel their touch'}</Text>
+   <Text style={t.copy}>{touchVisualOnly(caps)?'You can watch the animation on this device without vibration. Open this Touch Note on a phone with haptics to feel their touch.':hapticHelp||caps?.systemHaptics==='disabled'?'Turn on vibration in your phone’s Sound / Haptics settings, disable power-saving restrictions, then test again. Some system switches cannot be checked by this app.':'Touch Notes use your phone’s vibration. Test it before starting so you can feel the rhythm.'}</Text>
+   {touchVisualOnly(caps)?<Action label="Play animation" onPress={()=>{if(playState==='paused'){setHapticDialog(false);setPlayState('playing');}else beginPlayback();}}/>:<><Action dark label={!getInteractionPreferences().haptics?'Enable app vibration and test':'Test Vibration'} onPress={()=>{try{if(!getInteractionPreferences().haptics)setInteractionPreference('haptics',true);void testTouchVibration().then(ok=>{setHapticTested(ok);if(!ok)setHapticHelp(true);});}catch{setError('Could not enable vibration. Please try again.');}}}/>
+    <Action label="I felt it · Start Playback" disabled={!hapticTested} onPress={()=>{try{confirmTouchVibration(data?.profile.id);hapticConfirmed.current=true;if(playState==='paused'){setHapticDialog(false);setPlayState('playing');}else beginPlayback();}catch{setError('Could not save vibration confirmation. Please try again.');}}}/>
     <Pressable accessibilityRole="button" onPress={()=>setHapticHelp(true)}><Text style={s.help}>I didn’t feel it</Text></Pressable></>}
   </TouchNoteDialog>
  </View>;

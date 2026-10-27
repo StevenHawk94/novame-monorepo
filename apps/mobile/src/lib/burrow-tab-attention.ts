@@ -1,6 +1,7 @@
 import {useCallback,useRef,useSyncExternalStore} from 'react';
 import {getBurrowSnapshot,subscribeBurrowSnapshot} from './burrow-store';
 import {attentionRevision,attentionViewKey,burrowAttentionCounts,subscribeAttention} from './burrow-attention';
+import {usePlushieTouchBadge} from './plushie-touch-store';
 
 const subscribe=(listener:()=>void)=>{
   const state=subscribeBurrowSnapshot(listener),ready=subscribeAttention(listener);
@@ -10,6 +11,7 @@ const subscribe=(listener:()=>void)=>{
  * an old data closure here would miss its subsequent readiness notification.
  * Only the visible badge counts can invalidate the footer's React tree. */
 export function useBurrowTabAttention(){
+  const touches=usePlushieTouchBadge();
   const cached=useRef<{data:ReturnType<typeof getBurrowSnapshot>['data'];revision:string;
     value:ReturnType<typeof burrowAttentionCounts>;key:string}|null>(null);
   const read=useCallback(()=>{
@@ -20,5 +22,6 @@ export function useBurrowTabAttention(){
   },[]);
   const key=useCallback(()=>read().key,[read]);
   useSyncExternalStore(subscribe,key,key);
-  return read().value;
+  const value=read().value;
+  return touches?{...value,tabs:{...value.tabs,burrow:value.tabs.burrow+touches}}:value;
 }

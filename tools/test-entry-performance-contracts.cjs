@@ -65,6 +65,7 @@ test('footer suppresses unrelated updates but reads the latest content when its 
   const releases=[],react={...h.react,useSyncExternalStore(sub,get){h.react.useMemo(()=>{let before=get();releases.push(sub(()=>{
     const next=get();if(next!==before){invalidations++;before=next;}}));},[sub,get]);return get();}};
   const api=load(base+'burrow-tab-attention.ts',{
+    './plushie-touch-store':{usePlushieTouchBadge:()=>0},
     react,'./burrow-store':{getBurrowSnapshot:()=>({data}),subscribeBurrowSnapshot:fn=>{storeListeners.add(fn);return()=>storeListeners.delete(fn);}},
     './burrow-attention':{attentionRevision:()=>String(revision),attentionViewKey:v=>String(v.count),
       burrowAttentionCounts:d=>({count:d?.pairAccessVerified&&d.attention.games[0]?.id===ready?1:0}),

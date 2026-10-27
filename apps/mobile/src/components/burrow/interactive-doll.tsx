@@ -32,6 +32,7 @@ export function NativeDollSurface({asset,photo,artStyle,state,padding=0,showEmpt
   return <Animated.View pointerEvents="none" style={[artStyle,motion]}>
     <View style={[styles.photo,dollFaceRect(asset)]}><PlushieFaceMask asset={asset} photo={photo} placeholder={showEmptyPhotoDecoration}/></View>
     <Image source={asset.source} contentFit="fill" style={styles.fill}/>
+    {photo&&<View style={[styles.photo,dollFaceRect(asset)]}><PlushieFaceMask asset={asset} photo={photo} edgeOnly/></View>}
   </Animated.View>;
 }
 

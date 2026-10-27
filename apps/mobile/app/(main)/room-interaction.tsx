@@ -28,7 +28,7 @@ import { recordPhotoToyPlayForRating } from '@/lib/official-rating-milestones';
 import { showBurrowToast } from '@/lib/burrow-toast';
 import { PlushieRoomBackground } from '@/components/burrow/plushie-room-background';
 import { plushieFloorY } from '@/lib/plushie-room-layout';
-import {TouchNoteIcon} from '@/components/burrow/touch-note-ui';
+import {TouchNoteEntry} from '@/components/burrow/touch-note-entry';
 
 type Kind='toy'|'food'|'water'|'frame'|'letter';
 const kinds:Kind[]=['toy','food','water','frame','letter'];
@@ -179,7 +179,7 @@ export default function RoomInteractionScreen(){
     {kind==='toy'?<View style={styles.toyPage} onLayout={event=>setToyPageHeight(event.nativeEvent.layout.height)}>
       <PlushieRoomBackground wallpaper={slots.wallpaper} width={width} height={(toyPageHeight??Math.max(1,height-insets.top-insets.bottom-68))+insets.bottom}
         floorY={toyPhoto?touchBody*.56:floorY} bottomInset={insets.bottom}/>
-      {ownToy&&toyPhoto&&data.partner&&<Pressable accessibilityRole="button" accessibilityLabel="Touch Note" onPress={()=>router.push({pathname:'/(main)/plushie-touch',params:{mode:'record',pairVersion:data.pairVersion}})} style={{position:'absolute',right:12,top:14,zIndex:2,padding:8,alignItems:'center'}}><TouchNoteIcon size={65}/><Text style={{fontSize:14,fontWeight:'800',color:'#49321F'}}>Touch Note</Text></Pressable>}
+      {ownToy&&toyPhoto&&data.partner&&<TouchNoteEntry scope={`${data.profile.id}:${data.partner.id}:${data.pairVersion??''}`} pairVersion={data.pairVersion}/>}
       <View testID="plushie-play-area" style={[styles.toyStage,toyPhoto&&{flex:undefined,position:'absolute',top:touchBody*.27,left:(width-size)/2,width:size,height:touchBody*.73}]} onLayout={event=>{setToyStageHeight(event.nativeEvent.layout.height);setToyStageY(event.nativeEvent.layout.y??52);}}>
       {/* An empty face is a photo-entry preview, never a live toy controller.
           Both Skia and native fallback therefore stay still: no rub, pull,

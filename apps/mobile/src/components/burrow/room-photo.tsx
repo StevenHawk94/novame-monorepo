@@ -440,6 +440,10 @@ export function RoomPhotoEditor({ data, ownerId, kind, onClose, onSaved, onDaily
             height={(dollFaceBounds(toyAsset)[3]-dollFaceBounds(toyAsset)[1])*toyArt.height/toyAsset.height}
             sourceUri={draft?.uri} photo={draft?undefined:photo} imageRect={draftFaceRect} backgroundColor="#FFFAF2"/></View>
           <Image source={toyAsset.source} contentFit="fill" style={styles.image} pointerEvents="none" />
+          <View pointerEvents="none" style={[styles.toyFace,dollFaceRect(toyAsset)]}><PlushieFaceMask asset={toyAsset} edgeOnly
+            width={(dollFaceBounds(toyAsset)[2]-dollFaceBounds(toyAsset)[0])*toyArt.width/toyAsset.width}
+            height={(dollFaceBounds(toyAsset)[3]-dollFaceBounds(toyAsset)[1])*toyArt.height/toyAsset.height}
+            sourceUri={draft?.uri} photo={draft?undefined:photo} imageRect={draftFaceRect}/></View>
         </View>
       </View>:<View style={[styles.preview,kind==='frame'&&!memory&&styles.framePreview]}>{draft ? <Image source={{ uri: draft.uri }} cachePolicy="none" contentFit="cover" style={styles.image} /> : <RoomPhoto photo={photo} memory={!!memory} />}</View>}
       {kind === 'doll' && toyPhotoChangedToday(data, toyId, ownerId) && <Text style={styles.copy}>Today’s photo change for this toy is used. Other toys have their own photos.</Text>}

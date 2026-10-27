@@ -43,7 +43,17 @@ function composeTexture(costume:SkImage,face:SkImage|null,asset:BurrowArtAsset,p
         {x:padding+left,y:padding+top,width:right-left,height:bottom-top},Skia.Paint());
       canvas.restore();
     }
-    canvas.drawImage(costume,padding,padding);surface.flush();
+    canvas.drawImage(costume,padding,padding);
+    const edge=plushieFaceMask(asset)?.edgePath;
+    if(face&&edge){
+      const [left,top,right,bottom]=dollFaceBounds(asset),aspect=(right-left)/(bottom-top);
+      const clip=Skia.Path.MakeFromSVGString(edge);
+      if(clip){canvas.save();clip.offset(padding+left,padding+top);canvas.clipPath(clip,ClipOp.Intersect,true);
+        const sw=Math.min(face.width(),face.height()*aspect),sh=sw/aspect;
+        canvas.drawImageRect(face,{x:(face.width()-sw)/2,y:(face.height()-sh)/2,width:sw,height:sh},
+          {x:padding+left,y:padding+top,width:right-left,height:bottom-top},Skia.Paint());canvas.restore();}
+    }
+    surface.flush();
     // One composition per photo revision, not per touch / React render.
     return surface.makeImageSnapshot().makeNonTextureImage();
   }catch{return null;}

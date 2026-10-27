@@ -38,7 +38,8 @@ function screenHarness({rows=[],unread=[],compose=false,noteId}={}){
   const module=load('apps/mobile/src/components/burrow/love-note-screen.tsx',{
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{View:'View',Text:'Text',Pressable:'Button',ScrollView:'Scroll',SectionList:'SectionList',TextInput:'Input',KeyboardAvoidingView:'KeyboardView',ActivityIndicator:'Spinner',BackHandler:{addEventListener:(name,fn)=>{backHandlers.push(fn);return{remove(){}};}},Platform:{OS:'ios'},StyleSheet:{create:v=>v,hairlineWidth:1,absoluteFillObject:{position:'absolute',top:0,left:0,right:0,bottom:0}}},
-    'expo-router':{router:{push:path=>paths.push(path),back:()=>paths.push('back')}},
+    'expo-router':{router:{push:path=>paths.push(path),replace:path=>paths.push(path),back:()=>paths.push('back')}},
+    '@react-navigation/native':{usePreventRemove:(enabled,callback)=>{feed.removal={enabled,callback};}},
     '@expo/vector-icons':{Feather:'Icon',MaterialIcons:'Icon'},'react-native-safe-area-context':{useSafeAreaInsets:()=>({top:47,bottom:34})},
     'react-native-svg':{__esModule:true,default:'Svg',Path:'Path'},
     '@/lib/app-major-update-api':{saveMemoryRoomEntry:(...args)=>{commands.push(args);return Promise.resolve();}},
@@ -80,6 +81,14 @@ test('incoming entry reads one unread note; acknowledgement never jumps to compo
 test('Write Back forces composer even while other incoming notes remain unread',()=>{
   const a=note(),h=screenHarness({rows:[a],unread:[model.loveNoteKey(a)],compose:true});
   assert.ok(nodes(h.render()).some(n=>n.type==='Input'));assert.equal(h.marks.length,0);h.h.unmount();
+});
+test('closing a Home incoming note by header or native removal leads to History, not the composer',()=>{
+ for(const native of [false,true]){
+  const a=note(),h=screenHarness({rows:[a],unread:[model.loveNoteKey(a)]}),tree=h.render();
+  assert.equal(h.feed.removal.enabled,true);
+  if(native)h.feed.removal.callback();else nodes(tree).find(n=>n.type==='Back').props.onPress();
+  h.render();assert.equal(h.feed.removal.enabled,false);assert.equal(h.paths.at(-1),'/(main)/love-note-history');h.h.unmount();
+ }
 });
 test('arriving letters do not overwrite a composer already in use',()=>{
   const h=screenHarness();nodes(h.render()).find(n=>n.type==='Input').props.onChangeText('Still writing');

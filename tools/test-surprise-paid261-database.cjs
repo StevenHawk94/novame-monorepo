@@ -31,6 +31,12 @@ before(async()=>{
  const start=pricing.indexOf('create function public.prepare_burrow_surprise_v2');
  await db.exec(pricing.slice(start,pricing.indexOf('end $$;',start)+7));
  await db.exec(fs.readFileSync('supabase/migrations/20261022000261_surprise_paid_delivery.sql','utf8'));
+ // Actual economic-domain resolver and transfer trigger, not a boolean mock.
+ await db.exec('create table burrow_coin_transactions(user_id uuid,environment text);create table subscriptions(user_id uuid,store_environment text);');
+ const domains=fs.readFileSync('supabase/migrations/20261024000271_economic_domains.sql','utf8');
+ await db.exec(domains.slice(domains.indexOf('create table public.account_economic_domains'),domains.indexOf('create function public.lock_economic_account_v1')));
+ await db.exec(domains.slice(domains.indexOf('create function public.enforce_economic_transfer_v1'),domains.indexOf('create trigger security_gift_domain')));
+ await db.exec('create trigger security_surprise_domain before insert or update of sender_id,recipient_id,paid_at on burrow_surprises for each row execute function enforce_economic_transfer_v1();');
 });
 after(async()=>db?.close());beforeEach(async()=>db.exec('begin'));afterEach(async()=>db.exec('rollback'));
 test('pay debits exactly once before upload, creates no recipient gift or notification, and status survives lost acknowledgement',async()=>{
@@ -39,6 +45,15 @@ test('pay debits exactly once before upload, creates no recipient gift or notifi
  assert.equal((await q('select * from burrow_surprises where sent_at is not null')).length,0);
  const status=await rpc('burrow_surprise_send_status_v1',[A,KEY,B,VERSION]);assert.equal(status.paid,true);assert.equal(status.committed,false);
  assert.equal((await rpc('complete_burrow_surprise_v1',[A,ticket.id])).error,'media_incomplete');assert.equal(await balance(),700);
+});
+test('Sandbox partners pay/send/receive normally; cross-domain send rolls back with no debit or delivery',async()=>{
+ await q("insert into account_economic_domains(user_id,domain) values($1,'sandbox'),($2,'sandbox')",[A,B]);
+ const ticket=await pay();assert.equal(ticket.paid,true);await upload(ticket);assert.equal((await rpc('complete_burrow_surprise_v1',[A,ticket.id])).applied,true);
+ const received=await rpc('read_burrow_surprises_v1',[B,ticket.id,false]);assert.ok(!received.error);assert.equal(await balance(),700);
+ await q("update account_economic_domains set domain='production' where user_id=$1",[B]);
+ await q('savepoint cross_domain');
+ await assert.rejects(pay({key:'cccccccc-cccc-4ccc-8ccc-cccccccccccc'}),/economic_domain_mismatch/);
+ await q('rollback to cross_domain');assert.equal(await balance(),700);assert.equal((await q('select * from burrow_surprises')).length,1);
 });
 test('paid upload publishes once and never debits again even if other spending consumes all coins or Plus/price changes',async()=>{
  const ticket=await pay();await upload(ticket);await db.exec("update offer set price=800,denied='plus_required';update wallets set carrot_balance=0 where user_id='"+A+"'");

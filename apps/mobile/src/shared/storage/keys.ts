@@ -4,6 +4,8 @@ import { defineKey, definePrefixKey } from './registry';
 export const kBunnyIdentity=defineKey('burrow_bunny_identity_v1','user');
 export const kAdventureNudges=defineKey('burrow_adventure_nudges_v1','user');
 export const kPlushieTouch=defineKey('burrow_plushie_touch_v1','user');
+/** First vibration confirmation on this installation, isolated by account. */
+export const kTouchVibrationVerified=defineKey('burrow_touch_vibration_verified_v1','user');
 
 /**
  * THE key manifest. Every MMKV key in the app, declared exactly once, with an

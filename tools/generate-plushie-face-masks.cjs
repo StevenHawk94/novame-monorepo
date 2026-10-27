@@ -15,20 +15,32 @@ function faceMask(data,width,height,bounds){
  // Cover the costume's own antialiased boundary from underneath, but never
  // enter another transparent component (the actual background / hair gaps).
  for(let step=0;step<2;step++){const next=[];for(const p of frontier)for(const n of neighbours(p))if(n>=0&&!mask[n]&&data[n*4+3]>=16){mask[n]=1;next.push(n);}frontier=next;}
- const rects=[];let previous=new Map();
- for(let y=t;y<b;y++){const current=new Map();for(let x=l;x<r;){if(!mask[y*width+x]){x++;continue;}const start=x;while(x<r&&mask[y*width+x])x++;
+ const fringe=new Uint8Array(width*height),visited=face.slice();frontier=queue;
+ const whitePixel=n=>{const [r,g,b,a]=data.subarray(n*4,n*4+4);return a>0&&Math.min(r,g,b)>=235&&Math.max(r,g,b)-Math.min(r,g,b)<=20;};
+ // Very low-alpha white antialiasing can belong to the transparent flood too.
+ // Cover that residual colour, but never an alpha-zero/exterior pixel.
+ for(const p of queue)if(whitePixel(p))fringe[p]=1;
+ // Only near-white pixels connected to the enclosed hole, at most 3 source
+ // pixels inward. Never erase dark hair, skin, the exterior, or remote whites.
+ for(let step=0;step<3;step++){const next=[];for(const p of frontier)for(const n of neighbours(p)){
+  if(n<0||visited[n])continue;
+  if(whitePixel(n)){visited[n]=1;fringe[n]=1;next.push(n);}
+ }frontier=next;}
+ const pathFor=pixels=>{const rects=[];let previous=new Map();
+ for(let y=t;y<b;y++){const current=new Map();for(let x=l;x<r;){if(!pixels[y*width+x]){x++;continue;}const start=x;while(x<r&&pixels[y*width+x])x++;
   const key=start+':'+x,prior=previous.get(key);if(prior){prior.h++;current.set(key,prior);}else{const row={x:start-l,y:y-t,w:x-start,h:1};rects.push(row);current.set(key,row);}}
   previous=current;
  }
- const d=rects.map(row=>`M${row.x} ${row.y}h${row.w}v${row.h}h-${row.w}z`).join('');
- return {width:r-l,height:b-t,path:d,mask,face,rects};
+ return {rects,path:rects.map(row=>`M${row.x} ${row.y}h${row.w}v${row.h}h-${row.w}z`).join('')};};
+ const shape=pathFor(mask);
+ return {width:r-l,height:b-t,...shape,edgePath:pathFor(fringe).path,fringe,mask,face};
 }
 async function generate(){
  const imports=Object.fromEntries([...fs.readFileSync(source,'utf8').matchAll(/require\((['"])(.*?)\1\)/g)].map(m=>[m[2],path.resolve(path.dirname(source),m[2])]));
  const toys=load('apps/mobile/src/lib/burrow-art-assets.ts',imports).BURROW_ART.couple_dolls,result={};
  for(const toy of toys){const bytes=fs.readFileSync(toy.source),{data,info}=await sharp(bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   const shape=faceMask(data,info.width,info.height,toy.photoBounds);
-  result[toy.name]={sourceSha256:crypto.createHash('sha256').update(bytes).digest('hex'),canvas:[toy.width,toy.height],bounds:toy.photoBounds,width:shape.width,height:shape.height,path:shape.path};
+  result[toy.name]={sourceSha256:crypto.createHash('sha256').update(bytes).digest('hex'),canvas:[toy.width,toy.height],bounds:toy.photoBounds,width:shape.width,height:shape.height,path:shape.path,edgePath:shape.edgePath};
  }
  return JSON.stringify(result,null,2)+'\n';
 }

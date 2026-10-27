@@ -1,4 +1,5 @@
 import type { MajorUpdateBootstrap } from './app-major-update-api';
+import {adventureFriendGender} from './adventure-friend-identity';
 
 const RETURNING_HEADINGS = [
   '[name] is hanging around.',
@@ -33,12 +34,12 @@ export function adventureFriendPresentation(data: MajorUpdateBootstrap, random =
   const completedPreviously = !!friendId && !!data.adventureCollection?.progress?.some(progress =>
     progress.friend_id === friendId && progress.completed > 0);
   const isNewFriend = !discoveredPreviously && !completedPreviously;
-  const gender = snapshot?.gender ?? snapshot?.metadata?.gender;
+  const gender = adventureFriendGender(snapshot,data.friends?.find(friend=>friend.stable_id===friendId),friendId,friendName);
   return {
     isNewFriend,
     friendName,
     heading: isNewFriend ? 'You met a new friend!' : RETURNING_HEADINGS[Math.floor(random() * RETURNING_HEADINGS.length)].replace('[name]', friendName),
     introduction: `You ran into ${friendName} down in the burrow.`,
-    talkLabel: gender === 'she' ? 'Talk to her' : gender === 'he' ? 'Talk to him' : 'Talk to them',
+    talkLabel: gender === 'she' ? 'Talk to her' : gender === 'he' ? 'Talk to him' : 'Talk',
   };
 }

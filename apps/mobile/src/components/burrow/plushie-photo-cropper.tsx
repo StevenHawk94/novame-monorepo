@@ -34,6 +34,10 @@ export function PlushiePhotoCropper({asset,toy,onCancel,onConfirm}:{asset:{uri:s
      <PlushieFaceMask asset={toy} width={face.width} height={face.height} sourceUri={asset.uri} backgroundColor="#EAD4B5"
       imageRect={{width:asset.width*geometry.scale,height:asset.height*geometry.scale,x:(face.width-asset.width*geometry.scale)/2+geometry.offsetX,y:(face.height-asset.height*geometry.scale)/2+geometry.offsetY}}/>
     </View><Image testID="plushie-crop-outline" pointerEvents="none" source={toy.source} contentFit="fill" style={{position:'absolute',...art}}/>
+    <View pointerEvents="none" style={{position:'absolute',...face,overflow:'hidden'}}>
+     <PlushieFaceMask asset={toy} width={face.width} height={face.height} sourceUri={asset.uri} edgeOnly
+      imageRect={{width:asset.width*geometry.scale,height:asset.height*geometry.scale,x:(face.width-asset.width*geometry.scale)/2+geometry.offsetX,y:(face.height-asset.height*geometry.scale)/2+geometry.offsetY}}/>
+    </View>
    </View>
    <View style={{flexDirection:'row',gap:22,alignItems:'center'}}><Pressable accessibilityRole="button" accessibilityLabel="Zoom out" disabled={busy} onPress={()=>setZoom(z=>Math.max(1,z-.2))} style={button}><Text style={{color:'#FFF'}}>−</Text></Pressable><Text>Zoom {Math.round(zoom*100)}%</Text><Pressable accessibilityRole="button" accessibilityLabel="Zoom in" disabled={busy} onPress={()=>setZoom(z=>Math.min(3,z+.2))} style={button}><Text style={{color:'#FFF'}}>+</Text></Pressable></View>
    {error&&<Text accessibilityRole="alert" style={{color:'#A23824'}}>Photo could not be saved. Please try again.</Text>}

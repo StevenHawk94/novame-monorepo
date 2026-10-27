@@ -247,6 +247,8 @@ export async function addFriend(
       error?: string;
       pairedName?: string;
       partner?: PairingStatus['partner'];
+      pairVersion?: string;
+      adventureTeam?: import('./cooperative-adventure').AdventureTeamState;
     }>(
       '/api/friends/add',
       { userId, code, relationship: opts?.relationship, relationshipSince: opts?.relationshipSince },
@@ -254,6 +256,13 @@ export async function addFriend(
     if (epoch !== sessionEpoch() || userId !== sessionUserId()) return { ok: false, error: 'no_session' };
     if (data.error) return { ok: false, error: data.error };
     if (!data.success) return { ok: false, error: 'network' };
+    // Adopt only server-confirmed identity/version, never preview/code lookup
+    // results or inferred Plus. Other room content still prepares normally.
+    if(data.partner&&data.pairVersion){
+      try{const {confirmBurrowPair}=await import('./burrow-store');
+        if(epoch===sessionEpoch()&&userId===sessionUserId())confirmBurrowPair(userId,data.partner,data.pairVersion,data.adventureTeam);
+      }catch{/* A confirmed pair remains successful even if local reconciliation fails. */}
+    }
     const refresh = Promise.all([
       fetchFriends({ force: true }).catch(() => null),
       fetchPairing({ force: true }).catch(() => null),

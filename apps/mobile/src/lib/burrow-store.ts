@@ -861,6 +861,20 @@ function restore() {
   }
 }
 const persistKeys = () => { const owner = sessionUserId(); if (owner) persistBurrowActionKeys(owner, pendingKeys); };
+/** Adopt a confirmed first-pair identity, without inventing entitlements or
+ * treating unprepared private content as ready. Fence older Solo reads. */
+export function confirmBurrowPair(owner:string,partner:{userId:string;displayName:string;avatarUrl?:string;isDefaultAvatar?:boolean},pairVersion:string,
+  adventureTeam?:import('./cooperative-adventure').AdventureTeamState){
+  const before=state.data;
+  if(!before||owner!==sessionUserId()||before.profile.id!==owner||!partner.userId||!/^[a-f0-9]{32}$/.test(pairVersion)
+    ||(before.partner&&before.partner.id!==partner.userId))return false;
+  if(before.partner?.id===partner.userId&&before.pairVersion===pairVersion)return true;
+  invalidateBurrowPair({retainSolo:true});
+  if(!state.data)return false;
+  publish({data:{...state.data,partner:{id:partner.userId,display_name:partner.displayName,avatar_url:partner.avatarUrl??'',is_default_avatar:partner.isDefaultAvatar!==false,subscription_tier:null},
+    pairVersion,pairAccessVerified:undefined,...(adventureTeam?.userId===owner&&adventureTeam.partnerId===partner.userId&&adventureTeam.pairVersion===pairVersion?{adventureTeam}:{})},pairInvalidated:false});
+  persistWhenIdle();return true;
+}
 /** Drop private pair data immediately; late snapshots cannot restore it. */
 export function invalidateBurrowPair({ retainSolo = false }: { retainSolo?: boolean } = {}) {
   gameReads.invalidate();

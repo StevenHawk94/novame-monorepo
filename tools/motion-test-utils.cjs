@@ -39,6 +39,7 @@ function presentationImports(h,time) {
   const motion=motionHarness(h,time);
   const jsx=(type,props)=>({type,props});
   const dialogue=load('apps/mobile/src/components/burrow/friend-dialogue.tsx',{
+    react:h.react,
     'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{Pressable:'Button',ScrollView:'Scroll',Text:'Text',View:'View',StyleSheet:{create:x=>x}},
     './adventure-reveal':{AdventureReveal:'Reveal'},'./burrow-back-button':{BackIcon:'BackIcon'},
   });

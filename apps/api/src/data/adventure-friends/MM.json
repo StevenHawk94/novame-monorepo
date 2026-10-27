@@ -999,9 +999,9 @@
       "categoryCode": "C09",
       "sourceId": 273,
       "file": "Minerals/Rose Quartz.webp",
-      "key": "burrow/adventure-gifts/v1/273-34364f49572df238.webp",
-      "sha256": "34364f49572df23899d1cf776d3133d7d054f889a41c0bec80aeacfe4352d491",
-      "bytes": 23408
+      "key": "burrow/adventure-gifts/v1/273-479bf63a41c2d76b.webp",
+      "sha256": "479bf63a41c2d76bc43889a864ef08a5f51917321f88c9e40184203c35317ebd",
+      "bytes": 22750
     },
     {
       "id": "adventure_gift_274",
@@ -1012,9 +1012,9 @@
       "categoryCode": "C09",
       "sourceId": 274,
       "file": "Minerals/Citrine Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/274-e3b9ff6bc9d1341a.webp",
-      "sha256": "e3b9ff6bc9d1341ab631d09b4db9f8d870a86eebb5a89a70da2a9c693868b3b6",
-      "bytes": 23500
+      "key": "burrow/adventure-gifts/v1/274-532f415caf4d4e58.webp",
+      "sha256": "532f415caf4d4e5843b1d5aacf79d7e26f45ba0abd62751b07587d93ea2b77de",
+      "bytes": 22940
     },
     {
       "id": "adventure_gift_275",
@@ -1025,9 +1025,9 @@
       "categoryCode": "C09",
       "sourceId": 275,
       "file": "Minerals/Fluorite Cubes.webp",
-      "key": "burrow/adventure-gifts/v1/275-3a117c461bae7559.webp",
-      "sha256": "3a117c461bae7559d66d0ef9fe9bfcaa3e593f8b18d6310b8a15a596668b5cde",
-      "bytes": 21918
+      "key": "burrow/adventure-gifts/v1/275-f80f71726e7fff2b.webp",
+      "sha256": "f80f71726e7fff2b8d3f68d00e0e62e3951858585b6530102f786f2c4a86f8ab",
+      "bytes": 22764
     },
     {
       "id": "adventure_gift_276",
@@ -1038,9 +1038,9 @@
       "categoryCode": "C09",
       "sourceId": 276,
       "file": "Minerals/Pyrite Cubes.webp",
-      "key": "burrow/adventure-gifts/v1/276-c96204d0c3b283d2.webp",
-      "sha256": "c96204d0c3b283d2588ce32dbbdfee93a07706f8a09d990d63040e2945790bad",
-      "bytes": 22992
+      "key": "burrow/adventure-gifts/v1/276-865e841342b71da5.webp",
+      "sha256": "865e841342b71da577362d506b3c7d1b0f714d54ec65fca0ed8e6331c4884c5a",
+      "bytes": 22686
     },
     {
       "id": "adventure_gift_277",
@@ -1051,9 +1051,9 @@
       "categoryCode": "C09",
       "sourceId": 277,
       "file": "Minerals/Malachite Stone.webp",
-      "key": "burrow/adventure-gifts/v1/277-fd619aa358c7f560.webp",
-      "sha256": "fd619aa358c7f560d22cedd8b0bcdbe0910b38fd4a3a2df14de0f1e79180424e",
-      "bytes": 22400
+      "key": "burrow/adventure-gifts/v1/277-4b3b13d738464e86.webp",
+      "sha256": "4b3b13d738464e86f2580ab50dde6808e1a9175b0df52183a529e28a4b49f6e9",
+      "bytes": 22600
     },
     {
       "id": "adventure_gift_278",
@@ -1064,9 +1064,9 @@
       "categoryCode": "C09",
       "sourceId": 278,
       "file": "Minerals/Lapis Stone.webp",
-      "key": "burrow/adventure-gifts/v1/278-5a9f5d720ded2528.webp",
-      "sha256": "5a9f5d720ded25286505dc925982aaed159c197ab23dddd84ea5c352132d86e4",
-      "bytes": 22596
+      "key": "burrow/adventure-gifts/v1/278-1b7df7b833403524.webp",
+      "sha256": "1b7df7b8334035249ed68cbf224e92d661cdeb687cfb2dac5810697f67a30140",
+      "bytes": 22880
     },
     {
       "id": "adventure_gift_279",
@@ -1077,9 +1077,9 @@
       "categoryCode": "C09",
       "sourceId": 279,
       "file": "Minerals/Turquoise Stone.webp",
-      "key": "burrow/adventure-gifts/v1/279-ab8239b316136be6.webp",
-      "sha256": "ab8239b316136be67eb98db15b8505fdad2d66d60cdb93efd25da55a4526ecc6",
-      "bytes": 22552
+      "key": "burrow/adventure-gifts/v1/279-d5df91419d54d0d0.webp",
+      "sha256": "d5df91419d54d0d01170b05407eb329dfb63436901361510b3ff8e0559bb647b",
+      "bytes": 22836
     },
     {
       "id": "adventure_gift_280",
@@ -1090,9 +1090,9 @@
       "categoryCode": "C09",
       "sourceId": 280,
       "file": "Minerals/Rhodochrosite Stone.webp",
-      "key": "burrow/adventure-gifts/v1/280-4a224546a00d1290.webp",
-      "sha256": "4a224546a00d12904e47248a4cd39b3df0c848da247457b46ac6c320730566bc",
-      "bytes": 23212
+      "key": "burrow/adventure-gifts/v1/280-56be261cbc03bdfe.webp",
+      "sha256": "56be261cbc03bdfeacd3e78c09c868d1c38f4bc8ebf14adadf7bfb4a37ec4d07",
+      "bytes": 22622
     },
     {
       "id": "adventure_gift_281",
@@ -1103,9 +1103,9 @@
       "categoryCode": "C09",
       "sourceId": 281,
       "file": "Minerals/Smoky Quartz.webp",
-      "key": "burrow/adventure-gifts/v1/281-7054b75c6c385f94.webp",
-      "sha256": "7054b75c6c385f94715bee34896948b669c839c56aaea5ec4b1ec6a6890ad20d",
-      "bytes": 23748
+      "key": "burrow/adventure-gifts/v1/281-1e3a2ad5cd6688c1.webp",
+      "sha256": "1e3a2ad5cd6688c1e5c0f8144d498ce427015c5b319edad3846bf65d0b45fb93",
+      "bytes": 22780
     },
     {
       "id": "adventure_gift_282",
@@ -1116,9 +1116,9 @@
       "categoryCode": "C09",
       "sourceId": 282,
       "file": "Minerals/Clear Quartz.webp",
-      "key": "burrow/adventure-gifts/v1/282-0c8d39b023542e20.webp",
-      "sha256": "0c8d39b023542e204663135656b115969b1c1cd9c5e4525df3fd4ab922573723",
-      "bytes": 23182
+      "key": "burrow/adventure-gifts/v1/282-a3ca42ae2597588c.webp",
+      "sha256": "a3ca42ae2597588c9d861d0864fe88613750064fcb7abef556610dd4a3059b32",
+      "bytes": 22718
     },
     {
       "id": "adventure_gift_283",
@@ -1129,9 +1129,9 @@
       "categoryCode": "C09",
       "sourceId": 283,
       "file": "Minerals/Blue Geode.webp",
-      "key": "burrow/adventure-gifts/v1/283-b3dbe6d0fe66081d.webp",
-      "sha256": "b3dbe6d0fe66081db258e86fab0b2bb1b6c052917a0a0a3f5df682524712327c",
-      "bytes": 23178
+      "key": "burrow/adventure-gifts/v1/283-d192347ea5dc4e9e.webp",
+      "sha256": "d192347ea5dc4e9e1619461f4bfa73b13d538f1f90f4406b0e569a5c5c5a6cc4",
+      "bytes": 22996
     },
     {
       "id": "adventure_gift_284",
@@ -1142,9 +1142,9 @@
       "categoryCode": "C09",
       "sourceId": 284,
       "file": "Minerals/Amber Stone.webp",
-      "key": "burrow/adventure-gifts/v1/284-579acd0b7364e31a.webp",
-      "sha256": "579acd0b7364e31a88979ebfedaa60b252fc1a5e4b8acafb70e668aa319b4293",
-      "bytes": 22766
+      "key": "burrow/adventure-gifts/v1/284-a0d6a0c917e03088.webp",
+      "sha256": "a0d6a0c917e030886663642174ebd3ba00a6a36a8de4e219acb90325c40a1e64",
+      "bytes": 22954
     },
     {
       "id": "adventure_gift_285",
@@ -1155,9 +1155,9 @@
       "categoryCode": "C09",
       "sourceId": 285,
       "file": "Minerals/Garnet Stone.webp",
-      "key": "burrow/adventure-gifts/v1/285-476399eafb695fe9.webp",
-      "sha256": "476399eafb695fe912b813d24ffd1e859e629b0650e0816d470cd6d137e0d16e",
-      "bytes": 26146
+      "key": "burrow/adventure-gifts/v1/285-4396cd626e37a4e1.webp",
+      "sha256": "4396cd626e37a4e1c8f0f013a5328befa8e998ed2688e00b3af42ad22a52d369",
+      "bytes": 22654
     },
     {
       "id": "adventure_gift_286",
@@ -1168,9 +1168,9 @@
       "categoryCode": "C09",
       "sourceId": 286,
       "file": "Minerals/Amazonite Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/286-2c532e623eeace2d.webp",
-      "sha256": "2c532e623eeace2d672232ddfd992f9d34884eae7c64f802b81d2b3ceb21df9b",
-      "bytes": 24038
+      "key": "burrow/adventure-gifts/v1/286-7aefcfdb3b57890d.webp",
+      "sha256": "7aefcfdb3b57890dd8cbed5ed834b21d04d1cc12dcfcb554cdacef3e9231f22a",
+      "bytes": 22912
     },
     {
       "id": "adventure_gift_287",
@@ -1181,9 +1181,9 @@
       "categoryCode": "C09",
       "sourceId": 287,
       "file": "Minerals/Labradorite Stone.webp",
-      "key": "burrow/adventure-gifts/v1/287-bf68f533310c92ef.webp",
-      "sha256": "bf68f533310c92ef7369b3225118558a70ae74c2077b14d8abc8aa630ad6a2a3",
-      "bytes": 23298
+      "key": "burrow/adventure-gifts/v1/287-3416991a92d3b418.webp",
+      "sha256": "3416991a92d3b4185e9ad4a87b162173b8d8022597ce39c35419234578b6b782",
+      "bytes": 22574
     },
     {
       "id": "adventure_gift_288",
@@ -1194,9 +1194,9 @@
       "categoryCode": "C09",
       "sourceId": 288,
       "file": "Minerals/Sulfur Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/288-0ec08f8ab6b7f486.webp",
-      "sha256": "0ec08f8ab6b7f48681505c187df4f8def15f15a832c848e07086bf182282d1e9",
-      "bytes": 23516
+      "key": "burrow/adventure-gifts/v1/288-37dcf5c5aa12565a.webp",
+      "sha256": "37dcf5c5aa12565a3adb8f35c2ae49c533ac50d4b14cb889d83a0f1e1681187c",
+      "bytes": 22956
     },
     {
       "id": "adventure_gift_289",
@@ -1207,9 +1207,9 @@
       "categoryCode": "C09",
       "sourceId": 289,
       "file": "Minerals/Amethyst Geode.webp",
-      "key": "burrow/adventure-gifts/v1/289-e9c8af3a9e333986.webp",
-      "sha256": "e9c8af3a9e3339867f8cefc73988367c01d0cd93ef20a293795832ee96fd0c03",
-      "bytes": 22390
+      "key": "burrow/adventure-gifts/v1/289-f205b45285ee7b1c.webp",
+      "sha256": "f205b45285ee7b1ce8c1261c44b27284a75665089ad576fbb331a7bf7502885e",
+      "bytes": 22656
     },
     {
       "id": "adventure_gift_290",
@@ -1220,9 +1220,9 @@
       "categoryCode": "C09",
       "sourceId": 290,
       "file": "Minerals/Aquamarine Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/290-997d8886a2b70f13.webp",
-      "sha256": "997d8886a2b70f13c844da2c68d9a60a0bd3dbb610e2c56f51790aa59a4d1c17",
-      "bytes": 22608
+      "key": "burrow/adventure-gifts/v1/290-5b7c302d5d42b392.webp",
+      "sha256": "5b7c302d5d42b392ae92e1894c7f2818ed49a76980e4a60e1b9dfff8f23de0b0",
+      "bytes": 22798
     },
     {
       "id": "adventure_gift_291",
@@ -1233,9 +1233,9 @@
       "categoryCode": "C09",
       "sourceId": 291,
       "file": "Minerals/Emerald Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/291-6ceca21fa17acbb8.webp",
-      "sha256": "6ceca21fa17acbb87b28aabbe19201af16ce0670fa7223bc2932f1f43cded87a",
-      "bytes": 23234
+      "key": "burrow/adventure-gifts/v1/291-6208d2ac79e8909a.webp",
+      "sha256": "6208d2ac79e8909a864cb0ad783c971808fffc5ed369f294a2a2fcd760ce428f",
+      "bytes": 22354
     },
     {
       "id": "adventure_gift_292",
@@ -1246,9 +1246,9 @@
       "categoryCode": "C09",
       "sourceId": 292,
       "file": "Minerals/Ruby Stone.webp",
-      "key": "burrow/adventure-gifts/v1/292-804c19a935b8f9cf.webp",
-      "sha256": "804c19a935b8f9cf34f116b310eb79933dd9bd3a50404e4a4e298b77770894e0",
-      "bytes": 21616
+      "key": "burrow/adventure-gifts/v1/292-d4ca0080a2ee3b27.webp",
+      "sha256": "d4ca0080a2ee3b271de092565ac7a75a35051b526030cde3843aae69ca47772c",
+      "bytes": 22696
     },
     {
       "id": "adventure_gift_293",
@@ -1259,9 +1259,9 @@
       "categoryCode": "C09",
       "sourceId": 293,
       "file": "Minerals/Sapphire Stone.webp",
-      "key": "burrow/adventure-gifts/v1/293-f69602da147fd7aa.webp",
-      "sha256": "f69602da147fd7aab45030d830f89fc2461aad5433960930508e425d6c8f95bf",
-      "bytes": 22790
+      "key": "burrow/adventure-gifts/v1/293-b3002e2ead692005.webp",
+      "sha256": "b3002e2ead6920055d813f63f84967a2da3d5880a2e6c26bede6fba696a877ab",
+      "bytes": 22510
     },
     {
       "id": "adventure_gift_294",
@@ -1272,9 +1272,9 @@
       "categoryCode": "C09",
       "sourceId": 294,
       "file": "Minerals/Peridot Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/294-e42e47ffe3c89b95.webp",
-      "sha256": "e42e47ffe3c89b95ec0c1692eef19ce8ca8f08fc409ea972bd40f4b1f0c84a26",
-      "bytes": 23998
+      "key": "burrow/adventure-gifts/v1/294-e112edab0765c124.webp",
+      "sha256": "e112edab0765c124f4c90cbf3bcc2c073d740daf962c58bfd1e2b404049874d2",
+      "bytes": 22682
     },
     {
       "id": "adventure_gift_295",
@@ -1285,9 +1285,9 @@
       "categoryCode": "C09",
       "sourceId": 295,
       "file": "Minerals/Pink Tourmaline.webp",
-      "key": "burrow/adventure-gifts/v1/295-e2182481b7f11aca.webp",
-      "sha256": "e2182481b7f11aca61164058a98ebabc63be995df61614daff5667e52e55682d",
-      "bytes": 23174
+      "key": "burrow/adventure-gifts/v1/295-5c7a44b5e1335409.webp",
+      "sha256": "5c7a44b5e133540920957bac0cdf481fa30bdb50487b998efc36bfc083af9593",
+      "bytes": 22986
     },
     {
       "id": "adventure_gift_296",
@@ -1298,9 +1298,9 @@
       "categoryCode": "C09",
       "sourceId": 296,
       "file": "Minerals/Black Tourmaline.webp",
-      "key": "burrow/adventure-gifts/v1/296-ce041051c23104bb.webp",
-      "sha256": "ce041051c23104bbf51360073dc211b1351e1a5b08cdc1f5b6b9e80aaa7a08bb",
-      "bytes": 22758
+      "key": "burrow/adventure-gifts/v1/296-10db720d5d99cbd0.webp",
+      "sha256": "10db720d5d99cbd06f361528769400a87ff02bc8cdc3ed318a85d4e741a4b514",
+      "bytes": 22382
     },
     {
       "id": "adventure_gift_297",
@@ -1311,9 +1311,9 @@
       "categoryCode": "C09",
       "sourceId": 297,
       "file": "Minerals/Azurite Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/297-57650f9f64b2c12f.webp",
-      "sha256": "57650f9f64b2c12f64834096541b530cd5abf464bad0bf511c320db1addcf5a2",
-      "bytes": 23532
+      "key": "burrow/adventure-gifts/v1/297-3289f60883f2f729.webp",
+      "sha256": "3289f60883f2f729b8e7f58ae0d2bc97a516e382e6f533f8e6052c60d461dcda",
+      "bytes": 22488
     },
     {
       "id": "adventure_gift_298",
@@ -1324,9 +1324,9 @@
       "categoryCode": "C09",
       "sourceId": 298,
       "file": "Minerals/Hematite Stone.webp",
-      "key": "burrow/adventure-gifts/v1/298-e175aafe63447916.webp",
-      "sha256": "e175aafe634479165bde86fda86a09d8048ad5a54cbb632e5d6649def4bfb0bd",
-      "bytes": 24058
+      "key": "burrow/adventure-gifts/v1/298-90281aa95b648027.webp",
+      "sha256": "90281aa95b648027eb83cf41713972f03be544ace114c1c882529f6654d66512",
+      "bytes": 22600
     },
     {
       "id": "adventure_gift_299",
@@ -1337,9 +1337,9 @@
       "categoryCode": "C09",
       "sourceId": 299,
       "file": "Minerals/Calcite Cubes.webp",
-      "key": "burrow/adventure-gifts/v1/299-9d14ae8e55bc161d.webp",
-      "sha256": "9d14ae8e55bc161d829baef9096df94c53a3fd0e5bad2721c9cf0a0d72d0e13c",
-      "bytes": 23518
+      "key": "burrow/adventure-gifts/v1/299-b9f7e5ba8e62f06a.webp",
+      "sha256": "b9f7e5ba8e62f06ab6d21316f4a96176ce851f09e5ea2f815230c3f08e933a2d",
+      "bytes": 22568
     },
     {
       "id": "adventure_gift_300",
@@ -1350,9 +1350,9 @@
       "categoryCode": "C09",
       "sourceId": 300,
       "file": "Minerals/Selenite Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/300-a94968a432da6710.webp",
-      "sha256": "a94968a432da671048b457a568294854453eb91ceb6e9ab77e316892b6090885",
-      "bytes": 23898
+      "key": "burrow/adventure-gifts/v1/300-f1d31183f287648e.webp",
+      "sha256": "f1d31183f287648e53b0964f79e9f7c8e12134ca225b2f8eddc14d5e2199878a",
+      "bytes": 22906
     },
     {
       "id": "adventure_gift_301",
@@ -1363,9 +1363,9 @@
       "categoryCode": "C09",
       "sourceId": 301,
       "file": "Minerals/Desert Rose.webp",
-      "key": "burrow/adventure-gifts/v1/301-c44d8f6ea469b8fe.webp",
-      "sha256": "c44d8f6ea469b8fe273c73e509e7861b5fa064f3aa4e6f65bad896dcbd89e508",
-      "bytes": 24738
+      "key": "burrow/adventure-gifts/v1/301-ea432657b90ab3f2.webp",
+      "sha256": "ea432657b90ab3f2fef46a355700ba419ea3ede4296a419fd5e5b735c0503d0a",
+      "bytes": 22674
     },
     {
       "id": "adventure_gift_302",
@@ -1376,9 +1376,9 @@
       "categoryCode": "C09",
       "sourceId": 302,
       "file": "Minerals/Lepidolite Stone.webp",
-      "key": "burrow/adventure-gifts/v1/302-27fda16279773009.webp",
-      "sha256": "27fda1627977300901d88c1ac35fddaee30604c52da61b210654d0e3128303aa",
-      "bytes": 22310
+      "key": "burrow/adventure-gifts/v1/302-47c0291002f546bd.webp",
+      "sha256": "47c0291002f546bdb2eb124b62b10e9ded070aa8014ec6dd117e65d9aff3faae",
+      "bytes": 22812
     },
     {
       "id": "adventure_gift_303",
@@ -1389,9 +1389,9 @@
       "categoryCode": "C09",
       "sourceId": 303,
       "file": "Minerals/Aragonite Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/303-e72e8c6c7c411585.webp",
-      "sha256": "e72e8c6c7c41158504ea6ab07d94a1ffc68c0d9b3b6cb7d83c57404bb610acb2",
-      "bytes": 23128
+      "key": "burrow/adventure-gifts/v1/303-dbed8bb199a45f3f.webp",
+      "sha256": "dbed8bb199a45f3fa23403ccd89faa0e05ffdf4986937f358c9a02032b97b989",
+      "bytes": 22914
     },
     {
       "id": "adventure_gift_304",
@@ -1402,9 +1402,9 @@
       "categoryCode": "C09",
       "sourceId": 304,
       "file": "Minerals/Apatite Cluster.webp",
-      "key": "burrow/adventure-gifts/v1/304-9658e38a699a0bd0.webp",
-      "sha256": "9658e38a699a0bd0130dcffae7c2e502223e307796630461cc116ee18583ce1c",
-      "bytes": 23454
+      "key": "burrow/adventure-gifts/v1/304-3074edc54348e5ac.webp",
+      "sha256": "3074edc54348e5ace273c4cd752329801ae169796dbf42da21e318b2885601bf",
+      "bytes": 22994
     }
   ]
 }

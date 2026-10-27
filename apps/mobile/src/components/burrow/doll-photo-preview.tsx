@@ -17,6 +17,7 @@ export function DollPhotoPreview({asset,photo,style,artStyle,onEditPhoto,disable
     <PlushieFaceMask asset={asset} photo={photo} placeholder/>
    </View>
    <Image pointerEvents="none" source={asset.source} contentFit="fill" style={{width:'100%',height:'100%'}}/>
+   {photo&&<View pointerEvents="none" style={[face,{position:'absolute'}]}><PlushieFaceMask asset={asset} photo={photo} edgeOnly/></View>}
    {onEditPhoto&&<Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
     onPress={onEditPhoto} hitSlop={8} style={[face,{position:'absolute'}]}/>}
   </View>

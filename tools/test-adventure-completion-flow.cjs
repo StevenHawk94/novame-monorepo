@@ -67,7 +67,7 @@ test('legacy interactionRequired is a success receipt and immediately opens the 
   await h.render().find(n => n.type === 'Treasure').props.onClaim();
   assert.deepEqual(h.calls, ['legacy']); assert.deepEqual(h.receipts, [['continue', 'journey', false]]);
   assert.equal(h.routes.length, 0); assert.ok(!h.render().some(n => n.type === 'Treasure'));
-  assert.ok(h.render().some(n => n.type === 'Text' && n.props.children === 'Let’s be friend'));
+  assert.ok(h.render().some(n => n.type === 'Text' && n.props.children === 'Let’s be friends'));
   h.h.unmount();
 });
 test('new furniture claim is separate from the friend gift and uses the frozen furniture art', async () => {
@@ -84,13 +84,13 @@ test('presentation is frozen before a legacy chest claim creates this friend’s
   h.data.discoveries=[{user_id:'me',friend_id:'friend',source_adventure_id:'journey'}];
   await h.render().find(n=>n.type==='Treasure').props.onClaim();
   assert.equal(h.render().find(n=>n.type==='Stage').props.heading,'You met a new friend!');
-  assert.ok(h.render().some(n=>n.props.children==='Let’s be friend'));h.h.unmount();
+  assert.ok(h.render().some(n=>n.props.children==='Let’s be friends'));h.h.unmount();
 });
 test('legacy returning friends also skip the invitation and show their frozen prompt directly', async () => {
   const h=harness();h.data.discoveries=[{user_id:'me',friend_id:'friend',source_adventure_id:'earlier'}];
   await h.render().find(n=>n.type==='Treasure').props.onClaim();
   assert.ok(h.render().some(n=>n.type==='LegacyFriend'));
-  assert.ok(!h.render().some(n=>n.props.children==='Let’s be friend'));
+  assert.ok(!h.render().some(n=>n.props.children==='Let’s be friends'));
   assert.notEqual(h.render().find(n=>n.type==='Stage').props.heading,'You met a new friend!');h.h.unmount();
 });
 test('resuming the intermediate receipt skips an already-claimed chest; final navigation goes to Home', () => {

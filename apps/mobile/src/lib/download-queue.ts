@@ -1,10 +1,8 @@
 /**
  * Foreground-only R2 completion queue.
  *
- * Both platforms keep only the curated bundled item set as their offline
- * baseline. Remote-only item icons are downloaded only when a mounted tile,
- * journal match, or widget actually needs one. Mutable R2 assets continue
- * through one foreground/idle scheduler.
+ * Current gifts and announcements share one foreground/idle scheduler.
+ * Retired diary icons, outfits and scenes are never bulk-staged at launch.
  *
  * Pages keep their existing cache-first behavior. Android warm-up is disk-only
  * with bounded backoff; it never pre-decodes the background image library or
@@ -15,21 +13,9 @@ import { Image as ExpoImage } from 'expo-image';
 
 import {
   ensureOutfitVideoCached,
-  fetchOutfitCatalog,
-  getCachedOutfitCatalog,
   getCachedOutfitVideoUri,
-  getEquippedOutfitKey,
-  outfitAssetUrl,
   type OutfitDef,
 } from './outfits';
-import {
-  fetchSceneCatalog,
-  getCachedSceneCatalog,
-  sceneAssetUrl,
-  type SceneDef,
-} from './scenes';
-import { getCachedRemoteItemManifest, remoteItemAssetUrl } from './item-manifest-cache';
-import { getSelectedScene } from './cosmetics-store';
 import {
   ensureAndroidR2FileCached,
   getAndroidR2CachedUri,
@@ -37,9 +23,6 @@ import {
 } from './android-r2-file-cache';
 import type { RemoteItemManifest } from '@novame/engine';
 import { isBaseItemIconUrl } from './base-item-icons';
-import { TAP_YOUR_DAY_LOCAL_CHOICES } from '@novame/engine';
-
-const localTapIds = new Set(TAP_YOUR_DAY_LOCAL_CHOICES.map(choice => choice.itemId));
 
 const IS_ANDROID = Platform.OS === 'android';
 const MAX_CONCURRENCY = IS_ANDROID ? 1 : 2;
@@ -51,13 +34,6 @@ const MAX_ATTEMPTS = 3;
 // the confirmed download order. Equal-priority tasks retain insertion order.
 const PRIORITY = {
   urgent: IS_ANDROID ? -300 : -100,
-  catalog: -40,
-  outfitThumb: 0,
-  sceneThumb: 5,
-  outfitPreview: 10,
-  itemIcon: 15,
-  sceneFull: 20,
-  outfitAnimation: 25,
 } as const;
 
 type QueueTask = {
@@ -426,100 +402,11 @@ export async function ensurePriorityOutfitVideo(outfit: OutfitDef): Promise<stri
   return ok ? getCachedOutfitVideoUri(outfit.key, outfit.assetVersion) : null;
 }
 
-function stageOutfit(outfit: OutfitDef): void {
-  enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), PRIORITY.outfitThumb);
-  enqueueR2Image(outfitAssetUrl(outfit.bunny, outfit.assetVersion), PRIORITY.outfitPreview);
-  addOutfitVideoTask(outfit, PRIORITY.outfitAnimation);
-}
-
-function stageAndroidP0(outfits: OutfitDef[], scenes: SceneDef[]): void {
-  if (!IS_ANDROID) return;
-  const equipped = getEquippedOutfitKey();
-  const selectedScene = getSelectedScene();
-
-  // Visible Home resources outrank announcements and the background library.
-  const currentOutfit = outfits.find((outfit) => outfit.key === equipped);
-  if (currentOutfit) {
-    addOutfitVideoTask(currentOutfit, PRIORITY.urgent, false);
-  }
-  const currentScene = scenes.find((scene) => scene.key === selectedScene);
-  if (currentScene) {
-    enqueueR2Image(sceneAssetUrl(currentScene.image, currentScene.assetVersion), PRIORITY.urgent);
-  }
-
-  // Confirmed P0 order: Outfit thumbs → Map thumbs → worn previews → full
-  // Maps → Android outfit animations. Equal-priority insertion
-  // order follows video-manifest.json.
-  for (const outfit of outfits) {
-    enqueueR2Image(outfitAssetUrl(outfit.thumb, outfit.assetVersion), PRIORITY.outfitThumb);
-  }
-  for (const scene of scenes) {
-    enqueueR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion), PRIORITY.sceneThumb);
-  }
-  for (const outfit of outfits) {
-    enqueueR2Image(outfitAssetUrl(outfit.bunny, outfit.assetVersion), PRIORITY.outfitPreview);
-  }
-  for (const scene of scenes) {
-    enqueueR2Image(sceneAssetUrl(scene.image, scene.assetVersion), PRIORITY.sceneFull);
-  }
-  for (const outfit of outfits) {
-    addOutfitVideoTask(outfit, PRIORITY.outfitAnimation, true);
-  }
-}
-
-function stageScene(scene: SceneDef): void {
-  enqueueR2Image(sceneAssetUrl(scene.thumb, scene.assetVersion), PRIORITY.sceneThumb);
-  enqueueR2Image(sceneAssetUrl(scene.image, scene.assetVersion), PRIORITY.sceneFull);
-}
-
-export function stageRemoteItemImages(
-  manifest?: RemoteItemManifest | null,
-): void {
-  if (IS_ANDROID) {
-    // New remote icons are queued by ItemSprite when visible on Android.
-    return;
-  }
-  const resolvedManifest = manifest === undefined ? getCachedRemoteItemManifest() : manifest;
-  for (const item of resolvedManifest?.items ?? []) {
-    // Approved Tap art is packaged locally; do not stage obsolete R2 overrides.
-    if (localTapIds.has(item.itemId)) continue;
-    enqueueR2Image(remoteItemAssetUrl(item.imageKey, item.assetVersion), PRIORITY.itemIcon);
-  }
-}
-
-async function refreshRuntimeCatalogs(): Promise<boolean> {
-  const [outfits, scenes] = await Promise.all([
-    fetchOutfitCatalog(),
-    fetchSceneCatalog(),
-  ]);
-  if (!IS_ANDROID) {
-    for (const outfit of outfits) stageOutfit(outfit);
-    for (const scene of scenes) stageScene(scene);
-  } else {
-    stageAndroidP0(outfits, scenes);
-  }
-  return outfits.length > 0 && scenes.length > 0;
-}
+/** Retired catalog compatibility: never stage old icons, scenes or videos. */
+export function stageRemoteItemImages(_manifest?: RemoteItemManifest | null): void {}
 
 function stageRuntimeInventory(): void {
-  if (!IS_ANDROID) {
-    for (const outfit of getCachedOutfitCatalog()) stageOutfit(outfit);
-    for (const scene of getCachedSceneCatalog()) stageScene(scene);
-    stageRemoteItemImages();
-  } else {
-    const outfits = getCachedOutfitCatalog();
-    const scenes = getCachedSceneCatalog();
-    if (outfits.length > 0 || scenes.length > 0) stageAndroidP0(outfits, scenes);
-  }
-  addTask({
-    key: 'catalogs:runtime',
-    priority: PRIORITY.catalog,
-    run: refreshRuntimeCatalogs,
-    timeoutMs: IS_ANDROID ? 8_000 : undefined,
-    requiresAndroidUi: IS_ANDROID,
-  });
-
-  pump();
+  // Current gifts and announcements are explicitly enqueued by their owners.
 }
 
 /** Cold-start entry. Never blocks the splash or a page render. */
@@ -579,16 +466,7 @@ export function markAndroidP0UiReady(): void {
 }
 
 /** Reconcile after the tiny content-version pointer reports new assets. */
-export function stageLatestManifest(): void {
-  const catalogTask = tasks.get('catalogs:runtime');
-  if (catalogTask && catalogTask.status !== 'active') {
-    catalogTask.status = 'queued';
-    catalogTask.attempts = 0;
-    catalogTask.nextAttemptAt = Date.now();
-  }
-  stageRuntimeInventory();
-  pump();
-}
+export function stageLatestManifest(): void {}
 
 // Compatibility exports for retired callers. They now route into the same
 // non-blocking foreground queue rather than maintaining a second cache policy.

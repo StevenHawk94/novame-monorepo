@@ -36,7 +36,7 @@ test('paused playback freezes cursor, count, elapsed and haptics; Continue rebas
  const fresh=play.createTouchPlayback('full');assert.equal(fresh.elapsed,0);assert.equal(fresh.count,0);assert.equal(fresh.cursor,0);
 });
 test('Detailed auto falls to Standard only, never Light; unknown/critical memory and Reduce Motion choose Standard',async()=>{
- const runtime=load('apps/mobile/src/lib/touch-note-runtime.ts',{'expo':{requireOptionalNativeModule:()=>null},'./interaction-preferences':{getInteractionPreferences:()=>({haptics:true})},'./haptics':{haptics:{touchPulse:async()=>true}}});
+ const runtime=load('apps/mobile/src/lib/touch-note-runtime.ts',{'expo':{requireOptionalNativeModule:()=>null},'react-native':{Platform:{OS:'ios',isPad:false}},'./storage':{storage:{getString(){},set(){}}},'../shared/storage/keys':{kTouchVibrationVerified:{name:'verified'}},'./interaction-preferences':{getInteractionPreferences:()=>({haptics:true})},'./haptics':{haptics:{touchPulse:async()=>true}}});
  const good={availableBytes:200*1024*1024,lowMemory:false};assert.equal(runtime.touchInitialQuality(good),'full');
  for(const c of [null,{...good,availableBytes:10},{...good,lowMemory:true},{...good,availableBytes:NaN}])assert.equal(runtime.touchInitialQuality(c),'standard');
  assert.equal(runtime.touchInitialQuality(good,true),'standard');assert.equal(await runtime.touchCapabilities(),null);

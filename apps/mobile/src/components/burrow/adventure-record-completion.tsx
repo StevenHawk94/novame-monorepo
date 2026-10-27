@@ -5,7 +5,6 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useIsFocused, usePreventRemove } from '@react-navigation/native';
 import { presentAdventureJournalReward, requestAdventureJournalStart, retryAdventureJournalJob, useAdventureJournalJob } from '@/lib/adventure-journal-jobs';
-import { ONBOARDING_ART } from '@/lib/burrow-onboarding-design';
 import { ADVENTURE_LOG_BACKGROUND } from '@/lib/burrow-surface';
 import { useBunnyVariant } from '@/lib/bunny-identity';
 import { ReflectCelebration } from '@/components/main/reflect-celebration';
@@ -13,6 +12,7 @@ import { AdventureReveal } from './adventure-reveal';
 import { openStartedAdventure } from '@/lib/adventure-navigation';
 import { HORIZONTAL_EDGE_BACK_OPTIONS } from '@/lib/page-edge-gesture';
 const PINKY_READY = require('../../../assets/burrow-webp/adventure-page/pinky.webp');
+const BISCUIT_READY = require('../../../assets/burrow-webp/adventure-page/biscuit.webp');
 
 export function AdventureReady({ onStart, onLoggedVisible, disabled = false, allowNavigation = false }: { onStart: () => void; onLoggedVisible?:()=>void; disabled?: boolean; allowNavigation?: boolean }) {
   const navigation = useNavigation();
@@ -32,7 +32,7 @@ export function AdventureReady({ onStart, onLoggedVisible, disabled = false, all
   }, [allowNavigation]));
   return <View style={s.ready}>
     <View style={s.message}>
-    <Image source={variant==='pinky'?PINKY_READY:ONBOARDING_ART.welcome} contentFit="contain" style={s.bunny} />
+    <Image source={variant==='pinky'?PINKY_READY:BISCUIT_READY} contentFit="contain" style={s.bunny} />
     <AdventureReveal onVisible={onLoggedVisible}><Text accessibilityRole="header" style={s.title}>Your day has been logged!</Text></AdventureReveal>
     <AdventureReveal delay={180}><Text style={s.description}>Your bunny has picked up the trail of your day and is ready for an adventure.</Text></AdventureReveal>
     </View>

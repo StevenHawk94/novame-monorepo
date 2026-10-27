@@ -4,13 +4,24 @@ import { storage } from './storage';
 import { kToyInputBatches } from '../shared/storage/keys';
 import { burrowClock, getBurrowSnapshot, scheduleBurrowRefresh, plushiePhotoSyncState } from './burrow-store';
 import { interactBurrowToyWindow } from './app-major-update-api';
-import { sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
+import { sessionEpoch,sessionUserId, subscribeSessionIdentity } from './session-lifecycle';
 import { createToyInteractionBatcher, type ToyRecordQueue, type ToyRecordScope } from './toy-interaction-batcher';
 import { toyPhotoFor } from './burrow-toy-photos';
 import { burrowLocalDay } from './burrow-local-day';
 import { questProgress } from './quest-progress-store';
 import { coinRewardDefinitelyRejected } from './coin-reward-store';
 import type { ToyRecordBatch } from './toy-interaction-batcher';
+import {momentsCache} from './moments-cache';
+let momentRefresh:ReturnType<typeof setTimeout>|undefined;
+function confirmedToy(){
+  scheduleBurrowRefresh();
+  if(momentRefresh)clearTimeout(momentRefresh);
+  const scope=current(),epoch=sessionEpoch();
+  momentRefresh=setTimeout(()=>{momentRefresh=undefined;const latest=current(),data=getBurrowSnapshot().data;
+    if(epoch===sessionEpoch()&&data&&scope&&latest&&scope.userId===latest.userId&&scope.partnerId===latest.partnerId&&scope.pairVersion===latest.pairVersion)
+      void momentsCache.retry(data);
+  },500);
+}
 const toyQuest=(scope:ToyRecordScope,batch:ToyRecordBatch)=>({
   scope:`${scope.userId}:${scope.partnerId??'solo'}:${scope.pairVersion??''}`,day:batch.localDate,questId:'interact_with_toy',
 });
@@ -30,7 +41,7 @@ try {
   if(v?.version===2&&typeof v.scope?.userId==='string'&&Array.isArray(v.pending)&&v.pending.every(batch)
     &&(!v.batch||batch(v.batch))&&(!v.windowStartedAt||Number.isFinite(Date.parse(v.windowStartedAt))))restored=v;
 }catch{}
-const batcher=createToyInteractionBatcher({current,uuid:randomUUID,restored,confirmed:scheduleBurrowRefresh,
+const batcher=createToyInteractionBatcher({current,uuid:randomUUID,restored,confirmed:confirmedToy,
   queued:(scope,batch)=>questProgress.fact(`toy:${batch.id}`,toyQuest(scope,batch),'pending'),
   rejected:(scope,batch)=>questProgress.fact(`toy:${batch.id}`,toyQuest(scope,batch),'rejected'),
   definitive:coinRewardDefinitelyRejected,
@@ -49,6 +60,7 @@ const batcher=createToyInteractionBatcher({current,uuid:randomUUID,restored,conf
   },
 });
 subscribeSessionIdentity(()=>{
+  if(momentRefresh)clearTimeout(momentRefresh);momentRefresh=undefined;
   const queue=batcher.snapshot();
   if(!queue||queue.scope.userId!==sessionUserId())batcher.reset();
 });
